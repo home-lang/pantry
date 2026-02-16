@@ -3,7 +3,7 @@
  *
  * @domain `k6.io`
  * @programs `k6`
- * @version `1.6.0` (35 versions available)
+ * @version `1.6.1` (36 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install k6.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "k6"
  * console.log(pkg.description) // "A modern load testing tool, using Go and JavaSc..."
  * console.log(pkg.programs)    // ["k6"]
- * console.log(pkg.versions[0]) // "1.6.0" (latest)
+ * console.log(pkg.versions[0]) // "1.6.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/k6-io.md
@@ -68,6 +68,7 @@ export const k6ioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.6.1',
     '1.6.0',
     '1.5.0',
     '1.4.2',
