@@ -27,10 +27,16 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const verbose = ctx.hasOption("verbose");
     const production = ctx.hasOption("production");
     const dev_only = ctx.hasOption("dev");
-    // Hoisted linker: peer deps auto-install by default (like bun/npm v7+)
-    // --peer flag is kept for backwards compatibility but is now the default
-    const include_peer = true;
     const ignore_scripts = ctx.hasOption("ignore-scripts");
+
+    // Load pantry.toml project configuration
+    const cwd_buf = io_helper.getCwdAlloc(allocator) catch try allocator.dupe(u8, ".");
+    defer allocator.free(cwd_buf);
+    const pantry_config = lib.config.loadPantryToml(allocator, cwd_buf) catch lib.config.PantryConfig{};
+
+    // Peer deps: only auto-install if pantry.toml says so OR --peer flag is set
+    // Default: false (must be explicitly enabled in pantry.toml or via --peer)
+    const include_peer = ctx.hasOption("peer") or pantry_config.install.peer;
     const offline = ctx.hasOption("offline");
     const filter = ctx.getOption("filter");
 
@@ -75,12 +81,13 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     // Call existing install logic with options
     const install_options = lib.commands.InstallOptions{
-        .production = production,
+        .production = production or pantry_config.install.production,
         .dev_only = dev_only,
         .include_peer = include_peer,
         .ignore_scripts = ignore_scripts,
         .verbose = verbose,
         .filter = filter,
+        .linker = pantry_config.install.linker,
     };
     const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);
@@ -119,14 +126,19 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
         style.print("Warning: --global option is not yet implemented for add command\n", .{});
     }
 
-    // Install the packages (hoisted linker: peer deps auto-install)
+    // Load pantry.toml config for linker/peer settings
+    const add_cwd = io_helper.getCwdAlloc(allocator) catch try allocator.dupe(u8, ".");
+    defer allocator.free(add_cwd);
+    const add_config = lib.config.loadPantryToml(allocator, add_cwd) catch lib.config.PantryConfig{};
+
     const install_options = lib.commands.InstallOptions{
         .production = false,
         .dev_only = false,
-        .include_peer = true,
+        .include_peer = peer or add_config.install.peer,
         .ignore_scripts = false,
         .verbose = verbose,
         .filter = null,
+        .linker = add_config.install.linker,
     };
     var result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);

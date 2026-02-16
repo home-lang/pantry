@@ -392,6 +392,16 @@ pub fn installWorkspaceCommandWithOptions(
                     continue;
                 }
 
+                // Filter peer deps: only include if enabled via pantry.toml or --peer flag
+                if (dep.dep_type == .peer and !options.include_peer) {
+                    continue;
+                }
+
+                // Filter dev deps in production mode
+                if (dep.dep_type == .dev and options.production) {
+                    continue;
+                }
+
                 // Resolve catalog references
                 var resolved_dep = dep;
 

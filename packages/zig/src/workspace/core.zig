@@ -9,8 +9,8 @@ pub const WorkspaceConfig = struct {
     packages: [][]const u8,
     /// Shared dependencies configuration
     shared_deps: bool = true,
-    /// Hoist dependencies to root
-    hoist: bool = true,
+    /// Hoist dependencies to root (deprecated: use pantry.toml [install] linker = "hoisted" instead)
+    hoist: bool = false,
     /// Workspace name
     name: ?[]const u8 = null,
     /// Workspace version
@@ -61,9 +61,9 @@ pub const WorkspaceConfig = struct {
             true;
 
         const hoist = if (ws_obj.get("hoist")) |h|
-            if (h == .bool) h.bool else true
+            if (h == .bool) h.bool else false
         else
-            true;
+            false;
 
         const name = if (ws_obj.get("name")) |n|
             if (n == .string) try allocator.dupe(u8, n.string) else null

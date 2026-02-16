@@ -30,6 +30,15 @@ pub const ServiceConfig = services.ServiceConfig;
 pub const extractServices = services.extractServices;
 pub const findProjectServices = services.findProjectServices;
 
+// TOML parser
+pub const toml_parser = @import("config/toml.zig");
+
+// pantry.toml project configuration
+pub const pantry_config = @import("config/pantry_config.zig");
+pub const PantryConfig = pantry_config.PantryConfig;
+pub const LinkerMode = pantry_config.LinkerMode;
+pub const loadPantryToml = pantry_config.loadPantryToml;
+
 // Re-export core zig-config functions
 pub const loadConfig = zig_config.loadConfig;
 pub const tryLoadConfig = zig_config.tryLoadConfig;

@@ -44,6 +44,9 @@ pub const EnvCache = cache.EnvCache;
 pub const PackageCache = cache.PackageCache;
 pub const ConfigResult = config.ConfigResult;
 pub const loadpantryConfig = config.loadpantryConfig;
+pub const PantryConfig = config.PantryConfig;
+pub const LinkerMode = config.LinkerMode;
+pub const loadPantryToml = config.loadPantryToml;
 
 test {
     @import("std").testing.refAllDecls(@This());

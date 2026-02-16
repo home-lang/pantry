@@ -66,8 +66,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
 
     if (deps.len == 0) return null;
 
-    // 4. Check all deps (including peer deps — hoisted linker auto-installs them)
-    //    against lockfile + verify dirs exist
+    // 4. Check all deps against lockfile + verify dirs exist
     var checked_count: usize = 0;
     for (deps) |dep| {
         if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator)) {
@@ -207,8 +206,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         break :blk true; // .normal dependencies
                     }
                 } else {
-                    // Default: install dependencies, devDependencies, and peerDependencies
-                    // Hoisted linker: peer deps are auto-installed like bun/npm v7+
+                    // Default: install dependencies and devDependencies
+                    // Peer deps only if explicitly enabled via pantry.toml or --peer flag
+                    if (dep.dep_type == .peer) {
+                        break :blk options.include_peer;
+                    }
                     break :blk true;
                 }
             };

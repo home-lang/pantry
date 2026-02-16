@@ -18,15 +18,19 @@ pub const CommandResult = struct {
     }
 };
 
+/// Linker strategy (re-export from config)
+pub const LinkerMode = lib.config.LinkerMode;
+
 /// Install command options
 pub const InstallOptions = struct {
     production: bool = false, // Skip devDependencies
     dev_only: bool = false, // Install devDependencies only
-    include_peer: bool = true, // Include peerDependencies (hoisted linker: auto-install like bun/npm v7+)
+    include_peer: bool = false, // Include peerDependencies (opt-in via pantry.toml or --peer flag)
     ignore_scripts: bool = false, // Don't run lifecycle scripts
     verbose: bool = false, // Verbose output
     quiet: bool = false, // Quiet output (suppress non-essential messages)
     filter: ?[]const u8 = null, // Filter pattern for workspace packages
+    linker: LinkerMode = .isolated, // Linker strategy (default: isolated, opt-in: hoisted)
 };
 
 /// Result of a single package installation task
