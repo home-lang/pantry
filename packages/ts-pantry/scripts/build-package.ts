@@ -15,6 +15,18 @@ const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathna
 // eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
+// Strip YAML inline comments: ` #comment` or ` # comment` at end of value
+// Only strips when # is preceded by a space (YAML spec: not inside quoted strings, not in URLs)
+function stripYamlComment(val: string): string {
+  // Don't strip from quoted strings
+  if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) return val
+  // Find ` #` pattern — must be preceded by a space
+  const idx = val.indexOf(' #')
+  if (idx < 0) return val
+  // Make sure this isn't inside a URL (e.g. https://foo.com#anchor has no space before #)
+  return val.slice(0, idx).trim()
+}
+
 // Parse a YAML value that follows a key: — handles block scalars (|), arrays (- item), or plain strings
 // For `run:` keys, also detects YAML arrays (lines starting with `- `)
 // Returns the value, or { value, _newIndex } if it advanced the line pointer
@@ -108,8 +120,8 @@ function parseYamlValue(
     return ''
   }
 
-  // Plain inline value
-  let val = rawVal
+  // Plain inline value — strip YAML inline comments
+  let val = stripYamlComment(rawVal)
   if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1)
   if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
   return val
@@ -226,7 +238,7 @@ function parseYaml(content: string): Record<string, any> {
               break
             }
           }
-          currentObj.push(fullValue)
+          currentObj.push(stripYamlComment(fullValue))
         }
       }
       continue
@@ -337,7 +349,7 @@ function parseYaml(content: string): Record<string, any> {
         return v
       }) : []
     } else {
-      currentObj[key] = value
+      currentObj[key] = stripYamlComment(value)
     }
   }
 
