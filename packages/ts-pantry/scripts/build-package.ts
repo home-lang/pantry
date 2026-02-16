@@ -516,8 +516,22 @@ function getBuildOverrides(pkgName: string): { description?: string; extraConfig
   }
 }
 
-async function downloadSource(url: string, destDir: string, stripComponents: number = 1, ref?: string): Promise<void> {
+async function downloadSource(url: string, destDir: string, stripComponents: number = 1, ref?: string, pkgDomain?: string, pkgVersion?: string): Promise<void> {
   console.log(`📥 Downloading source from ${url}`)
+
+  // Handle non-archive single files (.jar, .bin, etc.) — save directly, don't extract
+  const nonArchiveExts = ['.jar', '.bin', '.exe', '.AppImage', '.whl', '.gem']
+  const urlPath = new URL(url).pathname
+  const matchedExt = nonArchiveExts.find(ext => urlPath.endsWith(ext))
+  if (matchedExt) {
+    const encodedUrl = url.replace(/ /g, '%20')
+    // Save with pkgx naming convention: <domain>-<version>.<ext>
+    const fileName = pkgDomain && pkgVersion ? `${pkgDomain}-${pkgVersion}${matchedExt}` : urlPath.split('/').pop() || `download${matchedExt}`
+    const destFile = join(destDir, fileName)
+    console.log(`📦 Saving non-archive file as ${fileName}`)
+    execSync(`curl -fSL --connect-timeout 30 --max-time 600 --retry 2 --retry-delay 5 -o "${destFile}" "${encodedUrl}"`, { stdio: 'inherit' })
+    return
+  }
 
   // Handle git+https:// URLs — clone the repo
   if (url.startsWith('git+https://') || url.startsWith('git+http://')) {
@@ -985,7 +999,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     const ref = recipe.distributable.ref ? interpolate(recipe.distributable.ref, templateVars) : undefined
 
     try {
-      await downloadSource(sourceUrl, buildDir, stripComponents, ref)
+      await downloadSource(sourceUrl, buildDir, stripComponents, ref, pkgName, version)
     } catch (firstError: any) {
       let recovered = false
 
@@ -997,7 +1011,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         const altUrl = interpolate(rawUrl, altVars)
         const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
         try {
-          await downloadSource(altUrl, buildDir, stripComponents, altRef)
+          await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
           templateVars['version.tag'] = altTag
           recovered = true
         } catch { /* continue to next retry */ }
@@ -1018,7 +1032,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         const altUrl = interpolate(rawUrl, altVars)
         const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
         try {
-          await downloadSource(altUrl, buildDir, stripComponents, altRef)
+          await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
           Object.assign(templateVars, altVars)
           recovered = true
         } catch { /* continue to next retry */ }
@@ -1040,7 +1054,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
           const altUrl = interpolate(rawUrl, altVars)
           const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
           try {
-            await downloadSource(altUrl, buildDir, stripComponents, altRef)
+            await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
             Object.assign(templateVars, altVars)
             recovered = true
           } catch { /* continue to next retry */ }
@@ -1062,7 +1076,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         const altUrl = interpolate(rawUrl, altVars)
         const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
         try {
-          await downloadSource(altUrl, buildDir, stripComponents, altRef)
+          await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
           Object.assign(templateVars, altVars)
           recovered = true
         } catch { /* all retries exhausted */ }
@@ -1084,7 +1098,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
             const altUrl = interpolate(rawUrl, altVars)
             const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
             try {
-              await downloadSource(altUrl, buildDir, stripComponents, altRef)
+              await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
               Object.assign(templateVars, altVars)
               recovered = true
             } catch { /* try next alternative */ }

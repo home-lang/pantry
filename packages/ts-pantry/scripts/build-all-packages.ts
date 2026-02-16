@@ -635,6 +635,7 @@ Options:
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex configure/FFI
     'chiark.greenend.org.uk/puzzles', // Needs GTK
+    'gnu.org/source-highlight', // Needs boost.org built from source
   ])
 
   let platformSkipped = 0
