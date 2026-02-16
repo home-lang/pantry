@@ -1,5 +1,6 @@
 distributable:
   url: https://github.com/JetBrains/kotlin/releases/download/{{version.tag}}/kotlin-compiler-{{version}}.zip
+  strip-components: 1
 
 versions:
   github: JetBrains/kotlin

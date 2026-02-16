@@ -1,5 +1,6 @@
 distributable:
   url: https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/{{version}}/allure-commandline-{{version}}.zip
+  strip-components: 1
 
 versions:
   github: allure-framework/allure2

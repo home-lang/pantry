@@ -1,5 +1,6 @@
 distributable:
   url: https://github.com/jbangdev/jbang/releases/download/v{{version}}/jbang-{{version}}.zip
+  strip-components: 1
 versions:
   github: jbangdev/jbang
 dependencies:

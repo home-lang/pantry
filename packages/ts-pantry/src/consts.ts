@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-16T03:15:30.414Z
+ * Generated on 2026-02-16T21:48:10.350Z
  */
 
 /**
