@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
-import { generateBuildScript, getSkips, type PackageRecipe } from './buildkit.ts'
+import { generateBuildScript, getSkips } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
@@ -327,7 +327,7 @@ function parseYaml(content: string): Record<string, any> {
     } else if (value.startsWith('[') && value.endsWith(']')) {
       // Inline YAML flow sequence: [val1, val2]
       const inner = value.slice(1, -1).trim()
-      currentObj[key] = inner ? inner.split(',').map(v => {
+      currentObj[key] = inner ? inner.split(',').map((v: string) => {
         v = v.trim()
         if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1)
         if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1)

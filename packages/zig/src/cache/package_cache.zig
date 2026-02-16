@@ -45,7 +45,7 @@ pub const PackageCache = struct {
     /// Allocator
     allocator: std.mem.Allocator,
     /// Lock for thread safety
-    lock: std.Thread.RwLock,
+    lock: io_helper.Mutex,
     /// Maximum cache size in bytes (0 = unlimited)
     max_size_bytes: usize,
 
@@ -113,8 +113,8 @@ pub const PackageCache = struct {
         const key = try getCacheKey(self.allocator, name, version);
         defer self.allocator.free(key);
 
-        self.lock.lockShared();
-        defer self.lock.unlockShared();
+        self.lock.lock();
+        defer self.lock.unlock();
 
         if (self.metadata.get(key)) |meta| {
             // Verify file exists
@@ -142,7 +142,7 @@ pub const PackageCache = struct {
             };
 
             // Update last accessed time (for LRU)
-            meta.last_accessed = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+            meta.last_accessed = @as(i64, @intCast(io_helper.clockGettime().sec));
 
             return meta.*;
         }
@@ -180,7 +180,7 @@ pub const PackageCache = struct {
         const key = try getCacheKey(self.allocator, name, version);
         errdefer self.allocator.free(key);
 
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+        const now = @as(i64, @intCast(io_helper.clockGettime().sec));
 
         // Estimate uncompressed size (for gzipped tarballs, typically 3-5x compression)
         // This is a heuristic - exact size would require extraction
@@ -308,8 +308,8 @@ pub const PackageCache = struct {
 
     /// Get cache statistics
     pub fn stats(self: *PackageCache) CacheStats {
-        self.lock.lockShared();
-        defer self.lock.unlockShared();
+        self.lock.lock();
+        defer self.lock.unlock();
 
         var total_size: usize = 0;
         var it = self.metadata.valueIterator();
@@ -329,7 +329,7 @@ pub const PackageCache = struct {
         self.lock.lock();
         defer self.lock.unlock();
 
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+        const now = @as(i64, @intCast(io_helper.clockGettime().sec));
         const max_age_seconds = @as(i64, max_age_days) * 24 * 60 * 60;
 
         // Build list of all packages with their metadata

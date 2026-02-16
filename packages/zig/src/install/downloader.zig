@@ -93,7 +93,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     var transfer_buf: [16384]u8 = undefined; // 16KB transfer buffer for chunked progress
     const body_reader = stream.reader(&transfer_buf);
 
-    const start_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const start_ts = io_helper.clockGettime();
     const start_ms = @as(i64, @intCast(start_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts.nsec)), 1_000_000);
     var bytes_downloaded: u64 = 0;
     var last_update_ms: i64 = start_ms;
@@ -108,7 +108,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
         // Update progress display (skip if quiet mode)
         if (!quiet) {
-            const now_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const now_ts = io_helper.clockGettime();
             const now_ms = @as(i64, @intCast(now_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(now_ts.nsec)), 1_000_000);
 
             if (now_ms - last_update_ms >= 100) {

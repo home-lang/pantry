@@ -293,7 +293,7 @@ pub fn installSinglePackage(
     shared_installer: *install.Installer,
     options: types.InstallOptions,
 ) !types.InstallTaskResult {
-    const start_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const start_ts = io_helper.clockGettime();
     const start_time = @as(i64, @intCast(start_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts.nsec, 1_000_000)));
 
     // Skip local packages - they're handled separately
@@ -402,7 +402,7 @@ pub fn installSinglePackage(
         ) catch false;
 
         if (cache_success) {
-            const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const end_ts = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
             return .{
                 .name = lookup_name,
@@ -514,7 +514,7 @@ pub fn installSinglePackage(
         }
     }
 
-    const end_ts2 = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const end_ts2 = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts2.nsec, 1_000_000)));
 
     _ = bin_dir;

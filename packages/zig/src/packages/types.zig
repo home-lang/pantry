@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("../io_helper.zig");
 
 /// Package source types
 pub const PackageSource = enum {
@@ -155,7 +156,7 @@ pub const Lockfile = struct {
             .version = try allocator.dupe(u8, version),
             .lockfile_version = 1,
             .packages = std.StringHashMap(LockfileEntry).init(allocator),
-            .generated_at = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec,
+            .generated_at = (io_helper.clockGettime()).sec,
         };
     }
 

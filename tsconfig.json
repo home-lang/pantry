@@ -16,6 +16,9 @@
       ],
       "ts-cloud/aws": [
         "./packages/registry/app/ts-cloud-aws.ts"
+      ],
+      "@stacksjs/ts-cloud/aws": [
+        "./packages/registry/app/ts-cloud-aws.ts"
       ]
     },
     "resolveJsonModule": true,

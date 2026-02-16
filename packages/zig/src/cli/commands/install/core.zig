@@ -79,7 +79,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     if (checked_count == 0) return null;
 
     // 5. All up-to-date!
-    const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const end_ts = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
     const pantry_version = version_options.version;
@@ -129,7 +129,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(cwd);
 
         // Start timing for install operation (millisecond precision)
-        const start_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_ts = io_helper.clockGettime();
         const start_time = @as(i64, @intCast(start_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts.nsec, 1_000_000)));
 
         // ── FAST PATH: check if everything is already up-to-date ──
@@ -766,7 +766,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const pantry_hash = version_options.commit_hash;
 
         const total_deps = deps.len;
-        const end_ts = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const end_ts = io_helper.clockGettime();
         const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
@@ -830,7 +830,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     defer installer.deinit();
 
     // Start timing (millisecond precision)
-    const start_ts2 = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const start_ts2 = io_helper.clockGettime();
     const start_time = @as(i64, @intCast(start_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts2.nsec, 1_000_000)));
 
     // Print header with Pantry version info
@@ -1082,7 +1082,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     }
 
     // Clean summary with timing
-    const end_ts2 = std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+    const end_ts2 = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts2.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 

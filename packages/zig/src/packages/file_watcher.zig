@@ -100,7 +100,7 @@ pub const FileWatcher = struct {
 
             if (changes.len > 0) {
                 // Update last change time
-                const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+                const now = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
                 self.last_change_time.store(now, .release);
 
                 // Wait for debounce period
@@ -108,7 +108,7 @@ pub const FileWatcher = struct {
 
                 // Check if more changes occurred during debounce
                 const last_change = self.last_change_time.load(.acquire);
-                const time_since_last = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - last_change;
+                const time_since_last = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) - last_change;
 
                 if (time_since_last >= self.options.debounce_ms) {
                     // No more changes, trigger callback
@@ -203,7 +203,7 @@ pub const FileWatcher = struct {
                     .file_path = try self.allocator.dupe(u8, entry.key_ptr.*),
                     .member = member,
                     .change_type = .deleted,
-                    .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)),
+                    .timestamp = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000)),
                 });
             }
         }
@@ -264,7 +264,7 @@ pub const FileWatcher = struct {
                             .file_path = try self.allocator.dupe(u8, full_path),
                             .member = member,
                             .change_type = .modified,
-                            .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)),
+                            .timestamp = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000)),
                         });
                     }
                 } else {
@@ -273,7 +273,7 @@ pub const FileWatcher = struct {
                         .file_path = try self.allocator.dupe(u8, full_path),
                         .member = member,
                         .change_type = .created,
-                        .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)),
+                        .timestamp = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000)),
                     });
                 }
             }

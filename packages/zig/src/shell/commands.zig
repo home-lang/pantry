@@ -27,9 +27,9 @@ pub const ShellCommands = struct {
     /// Returns: env_dir|project_dir or empty on cache miss
     /// Performance target: < 1ms
     pub fn lookup(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
-        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_time = io_helper.clockGettimeMonotonic();
         defer {
-            const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const end_time = io_helper.clockGettimeMonotonic();
             const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
             const elapsed_us = @divFloor(elapsed_ns, std.time.ns_per_us);
             if (elapsed_us > 1000) {
@@ -98,9 +98,9 @@ pub const ShellCommands = struct {
     /// Returns: Shell code to eval (exports, PATH modifications)
     /// Performance target: < 50ms (cache hit), < 300ms (cache miss with install)
     pub fn activate(self: *ShellCommands, pwd: []const u8) ![]const u8 {
-        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_time = io_helper.clockGettimeMonotonic();
         defer {
-            const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+            const end_time = io_helper.clockGettimeMonotonic();
             const elapsed_ns = (end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec);
             const elapsed_ms = @divFloor(elapsed_ns, std.time.ns_per_ms);
             if (elapsed_ms > 50) {
@@ -120,7 +120,7 @@ pub const ShellCommands = struct {
 
         // 3. Fast-path: Check cache first (file modification based)
         // If pantry.json mtime unchanged, use cached environment instantly
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+        const now = @as(i64, @intCast((io_helper.clockGettime()).sec));
 
         const project_hash_quick = lib.string.md5Hash(project_root);
         if (try self.env_cache.get(project_hash_quick)) |cached_entry| {
@@ -348,9 +348,9 @@ pub const ShellCommands = struct {
             .dep_mtime = dep_mtime,
             .path = try self.allocator.dupe(u8, env_dir),
             .env_vars = std.StringHashMap([]const u8).init(self.allocator),
-            .created_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
-            .cached_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
-            .last_validated = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+            .created_at = @as(i64, @intCast((io_helper.clockGettime()).sec)),
+            .cached_at = @as(i64, @intCast((io_helper.clockGettime()).sec)),
+            .last_validated = @as(i64, @intCast((io_helper.clockGettime()).sec)),
         };
 
         try self.env_cache.put(entry);

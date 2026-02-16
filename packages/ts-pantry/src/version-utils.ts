@@ -356,7 +356,7 @@ export async function validatePackageSpec(packageSpec: string): Promise<{
     if (atIndex === -1) {
       // No version specified
       const packageName = packageSpec
-      const domain = resolvePackageDomain(packageName)
+      const domain = resolvePackageDomain(packageName as PackageName)
 
       if (!domain) {
         return {
@@ -374,7 +374,7 @@ export async function validatePackageSpec(packageSpec: string): Promise<{
     const packageName = packageSpec.slice(0, atIndex)
     const version = packageSpec.slice(atIndex + 1)
 
-    const domain = resolvePackageDomain(packageName)
+    const domain = resolvePackageDomain(packageName as PackageName)
     if (!domain) {
       return {
         isValid: false,

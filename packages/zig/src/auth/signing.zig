@@ -123,7 +123,11 @@ pub fn signPackageEd25519(
         .algorithm = try allocator.dupe(u8, "ed25519"),
         .signature = sig_b64,
         .key_id = key_id,
-        .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+        .timestamp = blk: {
+            var ts: std.c.timespec = .{ .sec = 0, .nsec = 0 };
+            _ = std.c.clock_gettime(std.c.CLOCK.REALTIME, &ts);
+            break :blk @as(i64, ts.sec);
+        },
         .key_url = null,
     };
 }

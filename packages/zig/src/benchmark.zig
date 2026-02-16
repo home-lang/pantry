@@ -1,4 +1,5 @@
 const std = @import("std");
+const io_helper = @import("io_helper.zig");
 const style = @import("cli/style.zig");
 
 /// Benchmark result
@@ -35,9 +36,9 @@ pub fn benchmark(
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
-        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_time = io_helper.clockGettimeMonotonic();
         func();
-        const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const end_time = io_helper.clockGettimeMonotonic();
 
         // Handle nanosecond rollover correctly
         const sec_diff = end_time.sec - start_time.sec;
@@ -72,9 +73,9 @@ pub fn benchmarkCacheLookup(
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
-        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_time = io_helper.clockGettimeMonotonic();
         _ = try cache.get(key);
-        const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const end_time = io_helper.clockGettimeMonotonic();
 
         const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
         total_ns += elapsed;
@@ -110,9 +111,9 @@ pub fn benchmarkHash(
 
     var i: usize = 0;
     while (i < iterations) : (i += 1) {
-        const start_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const start_time = io_helper.clockGettimeMonotonic();
         _ = string.md5Hash(data);
-        const end_time = std.posix.clock_gettime(.MONOTONIC) catch std.posix.timespec{ .sec = 0, .nsec = 0 };
+        const end_time = io_helper.clockGettimeMonotonic();
 
         const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
         total_ns += elapsed;

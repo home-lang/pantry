@@ -35,7 +35,7 @@ const ExecutionContext = struct {
 
 /// Execute a script in a workspace member
 fn executeScript(ctx: ExecutionContext) !ScriptResult {
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
     // Load scripts for this member
     const scripts_map = lib.config.findProjectScripts(ctx.allocator, ctx.member.abs_path) catch {
@@ -108,12 +108,12 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
             .exit_code = 1,
             .stdout = try ctx.allocator.dupe(u8, ""),
             .stderr = err_msg,
-            .duration_ms = @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time),
+            .duration_ms = @intCast(@as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) - start_time),
             .allocator = ctx.allocator,
         };
     };
 
-    const duration = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
+    const duration = @as(u64, @intCast(@as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) - start_time));
     const success = result.term.exited == 0;
 
     return ScriptResult{
@@ -131,7 +131,7 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
 const Task = struct {
     ctx: ExecutionContext,
     result: *?ScriptResult,
-    mutex: *std.Thread.Mutex,
+    mutex: *io_helper.Mutex,
     error_occurred: *bool,
 };
 
@@ -185,7 +185,7 @@ pub fn executeParallelGroup(
     var threads = try allocator.alloc(std.Thread, members.len);
     defer allocator.free(threads);
 
-    var mutex = std.Thread.Mutex{};
+    var mutex = io_helper.Mutex{};
     var error_occurred = false;
 
     // Spawn threads

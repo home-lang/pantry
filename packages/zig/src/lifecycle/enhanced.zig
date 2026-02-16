@@ -80,7 +80,7 @@ pub fn executeScriptWithTimeout(
         };
     }
 
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
     // Create child process
     const shell_argv = [_][]const u8{
@@ -103,7 +103,7 @@ pub fn executeScriptWithTimeout(
     else
         try io_helper.wait(&child);
 
-    const duration_ms = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
+    const duration_ms = @as(u64, @intCast(@as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) - start_time));
 
     // Check if timed out
     if (timeout_result == .timeout) {
@@ -181,11 +181,11 @@ fn waitWithTimeout(child: *std.process.Child, timeout_ms: u64) !WaitResult {
     // Simplified timeout implementation
     // Real implementation would use threading or polling
 
-    const start = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const start = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
     // Poll for completion
     while (true) {
-        const elapsed = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start));
+        const elapsed = @as(u64, @intCast(@as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) - start));
         if (elapsed > timeout_ms) {
             return .timeout;
         }
@@ -279,7 +279,7 @@ pub fn executeScriptsParallel(
     var stats = ExecutionStats.init(allocator);
     errdefer stats.deinit();
 
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
     // For now, execute sequentially
     // Real parallel implementation would use thread pool
@@ -347,7 +347,7 @@ pub fn executeScriptsParallel(
         }
     }
 
-    const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
     stats.total_duration_ms = @intCast(end_time - start_time);
 
     return .{
@@ -385,7 +385,7 @@ pub fn executeScriptSandboxed(
         };
     }
 
-    const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+    const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
     const builtin = @import("builtin");
 
     // Build sandboxed command based on OS
@@ -498,7 +498,7 @@ pub fn executeScriptSandboxed(
 
             // Write profile to temp file
             const tmp_dir = io_helper.getTempDir();
-            const profile_path = try std.fmt.allocPrint(allocator, "{s}/pantry-sandbox-{d}.sb", .{ tmp_dir, @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) });
+            const profile_path = try std.fmt.allocPrint(allocator, "{s}/pantry-sandbox-{d}.sb", .{ tmp_dir, @as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) });
             defer allocator.free(profile_path);
 
             const profile_file = try io_helper.cwd().createFile(io_helper.io, profile_path, .{});
@@ -544,7 +544,7 @@ pub fn executeScriptSandboxed(
     else
         try io_helper.wait(&child);
 
-    const duration_ms = @as(u64, @intCast(@as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000)) - start_time));
+    const duration_ms = @as(u64, @intCast(@as(i64, @intCast((io_helper.clockGettime()).sec * 1000)) - start_time));
 
     // Check if timed out
     if (timeout_result == .timeout) {

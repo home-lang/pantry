@@ -318,14 +318,16 @@ pub const ServiceManager = struct {
             }
 
             // Environment variables
-            var env_buf = std.ArrayList(u8).init(self.allocator);
-            defer env_buf.deinit();
+            var env_buf = std.ArrayList(u8){};
+            defer env_buf.deinit(self.allocator);
             var it = service.env_vars.iterator();
             var first = true;
             while (it.next()) |entry| {
-                if (!first) try env_buf.appendSlice(" ");
+                if (!first) try env_buf.appendSlice(self.allocator, " ");
                 first = false;
-                try env_buf.writer().print("{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
+                const formatted = try std.fmt.allocPrint(self.allocator, "{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
+                defer self.allocator.free(formatted);
+                try env_buf.appendSlice(self.allocator, formatted);
             }
             if (env_buf.items.len > 0) {
                 const env_line = try std.fmt.allocPrint(self.allocator, "{s}_env=\"{s}\"\n", .{ script_name, env_buf.items });

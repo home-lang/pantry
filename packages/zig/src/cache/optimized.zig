@@ -189,7 +189,7 @@ pub const OptimizedCache = struct {
         // Check TTL expiration
         if (result) |meta| {
             if (self.config.max_age_seconds > 0) {
-                const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+                const now = @as(i64, @intCast(io_helper.clockGettime().sec));
                 const age = now - meta.downloaded_at;
                 if (age > self.config.max_age_seconds) {
                     // Expired, remove from cache
@@ -215,8 +215,8 @@ pub const OptimizedCache = struct {
         const final_data = switch (self.config.compression) {
             .none => data,
             .gzip => blk: {
-                var compressed = std.ArrayList(u8).init(self.allocator);
-                defer compressed.deinit();
+                var compressed = std.ArrayList(u8){};
+                defer compressed.deinit(self.allocator);
 
                 var compressor = try std.compress.gzip.compressor(
                     compressed.writer(),
@@ -225,11 +225,11 @@ pub const OptimizedCache = struct {
                 try compressor.write(data);
                 try compressor.finish();
 
-                break :blk try compressed.toOwnedSlice();
+                break :blk try compressed.toOwnedSlice(self.allocator);
             },
             .zstd => blk: {
-                var compressed = std.ArrayList(u8).init(self.allocator);
-                defer compressed.deinit();
+                var compressed = std.ArrayList(u8){};
+                defer compressed.deinit(self.allocator);
 
                 var compressor = try std.compress.zstd.compressor(
                     compressed.writer(),
@@ -238,7 +238,7 @@ pub const OptimizedCache = struct {
                 try compressor.write(data);
                 try compressor.finish();
 
-                break :blk try compressed.toOwnedSlice();
+                break :blk try compressed.toOwnedSlice(self.allocator);
             },
         };
         defer {
@@ -275,8 +275,8 @@ pub const OptimizedCache = struct {
         return switch (self.config.compression) {
             .none => data,
             .gzip => blk: {
-                var decompressed = std.ArrayList(u8).init(self.allocator);
-                defer decompressed.deinit();
+                var decompressed = std.ArrayList(u8){};
+                defer decompressed.deinit(self.allocator);
 
                 var stream = std.io.fixedBufferStream(data);
                 var decompressor = try std.compress.gzip.decompressor(stream.reader());
@@ -285,15 +285,15 @@ pub const OptimizedCache = struct {
                 while (true) {
                     const bytes_read = try decompressor.read(&buffer);
                     if (bytes_read == 0) break;
-                    try decompressed.appendSlice(buffer[0..bytes_read]);
+                    try decompressed.appendSlice(self.allocator, buffer[0..bytes_read]);
                 }
 
                 self.allocator.free(data);
-                break :blk try decompressed.toOwnedSlice();
+                break :blk try decompressed.toOwnedSlice(self.allocator);
             },
             .zstd => blk: {
-                var decompressed = std.ArrayList(u8).init(self.allocator);
-                defer decompressed.deinit();
+                var decompressed = std.ArrayList(u8){};
+                defer decompressed.deinit(self.allocator);
 
                 var stream = std.io.fixedBufferStream(data);
                 var decompressor = try std.compress.zstd.decompressor(stream.reader());
@@ -302,11 +302,11 @@ pub const OptimizedCache = struct {
                 while (true) {
                     const bytes_read = try decompressor.read(&buffer);
                     if (bytes_read == 0) break;
-                    try decompressed.appendSlice(buffer[0..bytes_read]);
+                    try decompressed.appendSlice(self.allocator, buffer[0..bytes_read]);
                 }
 
                 self.allocator.free(data);
-                break :blk try decompressed.toOwnedSlice();
+                break :blk try decompressed.toOwnedSlice(self.allocator);
             },
         };
     }
@@ -346,16 +346,17 @@ pub const OptimizedCache = struct {
         }
 
         // Build list sorted by downloaded_at (oldest first)
-        var packages = try std.ArrayList(struct {
+        var packages = std.ArrayList(struct {
             key: []const u8,
             downloaded_at: i64,
             size: usize,
-        }).initCapacity(self.allocator, self.base.metadata.count());
-        defer packages.deinit();
+        }){};
+        try packages.ensureTotalCapacity(self.allocator, self.base.metadata.count());
+        defer packages.deinit(self.allocator);
 
         var entry_it = self.base.metadata.iterator();
         while (entry_it.next()) |entry| {
-            try packages.append(.{
+            try packages.append(self.allocator, .{
                 .key = entry.key_ptr.*,
                 .downloaded_at = entry.value_ptr.downloaded_at,
                 .size = entry.value_ptr.size,
@@ -394,15 +395,15 @@ pub const OptimizedCache = struct {
         self.base.lock.lock();
         defer self.base.lock.unlock();
 
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
-        var to_remove = std.ArrayList([]const u8).init(self.allocator);
-        defer to_remove.deinit();
+        const now = @as(i64, @intCast(io_helper.clockGettime().sec));
+        var to_remove = std.ArrayList([]const u8){};
+        defer to_remove.deinit(self.allocator);
 
         var it = self.base.metadata.iterator();
         while (it.next()) |entry| {
             const age = now - entry.value_ptr.downloaded_at;
             if (age > self.config.max_age_seconds) {
-                try to_remove.append(entry.key_ptr.*);
+                try to_remove.append(self.allocator, entry.key_ptr.*);
             }
         }
 
@@ -423,8 +424,8 @@ pub const OptimizedCache = struct {
 
     /// Get detailed cache statistics
     pub fn getStatistics(self: *OptimizedCache) !CacheStatistics {
-        self.base.lock.lockShared();
-        defer self.base.lock.unlockShared();
+        self.base.lock.lock();
+        defer self.base.lock.unlock();
 
         var total_size: usize = 0;
         var uncompressed_size: usize = 0;

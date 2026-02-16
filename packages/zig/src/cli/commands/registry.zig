@@ -1347,7 +1347,7 @@ fn updateDynamoDBIndex(
     // Get current timestamp as ISO 8601 string (native, no subprocess)
     var timestamp_buf: [24]u8 = undefined;
     const timestamp: []const u8 = blk: {
-        const ts = std.posix.clock_gettime(.REALTIME) catch break :blk "1970-01-01T00:00:00Z";
+        const ts = io_helper.clockGettime();
         const epoch_secs: std.time.epoch.EpochSeconds = .{ .secs = @intCast(ts.sec) };
         const epoch_day = epoch_secs.getEpochDay();
         const year_day = epoch_day.calculateYearDay();

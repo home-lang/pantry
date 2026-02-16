@@ -1,6 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const signing = @import("signing.zig");
+const io_helper = @import("../io_helper.zig");
 
 test "Generate Ed25519 keypair" {
     const allocator = testing.allocator;
@@ -143,7 +144,7 @@ test "Verify with missing key returns error" {
         .algorithm = "ed25519",
         .signature = "dummy_signature",
         .key_id = "nonexistent_key",
-        .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+        .timestamp = @as(i64, @intCast((io_helper.clockGettime()).sec)),
     };
 
     var keyring = signing.Keyring.init(allocator);
@@ -165,7 +166,7 @@ test "Verify with unsupported algorithm returns error" {
         .algorithm = "unsupported_algo",
         .signature = "dummy_signature",
         .key_id = "some_key",
-        .timestamp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+        .timestamp = @as(i64, @intCast((io_helper.clockGettime()).sec)),
     };
 
     var keyring = signing.Keyring.init(allocator);

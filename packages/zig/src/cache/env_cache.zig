@@ -31,7 +31,7 @@ pub const Entry = struct {
 
     /// Check if cache entry is still valid
     pub fn isValid(self: *Entry, _: std.mem.Allocator) !bool {
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+        const now = @as(i64, @intCast(io_helper.clockGettime().sec));
 
         // Check TTL expiration
         if (now - self.created_at > self.ttl) {
@@ -80,7 +80,7 @@ pub const EnvCache = struct {
     /// Allocator
     allocator: std.mem.Allocator,
     /// RWLock for thread-safe access
-    lock: std.Thread.RwLock,
+    lock: io_helper.Mutex,
     /// Cache file path
     cache_file_path: ?[]const u8 = null,
 
@@ -167,8 +167,8 @@ pub const EnvCache = struct {
         }
 
         // Fall back to main cache
-        self.lock.lockShared();
-        defer self.lock.unlockShared();
+        self.lock.lock();
+        defer self.lock.unlock();
 
         if (self.cache.get(hash)) |entry| {
             if (try entry.isValid(self.allocator)) {
@@ -224,13 +224,13 @@ pub const EnvCache = struct {
         self.lock.lock();
         defer self.lock.unlock();
 
-        var to_remove = std.ArrayList([16]u8).init(self.allocator);
-        defer to_remove.deinit();
+        var to_remove = std.ArrayList([16]u8){};
+        defer to_remove.deinit(self.allocator);
 
         var it = self.cache.iterator();
         while (it.next()) |kv| {
             if (!try kv.value_ptr.*.isValid(self.allocator)) {
-                try to_remove.append(kv.key_ptr.*);
+                try to_remove.append(self.allocator, kv.key_ptr.*);
             }
         }
 
@@ -255,8 +255,8 @@ pub const EnvCache = struct {
     pub fn save(self: *EnvCache) !void {
         const cache_file = self.cache_file_path orelse return;
 
-        self.lock.lockShared();
-        defer self.lock.unlockShared();
+        self.lock.lock();
+        defer self.lock.unlock();
 
         // Create temp file for atomic write
         const temp_file = try std.fmt.allocPrint(self.allocator, "{s}.tmp", .{cache_file});
@@ -404,8 +404,8 @@ pub const EnvCache = struct {
 
     /// Get cache statistics
     pub fn stats(self: *EnvCache) CacheStats {
-        self.lock.lockShared();
-        defer self.lock.unlockShared();
+        self.lock.lock();
+        defer self.lock.unlock();
 
         var fast_count: usize = 0;
         for (self.fast_cache) |maybe_entry| {
@@ -446,7 +446,7 @@ pub fn createEntry(
         .dep_mtime = @divFloor(stat.mtime, std.time.ns_per_s), // Store in seconds to match isValid comparison
         .path = try allocator.dupe(u8, path),
         .env_vars = env_vars,
-        .created_at = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)),
+        .created_at = @as(i64, @intCast(io_helper.clockGettime().sec)),
     };
 
     return entry;
@@ -475,7 +475,7 @@ test "EnvCache basic operations" {
 
     const hash = string.md5Hash("test");
     const entry = try allocator.create(Entry);
-    const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+    const now = @as(i64, @intCast(io_helper.clockGettime().sec));
     entry.* = .{
         .hash = hash,
         .dep_file = try allocator.dupe(u8, tmp_file),
@@ -527,7 +527,7 @@ test "EnvCache fast cache" {
         const hash = string.md5Hash(key);
 
         const entry = try allocator.create(Entry);
-        const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+        const now = @as(i64, @intCast(io_helper.clockGettime().sec));
         entry.* = .{
             .hash = hash,
             .dep_file = try allocator.dupe(u8, tmp_file),

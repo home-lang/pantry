@@ -116,7 +116,7 @@ function shellEnv(packages: string[]): Record<string, string> {
   const binPaths = getInstalledPackagePaths(packages)
   const libPaths = getLibraryPaths(packages)
 
-  const env: Record<string, string> = { ...process.env }
+  const env = { ...process.env } as Record<string, string>
 
   if (binPaths.length > 0) {
     env.PATH = [...binPaths, process.env.PATH || ''].join(':')

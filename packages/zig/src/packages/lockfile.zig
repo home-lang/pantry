@@ -231,7 +231,11 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
     else
         1;
 
-    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+    const now = blk: {
+        var ts: std.c.timespec = .{ .sec = 0, .nsec = 0 };
+        _ = std.c.clock_gettime(std.c.CLOCK.REALTIME, &ts);
+        break :blk ts.sec;
+    };
     const generated_at = if (root.object.get("generatedAt")) |v|
         if (v == .string) std.fmt.parseInt(i64, v.string, 10) catch now else now
     else

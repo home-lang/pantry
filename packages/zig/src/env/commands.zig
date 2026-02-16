@@ -5,7 +5,7 @@ const style = @import("../cli/style.zig");
 
 /// Get current Unix timestamp (Zig 0.16 compatible)
 fn getTimestamp() i64 {
-    const ts = std.posix.clock_gettime(.REALTIME) catch return 0;
+    const ts = io_helper.clockGettime();
     return @intCast(ts.sec);
 }
 

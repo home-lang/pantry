@@ -54,13 +54,13 @@ pub const InstallResult = struct {
 /// Thread-safe wrapper for the installing stack
 const InstallingStack = struct {
     map: std.StringHashMap(void),
-    mutex: std.Thread.Mutex,
+    mutex: io_helper.Mutex,
     allocator: std.mem.Allocator,
 
     fn init(allocator: std.mem.Allocator) InstallingStack {
         return .{
             .map = std.StringHashMap(void).init(allocator),
-            .mutex = std.Thread.Mutex{},
+            .mutex = io_helper.Mutex{},
             .allocator = allocator,
         };
     }
@@ -108,11 +108,11 @@ const NpmCache = struct {
     };
 
     resolution_map: std.StringHashMap(ResolutionEntry),
-    resolution_mutex: std.Thread.Mutex,
+    resolution_mutex: io_helper.Mutex,
 
     // --- Level 1: registry response cache (package name → raw JSON bytes) ---
     registry_map: std.StringHashMap([]const u8),
-    registry_mutex: std.Thread.Mutex,
+    registry_mutex: io_helper.Mutex,
 
     allocator: std.mem.Allocator,
 
@@ -251,7 +251,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         // Check if this is a local path dependency
         const is_local_path = std.mem.startsWith(u8, spec.version, "~/") or
@@ -313,7 +313,7 @@ pub const Installer = struct {
         // Atomically check+insert to prevent circular dependency loops (race-free)
         if (!try self.installing_stack.tryPut(install_key)) {
             // Already being installed in the call stack - skip to avoid infinite loop
-            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
             return InstallResult{
                 .name = try self.allocator.dupe(u8, resolved_spec.name),
                 .version = try self.allocator.dupe(u8, resolved_spec.version),
@@ -341,7 +341,7 @@ pub const Installer = struct {
             try self.installDependencies(info.dependencies, options);
         }
 
-        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, resolved_spec.name),
@@ -358,7 +358,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         // Expand ~ to home directory if needed
         var local_path: []const u8 = undefined;
@@ -435,7 +435,7 @@ pub const Installer = struct {
             break :blk try self.allocator.dupe(u8, abs_local_path);
         };
 
-        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         if (!options.quiet) {
             style.print("  ✓ linked to {s}\n", .{local_path});
@@ -456,7 +456,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         if (spec.repo == null) {
             return error.InvalidGitHubSpec;
@@ -488,7 +488,7 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -568,7 +568,7 @@ pub const Installer = struct {
             try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
         }
 
-        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -585,7 +585,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         const tarball_url = spec.url orelse return error.NoTarballUrl;
 
@@ -613,7 +613,7 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -683,7 +683,7 @@ pub const Installer = struct {
             };
         }
 
-        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -1037,7 +1037,7 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         // Determine install location
         const install_dir = if (options.project_root) |project_root| blk: {
@@ -1064,7 +1064,7 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -1206,7 +1206,7 @@ pub const Installer = struct {
             };
         }
 
-        const end_time = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec * 1000));
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),

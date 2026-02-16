@@ -738,10 +738,10 @@ pub fn waitWithTimeout(child: *std.process.Child, timeout_ms: u64) !WaitWithTime
     const waiter = try std.Thread.spawn(.{}, waitThreadMain, .{&state});
     defer waiter.join();
 
-    const start_ms = std.time.milliTimestamp();
+    const start_ms = getMilliTimestamp();
 
     while (!state.done.load(.acquire)) {
-        const elapsed_raw = std.time.milliTimestamp() - start_ms;
+        const elapsed_raw = getMilliTimestamp() - start_ms;
         const elapsed_ms: u64 = if (elapsed_raw <= 0) 0 else @intCast(elapsed_raw);
 
         if (elapsed_ms >= timeout_ms) {
@@ -749,13 +749,13 @@ pub fn waitWithTimeout(child: *std.process.Child, timeout_ms: u64) !WaitWithTime
             kill(child);
 
             while (!state.done.load(.acquire)) {
-                std.time.sleep(10 * std.time.ns_per_ms);
+                nanosleep(0, 10 * std.time.ns_per_ms);
             }
 
             return .timeout;
         }
 
-        std.time.sleep(10 * std.time.ns_per_ms);
+        nanosleep(0, 10 * std.time.ns_per_ms);
     }
 
     if (state.err) |err| return err;
@@ -1029,6 +1029,40 @@ pub fn nanosleep(secs: u64, nsecs: u64) void {
     var ts: c.timespec = .{ .sec = @intCast(secs), .nsec = @intCast(nsecs) };
     _ = c.nanosleep(&ts, &ts);
 }
+
+/// Get current wall-clock time in milliseconds (replacement for std.time.milliTimestamp)
+pub fn getMilliTimestamp() i64 {
+    var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
+    _ = c.clock_gettime(c.CLOCK.REALTIME, &ts);
+    return @as(i64, ts.sec) * 1000 + @as(i64, @intCast(@divFloor(ts.nsec, 1_000_000)));
+}
+
+/// Get current wall-clock timespec (replacement for std.posix.clock_gettime(.REALTIME))
+pub fn clockGettime() c.timespec {
+    var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
+    _ = c.clock_gettime(c.CLOCK.REALTIME, &ts);
+    return ts;
+}
+
+/// Get current monotonic timespec (for benchmarking/timing)
+pub fn clockGettimeMonotonic() c.timespec {
+    var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
+    _ = c.clock_gettime(c.CLOCK.MONOTONIC, &ts);
+    return ts;
+}
+
+/// Simple spinlock mutex (replacement for std.Thread.Mutex removed in 0.16-dev)
+pub const Mutex = struct {
+    inner: std.atomic.Mutex = .unlocked,
+
+    pub fn lock(self: *Mutex) void {
+        while (!self.inner.tryLock()) {}
+    }
+
+    pub fn unlock(self: *Mutex) void {
+        self.inner.unlock();
+    }
+};
 
 /// Simple environment map type for cross-version compatibility
 pub const EnvMap = std.StringHashMap([]const u8);

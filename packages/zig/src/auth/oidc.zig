@@ -570,7 +570,7 @@ pub const DEFAULT_CLOCK_SKEW_SECONDS: i64 = 60;
 
 /// Validate token expiration with configurable clock skew tolerance
 pub fn validateExpirationWithSkew(claims: *const OIDCToken.Claims, clock_skew_seconds: i64) !void {
-    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+    const now = io_helper.clockGettime().sec;
 
     // Check if token has expired (with clock skew tolerance)
     if (now >= claims.exp + clock_skew_seconds) {
@@ -654,7 +654,7 @@ pub const TokenManager = struct {
     /// Check if token is expiring within the threshold
     fn isTokenExpiringSoon(self: *const TokenManager, token: *const OIDCToken) bool {
         _ = self;
-        const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+        const now = io_helper.clockGettime().sec;
         return now >= (token.claims.exp - TOKEN_REFRESH_THRESHOLD_SECONDS);
     }
 
@@ -672,7 +672,7 @@ pub const TokenManager = struct {
     /// Get time until token expires (in seconds)
     pub fn getTokenTTL(self: *const TokenManager) ?i64 {
         if (self.current_token) |token| {
-            const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+            const now = io_helper.clockGettime().sec;
             const ttl = token.claims.exp - now;
             return if (ttl > 0) ttl else 0;
         }
@@ -1515,7 +1515,7 @@ pub const CachedJWKS = struct {
     const DEFAULT_TTL: i64 = 3600; // 1 hour
 
     pub fn isExpired(self: *const CachedJWKS) bool {
-        const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+        const now = io_helper.clockGettime().sec;
         return now >= (self.fetched_at + self.ttl_seconds);
     }
 
@@ -1546,7 +1546,7 @@ pub fn fetchJWKSCached(allocator: std.mem.Allocator, jwks_uri: []const u8) !JWKS
 
     // Fetch fresh JWKS
     const jwks = try fetchJWKS(allocator, jwks_uri);
-    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+    const now = io_helper.clockGettime().sec;
 
     // Cache it
     jwks_cache = .{

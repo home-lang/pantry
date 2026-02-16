@@ -153,7 +153,7 @@ export function parsePackageSpec(spec: string): ParsedPackageSpec {
 }
 
 export function formatPackageSpec(name: PackageName, version?: string): PackageSpec {
-  return version ? `${name}@${version}` : name
+  return (version ? `${name as string}@${version}` : name) as PackageSpec
 }
 
 export function detectPlatform(): PlatformInfo {

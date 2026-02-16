@@ -2,10 +2,11 @@ const std = @import("std");
 const testing = std.testing;
 const lib = @import("lib");
 const oidc = lib.auth.oidc;
+const io_helper = @import("../io_helper.zig");
 
 /// Get current Unix timestamp (Zig 0.16 compatible)
 fn getTimestamp() i64 {
-    const ts = std.posix.clock_gettime(.REALTIME) catch return 0;
+    const ts = io_helper.clockGettime();
     return @intCast(ts.sec);
 }
 
@@ -193,9 +194,9 @@ test "Validate Token Expiration - Valid" {
         .iss = "https://token.actions.githubusercontent.com",
         .sub = "repo:owner/repo:ref:refs/heads/main",
         .aud = "pantry",
-        .exp = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)) + 3600, // Expires in 1 hour
-        .iat = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)) - 60, // Issued 1 minute ago
-        .nbf = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec)) - 60, // Valid from 1 minute ago
+        .exp = @as(i64, @intCast((io_helper.clockGettime()).sec)) + 3600, // Expires in 1 hour
+        .iat = @as(i64, @intCast((io_helper.clockGettime()).sec)) - 60, // Issued 1 minute ago
+        .nbf = @as(i64, @intCast((io_helper.clockGettime()).sec)) - 60, // Valid from 1 minute ago
         .jti = null,
         .repository_owner = "owner",
         .repository = "owner/repo",
@@ -508,7 +509,7 @@ test "JWT Header Structure" {
 }
 
 test "Cached JWKS - Expiration Check" {
-    const now = (std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec;
+    const now = (io_helper.clockGettime()).sec;
 
     // Not expired
     const cached_valid = oidc.CachedJWKS{
@@ -556,7 +557,7 @@ test "Validation Error Types" {
 
 test "Validate Token Expiration - With Clock Skew Tolerance" {
     // Token that expired 30 seconds ago should pass with 60 second tolerance
-    const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+    const now = @as(i64, @intCast((io_helper.clockGettime()).sec));
 
     const claims_recently_expired = oidc.OIDCToken.Claims{
         .iss = "https://token.actions.githubusercontent.com",
@@ -593,7 +594,7 @@ test "Validate Token Expiration - With Clock Skew Tolerance" {
 }
 
 test "Validate Token Expiration - NBF With Clock Skew" {
-    const now = @as(i64, @intCast((std.posix.clock_gettime(.REALTIME) catch std.posix.timespec{ .sec = 0, .nsec = 0 }).sec));
+    const now = @as(i64, @intCast((io_helper.clockGettime()).sec));
 
     // Token that will be valid 30 seconds from now should pass with 60 second tolerance
     const claims_not_yet_valid = oidc.OIDCToken.Claims{
