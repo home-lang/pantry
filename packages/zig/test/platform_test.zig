@@ -7,7 +7,7 @@ test "Platform - current returns valid OS" {
 
     // Should be one of the known OS types
     const valid_os = switch (os) {
-        .darwin, .linux, .windows => true,
+        .darwin, .linux, .windows, .freebsd => true,
     };
 
     try testing.expect(valid_os);

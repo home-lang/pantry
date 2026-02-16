@@ -279,6 +279,7 @@ test "Platform service file extension" {
     switch (plat) {
         .macos => try std.testing.expectEqualStrings(".plist", plat.serviceFileExtension()),
         .linux => try std.testing.expectEqualStrings(".service", plat.serviceFileExtension()),
+        .freebsd => try std.testing.expectEqualStrings("", plat.serviceFileExtension()),
         .windows => try std.testing.expectEqualStrings(".xml", plat.serviceFileExtension()),
         .unknown => try std.testing.expectEqualStrings("", plat.serviceFileExtension()),
     }

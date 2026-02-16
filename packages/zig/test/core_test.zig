@@ -59,7 +59,7 @@ test "Library path variables are platform-specific" {
 
     switch (Platform.current()) {
         .darwin => try std.testing.expectEqualStrings("DYLD_LIBRARY_PATH", lib_var),
-        .linux => try std.testing.expectEqualStrings("LD_LIBRARY_PATH", lib_var),
+        .linux, .freebsd => try std.testing.expectEqualStrings("LD_LIBRARY_PATH", lib_var),
         .windows => try std.testing.expectEqualStrings("PATH", lib_var),
     }
 }
@@ -68,7 +68,7 @@ test "Path separator is platform-specific" {
     const sep = Paths.pathSeparator();
 
     switch (Platform.current()) {
-        .darwin, .linux => try std.testing.expect(sep == ':'),
+        .darwin, .linux, .freebsd => try std.testing.expect(sep == ':'),
         .windows => try std.testing.expect(sep == ';'),
     }
 }
