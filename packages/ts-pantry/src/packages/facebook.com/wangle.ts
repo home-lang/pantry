@@ -2,7 +2,7 @@
  * **wangle** - Wangle is a framework providing a set of common client/server abstractions for building services in a consistent, modular, and composable way.
  *
  * @domain `facebook.com/wangle`
- * @version `2026.2.9.0` (125 versions available)
+ * @version `2026.2.9.0` (126 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/wangle`
@@ -86,6 +86,7 @@ export const facebookcomwanglePackage = {
   versions: [
     '2026.2.9.0',
     '2026.2.2.0',
+    '2026.2.16.0',
     '2026.1.5.0',
     '2026.1.26.0',
     '2026.1.19.0',
