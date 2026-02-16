@@ -134,12 +134,8 @@ jobs:
             ARGS="$ARGS --force"
           fi
 
-          # Add each package
-          IFS=',' read -ra DOMAINS <<< "${{ github.event.inputs.packages }}"
-          for d in "${DOMAINS[@]}"; do
-            d=$(echo "$d" | xargs)
-            ARGS="$ARGS -p $d"
-          done
+          # Pass all packages as comma-separated to -p
+          ARGS="$ARGS -p ${{ github.event.inputs.packages }}"
 
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
