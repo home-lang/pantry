@@ -177,7 +177,7 @@ pub fn updateCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
     const install_options = install.InstallOptions{
         .production = options.production,
         .dev_only = false,
-        .include_peer = false,
+        .include_peer = true,
     };
 
     return try install.installCommandWithOptions(allocator, args, install_options);

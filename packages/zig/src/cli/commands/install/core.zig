@@ -66,11 +66,10 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
 
     if (deps.len == 0) return null;
 
-    // 4. Filter to non-peer deps (default install behavior)
-    //    and check all against lockfile + verify dirs exist
+    // 4. Check all deps (including peer deps — hoisted linker auto-installs them)
+    //    against lockfile + verify dirs exist
     var checked_count: usize = 0;
     for (deps) |dep| {
-        if (dep.dep_type == .peer) continue; // Skip peer deps by default
         if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator)) {
             return null; // At least one package needs work → fall through to slow path
         }
@@ -208,11 +207,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         break :blk true; // .normal dependencies
                     }
                 } else {
-                    // Default: install dependencies and devDependencies
-                    // Only skip peerDependencies unless --peer is specified
-                    if (dep.dep_type == .peer) {
-                        break :blk options.include_peer;
-                    }
+                    // Default: install dependencies, devDependencies, and peerDependencies
+                    // Hoisted linker: peer deps are auto-installed like bun/npm v7+
                     break :blk true;
                 }
             };

@@ -27,7 +27,9 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const verbose = ctx.hasOption("verbose");
     const production = ctx.hasOption("production");
     const dev_only = ctx.hasOption("dev");
-    const include_peer = ctx.hasOption("peer");
+    // Hoisted linker: peer deps auto-install by default (like bun/npm v7+)
+    // --peer flag is kept for backwards compatibility but is now the default
+    const include_peer = true;
     const ignore_scripts = ctx.hasOption("ignore-scripts");
     const offline = ctx.hasOption("offline");
     const filter = ctx.getOption("filter");
@@ -117,11 +119,11 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
         style.print("Warning: --global option is not yet implemented for add command\n", .{});
     }
 
-    // Install the packages
+    // Install the packages (hoisted linker: peer deps auto-install)
     const install_options = lib.commands.InstallOptions{
         .production = false,
         .dev_only = false,
-        .include_peer = false,
+        .include_peer = true,
         .ignore_scripts = false,
         .verbose = verbose,
         .filter = null,

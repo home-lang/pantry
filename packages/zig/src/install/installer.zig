@@ -734,11 +734,17 @@ pub const Installer = struct {
         if (parsed.value != .object) return;
 
         // Process dependencies and peerDependencies (skip devDependencies)
+        // Hoisted linker: peer deps are flattened to root alongside direct deps
         const sections = [_][]const u8{ "dependencies", "peerDependencies" };
+
+        // Read peerDependenciesMeta for optional peer detection
+        const peer_meta = parsed.value.object.get("peerDependenciesMeta");
 
         for (sections) |section_key| {
             const deps_val = parsed.value.object.get(section_key) orelse continue;
             if (deps_val != .object) continue;
+
+            const is_peer_section = std.mem.eql(u8, section_key, "peerDependencies");
 
             var it = deps_val.object.iterator();
             while (it.next()) |entry| {
@@ -750,9 +756,42 @@ pub const Installer = struct {
                 // Skip workspace references (monorepo internal deps)
                 if (std.mem.startsWith(u8, dep_version, "workspace:")) continue;
 
+                // Check peerDependenciesMeta for optional peers
+                if (is_peer_section) {
+                    if (peer_meta) |meta| {
+                        if (meta == .object) {
+                            if (meta.object.get(dep_name)) |dep_meta| {
+                                if (dep_meta == .object) {
+                                    if (dep_meta.object.get("optional")) |opt_val| {
+                                        if (opt_val == .bool and opt_val.bool) {
+                                            // Optional peer — install if possible, don't warn on failure
+                                            self.installOptionalTransitiveDep(dep_name, dep_version, project_root, depth + 1);
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 self.installTransitiveDep(dep_name, dep_version, project_root, depth + 1);
             }
         }
+    }
+
+    /// Install an optional transitive peer dependency.
+    /// Silently skips if the package can't be resolved (optional peers are best-effort).
+    fn installOptionalTransitiveDep(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+        project_root: []const u8,
+        depth: u32,
+    ) void {
+        self.installTransitiveDepInner(name, version_constraint, project_root, depth) catch {
+            // Optional peer dep — silently skip on failure
+        };
     }
 
     /// Install a single transitive dependency.
