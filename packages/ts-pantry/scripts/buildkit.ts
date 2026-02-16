@@ -469,18 +469,18 @@ export function generateBuildScript(
   }
   sections.push('')
 
+  // Common setup — set BEFORE recipe env so recipes can override (e.g. certbot's SRCROOT)
+  sections.push('# Common setup')
+  sections.push('export FORCE_UNSAFE_CONFIGURE=1')
+  sections.push(`export SRCROOT="${buildDir}"`)
+  sections.push('')
+
   // Environment from YAML recipe (overrides defaults above)
   if (recipe.build?.env) {
     sections.push('# Environment from recipe')
     sections.push(expandEnv(recipe.build.env, platform, tokens))
     sections.push('')
   }
-
-  // Common setup
-  sections.push('# Common setup')
-  sections.push('export FORCE_UNSAFE_CONFIGURE=1')
-  sections.push(`export SRCROOT="${buildDir}"`)
-  sections.push('')
 
   // Preserve system toolchain paths before overriding HOME
   sections.push('# Preserve system toolchains before HOME override')
