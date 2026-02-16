@@ -6,7 +6,7 @@
 
 - **Domain**: `sfcgal.org`
 - **Name**: `sfcgal-config`
-- **Homepage**: <https://sfcgal.gitlab.io/SFCGAL/>
+- **Homepage**: https://sfcgal.gitlab.io/SFCGAL/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sfcgal.org/package.yml)
 
 ## Installation

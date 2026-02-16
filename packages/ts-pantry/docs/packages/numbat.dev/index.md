@@ -6,7 +6,7 @@
 
 - **Domain**: `numbat.dev`
 - **Name**: `numbat`
-- **Homepage**: <https://numbat.dev>
+- **Homepage**: https://numbat.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/numbat.dev/package.yml)
 
 ## Installation

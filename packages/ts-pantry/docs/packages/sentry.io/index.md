@@ -6,7 +6,7 @@
 
 - **Domain**: `sentry.io`
 - **Name**: `sentry-cli`
-- **Homepage**: <https://docs.sentry.io/cli/>
+- **Homepage**: https://docs.sentry.io/cli/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sentry.io/package.yml)
 
 ## Installation

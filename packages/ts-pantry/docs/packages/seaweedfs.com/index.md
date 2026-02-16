@@ -6,7 +6,7 @@
 
 - **Domain**: `seaweedfs.com`
 - **Name**: `SeaweedFS`
-- **Homepage**: <https://seaweedfs.com>
+- **Homepage**: https://seaweedfs.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/seaweedfs.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `aria2.github.io`
 - **Name**: `aria2c`
-- **Homepage**: <https://aria2.github.io/>
+- **Homepage**: https://aria2.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aria2.github.io/package.yml)
 
 ## Installation

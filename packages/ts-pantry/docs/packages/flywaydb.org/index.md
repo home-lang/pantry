@@ -6,7 +6,7 @@
 
 - **Domain**: `flywaydb.org`
 - **Name**: `flyway`
-- **Homepage**: <https://flywaydb.org/>
+- **Homepage**: https://flywaydb.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/flywaydb.org/package.yml)
 
 ## Installation

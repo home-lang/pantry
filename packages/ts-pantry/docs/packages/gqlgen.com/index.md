@@ -6,7 +6,7 @@
 
 - **Domain**: `gqlgen.com`
 - **Name**: `gqlgen`
-- **Homepage**: <https://gqlgen.com>
+- **Homepage**: https://gqlgen.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gqlgen.com/package.yml)
 
 ## Installation

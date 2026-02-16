@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/diffutils`
 - **Name**: `diffutils`
-- **Homepage**: <https://www.gnu.org/software/diffutils/>
+- **Homepage**: https://www.gnu.org/software/diffutils/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/diffutils/package.yml)
 
 ## Installation

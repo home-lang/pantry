@@ -6,7 +6,7 @@
 
 - **Domain**: `leo-lang.org`
 - **Name**: `leo`
-- **Homepage**: <https://leo-lang.org/>
+- **Homepage**: https://leo-lang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/leo-lang.org/package.yml)
 
 ## Installation

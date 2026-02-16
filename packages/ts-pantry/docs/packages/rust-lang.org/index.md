@@ -6,7 +6,7 @@
 
 - **Domain**: `rust-lang.org`
 - **Name**: `rust`
-- **Homepage**: <https://www.rust-lang.org/>
+- **Homepage**: https://www.rust-lang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.org/package.yml)
 
 ## Installation

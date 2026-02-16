@@ -6,7 +6,7 @@
 
 - **Domain**: `rome.tools`
 - **Name**: `rome`
-- **Homepage**: <https://docs.rome.tools/>
+- **Homepage**: https://docs.rome.tools/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rome.tools/package.yml)
 
 ## Installation

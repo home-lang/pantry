@@ -6,7 +6,7 @@
 
 - **Domain**: `makotemplates.org`
 - **Name**: `mako-render`
-- **Homepage**: <https://www.makotemplates.org>
+- **Homepage**: https://www.makotemplates.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/makotemplates.org/package.yml)
 
 ## Installation

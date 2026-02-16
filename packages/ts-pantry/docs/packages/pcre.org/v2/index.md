@@ -6,7 +6,7 @@
 
 - **Domain**: `pcre.org/v2`
 - **Name**: `pcre2`
-- **Homepage**: <https://www.pcre.org/>
+- **Homepage**: https://www.pcre.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pcre.org/v2/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `flipt.io`
 - **Name**: `flipt`
-- **Homepage**: <https://flipt.io>
+- **Homepage**: https://flipt.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/flipt.io/package.yml)
 
 ## Installation

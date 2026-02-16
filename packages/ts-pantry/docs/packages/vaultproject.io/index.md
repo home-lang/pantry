@@ -6,7 +6,7 @@
 
 - **Domain**: `vaultproject.io`
 - **Name**: `vault`
-- **Homepage**: <https://www.vaultproject.io/>
+- **Homepage**: https://www.vaultproject.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vaultproject.io/package.yml)
 
 ## Installation

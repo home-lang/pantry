@@ -6,7 +6,7 @@
 
 - **Domain**: `stedolan.github.io/jq`
 - **Name**: `jq`
-- **Homepage**: <https://jqlang.github.io/jq/>
+- **Homepage**: https://jqlang.github.io/jq/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/stedolan.github.io/jq/package.yml)
 
 ## Installation

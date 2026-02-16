@@ -6,7 +6,7 @@
 
 - **Domain**: `apache.org/httpd`
 - **Name**: `httpd`
-- **Homepage**: <https://httpd.apache.org/>
+- **Homepage**: https://httpd.apache.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apache.org/httpd/package.yml)
 
 ## Installation

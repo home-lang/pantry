@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/ColinIanKing/stress-ng`
 - **Name**: `stress-ng`
-- **Homepage**: <https://wiki.ubuntu.com/Kernel/Reference/stress-ng>
+- **Homepage**: https://wiki.ubuntu.com/Kernel/Reference/stress-ng
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/ColinIanKing/stress-ng/package.yml)
 
 ## Installation

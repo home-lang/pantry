@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/zoxide`
 - **Name**: `zoxide`
-- **Homepage**: <https://crates.io/crates/zoxide>
+- **Homepage**: https://crates.io/crates/zoxide
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/zoxide/package.yml)
 
 ## Installation

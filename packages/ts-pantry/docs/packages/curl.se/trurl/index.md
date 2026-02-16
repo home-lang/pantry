@@ -6,7 +6,7 @@
 
 - **Domain**: `curl.se/trurl`
 - **Name**: `trurl`
-- **Homepage**: <https://curl.se/trurl/>
+- **Homepage**: https://curl.se/trurl/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/curl.se/trurl/package.yml)
 
 ## Installation

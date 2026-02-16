@@ -6,7 +6,7 @@
 
 - **Domain**: `f1bonacc1.github.io/process-compose`
 - **Name**: `process-compose`
-- **Homepage**: <https://f1bonacc1.github.io/process-compose/>
+- **Homepage**: https://f1bonacc1.github.io/process-compose/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/f1bonacc1.github.io/process-compose/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `rclone.org`
 - **Name**: `rclone`
-- **Homepage**: <https://rclone.org/>
+- **Homepage**: https://rclone.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rclone.org/package.yml)
 
 ## Installation

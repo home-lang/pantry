@@ -6,7 +6,7 @@
 
 - **Domain**: `augeas.net`
 - **Name**: `augeas`
-- **Homepage**: <https://augeas.net/>
+- **Homepage**: https://augeas.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/augeas.net/package.yml)
 
 ## Installation

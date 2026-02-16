@@ -6,7 +6,7 @@
 
 - **Domain**: `just.systems`
 - **Name**: `just`
-- **Homepage**: <https://just.systems>
+- **Homepage**: https://just.systems
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/just.systems/package.yml)
 
 ## Installation

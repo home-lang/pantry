@@ -6,7 +6,7 @@
 
 - **Domain**: `surrealdb.com`
 - **Name**: `surreal`
-- **Homepage**: <https://surrealdb.com>
+- **Homepage**: https://surrealdb.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/surrealdb.com/package.yml)
 
 ## Installation

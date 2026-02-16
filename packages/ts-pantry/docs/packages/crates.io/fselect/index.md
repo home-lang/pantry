@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/fselect`
 - **Name**: `fselect`
-- **Homepage**: <https://fselect.rocks>
+- **Homepage**: https://fselect.rocks
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/fselect/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `amrdeveloper.github.io/GQL`
 - **Name**: `gitql`
-- **Homepage**: <https://amrdeveloper.github.io/GQL/>
+- **Homepage**: https://amrdeveloper.github.io/GQL/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/amrdeveloper.github.io/GQL/package.yml)
 
 ## Installation

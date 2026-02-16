@@ -6,7 +6,7 @@
 
 - **Domain**: `google.com/zx`
 - **Name**: `zx`
-- **Homepage**: <https://google.github.io/zx/>
+- **Homepage**: https://google.github.io/zx/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/google.com/zx/package.yml)
 
 ## Installation

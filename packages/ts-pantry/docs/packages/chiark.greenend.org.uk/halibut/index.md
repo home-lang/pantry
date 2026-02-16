@@ -6,7 +6,7 @@
 
 - **Domain**: `chiark.greenend.org.uk/halibut`
 - **Name**: `halibut`
-- **Homepage**: <https://www.chiark.greenend.org.uk/~sgtatham/halibut/>
+- **Homepage**: https://www.chiark.greenend.org.uk/~sgtatham/halibut/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/chiark.greenend.org.uk/halibut/package.yml)
 
 ## Installation

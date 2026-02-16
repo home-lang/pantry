@@ -6,7 +6,7 @@
 
 - **Domain**: `laravel.com`
 - **Name**: `laravel`
-- **Homepage**: <https://laravel.com/docs>
+- **Homepage**: https://laravel.com/docs
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/laravel.com/package.yml)
 
 ## Installation

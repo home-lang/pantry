@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/parallel`
 - **Name**: `parallel`
-- **Homepage**: <https://savannah.gnu.org/projects/parallel/>
+- **Homepage**: https://savannah.gnu.org/projects/parallel/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/parallel/package.yml)
 
 ## Installation

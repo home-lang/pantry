@@ -6,7 +6,7 @@
 
 - **Domain**: `rust-script.org`
 - **Name**: `rust-script`
-- **Homepage**: <https://rust-script.org>
+- **Homepage**: https://rust-script.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rust-script.org/package.yml)
 
 ## Installation

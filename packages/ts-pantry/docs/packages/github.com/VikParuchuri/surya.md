@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/VikParuchuri/surya`
 - **Name**: `Surya`
-- **Homepage**: <https://www.datalab.to>
+- **Homepage**: https://www.datalab.to
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/VikParuchuri/surya/package.yml)
 
 ## Installation

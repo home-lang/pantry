@@ -6,7 +6,7 @@
 
 - **Domain**: `tmate.io`
 - **Name**: `tmate`
-- **Homepage**: <https://tmate.io/>
+- **Homepage**: https://tmate.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tmate.io/package.yml)
 
 ## Installation

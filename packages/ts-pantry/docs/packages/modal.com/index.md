@@ -6,7 +6,7 @@
 
 - **Domain**: `modal.com`
 - **Name**: `modal`
-- **Homepage**: <https://modal.com/docs>
+- **Homepage**: https://modal.com/docs
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/modal.com/package.yml)
 
 ## Installation

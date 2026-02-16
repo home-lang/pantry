@@ -6,7 +6,7 @@
 
 - **Domain**: `langchain.com`
 - **Name**: `langchain`
-- **Homepage**: <https://python.langchain.com>
+- **Homepage**: https://python.langchain.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/langchain.com/package.yml)
 
 ## Installation

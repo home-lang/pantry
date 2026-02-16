@@ -6,7 +6,7 @@
 
 - **Domain**: `public.hronopik.de/vid.stab`
 - **Name**: `vid.stab`
-- **Homepage**: <http://public.hronopik.de/vid.stab/>
+- **Homepage**: http://public.hronopik.de/vid.stab/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/public.hronopik.de/vid.stab/package.yml)
 
 ## Installation

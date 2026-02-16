@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/automake`
 - **Name**: `automake`
-- **Homepage**: <https://www.gnu.org/software/automake/>
+- **Homepage**: https://www.gnu.org/software/automake/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/automake/package.yml)
 
 ## Installation

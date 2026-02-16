@@ -6,7 +6,7 @@
 
 - **Domain**: `gource.io`
 - **Name**: `gource`
-- **Homepage**: <https://gource.io>
+- **Homepage**: https://gource.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gource.io/package.yml)
 
 ## Installation

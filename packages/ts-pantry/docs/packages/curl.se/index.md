@@ -6,7 +6,7 @@
 
 - **Domain**: `curl.se`
 - **Name**: `cURL`
-- **Homepage**: <https://curl.se>
+- **Homepage**: https://curl.se
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/curl.se/package.yml)
 
 ## Installation

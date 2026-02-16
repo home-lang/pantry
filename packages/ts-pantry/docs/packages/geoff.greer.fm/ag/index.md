@@ -6,7 +6,7 @@
 
 - **Domain**: `geoff.greer.fm/ag`
 - **Name**: `The Silver Searcher`
-- **Homepage**: <http://geoff.greer.fm/ag/>
+- **Homepage**: http://geoff.greer.fm/ag/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/geoff.greer.fm/ag/package.yml)
 
 ## Installation

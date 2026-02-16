@@ -6,7 +6,7 @@
 
 - **Domain**: `convco.github.io`
 - **Name**: `convco`
-- **Homepage**: <https://convco.github.io>
+- **Homepage**: https://convco.github.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/convco.github.io/package.yml)
 
 ## Installation

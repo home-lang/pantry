@@ -6,7 +6,7 @@
 
 - **Domain**: `neovim.io`
 - **Name**: `nvim`
-- **Homepage**: <https://neovim.io/>
+- **Homepage**: https://neovim.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/neovim.io/package.yml)
 
 ## Installation

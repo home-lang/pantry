@@ -6,7 +6,7 @@
 
 - **Domain**: `stripe.com`
 - **Name**: `stripe`
-- **Homepage**: <https://stripe.com/docs/stripe-cli>
+- **Homepage**: https://stripe.com/docs/stripe-cli
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/stripe.com/package.yml)
 
 ## Installation

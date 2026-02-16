@@ -6,7 +6,7 @@
 
 - **Domain**: `cloudfoundry.org/cf-cli`
 - **Name**: `cf`
-- **Homepage**: <https://ee.lbl.gov/>
+- **Homepage**: https://ee.lbl.gov/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cloudfoundry.org/cf-cli/package.yml)
 
 ## Installation

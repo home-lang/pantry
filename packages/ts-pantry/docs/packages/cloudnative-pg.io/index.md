@@ -6,7 +6,7 @@
 
 - **Domain**: `cloudnative-pg.io`
 - **Name**: `kubectl-cnpg`
-- **Homepage**: <https://cloudnative-pg.io/>
+- **Homepage**: https://cloudnative-pg.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cloudnative-pg.io/package.yml)
 
 ## Installation

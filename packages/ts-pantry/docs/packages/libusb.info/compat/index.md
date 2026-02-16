@@ -6,7 +6,7 @@
 
 - **Domain**: `libusb.info/compat`
 - **Name**: `libusb-compat`
-- **Homepage**: <https://libusb.info/>
+- **Homepage**: https://libusb.info/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libusb.info/compat/package.yml)
 
 ## Installation

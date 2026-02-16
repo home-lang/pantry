@@ -6,7 +6,7 @@
 
 - **Domain**: `wavpack.com`
 - **Name**: `wavpack`
-- **Homepage**: <https://www.wavpack.com/>
+- **Homepage**: https://www.wavpack.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wavpack.com/package.yml)
 
 ## Installation

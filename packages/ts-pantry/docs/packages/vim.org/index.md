@@ -6,7 +6,7 @@
 
 - **Domain**: `vim.org`
 - **Name**: `vim`
-- **Homepage**: <https://www.vim.org>
+- **Homepage**: https://www.vim.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vim.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `lame.sourceforge.io`
 - **Name**: `lame`
-- **Homepage**: <https://lame.sourceforge.io/>
+- **Homepage**: https://lame.sourceforge.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lame.sourceforge.io/package.yml)
 
 ## Installation

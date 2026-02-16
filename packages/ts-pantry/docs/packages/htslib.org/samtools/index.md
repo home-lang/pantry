@@ -6,7 +6,7 @@
 
 - **Domain**: `htslib.org/samtools`
 - **Name**: `samtools`
-- **Homepage**: <https://www.htslib.org/>
+- **Homepage**: https://www.htslib.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/htslib.org/samtools/package.yml)
 
 ## Installation
@@ -91,4 +91,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

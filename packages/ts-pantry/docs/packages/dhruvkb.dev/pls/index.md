@@ -6,7 +6,7 @@
 
 - **Domain**: `dhruvkb.dev/pls`
 - **Name**: `pls`
-- **Homepage**: <https://pls.cli.rs/>
+- **Homepage**: https://pls.cli.rs/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dhruvkb.dev/pls/package.yml)
 
 ## Installation

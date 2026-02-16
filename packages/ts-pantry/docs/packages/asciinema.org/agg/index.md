@@ -6,7 +6,7 @@
 
 - **Domain**: `asciinema.org/agg`
 - **Name**: `agg`
-- **Homepage**: <https://docs.asciinema.org/manual/agg/>
+- **Homepage**: https://docs.asciinema.org/manual/agg/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/asciinema.org/agg/package.yml)
 
 ## Installation

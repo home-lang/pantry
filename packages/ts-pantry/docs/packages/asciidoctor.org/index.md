@@ -6,7 +6,7 @@
 
 - **Domain**: `asciidoctor.org`
 - **Name**: `asciidoctor`
-- **Homepage**: <https://asciidoctor.org/>
+- **Homepage**: https://asciidoctor.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/asciidoctor.org/package.yml)
 
 ## Installation

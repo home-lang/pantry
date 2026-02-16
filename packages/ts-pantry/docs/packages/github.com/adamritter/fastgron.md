@@ -1,6 +1,6 @@
 # fastgron
 
-> High-performance JSON to GRON (greppable, flattened JSON) converter
+>  High-performance JSON to GRON (greppable, flattened JSON) converter
 
 ## Package Information
 

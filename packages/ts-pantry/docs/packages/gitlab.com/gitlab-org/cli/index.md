@@ -6,7 +6,7 @@
 
 - **Domain**: `gitlab.com/gitlab-org/cli`
 - **Name**: `glab`
-- **Homepage**: <https://gitlab.com/gitlab-org/cli>
+- **Homepage**: https://gitlab.com/gitlab-org/cli
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gitlab.com/gitlab-org/cli/package.yml)
 
 ## Installation

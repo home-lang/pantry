@@ -6,7 +6,7 @@
 
 - **Domain**: `libgd.github.io`
 - **Name**: `libgd.github`
-- **Homepage**: <https://libgd.github.io/>
+- **Homepage**: https://libgd.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libgd.github.io/package.yml)
 
 ## Installation

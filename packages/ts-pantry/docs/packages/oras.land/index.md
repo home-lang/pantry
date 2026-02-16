@@ -6,7 +6,7 @@
 
 - **Domain**: `oras.land`
 - **Name**: `oras`
-- **Homepage**: <https://oras.land>
+- **Homepage**: https://oras.land
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/oras.land/package.yml)
 
 ## Installation

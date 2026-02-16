@@ -6,7 +6,7 @@
 
 - **Domain**: `python-pillow.org`
 - **Name**: `python-pillow`
-- **Homepage**: <https://python-pillow.github.io>
+- **Homepage**: https://python-pillow.github.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/python-pillow.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `aux4.io`
 - **Name**: `aux4`
-- **Homepage**: <https://aux4.io>
+- **Homepage**: https://aux4.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aux4.io/package.yml)
 
 ## Installation

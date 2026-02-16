@@ -6,7 +6,7 @@
 
 - **Domain**: `fuellabs.github.io/sway`
 - **Name**: `forc`
-- **Homepage**: <https://docs.fuel.network/docs/sway/>
+- **Homepage**: https://docs.fuel.network/docs/sway/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fuellabs.github.io/sway/package.yml)
 
 ## Installation

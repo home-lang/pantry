@@ -6,7 +6,7 @@
 
 - **Domain**: `tailwindcss.com`
 - **Name**: `tailwindcss`
-- **Homepage**: <https://tailwindcss.com>
+- **Homepage**: https://tailwindcss.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tailwindcss.com/package.yml)
 
 ## Installation

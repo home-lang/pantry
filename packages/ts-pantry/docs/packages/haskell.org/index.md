@@ -6,7 +6,7 @@
 
 - **Domain**: `haskell.org`
 - **Name**: `haskell`
-- **Homepage**: <http://www.haskell.org/ghc/>
+- **Homepage**: http://www.haskell.org/ghc/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/haskell.org/package.yml)
 
 ## Installation

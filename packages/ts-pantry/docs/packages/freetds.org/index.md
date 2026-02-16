@@ -6,7 +6,7 @@
 
 - **Domain**: `freetds.org`
 - **Name**: `freetds`
-- **Homepage**: <https://www.freetds.org/>
+- **Homepage**: https://www.freetds.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freetds.org/package.yml)
 
 ## Installation

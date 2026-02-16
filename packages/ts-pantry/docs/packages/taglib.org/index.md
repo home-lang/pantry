@@ -6,7 +6,7 @@
 
 - **Domain**: `taglib.org`
 - **Name**: `taglib-config`
-- **Homepage**: <https://taglib.org/>
+- **Homepage**: https://taglib.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/taglib.org/package.yml)
 
 ## Installation

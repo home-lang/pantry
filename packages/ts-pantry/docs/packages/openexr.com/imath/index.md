@@ -6,7 +6,7 @@
 
 - **Domain**: `openexr.com/imath`
 - **Name**: `imath`
-- **Homepage**: <https://imath.readthedocs.io>
+- **Homepage**: https://imath.readthedocs.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openexr.com/imath/package.yml)
 
 ## Installation

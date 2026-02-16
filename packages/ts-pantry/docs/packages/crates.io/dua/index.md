@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/dua`
 - **Name**: `dua`
-- **Homepage**: <https://lib.rs/crates/dua-cli>
+- **Homepage**: https://lib.rs/crates/dua-cli
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/dua/package.yml)
 
 ## Installation

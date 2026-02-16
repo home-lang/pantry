@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/maxmind/libmaxminddb`
 - **Name**: `mmdblookup`
-- **Homepage**: <https://maxmind.github.io/libmaxminddb/>
+- **Homepage**: https://maxmind.github.io/libmaxminddb/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/maxmind/libmaxminddb/package.yml)
 
 ## Installation

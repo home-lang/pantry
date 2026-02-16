@@ -6,7 +6,7 @@
 
 - **Domain**: `cli.github.com`
 - **Name**: `gh`
-- **Homepage**: <https://cli.github.com/>
+- **Homepage**: https://cli.github.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cli.github.com/package.yml)
 
 ## Installation

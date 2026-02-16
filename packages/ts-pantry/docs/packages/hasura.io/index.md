@@ -6,7 +6,7 @@
 
 - **Domain**: `hasura.io`
 - **Name**: `hasura`
-- **Homepage**: <https://hasura.io>
+- **Homepage**: https://hasura.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hasura.io/package.yml)
 
 ## Installation

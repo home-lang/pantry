@@ -6,7 +6,7 @@
 
 - **Domain**: `maturin.rs`
 - **Name**: `maturin`
-- **Homepage**: <https://maturin.rs>
+- **Homepage**: https://maturin.rs
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/maturin.rs/package.yml)
 
 ## Installation

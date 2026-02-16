@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/plotutils`
 - **Name**: `plotutils`
-- **Homepage**: <https://www.gnu.org/software/plotutils/>
+- **Homepage**: https://www.gnu.org/software/plotutils/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/plotutils/package.yml)
 
 ## Installation

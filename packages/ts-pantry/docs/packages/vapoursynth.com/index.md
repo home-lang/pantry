@@ -6,7 +6,7 @@
 
 - **Domain**: `vapoursynth.com`
 - **Name**: `vspipe`
-- **Homepage**: <https://www.vapoursynth.com>
+- **Homepage**: https://www.vapoursynth.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vapoursynth.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `tox.wiki`
 - **Name**: `tox`
-- **Homepage**: <https://tox.wiki/en/latest/>
+- **Homepage**: https://tox.wiki/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tox.wiki/package.yml)
 
 ## Installation

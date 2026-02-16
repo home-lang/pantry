@@ -6,7 +6,7 @@
 
 - **Domain**: `printfn.github.io/fend`
 - **Name**: `fend`
-- **Homepage**: <https://printfn.github.io/fend>
+- **Homepage**: https://printfn.github.io/fend
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/printfn.github.io/fend/package.yml)
 
 ## Installation

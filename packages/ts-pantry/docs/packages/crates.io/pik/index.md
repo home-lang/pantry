@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/pik`
 - **Name**: `pik`
-- **Homepage**: <https://crates.io/crates/pik>
+- **Homepage**: https://crates.io/crates/pik
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/pik/package.yml)
 
 ## Installation

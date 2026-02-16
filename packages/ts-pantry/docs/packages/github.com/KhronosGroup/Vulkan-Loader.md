@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/KhronosGroup/Vulkan-Loader`
 - **Name**: `Vulkan-Loader`
-- **Homepage**: <https://vulkan.lunarg.com/doc/sdk/latest/linux/LoaderInterfaceArchitecture.html>
+- **Homepage**: https://vulkan.lunarg.com/doc/sdk/latest/linux/LoaderInterfaceArchitecture.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/KhronosGroup/Vulkan-Loader/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `carapace.sh`
 - **Name**: `carapace`
-- **Homepage**: <https://carapace.sh>
+- **Homepage**: https://carapace.sh
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/carapace.sh/package.yml)
 
 ## Installation

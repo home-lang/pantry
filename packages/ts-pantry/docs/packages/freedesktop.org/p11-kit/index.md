@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/p11-kit`
 - **Name**: `p11-kit`
-- **Homepage**: <https://p11-glue.freedesktop.org>
+- **Homepage**: https://p11-glue.freedesktop.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/p11-kit/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `openexr.com`
 - **Name**: `exr`
-- **Homepage**: <https://www.openexr.com/>
+- **Homepage**: https://www.openexr.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openexr.com/package.yml)
 
 ## Installation

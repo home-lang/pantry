@@ -6,7 +6,7 @@
 
 - **Domain**: `argoproj.github.io/cd`
 - **Name**: `argo-cd`
-- **Homepage**: <https://argoproj.github.io/cd/>
+- **Homepage**: https://argoproj.github.io/cd/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/argoproj.github.io/cd/package.yml)
 
 ## Installation

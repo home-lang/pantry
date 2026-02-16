@@ -6,7 +6,7 @@
 
 - **Domain**: `ibr.cs.tu-bs.de/libsmi`
 - **Name**: `smi`
-- **Homepage**: <https://www.ibr.cs.tu-bs.de/projects/libsmi/>
+- **Homepage**: https://www.ibr.cs.tu-bs.de/projects/libsmi/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ibr.cs.tu-bs.de/libsmi/package.yml)
 
 ## Installation

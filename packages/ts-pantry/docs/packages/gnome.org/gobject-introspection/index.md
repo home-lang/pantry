@@ -6,7 +6,7 @@
 
 - **Domain**: `gnome.org/gobject-introspection`
 - **Name**: `g-ir`
-- **Homepage**: <https://gi.readthedocs.io/en/latest/>
+- **Homepage**: https://gi.readthedocs.io/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/gobject-introspection/package.yml)
 
 ## Installation

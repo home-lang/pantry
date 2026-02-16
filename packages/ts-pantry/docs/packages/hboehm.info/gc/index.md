@@ -6,7 +6,7 @@
 
 - **Domain**: `hboehm.info/gc`
 - **Name**: `gc`
-- **Homepage**: <https://www.hboehm.info/gc/>
+- **Homepage**: https://www.hboehm.info/gc/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hboehm.info/gc/package.yml)
 
 ## Installation

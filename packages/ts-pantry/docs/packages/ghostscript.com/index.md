@@ -6,7 +6,7 @@
 
 - **Domain**: `ghostscript.com`
 - **Name**: `ghostscript`
-- **Homepage**: <https://www.ghostscript.com/>
+- **Homepage**: https://www.ghostscript.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ghostscript.com/package.yml)
 
 ## Installation

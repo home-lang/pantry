@@ -6,7 +6,7 @@
 
 - **Domain**: `aws.amazon.com/cli`
 - **Name**: `aws/cli`
-- **Homepage**: <https://aws.amazon.com/cli/>
+- **Homepage**: https://aws.amazon.com/cli/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aws.amazon.com/cli/package.yml)
 
 ## Installation

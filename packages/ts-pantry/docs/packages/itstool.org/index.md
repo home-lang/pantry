@@ -6,7 +6,7 @@
 
 - **Domain**: `itstool.org`
 - **Name**: `itstool`
-- **Homepage**: <https://itstool.org/>
+- **Homepage**: https://itstool.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/itstool.org/package.yml)
 
 ## Installation

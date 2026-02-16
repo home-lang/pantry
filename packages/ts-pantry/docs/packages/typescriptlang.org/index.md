@@ -6,7 +6,7 @@
 
 - **Domain**: `typescriptlang.org`
 - **Name**: `tsc`
-- **Homepage**: <https://www.typescriptlang.org/>
+- **Homepage**: https://www.typescriptlang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/typescriptlang.org/package.yml)
 
 ## Installation

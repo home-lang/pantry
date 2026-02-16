@@ -6,7 +6,7 @@
 
 - **Domain**: `scala-lang.org`
 - **Name**: `scala-lang`
-- **Homepage**: <https://dotty.epfl.ch>
+- **Homepage**: https://dotty.epfl.ch
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/scala-lang.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `yui.github.io/yuicompressor`
 - **Name**: `yuicompressor`
-- **Homepage**: <https://yui.github.io/yuicompressor/>
+- **Homepage**: https://yui.github.io/yuicompressor/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/yui.github.io/yuicompressor/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `elv.sh`
 - **Name**: `elvish`
-- **Homepage**: <https://elv.sh/>
+- **Homepage**: https://elv.sh/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/elv.sh/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `libzip.org`
 - **Name**: `zip`
-- **Homepage**: <https://libzip.org/>
+- **Homepage**: https://libzip.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libzip.org/package.yml)
 
 ## Installation

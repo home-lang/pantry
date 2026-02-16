@@ -6,7 +6,7 @@
 
 - **Domain**: `pyinvoke.org`
 - **Name**: `invoke`
-- **Homepage**: <https://www.pyinvoke.org/>
+- **Homepage**: https://www.pyinvoke.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pyinvoke.org/package.yml)
 
 ## Installation

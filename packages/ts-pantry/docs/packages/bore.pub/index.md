@@ -6,7 +6,7 @@
 
 - **Domain**: `bore.pub`
 - **Name**: `bore`
-- **Homepage**: <http://bore.pub>
+- **Homepage**: http://bore.pub
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bore.pub/package.yml)
 
 ## Installation

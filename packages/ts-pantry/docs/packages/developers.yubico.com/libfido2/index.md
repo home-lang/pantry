@@ -6,7 +6,7 @@
 
 - **Domain**: `developers.yubico.com/libfido2`
 - **Name**: `fido2`
-- **Homepage**: <https://developers.yubico.com/libfido2/>
+- **Homepage**: https://developers.yubico.com/libfido2/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/developers.yubico.com/libfido2/package.yml)
 
 ## Installation

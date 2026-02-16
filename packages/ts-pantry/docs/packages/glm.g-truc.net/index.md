@@ -6,7 +6,7 @@
 
 - **Domain**: `glm.g-truc.net`
 - **Name**: `glm.g-truc`
-- **Homepage**: <https://glm.g-truc.net>
+- **Homepage**: https://glm.g-truc.net
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/glm.g-truc.net/package.yml)
 
 ## Installation

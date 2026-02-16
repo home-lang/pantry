@@ -6,7 +6,7 @@
 
 - **Domain**: `clog-tool.github.io`
 - **Name**: `clog`
-- **Homepage**: <https://gothenburgbitfactory.org/clog/docs/>
+- **Homepage**: https://gothenburgbitfactory.org/clog/docs/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/clog-tool.github.io/package.yml)
 
 ## Installation

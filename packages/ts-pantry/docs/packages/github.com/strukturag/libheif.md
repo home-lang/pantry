@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/strukturag/libheif`
 - **Name**: `heif`
-- **Homepage**: <https://www.libde265.org/>
+- **Homepage**: https://www.libde265.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/strukturag/libheif/package.yml)
 
 ## Installation

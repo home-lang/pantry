@@ -6,7 +6,7 @@
 
 - **Domain**: `filippo.io/age`
 - **Name**: `age`
-- **Homepage**: <https://age-encryption.org>
+- **Homepage**: https://age-encryption.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/filippo.io/age/package.yml)
 
 ## Installation

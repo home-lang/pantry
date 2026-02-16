@@ -6,7 +6,7 @@
 
 - **Domain**: `webmproject.org/libvpx`
 - **Name**: `libvpx`
-- **Homepage**: <http://www.webmproject.org/code/>
+- **Homepage**: http://www.webmproject.org/code/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/webmproject.org/libvpx/package.yml)
 
 ## Installation

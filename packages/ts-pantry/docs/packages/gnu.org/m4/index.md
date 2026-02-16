@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/m4`
 - **Name**: `m4`
-- **Homepage**: <https://www.gnu.org/software/m4/>
+- **Homepage**: https://www.gnu.org/software/m4/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/m4/package.yml)
 
 ## Installation

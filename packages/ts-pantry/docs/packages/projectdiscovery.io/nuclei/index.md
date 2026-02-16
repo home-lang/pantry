@@ -6,7 +6,7 @@
 
 - **Domain**: `projectdiscovery.io/nuclei`
 - **Name**: `nuclei`
-- **Homepage**: <https://nuclei.projectdiscovery.io/>
+- **Homepage**: https://nuclei.projectdiscovery.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/projectdiscovery.io/nuclei/package.yml)
 
 ## Installation

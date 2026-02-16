@@ -6,7 +6,7 @@
 
 - **Domain**: `cfssl.org`
 - **Name**: `cfssl`
-- **Homepage**: <https://cfssl.org/>
+- **Homepage**: https://cfssl.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cfssl.org/package.yml)
 
 ## Installation

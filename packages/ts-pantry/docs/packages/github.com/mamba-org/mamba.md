@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/mamba-org/mamba`
 - **Name**: `mamba`
-- **Homepage**: <https://mamba.readthedocs.io>
+- **Homepage**: https://mamba.readthedocs.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/mamba-org/mamba/package.yml)
 
 ## Installation

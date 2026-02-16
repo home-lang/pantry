@@ -6,7 +6,7 @@
 
 - **Domain**: `ktlint.github.io`
 - **Name**: `ktlint`
-- **Homepage**: <https://ktlint.github.io/>
+- **Homepage**: https://ktlint.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ktlint.github.io/package.yml)
 
 ## Installation

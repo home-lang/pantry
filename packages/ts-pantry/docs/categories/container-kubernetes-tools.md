@@ -48,7 +48,7 @@ Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as
 
 ### [github.com/stern/stern](../packages/github.com/stern/stern.md) (stern)
 
-⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of <https://github.com/wercker/stern>
+⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of https://github.com/wercker/stern
 
 **Programs**: stern
 

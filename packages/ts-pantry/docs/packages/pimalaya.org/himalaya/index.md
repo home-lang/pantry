@@ -6,7 +6,7 @@
 
 - **Domain**: `pimalaya.org/himalaya`
 - **Name**: `himalaya`
-- **Homepage**: <https://pimalaya.org>
+- **Homepage**: https://pimalaya.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pimalaya.org/himalaya/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `crystal-lang.org`
 - **Name**: `crystal`
-- **Homepage**: <https://crystal-lang.org/>
+- **Homepage**: https://crystal-lang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crystal-lang.org/package.yml)
 
 ## Installation

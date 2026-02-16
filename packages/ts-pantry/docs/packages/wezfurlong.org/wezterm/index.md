@@ -6,7 +6,7 @@
 
 - **Domain**: `wezfurlong.org/wezterm`
 - **Name**: `wezterm`
-- **Homepage**: <https://wezfurlong.org/wezterm/>
+- **Homepage**: https://wezfurlong.org/wezterm/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wezfurlong.org/wezterm/package.yml)
 
 ## Installation

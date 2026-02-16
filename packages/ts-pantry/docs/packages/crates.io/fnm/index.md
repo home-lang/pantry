@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/fnm`
 - **Name**: `fnm`
-- **Homepage**: <https://fnm.vercel.app>
+- **Homepage**: https://fnm.vercel.app
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/fnm/package.yml)
 
 ## Installation

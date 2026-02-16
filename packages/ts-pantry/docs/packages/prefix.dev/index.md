@@ -6,7 +6,7 @@
 
 - **Domain**: `prefix.dev`
 - **Name**: `pixi`
-- **Homepage**: <https://pixi.sh>
+- **Homepage**: https://pixi.sh
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/prefix.dev/package.yml)
 
 ## Installation

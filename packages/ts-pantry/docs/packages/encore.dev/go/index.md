@@ -6,7 +6,7 @@
 
 - **Domain**: `encore.dev/go`
 - **Name**: `encore-go`
-- **Homepage**: <https://encore.dev>
+- **Homepage**: https://encore.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/encore.dev/go/package.yml)
 
 ## Installation

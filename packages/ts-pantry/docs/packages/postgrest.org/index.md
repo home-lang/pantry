@@ -6,7 +6,7 @@
 
 - **Domain**: `postgrest.org`
 - **Name**: `postgrest`
-- **Homepage**: <https://postgrest.org>
+- **Homepage**: https://postgrest.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/postgrest.org/package.yml)
 
 ## Installation

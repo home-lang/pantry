@@ -6,7 +6,7 @@
 
 - **Domain**: `tesseract-ocr.github.io`
 - **Name**: `tesseract`
-- **Homepage**: <https://github.com/tesseract-ocr/>
+- **Homepage**: https://github.com/tesseract-ocr/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tesseract-ocr.github.io/package.yml)
 
 ## Installation

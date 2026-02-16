@@ -6,7 +6,7 @@
 
 - **Domain**: `wundergraph.com`
 - **Name**: `wunderctl`
-- **Homepage**: <https://wundergraph.com>
+- **Homepage**: https://wundergraph.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wundergraph.com/package.yml)
 
 ## Installation

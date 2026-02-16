@@ -1,12 +1,12 @@
 # uriparse
 
-> :hocho: Strictly RFC 3986 compliant URI parsing and handling library written in C89; moved from SourceForge to GitHub
+>  :hocho: Strictly RFC 3986 compliant URI parsing and handling library written in C89; moved from SourceForge to GitHub
 
 ## Package Information
 
 - **Domain**: `uriparser.github.io`
 - **Name**: `uriparse`
-- **Homepage**: <https://uriparser.github.io/>
+- **Homepage**: https://uriparser.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/uriparser.github.io/package.yml)
 
 ## Installation

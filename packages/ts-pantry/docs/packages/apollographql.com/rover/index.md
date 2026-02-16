@@ -6,7 +6,7 @@
 
 - **Domain**: `apollographql.com/rover`
 - **Name**: `rover`
-- **Homepage**: <https://www.apollographql.com/docs/rover/>
+- **Homepage**: https://www.apollographql.com/docs/rover/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apollographql.com/rover/package.yml)
 
 ## Installation

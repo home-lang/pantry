@@ -6,7 +6,7 @@
 
 - **Domain**: `digip.org/jansson`
 - **Name**: `jansson`
-- **Homepage**: <http://www.digip.org/jansson/>
+- **Homepage**: http://www.digip.org/jansson/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/digip.org/jansson/package.yml)
 
 ## Installation

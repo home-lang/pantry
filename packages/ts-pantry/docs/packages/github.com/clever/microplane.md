@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/clever/microplane`
 - **Name**: `mp`
-- **Homepage**: <https://medium.com/always-a-student/mo-repos-mo-problems-how-we-make-changes-across-many-git-repositories-293ad7d418f0>
+- **Homepage**: https://medium.com/always-a-student/mo-repos-mo-problems-how-we-make-changes-across-many-git-repositories-293ad7d418f0
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/clever/microplane/package.yml)
 
 ## Installation

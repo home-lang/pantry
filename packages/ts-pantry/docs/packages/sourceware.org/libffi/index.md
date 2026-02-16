@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceware.org/libffi`
 - **Name**: `libffi`
-- **Homepage**: <http://sourceware.org/libffi>
+- **Homepage**: http://sourceware.org/libffi
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceware.org/libffi/package.yml)
 
 ## Installation

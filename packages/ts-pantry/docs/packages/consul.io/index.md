@@ -6,7 +6,7 @@
 
 - **Domain**: `consul.io`
 - **Name**: `consul`
-- **Homepage**: <https://www.consul.io>
+- **Homepage**: https://www.consul.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/consul.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `cmake.org`
 - **Name**: `cmake`
-- **Homepage**: <https://www.cmake.org/>
+- **Homepage**: https://www.cmake.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cmake.org/package.yml)
 
 ## Installation

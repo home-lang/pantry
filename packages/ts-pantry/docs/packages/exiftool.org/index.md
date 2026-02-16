@@ -6,7 +6,7 @@
 
 - **Domain**: `exiftool.org`
 - **Name**: `exiftool`
-- **Homepage**: <https://exiftool.org>
+- **Homepage**: https://exiftool.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/exiftool.org/package.yml)
 
 ## Installation

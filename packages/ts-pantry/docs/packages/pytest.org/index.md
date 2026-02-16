@@ -6,7 +6,7 @@
 
 - **Domain**: `pytest.org`
 - **Name**: `pytest`
-- **Homepage**: <https://docs.pytest.org/en/latest/>
+- **Homepage**: https://docs.pytest.org/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pytest.org/package.yml)
 
 ## Installation

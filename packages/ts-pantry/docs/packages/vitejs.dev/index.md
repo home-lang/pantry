@@ -6,7 +6,7 @@
 
 - **Domain**: `vitejs.dev`
 - **Name**: `vite`
-- **Homepage**: <https://vitejs.dev/>
+- **Homepage**: https://vitejs.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vitejs.dev/package.yml)
 
 ## Installation

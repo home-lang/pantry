@@ -6,7 +6,7 @@
 
 - **Domain**: `nomadproject.io`
 - **Name**: `nomad`
-- **Homepage**: <https://www.nomadproject.io>
+- **Homepage**: https://www.nomadproject.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nomadproject.io/package.yml)
 
 ## Installation

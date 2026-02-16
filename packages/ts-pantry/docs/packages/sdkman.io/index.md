@@ -6,7 +6,7 @@
 
 - **Domain**: `sdkman.io`
 - **Name**: `sdkman-init.sh`
-- **Homepage**: <https://sdkman.io>
+- **Homepage**: https://sdkman.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sdkman.io/package.yml)
 
 ## Installation

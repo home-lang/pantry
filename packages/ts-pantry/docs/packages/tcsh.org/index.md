@@ -6,7 +6,7 @@
 
 - **Domain**: `tcsh.org`
 - **Name**: `tcsh`
-- **Homepage**: <https://www.tcsh.org/>
+- **Homepage**: https://www.tcsh.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tcsh.org/package.yml)
 
 ## Installation

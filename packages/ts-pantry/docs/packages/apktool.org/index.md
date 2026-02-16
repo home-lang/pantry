@@ -6,7 +6,7 @@
 
 - **Domain**: `apktool.org`
 - **Name**: `apktool`
-- **Homepage**: <https://apktool.org/>
+- **Homepage**: https://apktool.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apktool.org/package.yml)
 
 ## Installation

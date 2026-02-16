@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/tar`
 - **Name**: `tar`
-- **Homepage**: <https://www.libarchive.org>
+- **Homepage**: https://www.libarchive.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/tar/package.yml)
 
 ## Installation

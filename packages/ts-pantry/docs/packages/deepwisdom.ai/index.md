@@ -6,7 +6,7 @@
 
 - **Domain**: `deepwisdom.ai`
 - **Name**: `MetaGPT`
-- **Homepage**: <https://deepwisdom.ai/>
+- **Homepage**: https://deepwisdom.ai/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/deepwisdom.ai/package.yml)
 
 ## Installation

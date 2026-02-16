@@ -6,7 +6,7 @@
 
 - **Domain**: `pypa.io/trove-classifiers`
 - **Name**: `trove-classifiers`
-- **Homepage**: <https://pypi.org/p/trove-classifiers/>
+- **Homepage**: https://pypi.org/p/trove-classifiers/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pypa.io/trove-classifiers/package.yml)
 
 ## Installation

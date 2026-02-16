@@ -6,7 +6,7 @@
 
 - **Domain**: `nmap.org`
 - **Name**: `nmap`
-- **Homepage**: <https://nmap.org/>
+- **Homepage**: https://nmap.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nmap.org/package.yml)
 
 ## Installation

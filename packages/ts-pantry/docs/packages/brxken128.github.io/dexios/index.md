@@ -6,7 +6,7 @@
 
 - **Domain**: `brxken128.github.io/dexios`
 - **Name**: `dexios`
-- **Homepage**: <https://brxken128.github.io/dexios/>
+- **Homepage**: https://brxken128.github.io/dexios/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/brxken128.github.io/dexios/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `jenv.be`
 - **Name**: `jenv`
-- **Homepage**: <http://www.jenv.be>
+- **Homepage**: http://www.jenv.be
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jenv.be/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `invisible-island.net/dialog`
 - **Name**: `dialog`
-- **Homepage**: <https://invisible-island.net/dialog/>
+- **Homepage**: https://invisible-island.net/dialog/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/invisible-island.net/dialog/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `fmt.dev`
 - **Name**: `fmt`
-- **Homepage**: <https://fmt.dev>
+- **Homepage**: https://fmt.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fmt.dev/package.yml)
 
 ## Installation

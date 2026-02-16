@@ -6,7 +6,7 @@
 
 - **Domain**: `chezmoi.io`
 - **Name**: `chezmoi`
-- **Homepage**: <https://chezmoi.io/>
+- **Homepage**: https://chezmoi.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/chezmoi.io/package.yml)
 
 ## Installation

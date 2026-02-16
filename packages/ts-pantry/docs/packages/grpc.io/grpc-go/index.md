@@ -6,7 +6,7 @@
 
 - **Domain**: `grpc.io/grpc-go`
 - **Name**: `protoc-gen-go-grpc`
-- **Homepage**: <https://grpc.io>
+- **Homepage**: https://grpc.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/grpc.io/grpc-go/package.yml)
 
 ## Installation

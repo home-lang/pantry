@@ -1,12 +1,12 @@
 # jbig2dec
 
-> This is a mirror: the canonical repo is: git.ghostscript.com/jbig2dec.git. This repo does not host releases, they are here: <https://github.com/ArtifexSoftware/jbig2dec/tags>
+> This is a mirror: the canonical repo is: git.ghostscript.com/jbig2dec.git. This repo does not host releases, they are here: https://github.com/ArtifexSoftware/jbig2dec/tags
 
 ## Package Information
 
 - **Domain**: `jbig2dec.com`
 - **Name**: `jbig2dec`
-- **Homepage**: <https://jbig2dec.com/>
+- **Homepage**: https://jbig2dec.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jbig2dec.com/package.yml)
 
 ## Installation

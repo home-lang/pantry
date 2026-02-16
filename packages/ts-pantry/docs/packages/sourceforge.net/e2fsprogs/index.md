@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/e2fsprogs`
 - **Name**: `e2fsprogs`
-- **Homepage**: <https://e2fsprogs.sourceforge.net/>
+- **Homepage**: https://e2fsprogs.sourceforge.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/e2fsprogs/package.yml)
 
 ## Installation
@@ -72,4 +72,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

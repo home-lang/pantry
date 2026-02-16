@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/helmfile/helmfile`
 - **Name**: `helmfile`
-- **Homepage**: <https://helmfile.readthedocs.io>
+- **Homepage**: https://helmfile.readthedocs.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/helmfile/helmfile/package.yml)
 
 ## Installation

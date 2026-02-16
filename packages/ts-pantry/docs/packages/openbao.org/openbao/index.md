@@ -6,7 +6,7 @@
 
 - **Domain**: `openbao.org/openbao`
 - **Name**: `openbao`
-- **Homepage**: <https://openbao.org/>
+- **Homepage**: https://openbao.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openbao.org/openbao/package.yml)
 
 ## Installation

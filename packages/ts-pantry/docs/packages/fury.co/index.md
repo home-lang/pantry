@@ -6,7 +6,7 @@
 
 - **Domain**: `fury.co`
 - **Name**: `fury`
-- **Homepage**: <https://fury.co/guide/cli>
+- **Homepage**: https://fury.co/guide/cli
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fury.co/package.yml)
 
 ## Installation

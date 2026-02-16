@@ -6,7 +6,7 @@
 
 - **Domain**: `cedarpolicy.com/cli`
 - **Name**: `cedar`
-- **Homepage**: <https://www.cedarpolicy.com>
+- **Homepage**: https://www.cedarpolicy.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cedarpolicy.com/cli/package.yml)
 
 ## Installation

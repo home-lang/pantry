@@ -6,7 +6,7 @@
 
 - **Domain**: `traefik.io`
 - **Name**: `traefik`
-- **Homepage**: <https://traefik.io/>
+- **Homepage**: https://traefik.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/traefik.io/package.yml)
 
 ## Installation

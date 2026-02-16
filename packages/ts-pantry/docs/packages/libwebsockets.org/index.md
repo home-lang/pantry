@@ -6,7 +6,7 @@
 
 - **Domain**: `libwebsockets.org`
 - **Name**: `libwebsockets`
-- **Homepage**: <https://libwebsockets.org>
+- **Homepage**: https://libwebsockets.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libwebsockets.org/package.yml)
 
 ## Installation

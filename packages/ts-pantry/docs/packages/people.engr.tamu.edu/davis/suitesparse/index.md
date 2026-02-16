@@ -6,7 +6,7 @@
 
 - **Domain**: `people.engr.tamu.edu/davis/suitesparse`
 - **Name**: `suite-sparse`
-- **Homepage**: <https://people.engr.tamu.edu/davis/suitesparse.html>
+- **Homepage**: https://people.engr.tamu.edu/davis/suitesparse.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/people.engr.tamu.edu/davis/suitesparse/package.yml)
 
 ## Installation

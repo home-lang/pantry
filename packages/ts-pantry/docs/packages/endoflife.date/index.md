@@ -6,7 +6,7 @@
 
 - **Domain**: `endoflife.date`
 - **Name**: `eol`
-- **Homepage**: <https://endoflife.date>
+- **Homepage**: https://endoflife.date
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/endoflife.date/package.yml)
 
 ## Installation

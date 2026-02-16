@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/gopasspw/gopass`
 - **Name**: `gopass`
-- **Homepage**: <https://www.gopass.pw/>
+- **Homepage**: https://www.gopass.pw/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/gopasspw/gopass/package.yml)
 
 ## Installation

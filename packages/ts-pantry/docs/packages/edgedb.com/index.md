@@ -6,7 +6,7 @@
 
 - **Domain**: `edgedb.com`
 - **Name**: `edgedb`
-- **Homepage**: <https://www.edgedb.com/docs/cli/index>
+- **Homepage**: https://www.edgedb.com/docs/cli/index
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/edgedb.com/package.yml)
 
 ## Installation

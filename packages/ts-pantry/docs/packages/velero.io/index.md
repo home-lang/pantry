@@ -6,7 +6,7 @@
 
 - **Domain**: `velero.io`
 - **Name**: `velero`
-- **Homepage**: <https://velero.io/>
+- **Homepage**: https://velero.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/velero.io/package.yml)
 
 ## Installation

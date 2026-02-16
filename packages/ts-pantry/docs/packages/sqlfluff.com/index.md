@@ -6,7 +6,7 @@
 
 - **Domain**: `sqlfluff.com`
 - **Name**: `sqlfluff`
-- **Homepage**: <https://docs.sqlfluff.com/>
+- **Homepage**: https://docs.sqlfluff.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sqlfluff.com/package.yml)
 
 ## Installation

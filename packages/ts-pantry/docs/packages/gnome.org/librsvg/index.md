@@ -1,12 +1,12 @@
 # rsvg-convert
 
-> Read-only mirror of <https://gitlab.gnome.org/GNOME/librsvg>
+> Read-only mirror of https://gitlab.gnome.org/GNOME/librsvg
 
 ## Package Information
 
 - **Domain**: `gnome.org/librsvg`
 - **Name**: `rsvg-convert`
-- **Homepage**: <https://wiki.gnome.org/Projects/LibRsvg>
+- **Homepage**: https://wiki.gnome.org/Projects/LibRsvg
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/librsvg/package.yml)
 
 ## Installation

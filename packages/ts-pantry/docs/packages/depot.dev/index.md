@@ -6,7 +6,7 @@
 
 - **Domain**: `depot.dev`
 - **Name**: `depot`
-- **Homepage**: <https://depot.dev>
+- **Homepage**: https://depot.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/depot.dev/package.yml)
 
 ## Installation

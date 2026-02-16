@@ -6,7 +6,7 @@
 
 - **Domain**: `openblas.net`
 - **Name**: `openblas`
-- **Homepage**: <http://www.openblas.net>
+- **Homepage**: http://www.openblas.net
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openblas.net/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `sshx.io`
 - **Name**: `sshx`
-- **Homepage**: <https://sshx.io>
+- **Homepage**: https://sshx.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sshx.io/package.yml)
 
 ## Installation

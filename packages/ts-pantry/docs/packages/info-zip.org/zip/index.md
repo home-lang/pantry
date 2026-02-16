@@ -6,7 +6,7 @@
 
 - **Domain**: `info-zip.org/zip`
 - **Name**: `zip`
-- **Homepage**: <https://infozip.sourceforge.net/Zip.html>
+- **Homepage**: https://infozip.sourceforge.net/Zip.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/info-zip.org/zip/package.yml)
 
 ## Installation

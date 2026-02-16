@@ -6,7 +6,7 @@
 
 - **Domain**: `typst.app`
 - **Name**: `typst`
-- **Homepage**: <https://typst.app/>
+- **Homepage**: https://typst.app/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/typst.app/package.yml)
 
 ## Installation

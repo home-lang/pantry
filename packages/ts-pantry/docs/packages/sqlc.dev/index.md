@@ -6,7 +6,7 @@
 
 - **Domain**: `sqlc.dev`
 - **Name**: `sqlc`
-- **Homepage**: <https://sqlc.dev/>
+- **Homepage**: https://sqlc.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sqlc.dev/package.yml)
 
 ## Installation

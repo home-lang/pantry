@@ -6,7 +6,7 @@
 
 - **Domain**: `dest-unreach.org/socat`
 - **Name**: `socat`
-- **Homepage**: <http://www.dest-unreach.org/socat/>
+- **Homepage**: http://www.dest-unreach.org/socat/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dest-unreach.org/socat/package.yml)
 
 ## Installation

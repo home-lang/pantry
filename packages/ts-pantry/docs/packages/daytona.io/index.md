@@ -6,7 +6,7 @@
 
 - **Domain**: `daytona.io`
 - **Name**: `daytona`
-- **Homepage**: <https://daytona.io>
+- **Homepage**: https://daytona.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/daytona.io/package.yml)
 
 ## Installation

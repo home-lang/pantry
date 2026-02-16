@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/ocrmypdf/OCRmyPDF`
 - **Name**: `ocrmypdf`
-- **Homepage**: <https://ocrmypdf.readthedocs.io/en/latest/>
+- **Homepage**: https://ocrmypdf.readthedocs.io/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/ocrmypdf/OCRmyPDF/package.yml)
 
 ## Installation

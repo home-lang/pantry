@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/mdcat`
 - **Name**: `mdcat`
-- **Homepage**: <https://crates.io/crates/mdcat>
+- **Homepage**: https://crates.io/crates/mdcat
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/mdcat/package.yml)
 
 ## Installation

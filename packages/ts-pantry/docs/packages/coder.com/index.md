@@ -6,7 +6,7 @@
 
 - **Domain**: `coder.com`
 - **Name**: `coder`
-- **Homepage**: <https://coder.com>
+- **Homepage**: https://coder.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/coder.com/package.yml)
 
 ## Installation

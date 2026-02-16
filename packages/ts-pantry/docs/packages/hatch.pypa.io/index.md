@@ -6,7 +6,7 @@
 
 - **Domain**: `hatch.pypa.io`
 - **Name**: `hatch`
-- **Homepage**: <https://hatch.pypa.io/latest/>
+- **Homepage**: https://hatch.pypa.io/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hatch.pypa.io/package.yml)
 
 ## Installation

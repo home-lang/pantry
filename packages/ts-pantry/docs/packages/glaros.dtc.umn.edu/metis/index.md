@@ -6,7 +6,7 @@
 
 - **Domain**: `glaros.dtc.umn.edu/metis`
 - **Name**: `metis`
-- **Homepage**: <http://glaros.dtc.umn.edu/gkhome/views/metis>
+- **Homepage**: http://glaros.dtc.umn.edu/gkhome/views/metis
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/glaros.dtc.umn.edu/metis/package.yml)
 
 ## Installation

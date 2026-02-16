@@ -6,7 +6,7 @@
 
 - **Domain**: `localstack.cloud/awscli-local`
 - **Name**: `awslocal`
-- **Homepage**: <https://www.localstack.cloud/>
+- **Homepage**: https://www.localstack.cloud/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/localstack.cloud/awscli-local/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `borgbackup.org`
 - **Name**: `borg`
-- **Homepage**: <https://www.borgbackup.org/>
+- **Homepage**: https://www.borgbackup.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/borgbackup.org/package.yml)
 
 ## Installation

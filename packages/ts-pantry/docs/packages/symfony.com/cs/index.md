@@ -6,7 +6,7 @@
 
 - **Domain**: `symfony.com/cs`
 - **Name**: `php-cs-fixer`
-- **Homepage**: <https://cs.symfony.com/>
+- **Homepage**: https://cs.symfony.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/symfony.com/cs/package.yml)
 
 ## Installation

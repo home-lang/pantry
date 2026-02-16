@@ -6,7 +6,7 @@
 
 - **Domain**: `scala-sbt.org`
 - **Name**: `sbt`
-- **Homepage**: <https://www.scala-sbt.org/>
+- **Homepage**: https://www.scala-sbt.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/scala-sbt.org/package.yml)
 
 ## Installation

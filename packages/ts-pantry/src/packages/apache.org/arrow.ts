@@ -3,7 +3,7 @@
  *
  * @domain `apache.org/arrow`
  * @programs `parquet-dump-schema`, `parquet-reader`, `parquet-scan`
- * @version `23.0.0` (17 versions available)
+ * @version `23.0.1` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install apache.org/arrow`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "arrow"
  * console.log(pkg.description) // "Apache Arrow is the universal columnar format a..."
  * console.log(pkg.programs)    // ["parquet-dump-schema", "parquet-reader", ...]
- * console.log(pkg.versions[0]) // "23.0.0" (latest)
+ * console.log(pkg.versions[0]) // "23.0.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/apache-org/arrow.md
@@ -99,6 +99,7 @@ export const apacheorgarrowPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '23.0.1',
     '23.0.0',
     '22.0.0',
     '21.0.0',

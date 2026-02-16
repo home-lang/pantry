@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/aswinkarthik/csvdiff`
 - **Name**: `csvdiff`
-- **Homepage**: <https://aswinkarthik.github.io/csvdiff/>
+- **Homepage**: https://aswinkarthik.github.io/csvdiff/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/aswinkarthik/csvdiff/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `eksctl.io`
 - **Name**: `eksctl`
-- **Homepage**: <https://eksctl.io>
+- **Homepage**: https://eksctl.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/eksctl.io/package.yml)
 
 ## Installation

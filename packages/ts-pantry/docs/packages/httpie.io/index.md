@@ -6,7 +6,7 @@
 
 - **Domain**: `httpie.io`
 - **Name**: `httpie`
-- **Homepage**: <https://httpie.io/>
+- **Homepage**: https://httpie.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/httpie.io/package.yml)
 
 ## Installation

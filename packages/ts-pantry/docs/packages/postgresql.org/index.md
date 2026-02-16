@@ -1,12 +1,12 @@
 # postgresql
 
-> Mirror of the official PostgreSQL GIT repository. Note that this is just a *mirror* - we don't work with pull requests on github. To contribute, please see <https://wiki.postgresql.org/wiki/Submitting*a*Patch>
+> Mirror of the official PostgreSQL GIT repository. Note that this is just a *mirror* - we don't work with pull requests on github. To contribute, please see https://wiki.postgresql.org/wiki/Submitting_a_Patch
 
 ## Package Information
 
 - **Domain**: `postgresql.org`
 - **Name**: `postgresql`
-- **Homepage**: <https://www.postgresql.org/>
+- **Homepage**: https://www.postgresql.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/postgresql.org/package.yml)
 
 ## Installation
@@ -26,22 +26,22 @@ This package provides the following executable programs:
 - `dropuser`
 - `ecpg`
 - `initdb`
-- `pg*archivecleanup`
-- `pg*basebackup`
-- `pg*config`
-- `pg*controldata`
-- `pg*ctl`
-- `pg*dump`
-- `pg*dumpall`
-- `pg*isready`
-- `pg*receivewal`
-- `pg*recvlogical`
-- `pg*resetwal`
-- `pg*restore`
-- `pg*rewind`
-- `pg*test*fsync`
-- `pg*test*timing`
-- `pg*upgrade`
+- `pg_archivecleanup`
+- `pg_basebackup`
+- `pg_config`
+- `pg_controldata`
+- `pg_ctl`
+- `pg_dump`
+- `pg_dumpall`
+- `pg_isready`
+- `pg_receivewal`
+- `pg_recvlogical`
+- `pg_resetwal`
+- `pg_restore`
+- `pg_rewind`
+- `pg_test_fsync`
+- `pg_test_timing`
+- `pg_upgrade`
 - `pg_waldump`
 - `pgbench`
 - `postgres`

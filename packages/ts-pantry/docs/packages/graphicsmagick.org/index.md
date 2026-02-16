@@ -6,7 +6,7 @@
 
 - **Domain**: `graphicsmagick.org`
 - **Name**: `gm`
-- **Homepage**: <http://www.graphicsmagick.org/>
+- **Homepage**: http://www.graphicsmagick.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/graphicsmagick.org/package.yml)
 
 ## Installation

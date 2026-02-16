@@ -6,7 +6,7 @@
 
 - **Domain**: `doxygen.nl`
 - **Name**: `doxygen`
-- **Homepage**: <https://www.doxygen.nl/>
+- **Homepage**: https://www.doxygen.nl/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/doxygen.nl/package.yml)
 
 ## Installation

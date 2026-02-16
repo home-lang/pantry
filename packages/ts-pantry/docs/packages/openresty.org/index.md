@@ -6,7 +6,7 @@
 
 - **Domain**: `openresty.org`
 - **Name**: `openresty`
-- **Homepage**: <https://openresty.org>
+- **Homepage**: https://openresty.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openresty.org/package.yml)
 
 ## Installation

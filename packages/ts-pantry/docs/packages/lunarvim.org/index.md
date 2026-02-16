@@ -6,7 +6,7 @@
 
 - **Domain**: `lunarvim.org`
 - **Name**: `lunarvim`
-- **Homepage**: <https://www.lunarvim.org>
+- **Homepage**: https://www.lunarvim.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lunarvim.org/package.yml)
 
 ## Installation

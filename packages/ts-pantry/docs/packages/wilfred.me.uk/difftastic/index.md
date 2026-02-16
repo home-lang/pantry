@@ -6,7 +6,7 @@
 
 - **Domain**: `wilfred.me.uk/difftastic`
 - **Name**: `difft`
-- **Homepage**: <https://difftastic.wilfred.me.uk/>
+- **Homepage**: https://difftastic.wilfred.me.uk/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wilfred.me.uk/difftastic/package.yml)
 
 ## Installation

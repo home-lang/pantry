@@ -6,7 +6,7 @@
 
 - **Domain**: `opendap.org`
 - **Name**: `opendap`
-- **Homepage**: <https://www.opendap.org/>
+- **Homepage**: https://www.opendap.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/opendap.org/package.yml)
 
 ## Installation

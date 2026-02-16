@@ -6,7 +6,7 @@
 
 - **Domain**: `google.com/glog`
 - **Name**: `glog`
-- **Homepage**: <http://google.github.io/glog/>
+- **Homepage**: http://google.github.io/glog/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/google.com/glog/package.yml)
 
 ## Installation

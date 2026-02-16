@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/oneapi-src/oneTBB`
 - **Name**: `tbb`
-- **Homepage**: <https://uxlfoundation.github.io/oneTBB/>
+- **Homepage**: https://uxlfoundation.github.io/oneTBB/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/oneapi-src/oneTBB/package.yml)
 
 ## Installation

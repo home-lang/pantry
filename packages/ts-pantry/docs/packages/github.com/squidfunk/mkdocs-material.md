@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/squidfunk/mkdocs-material`
 - **Name**: `squidfunk/mkdocs-material`
-- **Homepage**: <https://squidfunk.github.io/mkdocs-material/>
+- **Homepage**: https://squidfunk.github.io/mkdocs-material/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/squidfunk/mkdocs-material/package.yml)
 
 ## Installation

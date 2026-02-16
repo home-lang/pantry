@@ -6,7 +6,7 @@
 
 - **Domain**: `cointop.sh`
 - **Name**: `cointop`
-- **Homepage**: <https://cointop.sh>
+- **Homepage**: https://cointop.sh
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cointop.sh/package.yml)
 
 ## Installation

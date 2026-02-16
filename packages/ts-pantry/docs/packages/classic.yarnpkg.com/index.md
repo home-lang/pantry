@@ -1,12 +1,12 @@
 # classic.yarnpkg
 
-> The 1.x line is frozen - features and bugfixes now happen on <https://github.com/yarnpkg/berry>
+> The 1.x line is frozen - features and bugfixes now happen on https://github.com/yarnpkg/berry
 
 ## Package Information
 
 - **Domain**: `classic.yarnpkg.com`
 - **Name**: `classic.yarnpkg`
-- **Homepage**: <https://yarnpkg.com/>
+- **Homepage**: https://yarnpkg.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/classic.yarnpkg.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `libsdl.org`
 - **Name**: `libsdl`
-- **Homepage**: <https://libsdl.org>
+- **Homepage**: https://libsdl.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libsdl.org/package.yml)
 
 ## Installation

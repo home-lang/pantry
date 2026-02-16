@@ -6,7 +6,7 @@
 
 - **Domain**: `x.org/xauth`
 - **Name**: `xauth`
-- **Homepage**: <https://www.x.org/>
+- **Homepage**: https://www.x.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/x.org/xauth/package.yml)
 
 ## Installation

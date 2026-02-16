@@ -6,7 +6,7 @@
 
 - **Domain**: `plasmasturm.org/rename`
 - **Name**: `rename`
-- **Homepage**: <http://plasmasturm.org/code/rename/>
+- **Homepage**: http://plasmasturm.org/code/rename/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/plasmasturm.org/rename/package.yml)
 
 ## Installation

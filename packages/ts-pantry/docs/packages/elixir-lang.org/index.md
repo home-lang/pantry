@@ -6,7 +6,7 @@
 
 - **Domain**: `elixir-lang.org`
 - **Name**: `elixir-lang`
-- **Homepage**: <https://elixir-lang.org/>
+- **Homepage**: https://elixir-lang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/elixir-lang.org/package.yml)
 
 ## Installation

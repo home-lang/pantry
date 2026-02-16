@@ -6,7 +6,7 @@
 
 - **Domain**: `bashly.dannyb.co`
 - **Name**: `bashly`
-- **Homepage**: <https://bashly.dev>
+- **Homepage**: https://bashly.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bashly.dannyb.co/package.yml)
 
 ## Installation

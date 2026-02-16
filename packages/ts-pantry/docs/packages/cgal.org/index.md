@@ -6,7 +6,7 @@
 
 - **Domain**: `cgal.org`
 - **Name**: `cgal`
-- **Homepage**: <https://github.com/CGAL/cgal#readme>
+- **Homepage**: https://github.com/CGAL/cgal#readme
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cgal.org/package.yml)
 
 ## Installation
@@ -74,4 +74,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

@@ -6,7 +6,7 @@
 
 - **Domain**: `libcxx.llvm.org`
 - **Name**: `libcxx.llvm`
-- **Homepage**: <http://llvm.org>
+- **Homepage**: http://llvm.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libcxx.llvm.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `chiark.greenend.org.uk/putty`
 - **Name**: `putty`
-- **Homepage**: <https://www.chiark.greenend.org.uk/~sgtatham/putty/>
+- **Homepage**: https://www.chiark.greenend.org.uk/~sgtatham/putty/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/chiark.greenend.org.uk/putty/package.yml)
 
 ## Installation

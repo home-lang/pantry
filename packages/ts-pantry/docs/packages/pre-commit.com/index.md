@@ -6,7 +6,7 @@
 
 - **Domain**: `pre-commit.com`
 - **Name**: `pre-commit`
-- **Homepage**: <https://pre-commit.com/>
+- **Homepage**: https://pre-commit.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pre-commit.com/package.yml)
 
 ## Installation

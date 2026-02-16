@@ -6,7 +6,7 @@
 
 - **Domain**: `rye.astral.sh`
 - **Name**: `rye`
-- **Homepage**: <https://rye-up.com/>
+- **Homepage**: https://rye-up.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rye.astral.sh/package.yml)
 
 ## Installation

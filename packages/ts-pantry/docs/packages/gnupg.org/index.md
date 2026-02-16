@@ -6,7 +6,7 @@
 
 - **Domain**: `gnupg.org`
 - **Name**: `gnupg`
-- **Homepage**: <https://gnupg.org/>
+- **Homepage**: https://gnupg.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnupg.org/package.yml)
 
 ## Installation

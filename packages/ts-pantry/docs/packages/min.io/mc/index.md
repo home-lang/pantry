@@ -6,7 +6,7 @@
 
 - **Domain**: `min.io/mc`
 - **Name**: `mc`
-- **Homepage**: <https://min.io/download>
+- **Homepage**: https://min.io/download
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/min.io/mc/package.yml)
 
 ## Installation

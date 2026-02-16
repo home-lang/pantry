@@ -6,7 +6,7 @@
 
 - **Domain**: `palletsprojects.com/jinja`
 - **Name**: `python-jinja`
-- **Homepage**: <https://jinja.palletsprojects.com>
+- **Homepage**: https://jinja.palletsprojects.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/palletsprojects.com/jinja/package.yml)
 
 ## Installation

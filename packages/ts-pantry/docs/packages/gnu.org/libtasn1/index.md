@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/libtasn1`
 - **Name**: `asn1`
-- **Homepage**: <https://www.gnu.org/software/libtasn1/>
+- **Homepage**: https://www.gnu.org/software/libtasn1/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/libtasn1/package.yml)
 
 ## Installation

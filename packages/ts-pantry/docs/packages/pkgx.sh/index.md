@@ -6,7 +6,7 @@
 
 - **Domain**: `pkgx.sh`
 - **Name**: `pkgx`
-- **Homepage**: <https://pkgx.sh>
+- **Homepage**: https://pkgx.sh
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pkgx.sh/package.yml)
 
 ## Installation

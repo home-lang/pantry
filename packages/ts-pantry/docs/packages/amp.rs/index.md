@@ -6,7 +6,7 @@
 
 - **Domain**: `amp.rs`
 - **Name**: `amp`
-- **Homepage**: <https://amp.rs>
+- **Homepage**: https://amp.rs
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/amp.rs/package.yml)
 
 ## Installation

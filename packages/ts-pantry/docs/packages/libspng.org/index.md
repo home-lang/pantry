@@ -6,7 +6,7 @@
 
 - **Domain**: `libspng.org`
 - **Name**: `libspng`
-- **Homepage**: <https://libspng.org>
+- **Homepage**: https://libspng.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libspng.org/package.yml)
 
 ## Installation

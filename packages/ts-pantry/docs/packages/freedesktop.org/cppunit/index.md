@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/cppunit`
 - **Name**: `cppunit`
-- **Homepage**: <https://wiki.freedesktop.org/www/Software/cppunit/>
+- **Homepage**: https://wiki.freedesktop.org/www/Software/cppunit/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/cppunit/package.yml)
 
 ## Installation

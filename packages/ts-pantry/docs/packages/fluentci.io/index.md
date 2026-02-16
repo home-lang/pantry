@@ -1,12 +1,12 @@
 # fluentci
 
-> Set up and run your CI locally or in any CI Provider in a consistent way <https://backdropbuild.com/builds/v4/fluentci>
+> Set up and run your CI locally or in any CI Provider in a consistent way https://backdropbuild.com/builds/v4/fluentci
 
 ## Package Information
 
 - **Domain**: `fluentci.io`
 - **Name**: `fluentci`
-- **Homepage**: <https://fluentci.io>
+- **Homepage**: https://fluentci.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fluentci.io/package.yml)
 
 ## Installation

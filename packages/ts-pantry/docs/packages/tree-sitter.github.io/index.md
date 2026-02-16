@@ -6,7 +6,7 @@
 
 - **Domain**: `tree-sitter.github.io`
 - **Name**: `tree-sitter`
-- **Homepage**: <https://tree-sitter.github.io/>
+- **Homepage**: https://tree-sitter.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tree-sitter.github.io/package.yml)
 
 ## Installation

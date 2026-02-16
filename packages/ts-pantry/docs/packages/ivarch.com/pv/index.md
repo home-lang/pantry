@@ -6,7 +6,7 @@
 
 - **Domain**: `ivarch.com/pv`
 - **Name**: `pv`
-- **Homepage**: <https://www.ivarch.com/programs/pv.shtml>
+- **Homepage**: https://www.ivarch.com/programs/pv.shtml
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ivarch.com/pv/package.yml)
 
 ## Installation

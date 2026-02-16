@@ -6,7 +6,7 @@
 
 - **Domain**: `unbound.net`
 - **Name**: `unbound`
-- **Homepage**: <https://nlnetlabs.nl/unbound>
+- **Homepage**: https://nlnetlabs.nl/unbound
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/unbound.net/package.yml)
 
 ## Installation

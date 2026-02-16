@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/blynn/nex`
 - **Name**: `nex`
-- **Homepage**: <https://repo.or.cz/nvi.git>
+- **Homepage**: https://repo.or.cz/nvi.git
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/blynn/nex/package.yml)
 
 ## Installation

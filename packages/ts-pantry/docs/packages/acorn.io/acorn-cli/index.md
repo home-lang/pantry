@@ -6,7 +6,7 @@
 
 - **Domain**: `acorn.io/acorn-cli`
 - **Name**: `acorn`
-- **Homepage**: <https://docs.acorn.io/>
+- **Homepage**: https://docs.acorn.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/acorn.io/acorn-cli/package.yml)
 
 ## Installation

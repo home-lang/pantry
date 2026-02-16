@@ -6,7 +6,7 @@
 
 - **Domain**: `php.net`
 - **Name**: `php`
-- **Homepage**: <https://www.php.net/>
+- **Homepage**: https://www.php.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/php.net/package.yml)
 
 ## Installation

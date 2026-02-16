@@ -6,7 +6,7 @@
 
 - **Domain**: `macvim.org`
 - **Name**: `macvim`
-- **Homepage**: <https://macvim.org>
+- **Homepage**: https://macvim.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/macvim.org/package.yml)
 
 ## Installation

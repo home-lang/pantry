@@ -6,7 +6,7 @@
 
 - **Domain**: `fftw.org`
 - **Name**: `fftw`
-- **Homepage**: <https://fftw.org>
+- **Homepage**: https://fftw.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fftw.org/package.yml)
 
 ## Installation

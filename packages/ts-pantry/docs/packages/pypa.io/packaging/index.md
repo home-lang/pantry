@@ -6,7 +6,7 @@
 
 - **Domain**: `pypa.io/packaging`
 - **Name**: `packaging`
-- **Homepage**: <https://packaging.pypa.io/>
+- **Homepage**: https://packaging.pypa.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pypa.io/packaging/package.yml)
 
 ## Installation

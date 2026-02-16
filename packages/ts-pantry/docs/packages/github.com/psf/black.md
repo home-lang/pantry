@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/psf/black`
 - **Name**: `black`
-- **Homepage**: <https://black.readthedocs.io/en/stable/>
+- **Homepage**: https://black.readthedocs.io/en/stable/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/psf/black/package.yml)
 
 ## Installation

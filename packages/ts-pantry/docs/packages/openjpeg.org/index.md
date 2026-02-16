@@ -6,7 +6,7 @@
 
 - **Domain**: `openjpeg.org`
 - **Name**: `opj`
-- **Homepage**: <https://www.openjpeg.org/>
+- **Homepage**: https://www.openjpeg.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openjpeg.org/package.yml)
 
 ## Installation
@@ -70,4 +70,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

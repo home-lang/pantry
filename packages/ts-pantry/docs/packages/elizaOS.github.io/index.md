@@ -6,7 +6,7 @@
 
 - **Domain**: `elizaOS.github.io`
 - **Name**: `elizaOS`
-- **Homepage**: <https://elizaOS.github.io/eliza/>
+- **Homepage**: https://elizaOS.github.io/eliza/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/elizaOS.github.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `pugixml.org`
 - **Name**: `pugixml`
-- **Homepage**: <http://pugixml.org/>
+- **Homepage**: http://pugixml.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pugixml.org/package.yml)
 
 ## Installation

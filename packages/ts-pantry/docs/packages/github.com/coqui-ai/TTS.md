@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/coqui-ai/TTS`
 - **Name**: `TTS`
-- **Homepage**: <http://coqui.ai>
+- **Homepage**: http://coqui.ai
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/coqui-ai/TTS/package.yml)
 
 ## Installation

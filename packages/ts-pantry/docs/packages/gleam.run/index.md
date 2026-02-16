@@ -6,7 +6,7 @@
 
 - **Domain**: `gleam.run`
 - **Name**: `gleam`
-- **Homepage**: <https://gleam.run>
+- **Homepage**: https://gleam.run
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gleam.run/package.yml)
 
 ## Installation

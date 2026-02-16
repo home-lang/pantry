@@ -1,12 +1,12 @@
 # speexdsp
 
-> Speex audio processing library - THIS IS A MIRROR, DEVELOPMENT HAPPENS AT <https://gitlab.xiph.org/xiph/speexdsp>
+> Speex audio processing library - THIS IS A MIRROR, DEVELOPMENT HAPPENS AT https://gitlab.xiph.org/xiph/speexdsp
 
 ## Package Information
 
 - **Domain**: `github.com/xiph/speexdsp`
 - **Name**: `speexdsp`
-- **Homepage**: <https://speex.org>
+- **Homepage**: https://speex.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/xiph/speexdsp/package.yml)
 
 ## Installation
