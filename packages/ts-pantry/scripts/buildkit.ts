@@ -608,9 +608,25 @@ export function generateBuildScript(
     depPkgConfigPaths.push(`${depPath}/lib/pkgconfig`)
   }
 
-  if (depBinPaths.length > 0) {
+  // Also include system pkg-config paths so configure can find system-installed dev packages
+  if (osName === 'linux') {
+    depPkgConfigPaths.push('/usr/lib/x86_64-linux-gnu/pkgconfig')
+    depPkgConfigPaths.push('/usr/lib/pkgconfig')
+    depPkgConfigPaths.push('/usr/share/pkgconfig')
+    depLibPaths.push('/usr/lib/x86_64-linux-gnu')
+    depIncludePaths.push('/usr/include')
+  } else if (osName === 'darwin') {
+    depPkgConfigPaths.push('/opt/homebrew/lib/pkgconfig')
+    depPkgConfigPaths.push('/usr/local/lib/pkgconfig')
+    depIncludePaths.push('/opt/homebrew/include')
+    depLibPaths.push('/opt/homebrew/lib')
+  }
+
+  if (depBinPaths.length > 0 || depPkgConfigPaths.length > 0) {
     sections.push('# Dependency paths')
-    sections.push(`export PATH="${depBinPaths.join(':')}:$PATH"`)
+    if (depBinPaths.length > 0) {
+      sections.push(`export PATH="${depBinPaths.join(':')}:$PATH"`)
+    }
     sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
     sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)
     sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)

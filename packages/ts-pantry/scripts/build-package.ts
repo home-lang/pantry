@@ -4,7 +4,7 @@
 // Reads package metadata from src/packages and build instructions from src/pantry
 // Uses buildkit to generate bash build scripts from YAML recipes (like brewkit)
 
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -665,6 +665,28 @@ async function downloadDependencies(
       // Use tar -xf (auto-detect format) instead of -xzf (gzip only)
       execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
       execSync(`rm "${tarballPath}"`)
+
+      // Fix pkg-config files in downloaded deps — replace hardcoded build-time prefixes
+      // with the actual dep install path so pkg-config works correctly
+      const pcDir = join(depInstallDir, 'lib', 'pkgconfig')
+      if (existsSync(pcDir)) {
+        try {
+          const pcFiles = readdirSync(pcDir).filter(f => f.endsWith('.pc'))
+          for (const pcFile of pcFiles) {
+            const pcPath = join(pcDir, pcFile)
+            let content = readFileSync(pcPath, 'utf-8')
+            // Replace any hardcoded /tmp/buildkit-install-* prefix with actual dep path
+            const replaced = content.replace(/\/tmp\/buildkit-install-[^\s/]+(\/[^\s]*)?/g, (match) => {
+              // Extract the relative path part after the prefix
+              const afterPrefix = match.replace(/^\/tmp\/buildkit-install-[^\s/]+/, '')
+              return depInstallDir + afterPrefix
+            })
+            if (replaced !== content) {
+              writeFileSync(pcPath, replaced)
+            }
+          }
+        } catch { /* ignore pkg-config fix errors */ }
+      }
 
       depPaths[domain] = depInstallDir
       depPaths[`deps.${domain}.prefix`] = depInstallDir
