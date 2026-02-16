@@ -542,7 +542,9 @@ export function generateBuildScript(
   sections.push('  if [ "$1" = "-i" ] && [ "$2" = "-e" ] && [ $# -le 3 ]; then return 0; fi')
   sections.push('  "$__real_sed" "$@"')
   sections.push('}')
-  sections.push('export -f sed')
+  // Do NOT export -f sed: exported functions pollute child process environments
+  // (make, configure) causing "environment: line N: command not found" errors.
+  // The wrapper only needs to exist in our build script, not in sub-processes.
   sections.push('')
 
   if (osName === 'darwin') {
@@ -563,7 +565,7 @@ export function generateBuildScript(
     sections.push('    fi')
     sections.push('    /usr/bin/install "${args[@]}"')
     sections.push('  }')
-    sections.push('  export -f install')
+    // Do NOT export -f install: same reason as sed — avoid polluting child environments
     sections.push('fi')
     sections.push('rm -f /tmp/_install_test')
     sections.push('')
@@ -597,7 +599,7 @@ export function generateBuildScript(
   sections.push('      ;;')
   sections.push('  esac')
   sections.push('}')
-  sections.push('export -f bkpyvenv')
+  // Do NOT export -f bkpyvenv: only called from our build script, not child processes
   sections.push('')
 
   // python-venv.sh shim
@@ -618,7 +620,7 @@ export function generateBuildScript(
   sections.push('    chmod +x "$target"')
   sections.push('  fi')
   sections.push('}')
-  sections.push('export -f python-venv.sh')
+  // Do NOT export -f python-venv.sh: only called from our build script
   sections.push('')
 
   // fix-shebangs.ts shim — replaces hardcoded interpreter paths with #!/usr/bin/env
@@ -643,7 +645,7 @@ export function generateBuildScript(
   sections.push('    esac')
   sections.push('  done')
   sections.push('}')
-  sections.push('export -f fix-shebangs.ts')
+  // Do NOT export -f fix-shebangs.ts: only called from our build script
   sections.push('')
 
   // Add dependency paths to PATH and pkg-config
