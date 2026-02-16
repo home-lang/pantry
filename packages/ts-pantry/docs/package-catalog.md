@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-02-16T18:01:03.402Z
+- **Last Updated**: 2026-02-16T19:25:22.777Z
 
 ## Table of Contents
 
@@ -159,7 +159,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[github.com/stern/stern](./packages/github.com/stern/stern.md)** () | ⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of https://github.com/werck... | stern | 1.33.1 (+8) | `pkgx stern` |
 | **[github.com/yannh/kubeconform](./packages/github.com/yannh/kubeconform.md)** () | A FAST Kubernetes manifests validator, with support for Custom Resources! | kubeconform | 0.7.0 (+4) | `pkgx kubeconform` |
 | **[helm.sh](./packages/helm.sh/index.md)** () | The Kubernetes Package Manager | helm | 4.1.1 (+52) | `pkgx helm` |
-| **[istio.io](./packages/istio.io/index.md)** () | Connect, secure, control, and observe services. | istioctl | 1.28.3 (+60) | `pkgx istioctl` |
+| **[istio.io](./packages/istio.io/index.md)** () | Connect, secure, control, and observe services. | istioctl | 1.29.0 (+63) | `pkgx istioctl` |
 | **[k9scli.io](./packages/k9scli.io/index.md)** () | 🐶 Kubernetes CLI To Manage Your Clusters In Style! | k9s | 0.50.18 (+63) | `pkgx k9s` |
 | **[krew.sigs.k8s.io](./packages/krew.sigs.k8s.io/index.md)** () | 📦 Find and install kubectl plugins | kubectl-krew | 0.4.5 (+1) | `pkgx kubectl-krew` |
 | **[kubebuilder.io](./packages/kubebuilder.io/index.md)** () | Kubebuilder - SDK for building Kubernetes APIs using CRDs | kubebuilder | 4.12.0 (+26) | `pkgx kubebuilder` |

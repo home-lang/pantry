@@ -3,7 +3,7 @@
  *
  * @domain `istio.io`
  * @programs `istioctl`
- * @version `1.28.3` (61 versions available)
+ * @version `1.29.0` (64 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install istio.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "istioctl"
  * console.log(pkg.description) // "Connect, secure, control, and observe services."
  * console.log(pkg.programs)    // ["istioctl"]
- * console.log(pkg.versions[0]) // "1.28.3" (latest)
+ * console.log(pkg.versions[0]) // "1.29.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/istio-io.md
@@ -68,10 +68,13 @@ export const istioioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.29.0',
+    '1.28.4',
     '1.28.3',
     '1.28.2',
     '1.28.1',
     '1.28.0',
+    '1.27.7',
     '1.27.6',
     '1.27.5',
     '1.27.4',
