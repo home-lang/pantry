@@ -195,12 +195,23 @@ jobs:
             libx11-dev libxrandr-dev libxi-dev libxcursor-dev \
             libxkbcommon-dev libwayland-dev libfontconfig1-dev \
             protobuf-compiler libprotobuf-dev \
-            nettle-dev libp11-kit-dev
+            nettle-dev libp11-kit-dev \
+            libboost-all-dev libsndfile1-dev \
+            libjpeg-dev libpng-dev libtiff-dev libwebp-dev \
+            libfreetype-dev libharfbuzz-dev \
+            libltdl-dev libacl1-dev libattr1-dev \
+            liblz4-dev libzstd-dev libxxhash-dev \
+            libyaml-dev libjansson-dev \
+            libedit-dev libelf-dev \
+            tcl-dev tk-dev \
+            libunwind-dev libdw-dev
 
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons
+          brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
+            boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
+            libyaml jansson libedit
 
       - name: Setup Rust toolchain
         run: |
@@ -219,11 +230,14 @@ jobs:
           go version 2>/dev/null || echo "go: not found"
           python3 --version 2>/dev/null || echo "python3: not found"
           node --version 2>/dev/null || echo "node: not found"
+          java -version 2>/dev/null || echo "java: not found"
           echo "HOME=$HOME"
           echo "CARGO_HOME=${CARGO_HOME:-not set}"
           echo "GOPATH=${GOPATH:-not set}"
+          echo "JAVA_HOME=${JAVA_HOME:-not set}"
           which cargo 2>/dev/null || echo "cargo not in PATH"
           which go 2>/dev/null || echo "go not in PATH"
+          which java 2>/dev/null || echo "java not in PATH"
 
       - name: Build batch ${{ matrix.batch }}
         env:
