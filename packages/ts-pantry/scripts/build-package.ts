@@ -231,6 +231,15 @@ function parseYaml(content: string): Record<string, any> {
             } else break
           }
           currentObj.push(itemObj)
+        } else if (value === '|' || value === '|-') {
+          // Block scalar array item: - |
+          const result = parseYamlValue(value, lines, i, indent + 2, false)
+          if (typeof result === 'object' && result._newIndex !== undefined) {
+            i = result._newIndex
+            currentObj.push(result.value)
+          } else {
+            currentObj.push(result)
+          }
         } else {
           // Plain string item — check for continuation lines (multi-line plain scalar)
           // e.g. - ./configure
@@ -533,19 +542,30 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   console.log(`📦 Extracting source to ${destDir}`)
 
   if (isZip) {
-    // For zip: extract then move contents up if strip-components > 0
+    // For zip: extract then unwrap top-level directory if strip-components > 0
     const tmpExtract = join(destDir, '__zip_extract__')
     mkdirSync(tmpExtract, { recursive: true })
     execSync(`unzip -q -o "${tempFile}" -d "${tmpExtract}"`, { stdio: 'inherit' })
 
     if (stripComponents > 0) {
-      // Find the single top-level dir and move its contents
-      const entries = execSync(`ls "${tmpExtract}"`, { encoding: 'utf-8' }).trim().split('\n')
-      if (entries.length === 1) {
-        execSync(`cp -a "${join(tmpExtract, entries[0])}/." "${destDir}/"`, { stdio: 'pipe' })
-      } else {
-        execSync(`cp -a "${tmpExtract}/." "${destDir}/"`, { stdio: 'pipe' })
+      // Apply strip-components by unwrapping top-level directories
+      let currentDir = tmpExtract
+      for (let s = 0; s < stripComponents; s++) {
+        const entries = execSync(`ls "${currentDir}"`, { encoding: 'utf-8' }).trim().split('\n').filter(e => e)
+        if (entries.length === 1) {
+          const entryPath = join(currentDir, entries[0])
+          // Only strip if the single entry is a directory (not a file like a .jar)
+          try {
+            if (statSync(entryPath).isDirectory()) {
+              currentDir = entryPath
+              continue
+            }
+          } catch { /* stat failed, not a directory */ }
+        }
+        // Can't strip further (multiple entries or single file)
+        break
       }
+      execSync(`cp -a "${currentDir}/." "${destDir}/"`, { stdio: 'pipe' })
     } else {
       execSync(`cp -a "${tmpExtract}/." "${destDir}/"`, { stdio: 'pipe' })
     }
@@ -922,7 +942,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   if (recipe.distributable?.url) {
     const rawUrl = typeof recipe.distributable.url === 'string' ? recipe.distributable.url : String(recipe.distributable.url)
     const sourceUrl = interpolate(rawUrl, templateVars)
-    const stripComponents = recipe.distributable['strip-components'] ?? 1
+    // Default strip-components: 1 for tar (standard), 0 for zip (many recipes expect outer dir)
+    const isZipUrl = rawUrl.endsWith('.zip') || sourceUrl.endsWith('.zip')
+    const stripComponents = recipe.distributable['strip-components'] ?? (isZipUrl ? 0 : 1)
     const ref = recipe.distributable.ref ? interpolate(recipe.distributable.ref, templateVars) : undefined
 
     try {
@@ -944,7 +966,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         } catch { /* continue to next retry */ }
       }
 
-      // Retry 2: If version ends in .0, strip it (GNU FTP uses "4.9" not "4.9.0")
+      // Retry 2: If version ends in .0, strip trailing .0 components
+      // First try stripping one .0, then strip ALL trailing .0s (e.g., 20251022.0.0 → 20251022)
       if (!recovered && version.endsWith('.0') && version.split('.').length >= 3) {
         const shortVersion = version.replace(/\.0$/, '')
         console.log(`⚠️  Download failed, retrying with shortened version ${shortVersion}...`)
@@ -959,13 +982,35 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
         try {
           await downloadSource(altUrl, buildDir, stripComponents, altRef)
-          // Update templateVars with the shortened version for the build
           Object.assign(templateVars, altVars)
           recovered = true
         } catch { /* continue to next retry */ }
       }
 
-      // Retry 3: If version.tag was used with v prefix and version also ends in .0
+      // Retry 3: Strip ALL trailing .0 components (e.g., 20251022.0.0 → 20251022)
+      if (!recovered && version.includes('.0')) {
+        const fullyStripped = version.replace(/(?:\.0)+$/, '')
+        if (fullyStripped !== version && fullyStripped !== version.replace(/\.0$/, '')) {
+          console.log(`⚠️  Download failed, retrying with fully stripped version ${fullyStripped}...`)
+          const altVars = {
+            ...templateVars,
+            'version': fullyStripped,
+            'version.raw': fullyStripped,
+            'version.tag': versionTag.startsWith('v') ? `v${fullyStripped}` : fullyStripped,
+            'version.marketing': fullyStripped.split('.').slice(0, 2).join('.'),
+            'version.patch': '0',
+          }
+          const altUrl = interpolate(rawUrl, altVars)
+          const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
+          try {
+            await downloadSource(altUrl, buildDir, stripComponents, altRef)
+            Object.assign(templateVars, altVars)
+            recovered = true
+          } catch { /* continue to next retry */ }
+        }
+      }
+
+      // Retry 4: If version.tag was used with v prefix and version also ends in .0
       if (!recovered && rawUrl.includes('version.tag') && versionTag.startsWith('v') && version.endsWith('.0')) {
         const shortVersion = version.replace(/\.0$/, '')
         console.log(`⚠️  Download failed, retrying with shortened version v${shortVersion}...`)
@@ -1086,10 +1131,13 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       cwd: buildDir,
       env: {
         ...process.env,
-        ...buildEnv,
+        // Only pass basic path vars — buildkit.ts handles all recipe env vars
+        // (CFLAGS, LDFLAGS, ARGS, etc.) via export statements in the bash script.
+        // Do NOT spread buildEnv here: it contains literal $VAR references from
+        // interpolate() that pollute the bash script's variable expansion.
+        prefix,
+        PREFIX: prefix,
         SRCROOT: buildDir,
-        // HOME is overridden inside the build script itself (buildkit.ts)
-        // Keep real HOME here so the script can access REAL_HOME for toolchains
       },
       stdio: 'inherit',
       shell: '/bin/bash',

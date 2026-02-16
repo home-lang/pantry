@@ -449,6 +449,9 @@ export function generateBuildScript(
   // Shebang and safety
   sections.push('#!/bin/bash')
   sections.push('set -eo pipefail')
+  // nullglob: unmatched globs expand to nothing (prevents "No such file" errors
+  // when recipes use patterns like *.la or pkgconfig/*.pc in sed/rm commands)
+  sections.push('shopt -s nullglob')
   sections.push('')
 
   // Default compiler flags (from brewkit's flags())
@@ -509,14 +512,21 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
-  // macOS: use GNU sed if available (pantry scripts expect GNU sed -i behavior)
+  // Wrap sed to handle nullglob (empty glob → no file args) and use GNU sed on macOS
+  sections.push('# sed wrapper: use GNU sed on macOS + handle empty nullglob gracefully')
+  sections.push('__real_sed="$(command -v gsed 2>/dev/null || command -v sed)"')
+  sections.push('sed() {')
+  // With -i flag, we need at least 3 args: sed -i 'pattern' file...
+  // If only 2 args (no files due to nullglob), silently succeed
+  sections.push('  if [ "$1" = "-i" ] && [ $# -le 2 ]; then return 0; fi')
+  // Also handle sed -i -e 'pattern' with no files (3 args, no file)
+  sections.push('  if [ "$1" = "-i" ] && [ "$2" = "-e" ] && [ $# -le 3 ]; then return 0; fi')
+  sections.push('  "$__real_sed" "$@"')
+  sections.push('}')
+  sections.push('export -f sed')
+  sections.push('')
+
   if (osName === 'darwin') {
-    sections.push('# Use GNU sed on macOS (pantry scripts expect GNU sed -i)')
-    sections.push('if command -v gsed &>/dev/null; then')
-    sections.push('  sed() { gsed "$@"; }')
-    sections.push('  export -f sed')
-    sections.push('fi')
-    sections.push('')
 
     // macOS: install -D shim (GNU extension not available on macOS)
     sections.push('# install -D shim for macOS (GNU extension)')
@@ -527,7 +537,9 @@ export function generateBuildScript(
     sections.push('      if [ "$arg" = "-D" ]; then has_D=true; else args+=("$arg"); fi')
     sections.push('    done')
     sections.push('    if $has_D; then')
-    sections.push('      local dest="${args[-1]}"')
+    // Use bash 3.2 compatible syntax (no negative array indices)
+    sections.push('      local last_idx=$(( ${#args[@]} - 1 ))')
+    sections.push('      local dest="${args[$last_idx]}"')
     sections.push('      mkdir -p "$(dirname "$dest")"')
     sections.push('    fi')
     sections.push('    /usr/bin/install "${args[@]}"')
@@ -577,7 +589,10 @@ export function generateBuildScript(
   sections.push('  local cmd_name; cmd_name="$(basename "$target")"')
   sections.push('  python3 -m venv "$prefix/venv"')
   sections.push('  "$prefix/venv/bin/pip" install --upgrade pip setuptools wheel 2>/dev/null || true')
-  sections.push('  "$prefix/venv/bin/pip" install .')
+  // cd to SRCROOT if set — some recipes point SRCROOT to a subdirectory (e.g., certbot)
+  sections.push('  local _pip_dir="."')
+  sections.push('  if [ -n "$SRCROOT" ] && [ -d "$SRCROOT" ]; then _pip_dir="$SRCROOT"; fi')
+  sections.push('  "$prefix/venv/bin/pip" install "$_pip_dir"')
   sections.push('  mkdir -p "$(dirname "$target")"')
   sections.push('  if [ -f "$prefix/venv/bin/$cmd_name" ]; then')
   sections.push("    printf '#!/bin/sh\\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\\nexec \"$SCRIPT_DIR/../venv/bin/%s\" \"$@\"\\n' \"$cmd_name\" > \"$target\"")
