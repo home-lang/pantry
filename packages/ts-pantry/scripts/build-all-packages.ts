@@ -664,8 +664,12 @@ Options:
   let propsSkipped = 0
   let knownBrokenSkipped = 0
 
+  // When -p is specified, only skip platform-incompatible packages (can't build linux on darwin)
+  // All other filters (knownBroken, toolchain, props) are bypassed for targeted builds
+  const isTargetedBuild = !!values.package
+
   allPackages = allPackages.filter(p => {
-    // Platform filtering
+    // Platform filtering (always applies — can't cross-compile)
     if (targetOs === 'darwin' && linuxOnlyDomains.has(p.domain)) {
       platformSkipped++
       return false
@@ -674,6 +678,8 @@ Options:
       platformSkipped++
       return false
     }
+    // Skip remaining filters for targeted builds
+    if (isTargetedBuild) return true
     // Toolchain filtering
     if (specializedToolchainPackages.has(p.domain)) {
       toolchainSkipped++
