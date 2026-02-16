@@ -524,7 +524,10 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   // Encode spaces and special chars in URLs (e.g. xpra.org has "xpra 6.4.3" in tag)
   const encodedUrl = url.replace(/ /g, '%20')
   try {
-    execSync(`curl -fSL -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
+    // --connect-timeout 30: fail fast if server doesn't respond
+    // --max-time 600: abort if download takes >10 minutes (SourceForge can be very slow)
+    // --retry 2 --retry-delay 5: retry on transient failures
+    execSync(`curl -fSL --connect-timeout 30 --max-time 600 --retry 2 --retry-delay 5 -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
   } catch (curlError: any) {
     const err = new Error(`DOWNLOAD_FAILED: Failed to download ${url}`) as any
     err._downloadFailure = true
@@ -1029,6 +1032,30 @@ async function buildPackage(options: BuildOptions): Promise<void> {
           Object.assign(templateVars, altVars)
           recovered = true
         } catch { /* all retries exhausted */ }
+      }
+
+      // Retry 5: For alternation strip patterns, try each alternative as version.tag
+      if (!recovered && rawUrl.includes('version.tag')) {
+        const stripMatch = yamlContent.match(/strip:\s*\/(.+)\/$/) ?? yamlContent.match(/strip:\s*\/(.+)\//)
+        if (stripMatch && stripMatch[1].includes('|')) {
+          const pattern = stripMatch[1]
+          const alts = pattern.replace(/^\(/, '').replace(/\)$/, '').split('|')
+          for (const alt of alts) {
+            if (recovered) break
+            const altPrefix = alt.replace(/^\^/, '')
+            const altTag = altPrefix + version
+            if (altTag === versionTag) continue // Already tried
+            console.log(`⚠️  Download failed, retrying with alternate version tag: ${altTag}...`)
+            const altVars = { ...templateVars, 'version.tag': altTag }
+            const altUrl = interpolate(rawUrl, altVars)
+            const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
+            try {
+              await downloadSource(altUrl, buildDir, stripComponents, altRef)
+              Object.assign(templateVars, altVars)
+              recovered = true
+            } catch { /* try next alternative */ }
+          }
+        }
       }
 
       if (!recovered) {

@@ -403,13 +403,14 @@ export function processScript(
           tokens,
         )
         const extname = item.prop?.extname ? `.${item.prop.extname.replace(/^\./, '')}` : ''
-        const escapedProp = propContent.replace(/\$/g, '\\$')
-
+        // Single-quoted heredoc (<<'EOF') prevents bash variable expansion,
+        // so we do NOT need to escape $ — content is written literally.
+        // Only escape backslashes that aren't already part of an escape sequence.
         run = [
           'OLD_PROP=$PROP',
           `PROP=$(mktemp)${extname}`,
           `cat <<'DEV_PKGX_EOF' > $PROP`,
-          escapedProp,
+          propContent,
           'DEV_PKGX_EOF',
           propContent.startsWith('#!') ? 'chmod +x $PROP' : '',
           run.trim(),
@@ -503,6 +504,24 @@ export function generateBuildScript(
   sections.push('# Go toolchain (GOPATH only; GOROOT set after deps)')
   sections.push('export GOPATH="$REAL_HOME/go"')
   sections.push('mkdir -p "$GOPATH"')
+  sections.push('')
+
+  // Java/JDK — preserve JAVA_HOME from environment (GitHub runners have Java pre-installed)
+  sections.push('# Java toolchain')
+  sections.push('if [ -z "$JAVA_HOME" ] && [ -d "/usr/lib/jvm" ]; then')
+  sections.push('  # Auto-detect JDK on Linux')
+  sections.push('  for d in /usr/lib/jvm/java-*-openjdk-*; do')
+  sections.push('    if [ -d "$d" ]; then export JAVA_HOME="$d"; break; fi')
+  sections.push('  done')
+  sections.push('fi')
+  if (osName === 'darwin') {
+    sections.push('if [ -z "$JAVA_HOME" ] && /usr/libexec/java_home &>/dev/null; then')
+    sections.push('  export JAVA_HOME="$(/usr/libexec/java_home 2>/dev/null || true)"')
+    sections.push('fi')
+  }
+  sections.push('if [ -n "$JAVA_HOME" ]; then')
+  sections.push('  export PATH="$JAVA_HOME/bin:$PATH"')
+  sections.push('fi')
   sections.push('')
 
   // Node.js / npm
