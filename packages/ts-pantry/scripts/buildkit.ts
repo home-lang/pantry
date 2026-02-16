@@ -711,14 +711,14 @@ export function generateBuildScript(
   sections.push('export PATH="$GOPATH/bin:${GOROOT:+$GOROOT/bin:}$PATH"')
   sections.push('')
 
-  // Working directory
+  // Working directory — always cd to buildDir first, then to any subdirectory
+  sections.push(`cd "${buildDir}"`)
   const wd = recipe.build?.['working-directory']
   if (wd) {
     const expandedWd = applyTokens(wd, tokens)
+    // If relative, it's a subdirectory of buildDir; if absolute, use as-is
     sections.push(`mkdir -p "${expandedWd}"`)
     sections.push(`cd "${expandedWd}"`)
-  } else {
-    sections.push(`cd "${buildDir}"`)
   }
   sections.push('')
 
