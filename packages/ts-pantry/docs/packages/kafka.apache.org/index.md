@@ -65,20 +65,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
-- `4.1.1`, `4.1.0`, `4.0.1`, `4.0.0`, `3.9.1`
-- `3.9.0`, `3.8.1`, `3.8.0`, `3.7.2`
+- `4.2.0`, `4.1.1`, `4.1.0`, `4.0.1`, `4.0.0`
+- `3.9.1`, `3.9.0`, `3.8.1`, `3.8.0`, `3.7.2`
 
 </details>
 
-**Latest Version**: `4.1.1`
+**Latest Version**: `4.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +kafka.apache.org@4.1.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +kafka.apache.org@4.2.0 -- $SHELL -i
 ```
 
 ## Dependencies
