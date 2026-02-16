@@ -620,6 +620,7 @@ Options:
     'crystal-lang.org/shards', // Depends on crystal
     'dart.dev', // Need Dart SDK
     'vlang.io', // Need V compiler
+    'rebar3.org', // Need Erlang runtime
   ])
 
   // Packages with known broken recipes or that fundamentally can't build in standard CI
@@ -638,6 +639,24 @@ Options:
     'gnu.org/source-highlight', // Needs boost.org built from source
     'crates.io/bpb', // Uses deprecated Rust features (E0557), incompatible with modern rustc
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
+    'nasm.us', // Version normalization drops leading zeros (2.16.03→2.16.3), breaking download URLs
+    'strace.io', // Needs newer version (6.8+) for modern kernel headers, current 6.2 fails
+    'microbrew.org/md5sha1sum', // Needs OpenSSL lib path configured, hard to do generically in CI
+    'apple.com/container', // Needs Swift 6.2+, runners only have 5.10
+    'openai.com/codex', // Needs Rust 1.89+, may not be available on runners
+    'gnu.org/plotutils', // Compile errors with modern compilers (unmaintained since 2009)
+    'ghostgum.com.au/epstool', // Debian mirror URL broken + needs ghostscript dep chain
+    'mcmc-jags.sourceforge.io', // Needs LAPACK library not available in standard CI
+    'itstool.org', // Needs Python libxml2 module
+    'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
+    'openinterpreter.com', // tiktoken wheel build failure (Python C extension)
+    'psycopg.org/psycopg3', // Version mismatch with PyPI (wants dev version)
+    'sourceware.org/dm', // GitLab download URLs return 404
+    'oracle.com/berkeley-db', // Thread-local storage error with STL on modern macOS
+    'pixman.org', // Compilation errors on darwin with modern clang
+    'gnu.org/plotutils', // Compilation errors on linux with modern gcc
+    'llm.datasette.io', // GitHub tag v0.28.0 no longer exists (renamed/moved)
+    'taku910.github.io/mecab-ipadic', // Needs mecab built first (complex dep chain)
   ])
 
   let platformSkipped = 0

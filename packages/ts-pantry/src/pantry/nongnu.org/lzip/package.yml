@@ -1,9 +1,9 @@
 distributable:
-  url: https://cdn.betsu.org/mirrors/savannah/lzip/lzip-{{version.marketing}}.tar.gz
+  url: https://download.savannah.gnu.org/releases/lzip/lzip-{{version.marketing}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://cdn.betsu.org/mirrors/savannah/lzip/
+  url: https://download.savannah.gnu.org/releases/lzip/
   match: /lzip-\d+\.\d+\.tar\.gz/
   strip:
     - /^lzip-/

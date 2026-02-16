@@ -500,6 +500,10 @@ export function generateBuildScript(
   sections.push('  ln -sfn "$REAL_HOME/.rustup" "$HOME/.rustup" 2>/dev/null || true')
   sections.push('elif [ -d "/usr/share/rust/.cargo/bin" ]; then')
   sections.push('  export PATH="/usr/share/rust/.cargo/bin:$PATH"')
+  sections.push('elif command -v cargo &>/dev/null; then')
+  sections.push('  # Cargo available via system PATH (e.g., Homebrew on macOS)')
+  sections.push('  CARGO_BIN_DIR="$(dirname "$(command -v cargo)")"')
+  sections.push('  export PATH="$CARGO_BIN_DIR:$PATH"')
   sections.push('fi')
   sections.push('')
 
@@ -548,6 +552,16 @@ export function generateBuildScript(
   // Do NOT export -f sed: exported functions pollute child process environments
   // (make, configure) causing "environment: line N: command not found" errors.
   // The wrapper only needs to exist in our build script, not in sub-processes.
+  sections.push('')
+
+  // Wrap ln to handle "same file" errors gracefully (caused by HOME symlinks)
+  sections.push('# ln wrapper: suppress "same file" errors from redundant symlinks')
+  sections.push('__real_ln="$(command -v ln)"')
+  sections.push('ln() {')
+  sections.push('  local _out; _out=$("$__real_ln" "$@" 2>&1) && return 0')
+  sections.push('  if echo "$_out" | grep -q "same file"; then return 0; fi')
+  sections.push('  echo "$_out" >&2; return 1')
+  sections.push('}')
   sections.push('')
 
   if (osName === 'darwin') {
