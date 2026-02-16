@@ -428,8 +428,11 @@ async function buildAndUpload(
       lastError = error
       const errMsg = error.message || ''
 
-      // Only try fallback versions if the error is a source download failure (404/curl error)
-      const isDownloadError = errMsg.includes('curl') ||
+      // Only try fallback versions if the error is a source download failure
+      // Exit code 42 from build-package.ts = download failure (curl 404, git clone fail, etc.)
+      const isDownloadError = error.status === 42 ||
+        errMsg.includes('DOWNLOAD_FAILED') ||
+        errMsg.includes('curl') ||
         errMsg.includes('404') ||
         errMsg.includes('The requested URL returned error')
       if (!isDownloadError) {
@@ -437,7 +440,7 @@ async function buildAndUpload(
         break
       }
 
-      console.log(`   ⚠️  Version ${candidateVersion} source not available`)
+      console.log(`   ⚠️  Version ${candidateVersion} source not available (exit code: ${error.status})`)
     }
   }
 

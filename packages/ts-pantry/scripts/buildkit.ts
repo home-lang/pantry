@@ -568,6 +568,31 @@ export function generateBuildScript(
   sections.push('export -f python-venv.sh')
   sections.push('')
 
+  // fix-shebangs.ts shim — replaces hardcoded interpreter paths with #!/usr/bin/env
+  sections.push('# fix-shebangs.ts shim (brewkit compatibility)')
+  sections.push('fix-shebangs.ts() {')
+  sections.push('  for f in "$@"; do')
+  sections.push('    [ -f "$f" ] || continue')
+  sections.push('    local first_line')
+  sections.push('    first_line="$(head -1 "$f")"')
+  sections.push('    case "$first_line" in')
+  sections.push('      "#!"*)')
+  sections.push('        local interp')
+  sections.push('        interp="$(basename "$(echo "$first_line" | sed "s|^#![[:space:]]*||" | awk "{print \\$1}")")"')
+  sections.push('        case "$interp" in')
+  sections.push('          perl*|python*|ruby*|lua*|wish*|tclsh*|node*|bash*|sh*|env)')
+  sections.push('            if [ "$interp" = "env" ]; then continue; fi')
+  sections.push('            sed -i.bak "1s|.*|#!/usr/bin/env $interp|" "$f"')
+  sections.push('            rm -f "$f.bak"')
+  sections.push('            ;;')
+  sections.push('        esac')
+  sections.push('        ;;')
+  sections.push('    esac')
+  sections.push('  done')
+  sections.push('}')
+  sections.push('export -f fix-shebangs.ts')
+  sections.push('')
+
   // Add dependency paths to PATH and pkg-config
   const depBinPaths: string[] = []
   const depLibPaths: string[] = []
@@ -575,7 +600,8 @@ export function generateBuildScript(
   const depPkgConfigPaths: string[] = []
 
   for (const [key, depPath] of Object.entries(depPaths)) {
-    if (!key.startsWith('deps.')) continue
+    // Only use .prefix keys for PATH construction (skip .version, .version.major, etc.)
+    if (!key.endsWith('.prefix')) continue
     depBinPaths.push(`${depPath}/bin`)
     depLibPaths.push(`${depPath}/lib`)
     depIncludePaths.push(`${depPath}/include`)
@@ -626,9 +652,11 @@ export function generateBuildScript(
   sections.push('')
 
   // User script from pantry YAML
-  if (recipe.build?.script) {
+  // Handle both `build: { script: [...] }` and `build: [...]` (direct array) formats
+  const buildScript = Array.isArray(recipe.build) ? recipe.build : recipe.build?.script
+  if (buildScript) {
     sections.push('# Build script from pantry recipe')
-    sections.push(processScript(recipe.build.script, tokens, platform, version))
+    sections.push(processScript(buildScript, tokens, platform, version))
   } else {
     sections.push('echo "No build script found in recipe"')
     sections.push('exit 1')

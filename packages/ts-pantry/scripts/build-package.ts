@@ -455,7 +455,13 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
       execSync(`git clone --depth 1 ${refArg} "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
     } catch {
       // If shallow clone with ref fails, try full clone + checkout
-      execSync(`git clone "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
+      try {
+        execSync(`git clone "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
+      } catch (cloneError: any) {
+        const err = new Error(`DOWNLOAD_FAILED: Failed to clone ${gitUrl}`) as any
+        err._downloadFailure = true
+        throw err
+      }
       if (ref) {
         try {
           execSync(`cd "${destDir}/_git_clone" && git checkout "${ref}"`, { stdio: 'inherit' })
@@ -477,12 +483,20 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   // Download using curl (follow redirects, fail on HTTP errors)
   // Encode spaces and special chars in URLs (e.g. xpra.org has "xpra 6.4.3" in tag)
   const encodedUrl = url.replace(/ /g, '%20')
-  execSync(`curl -fSL -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
+  try {
+    execSync(`curl -fSL -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
+  } catch (curlError: any) {
+    const err = new Error(`DOWNLOAD_FAILED: Failed to download ${url}`) as any
+    err._downloadFailure = true
+    throw err
+  }
 
   // Validate downloaded file is not a tiny error page
   const fileSize = statSync(tempFile).size
   if (fileSize < 1000) {
-    throw new Error(`Downloaded file is too small (${fileSize} bytes) — likely an error page, not a source archive`)
+    const err = new Error(`Downloaded file is too small (${fileSize} bytes) — likely an error page, not a source archive`) as any
+    err._downloadFailure = true
+    throw err
   }
 
   console.log(`📦 Extracting source to ${destDir}`)
@@ -663,6 +677,34 @@ async function downloadDependencies(
       depPaths[`deps.${domain}.version.patch`] = depVParts[2] || '0'
       depPaths[`deps.${domain}.version.marketing`] = `${depVParts[0] || '0'}.${depVParts[1] || '0'}`
 
+      // Fix meson venv: replace hardcoded python3 shebang from build environment
+      // The meson binary in S3 has a venv with a hardcoded python3 path that doesn't exist at runtime
+      if (domain === 'mesonbuild.com') {
+        try {
+          const mesonBin = join(depInstallDir, 'bin', 'meson')
+          if (existsSync(mesonBin)) {
+            const mesonContent = readFileSync(mesonBin, 'utf-8')
+            if (mesonContent.startsWith('#!') && mesonContent.includes('/venv/bin/python')) {
+              // Replace hardcoded venv python with system python3
+              const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
+              writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
+              console.log(`   - Fixed meson shebang to use system python3`)
+            }
+          }
+          // Also fix the venv activation scripts if they exist
+          const venvDir = join(depInstallDir, 'venv')
+          if (existsSync(venvDir)) {
+            // Create a symlink to system python3 in the venv
+            const venvBin = join(venvDir, 'bin', 'python3')
+            try {
+              execSync(`rm -f "${venvBin}" && ln -sf "$(which python3)" "${venvBin}"`, { stdio: 'pipe' })
+            } catch { /* ignore */ }
+          }
+        } catch (e: any) {
+          console.log(`   - Warning: Could not fix meson venv: ${e.message}`)
+        }
+      }
+
     } catch (error: any) {
       console.log(`   - ${domain}: failed (${error.message})`)
     }
@@ -772,7 +814,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Download source
   if (recipe.distributable?.url) {
-    const rawUrl = recipe.distributable.url
+    const rawUrl = typeof recipe.distributable.url === 'string' ? recipe.distributable.url : String(recipe.distributable.url)
     const sourceUrl = interpolate(rawUrl, templateVars)
     const stripComponents = recipe.distributable['strip-components'] ?? 1
     const ref = recipe.distributable.ref ? interpolate(recipe.distributable.ref, templateVars) : undefined
@@ -907,8 +949,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     console.error('❌ Build script failed')
     // Print the generated script for debugging
     console.error('\n--- Generated build script ---')
-    console.error(bashScript.slice(0, 2000))
-    if (bashScript.length > 2000) console.error('... (truncated)')
+    console.error(bashScript.slice(0, 8000))
+    if (bashScript.length > 8000) console.error(`... (truncated, ${bashScript.length} total chars)`)
     console.error('--- End script ---')
     throw error
   }
@@ -968,5 +1010,10 @@ async function main() {
 
 main().catch((error) => {
   console.error('❌ Build failed:', error.message)
+  // Exit code 42 = download failure (source 404/unavailable) — signals version fallback should try older versions
+  // Exit code 1 = build/other failure — no point trying older versions
+  if (error._downloadFailure) {
+    process.exit(42)
+  }
   process.exit(1)
 })
