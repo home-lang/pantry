@@ -10,6 +10,40 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
+
+/**
+ * Find the system prefix for a dependency by detecting where its binary lives.
+ * For example, if `cargo` is at `/home/runner/.cargo/bin/cargo`, returns `/home/runner/.cargo`.
+ * Falls back to /usr/local or /usr if binary not found.
+ */
+function findSystemPrefix(domain: string): string {
+  // Full domain -> binary name mappings
+  const domainMap: Record<string, string> = {
+    'go.dev': 'go', 'python.org': 'python3', 'cmake.org': 'cmake',
+    'nodejs.org': 'node', 'mesonbuild.com': 'meson', 'ninja-build.org': 'ninja',
+    'rust-lang.org/cargo': 'cargo', 'rust-lang.org/rustup': 'rustup',
+    'openssl.org': 'openssl', 'curl.se': 'curl', 'gnu.org/make': 'make',
+    'gnu.org/autoconf': 'autoconf', 'gnu.org/automake': 'automake',
+    'gnu.org/libtool': 'libtool', 'perl.org': 'perl', 'ruby-lang.org': 'ruby',
+    'openjdk.org': 'java', 'adoptium.net': 'java',
+  }
+  // Extract likely binary name from domain
+  const lastPart = domain.split('/').pop() || ''
+  const binaryName = domainMap[domain] || domainMap[lastPart] || lastPart
+  try {
+    const whichPath = execSync(`command -v ${binaryName} 2>/dev/null`, { encoding: 'utf-8' }).trim()
+    if (whichPath && existsSync(whichPath)) {
+      // Binary at /X/Y/bin/name → prefix is /X/Y
+      const binDir = dirname(whichPath)
+      const prefix = dirname(binDir)
+      // Sanity check: prefix should have a bin directory
+      if (binDir.endsWith('/bin') || binDir.endsWith('/sbin')) {
+        return prefix
+      }
+    }
+  } catch { /* binary not found */ }
+  return existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+}
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
 // eslint-disable-next-line ts/no-top-level-await
@@ -709,7 +743,7 @@ async function downloadDependencies(
       } catch {
         console.log(`   - ${domain}: not in S3, falling back to system path`)
         // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
-        const fallbackPrefix = existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+        const fallbackPrefix = findSystemPrefix(domain)
         depPaths[domain] = fallbackPrefix
         depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
@@ -720,7 +754,7 @@ async function downloadDependencies(
 
       if (!platformInfo) {
         console.log(`   - ${domain}@${version}: no binary for ${platform}, falling back to system path`)
-        const fallbackPrefix = existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+        const fallbackPrefix = findSystemPrefix(domain)
         depPaths[domain] = fallbackPrefix
         depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
