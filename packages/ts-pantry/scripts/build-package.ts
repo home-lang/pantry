@@ -15,6 +15,22 @@ const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathna
 // eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
+// Check if a trimmed line looks like a YAML key-value pair (key: value)
+// Returns false for lines that are pure URLs (e.g. "https://example.com/path")
+function looksLikeKeyValue(trimmedLine: string): boolean {
+  const colonIdx = trimmedLine.indexOf(':')
+  if (colonIdx < 0) return false
+  // If the first colon is followed by // it's a URL scheme, not a key-value pair
+  if (trimmedLine[colonIdx + 1] === '/' && trimmedLine[colonIdx + 2] === '/') return false
+  // A YAML key should be followed by `: ` (colon+space) or `:\n` (colon at end)
+  const afterColon = trimmedLine[colonIdx + 1]
+  if (afterColon !== undefined && afterColon !== ' ' && afterColon !== '\t') return false
+  // The key part should look like a valid YAML key (alphanumeric, hyphens, dots, slashes)
+  const key = trimmedLine.slice(0, colonIdx).trim()
+  if (!key || /[{}[\]]/.test(key)) return false
+  return true
+}
+
 // Strip YAML inline comments: ` #comment` or ` # comment` at end of value
 // Only strips when # is preceded by a space (YAML spec: not inside quoted strings, not in URLs)
 function stripYamlComment(val: string): string {
@@ -282,8 +298,8 @@ function parseYaml(content: string): Record<string, any> {
           // It's an array
           currentObj[key] = []
           stack.push({ indent, obj: currentObj[key] })
-        } else if (nextLine.includes(':') && !nextLine.includes('://') && nextLineIndent > indent) {
-          // It's an object (has key-value pairs) — but not URLs like https://...
+        } else if (nextLineIndent > indent && looksLikeKeyValue(nextLine.trim())) {
+          // It's an object (has key-value pairs)
           currentObj[key] = {}
           stack.push({ indent, obj: currentObj[key] })
         } else if (nextLineIndent > indent && nextLine) {
