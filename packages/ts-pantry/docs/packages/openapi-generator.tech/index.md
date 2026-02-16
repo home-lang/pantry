@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 18 versions</summary>
+<summary>Show all 19 versions</summary>
 
-- `7.19.0`, `7.18.0`, `7.17.0`, `7.16.0`, `7.15.0`
-- `7.14.0`, `7.13.0`, `7.12.0`, `7.11.0`, `7.10.0`
-- `7.9.0`, `7.8.0`, `7.7.0`, `7.6.0`, `7.5.0`
-- `7.4.0`, `7.3.0`, `7.2.0`
+- `7.20.0`, `7.19.0`, `7.18.0`, `7.17.0`, `7.16.0`
+- `7.15.0`, `7.14.0`, `7.13.0`, `7.12.0`, `7.11.0`
+- `7.10.0`, `7.9.0`, `7.8.0`, `7.7.0`, `7.6.0`
+- `7.5.0`, `7.4.0`, `7.3.0`, `7.2.0`
 
 </details>
 
-**Latest Version**: `7.19.0`
+**Latest Version**: `7.20.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +openapi-generator.tech@7.19.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +openapi-generator.tech@7.20.0 -- $SHELL -i
 ```
 
 ## Dependencies
