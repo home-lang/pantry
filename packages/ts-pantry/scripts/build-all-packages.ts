@@ -646,8 +646,8 @@ Options:
     'openai.com/codex', // Needs Rust 1.89+, may not be available on runners
     'gnu.org/plotutils', // Compile errors with modern compilers (unmaintained since 2009)
     'ghostgum.com.au/epstool', // Debian mirror URL broken + needs ghostscript dep chain
-    'mcmc-jags.sourceforge.io', // Needs LAPACK library not available in standard CI
-    'itstool.org', // Needs Python libxml2 module
+    // mcmc-jags.sourceforge.io — LAPACK+gfortran now in CI
+    // itstool.org — python3-libxml2 now in CI
     'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
     'openinterpreter.com', // tiktoken wheel build failure (Python C extension)
     'psycopg.org/psycopg3', // Version mismatch with PyPI (wants dev version)

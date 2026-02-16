@@ -90,7 +90,8 @@ jobs:
             libedit-dev libelf-dev \
             tcl-dev tk-dev \
             libunwind-dev libdw-dev \
-            libzip-dev liblapack-dev gfortran
+            libzip-dev liblapack-dev gfortran \
+            python3-lxml python3-libxml2
 
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
