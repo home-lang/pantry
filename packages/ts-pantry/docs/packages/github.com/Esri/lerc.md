@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/Esri/lerc`
 - **Name**: `lerc`
-- **Homepage**: https://github.com/esri/lerc
+- **Homepage**: <https://github.com/esri/lerc>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/Esri/lerc/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `conftest.dev`
 - **Name**: `conftest`
-- **Homepage**: https://www.conftest.dev/
+- **Homepage**: <https://www.conftest.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/conftest.dev/package.yml)
 
 ## Installation

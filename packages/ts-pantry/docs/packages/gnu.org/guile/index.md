@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/guile`
 - **Name**: `guil`
-- **Homepage**: https://www.gnu.org/software/guile/
+- **Homepage**: <https://www.gnu.org/software/guile/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/guile/package.yml)
 
 ## Installation

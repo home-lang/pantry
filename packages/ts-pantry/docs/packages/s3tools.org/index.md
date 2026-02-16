@@ -6,7 +6,7 @@
 
 - **Domain**: `s3tools.org`
 - **Name**: `s3cmd`
-- **Homepage**: https://s3tools.org/s3cmd
+- **Homepage**: <https://s3tools.org/s3cmd>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/s3tools.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `apache.org/subversion`
 - **Name**: `svn`
-- **Homepage**: https://subversion.apache.org/
+- **Homepage**: <https://subversion.apache.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apache.org/subversion/package.yml)
 
 ## Installation

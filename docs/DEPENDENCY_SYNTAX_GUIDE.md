@@ -57,6 +57,7 @@ The simplified syntax mirrors npm's `package.json` format. The source is automat
 ```
 
 **Auto-detection rules:**
+
 - Contains `/` (slash)
 - Does NOT start with `@` (not a scoped npm package)
 - Maps to `source: "github"`
@@ -77,6 +78,7 @@ The simplified syntax mirrors npm's `package.json` format. The source is automat
 ```
 
 **Auto-detection rules:**
+
 - Contains `.` (dot)
 - Ends with common TLDs: `.org`, `.com`, `.dev`, `.io`, `.sh`, `.net`
 - Maps to `source: "pkgx"`
@@ -96,6 +98,7 @@ The simplified syntax mirrors npm's `package.json` format. The source is automat
 ```
 
 **Auto-detection rules:**
+
 - Starts with `@`
 - Contains `/` (slash)
 - Maps to `source: "npm"`
@@ -113,6 +116,7 @@ The simplified syntax mirrors npm's `package.json` format. The source is automat
 ```
 
 **Auto-detection behavior:**
+
 - No specific pattern detected
 - Falls back to resolution order: pkgx → npm → github
 - Maps to `source: "auto"`
@@ -131,6 +135,7 @@ The simplified syntax mirrors npm's `package.json` format. The source is automat
 ```
 
 **Auto-detection rules:**
+
 - Starts with `http://` or `https://`
 - Maps to `source: "http"`
 
@@ -148,6 +153,7 @@ The simplified syntax mirrors npm's `package.json` format. The source is automat
 ```
 
 **Auto-detection rules:**
+
 - Ends with `.git`
 - Maps to `source: "git"`
 
@@ -173,6 +179,7 @@ For maximum control and advanced options, use the explicit object syntax.
 ```
 
 **Available options:**
+
 - `source`: `"github"` (required)
 - `repo`: Owner/repository format (required)
 - `version`: Version or range (default: `"latest"`)
@@ -194,6 +201,7 @@ For maximum control and advanced options, use the explicit object syntax.
 ```
 
 **Available options:**
+
 - `source`: `"npm"` (required)
 - `version`: Version or range (required)
 - `registry`: Custom npm registry URL (optional)
@@ -214,12 +222,14 @@ For maximum control and advanced options, use the explicit object syntax.
 ```
 
 **Available options:**
+
 - `source`: `"http"` (required)
 - `url`: Direct download URL (required)
 - `version`: Version identifier (required)
 - `global`: Install globally (optional)
 
 **Supported formats:**
+
 - `.tar.gz`
 - `.tar.xz`
 - `.zip`
@@ -255,6 +265,7 @@ For maximum control and advanced options, use the explicit object syntax.
 ```
 
 **Available options:**
+
 - `source`: `"git"` (required)
 - `url`: Git repository URL (required)
 - `branch`: Branch name (optional, conflicts with `tag`)
@@ -276,6 +287,7 @@ For maximum control and advanced options, use the explicit object syntax.
 ```
 
 **Available options:**
+
 - `source`: `"pkgx"` (required)
 - `version`: Exact version (required)
 - `global`: Install globally (optional)
@@ -291,8 +303,8 @@ When using simplified syntax, pantry automatically detects the source based on t
 | `owner/repo` | `stacksjs/bunpress` | `github` |
 | `domain.tld` | `nodejs.org` | `pkgx` |
 | `@org/package` | `@types/node` | `npm` |
-| `http(s)://...` | `https://cdn.com/lib.tar.gz` | `http` |
-| `*.git` | `https://github.com/user/repo.git` | `git` |
+| `http(s)://...` | `<https://cdn.com/lib.tar.gz>` | `http` |
+| `*.git` | `<https://github.com/user/repo.git>` | `git` |
 | Simple name | `typescript` | `auto` (fallback) |
 
 ### Auto-Resolution Fallback
@@ -306,9 +318,11 @@ For ambiguous package names (simple names like `typescript`), pantry uses this r
 **Example flow for `"typescript": "^5.0.0"`:**
 
 ```
+
 1. Search pkgx: typescript → Not found
 2. Search npm: typescript → Found! ✓
 3. Use source: npm
+
 ```
 
 ---
@@ -446,6 +460,7 @@ You can mix simplified and explicit syntax in the same configuration:
 ```
 
 **Why mix?**
+
 - Use simplified syntax for common public packages
 - Use explicit syntax for private packages or custom configurations
 - Provides flexibility without sacrificing simplicity

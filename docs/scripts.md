@@ -114,10 +114,12 @@ The script provides improved descriptions for all PHP configurations:
 The script is integrated into the GitHub workflow for PHP binary compilation:
 
 ```yaml
+
 - name: Get PHP versions from ts-pkgx
+
   id: get-versions
   run: |
-    # Get dynamic PHP versions using our custom script
+# Get dynamic PHP versions using our custom script
     PHP_VERSIONS=$(bun scripts/get-php-versions.ts | grep "JSON output for GitHub Actions:" -A 1 | tail -1)
     echo "php_versions=$PHP_VERSIONS" >> $GITHUB_OUTPUT
     echo "🔍 Dynamic PHP versions: $PHP_VERSIONS"

@@ -6,7 +6,7 @@
 
 - **Domain**: `bun.sh`
 - **Name**: `bun`
-- **Homepage**: https://bun.sh
+- **Homepage**: <https://bun.sh>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bun.sh/package.yml)
 
 ## Installation

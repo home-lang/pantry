@@ -6,7 +6,7 @@
 
 - **Domain**: `curlie.io`
 - **Name**: `curlie`
-- **Homepage**: https://rs.github.io/curlie
+- **Homepage**: <https://rs.github.io/curlie>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/curlie.io/package.yml)
 
 ## Installation

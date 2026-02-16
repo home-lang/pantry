@@ -96,12 +96,14 @@ Stress tests and boundary conditions:
 **Purpose**: Verify core features work as designed
 
 **Tests**:
+
 - Basic CRUD operations on catalogs
 - Catalog resolution from default and named catalogs
 - Protocol detection and parsing
 - Version validation
 
 **Key Insights**:
+
 - All core features work correctly
 - API is intuitive and follows conventions
 - Error handling is graceful
@@ -111,12 +113,14 @@ Stress tests and boundary conditions:
 **Purpose**: Ensure robust JSON parsing
 
 **Tests**:
+
 - Parse from workspaces.catalog
 - Parse from workspaces.catalogs
 - Parse from top-level locations
 - Handle malformed JSON gracefully
 
 **Key Insights**:
+
 - Parser handles all valid package.json structures
 - Skips invalid data without crashing
 - Provides clear warnings for invalid data
@@ -126,12 +130,14 @@ Stress tests and boundary conditions:
 **Purpose**: Uncover boundary conditions and unusual inputs
 
 **Tests**:
+
 - Empty strings, very long strings
 - Unicode and special characters
 - Non-string values
 - Duplicate entries
 
 **Key Insights**:
+
 - Implementation is robust against edge cases
 - Memory management is sound
 - No crashes on unusual but valid inputs
@@ -141,17 +147,20 @@ Stress tests and boundary conditions:
 **Purpose**: Verify performance and scalability
 
 **Tests**:
+
 - 1000 packages in single catalog
 - 50 catalogs with 20 packages each
 - 1000 lookups performance test
 - Very long names and versions
 
 **Key Insights**:
+
 - O(1) hash lookups perform well at scale
 - Memory usage is reasonable
 - Can handle large monorepos efficiently
 
 **Performance Results**:
+
 - 1000 catalog lookups complete in <10ms
 - Hash-based lookups scale well
 - No memory leaks detected in stress tests
@@ -161,12 +170,14 @@ Stress tests and boundary conditions:
 **Purpose**: Verify catalogs work with other features
 
 **Tests**:
+
 - Catalogs + overrides
 - Catalogs + workspace protocol
 - Catalogs + GitHub references
 - Real-world monorepo scenarios
 
 **Key Insights**:
+
 - Features compose well together
 - No conflicts or unexpected interactions
 - Works seamlessly in real projects
@@ -176,11 +187,13 @@ Stress tests and boundary conditions:
 **Purpose**: Ensure no memory leaks or use-after-free
 
 **Tests**:
+
 - Repeated allocation/deallocation cycles
 - Replacing catalogs
 - Cleanup of nested structures
 
 **Key Insights**:
+
 - All memory is properly freed
 - No double-free issues
 - Deinit is comprehensive
@@ -215,11 +228,13 @@ The comprehensive test suite helped identify and verify:
 
 ```
 Benchmark: 1000 catalog lookups
+
 - Dataset: 500 packages in catalog
 - Operations: 1000 lookups (with duplicates)
 - Time: <10ms (typically 2-5ms)
 - Complexity: O(1) per lookup
 - Memory: Constant per lookup
+
 ```
 
 ## Test Execution
@@ -290,6 +305,7 @@ The test suite provides comprehensive coverage of:
 ### 1. Comprehensive Edge Cases
 
 Every public function tested with:
+
 - Minimum values (empty strings, zero packages)
 - Maximum values (very long strings, many packages)
 - Boundary values (null, whitespace, special chars)
@@ -298,6 +314,7 @@ Every public function tested with:
 ### 2. Memory Safety
 
 All tests run under allocator that detects:
+
 - Memory leaks
 - Double frees
 - Use after free
@@ -306,6 +323,7 @@ All tests run under allocator that detects:
 ### 3. Performance Verification
 
 Stress tests ensure:
+
 - Scalability to large monorepos
 - O(1) lookup performance
 - Reasonable memory usage
@@ -314,6 +332,7 @@ Stress tests ensure:
 ### 4. Real-World Scenarios
 
 Integration tests based on:
+
 - Actual React monorepo patterns
 - Common npm package structures
 - Turborepo configurations
@@ -322,6 +341,7 @@ Integration tests based on:
 ### 5. Clear Test Names
 
 All test names describe:
+
 - What is being tested
 - What the expected behavior is
 - What scenario is covered
@@ -348,6 +368,7 @@ Verifies thread safety and concurrent access patterns:
 10. **Random access patterns** - Unpredictable concurrent access
 
 **Key Results**:
+
 - ✅ No data races detected
 - ✅ Maintains >1000 lookups/ms with 8 concurrent threads
 - ✅ All 16,000 operations in stress test succeed
@@ -370,6 +391,7 @@ Random input generation to find crashes and edge cases:
 11. **High-entropy inputs** - Very long strings (1000+ characters)
 
 **Malicious Input Patterns Tested**:
+
 - `\x00` (null bytes)
 - `../../etc/passwd` (path traversal)
 - `; rm -rf /` (command injection)
@@ -379,6 +401,7 @@ Random input generation to find crashes and edge cases:
 - Very long strings (10,000+ characters)
 
 **Key Results**:
+
 - ✅ No crashes on any input
 - ✅ Graceful handling of malicious patterns
 - ✅ Proper unicode support (UTF-8)
@@ -408,12 +431,14 @@ Verifies test suite effectiveness by introducing intentional bugs:
 16. **Semantic correctness** - Verify intended behavior
 
 **Mutation Testing Framework**:
+
 - Each mutation is an intentional bug
 - Tests should FAIL when mutation is present
 - If tests still pass, mutation "survived" (bad)
 - If tests fail, mutation was "killed" (good)
 
 **Key Results**:
+
 - ✅ Target: >70% kill rate
 - ✅ Actual: 90%+ kill rate achieved
 - ✅ Test suite catches most bugs
@@ -434,6 +459,7 @@ Ensures catalogs are properly recorded in lockfiles:
 9. **Temporary file operations** - Safe file I/O
 
 **Key Features Tested**:
+
 - Resolved catalog versions are persisted
 - Lockfile updates when catalog versions change
 - Deduplication across workspace packages
@@ -441,6 +467,7 @@ Ensures catalogs are properly recorded in lockfiles:
 - Proper memory management in lockfile operations
 
 **Key Results**:
+
 - ✅ Catalog resolutions properly persisted
 - ✅ Lockfile detects catalog version changes
 - ✅ Deduplication works across workspaces
@@ -463,12 +490,14 @@ Verifies catalog references are resolved during publishing:
 11. **Package.json creation and parsing** - File I/O operations
 
 **Publishing Rules Enforced**:
+
 - No `catalog:` references in published packages
 - All catalog refs must resolve to concrete versions
 - Publish fails if any reference cannot be resolved
 - Non-catalog dependencies are preserved unchanged
 
 **Key Results**:
+
 - ✅ All catalog references resolved before publish
 - ✅ Validation prevents unresolved refs from being published
 - ✅ Monorepo packages correctly deduplicated
@@ -493,6 +522,7 @@ The comprehensive test suite now includes **174 total tests** (100% coverage):
 ### Coverage Metrics
 
 **Line Coverage**:
+
 - ✅ 100% of public API functions
 - ✅ 100% of parsing logic
 - ✅ 100% of resolution logic
@@ -500,6 +530,7 @@ The comprehensive test suite now includes **174 total tests** (100% coverage):
 - ✅ 95%+ of error handling paths
 
 **Scenario Coverage**:
+
 - ✅ Valid inputs (normal use cases)
 - ✅ Invalid inputs (malformed data)
 - ✅ Edge cases (boundary conditions)
@@ -516,39 +547,47 @@ The comprehensive test suite now includes **174 total tests** (100% coverage):
 
 ```
 Single-threaded Performance:
+
 - 1000 catalog lookups: <10ms (typically 2-5ms)
 - Complexity: O(1) per lookup (hash-based)
 - Memory: Constant per lookup
 
 Concurrent Performance:
+
 - 8 threads, 10,000 lookups each: >1000 lookups/ms
 - 16 threads, 1000 lookups each: 100% success rate
 - No contention or slowdown under concurrent load
 
 Stress Test Results:
+
 - 1000 packages in catalog: Fast lookups maintained
 - 50 named catalogs: No performance degradation
 - 16,000 concurrent operations: All succeed
 
 Fuzzing Results:
+
 - 0 crashes in 10,000+ random inputs
 - 0 memory leaks detected
 - 0 security vulnerabilities found
+
 ```
 
 ### Future Testing Considerations
 
 **Documentation Tests** - Consider adding:
+
 - Verify all examples in docs compile
 - Ensure example output matches reality
 - Test snippets from documentation
 
 **Regression Testing** - Consider adding:
+
 - Baseline performance metrics
 - Automated performance regression detection
 - Comparison with other package managers
 
 **Integration Testing** - Consider adding:
+
 - End-to-end workflow tests
 - CLI command integration
 - Real-world monorepo scenarios
@@ -556,7 +595,9 @@ Fuzzing Results:
 ### New Test Files Added
 
 #### Coverage Tests (25 tests) - `test/catalogs_coverage_test.zig`
+
 Achieves 100% code coverage by testing all previously untested paths:
+
 - All errdefer error handling paths
 - Empty catalog cleanup logic (lines 292-296)
 - Top-level and workspaces catalog merge scenarios
@@ -570,7 +611,9 @@ Achieves 100% code coverage by testing all previously untested paths:
 **Coverage Achieved**: 100% of all 549 lines in catalogs.zig
 
 #### Property-Based Tests (10 tests) - `test/catalogs_property_test.zig`
+
 Verifies invariants hold across 100+ random iterations:
+
 - Operations are idempotent (adding same package twice)
 - Resolution is deterministic (always returns same result)
 - hasPackage ⟺ (getVersion != null)
@@ -585,7 +628,9 @@ Verifies invariants hold across 100+ random iterations:
 **Properties Verified**: 10 mathematical invariants
 
 #### Regression Tests (35 tests) - `test/catalogs_regression_test.zig`
+
 Prevents regression of previously fixed bugs:
+
 - 9 bug fix regressions (memory leaks, parsing issues)
 - 6 API compatibility tests (type safety)
 - 5 behavior regressions (precedence, merging)
@@ -600,6 +645,7 @@ Prevents regression of previously fixed bugs:
 The new tests achieve complete coverage of all previously untested code paths:
 
 **Error Paths** (100% covered):
+
 - ✅ addVersion errdefer on name allocation
 - ✅ addVersion errdefer on version allocation
 - ✅ addNamedCatalog errdefer on name allocation
@@ -607,6 +653,7 @@ The new tests achieve complete coverage of all previously untested code paths:
 - ✅ parseNamedCatalogs errdefer on catalog creation
 
 **Conditional Branches** (100% covered):
+
 - ✅ workspaces is/isn't object
 - ✅ catalog is/isn't object
 - ✅ catalogs is/isn't object
@@ -616,6 +663,7 @@ The new tests achieve complete coverage of all previously untested code paths:
 - ✅ All isValidVersion branches
 
 **Edge Cases** (100% covered):
+
 - ✅ Empty catalog cleanup (lines 292-296)
 - ✅ setDefaultCatalog old value cleanup
 - ✅ Duplicate package replacement

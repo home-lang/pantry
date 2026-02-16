@@ -6,7 +6,7 @@
 
 - **Domain**: `pluralith.com`
 - **Name**: `pluralith`
-- **Homepage**: https://www.pluralith.com
+- **Homepage**: <https://www.pluralith.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pluralith.com/package.yml)
 
 ## Installation

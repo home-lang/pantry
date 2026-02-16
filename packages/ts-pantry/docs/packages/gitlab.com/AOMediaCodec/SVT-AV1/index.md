@@ -6,7 +6,7 @@
 
 - **Domain**: `gitlab.com/AOMediaCodec/SVT-AV1`
 - **Name**: `SvtAv1EncApp`
-- **Homepage**: https://gitlab.com/AOMediaCodec/SVT-AV1
+- **Homepage**: <https://gitlab.com/AOMediaCodec/SVT-AV1>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gitlab.com/AOMediaCodec/SVT-AV1/package.yml)
 
 ## Installation

@@ -29,10 +29,10 @@ Packages can declare executables in the `"bin"` field of their `package.json`. T
 }
 ```
 
-These executables are commonly plain JavaScript files marked with a [shebang line](https://en.wikipedia.org/wiki/Shebang_\(Unix\)) to indicate which program should be used to execute them.
+These executables are commonly plain JavaScript files marked with a [shebang line](https://en.wikipedia.org/wiki/Shebang*\(Unix\)) to indicate which program should be used to execute them.
 
 ```js
-#!/usr/bin/env node
+# !/usr/bin/env node
 
 console.log("Hello world!");
 ```
@@ -44,6 +44,7 @@ px my-cli
 ```
 
 As with `npx` and `bunx`, `px` will:
+
 1. Check for a locally installed package first
 2. Fall back to checking global installation
 3. Auto-install the package if not found
@@ -80,7 +81,7 @@ px <executable> [args...]
 
 ### Package Selection
 
-**--package `<pkg>`** or **-p `<pkg>`** - Run binary from specific package. Useful when binary name differs from package name:
+**--package `<pkg>`**or**-p `<pkg>`** - Run binary from specific package. Useful when binary name differs from package name:
 
 ```bash
 px -p renovate renovate-config-validator
@@ -106,11 +107,11 @@ px my-cli --pantry     # bad (passed to executable)
 
 **--silent** - Don't log anything
 
-**--verbose** or **-v** - Verbose logging
+**--verbose**or**-v** - Verbose logging
 
 ### General
 
-**--help** or **-h** - Print help menu
+**--help**or**-h** - Print help menu
 
 ***
 
@@ -196,9 +197,9 @@ Local Installation → Global Installation → Auto-Install → Execute
 By default, `px` respects shebangs in executable files:
 
 ```js
-#!/usr/bin/env node    // Executed with Node.js
-#!/usr/bin/env bun     // Executed with Bun
-#!/usr/bin/env pantry  // Executed with Pantry
+# !/usr/bin/env node    // Executed with Node.js
+# !/usr/bin/env bun     // Executed with Bun
+# !/usr/bin/env pantry  // Executed with Pantry
 ```
 
 Override with `--pantry` flag:
@@ -278,12 +279,14 @@ px --verbose cowsay "Installation works!"
 ### vs npx
 
 **`px` advantages:**
+
 - Faster package resolution
 - Better caching
 - Integrated with Pantry's package management
 - Consistent with Pantry CLI
 
 **Similar features:**
+
 - Auto-installation
 - Local-first resolution
 - Version specification support
@@ -291,11 +294,13 @@ px --verbose cowsay "Installation works!"
 ### vs bunx
 
 **Similar philosophy:**
+
 - Fast execution
 - Smart caching
 - Modern package management
 
 **`px` specific:**
+
 - Integrated with Pantry ecosystem
 - Consistent configuration
 - Unified cache management
@@ -327,7 +332,7 @@ px eslint --fix --ext .ts,.tsx src/
 px cowsay "Hello, Pantry!"
 
 # Environment variables
-NODE_ENV=production px webpack
+NODE*ENV=production px webpack
 ```
 
 ### Package Scopes
@@ -347,9 +352,9 @@ px @myorg/tool command
 
 ### Environment Variables
 
-- `PANTRY_CACHE_DIR` - Custom cache directory
-- `PANTRY_REGISTRY` - Custom npm registry
-- `PANTRY_LOG_LEVEL` - Logging verbosity
+- `PANTRY*CACHE*DIR` - Custom cache directory
+- `PANTRY*REGISTRY` - Custom npm registry
+- `PANTRY*LOG_LEVEL` - Logging verbosity
 
 ### pantry.json
 
@@ -375,6 +380,7 @@ Error: Package 'unknown-tool' not found
 ```
 
 **Solution:** Check package name spelling or try with full package path:
+
 ```bash
 px -p full-package-name binary-name
 ```
@@ -386,6 +392,7 @@ Error: Executable 'tool' not found in package
 ```
 
 **Solution:** Use `--package` to specify the correct package:
+
 ```bash
 px --package correct-package-name tool
 ```
@@ -405,6 +412,7 @@ Error: Cannot satisfy version constraint
 ```
 
 **Solution:** Specify exact version:
+
 ```bash
 px package@1.2.3 command
 ```

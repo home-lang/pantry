@@ -52,8 +52,10 @@ dependencies:
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
+
 ```
 
 ### Shorthand: services.infer: true
@@ -220,10 +222,10 @@ pantry service status postgres
 pantry automatically creates default configuration files for services:
 
 ```bash
-# Service configurations are stored in:
+# Service configurations are stored in
 ~/.local/share/pantry/services/config/
 
-# Examples:
+# Examples
 # ~/.local/share/pantry/services/config/redis.conf
 # ~/.local/share/pantry/services/config/nginx.conf
 # ~/.local/share/pantry/services/config/prometheus.yml
@@ -285,13 +287,19 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
+
   - job_name: 'prometheus'
+
     static_configs:
+
       - targets: ['localhost:9090']
 
   - job_name: 'node'
+
     static_configs:
+
       - targets: ['localhost:9100']
+
 ```
 
 ### Custom Configuration
@@ -393,7 +401,7 @@ pantry service start mysql
 Each service automatically creates a project-specific database:
 
 ```bash
-# For project "my-app", databases are created as:
+# For project "my-app", databases are created as
 # PostgreSQL: my_app
 # MySQL: my_app
 # With the configured username having full access
@@ -469,8 +477,8 @@ Different services use appropriate health check methods:
 - **PostgreSQL**: `pg_isready -p 5432`
 - **Redis**: `redis-cli ping`
 - **MySQL**: `mysqladmin ping`
-- **Nginx**: `curl -f http://localhost:8080/health`
-- **Prometheus**: `curl -f http://localhost:9090/-/healthy`
+- **Nginx**: `curl -f <http://localhost:8080/health>`
+- **Prometheus**: `curl -f <http://localhost:9090/-/healthy>`
 - **Vault**: `vault status` (exit code 2 when sealed but running)
 
 ### Health Check Configuration
@@ -495,10 +503,10 @@ healthCheck: {
 Services are managed using launchd plists:
 
 ```bash
-# Service files created at:
+# Service files created at
 ~/Library/LaunchAgents/com.pantry.{service}.plist
 
-# Manual launchd operations:
+# Manual launchd operations
 launchctl load ~/Library/LaunchAgents/com.pantry.postgres.plist
 launchctl start com.pantry.postgres
 ```
@@ -508,10 +516,10 @@ launchctl start com.pantry.postgres
 Services are managed using systemd user services:
 
 ```bash
-# Service files created at:
+# Service files created at
 ~/.config/systemd/user/pantry-{service}.service
 
-# Manual systemd operations:
+# Manual systemd operations
 systemctl --user start pantry-postgres
 systemctl --user enable pantry-postgres
 ```
@@ -527,10 +535,10 @@ Service management is currently not supported on Windows. Services can be run ma
 Each service gets its own isolated data directory:
 
 ```bash
-# Service data is stored in:
+# Service data is stored in
 ~/.local/share/pantry/services/{service}/data/
 
-# Examples:
+# Examples
 ~/.local/share/pantry/services/postgres/data/
 ~/.local/share/pantry/services/redis/data/
 ~/.local/share/pantry/services/mongodb/data/
@@ -541,10 +549,10 @@ Each service gets its own isolated data directory:
 Service logs are centrally managed:
 
 ```bash
-# Logs are stored in:
+# Logs are stored in
 ~/.local/share/pantry/logs/
 
-# Examples:
+# Examples
 ~/.local/share/pantry/logs/postgres.log
 ~/.local/share/pantry/logs/redis.log
 ~/.local/share/pantry/logs/nginx-error.log
@@ -784,12 +792,14 @@ Service management integrates well with project environments:
 ```yaml
 # deps.yaml
 dependencies:
+
   - node@22
   - postgresql@15
 
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
 
@@ -817,7 +827,7 @@ redis-cli -h localhost -p 6379
 # Start web development stack
 pantry service start postgres redis nginx
 
-# Services are now available at:
+# Services are now available at
 # PostgreSQL: localhost:5432
 # Redis: localhost:6379
 # Nginx: http://localhost:8080

@@ -6,7 +6,7 @@
 
 - **Domain**: `rust-lang.org/cargo`
 - **Name**: `cargo`
-- **Homepage**: https://doc.rust-lang.org/cargo
+- **Homepage**: <https://doc.rust-lang.org/cargo>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.org/cargo/package.yml)
 
 ## Installation

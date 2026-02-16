@@ -69,6 +69,7 @@ Gradually migrate projects to use pantry environments:
 mkdir new-project && cd new-project
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - yarn@1.22
 
@@ -144,13 +145,14 @@ find . -name ".nvmrc" -exec echo {} \; -exec cat {} \; -exec echo \;
 2. **Create project-specific environments:**
 
    ```bash
-   # For each project, replace .nvmrc with dependencies.yaml
+# For each project, replace .nvmrc with dependencies.yaml
    cd my-project
 
-   # If you have .nvmrc
+# If you have .nvmrc
    NODE_VERSION=$(cat .nvmrc)
    cat > dependencies.yaml << EOF
    dependencies:
+
      - node@${NODE_VERSION}
      - yarn@1.22  # or npm, depending on preference
 
@@ -176,10 +178,10 @@ find . -name ".nvmrc" -exec echo {} \; -exec cat {} \; -exec echo \;
 5. **Gradually remove nvm (optional):**
 
    ```bash
-   # After verifying all projects work
+# After verifying all projects work
    nvm deactivate
-   # Remove nvm lines from ~/.zshrc
-   # Uninstall nvm
+# Remove nvm lines from ~/.zshrc
+# Uninstall nvm
    ```
 
 ### Benefits Over nvm
@@ -202,6 +204,7 @@ pip install -r requirements.txt
 # pantry workflow
 cat > dependencies.yaml << EOF
 dependencies:
+
   - python@3.12
   - pip
 
@@ -223,6 +226,7 @@ poetry shell
 # pantry workflow
 cat > dependencies.yaml << EOF
 dependencies:
+
   - python@3.12
   - poetry@1.5
 
@@ -246,6 +250,7 @@ conda install numpy pandas
 # pantry workflow
 cat > dependencies.yaml << EOF
 dependencies:
+
   - python@3.12
   - pip
 
@@ -271,6 +276,7 @@ bundle install
 # pantry workflow
 cat > dependencies.yaml << EOF
 dependencies:
+
   - ruby@3.1.0
 
 env:
@@ -291,6 +297,7 @@ bundle install
 # pantry workflow
 cat > dependencies.yaml << EOF
 dependencies:
+
   - ruby@3.1.0
 
 env:
@@ -315,6 +322,7 @@ CMD ["npm", "start"]
 ```yaml
 # pantry dependencies.yaml
 dependencies:
+
   - node@22
   - yarn@1.22
 
@@ -335,6 +343,7 @@ RUN apt-get update && apt-get install -y \
 ```yaml
 # pantry equivalent
 dependencies:
+
   - node@22
   - python@3.12
   - postgresql@15
@@ -356,6 +365,7 @@ Begin with new projects or non-critical environments:
 mkdir test-pantry && cd test-pantry
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
 
 env:
@@ -476,6 +486,7 @@ npm start
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22.0.0
   - yarn@1.22
 
@@ -505,6 +516,7 @@ conda activate data-science
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - python@3.12
   - pip
 
@@ -533,4 +545,4 @@ pip install numpy pandas jupyter
 - **Examples**: Check the [Examples](./examples.md) page for migration patterns
 - **Troubleshooting**: See [Troubleshooting](./troubleshooting.md) for common issues
 
-Remember: Migration should be **gradual** and **reversible**. Take your time and verify each step works before proceeding to the next.
+Remember: Migration should be **gradual**and**reversible**. Take your time and verify each step works before proceeding to the next.

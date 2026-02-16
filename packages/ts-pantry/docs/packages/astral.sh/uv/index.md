@@ -6,7 +6,7 @@
 
 - **Domain**: `astral.sh/uv`
 - **Name**: `uv`
-- **Homepage**: https://docs.astral.sh/uv
+- **Homepage**: <https://docs.astral.sh/uv>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/astral.sh/uv/package.yml)
 
 ## Installation

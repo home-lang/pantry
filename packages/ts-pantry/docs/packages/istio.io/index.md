@@ -6,7 +6,7 @@
 
 - **Domain**: `istio.io`
 - **Name**: `istioctl`
-- **Homepage**: https://istio.io/
+- **Homepage**: <https://istio.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/istio.io/package.yml)
 
 ## Installation

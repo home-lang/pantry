@@ -6,7 +6,7 @@
 
 - **Domain**: `code.videolan.org/rist/librist`
 - **Name**: `rist`
-- **Homepage**: https://code.videolan.org/rist/
+- **Homepage**: <https://code.videolan.org/rist/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/code.videolan.org/rist/librist/package.yml)
 
 ## Installation

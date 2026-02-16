@@ -61,74 +61,100 @@ The main interface that represents a pkgx package.
 ```typescript
 interface PkgxPackage {
   /**
-   * The display name of the package
-   */
+
+   _ The display name of the package
+
+   _/
   name: string
 
   /**
-   * The domain name of the package (e.g., 'nodejs.org', 'bun.sh')
-   */
+
+   _ The domain name of the package (e.g., 'nodejs.org', 'bun.sh')
+
+   _/
   domain: string
 
   /**
-   * A brief description of the package
-   */
+
+   _ A brief description of the package
+
+   _/
   description: string
 
   /**
-   * URL to the package.yml file in the pkgx pantry repository
-   */
+
+   _ URL to the package.yml file in the pkgx pantry repository
+
+   _/
   packageYmlUrl?: string
 
   /**
-   * URL to the package's homepage
-   */
+
+   _ URL to the package's homepage
+
+   _/
   homepageUrl?: string
 
   /**
-   * URL to the package's GitHub repository
-   */
+
+   _ URL to the package's GitHub repository
+
+   _/
   githubUrl?: string
 
   /**
-   * The command to install the package using pkgx
-   */
+
+   _ The command to install the package using pkgx
+
+   _/
   installCommand: string
 
   /**
-   * List of executable programs provided by the package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of executable programs provided by the package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   programs: string[]
 
   /**
-   * List of companion packages that are often used with this package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of companion packages that are often used with this package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   companions: string[]
 
   /**
-   * List of dependencies required by this package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of dependencies required by this package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   dependencies: string[]
 
   /**
-   * List of available versions of the package
-   * From newest version to oldest.
-   * @see https://ts-pkgx.netlify.app/usage
-   */
+
+   _ List of available versions of the package
+   _ From newest version to oldest.
+   _ @see https://ts-pkgx.netlify.app/usage
+
+   _/
   versions: string[]
 
   /**
-   * List of alternative names or aliases for this package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of alternative names or aliases for this package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   aliases?: string[]
 
   /**
-   * The full path to the package, including any nested paths (e.g. 'agwa.name/git-crypt')
-   */
+
+   _ The full path to the package, including any nested paths (e.g. 'agwa.name/git-crypt')
+
+   _/
   fullPath?: string
 }
 ```
@@ -154,12 +180,13 @@ interface Pantry {
 ```
 
 Each property in the Pantry interface includes comprehensive JSDoc documentation with:
-- Package description and purpose
-- List of programs provided
-- Installation command
-- Links to homepage, GitHub, and package documentation
-- Version information with "From newest version to oldest" description
-- Links to our usage documentation at https://ts-pkgx.netlify.app/usage
+
+_ Package description and purpose
+_ List of programs provided
+_ Installation command
+_ Links to homepage, GitHub, and package documentation
+_ Version information with "From newest version to oldest" description
+_ Links to our usage documentation at <https://ts-pkgx.netlify.app/usage>
 
 ### PackageFetchOptions
 
@@ -168,55 +195,73 @@ Options for package fetching operations.
 ```typescript
 interface PackageFetchOptions {
   /**
-   * Timeout in milliseconds for fetching operations
-   * @default 20000
+
+   _ Timeout in milliseconds for fetching operations
+   _ @default 20000
+
    */
   timeout?: number
 
   /**
-   * Directory to save package data
-   * @default 'src/packages'
+
+   _ Directory to save package data
+   _ @default 'src/packages'
+
    */
   outputDir?: string
 
   /**
-   * Directory to cache package data
-   * @default '.cache/packages'
+
+   _ Directory to cache package data
+   _ @default '.cache/packages'
+
    */
   cacheDir?: string
 
   /**
-   * Enable or disable caching
-   * @default true
+
+   _ Enable or disable caching
+   _ @default true
+
    */
   cache?: boolean
 
   /**
-   * Cache expiration time in minutes
-   * @default 1440
+
+   _ Cache expiration time in minutes
+   _ @default 1440
+
    */
   cacheExpirationMinutes?: number
 
   /**
-   * Enable debug mode to save screenshots and additional info
-   * @default false
+
+   _ Enable debug mode to save screenshots and additional info
+   _ @default false
+
    */
   debug?: boolean
 
   /**
-   * Limit the number of packages to fetch
-   */
+
+   _ Limit the number of packages to fetch
+
+   _/
   limit?: number
 
   /**
-   * Number of packages to fetch concurrently
-   * @default 8
+
+   _ Number of packages to fetch concurrently
+   _ @default 8
+
    */
   concurrency?: number
 
   /**
-   * Output JSON for CI integration
-   * @default false
+
+   _ Output JSON for CI integration
+   _ @default false
+
    */
   outputJson?: boolean
 }
@@ -229,6 +274,7 @@ interface PackageFetchOptions {
 ts-pkgx uses intelligent alias-based naming for package variables and types:
 
 1. **Packages with aliases use the primary alias for naming:**
+
    ```typescript
    // For bun.sh (alias: 'bun')
    export const bunPackage = { ... }
@@ -244,6 +290,7 @@ ts-pkgx uses intelligent alias-based naming for package variables and types:
    ```
 
 2. **Packages without aliases use domain-based naming:**
+
    ```typescript
    // For example.com (no alias)
    export const examplecomPackage = { ... }
@@ -256,41 +303,61 @@ Every generated package includes rich JSDoc documentation:
 
 ```typescript
 /**
- * Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
- *
+
+ _ Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
+ _
+
  * **Programs:** bun
- *
- * **Install:** `pkgx bun.sh`
- *
- * **Homepage:** https://bun.sh
- *
- * **GitHub:** https://github.com/oven-sh/bun
- *
- * @see https://ts-pkgx.netlify.app/packages/bunsh
+
+ _
+
+ _ **Install:** `pkgx bun.sh`
+
+ _
+
+ _ **Homepage:** https://bun.sh
+
+ _
+
+ _ **GitHub:** https://github.com/oven-sh/bun
+
+ _
+
+ _ @see https://ts-pkgx.netlify.app/packages/bunsh
+
  */
 export const bunPackage = {
   name: 'bun',
   domain: 'bun.sh',
   description: 'Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one',
   /**
-   * List of executable programs provided by this package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of executable programs provided by this package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   programs: ['bun'] as const,
   /**
-   * List of available versions of this package
-   * From newest version to oldest.
-   * @see https://ts-pkgx.netlify.app/usage
-   */
+
+   _ List of available versions of this package
+   _ From newest version to oldest.
+   _ @see https://ts-pkgx.netlify.app/usage
+
+   _/
   versions: ['1.2.15', '1.2.14',] as const,
   /**
-   * List of dependencies required by this package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of dependencies required by this package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   dependencies: [] as const,
   /**
-   * List of companion packages that are often used with this package
-   * @see https://ts-pkgx.netlify.app/usage
+
+   _ List of companion packages that are often used with this package
+   _ @see https://ts-pkgx.netlify.app/usage
+
    */
   companions: [] as const,
   // ... other properties with JSDoc
@@ -302,18 +369,21 @@ export const bunPackage = {
 The generated packages provide excellent TypeScript intellisense:
 
 1. **Hovering over `pantry.bun`** shows:
-   - Package description
-   - Programs provided
-   - Installation command
-   - Links to documentation
+
+   _ Package description
+   _ Programs provided
+   _ Installation command
+   _ Links to documentation
 
 2. **Hovering over `pantry.bun.versions`** shows:
-   - "From newest version to oldest."
-   - Link to usage documentation
+
+   _ "From newest version to oldest."
+   _ Link to usage documentation
 
 3. **Hovering over `pantry.bun.programs`** shows:
-   - "List of executable programs provided by this package"
-   - Link to usage documentation
+
+   _ "List of executable programs provided by this package"
+   _ Link to usage documentation
 
 ## Dependency Resolution
 
@@ -363,12 +433,12 @@ async function resolveDependencyFile(
 
 #### Parameters
 
-- `filePath`: Path to the dependency file (deps.yaml, pkgx.yaml, etc.)
-- `options`: Configuration options for resolution
+_ `filePath`: Path to the dependency file (deps.yaml, pkgx.yaml, etc.)
+_ `options`: Configuration options for resolution
 
 #### Returns
 
-- `DependencyResolutionResult` with all resolved dependencies, conflicts, and install information
+_ `DependencyResolutionResult` with all resolved dependencies, conflicts, and install information
 
 #### Example
 
@@ -396,11 +466,11 @@ function findDependencyFiles(directory: string): string[]
 
 #### Parameters
 
-- `directory`: Directory to search for dependency files
+_ `directory`: Directory to search for dependency files
 
 #### Returns
 
-- Array of paths to found dependency files
+_ Array of paths to found dependency files
 
 #### Example
 
@@ -422,12 +492,12 @@ async function getAvailableVersionsForPackage(
 
 #### Parameters
 
-- `packageName`: Name of the package
-- `packagesDir`: Directory containing generated package files
+_ `packageName`: Name of the package
+_ `packagesDir`: Directory containing generated package files
 
 #### Returns
 
-- Array of available versions for the package
+_ Array of available versions for the package
 
 #### Example
 
@@ -449,12 +519,12 @@ function resolveVersionConstraint(
 
 #### Parameters
 
-- `constraint`: Version constraint (e.g., '^1.2.3', '~1.0.0', 'latest')
-- `availableVersions`: Array of available versions
+_ `constraint`: Version constraint (e.g., '^1.2.3', '~1.0.0', 'latest')
+_ `availableVersions`: Array of available versions
 
 #### Returns
 
-- Best matching version or null if no match found
+_ Best matching version or null if no match found
 
 #### Example
 
@@ -485,12 +555,12 @@ async function fetchPantryPackageWithMetadata(
 
 #### Parameters
 
-- `packageName`: The name of the package to fetch (e.g., 'node', 'bun', 'agwa.name/git-crypt')
-- `options`: Optional configuration object
+_ `packageName`: The name of the package to fetch (e.g., 'node', 'bun', 'agwa.name/git-crypt')
+_ `options`: Optional configuration object
 
 #### Returns
 
-- Object with `packageInfo` property containing the fetched package information, or `null` if not found
+_ Object with `packageInfo` property containing the fetched package information, or `null` if not found
 
 #### Example
 
@@ -525,13 +595,13 @@ function saveToCacheAndOutput(
 
 #### Parameters
 
-- `packageName`: The name of the package
-- `packageInfo`: The package information to save
-- `options`: Configuration for cache and output directories
+_ `packageName`: The name of the package
+_ `packageInfo`: The package information to save
+_ `options`: Configuration for cache and output directories
 
 #### Returns
 
-- Object with `outputPath` property containing the path to the saved TypeScript file
+_ Object with `outputPath` property containing the path to the saved TypeScript file
 
 #### Example
 
@@ -557,11 +627,11 @@ async function fetchAndSaveAllPackages(
 
 #### Parameters
 
-- `options`: Optional configuration
+_ `options`: Optional configuration
 
 #### Returns
 
-- Array of domain names of the packages that were successfully fetched and saved
+_ Array of domain names of the packages that were successfully fetched and saved
 
 #### Example
 
@@ -590,13 +660,13 @@ function savePackageAsTypeScript(
 
 #### Parameters
 
-- `outputDir`: Directory to save the TypeScript file
-- `packageName`: Name of the package
-- `packageInfo`: Package information
+_ `outputDir`: Directory to save the TypeScript file
+_ `packageName`: Name of the package
+_ `packageInfo`: Package information
 
 #### Returns
 
-- Path to the saved TypeScript file
+_ Path to the saved TypeScript file
 
 #### Example
 
@@ -621,11 +691,11 @@ function convertDomainToVarName(domain: string): string
 
 #### Parameters
 
-- `domain`: Domain name (e.g., 'bun.sh', 'agwa.name/git-crypt')
+_ `domain`: Domain name (e.g., 'bun.sh', 'agwa.name/git-crypt')
 
 #### Returns
 
-- Safe TypeScript variable name (e.g., 'bunsh', 'agwanamegitcrypt')
+_ Safe TypeScript variable name (e.g., 'bunsh', 'agwanamegitcrypt')
 
 #### Example
 
@@ -644,11 +714,11 @@ function convertDomainToFileName(domain: string): string
 
 #### Parameters
 
-- `domain`: Domain name or path
+_ `domain`: Domain name or path
 
 #### Returns
 
-- Filename-safe version (e.g., 'bun.sh' -> 'bunsh', 'agwa.name/git-crypt' -> 'agwaname-gitcrypt')
+_ Filename-safe version (e.g., 'bun.sh' -> 'bunsh', 'agwa.name/git-crypt' -> 'agwaname-gitcrypt')
 
 #### Example
 
@@ -667,11 +737,11 @@ function guessOriginalDomain(fileName: string): string
 
 #### Parameters
 
-- `fileName`: The filename (without extension)
+_ `fileName`: The filename (without extension)
 
 #### Returns
 
-- Best guess at the original domain
+_ Best guess at the original domain
 
 #### Example
 
@@ -691,14 +761,15 @@ async function generateIndex(): Promise<string>
 ```
 
 The generated index includes:
-- Comprehensive JSDoc documentation for each package property
-- Alias properties that point to the same package objects
-- Type-safe property names (quoted when necessary)
-- Links to package documentation pages
+
+_ Comprehensive JSDoc documentation for each package property
+_ Alias properties that point to the same package objects
+_ Type-safe property names (quoted when necessary)
+_ Links to package documentation pages
 
 #### Returns
 
-- Path to the generated index file
+_ Path to the generated index file
 
 #### Example
 
@@ -717,7 +788,7 @@ async function generateAliases(): Promise<string>
 
 #### Returns
 
-- Path to the generated aliases file
+_ Path to the generated aliases file
 
 #### Example
 
@@ -736,7 +807,7 @@ async function generateDocs(outputDir: string = 'docs'): Promise<void>
 
 #### Parameters
 
-- `outputDir`: Directory to save documentation files
+_ `outputDir`: Directory to save documentation files
 
 #### Example
 
@@ -755,11 +826,11 @@ function getPackage(name: string): PkgxPackage | undefined
 
 #### Parameters
 
-- `name`: The name of the package to lookup (can be a domain or an alias)
+_ `name`: The name of the package to lookup (can be a domain or an alias)
 
 #### Returns
 
-- The package if found, or undefined if not found
+_ The package if found, or undefined if not found
 
 #### Example
 
@@ -985,8 +1056,9 @@ async function resolveDependencies(
 
 #### Parameters
 
-- `filePath`: Path to dependency file (deps.yaml, pkgx.yaml, etc.)
-- `options`: Optional resolution configuration
+_ `filePath`: Path to dependency file (deps.yaml, pkgx.yaml, etc.)
+
+* `options`: Optional resolution configuration
 
 #### Example
 

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/cookiecutter/cookiecutter`
 - **Name**: `cookiecutter`
-- **Homepage**: https://pypi.org/project/cookiecutter/
+- **Homepage**: <https://pypi.org/project/cookiecutter/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/cookiecutter/cookiecutter/package.yml)
 
 ## Installation

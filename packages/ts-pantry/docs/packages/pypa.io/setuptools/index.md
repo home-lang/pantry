@@ -6,7 +6,7 @@
 
 - **Domain**: `pypa.io/setuptools`
 - **Name**: `setuptools`
-- **Homepage**: https://pypi.org/project/setuptools/
+- **Homepage**: <https://pypi.org/project/setuptools/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pypa.io/setuptools/package.yml)
 
 ## Installation

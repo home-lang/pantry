@@ -6,7 +6,7 @@
 
 - **Domain**: `bitwarden.com`
 - **Name**: `bw`
-- **Homepage**: https://bitwarden.com/
+- **Homepage**: <https://bitwarden.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bitwarden.com/package.yml)
 
 ## Installation

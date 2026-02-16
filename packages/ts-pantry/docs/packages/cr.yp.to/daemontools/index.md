@@ -6,7 +6,7 @@
 
 - **Domain**: `cr.yp.to/daemontools`
 - **Name**: `daemontools`
-- **Homepage**: https://cr.yp.to/daemontools.html
+- **Homepage**: <https://cr.yp.to/daemontools.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cr.yp.to/daemontools/package.yml)
 
 ## Installation

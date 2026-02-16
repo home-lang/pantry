@@ -97,7 +97,7 @@ If you're having issues with PATH management:
 1. **Manual PATH addition**:
 
    ```bash
-   # For Zsh/Bash
+# For Zsh/Bash
    echo 'export PATH="~/.local/bin:$PATH"' >> ~/.zshrc  # or ~/.bashrc
    source ~/.zshrc  # or ~/.bashrc
    ```
@@ -112,7 +112,7 @@ If you're having issues with PATH management:
 
    ```bash
    ls -la ~/.local/bin/node  # replace 'node' with your shim
-   # Should show -rwxr-xr-x (executable)
+# Should show -rwxr-xr-x (executable)
    ```
 
 4. **Restart your terminal** - Some changes require a terminal restart to take effect.

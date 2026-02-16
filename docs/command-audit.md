@@ -196,7 +196,7 @@ $ cat audit-report.json | jq '.summary'
 Use in continuous integration to fail builds with vulnerabilities:
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # .github/workflows/security.yml
 
 pantry audit --audit-level=high
@@ -333,9 +333,11 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v3
       - run: pantry install
       - run: pantry audit --audit-level=moderate
+
 ```
 
 ### 5. False Positive Management
@@ -344,7 +346,7 @@ Ignore assessed vulnerabilities that don't affect your code:
 
 ```bash
 # Create audit script with known exceptions
-#!/bin/bash
+# !/bin/bash
 pantry audit \
   --ignore CVE-2022-25883 \
   --ignore CVE-2023-26136 \

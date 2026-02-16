@@ -6,7 +6,7 @@
 
 ts-pkgx is a specialized library that provides tools for fetching, storing, and accessing package data from [pkgx.dev](https://pkgx.dev). It offers both programmatic APIs and CLI tools for developers who want to work with pkgx packages in their TypeScript applications.
 
-## What is pkgx?
+## What is pkgx
 
 [pkgx.dev](https://pkgx.dev) is a package manager that simplifies the installation of development tools and dependencies. It provides a central repository of packages that can be easily installed and managed.
 
@@ -26,7 +26,7 @@ ts-pkgx is a specialized library that provides tools for fetching, storing, and 
 - **Compiled Binaries**: Use pre-compiled binaries for various platforms
 - **Advanced Error Handling**: Robust error handling with automatic retries
 
-## Why ts-pkgx?
+## Why ts-pkgx
 
 ts-pkgx simplifies the process of working with pkgx.dev package data in TypeScript projects. Instead of manually scraping the pkgx.dev website or trying to parse package information yourself, ts-pkgx provides a clean, type-safe interface for accessing this data.
 

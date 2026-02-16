@@ -53,7 +53,7 @@ Add `publishConfig` to your `package.json` or `pantry.json`:
 
 **Configuration Options:**
 
-- `registry`: Registry URL (default: `https://registry.npmjs.org`)
+- `registry`: Registry URL (default: `<https://registry.npmjs.org>`)
 - `access`: Package access level - `"public"` or `"restricted"` (for scoped packages)
 - `tag`: Distribution tag (default: `"latest"`)
 
@@ -72,19 +72,23 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # CRITICAL: Required for OIDC authentication
+# CRITICAL: Required for OIDC authentication
     permissions:
       id-token: write  # Required to request OIDC token
       contents: read   # Required to checkout code
 
     steps:
+
       - name: Checkout code
+
         uses: actions/checkout@v4
 
       - name: Setup Pantry
+
         run: curl -fsSL https://pantry.sh/install.sh | bash
 
       - name: Publish to npm
+
         run: pantry publish
 ```
 
@@ -115,7 +119,7 @@ Pantry determines the registry to use in this order:
 
 1. **CLI flag**: `--registry` option takes highest priority
 2. **publishConfig**: Registry from `package.json` or `pantry.json`
-3. **Default**: `https://registry.npmjs.org`
+3. **Default**: `<https://registry.npmjs.org>`
 
 ### Examples
 
@@ -155,10 +159,13 @@ pantry publish
 #### Publish to multiple registries
 
 ```yaml
+
 - name: Publish to npm
+
   run: pantry publish --registry https://registry.npmjs.org
 
 - name: Publish to GitHub Packages
+
   run: pantry publish --registry https://npm.pkg.github.com
 ```
 
@@ -190,6 +197,7 @@ Or on the npm website under "Provenance" section of your package page.
 **Cause**: OIDC provider not detected or token not available
 
 **Solutions**:
+
 - Ensure you're running in a supported CI/CD environment (GitHub Actions, GitLab CI)
 - Verify `id-token: write` permission is set in your workflow
 - Check that environment variables are available:
@@ -201,6 +209,7 @@ Or on the npm website under "Provenance" section of your package page.
 **Cause**: OIDC claims don't match the trusted publisher configuration on npm
 
 **Solutions**:
+
 - Verify the workflow file path matches exactly (e.g., `.github/workflows/publish.yml`)
 - Check that the repository owner/name match your npm trusted publisher config
 - Ensure you're publishing from the correct branch if you specified allowed refs
@@ -211,11 +220,14 @@ Or on the npm website under "Provenance" section of your package page.
 **Cause**: This is the first time publishing the package
 
 **Solutions**:
+
 - You cannot use OIDC for the first publish of a package
 - First publish must use traditional npm token authentication:
+
   ```bash
   NPM_TOKEN=your_token pantry publish --no-oidc
   ```
+
 - After first publish, configure trusted publisher on npm
 - Subsequent publishes can use OIDC
 
@@ -260,6 +272,7 @@ jobs:
 ```
 
 Configure environment protection rules:
+
 - Required reviewers
 - Wait timer
 - Branch restrictions
@@ -269,8 +282,8 @@ Configure environment protection rules:
 When configuring trusted publisher on npm, specify allowed refs:
 
 - `refs/heads/main` - Only from main branch
-- `refs/tags/v*` - Only from version tags
-- `refs/heads/release/*` - Only from release branches
+- `refs/tags/v_` - Only from version tags
+- `refs/heads/release/_` - Only from release branches
 
 ### 3. Use Workflow Environments
 
@@ -327,12 +340,16 @@ publish:
   stage: deploy
   image: alpine:latest
   script:
+
     - apk add --no-cache curl bash
     - curl -fsSL https://pantry.sh/install.sh | bash
     - pantry publish
+
   only:
+
     - tags
-  # GitLab automatically provides CI_JOB_JWT_V2
+
+# GitLab automatically provides CI_JOB_JWT_V2
 ```
 
 ## Migration from Token Authentication
@@ -340,7 +357,9 @@ publish:
 ### Before (using NPM_TOKEN)
 
 ```yaml
+
 - name: Publish
+
   run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -354,9 +373,11 @@ permissions:
   contents: read
 
 steps:
+
   - name: Publish
+
     run: pantry publish
-    # No secrets needed!
+# No secrets needed
 ```
 
 ## Reference

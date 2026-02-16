@@ -10,7 +10,7 @@
 
 > A modern dependency manager for your system and your projects. Effortlessly manage development tools, runtime environments, and project dependencies with automatic environment isolation. _Think Homebrew meets project-aware dependency management._
 
-## What is pantry?
+## What is pantry
 
 pantry is a comprehensive dependency management solution that bridges the gap between system-wide package management and project-specific environments. Whether you're setting up a new development machine, managing system tools, or working on projects with specific dependency requirements, pantry provides a unified interface for all your dependency needs.
 
@@ -67,7 +67,7 @@ pantry transforms how you manage dependencies across your entire development wor
 - 🔄 **Auto-Updates** — Configure automatic updates for your dependency management tools
 - 🎛️ **Flexible Configuration** — Customize behavior through config files or command-line options
 
-## Why pantry?
+## Why pantry
 
 Modern development requires managing dependencies at multiple levels - from system tools to project-specific requirements. Traditional approaches fall short:
 
@@ -110,7 +110,7 @@ bun scripts/get-php-versions.ts
 # Check if there are new PHP versions available
 bun scripts/check-php-updates.ts
 
-# These scripts:
+# These scripts
 # - Fetch latest PHP versions dynamically
 # - Generates configuration descriptions
 # - Check if rebuilds are needed
@@ -199,6 +199,7 @@ pantry automatically manages project-specific dependencies:
 ```bash
 # Create a project with dependencies
 echo "dependencies:
+
   - node@22
   - typescript@5.7
   - bun@1.2" > dependencies.yaml
@@ -311,14 +312,17 @@ Add services to your dependency file to auto-start when the project environment 
 ```yaml
 # deps.yaml
 dependencies:
+
   - node@22
   - postgresql@15
 
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
+
 ```
 
 #### Database Configuration
@@ -427,7 +431,9 @@ See [Configuration Guide](https://github.com/stacksjs/pantry/tree/main/docs/conf
 Integrate pantry into your CI/CD workflows:
 
 ```yaml
+
 - name: Setup Development Environment
+
   uses: stacksjs/pantry-installer@v1
   with:
     packages: node@22 typescript@5.7 bun@1.2.14

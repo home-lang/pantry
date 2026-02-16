@@ -15,6 +15,7 @@ Currently `--filter` is supported by `pantry install` and `pantry run`, and can 
 Name patterns select packages based on the package name, as specified in `pantry.json` or `package.json`. For example, if you have packages `pkg-a`, `pkg-b` and `other`, you can match all packages with `*`, only `pkg-a` and `pkg-b` with `pkg*`, and a specific package by providing the full name of the package.
 
 **Examples:**
+
 ```bash
 # Match all packages starting with "pkg-"
 pantry install --filter 'pkg-*'
@@ -31,6 +32,7 @@ pantry install --filter '@myorg/*'
 Path patterns are specified by starting the pattern with `./`, and will select all packages in directories that match the pattern. For example, to match all packages in subdirectories of `packages`, you can use `--filter './packages/**'`. To match a package located in `packages/foo`, use `--filter ./packages/foo`.
 
 **Examples:**
+
 ```bash
 # Match all packages in packages/ directory
 pantry install --filter './packages/*'
@@ -47,6 +49,7 @@ pantry install --filter './apps/**'
 You can exclude packages by prefixing the pattern with `!`. Negations are processed after inclusions, so if a package matches both an inclusion and exclusion pattern, it will be excluded.
 
 **Examples:**
+
 ```bash
 # Install all packages except pkg-c
 pantry install --filter '*' --filter '!pkg-c'
@@ -60,6 +63,7 @@ pantry install --filter './packages/*' --filter '!./packages/excluded'
 The special pattern `./` matches the root package (the workspace root's `pantry.json` or `package.json`).
 
 **Examples:**
+
 ```bash
 # Install only the root package dependencies
 pantry install --filter './'
@@ -146,11 +150,11 @@ Running script 'dev' in 2 package(s):
 Filters respect your workspace configuration: If you have a `pantry.json` file that specifies which packages are part of the workspace, `--filter` will be restricted to only these packages. Also, in a workspace you can use `--filter` to run scripts in packages that are located anywhere in the workspace:
 
 ```bash
-# Packages structure:
+# Packages structure
 # src/foo
 # src/bar
 
-# In src/bar: runs myscript in src/foo, no need to cd!
+# In src/bar: runs myscript in src/foo, no need to cd
 pantry run myscript --filter 'foo'
 ```
 
@@ -164,6 +168,7 @@ When running scripts with `--filter`, pantry will:
 4. Show a summary of succeeded, failed, and skipped packages
 
 **Example output:**
+
 ```
 Running script 'build' in 3 package(s):
   • pkg-a
@@ -194,12 +199,14 @@ Pantry automatically analyzes dependencies between workspace members and execute
 **Example:**
 
 Given a workspace with:
+
 - `shared-utils` (no dependencies)
 - `api` (depends on `shared-utils`)
 - `frontend` (depends on `shared-utils`)
 - `e2e-tests` (depends on `api` and `frontend`)
 
 Running `pantry run build --filter '*'` will execute in this order:
+
 1. `shared-utils` (first, no dependencies)
 2. `api` and `frontend` (can run in parallel, both depend only on `shared-utils`)
 3. `e2e-tests` (last, depends on everything else)
@@ -294,6 +301,7 @@ pantry run test --filter 'regex:v\\d+\\.\\d+\\.\\d+'
 ```
 
 **Supported regex features:**
+
 - `.` - Matches any character
 - `*` - Matches zero or more of the preceding character
 - `+` - Matches one or more of the preceding character
@@ -304,7 +312,7 @@ pantry run test --filter 'regex:v\\d+\\.\\d+\\.\\d+'
 - `^` - Matches start of string
 - `$` - Matches end of string
 - `\\d` - Matches any digit
-- `\\w` - Matches any word character (alphanumeric + _)
+- `\\w` - Matches any word character (alphanumeric + *)
 - `\\s` - Matches any whitespace
 
 **Examples:**
@@ -317,6 +325,7 @@ pantry run test --filter 'regex:v\\d+\\.\\d+\\.\\d+'
 | `regex:\\w+-v\\d+` | `api-v1`, `service-v2` |
 
 **Combining with other patterns:**
+
 ```bash
 # Use regex with negation
 pantry run test --filter 'regex:^api-' --filter '!api-legacy'
@@ -375,6 +384,7 @@ pantry run test --filter changed-critical --changed origin/main
 ```
 
 **Output with named filter:**
+
 ```
 Using named filter 'api'
   All API and service packages
@@ -421,23 +431,26 @@ Filters can extend other filters, allowing you to build complex filter hierarchi
 ```
 
 **How it works:**
+
 - Child filters inherit all patterns from parent filters
 - Patterns are applied in order: parent first, then child
 - Multiple levels of inheritance are supported
 - Circular inheritance is detected and reported as an error
 
 **Example usage:**
+
 ```bash
 # Use the extended filter
 pantry run build --filter frontend-critical
 
-# Output shows inheritance chain:
+# Output shows inheritance chain
 # Using named filter 'frontend-critical'
-#   Production-ready frontend packages
-#   (extends 'frontend')
+# Production-ready frontend packages
+# (extends 'frontend')
 ```
 
 **Benefits:**
+
 - **DRY**: Avoid repeating common patterns
 - **Composition**: Build complex filters from simpler ones
 - **Maintainability**: Update base filters and all children inherit changes
@@ -609,6 +622,7 @@ Error: No workspace members match the filter pattern
 ```
 
 **Solutions:**
+
 - Verify your pattern syntax
 - Check that you're in a workspace directory
 - List all workspace members to see available packages
@@ -627,6 +641,7 @@ This is normal and expected. Pantry will skip packages that don't have the reque
 ### Wrong packages selected
 
 If the wrong packages are being selected:
+
 - Remember that name patterns match against the package name (from `pantry.json`/`package.json`), not the directory name
 - Use path patterns (`./packages/foo`) if you want to match by directory structure
 - Check for accidental shell expansion - always quote your patterns
@@ -651,12 +666,14 @@ pantry run build --filter '*' --parallel
 ```
 
 **How it works:**
+
 - Packages are grouped by dependency level
 - Each group runs in parallel using threads
 - Dependencies are respected (level 0 before level 1)
 - Shows timing information for each package
 
 **Example output:**
+
 ```
 Running script 'build' in 4 package(s) (3 parallel groups):
   • shared-utils
@@ -691,12 +708,14 @@ pantry run test --filter 'pkg-*' --changed HEAD
 ```
 
 **Detection strategy:**
+
 - Uses `git diff` to find changed files
 - Includes uncommitted changes
 - Maps changed files to workspace packages
 - Respects dependency order
 
 **Example output:**
+
 ```
 Detected 2 changed package(s) since HEAD
 
@@ -711,6 +730,7 @@ Running script 'test' in 2 package(s):
 ```
 
 **Use cases:**
+
 - CI/CD: Only test what changed
 - Incremental builds: Rebuild only affected packages
 - Fast iteration: Skip unchanged packages
@@ -734,13 +754,15 @@ pantry run dev --filter './packages/frontend-*' --watch
 ```
 
 **How it works:**
+
 - Polls filesystem for changes every 500ms
 - Debounces multiple changes (waits 100ms after last change)
-- Automatically ignores common directories (node_modules, .git, etc.)
+- Automatically ignores common directories (node*modules, .git, etc.)
 - Shows which files changed and in which packages
 - Re-runs the script in all filtered packages
 
 **Example output:**
+
 ```
 Running script 'build' in 2 package(s):
   • api
@@ -772,20 +794,23 @@ Re-running script 'build' in 2 affected package(s)...
 ```
 
 **Ignored patterns (by default):**
-- `node_modules`
+
+- `node*modules`
 - `.git`
 - `pantry`
 - `.zig-cache`
 - `zig-out`
-- `.DS_Store`
+- `.DS*Store`
 
 **Best practices:**
+
 - Use with `--filter` to watch specific packages
 - Combine with `--parallel` for faster re-runs
 - Use `--sequential` if you need deterministic output
 - Watch mode respects dependency ordering
 
 **Use cases:**
+
 - Development: Auto-rebuild on file changes
 - Testing: Continuous test running
 - Hot reload: Re-run dev servers

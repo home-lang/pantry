@@ -6,7 +6,7 @@
 
 - **Domain**: `kubernetes.io/minikube`
 - **Name**: `minikube`
-- **Homepage**: https://minikube.sigs.k8s.io/
+- **Homepage**: <https://minikube.sigs.k8s.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubernetes.io/minikube/package.yml)
 
 ## Installation

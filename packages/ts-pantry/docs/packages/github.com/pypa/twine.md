@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/pypa/twine`
 - **Name**: `twine`
-- **Homepage**: https://twine.readthedocs.io/
+- **Homepage**: <https://twine.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/pypa/twine/package.yml)
 
 ## Installation

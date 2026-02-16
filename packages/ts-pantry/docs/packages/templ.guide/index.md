@@ -6,7 +6,7 @@
 
 - **Domain**: `templ.guide`
 - **Name**: `templ`
-- **Homepage**: https://templ.guide
+- **Homepage**: <https://templ.guide>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/templ.guide/package.yml)
 
 ## Installation

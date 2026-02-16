@@ -6,7 +6,7 @@
 
 - **Domain**: `thoughtworks.github.io/talisman`
 - **Name**: `talisman`
-- **Homepage**: https://thoughtworks.github.io/talisman/
+- **Homepage**: <https://thoughtworks.github.io/talisman/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/thoughtworks.github.io/talisman/package.yml)
 
 ## Installation

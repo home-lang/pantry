@@ -6,7 +6,7 @@
 
 - **Domain**: `digitalocean.com/doctl`
 - **Name**: `doctl`
-- **Homepage**: https://docs.digitalocean.com/reference/doctl/
+- **Homepage**: <https://docs.digitalocean.com/reference/doctl/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/digitalocean.com/doctl/package.yml)
 
 ## Installation

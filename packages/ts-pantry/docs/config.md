@@ -106,49 +106,65 @@ The `fetchPantryPackage` and `fetchAndSaveAllPackages` functions accept an optio
 ```typescript
 interface PackageFetchOptions {
   /**
+
    * Timeout in milliseconds for fetching operations
    * @default 30000
+
    */
   timeout?: number
 
   /**
+
    * Directory to save package data
    * @default 'packages'
+
    */
   outputDir?: string
 
   /**
+
    * Directory to cache package data
    * @default '.cache/packages'
+
    */
   cacheDir?: string
 
   /**
+
    * Enable debug mode to save screenshots and additional info
    * @default false
+
    */
   debug?: boolean
 
   /**
+
    * Whether to use cached data if available and not expired
    * @default true
+
    */
   cache?: boolean
 
   /**
+
    * Cache expiration time in minutes
    * @default 1440 (24 hours)
+
    */
   cacheExpirationMinutes?: number
 
   /**
+
    * Limit the number of packages to fetch
+
    */
   limit?: number
 
   /**
+
    * Number of packages to fetch concurrently
    * @default 10
+
    */
   concurrency?: number
 }
@@ -156,11 +172,11 @@ interface PackageFetchOptions {
 
 ## Package Aliases
 
-ts-pkgx maintains a map of common package aliases in the `PACKAGE_ALIASES` object. This is used to resolve package names to their full domain names.
+ts-pkgx maintains a map of common package aliases in the `PACKAGE*ALIASES` object. This is used to resolve package names to their full domain names.
 
 ```typescript
 // Example aliases
-const PACKAGE_ALIASES: Record<string, string> = {
+const PACKAGE*ALIASES: Record<string, string> = {
   node: 'nodejs.org',
   python: 'python.org',
   go: 'go.dev',
@@ -189,7 +205,7 @@ When using GitHub API for fetching package information, you can use authenticati
 
 ```bash
 # Set environment variable before running commands
-export GITHUB_TOKEN=your_github_personal_access_token
+export GITHUB*TOKEN=your*github*personal*access_token
 bun run pkgx:fetch --all
 ```
 

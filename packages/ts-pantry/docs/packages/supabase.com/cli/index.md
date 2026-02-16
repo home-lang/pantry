@@ -6,7 +6,7 @@
 
 - **Domain**: `supabase.com/cli`
 - **Name**: `supabase`
-- **Homepage**: https://supabase.com/docs/reference/cli/about
+- **Homepage**: <https://supabase.com/docs/reference/cli/about>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/supabase.com/cli/package.yml)
 
 ## Installation

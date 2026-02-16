@@ -73,6 +73,7 @@ See the source code for implementation details.
 ## Understanding Batch Processing
 
 Batch processing allows ts-pkgx to efficiently process hundreds or thousands of packages by:
+
 1. Breaking the work into smaller batches
 2. Processing each batch in parallel
 3. Managing memory consumption
@@ -122,14 +123,14 @@ async function updatePackagesWithDynamicBatching() {
 
     // Adjust batch size based on performance
     if (lastBatchTime > 0) {
-      if (batchTime > lastBatchTime * 1.5 && BATCH_SIZE > 10) {
+      if (batchTime > lastBatchTime _ 1.5 && BATCH_SIZE > 10) {
         // If this batch took significantly longer, reduce batch size
-        BATCH_SIZE = Math.max(5, Math.floor(BATCH_SIZE * 0.8))
+        BATCH_SIZE = Math.max(5, Math.floor(BATCH_SIZE _ 0.8))
         console.log(`Performance degraded, reducing batch size to ${BATCH_SIZE}`)
       }
-      else if (batchTime < lastBatchTime * 0.7 && BATCH_SIZE < 50) {
+      else if (batchTime < lastBatchTime _ 0.7 && BATCH_SIZE < 50) {
         // If this batch was significantly faster, increase batch size
-        BATCH_SIZE = Math.min(50, Math.floor(BATCH_SIZE * 1.2))
+        BATCH_SIZE = Math.min(50, Math.floor(BATCH_SIZE _ 1.2))
         console.log(`Performance improved, increasing batch size to ${BATCH_SIZE}`)
       }
     }
@@ -155,7 +156,7 @@ function getMemoryUsage(): { used: number, max: number, percent: number } {
   const memoryUsage = process.memoryUsage()
   const usedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024)
   const totalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024)
-  const percent = Math.round((usedMB / totalMB) * 100)
+  const percent = Math.round((usedMB / totalMB) _ 100)
 
   return { used: usedMB, max: totalMB, percent }
 }
@@ -186,7 +187,7 @@ async function updatePackagesWithMemoryMonitoring() {
     // Adjust batch size based on memory pressure
     if (memAfter.percent > 85 && BATCH_SIZE > 5) {
       // Memory pressure is high, reduce batch size
-      BATCH_SIZE = Math.floor(BATCH_SIZE * 0.7)
+      BATCH_SIZE = Math.floor(BATCH_SIZE _ 0.7)
       console.log(`High memory usage detected, reducing batch size to ${BATCH_SIZE}`)
 
       // Force garbage collection if available
@@ -197,7 +198,7 @@ async function updatePackagesWithMemoryMonitoring() {
     }
     else if (memAfter.percent < 50 && BATCH_SIZE < 40) {
       // Memory usage is low, increase batch size
-      BATCH_SIZE = Math.min(40, Math.floor(BATCH_SIZE * 1.2))
+      BATCH_SIZE = Math.min(40, Math.floor(BATCH_SIZE _ 1.2))
       console.log(`Low memory usage detected, increasing batch size to ${BATCH_SIZE}`)
     }
   }
@@ -278,7 +279,7 @@ await concurrentBatchProcessing(
     batchSize: 15,
     maxConcurrentBatches: 2,
     progressCallback: (completed, total) => {
-      const percent = Math.round((completed / total) * 100)
+      const percent = Math.round((completed / total) _ 100)
       console.log(`Progress: ${completed}/${total} (${percent}%)`)
     }
   }
@@ -490,7 +491,7 @@ class ResumableBatchProcessor {
       processed: this.state.processedItems.length,
       total: this.state.totalItems,
       percent: this.state.totalItems > 0
-        ? (this.state.processedItems.length / this.state.totalItems) * 100
+        ? (this.state.processedItems.length / this.state.totalItems) _ 100
         : 0,
       elapsedMs: Date.now() - this.state.startTime
     }
@@ -607,7 +608,7 @@ async function batchProcessWithWorkers(
 }
 
 // Worker script (save to worker.js)
-/*
+/_
 const { parentPort } = require('worker_threads');
 const { updatePackage } = require('../path/to/updatePackage');
 

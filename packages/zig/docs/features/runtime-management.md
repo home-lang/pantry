@@ -5,6 +5,7 @@ Pantry automatically manages runtime versions (bun, node, deno, python) per proj
 ## Overview
 
 Pin specific runtime versions in your project configuration, and Pantry will:
+
 1. Auto-install the exact version
 2. Activate it when you `cd` into the project
 3. Update when you change versions in config
@@ -35,8 +36,8 @@ Pin specific runtime versions in your project configuration, and Pantry will:
 
 ```bash
 cd my-project
-# 🔧 Setting up environment...
-# 📦 Installing bun@1.3.0...
+# 🔧 Setting up environment
+# 📦 Installing bun@1.3.0
 # ✅ Environment ready: my-project
 
 which bun
@@ -75,8 +76,8 @@ cd my-project  # bun 1.3.0 activated
 vim pantry.json  # Change bun: "1.3.0" → "1.3.1"
 
 cd my-project
-# 🔄 Dependencies changed, updating environment...
-# 📦 Installing bun@1.3.1...
+# 🔄 Dependencies changed, updating environment
+# 📦 Installing bun@1.3.1
 # ✅ Environment updated
 
 bun --version
@@ -226,7 +227,7 @@ cd my-project        # First time: 250ms (download + install)
 cd ..
 cd my-project        # Cached: <50μs (instant!)
 
-# 1 hour later...
+# 1 hour later
 cd my-project        # Still cached: <50μs
 
 # Change version
@@ -260,8 +261,10 @@ Add a README section explaining runtime requirements:
 ## Requirements
 
 This project requires:
+
 - Bun 1.3.0 (auto-installed by Pantry)
 - Node 20.10.0 (auto-installed by Pantry)
+
 ```
 
 ### 3. Use runtime-specific features

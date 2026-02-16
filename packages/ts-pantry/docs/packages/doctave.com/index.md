@@ -6,7 +6,7 @@
 
 - **Domain**: `doctave.com`
 - **Name**: `doctave`
-- **Homepage**: https://cli.doctave.com
+- **Homepage**: <https://cli.doctave.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/doctave.com/package.yml)
 
 ## Installation

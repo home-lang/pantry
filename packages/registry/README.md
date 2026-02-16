@@ -22,7 +22,7 @@ bun run start
 bun run dev
 ```
 
-The server will start at `http://localhost:3000`.
+The server will start at `<http://localhost:3000>`.
 
 ## API Endpoints
 
@@ -87,6 +87,7 @@ AWS_REGION=us-east-1
 To publish a package, send a `POST` request to `/publish` with:
 
 **Multipart/form-data:**
+
 ```bash
 curl -X POST http://localhost:3000/publish \
   -H "Authorization: Bearer your-token" \
@@ -95,6 +96,7 @@ curl -X POST http://localhost:3000/publish \
 ```
 
 **JSON with base64 tarball:**
+
 ```bash
 curl -X POST http://localhost:3000/publish \
   -H "Authorization: Bearer your-token" \
@@ -107,6 +109,7 @@ curl -X POST http://localhost:3000/publish \
 Zig packages are content-addressed - they're identified by their hash, not URL.
 
 **Publish a Zig package:**
+
 ```bash
 curl -X POST http://localhost:3000/zig/publish \
   -H "Authorization: Bearer your-token" \
@@ -116,6 +119,7 @@ curl -X POST http://localhost:3000/zig/publish \
 ```
 
 **Response includes everything needed for dependencies:**
+
 ```json
 {
   "success": true,
@@ -127,6 +131,7 @@ curl -X POST http://localhost:3000/zig/publish \
 ```
 
 **Using in build.zig.zon:**
+
 ```zig
 .dependencies = .{
     .my_zig_lib = .{
@@ -137,6 +142,7 @@ curl -X POST http://localhost:3000/zig/publish \
 ```
 
 **Or fetch directly:**
+
 ```bash
 zig fetch --save https://registry.example.com/zig/packages/my-zig-lib/1.0.0/tarball
 ```
@@ -175,6 +181,7 @@ start()
 ### Local Storage (Development)
 
 By default, the registry uses local file storage:
+
 - Tarballs: `./.registry/tarballs/`
 - Metadata: `./.registry/metadata.json`
 
@@ -205,6 +212,7 @@ aws cloudformation deploy \
 ```
 
 This creates:
+
 - S3 bucket for package tarballs
 - DynamoDB table for metadata
 - DynamoDB table for analytics
@@ -234,7 +242,7 @@ docker run -d \
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | Server port | `3000` |
-| `BASE_URL` | Public URL for the registry | `http://localhost:3000` |
+| `BASE_URL` | Public URL for the registry | `<http://localhost:3000>` |
 | `S3_BUCKET` | S3 bucket for tarballs | `local` (file storage) |
 | `DYNAMODB_TABLE` | DynamoDB table for metadata | `local` (file storage) |
 | `DYNAMODB_ANALYTICS_TABLE` | DynamoDB table for analytics | (in-memory) |

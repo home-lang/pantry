@@ -6,7 +6,7 @@
 
 - **Domain**: `nginx.org`
 - **Name**: `nginx`
-- **Homepage**: https://nginx.org/
+- **Homepage**: <https://nginx.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nginx.org/package.yml)
 
 ## Installation

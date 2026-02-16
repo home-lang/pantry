@@ -6,7 +6,7 @@
 
 - **Domain**: `openprinting.github.io/cups`
 - **Name**: `cups`
-- **Homepage**: https://openprinting.github.io/cups
+- **Homepage**: <https://openprinting.github.io/cups>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openprinting.github.io/cups/package.yml)
 
 ## Installation

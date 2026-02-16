@@ -45,7 +45,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 1. **Check package name and version:**
 
    ```bash
-   # Try different package name formats
+# Try different package name formats
    pantry install node@22      # Standard format
    pantry install nodejs.org@22  # With domain
    pantry install node         # Latest version
@@ -124,8 +124,8 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 3. **Try different mirror or later:**
 
    ```bash
-   # Sometimes pkgx mirrors are temporarily down
-   # Wait a few minutes and try again
+# Sometimes pkgx mirrors are temporarily down
+# Wait a few minutes and try again
    ```
 
 ## Environment Issues
@@ -143,17 +143,17 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 1. **Check shell integration:**
 
    ```bash
-   # Should show function definition
+# Should show function definition
    type _pkgx_chpwd_hook
 
-   # Check shell config
+# Check shell config
    grep "pantry dev:shellcode" ~/.zshrc ~/.bashrc
    ```
 
 2. **Verify dependency file:**
 
    ```bash
-   # Check file exists and has correct syntax
+# Check file exists and has correct syntax
    cat dependencies.yaml
    pantry dev:dump --dryrun --verbose
    ```
@@ -176,8 +176,9 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 2. **Fix dependency file syntax:**
 
    ```yaml
-   # Correct format
+# Correct format
    dependencies:
+
      - node@22
      - python@3.12
 
@@ -189,7 +190,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 
    ```bash
    source ~/.zshrc
-   # Or restart your terminal
+# Or restart your terminal
    ```
 
 ### Shell Messages Not Showing
@@ -240,7 +241,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 
    ```bash
    echo $PATH
-   # Environment directories should come first
+# Environment directories should come first
    ```
 
 3. **Force environment reload:**
@@ -298,10 +299,10 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 2. **Clean up environments:**
 
    ```bash
-   # Remove old environments
+# Remove old environments
    pantry env:clean --older-than 14 --force
 
-   # Remove failed installations
+# Remove failed installations
    pantry env:clean --force
    ```
 
@@ -332,10 +333,10 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 2. **Validate configuration syntax:**
 
    ```bash
-   # For TypeScript files
+# For TypeScript files
    bunx tsc --noEmit pantry.config.ts
 
-   # For JSON files
+# For JSON files
    cat .pantryrc | python -m json.tool
    ```
 
@@ -358,7 +359,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 
    ```bash
    cat dependencies.yaml
-   # Verify env section syntax
+# Verify env section syntax
    ```
 
 2. **Test variable expansion:**
@@ -371,8 +372,8 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 3. **Check for shell conflicts:**
 
    ```bash
-   # Temporarily disable other shell customizations
-   # and test pantry environment
+# Temporarily disable other shell customizations
+# and test pantry environment
    ```
 
 ## Shell Integration Issues
@@ -402,17 +403,17 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 3. **Check for conflicts:**
 
    ```bash
-   # Look for other tools that might interfere
+# Look for other tools that might interfere
    grep -E "(nvm|rbenv|pyenv)" ~/.zshrc ~/.bashrc
    ```
 
 4. **Reinstall shell integration:**
 
    ```bash
-   # Remove old integration
+# Remove old integration
    sed -i '/pantry dev:shellcode/d' ~/.zshrc
 
-   # Add fresh integration
+# Add fresh integration
    echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
    source ~/.zshrc
    ```
@@ -435,7 +436,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 2. **Ensure consistent integration:**
 
    ```bash
-   # Add to all relevant shell configs
+# Add to all relevant shell configs
    for file in ~/.zshrc ~/.bashrc; do
      if [ -f "$file" ]; then
        echo 'eval "$(pantry dev:shellcode)"' >> "$file"
@@ -461,10 +462,10 @@ Starship tries to execute pantry-managed binaries (like `bun`, `node`, etc.) to 
    Add or update the `command_timeout` setting in your Starship configuration file (`~/.config/starship.toml`):
 
    ```toml
-   # Timeout for commands executed by starship (ms)
+# Timeout for commands executed by starship (ms)
    command_timeout = 5000
 
-   # Rest of your Starship configuration...
+# Rest of your Starship configuration
    [git_branch]
    symbol = "🌱 "
 
@@ -475,10 +476,10 @@ Starship tries to execute pantry-managed binaries (like `bun`, `node`, etc.) to 
 2. **Test the fix:**
 
    ```bash
-   # Restart your shell or source your config
+# Restart your shell or source your config
    source ~/.zshrc
 
-   # Change directories to trigger environment activation
+# Change directories to trigger environment activation
    cd ~/my-project
    ```
 
@@ -516,22 +517,22 @@ Starship tries to execute pantry-managed binaries (like `bun`, `node`, etc.) to 
 2. **Manual cleanup:**
 
    ```bash
-   # Remove packages
+# Remove packages
    rm -rf ~/.local/bin/pkgx ~/.local/bin/bun
    rm -rf ~/.local/share/pantry/
 
-   # Remove shell integration
+# Remove shell integration
    sed -i '/pantry/d' ~/.zshrc ~/.bashrc
 
-   # Remove global package
+# Remove global package
    npm uninstall -g ts-pantry
    ```
 
 3. **Clean PATH:**
 
    ```bash
-   # Edit shell config to remove pantry paths
-   # Restart terminal
+# Edit shell config to remove pantry paths
+# Restart terminal
    ```
 
 ## Advanced Debugging
@@ -759,11 +760,11 @@ systemctl --user daemon-reload
 ```bash
 # Check data directories
 ls -la ~/.local/share/pantry/services/
-du -sh ~/.local/share/pantry/services/*/
+du -sh ~/.local/share/pantry/services/_/
 
 # Check log files
 ls -la ~/.local/share/pantry/logs/
-tail -f ~/.local/share/pantry/logs/*.log
+tail -f ~/.local/share/pantry/logs/_.log
 ```
 
 **Solutions**:

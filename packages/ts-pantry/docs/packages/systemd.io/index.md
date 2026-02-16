@@ -6,7 +6,7 @@
 
 - **Domain**: `systemd.io`
 - **Name**: `systemd`
-- **Homepage**: https://systemd.io
+- **Homepage**: <https://systemd.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/systemd.io/package.yml)
 
 ## Installation

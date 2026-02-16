@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/rpg-cli`
 - **Name**: `rpg-cli`
-- **Homepage**: https://olano.dev/blog/deconstructing-the-role-playing-videogame/
+- **Homepage**: <https://olano.dev/blog/deconstructing-the-role-playing-videogame/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/rpg-cli/package.yml)
 
 ## Installation

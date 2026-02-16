@@ -6,7 +6,7 @@
 
 - **Domain**: `kind.sigs.k8s.io`
 - **Name**: `kind`
-- **Homepage**: https://kind.sigs.k8s.io/
+- **Homepage**: <https://kind.sigs.k8s.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kind.sigs.k8s.io/package.yml)
 
 ## Installation

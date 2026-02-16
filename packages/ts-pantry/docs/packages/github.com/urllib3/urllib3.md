@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/urllib3/urllib3`
 - **Name**: `urllib3`
-- **Homepage**: https://urllib3.readthedocs.io
+- **Homepage**: <https://urllib3.readthedocs.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/urllib3/urllib3/package.yml)
 
 ## Installation

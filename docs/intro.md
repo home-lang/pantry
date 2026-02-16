@@ -4,7 +4,7 @@
 
 > A lightweight package manager built on top of the pkgx Pantry to simplify package installation and management.
 
-## What is pantry?
+## What is pantry
 
 pantry serves as an alternative to package managers like Homebrew, focusing on:
 
@@ -73,8 +73,10 @@ source ~/.zshrc
 mkdir my-project && cd my-project
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - python@3.12
+
 env:
   NODE_ENV: development
   PROJECT_NAME: my-project
@@ -110,7 +112,7 @@ pantry uninstall
 
 With just a few commands, you've set up a complete development environment with automatic project-specific isolation. pantry handles all the complexity for you, and you can easily clean up when you're done.
 
-## Why Choose pantry?
+## Why Choose pantry
 
 pantry offers several advantages over traditional package managers:
 

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/nektos/act`
 - **Name**: `act`
-- **Homepage**: https://nektosact.com
+- **Homepage**: <https://nektosact.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/nektos/act/package.yml)
 
 ## Installation

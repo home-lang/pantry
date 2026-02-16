@@ -6,7 +6,7 @@
 
 - **Domain**: `charm.sh/melt`
 - **Name**: `melt`
-- **Homepage**: https://www.mltframework.org/
+- **Homepage**: <https://www.mltframework.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/charm.sh/melt/package.yml)
 
 ## Installation

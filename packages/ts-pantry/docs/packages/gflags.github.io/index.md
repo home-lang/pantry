@@ -6,7 +6,7 @@
 
 - **Domain**: `gflags.github.io`
 - **Name**: `gflags.github`
-- **Homepage**: https://gflags.github.io/gflags/
+- **Homepage**: <https://gflags.github.io/gflags/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gflags.github.io/package.yml)
 
 ## Installation

@@ -5,6 +5,7 @@ Pantry provides lightning-fast package installation with smart dependency resolu
 ## Overview
 
 Pantry can read and manage dependencies from various package manager formats:
+
 - `pantry.json` / `pantry.jsonc` - Native format
 - `package.json` - npm/Node.js format
 - `bun.lockb` - Bun lockfile

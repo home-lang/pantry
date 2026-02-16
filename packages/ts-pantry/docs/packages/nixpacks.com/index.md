@@ -6,7 +6,7 @@
 
 - **Domain**: `nixpacks.com`
 - **Name**: `nixpacks`
-- **Homepage**: https://nixpacks.com/
+- **Homepage**: <https://nixpacks.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nixpacks.com/package.yml)
 
 ## Installation

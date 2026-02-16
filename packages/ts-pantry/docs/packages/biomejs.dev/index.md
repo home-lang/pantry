@@ -6,7 +6,7 @@
 
 - **Domain**: `biomejs.dev`
 - **Name**: `biome`
-- **Homepage**: https://biomejs.dev/
+- **Homepage**: <https://biomejs.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/biomejs.dev/package.yml)
 
 ## Installation

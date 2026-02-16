@@ -13,7 +13,7 @@ Pantry is **20-50x faster** than npm, yarn, pnpm, and even Bun for package manag
 | **List packages** | <1ms | 45ms | 180ms | 160ms | 140ms |
 | **Cache lookup** | <50μs | 3ms | 15ms | 12ms | 10ms |
 
-**Result**: Pantry is **15-60x faster** depending on operation.
+**Result**: Pantry is**15-60x faster** depending on operation.
 
 ## Detailed Benchmarks
 
@@ -36,6 +36,7 @@ time npm install
 ```
 
 **Speedup**:
+
 - **15x faster than Bun**
 - **47x faster than npm**
 
@@ -58,6 +59,7 @@ time npm install
 ```
 
 **Speedup**:
+
 - **2,400x faster than Bun**
 - **24,000x faster than npm**
 
@@ -80,6 +82,7 @@ time npm install lodash --save
 ```
 
 **Speedup**:
+
 - **17x faster than Bun**
 - **61x faster than npm**
 
@@ -102,6 +105,7 @@ time npm uninstall lodash
 ```
 
 **Speedup**:
+
 - **35x faster than Bun**
 - **175x faster than npm**
 
@@ -124,14 +128,16 @@ time npm list --depth=0
 ```
 
 **Speedup**:
+
 - **45x faster than Bun**
 - **180x faster than npm**
 
-## Why So Fast?
+## Why So Fast
 
 ### 1. Zig Performance
 
 Written in Zig for maximum performance:
+
 - **Zero-cost abstractions** - No runtime overhead
 - **Compile-time optimization** - Aggressive inlining
 - **Manual memory management** - No GC pauses
@@ -142,12 +148,14 @@ Written in Zig for maximum performance:
 **Two-tier cache system**:
 
 **Fast cache** (Ring buffer):
+
 - 8 most recent environments
 - L1 cache optimized (64-byte cache lines)
 - <50μs lookup
 - Lock-free reads
 
 **Slow cache** (Disk):
+
 - All environments
 - Memory-mapped files
 - ~1ms lookup
@@ -158,6 +166,7 @@ Written in Zig for maximum performance:
 ### 3. Concurrent Operations
 
 **Parallel package downloads**:
+
 - Up to 16 concurrent connections
 - Connection pooling
 - Keep-alive reuse
@@ -168,11 +177,13 @@ Written in Zig for maximum performance:
 ### 4. Optimized Hashing
 
 **FNV-1a for small strings** (<1KB):
+
 - Single pass
 - No memory allocation
 - Branch-prediction friendly
 
 **MD5 for large data** (>1KB):
+
 - Hardware-accelerated (AES-NI)
 - Streaming mode
 - Zero-copy
@@ -182,6 +193,7 @@ Written in Zig for maximum performance:
 ### 5. Lock-Free Algorithms
 
 **RCU (Read-Copy-Update)**:
+
 - Zero locks on reads
 - Atomic pointer swaps
 - No contention
@@ -198,6 +210,7 @@ Written in Zig for maximum performance:
 | npm | ~45MB | 150-200MB |
 
 **Result**:
+
 - **20x smaller binary than Bun**
 - **8x less memory than Bun**
 
@@ -224,6 +237,7 @@ time pnpm install
 ```
 
 **Speedup**:
+
 - **21x faster than Bun**
 - **52x faster than npm**
 - **32x faster than pnpm**
@@ -234,19 +248,26 @@ time pnpm install
 
 ```yaml
 # With Pantry
+
 - run: pantry install
-  # ~180ms
+
+# ~180ms
 
 # With Bun
+
 - run: bun install
-  # ~3,000ms
+
+# ~3,000ms
 
 # With npm
+
 - run: npm ci
-  # ~12,000ms
+
+# ~12,000ms
 ```
 
 **Impact**:
+
 - **15-60x faster CI builds**
 - **Lower GitHub Actions costs**
 - **Faster deployment cycles**
@@ -261,7 +282,7 @@ time pnpm install
 | Bun | 120ms | 12s |
 | npm | 1,200ms | 2min |
 
-**Result**: Save **2 minutes per developer per day** vs npm
+**Result**: Save**2 minutes per developer per day** vs npm
 
 ## Performance Characteristics
 
@@ -309,11 +330,13 @@ Performance scales linearly with package count:
 
 ```
 Hardware:
+
 - CPU: Apple M1 Pro (8P+2E cores)
 - RAM: 16GB unified memory
 - SSD: 512GB NVMe (3000 MB/s)
 
 Software:
+
 - OS: macOS 14.2
 - Zig: 0.15.2
 - Bun: 1.0.15
@@ -323,24 +346,29 @@ Software:
 - pnpm: 8.12.0
 
 Network:
+
 - Connection: 1 Gbps fiber
 - Latency: <10ms to npmjs.org
 - Registry: https://registry.npmjs.org
+
 ```
 
 ### Test Packages
 
 **Small project** (10 packages):
+
 - express, lodash, axios, moment, chalk
 - uuid, dotenv, cors, bcrypt, jsonwebtoken
 
 **Medium project** (50 packages):
+
 - react, vue, @angular/core, svelte
 - typescript, webpack, vite, rollup
 - eslint, prettier, jest, vitest
 - + 38 transitive dependencies
 
 **Large project** (500 packages):
+
 - Full monorepo with all major frameworks
 - 200 direct dependencies
 - 300 transitive dependencies
@@ -348,11 +376,13 @@ Network:
 ### Measurement
 
 **Timing**:
+
 - 10 runs per test
 - Median time reported
 - Outliers removed (±2 standard deviations)
 
 **Cache clearing** between runs:
+
 ```bash
 # Clear Pantry cache
 pantry cache:clear
@@ -375,6 +405,7 @@ pnpm store prune
 ### CPU Time Breakdown
 
 **Pantry install (180ms total)**:
+
 ```
 Download packages:  150ms (83%)
 Extract archives:    20ms (11%)
@@ -383,6 +414,7 @@ Link binaries:        8ms  (4%)
 ```
 
 **Bun install (2,800ms total)**:
+
 ```
 JavaScript startup: 400ms (14%)
 Download packages: 1,800ms (64%)
@@ -393,32 +425,36 @@ Dependency resolve: 150ms  (5%)
 ### Memory Allocation
 
 **Pantry**:
+
 - Peak heap: 8.2MB
 - Total allocated: 42MB
 - Allocations: 1,240
 
 **Bun**:
+
 - Peak heap: 92MB
 - Total allocated: 380MB
 - Allocations: 14,600
 
-**Result**: **11x less memory** than Bun
+**Result**:**11x less memory** than Bun
 
 ### System Calls
 
 **Pantry** (install 50 packages):
+
 - open: 148
 - read: 342
 - write: 89
 - stat: 256
 
 **Bun** (install 50 packages):
+
 - open: 1,842
 - read: 4,128
 - write: 876
 - stat: 3,450
 
-**Result**: **10x fewer syscalls** than Bun
+**Result**:**10x fewer syscalls** than Bun
 
 ## Continuous Benchmarking
 

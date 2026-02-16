@@ -6,7 +6,7 @@
 
 - **Domain**: `browser-use.com`
 - **Name**: `browser-use`
-- **Homepage**: https://browser-use.com/
+- **Homepage**: <https://browser-use.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/browser-use.com/package.yml)
 
 ## Installation

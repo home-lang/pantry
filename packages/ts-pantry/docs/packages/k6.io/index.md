@@ -1,12 +1,12 @@
 # k6
 
-> A modern load testing tool, using Go and JavaScript - https://k6.io
+> A modern load testing tool, using Go and JavaScript - <https://k6.io>
 
 ## Package Information
 
 - **Domain**: `k6.io`
 - **Name**: `k6`
-- **Homepage**: https://k6.io
+- **Homepage**: <https://k6.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/k6.io/package.yml)
 
 ## Installation

@@ -454,7 +454,7 @@
 - Fix macOS DNS resolver linking issue in PHP build ([ca6661c](https://github.com/home-lang/pantry/commit/ca6661c)) _(by Chris <chrisbreuer93@gmail.com>)_
 - Fix macOS PHP precompiler dependency path resolution ([83b0d48](https://github.com/home-lang/pantry/commit/83b0d48)) _(by Chris <chrisbreuer93@gmail.com>)_
 - Fix Windows PHP extension detection logic ([f23cb94](https://github.com/home-lang/pantry/commit/f23cb94)) _(by Chris <chrisbreuer93@gmail.com>)_
--  chore: wip ([fa66533](https://github.com/home-lang/pantry/commit/fa66533)) _(by Chris <chrisbreuer93@gmail.com>)_
+- chore: wip ([fa66533](https://github.com/home-lang/pantry/commit/fa66533)) _(by Chris <chrisbreuer93@gmail.com>)_
 
 ### Contributors
 

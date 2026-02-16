@@ -6,7 +6,7 @@
 
 - **Domain**: `fluxcd.io/flux2`
 - **Name**: `flux`
-- **Homepage**: https://fluxcd.io
+- **Homepage**: <https://fluxcd.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fluxcd.io/flux2/package.yml)
 
 ## Installation

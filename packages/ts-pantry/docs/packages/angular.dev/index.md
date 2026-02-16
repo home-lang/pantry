@@ -6,7 +6,7 @@
 
 - **Domain**: `angular.dev`
 - **Name**: `ng`
-- **Homepage**: https://angular.dev/cli/
+- **Homepage**: <https://angular.dev/cli/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/angular.dev/package.yml)
 
 ## Installation

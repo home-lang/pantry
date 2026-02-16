@@ -6,7 +6,7 @@
 
 - **Domain**: `mypy-lang.org`
 - **Name**: `mypy-lang`
-- **Homepage**: https://www.mypy-lang.org/
+- **Homepage**: <https://www.mypy-lang.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mypy-lang.org/package.yml)
 
 ## Installation

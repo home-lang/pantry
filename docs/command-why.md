@@ -17,6 +17,7 @@ pantry why <package>
 The name of the package to explain. Supports glob patterns for matching multiple packages.
 
 **Examples:**
+
 - Exact match: `pantry why react`
 - Prefix glob: `pantry why @types/*`
 - Suffix glob: `pantry why *-loader`
@@ -370,6 +371,6 @@ $ pantry why "@myorg/*"
 ## See Also
 
 - [Configuration Guide](./config.md)
-- [Dependency Syntax Guide](./DEPENDENCY_SYNTAX_GUIDE.md)
+- [Dependency Syntax Guide](./DEPENDENCY*SYNTAX*GUIDE.md)
 - [Workspace Support](./workspaces.md)
 - [CLI Reference](./cli.md)

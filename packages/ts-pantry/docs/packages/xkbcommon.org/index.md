@@ -6,7 +6,7 @@
 
 - **Domain**: `xkbcommon.org`
 - **Name**: `xkbcli`
-- **Homepage**: https://xkbcommon.org/
+- **Homepage**: <https://xkbcommon.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xkbcommon.org/package.yml)
 
 ## Installation

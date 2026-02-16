@@ -3,16 +3,19 @@
 ## ✅ Completed Features
 
 ### 1. Zig 0.16-dev Compatibility (Documented)
+
 **Status:** Documented for future migration
 **Files:** `ZIG_0.16_MIGRATION.md`
 
 **Completed fixes:**
+
 - ✅ ArrayList.writer() API
 - ✅ readFileAlloc() parameter order (13 files)
 - ✅ Io.Limit type conversion
 - ✅ std.time.milliTimestamp() replacement
 
 **Remaining (13 errors):**
+
 - File.readToEndAlloc() → Io-based readers
 - Dir.AccessOptions.mode removed
 - Auth module Io threading
@@ -23,10 +26,12 @@
 ---
 
 ### 2. Package Signing & Verification
+
 **Status:** ✅ Fully Implemented
 **Files:** `src/cli/commands/verify.zig`
 
 **Features:**
+
 - ✅ `pantry verify <package>` - Verify package signatures
 - ✅ `pantry sign <package> <key>` - Sign packages with Ed25519
 - ✅ `pantry generate-key` - Generate new keypairs
@@ -35,6 +40,7 @@
 - ✅ Ed25519 signature algorithm
 
 **Usage:**
+
 ```bash
 # Generate keypair
 pantry generate-key
@@ -47,6 +53,7 @@ pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
 ```
 
 **Keyring Format** (`~/.pantry/keyring.json`):
+
 ```json
 {
   "key_id_here": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n"
@@ -55,11 +62,13 @@ pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
 
 ---
 
-###3. Dependency Tree Visualization
+### 3. Dependency Tree Visualization
+
 **Status:** ✅ Fully Implemented
 **Files:** `src/cli/commands/tree.zig`
 
 **Features:**
+
 - ✅ Tree view with Unicode box drawing
 - ✅ Color-coded by dependency type (normal/dev/peer/optional)
 - ✅ JSON output format
@@ -67,6 +76,7 @@ pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
 - ✅ Filtering options
 
 **Usage:**
+
 ```bash
 # Basic tree
 pantry tree
@@ -85,6 +95,7 @@ pantry tree --json
 ```
 
 **Example Output:**
+
 ```
 ├── ⚬ bun@1.3.0
 ├── ⚬ typescript@5.0.0
@@ -94,10 +105,12 @@ pantry tree --json
 ---
 
 ### 4. Better Error Recovery
+
 **Status:** ✅ Fully Implemented
 **Files:** `src/install/recovery.zig`
 
 **Features:**
+
 - ✅ Installation checkpoints
 - ✅ Automatic rollback on failure
 - ✅ Backup creation before operations
@@ -106,6 +119,7 @@ pantry tree --json
 - ✅ Partial install recovery
 
 **Components:**
+
 1. **InstallCheckpoint** - Tracks changes for rollback
    - Records created files
    - Records created directories
@@ -120,6 +134,7 @@ pantry tree --json
    - Version conflicts → Use `pantry tree` to debug
 
 **Usage:**
+
 ```zig
 var checkpoint = InstallCheckpoint.init(allocator);
 defer checkpoint.deinit();
@@ -137,10 +152,12 @@ if (error) {
 ---
 
 ### 5. Network Features (Offline Mode & Proxy)
+
 **Status:** ✅ Fully Implemented
 **Files:** `src/install/offline.zig`
 
 **Features:**
+
 - ✅ Offline mode support
 - ✅ Install from cache when offline
 - ✅ HTTP/HTTPS proxy configuration
@@ -148,6 +165,7 @@ if (error) {
 - ✅ Environment variable configuration
 
 **Usage:**
+
 ```bash
 # Enable offline mode
 export PANTRY_OFFLINE=1
@@ -165,6 +183,7 @@ pantry install
 ```
 
 **API:**
+
 ```zig
 // Check if offline
 if (offline.isOfflineMode()) {
@@ -182,10 +201,12 @@ if (!proxy.shouldBypass("example.com")) {
 ---
 
 ### 6. DX Improvements
+
 **Status:** ✅ Fully Implemented
 **Files:** `src/cli/commands/init.zig`
 
 **Features:**
+
 - ✅ `pantry init` - Interactive project initialization
 - ✅ Auto-detection of project type (Node/TypeScript/generic)
 - ✅ Sensible defaults
@@ -193,11 +214,12 @@ if (!proxy.shouldBypass("example.com")) {
 - ✅ Overwrite protection
 
 **Usage:**
+
 ```bash
 # Initialize new project
 pantry init
 
-# Interactive prompts:
+# Interactive prompts
 # - Project name (defaults to directory name)
 # - Version (defaults to 1.0.0)
 # - Description
@@ -206,6 +228,7 @@ pantry init
 **Generated Templates:**
 
 **Basic Project:**
+
 ```json
 {
   "name": "my-project",
@@ -223,6 +246,7 @@ pantry init
 ```
 
 **Node/TypeScript Project:**
+
 ```json
 {
   "name": "my-ts-project",
@@ -248,12 +272,15 @@ pantry init
 ---
 
 ### 7. Lockfile Support (from Option C)
+
 **Status:** ✅ Integrated
 **Files:**
+
 - `src/cli/commands/install/lockfile_hooks.zig`
 - `src/cli/commands/install/core.zig` (modified)
 
 **Features:**
+
 - ✅ Generates `pantry.lock` file
 - ✅ Records exact versions installed
 - ✅ Tracks resolved URLs
@@ -261,6 +288,7 @@ pantry init
 - ✅ Dependency tracking
 
 **Lockfile Format** (`pantry.lock`):
+
 ```json
 {
   "version": "1.0",
@@ -280,13 +308,16 @@ pantry init
 ---
 
 ### 8. Lifecycle Hooks (from Option C)
+
 **Status:** ✅ Integrated
 **Files:**
+
 - `src/cli/commands/install/lockfile_hooks.zig`
 - `src/lifecycle.zig` (existing)
 - `src/lifecycle/hooks.zig` (existing)
 
 **Features:**
+
 - ✅ Pre-install hooks
 - ✅ Post-install hooks
 - ✅ Reads from `pantry.json` or `package.json`
@@ -294,6 +325,7 @@ pantry init
 - ✅ Timeout handling
 
 **Usage in pantry.json:**
+
 ```json
 {
   "scripts": {
@@ -311,6 +343,7 @@ pantry init
 ```
 
 **Security:**
+
 - Scripts disabled by default
 - Must be in `trustedDependencies` array
 - Default trusted list includes popular packages (esbuild, swc, etc.)
@@ -318,11 +351,12 @@ pantry init
 
 ---
 
-## ✅ Integration Complete!
+## ✅ Integration Complete
 
 All features have been fully integrated into the codebase:
 
 ### CLI Commands (main.zig)
+
 - ✅ **verify.zig** - Wired into CLI router (lines 1017-1051)
   - `verifyAction()` - Package signature verification
   - Full option parsing (--keyring, --verbose)
@@ -348,12 +382,14 @@ All features have been fully integrated into the codebase:
 ### Install Flow Integration
 
 **Offline Mode (src/cli/commands/install/core.zig:237-241)**
+
 - ✅ Environment variable check (`PANTRY_OFFLINE`)
 - ✅ User feedback when offline mode enabled
 - ✅ Cache-first installation in helpers.zig (lines 130-172)
 - ✅ Network fallback when cache miss
 
 **Recovery Checkpoints (src/cli/commands/install/core.zig:243-274)**
+
 - ✅ Checkpoint initialization
 - ✅ Backup creation before installs
 - ✅ Package recording (lines 496-511)
@@ -361,11 +397,13 @@ All features have been fully integrated into the codebase:
 - ✅ Rollback on hook failures
 
 **Error Recovery (src/cli/commands/install/helpers.zig:185-195)**
+
 - ✅ Error classification (network, permission, disk, etc.)
 - ✅ Contextual recovery suggestions
 - ✅ Integration with checkpoint system
 
 ### Documentation
+
 - ✅ **README.md** - Updated with new commands section
 - ✅ **README.md** - Features section updated
 - ✅ **USAGE_EXAMPLES.md** - Created comprehensive guide (~600 lines)
@@ -382,12 +420,14 @@ All features have been fully integrated into the codebase:
 
 ## 🧹 Cleanup Status
 
-### Removed/Cleaned:
+### Removed/Cleaned
+
 - ✅ Added build artifacts to `.gitignore`
   - `/packages/zig/no/`
-  - `*.a`, `*.o` files
+  - `_.a`, `_.o` files
 
-### Retained (Now Integrated):
+### Retained (Now Integrated)
+
 - ✅ `src/lifecycle/hooks.zig` - Used by lockfile_hooks
 - ✅ `src/lifecycle/enhanced.zig` - Used by hooks
 - ✅ `src/deps/resolution/*` - All wired up:
@@ -396,8 +436,10 @@ All features have been fully integrated into the codebase:
   - `peer.zig` - Available for peer deps
   - `optional.zig` - Available for optional deps
 
-### Status:
+### Status
+
 **No unused code found!** All previously "unintegrated" features are now either:
+
 1. Integrated (lockfile, hooks, resolution)
 2. Part of existing infrastructure (signing, services)
 3. Newly implemented (verify, init, tree, offline, recovery)
@@ -406,7 +448,8 @@ All features have been fully integrated into the codebase:
 
 ## 📊 Impact Summary
 
-### Lines of Code Added:
+### Lines of Code Added
+
 - `verify.zig`: ~280 lines
 - `init.zig`: ~150 lines
 - `tree.zig`: ~280 lines
@@ -415,13 +458,15 @@ All features have been fully integrated into the codebase:
 - `lockfile_hooks.zig`: ~185 lines (from Option C)
 - **Total: ~1,355 new lines**
 
-### Integration Code Added:
+### Integration Code Added
+
 - `main.zig`: ~190 lines (5 new command actions + definitions)
 - `core.zig`: ~40 lines (offline mode + recovery checkpoints)
 - `helpers.zig`: ~70 lines (offline fallback + error recovery)
 - **Total: ~300 integration lines**
 
-### Features Added:
+### Features Added
+
 - 8 major features
 - 5 new CLI commands (verify, sign, generate-key, init, tree)
 - 5 new modules
@@ -429,7 +474,8 @@ All features have been fully integrated into the codebase:
 - Offline mode integration
 - Recovery system integration
 
-### Documentation:
+### Documentation
+
 - `ZIG_0.16_MIGRATION.md` - Migration guide (350+ lines)
 - `FEATURE_SUMMARY.md` - This file (450+ lines)
 - `USAGE_EXAMPLES.md` - Comprehensive usage guide (600+ lines)
@@ -441,6 +487,7 @@ All features have been fully integrated into the codebase:
 ## 🚀 Next Steps
 
 ### Immediate (When Zig 0.16 Stable Releases)
+
 1. ✅ ~~Wire up CLI commands~~ - **DONE**
 2. ✅ ~~Integrate offline mode~~ - **DONE**
 3. ✅ ~~Integrate recovery~~ - **DONE**
@@ -451,6 +498,7 @@ All features have been fully integrated into the codebase:
 8. **Build and release** - Create optimized binaries
 
 ### Future Enhancements
+
 1. **Telemetry/Analytics** (optional) - Usage metrics
 2. **Search Command** - Search package registry
 3. **Interactive Mode** - Better UX for complex operations
@@ -460,11 +508,12 @@ All features have been fully integrated into the codebase:
 
 ---
 
-## ✅ Documentation Complete!
+## ✅ Documentation Complete
 
 All user-facing documentation has been created:
 
-### Completed Docs:
+### Completed Docs
+
 - ✅ **USAGE_EXAMPLES.md** - Comprehensive guide covering:
   - Package signing workflow with keyring setup
   - Offline mode scenarios and best practices
@@ -484,13 +533,15 @@ All user-facing documentation has been created:
   - Integration status with code references
   - API documentation and usage patterns
 
-### Future Documentation (When Needed):
+### Future Documentation (When Needed)
+
 1. **Architecture Guide** - Deep dive into system design
 2. **Contributing Guide** - How to contribute to pantry
 3. **Plugin Development** - If plugin system is added
 4. **Performance Tuning** - Advanced optimization techniques
 
-### Developer Docs:
+### Developer Docs
+
 1. **Zig 0.16 Migration** - Already created
 2. **Architecture Overview** - How features integrate
 3. **Testing Guide** - How to test new features
@@ -500,6 +551,7 @@ All user-facing documentation has been created:
 ## ✨ Summary
 
 All requested features have been implemented:
+
 - ✅ Option B: Documented Zig 0.16 issues
 - ✅ Option C: Integrated lockfile & hooks
 - ✅ Feature #2: Package signing & verification

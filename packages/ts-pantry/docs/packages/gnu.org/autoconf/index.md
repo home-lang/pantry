@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/autoconf`
 - **Name**: `autoconf`
-- **Homepage**: https://www.gnu.org/software/autoconf/
+- **Homepage**: <https://www.gnu.org/software/autoconf/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/autoconf/package.yml)
 
 ## Installation

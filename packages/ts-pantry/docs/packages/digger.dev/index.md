@@ -6,7 +6,7 @@
 
 - **Domain**: `digger.dev`
 - **Name**: `digger`
-- **Homepage**: https://digger.dev
+- **Homepage**: <https://digger.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/digger.dev/package.yml)
 
 ## Installation

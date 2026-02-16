@@ -6,7 +6,7 @@
 
 - **Domain**: `nano-editor.org`
 - **Name**: `nano`
-- **Homepage**: https://www.nano-editor.org/
+- **Homepage**: <https://www.nano-editor.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nano-editor.org/package.yml)
 
 ## Installation

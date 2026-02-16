@@ -6,7 +6,7 @@
 
 - **Domain**: `mkdocs.org`
 - **Name**: `mkdocs`
-- **Homepage**: https://www.mkdocs.org
+- **Homepage**: <https://www.mkdocs.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mkdocs.org/package.yml)
 
 ## Installation

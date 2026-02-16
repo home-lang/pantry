@@ -6,7 +6,7 @@
 
 - **Domain**: `taplo.tamasfe.dev`
 - **Name**: `taplo`
-- **Homepage**: https://taplo.tamasfe.dev
+- **Homepage**: <https://taplo.tamasfe.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/taplo.tamasfe.dev/package.yml)
 
 ## Installation

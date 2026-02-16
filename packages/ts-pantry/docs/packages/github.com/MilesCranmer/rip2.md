@@ -1,6 +1,6 @@
 # rip2
 
->  A safe and ergonomic alternative to rm
+> A safe and ergonomic alternative to rm
 
 ## Package Information
 

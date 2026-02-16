@@ -117,18 +117,30 @@ ts-pkgx automatically generates TypeScript files for each package with comprehen
 import type { PkgxPackage } from '../types'
 
 /**
- * Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
+ - Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
  *
- * **Programs:** bun
+
+ - **Programs:** bun
+
  *
- * **Install:** `pkgx bun.sh`
+
+ - **Install:** `pkgx bun.sh`
+
  *
- * **Homepage:** https://bun.sh
+
+ - **Homepage:** https://bun.sh
+
  *
- * **GitHub:** https://github.com/oven-sh/bun
- *
- * @see https://ts-pkgx.netlify.app/packages/bunsh
- */
+
+ - **GitHub:** https://github.com/oven-sh/bun
+
+ _
+
+ - @see https://ts-pkgx.netlify.app/packages/bunsh
+
+ _/
 export const bunPackage: PkgxPackage = {
   name: 'Bun',
   domain: 'bun.sh',
@@ -266,6 +278,7 @@ ts-pkgx fetch --all --limit 50
 ```
 
 The batch processing system:
+
 - Processes packages in configurable batches (default: 8 concurrent packages)
 - Prevents memory issues when handling hundreds of packages
 - Skips unchanged packages to minimize unnecessary updates
@@ -423,6 +436,7 @@ ts-pkgx fetch --pkg "node,bun,python" --output-json
 ```
 
 This outputs structured JSON with:
+
 - List of successfully processed packages
 - Friendly names and mixed name formats
 - Success status and error information

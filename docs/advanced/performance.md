@@ -11,10 +11,12 @@ pantry supports parallel installation of independent packages, significantly red
 ```yaml
 # This will install packages in parallel
 dependencies:
+
   - nodejs.org@20
   - python.org@3.11
   - go.dev@1.21
   - rust-lang.org@1.70
+
 ```
 
 **Performance Impact:**

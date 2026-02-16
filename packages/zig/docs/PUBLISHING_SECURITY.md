@@ -102,13 +102,16 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Setup pantry
+
         run: |
           curl -fsSL https://pantry.sh/install.sh | sh
 
       - name: Publish
+
         run: pantry publish
 ```
 
@@ -121,10 +124,14 @@ publish:
     PANTRY_OIDC_TOKEN:
       aud: pantry
   script:
+
     - curl -fsSL https://pantry.sh/install.sh | sh
     - pantry publish
+
   only:
+
     - tags
+
 ```
 
 ### Azure Pipelines Setup
@@ -133,13 +140,16 @@ publish:
 trigger:
   tags:
     include:
+
       - v*
 
 pool:
   vmImage: 'ubuntu-latest'
 
 steps:
+
   - task: AzureCLI@2
+
     inputs:
       azureSubscription: 'your-subscription'
       scriptType: 'bash'
@@ -200,7 +210,7 @@ Add trusted publisher configuration to your `pantry.json`:
       "repository": "my-repo",
       "workflow": ".github/workflows/release.yml",
       "environment": "production",
-      "allowedRefs": ["refs/heads/main", "refs/tags/v*"]
+      "allowedRefs": ["refs/heads/main", "refs/tags/v_"]
     }
   ]
 }
@@ -227,13 +237,14 @@ Add trusted publisher configuration to your `pantry.json`:
       "owner": "acme-corp",
       "repository": "awesome-lib",
       "workflow": ".github/workflows/publish.yml",
-      "allowedRefs": ["refs/tags/v*"]
+      "allowedRefs": ["refs/tags/v_"]
     }
   ]
 }
 ```
 
 This configuration only allows publishing from:
+
 - Repository: `acme-corp/awesome-lib`
 - Workflow: `.github/workflows/publish.yml`
 - Ref pattern: Tags starting with `v`
@@ -269,7 +280,7 @@ When publishing with OIDC:
 
 Pantry automatically generates [SLSA](https://slsa.dev/) (Supply-chain Levels for Software Artifacts) provenance for published packages.
 
-### What is SLSA Provenance?
+### What is SLSA Provenance
 
 SLSA provenance provides a verifiable record of how a package was built, including:
 
@@ -347,12 +358,12 @@ Pantry supports cryptographic signing and verification of packages using Ed25519
 # Generate new Ed25519 keypair
 pantry keygen
 
-# Output:
+# Output
 # Public Key ID: 0123456789abcdef
 # Public Key saved to: ~/.pantry/keys/0123456789abcdef.pub
 # Private Key saved to: ~/.pantry/keys/0123456789abcdef.key
 #
-# Add this to your pantry.json:
+# Add this to your pantry.json
 # "keyId": "0123456789abcdef"
 ```
 
@@ -367,7 +378,7 @@ pantry publish
 # Sign existing tarball
 pantry sign my-package-1.0.0.tgz --key ~/.pantry/keys/0123456789abcdef.key
 
-# Output:
+# Output
 # ✓ Package signed successfully
 # Signature: signature.json
 ```
@@ -432,6 +443,7 @@ Trusted keys are stored in `~/.pantry/keyring/`:
 ### 1. Use OIDC Over Tokens
 
 ✅ **Do**: Use OIDC authentication from CI/CD
+
 ```yaml
 # GitHub Actions with OIDC
 permissions:
@@ -439,6 +451,7 @@ permissions:
 ```
 
 ❌ **Don't**: Store long-lived tokens in CI/CD
+
 ```yaml
 # Avoid this
 env:
@@ -448,6 +461,7 @@ env:
 ### 2. Configure Trusted Publishers
 
 ✅ **Do**: Restrict publishing to specific workflows
+
 ```json
 {
   "trustedPublishers": [{
@@ -463,11 +477,13 @@ env:
 ### 3. Enable Provenance
 
 ✅ **Do**: Always generate provenance
+
 ```bash
 pantry publish  # Provenance enabled by default
 ```
 
 ❌ **Don't**: Disable provenance without good reason
+
 ```bash
 pantry publish --provenance false  # Only if absolutely necessary
 ```
@@ -475,6 +491,7 @@ pantry publish --provenance false  # Only if absolutely necessary
 ### 4. Sign Your Packages
 
 ✅ **Do**: Sign packages with Ed25519
+
 ```bash
 pantry publish --sign
 ```
@@ -482,6 +499,7 @@ pantry publish --sign
 ### 5. Verify Dependencies
 
 ✅ **Do**: Verify signatures before installing
+
 ```bash
 pantry install --verify-signatures
 ```
@@ -489,6 +507,7 @@ pantry install --verify-signatures
 ### 6. Use Environment Protection
 
 ✅ **Do**: Require manual approval for production
+
 ```yaml
 # GitHub Actions
 environment:
@@ -500,6 +519,7 @@ environment:
 ### 7. Rotate Keys Regularly
 
 ✅ **Do**: Generate new signing keys periodically
+
 ```bash
 # Every 6-12 months
 pantry keygen --rotate
@@ -508,6 +528,7 @@ pantry keygen --rotate
 ### 8. Audit Publishing Activity
 
 ✅ **Do**: Review package provenance regularly
+
 ```bash
 pantry audit my-package --provenance
 ```
@@ -515,6 +536,7 @@ pantry audit my-package --provenance
 ### 9. Use 2FA
 
 ✅ **Do**: Enable 2FA on registry account
+
 ```bash
 pantry publish --otp 123456
 ```
@@ -522,12 +544,13 @@ pantry publish --otp 123456
 ### 10. Minimal Permissions
 
 ✅ **Do**: Grant only necessary permissions
+
 ```yaml
 # GitHub Actions
 permissions:
   id-token: write  # For OIDC
   contents: read   # For checkout
-  # Nothing else
+# Nothing else
 ```
 
 ---
@@ -539,6 +562,7 @@ permissions:
 **Error**: `OIDC authentication not available`
 
 **Solutions**:
+
 1. Ensure CI/CD permissions include `id-token: write`
 2. Check environment variables are set correctly
 3. Verify provider is supported
@@ -549,6 +573,7 @@ permissions:
 **Error**: `Package rejected: trusted publisher validation failed`
 
 **Solutions**:
+
 1. Verify `trustedPublishers` configuration in package.json
 2. Check workflow path matches exactly
 3. Confirm repository owner/name are correct
@@ -559,6 +584,7 @@ permissions:
 **Error**: `Signature verification failed`
 
 **Solutions**:
+
 1. Ensure public key is in keyring
 2. Check signature hasn't been tampered with
 3. Verify package integrity (checksum)
@@ -569,6 +595,7 @@ permissions:
 **Issue**: No provenance generated
 
 **Solutions**:
+
 1. Ensure publishing from CI/CD (not local)
 2. Verify OIDC authentication is working
 3. Check `--provenance` flag isn't set to `false`

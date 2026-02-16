@@ -5,10 +5,12 @@ Pantry uses aggressive caching strategies to achieve sub-microsecond performance
 ## Overview
 
 Pantry implements a two-tier caching system:
+
 - **Fast cache**: Ring buffer (8 entries, <50μs lookup)
 - **Slow cache**: Disk-based (unlimited entries, ~1ms lookup)
 
 Combined with:
+
 - **1-hour TTL**: No unnecessary revalidation
 - **mtime tracking**: Instant invalidation on file changes
 - **Lock-free reads**: Zero contention
@@ -60,12 +62,14 @@ pub const CacheEntry = struct {
 ### Ring Buffer Implementation
 
 **Characteristics**:
+
 - Fixed size: 8 entries
 - FIFO eviction policy
 - L1 cache optimized (64-byte alignment)
 - Lock-free reads with RCU
 
 **Performance**:
+
 - Lookup: <50μs
 - Insert: <100μs
 - Eviction: <50μs
@@ -77,7 +81,7 @@ pub const FastCache = struct {
     entries: [8]?CacheEntry,
     head: usize,
 
-    pub fn get(self: *FastCache, hash: []const u8) ?CacheEntry {
+    pub fn get(self: _FastCache, hash: []const u8) ?CacheEntry {
         // Linear search (only 8 entries, faster than hash lookup)
         for (self.entries) |entry| {
             if (entry) |e| {
@@ -89,7 +93,7 @@ pub const FastCache = struct {
         return null;
     }
 
-    pub fn put(self: *FastCache, entry: CacheEntry) void {
+    pub fn put(self: _FastCache, entry: CacheEntry) void {
         self.entries[self.head] = entry;
         self.head = (self.head + 1) % 8;
     }
@@ -97,6 +101,7 @@ pub const FastCache = struct {
 ```
 
 **Why it's fast**:
+
 - **Linear search**: For 8 entries, faster than hash table
 - **Cache-friendly**: All entries in single cache line
 - **No allocations**: Fixed-size array
@@ -107,12 +112,14 @@ pub const FastCache = struct {
 ### Disk-Based Storage
 
 **Characteristics**:
+
 - Unlimited entries
 - Memory-mapped files
 - Persisted across restarts
 - Atomic writes with RCU
 
 **Performance**:
+
 - Lookup: ~1ms
 - Insert: ~2ms
 - Delete: ~1ms
@@ -147,6 +154,7 @@ pub const FastCache = struct {
 ### 1-Hour TTL Strategy
 
 **Why 1 hour?**
+
 - Balances performance vs freshness
 - Typical development session length
 - Avoids unnecessary network checks
@@ -195,6 +203,7 @@ Configure TTL in `~/.pantry/config.json`:
 ### File Modification Detection
 
 **How it works**:
+
 1. Store dependency file mtime on cache
 2. Compare on every activation
 3. Invalidate if mtime changed
@@ -230,10 +239,11 @@ pub fn isValid(self: CacheEntry) bool {
 ### RCU (Read-Copy-Update)
 
 **Read path** (no locks):
+
 ```zig
-pub fn get(self: *Cache, hash: []const u8) ?CacheEntry {
+pub fn get(self: _Cache, hash: []const u8) ?CacheEntry {
     // Atomic load (no lock)
-    const entries = @atomicLoad(*[8]?CacheEntry, &self.entries, .Acquire);
+    const entries = @atomicLoad(_[8]?CacheEntry, &self.entries, .Acquire);
 
     // Search (no lock)
     for (entries) |entry| {
@@ -248,8 +258,9 @@ pub fn get(self: *Cache, hash: []const u8) ?CacheEntry {
 ```
 
 **Write path** (copy-update):
+
 ```zig
-pub fn put(self: *Cache, entry: CacheEntry) void {
+pub fn put(self: _Cache, entry: CacheEntry) void {
     // Copy current entries
     var new_entries = self.entries;
 
@@ -257,7 +268,7 @@ pub fn put(self: *Cache, entry: CacheEntry) void {
     new_entries[self.head] = entry;
 
     // Atomic swap (no lock)
-    @atomicStore(*[8]?CacheEntry, &self.entries, new_entries, .Release);
+    @atomicStore(_[8]?CacheEntry, &self.entries, new_entries, .Release);
 
     // Update head
     self.head = (self.head + 1) % 8;
@@ -265,6 +276,7 @@ pub fn put(self: *Cache, entry: CacheEntry) void {
 ```
 
 **Benefits**:
+
 - **Zero locks on reads**: Scales to any core count
 - **No contention**: Readers never block
 - **Cache-friendly**: No false sharing
@@ -279,6 +291,7 @@ pantry cache:stats
 ```
 
 Output:
+
 ```
 📊 Cache Statistics
 
@@ -350,11 +363,13 @@ pantry env:clean --aggressive
 ### Cache Hit Rates
 
 **Typical development workflow**:
+
 - Fast cache hit rate: **95%+**
 - Slow cache hit rate: **80%+**
 - Overall hit rate: **96%+**
 
 **CI/CD pipeline**:
+
 - Fast cache hit rate: **0%** (clean environment)
 - Slow cache hit rate: **0%** (clean environment)
 - Overall hit rate: **0%** (by design)
@@ -393,10 +408,10 @@ Check cache effectiveness:
 ```bash
 pantry cache:stats
 
-# If hit rate <90%, investigate:
-# - Frequently changing dependencies?
-# - Too many projects?
-# - TTL too short?
+# If hit rate <90%, investigate
+# - Frequently changing dependencies
+# - Too many projects
+# - TTL too short
 ```
 
 ### 4. Regular cleanup
@@ -405,7 +420,7 @@ Clean old environments weekly:
 
 ```bash
 # Add to cron
-0 0 * * 0 pantry env:clean --older-than=7
+0 0 _ _ 0 pantry env:clean --older-than=7
 ```
 
 ### 5. Disable cache for CI
@@ -414,10 +429,13 @@ Disable caching in CI/CD:
 
 ```yaml
 # GitHub Actions
+
 - run: pantry install --no-cache
 
 # Or clear before install
+
 - run: pantry cache:clear && pantry install
+
 ```
 
 ## Cache Internals
@@ -425,6 +443,7 @@ Disable caching in CI/CD:
 ### Hash Function
 
 **FNV-1a for small strings** (<1KB):
+
 ```zig
 pub fn fnv1a(data: []const u8) u64 {
     var hash: u64 = 0xcbf29ce484222325;
@@ -437,6 +456,7 @@ pub fn fnv1a(data: []const u8) u64 {
 ```
 
 **MD5 for large data** (>1KB):
+
 ```zig
 pub fn md5Hash(data: []const u8) [16]u8 {
     var hasher = std.crypto.hash.Md5.init(.{});
@@ -448,11 +468,13 @@ pub fn md5Hash(data: []const u8) [16]u8 {
 ### Cache Eviction
 
 **Fast cache**: FIFO (First-In-First-Out)
+
 - Simple ring buffer
 - No LRU overhead
 - Predictable behavior
 
 **Slow cache**: LRU (Least-Recently-Used)
+
 - Track last_used timestamp
 - Evict oldest on cleanup
 - Configurable threshold
@@ -465,7 +487,7 @@ pub fn md5Hash(data: []const u8) [16]u8 {
 # Check cache stats
 pantry cache:stats
 
-# If hit rate is 0%, check:
+# If hit rate is 0%, check
 pantry cache:clear
 cd my-project  # Should create cache entry
 cd ..
@@ -475,7 +497,7 @@ cd my-project  # Should hit cache
 ### Stale cache
 
 ```bash
-# If environment seems stale:
+# If environment seems stale
 pantry cache:clear
 cd my-project
 ```

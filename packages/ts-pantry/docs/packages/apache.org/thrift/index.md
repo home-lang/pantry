@@ -6,7 +6,7 @@
 
 - **Domain**: `apache.org/thrift`
 - **Name**: `thrift`
-- **Homepage**: https://thrift.apache.org/
+- **Homepage**: <https://thrift.apache.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apache.org/thrift/package.yml)
 
 ## Installation

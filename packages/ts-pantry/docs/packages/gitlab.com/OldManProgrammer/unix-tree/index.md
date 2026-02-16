@@ -6,7 +6,7 @@
 
 - **Domain**: `gitlab.com/OldManProgrammer/unix-tree`
 - **Name**: `tree`
-- **Homepage**: https://oldmanprogrammer.net/source.php?dir=projects/tree
+- **Homepage**: <https://oldmanprogrammer.net/source.php?dir=projects/tree>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gitlab.com/OldManProgrammer/unix-tree/package.yml)
 
 ## Installation

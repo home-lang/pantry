@@ -6,7 +6,7 @@
 
 - **Domain**: `libtom.net/math`
 - **Name**: `LibTomMath`
-- **Homepage**: https://www.libtom.net
+- **Homepage**: <https://www.libtom.net>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libtom.net/math/package.yml)
 
 ## Installation

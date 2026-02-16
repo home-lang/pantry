@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/kdave/btrfs-progs`
 - **Name**: `btrfs-progs`
-- **Homepage**: https://btrfs.readthedocs.io/en/latest/
+- **Homepage**: <https://btrfs.readthedocs.io/en/latest/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/kdave/btrfs-progs/package.yml)
 
 ## Installation

@@ -47,6 +47,7 @@ ${pkg.dependencies.length ? pkg.dependencies.map(d => `- ${d}`).join('\n') : 'No
 - [Homepage](${pkg.homepageUrl || 'N/A'})
 - [GitHub](${pkg.githubUrl || 'N/A'})
 - [Package YAML](${pkg.packageYmlUrl || 'N/A'})
+
 `
 }
 ```

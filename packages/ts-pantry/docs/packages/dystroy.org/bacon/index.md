@@ -6,7 +6,7 @@
 
 - **Domain**: `dystroy.org/bacon`
 - **Name**: `bacon`
-- **Homepage**: https://dystroy.org/bacon/
+- **Homepage**: <https://dystroy.org/bacon/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dystroy.org/bacon/package.yml)
 
 ## Installation

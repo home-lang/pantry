@@ -6,7 +6,7 @@
 
 - **Domain**: `valkey.io`
 - **Name**: `valkey`
-- **Homepage**: https://valkey.io
+- **Homepage**: <https://valkey.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/valkey.io/package.yml)
 
 ## Installation

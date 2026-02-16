@@ -6,7 +6,7 @@
 
 - **Domain**: `yt-dlp.org`
 - **Name**: `yt-dlp`
-- **Homepage**: https://discord.gg/H5MNcFW63r
+- **Homepage**: <https://discord.gg/H5MNcFW63r>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/yt-dlp.org/package.yml)
 
 ## Installation

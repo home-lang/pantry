@@ -1,11 +1,12 @@
 # Pantry TODO
 
 ## Context
+
 The goal is to have a fully automated release workflow through the CLI. NPM's trusted publisher requires manual browser login with 2FA which cannot be automated. The priority is building our own registry driver while keeping npm as a secondary driver for compatibility.
 
 **Vision:** Rebuild npm as an independent registry, similar to Deno but more catered to our needs. If npm automation can't work around the limitations, finish the npm driver as-is and improve via our own driver.
 
-**Long-term Goal:** The registry will ultimately pivot into a **marketplace** - making it easy to add paywalls to packages, etc.
+**Long-term Goal:**The registry will ultimately pivot into a**marketplace** - making it easy to add paywalls to packages, etc.
 
 **Existing Code:** Registry code already exists in `ts-pantry` repo - search for "registry" keywords.
 
@@ -14,10 +15,12 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 ## High Priority
 
 ### 1. Build Custom Registry Driver
+
 **Status:** Complete
 **Description:** Build our own registry driver that mimics npm functionality. This becomes the default, with npm as an optional driver for compatibility.
 
 **Architecture:**
+
 - Backend should not be complicated - it's essentially lookup logic
 - Use ts-cloud for S3 storage
 - Fallback: if package doesn't exist in our registry, fallback to npmjs
@@ -25,11 +28,13 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - Consider using DynamoDB ORM driver for the registry API (cloud)
 
 **Data Structure Considerations:**
+
 - Download counts / analytics structure
 - Packages vs Apps differentiation
 - Single table design patterns
 
 **Tasks:**
+
 - [x] Review existing registry code in ts-pantry
 - [x] Create/expand `registry` package in pantry monorepo (`packages/registry`)
 - [x] Design data structure for packages, apps, analytics
@@ -41,6 +46,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [x] Deploy configuration (CloudFormation, Docker, env vars)
 
 ### 2. Automate `pantry publish` End-to-End
+
 **Status:** Complete
 **Description:** Running `pantry publish` should handle all configuration automatically with no manual steps outside the CLI.
 
@@ -54,6 +60,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [x] Handle subsequent publishes (uses OIDC)
 
 ### 3. GitHub Secrets Automation
+
 **Status:** Deferred
 **Description:** ~~Automate adding secrets to GitHub repositories through CLI.~~ Decided against separate command - users can use `gh secret set` directly. Focus is on making `pantry publish` work seamlessly with tokens stored in `~/.pantry/credentials`.
 
@@ -62,10 +69,12 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [ ] ~~Integrate into `pantry publish` workflow~~
 
 ### 4. CI Workflow Naming Convention
+
 **Status:** Complete
 **Description:** Update CI workflow naming for clarity with multiple release targets.
 
 **Pattern:**
+
 - `Releaser / npm` - for npm releases
 - `Releaser / pantry` - for pantry registry releases
 - etc.
@@ -78,6 +87,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 ## Medium Priority
 
 ### 5. Registry Analytics
+
 **Status:** Complete
 **Description:** Track package statistics for visibility and insights.
 
@@ -86,6 +96,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [x] Expose analytics via API
 
 ### 6. Zig Package Manager Support
+
 **Status:** Complete
 **Description:** Zig does not have an official package manager - pantry should support Zig packages too.
 
@@ -98,6 +109,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 ## Low Priority / Nice to Have
 
 ### 7. Minimal Registry UI
+
 **Status:** Not Started
 **Description:** A simple UI for browsing the registry. Not a priority initially.
 
@@ -110,6 +122,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 **Differentiator:** We will have actual support (good luck contacting npm support if you ever need it).
 
 ### 8. Marketplace Features (Future)
+
 **Status:** Not Started
 **Description:** Pivot registry into a marketplace with monetization capabilities.
 
@@ -119,6 +132,7 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 - [ ] Revenue sharing model for package authors
 
 ### 9. NPM Trusted Publisher Automation
+
 **Status:** Deferred
 **Description:** Full automation of npm trusted publisher setup. Currently blocked by browser 2FA requirement.
 
@@ -145,15 +159,18 @@ The goal is to have a fully automated release workflow through the CLI. NPM's tr
 ## First Publish vs Subsequent Publish (npm driver)
 
 **First Publish:**
+
 - Requires tokens (can't use OIDC yet)
 - Must publish to npm first before configuring trusted publisher
 - Then configure trusted publisher manually (browser 2FA required)
 
 **Subsequent Publishes:**
+
 - Uses OIDC (no tokens needed)
 - Fully automated via GitHub Actions
 
 **Our Registry:**
+
 - First publish AND subsequent publishes are fully automated
 - No token management hassle
 - No trusted publisher configuration needed

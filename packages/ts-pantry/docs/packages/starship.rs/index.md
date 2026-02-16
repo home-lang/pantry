@@ -6,7 +6,7 @@
 
 - **Domain**: `starship.rs`
 - **Name**: `starship`
-- **Homepage**: https://starship.rs
+- **Homepage**: <https://starship.rs>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/starship.rs/package.yml)
 
 ## Installation

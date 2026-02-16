@@ -6,7 +6,7 @@
 
 - **Domain**: `mongodb.com/shell`
 - **Name**: `mongosh`
-- **Homepage**: https://www.mongodb.com/try/download/shell
+- **Homepage**: <https://www.mongodb.com/try/download/shell>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mongodb.com/shell/package.yml)
 
 ## Installation

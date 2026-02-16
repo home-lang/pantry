@@ -6,7 +6,7 @@
 
 - **Domain**: `upx.github.io`
 - **Name**: `upx`
-- **Homepage**: https://upx.github.io/
+- **Homepage**: <https://upx.github.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/upx.github.io/package.yml)
 
 ## Installation

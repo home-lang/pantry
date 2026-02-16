@@ -64,7 +64,7 @@ pantry follows the pkgm philosophy for installation paths, **never installing to
 - **User-specific installation**: `~/.local` - Used automatically when `/usr/local` is not writable
 - **Custom path**: Use `--path <path>` to specify any installation directory
 
-> **Important**: pantry follows the pkgm approach and **never installs to `/opt/homebrew`** (Homebrew's directory). This ensures clean separation from Homebrew-managed packages and follows the traditional Unix philosophy of using `/usr/local` for system-wide installations.
+> **Important**: pantry follows the pkgm approach and**never installs to `/opt/homebrew`** (Homebrew's directory). This ensures clean separation from Homebrew-managed packages and follows the traditional Unix philosophy of using `/usr/local` for system-wide installations.
 
 ```bash
 # Examples of different installation methods
@@ -273,6 +273,7 @@ Create a `dependencies.yaml` file in your project:
 
 ```yaml
 dependencies:
+
   - node@22
   - python@3.12
   - gnu.org/wget@1.21
@@ -291,17 +292,18 @@ Control where packages are installed with the `global` flag:
 ```yaml
 # dependencies.yaml
 dependencies:
-  # Install globally (system-wide)
+# Install globally (system-wide)
   node@22:
     version: 22.1.0
     global: true
 
-  # Install locally (project-specific)
+# Install locally (project-specific)
   typescript@5.0:
     version: 5.0.4
     global: false
 
-  # String format defaults to local installation
+# String format defaults to local installation
+
   - eslint@8.50
 
 env:
@@ -314,11 +316,12 @@ env:
 # dependencies.yaml
 global: true  # Apply to all dependencies
 dependencies:
+
   - node@22
   - python@3.12
   - git@2.42
 
-  # Override for specific packages
+# Override for specific packages
   typescript@5.0:
     version: 5.0.4
     global: false  # Install locally despite top-level global: true
@@ -563,7 +566,7 @@ Check cache size and usage information:
 # Show cache statistics
 pantry cache:stats
 
-# Example output:
+# Example output
 # 📊 Cache Statistics
 #
 # 📦 Cached Packages: 5
@@ -888,6 +891,7 @@ pantry supports multiple dependency file formats:
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22
   - python@3.12
 
@@ -902,6 +906,7 @@ Set project-specific environment variables:
 
 ```yaml
 dependencies:
+
   - node@22
 
 env:
@@ -916,6 +921,7 @@ Handle complex package specifications:
 
 ```yaml
 dependencies:
+
   - gnu.org/wget@^1.21
   - curl.se@~8.0
   - python.org@>=3.11

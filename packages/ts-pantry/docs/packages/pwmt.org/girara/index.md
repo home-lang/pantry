@@ -6,7 +6,7 @@
 
 - **Domain**: `pwmt.org/girara`
 - **Name**: `girara`
-- **Homepage**: https://pwmt.org/projects/girara
+- **Homepage**: <https://pwmt.org/projects/girara>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pwmt.org/girara/package.yml)
 
 ## Installation

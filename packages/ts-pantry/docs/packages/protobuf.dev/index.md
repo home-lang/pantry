@@ -6,7 +6,7 @@
 
 - **Domain**: `protobuf.dev`
 - **Name**: `Protocol Buffers`
-- **Homepage**: https://protobuf.dev/
+- **Homepage**: <https://protobuf.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/protobuf.dev/package.yml)
 
 ## Installation

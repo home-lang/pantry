@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/poppler-qt5`
 - **Name**: `poppler-qt5`
-- **Homepage**: https://poppler.freedesktop.org/
+- **Homepage**: <https://poppler.freedesktop.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/poppler-qt5/package.yml)
 
 ## Installation

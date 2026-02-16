@@ -6,7 +6,7 @@
 
 - **Domain**: `denilson.sa.nom.br/prettyping`
 - **Name**: `prettyping`
-- **Homepage**: https://denilsonsa.github.io/prettyping/
+- **Homepage**: <https://denilsonsa.github.io/prettyping/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/denilson.sa.nom.br/prettyping/package.yml)
 
 ## Installation

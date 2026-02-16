@@ -6,7 +6,7 @@
 
 - **Domain**: `authzed.com/spicedb`
 - **Name**: `spicedb`
-- **Homepage**: https://authzed.com/docs
+- **Homepage**: <https://authzed.com/docs>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/authzed.com/spicedb/package.yml)
 
 ## Installation

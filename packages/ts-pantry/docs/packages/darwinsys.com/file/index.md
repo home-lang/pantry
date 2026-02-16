@@ -6,7 +6,7 @@
 
 - **Domain**: `darwinsys.com/file`
 - **Name**: `file`
-- **Homepage**: https://darwinsys.com/file/
+- **Homepage**: <https://darwinsys.com/file/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/darwinsys.com/file/package.yml)
 
 ## Installation

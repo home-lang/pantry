@@ -6,7 +6,7 @@
 
 - **Domain**: `aquasecurity.github.io/trivy`
 - **Name**: `trivy`
-- **Homepage**: https://aquasecurity.github.io/trivy/
+- **Homepage**: <https://aquasecurity.github.io/trivy/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aquasecurity.github.io/trivy/package.yml)
 
 ## Installation

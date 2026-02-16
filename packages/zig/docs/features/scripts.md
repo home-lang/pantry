@@ -5,6 +5,7 @@ Run scripts from `package.json` or `pantry.json` with support for arguments, fil
 ## Overview
 
 Pantry provides a powerful script runner compatible with npm/yarn/pnpm scripts:
+
 - Run any script defined in `package.json` or `pantry.json`
 - Pass arguments to scripts
 - List all available scripts
@@ -232,7 +233,7 @@ pantry run build:watch
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "test:unit": "bun test src/**/*.test.ts",
-    "test:integration": "bun test tests/integration/**/*.test.ts"
+    "test:integration": "bun test tests/integration/**/_.test.ts"
   }
 }
 ```
@@ -287,12 +288,12 @@ pantry run validate
 {
   "scripts": {
     "build": "bun build",
-    "build:all": "pantry run build --filter=\"packages/*\" --parallel",
+    "build:all": "pantry run build --filter=\"packages/_\" --parallel",
     "test": "bun test",
-    "test:all": "pantry run test --filter=\"packages/*\"",
+    "test:all": "pantry run test --filter=\"packages/_\"",
     "test:changed": "pantry run test --changed",
     "dev": "bun run --hot src/index.ts",
-    "dev:all": "pantry run dev --filter=\"apps/*\" --parallel"
+    "dev:all": "pantry run dev --filter=\"apps/_\" --parallel"
   }
 }
 ```

@@ -6,7 +6,7 @@
 
 - **Domain**: `temporal.io`
 - **Name**: `temporal`
-- **Homepage**: https://temporal.io/
+- **Homepage**: <https://temporal.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/temporal.io/package.yml)
 
 ## Installation

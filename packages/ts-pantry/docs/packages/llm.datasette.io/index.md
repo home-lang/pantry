@@ -6,7 +6,7 @@
 
 - **Domain**: `llm.datasette.io`
 - **Name**: `llm`
-- **Homepage**: https://llm.datasette.io/
+- **Homepage**: <https://llm.datasette.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/llm.datasette.io/package.yml)
 
 ## Installation

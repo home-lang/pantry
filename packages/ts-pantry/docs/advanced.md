@@ -181,23 +181,37 @@ Every generated package includes detailed JSDoc comments:
 
 ```typescript
 /**
+
  * Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
  *
+
  * **Programs:** bun
+
  *
+
  * **Install:** `pkgx bun.sh`
+
  *
+
  * **Homepage:** https://bun.sh
+
  *
+
  * **GitHub:** https://github.com/oven-sh/bun
+
  *
+
  * @see https://ts-pkgx.netlify.app/packages/bunsh
+
  */
 export const bunPackage = {
   /**
+
    * List of available versions of this package
    * From newest version to oldest.
    * @see https://ts-pkgx.netlify.app/usage
+
    */
   versions: ['1.2.15', '1.2.14',] as const,
   // ... other properties with comprehensive JSDoc
@@ -297,9 +311,10 @@ ${pkg.dependencies.length ? pkg.dependencies.map(d => `- ${d}`).join('\n') : 'No
 
 ## Links
 
-- [Homepage](${pkg.homepageUrl || 'N/A'})
-- [GitHub](${pkg.githubUrl || 'N/A'})
-- [Package YAML](${pkg.packageYmlUrl || 'N/A'})
+* [Homepage](${pkg.homepageUrl || 'N/A'})
+* [GitHub](${pkg.githubUrl || 'N/A'})
+* [Package YAML](${pkg.packageYmlUrl || 'N/A'})
+
 `
 }
 ```
@@ -309,13 +324,13 @@ ${pkg.dependencies.length ? pkg.dependencies.map(d => `- ${d}`).join('\n') : 'No
 You can extend the built-in package aliases system:
 
 ```typescript
-import { aliases as PACKAGE_ALIASES } from 'ts-pkgx'
+import { aliases as PACKAGE*ALIASES } from 'ts-pkgx'
 
 // Add custom aliases
 function extendAliases(customAliases: Record<string, string>): void {
   Object.entries(customAliases).forEach(([alias, domain]) => {
-    if (!PACKAGE_ALIASES[alias]) {
-      PACKAGE_ALIASES[alias] = domain
+    if (!PACKAGE*ALIASES[alias]) {
+      PACKAGE*ALIASES[alias] = domain
       console.log(`Added alias: ${alias} -> ${domain}`)
     }
   })
@@ -412,7 +427,9 @@ function generateCustomIndex(packagesDir: string, outputFile: string): void {
 
   // Add standard getPackage function
   content += `/**
+
  * Get a package by name, supporting both full domain and aliases
+
  */
 export function getPackage(name: string): PkgxPackage | undefined {
   // Direct lookup
@@ -591,7 +608,7 @@ async function processPackagesWithCleanup() {
 Create custom CLI tools that integrate with ts-pkgx:
 
 ```typescript
-#!/usr/bin/env node
+# !/usr/bin/env node
 import { CAC } from 'cac'
 import { fetchPantryPackageWithMetadata, generateDocs } from 'ts-pkgx'
 
@@ -667,7 +684,7 @@ const configs: Record<string, EnvironmentConfig> = {
 }
 
 function getConfig(): EnvironmentConfig {
-  const env = process.env.NODE_ENV || 'development'
+  const env = process.env.NODE*ENV || 'development'
   return configs[env] || configs.development
 }
 

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/snowplow/factotum`
 - **Name**: `factotum`
-- **Homepage**: http://snowplowanalytics.com/blog/2016/04/09/introducing-factotum-data-pipeline-runner/
+- **Homepage**: <http://snowplowanalytics.com/blog/2016/04/09/introducing-factotum-data-pipeline-runner/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/snowplow/factotum/package.yml)
 
 ## Installation

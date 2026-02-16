@@ -6,7 +6,7 @@
 
 - **Domain**: `odigos.io`
 - **Name**: `odigos`
-- **Homepage**: https://odigos.io
+- **Homepage**: <https://odigos.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/odigos.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `soldeer.xyz`
 - **Name**: `soldeer`
-- **Homepage**: https://soldeer.xyz
+- **Homepage**: <https://soldeer.xyz>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/soldeer.xyz/package.yml)
 
 ## Installation

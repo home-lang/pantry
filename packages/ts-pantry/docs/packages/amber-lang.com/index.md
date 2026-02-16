@@ -6,7 +6,7 @@
 
 - **Domain**: `amber-lang.com`
 - **Name**: `amber`
-- **Homepage**: https://amberframework.org/
+- **Homepage**: <https://amberframework.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/amber-lang.com/package.yml)
 
 ## Installation

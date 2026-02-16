@@ -6,7 +6,7 @@
 
 - **Domain**: `coredns.io`
 - **Name**: `coredns`
-- **Homepage**: https://coredns.io/
+- **Homepage**: <https://coredns.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/coredns.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/rust-kanban`
 - **Name**: `rust-kanban`
-- **Homepage**: https://crates.io/crates/rust-kanban
+- **Homepage**: <https://crates.io/crates/rust-kanban>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/rust-kanban/package.yml)
 
 ## Installation

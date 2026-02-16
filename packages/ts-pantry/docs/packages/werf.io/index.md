@@ -6,7 +6,7 @@
 
 - **Domain**: `werf.io`
 - **Name**: `werf`
-- **Homepage**: https://werf.io/
+- **Homepage**: <https://werf.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/werf.io/package.yml)
 
 ## Installation

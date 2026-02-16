@@ -5,6 +5,7 @@ Pantry provides first-class support for monorepos with workspace management, all
 ## Overview
 
 Workspaces enable:
+
 - **Multiple packages** in one repository
 - **Shared dependencies** across packages
 - **Parallel operations** for faster builds
@@ -133,6 +134,7 @@ pantry run test --changed --since=origin/main
 ### Simple monorepo
 
 **workspace.json**:
+
 ```json
 {
   "name": "simple-mono",
@@ -143,6 +145,7 @@ pantry run test --changed --since=origin/main
 ```
 
 **packages/core/package.json**:
+
 ```json
 {
   "name": "@my-org/core",
@@ -154,6 +157,7 @@ pantry run test --changed --since=origin/main
 ```
 
 **packages/ui/package.json**:
+
 ```json
 {
   "name": "@my-org/ui",
@@ -176,6 +180,7 @@ pantry install
 ### Full-stack monorepo
 
 **workspace.json**:
+
 ```json
 {
   "name": "full-stack-mono",
@@ -187,6 +192,7 @@ pantry install
 ```
 
 **packages/shared/package.json**:
+
 ```json
 {
   "name": "@my-org/shared",
@@ -198,6 +204,7 @@ pantry install
 ```
 
 **packages/api-client/package.json**:
+
 ```json
 {
   "name": "@my-org/api-client",
@@ -212,6 +219,7 @@ pantry install
 ```
 
 **apps/web/package.json**:
+
 ```json
 {
   "name": "@my-org/web",
@@ -242,6 +250,7 @@ pantry run test --parallel
 ### Scoped packages
 
 **workspace.json**:
+
 ```json
 {
   "name": "@my-org/monorepo",
@@ -252,6 +261,7 @@ pantry run test --parallel
 ```
 
 **packages/logger/package.json**:
+
 ```json
 {
   "name": "@my-org/logger",
@@ -260,6 +270,7 @@ pantry run test --parallel
 ```
 
 **packages/config/package.json**:
+
 ```json
 {
   "name": "@my-org/config",
@@ -353,6 +364,7 @@ pantry run test --filter="...@my-org/core..."
 ### When to use parallel
 
 **Parallel execution** (`--parallel`):
+
 - Independent packages
 - No build order requirements
 - Tests that don't conflict
@@ -369,6 +381,7 @@ pantry run test --parallel
 ### When to use sequential
 
 **Sequential execution** (default):
+
 - Packages with build dependencies
 - Tests that share resources
 - Operations that must complete in order
@@ -414,7 +427,7 @@ vim packages/core/src/index.ts
 # Test only affected packages
 pantry run test --changed
 
-# Runs tests in:
+# Runs tests in
 # - packages/core (changed)
 # - packages/ui (depends on core)
 # - apps/web (depends on core)
@@ -425,6 +438,7 @@ pantry run test --changed
 ### Root-level scripts
 
 **workspace.json**:
+
 ```json
 {
   "name": "monorepo",
@@ -447,6 +461,7 @@ pantry run test:all
 ### Package-level scripts
 
 **packages/core/package.json**:
+
 ```json
 {
   "name": "@my-org/core",
@@ -513,6 +528,7 @@ Pantry hoists dependencies to workspace root when possible:
 ```
 
 Result:
+
 ```
 my-monorepo/
 ├── pantry/

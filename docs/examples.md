@@ -33,6 +33,7 @@ mkdir my-new-project && cd my-new-project
 # 2. Create dependencies file
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - typescript@5.0
   - yarn@1.22
@@ -58,6 +59,7 @@ yarn --version
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22
   - yarn@1.22
   - typescript@5.0
@@ -74,6 +76,7 @@ env:
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - python@3.12
   - pip
   - jupyter
@@ -93,13 +96,14 @@ Use the `global` flag to install development tools system-wide:
 # dependencies.yaml - Global development tools
 global: true
 dependencies:
+
   - node@22
   - python@3.12
   - go@1.21
   - bun@1.2.3
 
 env:
-  # Global environment variables
+# Global environment variables
   EDITOR: code
   PAGER: less
 ```
@@ -112,12 +116,13 @@ Combine global tools with project-specific dependencies:
 # dependencies.yaml - Mixed installation
 global: true  # Default to global installation
 dependencies:
-  # Global development tools
+# Global development tools
+
   - node@22
   - python@3.12
   - git@2.42
 
-  # Project-specific overrides
+# Project-specific overrides
   typescript@5.0:
     version: 5.0.4
     global: false     # Install locally for this project
@@ -138,7 +143,7 @@ Configure a standardized team environment with global shared tools:
 ```yaml
 # dependencies.yaml - Team standard
 dependencies:
-  # Global shared tools (available system-wide)
+# Global shared tools (available system-wide)
   node@22:
     version: 22.1.0
     global: true
@@ -149,7 +154,8 @@ dependencies:
     version: 24.0.0
     global: true
 
-  # Project-specific tools (isolated per project)
+# Project-specific tools (isolated per project)
+
   - typescript@5.0
   - jest@29.0
   - eslint@8.50
@@ -165,6 +171,7 @@ env:
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22
   - python@3.12
   - postgresql@15
@@ -184,6 +191,7 @@ env:
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - terraform@1.5
   - kubectl@1.28
   - helm@3.12
@@ -298,29 +306,32 @@ export default {
 ```yaml
 # dependencies.yaml
 dependencies:
-  # Exact versions for critical dependencies
+# Exact versions for critical dependencies
+
   - node@22.1.0
   - typescript@5.0.4
 
-  # Semver ranges for flexibility
+# Semver ranges for flexibility
+
   - eslint@^8.40.0
   - prettier@~2.8.0
 
-  # Latest compatible versions
+# Latest compatible versions
+
   - yarn@>=1.22.0
   - webpack@>=5.0.0
 
 env:
-  # Multi-line environment variables
+# Multi-line environment variables
   NODE_OPTIONS: >
     --max-old-space-size=4096
     --experimental-modules
 
-  # Path extensions
+# Path extensions
   PATH_EXTENSION: ./node_modules/.bin:./scripts
 
-  # Conditional variables
-  DEBUG: ${{ env.NODE_ENV == 'development' && 'app:*' || '' }}
+# Conditional variables
+  DEBUG: ${{ env.NODE_ENV == 'development' && 'app:_' || '' }}
 ```
 
 ### Individual Package Global Configuration
@@ -330,7 +341,7 @@ Fine-grained control over which packages are global vs local:
 ```yaml
 # dependencies.yaml
 dependencies:
-  # Core development tools - install globally
+# Core development tools - install globally
   node@22:
     version: 22.1.0
     global: true
@@ -341,7 +352,7 @@ dependencies:
     version: 2.42.0
     global: true
 
-  # Project-specific tools - install locally
+# Project-specific tools - install locally
   typescript@5.0:
     version: 5.0.4
     global: false
@@ -349,7 +360,8 @@ dependencies:
     version: 29.7.0
     global: false
 
-  # String format - defaults to local
+# String format - defaults to local
+
   - eslint@8.50
   - prettier@3.0
 
@@ -366,23 +378,26 @@ Use global flag to set up a development machine with system-wide tools:
 # dependencies.yaml - Development machine setup
 global: true
 dependencies:
-  # Core runtimes
+# Core runtimes
+
   - node@22
   - python@3.12
   - go@1.21
   - bun@1.2.3
 
-  # Development tools
+# Development tools
+
   - git@2.42
   - curl@8.4
   - wget@1.21
 
-  # Container tools
+# Container tools
+
   - docker@24.0
   - kubectl@1.28
 
 env:
-  # Global development settings
+# Global development settings
   DOCKER_DEFAULT_PLATFORM: linux/amd64
   KUBECTL_EXTERNAL_DIFF: code --wait --diff
 ```
@@ -392,7 +407,7 @@ env:
 ### Automated Project Setup Script
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # setup-project.sh
 
 set -e
@@ -414,6 +429,7 @@ case "$PROJECT_TYPE" in
   "node")
     cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - yarn@1.22
   - typescript@5.0
@@ -426,6 +442,7 @@ EOF
   "python")
     cat > dependencies.yaml << EOF
 dependencies:
+
   - python@3.12
   - pip
   - poetry@1.5
@@ -438,6 +455,7 @@ EOF
   "fullstack")
     cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - python@3.12
   - postgresql@15
@@ -457,7 +475,7 @@ echo "💡 Run 'cd $PROJECT_NAME' to activate the environment"
 ### Environment Cleanup Script
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # cleanup-environments.sh
 
 echo "🧹 Cleaning up old pantry environments..."
@@ -479,7 +497,7 @@ echo "✅ Cleanup complete"
 ### Package Update Script
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # update-packages.sh
 
 echo "🔄 Checking for package updates..."
@@ -492,10 +510,10 @@ pantry update --dry-run
 read -p "Do you want to proceed with updates? (y/N): " confirm
 
 if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
-  # Update all packages
+# Update all packages
   pantry update
 
-  # Update critical tools to latest
+# Update critical tools to latest
   echo "🚀 Updating critical tools to latest versions..."
   pantry upgrade node bun typescript --latest
 
@@ -524,27 +542,33 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Install pantry
+
         run: npm install -g ts-pantry
 
       - name: Install project dependencies
+
         run: |
-          # Create temporary dependencies file for CI
+# Create temporary dependencies file for CI
           cat > dependencies.yaml << EOF
           dependencies:
+
             - node@${{ matrix.node-version }}
             - yarn@1.22
+
           env:
             NODE_ENV: test
             CI: true
           EOF
 
-          # Activate environment and install packages
+# Activate environment and install packages
           pantry dev:on
 
       - name: Run tests
+
         run: |
           node --version
           yarn install
@@ -660,6 +684,7 @@ nvm list
 # 2. Create project-specific dependencies
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@$(node --version | cut -c2-)  # Current version
 
 env:
@@ -679,7 +704,7 @@ pantry dev:on
 
 ```bash
 # create-project-template.sh
-#!/bin/bash
+# !/bin/bash
 
 TEMPLATE_DIR="$HOME/.pantry-templates"
 mkdir -p "$TEMPLATE_DIR"
@@ -687,6 +712,7 @@ mkdir -p "$TEMPLATE_DIR"
 # Create Node.js template
 cat > "$TEMPLATE_DIR/node.yaml" << EOF
 dependencies:
+
   - node@22
   - yarn@1.22
   - typescript@5.0
@@ -701,6 +727,7 @@ EOF
 # Create Python template
 cat > "$TEMPLATE_DIR/python.yaml" << EOF
 dependencies:
+
   - python@3.12
   - pip
   - poetry@1.5
@@ -720,7 +747,7 @@ echo "Usage: cp $TEMPLATE_DIR/node.yaml ./dependencies.yaml"
 
 ```bash
 # monitor-environments.sh
-#!/bin/bash
+# !/bin/bash
 
 echo "📊 pantry Environment Report"
 echo "================================"
@@ -785,7 +812,7 @@ pantry service start prometheus grafana
 # Check all service status
 pantry service list
 
-# Services available at:
+# Services available at
 # PostgreSQL: localhost:5432
 # Redis: localhost:6379
 # Nginx: http://localhost:8080
@@ -815,7 +842,7 @@ pantry service start keycloak hasura
 # Check all services
 pantry service list
 
-# Services available at:
+# Services available at
 # Consul UI: http://localhost:8500
 # Vault UI: http://localhost:8200
 # Kafka: localhost:9092 / Pulsar: localhost:6650 / NATS: localhost:4222
@@ -834,12 +861,14 @@ Create a project with both packages and services:
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22
   - python@3.12
 
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
     - nginx
@@ -865,7 +894,7 @@ pantry service start localstack       # AWS services locally
 # Start monitoring
 pantry service start prometheus grafana
 
-# Services available at:
+# Services available at
 # Jenkins: http://localhost:8090
 # Verdaccio: http://localhost:4873
 # LocalStack: http://localhost:4566
@@ -877,9 +906,9 @@ pantry service start prometheus grafana
 # Activate environment (starts services automatically)
 cd my-project/
 # ✅ Environment activated for /path/to/my-project
-# 🚀 Starting PostgreSQL...
-# 🚀 Starting Redis...
-# 🚀 Starting Nginx...
+# 🚀 Starting PostgreSQL
+# 🚀 Starting Redis
+# 🚀 Starting Nginx
 
 # Services are available for your application
 npm run dev
@@ -896,7 +925,7 @@ pantry service start postgres redis
 # Check what's running
 pantry service list
 
-# Work on projects...
+# Work on projects
 
 # Evening: Stop non-essential services
 pantry service stop nginx grafana prometheus
@@ -944,7 +973,7 @@ pantry service restart postgres
 # Edit Redis configuration
 nano ~/.local/share/pantry/services/config/redis.conf
 
-# Example customizations:
+# Example customizations
 # maxmemory 256mb
 # maxmemory-policy allkeys-lru
 # save 60 1000
@@ -959,13 +988,13 @@ pantry service restart redis
 # Edit Nginx configuration
 nano ~/.local/share/pantry/services/config/nginx.conf
 
-# Add custom server block:
+# Add custom server block
 # server {
-#     listen 8081;
-#     server_name api.localhost;
-#     location / {
-#         proxy_pass http://localhost:3000;
-#     }
+# listen 8081
+# server_name api.localhost
+# location / {
+# proxy_pass http://localhost:3000
+# }
 # }
 
 # Test configuration
@@ -990,7 +1019,7 @@ tar -czf postgres-backup-$(date +%Y%m%d).tar.gz \
 
 # Backup with compression
 tar -czf services-backup.tar.gz \
-  --exclude='*.log' \
+  --exclude='_.log' \
   ~/.local/share/pantry/services/
 ```
 
@@ -1087,7 +1116,7 @@ conn = psycopg2.connect(
 
 r = redis.Redis(host='localhost', port=6379, db=0)
 
-# Your application code...
+# Your application code
 ```
 
 These examples demonstrate the versatility and power of pantry for various development scenarios. Use them as starting points for your own projects and workflows.

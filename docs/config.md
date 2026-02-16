@@ -244,6 +244,7 @@ pantry supports flexible dependency configuration with global installation optio
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22
   - python@3.12
 
@@ -266,8 +267,10 @@ dependencies:
   python@3.12:
     version: 3.12.1
     global: false # Install to project directory
-  # String format defaults to local installation
+# String format defaults to local installation
+
   - typescript@5.0
+
 ```
 
 #### Top-Level Global Flag
@@ -278,9 +281,11 @@ Apply global installation to all dependencies:
 # dependencies.yaml
 global: true # All packages install globally unless overridden
 dependencies:
+
   - node@22
   - python@3.12
   - bun@1.2.3
+
   typescript@5.0:
     version: 5.0.4
     global: false # Override: install locally for this project
@@ -298,8 +303,10 @@ The precedence order for global installation flags:
 # Example showing precedence
 global: true # Top-level: install globally
 dependencies:
+
   - node@22 # Uses top-level: global=true
   - python@3.12 # Uses top-level: global=true
+
   bun@1.2.3:
     version: 1.2.3
     global: false # Override: local installation
@@ -360,8 +367,10 @@ dependencies:
 services:
   enabled: true
   autoStart:
+
     - postgres
     - redis
+
 ```
 
 Behavior:
@@ -527,22 +536,27 @@ Dependency file example (inline hooks):
 preSetup:
   enabled: true
   commands:
+
     - { command: "bash -lc 'echo preSetup'" }
 
 postSetup:
   enabled: true
   commands:
+
     - { command: "bash -lc 'echo postSetup'" }
 
 preActivation:
   enabled: true
   commands:
+
     - { command: "bash -lc 'echo preActivation'" }
 
 postActivation:
   enabled: true
   commands:
+
     - { command: "bash -lc 'echo postActivation'" }
+
 ```
 
 Notes:
@@ -602,12 +616,18 @@ This guarantees that editing dependency versions switches to a distinct environm
 To inspect selection and cache behavior, enable verbose logging:
 
 ```bash
+
 export PANTRY_VERBOSE=true # or set in .env
 cd my-project
+
 # 🔍 Env target: env_dir=… dep_file=… dep_hash=…
+
 # 🔍 Cache check: dep=… dep_mtime=… cache_mtime=… fp_match=yes|no
+
 # 🔁 Cache invalid: dependency newer than cache
+
 # 🔁 Cache invalid: fingerprint mismatch
+
 ```
 
 ## Shell Message Customization
@@ -617,37 +637,49 @@ You can customize the messages shown when environments are activated or deactiva
 ### Disabling Shell Messages
 
 ```bash
+
 # Environment variable
+
 export pantry_SHOW_ENV_MESSAGES=false
 
 # Or in configuration file
+
 {
   "showShellMessages": false
 }
+
 ```
 
 ### Custom Activation Messages
 
 ```bash
+
 # Environment variable with path placeholder
+
 export pantry_SHELL_ACTIVATION_MESSAGE="🚀 Project environment loaded: {path}"
 
 # Or in configuration file
+
 {
   "shellActivationMessage": "🚀 Project environment loaded: {path}"
 }
+
 ```
 
 ### Custom Deactivation Messages
 
 ```bash
+
 # Environment variable
+
 export pantry_SHELL_DEACTIVATION_MESSAGE="🔒 Project environment closed"
 
 # Or in configuration file
+
 {
   "shellDeactivationMessage": "🔒 Project environment closed"
 }
+
 ```
 
 ### Message Examples
@@ -655,27 +687,33 @@ export pantry_SHELL_DEACTIVATION_MESSAGE="🔒 Project environment closed"
 Here are some example message configurations:
 
 ```json
+
 {
   "showShellMessages": true,
   "shellActivationMessage": "🔧 Development environment ready for {path}",
   "shellDeactivationMessage": "👋 Development environment closed"
 }
+
 ```
 
 ```json
+
 {
   "showShellMessages": true,
   "shellActivationMessage": "📁 Switched to project: {path}",
   "shellDeactivationMessage": "🏠 Returned to global environment"
 }
+
 ```
 
 ```json
+
 {
   "showShellMessages": true,
   "shellActivationMessage": "[ENV] {path}",
   "shellDeactivationMessage": "[ENV] deactivated"
 }
+
 ```
 
 ## Command-Line Overrides
@@ -683,36 +721,48 @@ Here are some example message configurations:
 Options specified on the command line take precedence over configuration files:
 
 ```bash
+
 # Override installation path
+
 pantry install --path ~/custom-path node@22
 
 # Force reinstallation
+
 pantry shim --force node
 
 # Disable auto PATH modification
+
 pantry bootstrap --no-auto-path
 
 # Install specific Bun version
+
 pantry bun --version 1.0.0
 
 # Bootstrap with custom options
+
 pantry bootstrap --skip-bun --verbose
 
 # Remove packages with dry-run preview
+
 pantry remove python --dry-run
 
 # Complete removal without confirmation
+
 pantry uninstall --force
 
 # Update packages with options
+
 pantry update --dry-run
 pantry upgrade bun --latest
 
 # Generate environment script with options
+
 pantry dev:dump --verbose --dryrun
 
 # Quiet installation
+
 pantry install --quiet node@22
+
 ```
 
 ## Configuration File Locations
@@ -730,6 +780,7 @@ pantry uses the `bunfig` library to load configuration files in this order:
 When using pantry as a library, you can import the types:
 
 ```ts
+
 import type { pantryConfig, pantryOptions } from 'ts-pantry'
 
 // Full configuration
@@ -744,6 +795,7 @@ const options: pantryOptions = {
   verbose: true,
   force: true,
 }
+
 ```
 
 ## Configuration Validation
@@ -751,10 +803,13 @@ const options: pantryOptions = {
 pantry validates configuration at runtime and will show helpful error messages for invalid configurations:
 
 ```bash
+
 # Check your current configuration
+
 pantry --verbose install --dry-run node
 
 # This will show the resolved configuration values
+
 ```
 
 ## Troubleshooting Configuration
@@ -764,27 +819,37 @@ pantry --verbose install --dry-run node
 1. Check file syntax:
 
    ```bash
-   # For TypeScript files
+
+# For TypeScript files
+
    bunx tsc --noEmit pantry.config.ts
 
-   # For JSON files
+# For JSON files
+
    bunx jsonlint .pantryrc
+
    ```
 
 2. Verify file location:
 
    ```bash
-   # Check current directory
+
+# Check current directory
+
    ls -la pantry.config.*
 
-   # Check home directory
+# Check home directory
+
    ls -la ~/.pantryrc ~/.config/pantry/
+
    ```
 
 3. Test with verbose mode:
 
    ```bash
+
    pantry --verbose list
+
    ```
 
 ### Environment Variables Not Working
@@ -792,22 +857,28 @@ pantry --verbose install --dry-run node
 1. Check if variables are set:
 
    ```bash
+
    env | grep pantry
+
    ```
 
 2. Export variables properly:
 
    ```bash
+
    export PANTRY_VERBOSE=true
    export pantry_INSTALL_PATH=/custom/path
    export pantry_DB_USERNAME=myuser
    export pantry_DB_PASSWORD=mypassword
    export pantry_DB_AUTH_METHOD=md5
+
    ```
 
 3. Verify shell configuration:
 
    ```bash
+
    echo $SHELL
    source ~/.zshrc  # or ~/.bashrc
+
    ```

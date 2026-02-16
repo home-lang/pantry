@@ -6,7 +6,7 @@
 
 - **Domain**: `buf.build`
 - **Name**: `buf`
-- **Homepage**: https://buf.build
+- **Homepage**: <https://buf.build>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/buf.build/package.yml)
 
 ## Installation

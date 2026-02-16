@@ -6,7 +6,7 @@
 
 - **Domain**: `x.org/xinput`
 - **Name**: `xinput`
-- **Homepage**: https://gitlab.freedesktop.org/xorg/app/xinput
+- **Homepage**: <https://gitlab.freedesktop.org/xorg/app/xinput>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/x.org/xinput/package.yml)
 
 ## Installation

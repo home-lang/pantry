@@ -6,7 +6,7 @@
 
 - **Domain**: `cairographics.org/pycairo`
 - **Name**: `pycairo`
-- **Homepage**: https://pycairo.readthedocs.io
+- **Homepage**: <https://pycairo.readthedocs.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cairographics.org/pycairo/package.yml)
 
 ## Installation

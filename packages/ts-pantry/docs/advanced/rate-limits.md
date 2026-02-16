@@ -5,6 +5,7 @@ ts-pkgx uses the GitHub API to fetch package information. This page covers advan
 ## Understanding GitHub API Rate Limits
 
 GitHub imposes rate limits on API requests:
+
 - Unauthenticated requests: 60 requests per hour
 - Authenticated requests: 5,000 requests per hour
 

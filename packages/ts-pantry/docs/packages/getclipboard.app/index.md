@@ -6,7 +6,7 @@
 
 - **Domain**: `getclipboard.app`
 - **Name**: `cb`
-- **Homepage**: https://getclipboard.app
+- **Homepage**: <https://getclipboard.app>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/getclipboard.app/package.yml)
 
 ## Installation

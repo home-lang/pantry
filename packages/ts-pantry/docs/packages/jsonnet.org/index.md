@@ -6,7 +6,7 @@
 
 - **Domain**: `jsonnet.org`
 - **Name**: `jsonnet`
-- **Homepage**: http://jsonnet.org
+- **Homepage**: <http://jsonnet.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jsonnet.org/package.yml)
 
 ## Installation

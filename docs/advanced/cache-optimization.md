@@ -86,7 +86,7 @@ dependencies:
 #### Pre-populate Common Packages
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # cache-warm.sh - Pre-populate cache with common packages
 
 COMMON_PACKAGES=(
@@ -114,7 +114,9 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
+
       - name: Cache pantry packages
+
         uses: actions/cache@v3
         with:
           path: ~/.cache/pantry
@@ -123,6 +125,7 @@ jobs:
             pantry-${{ runner.os }}-
 
       - name: Install dependencies
+
         run: |
           pantry install
 ```
@@ -132,7 +135,7 @@ jobs:
 ### Monitoring Cache Growth
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # cache-monitor.sh - Monitor cache size and growth
 
 cache_size() {
@@ -154,7 +157,7 @@ echo "Bun cache: $(du -sh ~/.cache/pantry/binaries/bun 2>/dev/null | cut -f1 || 
 ### Automated Cache Cleanup
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # cache-cleanup.sh - Automated cache maintenance
 
 MAX_CACHE_SIZE_MB=1000
@@ -166,10 +169,10 @@ current_size=$(du -sm "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
 if [ "$current_size" -gt "$MAX_CACHE_SIZE_MB" ]; then
   echo "Cache size ($current_size MB) exceeds limit ($MAX_CACHE_SIZE_MB MB)"
 
-  # Clean old packages first (keep recent versions)
+# Clean old packages first (keep recent versions)
   find "$CACHE_DIR/binaries/packages" -type d -mtime +30 -exec rm -rf {} + 2>/dev/null
 
-  # If still too large, clear entire cache
+# If still too large, clear entire cache
   new_size=$(du -sm "$CACHE_DIR" 2>/dev/null | cut -f1 || echo "0")
   if [ "$new_size" -gt "$MAX_CACHE_SIZE_MB" ]; then
     echo "Clearing entire cache..."
@@ -181,7 +184,7 @@ fi
 ### Selective Cache Retention
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # selective-cleanup.sh - Keep only essential cached packages
 
 KEEP_PACKAGES=(
@@ -231,7 +234,7 @@ ln -s "$pantry_CACHE_DIR" ~/.cache/pantry
 #### Cache Synchronization
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # sync-cache.sh - Synchronize cache across environments
 
 REMOTE_CACHE="user@server:/shared/cache/pantry/"
@@ -249,16 +252,16 @@ rsync -av "$LOCAL_CACHE" "$REMOTE_CACHE"
 #### Checksum Verification
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # verify-cache.sh - Verify cache integrity
 
 CACHE_DIR="$HOME/.cache/pantry/binaries/packages"
 
-for package_dir in "$CACHE_DIR"/*; do
+for package_dir in "$CACHE_DIR"/_; do
   if [ -d "$package_dir" ]; then
     package_name=$(basename "$package_dir")
 
-    # Check if package archive exists and is valid
+# Check if package archive exists and is valid
     if [ -f "$package_dir/package.tar.xz" ]; then
       if ! tar -tf "$package_dir/package.tar.xz" >/dev/null 2>&1; then
         echo "Corrupted cache for $package_name, removing..."
@@ -272,7 +275,7 @@ done
 #### Cache Repair
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # repair-cache.sh - Repair corrupted cache entries
 
 corrupted_packages=()
@@ -292,7 +295,7 @@ done < <(find "$HOME/.cache/pantry/binaries/packages" -maxdepth 1 -type d -print
 # Re-download corrupted packages
 for package in "${corrupted_packages[@]}"; do
   echo "Re-caching $package..."
-  # Extract package name and version
+# Extract package name and version
   domain=$(echo "$package" | cut -d'-' -f1-2)
   version=$(echo "$package" | cut -d'-' -f3-)
 
@@ -305,7 +308,7 @@ done
 ### Cache Performance Metrics
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # cache-metrics.sh - Collect cache performance metrics
 
 CACHE_DIR="$HOME/.cache/pantry"
@@ -323,7 +326,7 @@ cache_misses=$(grep "cache miss" ~/.pantry/logs/install.log 2>/dev/null | wc -l 
 total_requests=$((cache_hits + cache_misses))
 
 if [ "$total_requests" -gt 0 ]; then
-  hit_rate=$(echo "scale=2; $cache_hits * 100 / $total_requests" | bc)
+  hit_rate=$(echo "scale=2; $cache_hits _ 100 / $total_requests" | bc)
 else
   hit_rate="0"
 fi
@@ -349,7 +352,7 @@ cat "$METRICS_FILE"
 ### Performance Benchmarking
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # benchmark-cache.sh - Benchmark cache performance
 
 PACKAGES=("node@20.0.0" "python@3.11.5" "bun@1.2.3")
@@ -372,7 +375,7 @@ done
 # Benchmark warm cache (reinstall)
 echo "Warm cache performance:"
 for package in "${PACKAGES[@]}"; do
-  # Uninstall first
+# Uninstall first
   pantry uninstall "$package" >/dev/null 2>&1
 
   start_time=$(date +%s.%N)

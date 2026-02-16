@@ -46,10 +46,12 @@ async function resolveDependencies(
 ```
 
 **Parameters:**
+
 - `filePath` - Path to dependency file (deps.yaml, pkgx.yaml, etc.)
 - `options` - Optional resolution configuration
 
 **Example:**
+
 ```typescript
 const result = await resolveDependencies('./project-deps.yaml', {
   targetOs: 'darwin',
@@ -73,6 +75,7 @@ async function resolveDependenciesFromYaml(
 ```
 
 **Example:**
+
 ```typescript
 const yamlContent = `
 global: true
@@ -99,6 +102,7 @@ async function resolvePackageDependencies(
 ```
 
 **Example:**
+
 ```typescript
 const deps = await resolvePackageDependencies('gnu.org/grep')
 // Returns: ['gnu.org/grep', 'pcre.org/v2', 'zlib.net', ...]
@@ -258,6 +262,7 @@ export async function ciInstall() {
 ## Supported Dependency File Formats
 
 ### Standard Format
+
 ```yaml
 global: true
 dependencies:
@@ -267,42 +272,45 @@ dependencies:
 ```
 
 ### With Comments
+
 ```yaml
 global: true
 dependencies:
-  # Runtime dependencies
+# Runtime dependencies
   bun.sh: ^1.2.16 # JavaScript runtime
   gnu.org/grep: ^3.12.0 # Text search utility
 
-  # Development tools
+# Development tools
   cli.github.com: ^2.73.0 # GitHub CLI
 ```
 
 ### OS-Specific Dependencies
+
 ```yaml
 dependencies:
   openssl.org: ^1.1
-  linux:gnu.org/gcc: '*'
-  darwin:apple.com/xcode: '*'
+  linux:gnu.org/gcc: '_'
+  darwin:apple.com/xcode: '_'
 ```
 
 ### Complex Version Constraints
+
 ```yaml
 dependencies:
-  # Caret ranges (compatible within major version)
+# Caret ranges (compatible within major version)
   node.js: ^18.0.0
 
-  # Tilde ranges (compatible within minor version)
+# Tilde ranges (compatible within minor version)
   python.org: ~3.11.0
 
-  # Comparison operators
+# Comparison operators
   go.dev: '>=1.20.0'
   rust-lang.org: <1.75.0
 
-  # Exact versions
+# Exact versions
   bun.sh: 1.2.19
 
-  # Latest available
+# Latest available
   deno.land: latest
   cli.github.com: '*'
 ```
@@ -318,6 +326,7 @@ The API automatically resolves version conflicts using semantic versioning rules
 5. **Latest**: Falls back to newest available version
 
 **Example conflict resolution:**
+
 ```yaml
 # Input dependencies
 packageA_deps: somelib ^2.1.0
@@ -338,6 +347,7 @@ packageC_deps: somelib >=2.0.0
 ## Real-World Example
 
 Given this dependency file:
+
 ```yaml
 global: true
 dependencies:
@@ -351,6 +361,7 @@ dependencies:
 ```
 
 The resolver will:
+
 1. Parse **7 direct dependencies**
 2. Resolve **~60 total packages** (including all transitive dependencies)
 3. Handle **9 version conflicts** automatically
@@ -358,6 +369,7 @@ The resolver will:
 5. Provide complete dependency graph ready for installation
 
 **Output includes:**
+
 - All resolved packages with exact versions
 - Version conflict resolutions
 - Ready-to-use install commands:
@@ -371,17 +383,21 @@ The resolver will:
 Both install commands are optimized for modern package managers that auto-resolve transitive dependencies:
 
 ### `pkgxCommand` - pkgx Installation
+
 ```bash
 pkgx install bun.sh gnu.org/bash gnu.org/grep crates.io/eza ffmpeg.org cli.github.com starship.rs
 ```
+
 - Includes **only the 7 direct dependencies** from your deps file
 - pkgx auto-resolves and installs all transitive dependencies
 - Fast and efficient installation
 
 ### `launchpadCommand` - Launchpad Installation
+
 ```bash
 launchpad install bun.sh gnu.org/bash gnu.org/grep crates.io/eza ffmpeg.org cli.github.com starship.rs
 ```
+
 - Includes **only the 7 direct dependencies** from your deps file
 - Launchpad auto-resolves and installs all transitive dependencies
 - **Recommended for Launchpad integrations**
@@ -415,6 +431,7 @@ result.packages.forEach((pkg) => {
 ### Common Issues
 
 **Missing packages:**
+
 ```typescript
 // Check if package exists
 const deps = await resolvePackageDependencies('nonexistent.package')
@@ -422,6 +439,7 @@ const deps = await resolvePackageDependencies('nonexistent.package')
 ```
 
 **Version conflicts:**
+
 ```typescript
 // Monitor conflicts
 const result = await resolveDependencies('./deps.yaml', { verbose: true })
@@ -432,6 +450,7 @@ result.conflicts.forEach((conflict) => {
 ```
 
 **OS compatibility:**
+
 ```typescript
 // Platform-specific resolution
 const result = await resolveDependencies('./deps.yaml', {

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/chainguard-dev/apko`
 - **Name**: `apko`
-- **Homepage**: https://apko.dev
+- **Homepage**: <https://apko.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/chainguard-dev/apko/package.yml)
 
 ## Installation

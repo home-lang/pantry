@@ -6,7 +6,7 @@
 
 - **Domain**: `projen.io`
 - **Name**: `projen`
-- **Homepage**: https://projen.io
+- **Homepage**: <https://projen.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/projen.io/package.yml)
 
 ## Installation

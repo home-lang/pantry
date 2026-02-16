@@ -6,7 +6,7 @@
 
 - **Domain**: `attrs.org`
 - **Name**: `attrs`
-- **Homepage**: https://www.attrs.org/
+- **Homepage**: <https://www.attrs.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/attrs.org/package.yml)
 
 ## Installation

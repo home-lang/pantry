@@ -6,7 +6,7 @@
 
 - **Domain**: `docker.com/machine`
 - **Name**: `docker-machine`
-- **Homepage**: https://docs.gitlab.com/runner/executors/docker_machine.html
+- **Homepage**: <https://docs.gitlab.com/runner/executors/docker_machine.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/docker.com/machine/package.yml)
 
 ## Installation
@@ -61,4 +61,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

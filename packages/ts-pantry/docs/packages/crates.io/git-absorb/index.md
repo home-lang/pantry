@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/git-absorb`
 - **Name**: `git-absorb`
-- **Homepage**: https://crates.io/crates/git-absorb
+- **Homepage**: <https://crates.io/crates/git-absorb>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/git-absorb/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/mitsuhiko/when`
 - **Name**: `when`
-- **Homepage**: https://www.lightandmatter.com/when/when.html
+- **Homepage**: <https://www.lightandmatter.com/when/when.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/mitsuhiko/when/package.yml)
 
 ## Installation

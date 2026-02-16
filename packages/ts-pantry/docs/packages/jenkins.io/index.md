@@ -6,7 +6,7 @@
 
 - **Domain**: `jenkins.io`
 - **Name**: `jenkins-lts`
-- **Homepage**: https://www.jenkins.io/
+- **Homepage**: <https://www.jenkins.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jenkins.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `sf.net/optipng`
 - **Name**: `optipng`
-- **Homepage**: https://optipng.sourceforge.net/
+- **Homepage**: <https://optipng.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sf.net/optipng/package.yml)
 
 ## Installation

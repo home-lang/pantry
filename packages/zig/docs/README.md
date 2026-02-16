@@ -94,9 +94,9 @@ cd my-app
 
 ```bash
 pantry install
-# 🔧 Setting up environment...
-# 📦 Installing bun@1.3.0...
-# 📦 Installing react@18.2.0...
+# 🔧 Setting up environment
+# 📦 Installing bun@1.3.0
+# 📦 Installing react@18.2.0
 # ✅ Environment ready: my-app
 ```
 
@@ -109,6 +109,7 @@ pantry dev
 ```
 
 That's it! Pantry automatically:
+
 - ✅ Installed Bun 1.3.0
 - ✅ Installed React 18.2.0
 - ✅ Created isolated environment
@@ -121,6 +122,7 @@ That's it! Pantry automatically:
 ### 🚀 Lightning Fast
 
 **20-50x faster** than npm, yarn, pnpm:
+
 - Sub-microsecond cache lookups (<50μs)
 - Concurrent package downloads
 - Lock-free cache operations
@@ -129,12 +131,14 @@ That's it! Pantry automatically:
 ### 📦 Universal Package Manager
 
 Install from multiple sources:
+
 - npm registry
 - Custom registries
 - Git repositories
 - Local packages
 
 Supports all formats:
+
 - `pantry.json` / `pantry.jsonc`
 - `package.json`
 - `bun.lockb`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
@@ -155,6 +159,7 @@ Pin runtime versions per project:
 ```
 
 Pantry automatically:
+
 - Downloads correct versions
 - Activates on `cd` into project
 - Updates PATH with highest priority
@@ -177,6 +182,7 @@ Auto-start services per project:
 ```
 
 31 pre-configured services:
+
 - Databases: postgres, mysql, mongodb, redis
 - Web servers: nginx, apache, caddy
 - Infrastructure: rabbitmq, kafka, elasticsearch
@@ -185,12 +191,14 @@ Auto-start services per project:
 ### 🐚 Smart Shell Integration
 
 Automatic environment activation:
+
 - Detects directory changes
 - Activates correct runtime versions
 - Updates PATH automatically
 - Starts configured services
 
 Works with:
+
 - zsh
 - bash
 - fish
@@ -198,6 +206,7 @@ Works with:
 ### ⚡ Aggressive Caching
 
 Two-tier cache system:
+
 - **Fast cache**: 8 entries, <50μs lookup
 - **Slow cache**: Disk-based, ~1ms lookup
 - **1-hour TTL**: No unnecessary revalidation
@@ -217,6 +226,7 @@ Full monorepo support:
 ```
 
 Features:
+
 - Parallel execution
 - Changed-only filtering
 - Dependency linking
@@ -224,7 +234,7 @@ Features:
 
 ---
 
-## Why Pantry?
+## Why Pantry
 
 ### vs npm/yarn/pnpm
 
@@ -271,15 +281,18 @@ MIT License - see [LICENSE](../LICENSE) for details.
 ## Next Steps
 
 **New users**:
+
 1. [Installation](#installation) - Get Pantry installed
 2. [Quick Start](#quick-start) - Create your first project
 3. [Package Management](./features/package-management.md) - Learn package commands
 
 **Migrating**:
+
 1. [From npm/yarn](./guides/migrating-from-npm.md) - Migration guide
 2. [From Bun](./guides/migrating-from-bun.md) - Migration guide
 
 **Advanced users**:
+
 1. [Caching](./advanced/caching.md) - Cache optimization
 2. [Workspaces](./advanced/workspaces.md) - Monorepo setup
 3. [Performance](./advanced/performance.md) - Performance tuning

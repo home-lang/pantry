@@ -6,7 +6,7 @@
 
 - **Domain**: `ceph.com/cephadm`
 - **Name**: `cephadm`
-- **Homepage**: https://ceph.io
+- **Homepage**: <https://ceph.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ceph.com/cephadm/package.yml)
 
 ## Installation

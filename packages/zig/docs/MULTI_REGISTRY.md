@@ -105,16 +105,19 @@ pub fn main() !void {
 The default registry for pkgx packages.
 
 **Features**:
+
 - Native pkgx package support
 - Fast, CDN-backed distribution
 - Platform-specific binaries
 
 **Configuration**:
+
 ```zig
 const config = try pantry.registry.core.RegistryConfig.pkgx(allocator);
 ```
 
 **JSON**:
+
 ```json
 {
   "name": "pkgx",
@@ -129,17 +132,20 @@ const config = try pantry.registry.core.RegistryConfig.pkgx(allocator);
 Full npm registry support with package fetching, search, and version listing.
 
 **Features**:
+
 - Access to all npm packages
 - Version resolution (latest, specific versions)
 - Search functionality
 - Tarball downloads
 
 **Configuration**:
+
 ```zig
 const config = try pantry.registry.core.RegistryConfig.npm(allocator);
 ```
 
 **JSON**:
+
 ```json
 {
   "name": "npm",
@@ -154,6 +160,7 @@ const config = try pantry.registry.core.RegistryConfig.npm(allocator);
 ```
 
 **API Endpoints Used**:
+
 - `GET /{package}` - Package metadata
 - `GET /{package}/{version}` - Specific version
 - `GET /-/v1/search?text={query}` - Package search
@@ -164,16 +171,19 @@ const config = try pantry.registry.core.RegistryConfig.npm(allocator);
 GitHub package registry support.
 
 **Features**:
+
 - GitHub releases and packages
 - Organization package support
 - GitHub token authentication
 
 **Configuration**:
+
 ```zig
 const config = try pantry.registry.core.RegistryConfig.github(allocator);
 ```
 
 **JSON**:
+
 ```json
 {
   "name": "github",
@@ -192,11 +202,13 @@ const config = try pantry.registry.core.RegistryConfig.github(allocator);
 Support for any custom registry following the pantry REST convention.
 
 **Features**:
+
 - Flexible REST API
 - Multiple authentication methods
 - Custom headers support
 
 **REST API Convention**:
+
 ```
 GET  /packages/{name}                    - Get package metadata
 GET  /packages/{name}/{version}          - Get specific version
@@ -207,6 +219,7 @@ POST /packages                           - Publish package
 ```
 
 **Configuration**:
+
 ```zig
 var config = pantry.registry.core.RegistryConfig{
     .type = .custom,
@@ -218,6 +231,7 @@ var config = pantry.registry.core.RegistryConfig{
 ```
 
 **JSON**:
+
 ```json
 {
   "name": "my-registry",
@@ -270,7 +284,7 @@ pub fn loadRegistries(allocator: std.mem.Allocator) !pantry.registry.core.Regist
     const config_file = try std.fs.cwd().openFile("pantry.json", .{});
     defer config_file.close();
 
-    const config_content = try config_file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    const config_content = try config_file.readToEndAlloc(allocator, 10 _ 1024 _ 1024);
     defer allocator.free(config_content);
 
     // Parse JSON
@@ -329,6 +343,7 @@ For npm, GitHub, and custom registries.
 ```
 
 **HTTP Header**:
+
 ```
 Authorization: Bearer your-token-here
 ```
@@ -357,6 +372,7 @@ Username and password authentication.
 ```
 
 **HTTP Header**:
+
 ```
 Authorization: Basic dXNlcjpwYXNz
 ```
@@ -408,6 +424,7 @@ For registries with custom authentication schemes.
 Registries are sorted by priority (lower number = higher priority). When searching for a package, pantry tries registries in priority order until it finds the package.
 
 **Example**:
+
 ```json
 {
   "registries": [
@@ -434,7 +451,7 @@ Registries are sorted by priority (lower number = higher priority). When searchi
 manager.registries.items[0].enabled = false;
 
 // Get next enabled registry
-for (manager.registries.items) |*reg| {
+for (manager.registries.items) |_reg| {
     if (reg.enabled) {
         // Use this registry
         break;
@@ -458,11 +475,11 @@ for (manager.registries.items) |*reg| {
 ```zig
 pub fn fetchWithFallback(
     allocator: std.mem.Allocator,
-    manager: *pantry.registry.core.RegistryManager,
+    manager: _pantry.registry.core.RegistryManager,
     package_name: []const u8,
     version: ?[]const u8,
 ) !pantry.registry.core.PackageMetadata {
-    for (manager.registries.items) |*reg_config| {
+    for (manager.registries.items) |_reg_config| {
         if (!reg_config.enabled) continue;
 
         // Try this registry
@@ -493,27 +510,27 @@ Main manager for multiple registries.
 
 Create a new registry manager.
 
-#### `deinit(self: *RegistryManager) void`
+#### `deinit(self: _RegistryManager) void`
 
 Clean up resources.
 
-#### `addRegistry(self: *RegistryManager, config: RegistryConfig) !void`
+#### `addRegistry(self: _RegistryManager, config: RegistryConfig) !void`
 
 Add a registry. Automatically sorts by priority.
 
-#### `getRegistry(self: *const RegistryManager, name: []const u8) ?*const RegistryConfig`
+#### `getRegistry(self: _const RegistryManager, name: []const u8) ?_const RegistryConfig`
 
 Get registry by name.
 
-#### `getRegistryByType(self: *const RegistryManager, type: RegistryType) ?*const RegistryConfig`
+#### `getRegistryByType(self: _const RegistryManager, type: RegistryType) ?_const RegistryConfig`
 
 Get first enabled registry of specified type.
 
-#### `getDefaultRegistry(self: *const RegistryManager) ?*const RegistryConfig`
+#### `getDefaultRegistry(self: _const RegistryManager) ?_const RegistryConfig`
 
 Get the default (highest priority) registry.
 
-#### `setDefaultRegistry(self: *RegistryManager, name: []const u8) !void`
+#### `setDefaultRegistry(self: _RegistryManager, name: []const u8) !void`
 
 Set a specific registry as default.
 
@@ -530,6 +547,7 @@ Common interface for all registry types.
 Fetch package metadata.
 
 **Parameters**:
+
 - `allocator`: Memory allocator
 - `package_name`: Package name
 - `version`: Optional version (null for latest)
@@ -541,6 +559,7 @@ Fetch package metadata.
 Download package tarball.
 
 **Parameters**:
+
 - `allocator`: Memory allocator
 - `package_name`: Package name
 - `version`: Package version
@@ -551,6 +570,7 @@ Download package tarball.
 Search for packages.
 
 **Parameters**:
+
 - `allocator`: Memory allocator
 - `query`: Search query string
 
@@ -561,6 +581,7 @@ Search for packages.
 List all available versions.
 
 **Parameters**:
+
 - `allocator`: Memory allocator
 - `package_name`: Package name
 
@@ -583,7 +604,7 @@ pub const PackageMetadata = struct {
     dependencies: ?std.StringHashMap([]const u8),
     dev_dependencies: ?std.StringHashMap([]const u8),
 
-    pub fn deinit(self: *PackageMetadata, allocator: std.mem.Allocator) void;
+    pub fn deinit(self: _PackageMetadata, allocator: std.mem.Allocator) void;
 };
 ```
 
@@ -628,18 +649,18 @@ pub fn main() !void {
 ```zig
 pub fn searchAllRegistries(
     allocator: std.mem.Allocator,
-    manager: *pantry.registry.core.RegistryManager,
+    manager: _pantry.registry.core.RegistryManager,
     query: []const u8,
 ) !void {
     var all_results = std.ArrayList(pantry.registry.core.PackageMetadata).init(allocator);
     defer {
-        for (all_results.items) |*result| {
+        for (all_results.items) |_result| {
             result.deinit(allocator);
         }
         all_results.deinit();
     }
 
-    for (manager.registries.items) |*reg_config| {
+    for (manager.registries.items) |_reg_config| {
         if (!reg_config.enabled) continue;
 
         // Create appropriate registry implementation
@@ -753,6 +774,7 @@ app.listen(3000);
 
 - **Never commit tokens** to version control
 - Use environment variables for sensitive credentials:
+
   ```json
   {
     "auth": {
@@ -761,6 +783,7 @@ app.listen(3000);
     }
   }
   ```
+
 - Rotate tokens regularly
 - Use OIDC in CI/CD environments
 
@@ -790,20 +813,23 @@ app.listen(3000);
 **Problem**: Package exists but can't be found.
 
 **Solutions**:
+
 1. Check registry is enabled: `"enabled": true`
 2. Verify authentication credentials
 3. Check priority order
-4. Test registry URL manually: `curl https://registry.url/packages/name`
+4. Test registry URL manually: `curl <https://registry.url/packages/name>`
 
 ### Authentication Failures
 
 **Problem**: 401 or 403 errors.
 
 **Solutions**:
+
 1. Verify token is valid and not expired
 2. Check token has correct permissions
 3. Ensure auth type matches registry requirements
 4. Test authentication manually:
+
    ```bash
    curl -H "Authorization: Bearer TOKEN" https://registry.url/packages/test
    ```
@@ -813,6 +839,7 @@ app.listen(3000);
 **Problem**: Registry requests timing out.
 
 **Solutions**:
+
 1. Check network connectivity
 2. Verify registry URL is correct
 3. Use fallback registries
@@ -823,6 +850,7 @@ app.listen(3000);
 **Problem**: Wrong registry being used.
 
 **Solutions**:
+
 1. Check priority numbers (lower = higher priority)
 2. Verify default registry setting
 3. Ensure desired registry is enabled
@@ -833,6 +861,7 @@ app.listen(3000);
 **Problem**: Configuration not loading.
 
 **Solutions**:
+
 1. Validate JSON syntax: `jq . pantry.json`
 2. Check required fields (name, type, url)
 3. Verify auth object structure
@@ -843,6 +872,7 @@ app.listen(3000);
 **Problem**: Custom registry not working.
 
 **Solutions**:
+
 1. Verify REST API endpoints match convention
 2. Check response JSON format
 3. Ensure proper CORS headers if web-based
@@ -864,7 +894,7 @@ pub fn installPackage(
     defer manager.deinit();
 
     // Try each registry until success
-    for (manager.registries.items) |*reg_config| {
+    for (manager.registries.items) |_reg_config| {
         if (!reg_config.enabled) continue;
 
         const metadata = fetchFromRegistry(
@@ -899,7 +929,7 @@ pub fn searchPackages(
     defer manager.deinit();
 
     // Search all enabled registries
-    for (manager.registries.items) |*reg_config| {
+    for (manager.registries.items) |_reg_config| {
         if (!reg_config.enabled) continue;
 
         std.debug.print("\nSearching {s}...\n", .{reg_config.name.?});

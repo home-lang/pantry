@@ -6,7 +6,7 @@
 
 - **Domain**: `rebar3.org`
 - **Name**: `rebar3`
-- **Homepage**: https://rebar3.org
+- **Homepage**: <https://rebar3.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rebar3.org/package.yml)
 
 ## Installation

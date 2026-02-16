@@ -6,7 +6,7 @@
 
 - **Domain**: `git-quick-stats.sh`
 - **Name**: `git-quick-stats`
-- **Homepage**: https://git-quick-stats.sh/
+- **Homepage**: <https://git-quick-stats.sh/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/git-quick-stats.sh/package.yml)
 
 ## Installation

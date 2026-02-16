@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/shared-mime-info`
 - **Name**: `update-mime-database`
-- **Homepage**: https://wiki.freedesktop.org/www/Software/shared-mime-info
+- **Homepage**: <https://wiki.freedesktop.org/www/Software/shared-mime-info>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/shared-mime-info/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `cocoapods.org`
 - **Name**: `pod`
-- **Homepage**: https://cocoapods.org/
+- **Homepage**: <https://cocoapods.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cocoapods.org/package.yml)
 
 ## Installation

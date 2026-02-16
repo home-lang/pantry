@@ -6,7 +6,7 @@
 
 - **Domain**: `git-cliff.org`
 - **Name**: `git-cliff`
-- **Homepage**: https://git-cliff.org
+- **Homepage**: <https://git-cliff.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/git-cliff.org/package.yml)
 
 ## Installation

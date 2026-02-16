@@ -6,7 +6,7 @@
 
 - **Domain**: `tailcall.run`
 - **Name**: `tailcall`
-- **Homepage**: https://tailcall.run
+- **Homepage**: <https://tailcall.run>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tailcall.run/package.yml)
 
 ## Installation

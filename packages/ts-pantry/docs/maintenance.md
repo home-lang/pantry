@@ -109,16 +109,19 @@ bun run generate:index
 **Solution**: Try the following:
 
 1. Increase the timeout:
+
    ```bash
    bun run pkgx:fetch-all --timeout 60000
    ```
 
 2. Try a different fetch mode:
+
    ```bash
    bun run pkgx:fetch-all --mode scrape
    ```
 
 3. Fetch problematic packages individually:
+
    ```bash
    bun run pkgx:fetch <package-name> --retries 5
    ```
@@ -130,11 +133,13 @@ bun run generate:index
 **Solution**: Use cached data or wait for the rate limit to reset:
 
 1. Set a longer cache duration:
+
    ```bash
    bun run pkgx:fetch-all --cache-duration 240
    ```
 
 2. If you have a GitHub token, you can set it as an environment variable:
+
    ```bash
    export GITHUB_TOKEN=your_github_token
    ```

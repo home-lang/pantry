@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/junegunn/fzf`
 - **Name**: `fzf`
-- **Homepage**: https://junegunn.github.io/fzf/
+- **Homepage**: <https://junegunn.github.io/fzf/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/junegunn/fzf/package.yml)
 
 ## Installation

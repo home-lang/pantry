@@ -6,7 +6,7 @@
 
 - **Domain**: `intel.com/libva`
 - **Name**: `libva`
-- **Homepage**: http://intel.github.io/libva/
+- **Homepage**: <http://intel.github.io/libva/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/intel.com/libva/package.yml)
 
 ## Installation

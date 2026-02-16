@@ -15,7 +15,7 @@ Welcome to the ts-pkgx documentation! This directory contains comprehensive docu
 
 The package documentation is automatically generated from the latest package data using our comprehensive documentation generation system.
 
-### Generated Content Includes:
+### Generated Content Includes
 
 - **Package Catalog**: Organized by categories with quick stats and search functionality
 - **Individual Package Pages**: Detailed information for each package including:
@@ -83,10 +83,13 @@ The documentation generation is integrated into the build process and can be aut
 
 ```yaml
 # Example GitHub Actions workflow
+
 - name: Generate Documentation
+
   run: bun run pkgx:docs
 
 - name: Deploy to GitHub Pages
+
   run: bun run build:docs
 ```
 

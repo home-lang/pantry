@@ -11,6 +11,7 @@ const config: PickierConfig = {
     '**/pantry/**',
     '**/*.generated.zig',
     '**/no/**',
+    'CHANGELOG.md',
   ],
 
   lint: {
@@ -40,6 +41,12 @@ const config: PickierConfig = {
     'markdown/heading-increment': 'warn',
     'markdown/no-trailing-spaces': 'error',
     'markdown/fenced-code-language': 'warn',
+    'markdown/no-duplicate-heading': 'off',
+    'markdown/no-inline-html': 'off',
+    'markdown/no-bare-urls': 'off',
+    'markdown/link-image-style': 'off',
+    'markdown/reference-links-images': 'off',
+    'markdown/link-fragments': 'off',
 
     // Disable overly strict rules
     'regexp/no-unused-capturing-group': 'off',

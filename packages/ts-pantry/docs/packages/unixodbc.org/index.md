@@ -6,7 +6,7 @@
 
 - **Domain**: `unixodbc.org`
 - **Name**: `unixodbc`
-- **Homepage**: https://www.unixodbc.org/
+- **Homepage**: <https://www.unixodbc.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/unixodbc.org/package.yml)
 
 ## Installation

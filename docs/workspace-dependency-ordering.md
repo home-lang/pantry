@@ -83,22 +83,26 @@ utils
 ### Basic Dependency Chain
 
 **Workspace structure:**
+
 - `shared-config` (no dependencies)
 - `shared-types` (depends on `shared-config`)
 - `backend` (depends on `shared-types`)
 - `frontend` (depends on `shared-types`)
 
 **Command:**
+
 ```bash
 pantry run build --filter '*'
 ```
 
 **Execution order:**
+
 1. `shared-config`
 2. `shared-types`
 3. `backend` and `frontend` (independent of each other)
 
 **Output:**
+
 ```
 Running script 'build' in 4 package(s) (3 parallel groups):
   • shared-config
@@ -121,6 +125,7 @@ Running script 'build' in 4 package(s) (3 parallel groups):
 ### Diamond Dependency
 
 **Workspace structure:**
+
 ```
     core
    /    \
@@ -130,11 +135,13 @@ Running script 'build' in 4 package(s) (3 parallel groups):
 ```
 
 **Command:**
+
 ```bash
 pantry run test --filter '*'
 ```
 
 **Execution order:**
+
 1. `core`
 2. `db` and `api` (both depend on `core`, independent of each other)
 3. `app` (depends on both `db` and `api`)
@@ -144,11 +151,13 @@ pantry run test --filter '*'
 When you filter packages, Pantry only orders the **selected** packages, not the entire workspace.
 
 **Command:**
+
 ```bash
 pantry run build --filter 'api' --filter 'frontend'
 ```
 
 If `frontend` depends on `api`, the order will be:
+
 1. `api`
 2. `frontend`
 
@@ -167,19 +176,21 @@ Error: Circular dependency detected in workspace
 ### Common Causes
 
 **Direct circular dependency:**
+
 ```json
 // Package A
 {
-  "dependencies": { "package-b": "workspace:*" }
+  "dependencies": { "package-b": "workspace:_" }
 }
 
 // Package B
 {
-  "dependencies": { "package-a": "workspace:*" }
+  "dependencies": { "package-a": "workspace:_" }
 }
 ```
 
 **Indirect circular dependency:**
+
 ```
 A → B → C → A
 ```
@@ -189,6 +200,7 @@ A → B → C → A
 To fix circular dependencies:
 
 1. **Extract shared code**: Create a new package for shared functionality
+
    ```
    Before: A ↔ B
    After:  A → Shared ← B
@@ -248,10 +260,11 @@ Run tests in dependency order to catch integration issues early:
 
 ```bash
 # Test in dependency order
-pantry run test --filter '*'
+pantry run test --filter '_'
 ```
 
 This ensures:
+
 - Base packages are tested first
 - Dependent packages are tested only after dependencies pass
 - Fast failure if a base dependency fails
@@ -262,7 +275,7 @@ Run dev servers in the correct order:
 
 ```bash
 # Start services in dependency order
-pantry run dev --filter '*'
+pantry run dev --filter '_'
 ```
 
 This is especially useful for microservices where some services depend on others being available.
@@ -278,6 +291,7 @@ This is especially useful for microservices where some services depend on others
 ### Future Improvements
 
 1. **Parallel execution**: Run independent packages simultaneously
+
    ```
    Level 0: [utils] ────────────────► (done)
    Level 1: [api, frontend] ────────► (done, in parallel)
@@ -294,6 +308,7 @@ This is especially useful for microservices where some services depend on others
 **Problem**: Your workspace has circular dependencies.
 
 **Solution**:
+
 1. Run `pantry run build --filter '*'` to see where it fails
 2. Review the dependency graph
 3. Refactor to remove circular references (see [Resolution](#resolution) above)
@@ -303,11 +318,13 @@ This is especially useful for microservices where some services depend on others
 **Problem**: Scripts appear to run in the wrong order.
 
 **Solution**:
+
 1. Verify dependencies are correctly declared in `package.json`
 2. Check that workspace members use `workspace:*` protocol
 3. Ensure package names match exactly
 
 **Example of correct declaration:**
+
 ```json
 {
   "name": "frontend",
@@ -322,6 +339,7 @@ This is especially useful for microservices where some services depend on others
 **Problem**: Pantry doesn't recognize a workspace dependency.
 
 **Solution**:
+
 1. Verify the package is listed in the root workspace configuration
 2. Check the package name matches in both places
 3. Ensure the package directory exists and has a valid `package.json`
@@ -346,6 +364,7 @@ Pantry's dependency ordering uses:
 ### Testing
 
 Dependency ordering is tested with:
+
 - Simple chains (A → B → C)
 - Diamond dependencies
 - Independent packages
@@ -353,6 +372,7 @@ Dependency ordering is tested with:
 - Empty workspaces
 
 Run tests with:
+
 ```bash
 zig build test
 ```
@@ -362,11 +382,13 @@ zig build test
 ### vs. npm/pnpm workspaces
 
 **npm/pnpm:**
+
 - Require `--workspace-concurrency=1` for sequential execution
 - No automatic dependency ordering
 - Must manually specify order with multiple commands
 
 **Pantry:**
+
 - Automatic dependency detection and ordering
 - Built-in topological sort
 - No configuration needed
@@ -374,11 +396,13 @@ zig build test
 ### vs. Lerna
 
 **Lerna:**
+
 - Requires `lerna run --sort` for dependency ordering
 - Can run in parallel with `--concurrency`
 - Requires configuration in `lerna.json`
 
 **Pantry:**
+
 - Automatic by default
 - No configuration required
 - Simpler mental model
@@ -386,11 +410,13 @@ zig build test
 ### vs. Turborepo
 
 **Turborepo:**
+
 - Explicit dependency declaration in `turbo.json`
 - Parallel execution by default
 - Requires setup and configuration
 
 **Pantry:**
+
 - Infers dependencies from `package.json`
 - No additional configuration files
 - Works out of the box
@@ -415,22 +441,25 @@ Keep packages as independent as possible:
 
 ```
 ✅ Good:
+
 - 3 independent packages
 - 2 shared utility packages
 
 ❌ Bad:
+
 - Everything depends on everything
 - Deep dependency chains
+
 ```
 
 ### 3. Use Workspace Protocol
 
-Always use `workspace:*` for workspace dependencies:
+Always use `workspace:_` for workspace dependencies:
 
 ```json
 {
   "dependencies": {
-    "shared-utils": "workspace:*"  // ✅ Explicit workspace dependency
+    "shared-utils": "workspace:_"  // ✅ Explicit workspace dependency
   }
 }
 ```
@@ -440,7 +469,7 @@ Always use `workspace:*` for workspace dependencies:
 Run tests in dependency order to catch issues early:
 
 ```bash
-pantry run test --filter '*'
+pantry run test --filter '_'
 ```
 
 ### 5. Document Dependencies
@@ -451,7 +480,7 @@ Add comments explaining why dependencies exist:
 {
   "dependencies": {
     // Required for shared TypeScript types
-    "shared-types": "workspace:*"
+    "shared-types": "workspace:_"
   }
 }
 ```

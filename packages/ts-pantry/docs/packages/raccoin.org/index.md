@@ -6,7 +6,7 @@
 
 - **Domain**: `raccoin.org`
 - **Name**: `raccoin`
-- **Homepage**: https://raccoin.org/
+- **Homepage**: <https://raccoin.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/raccoin.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `trufflesecurity.com/trufflehog`
 - **Name**: `trufflehog`
-- **Homepage**: https://trufflesecurity.com/
+- **Homepage**: <https://trufflesecurity.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/trufflesecurity.com/trufflehog/package.yml)
 
 ## Installation

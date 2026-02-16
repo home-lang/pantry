@@ -9,6 +9,7 @@ This implementation adds comprehensive OpenID Connect (OIDC) authentication supp
 ### 1. Core OIDC Module (`packages/zig/src/auth/oidc.zig`)
 
 **Features:**
+
 - JWT token decoding and validation
 - Support for 4 major CI/CD providers (GitHub Actions, GitLab CI, Bitbucket, CircleCI)
 - OIDC claims extraction and verification
@@ -17,6 +18,7 @@ This implementation adds comprehensive OpenID Connect (OIDC) authentication supp
 - Automatic provider detection from environment
 
 **Key Components:**
+
 - `OIDCToken` - Token structure with parsed claims
 - `OIDCProvider` - Provider configuration (issuer, JWKS URI, env vars)
 - `TrustedPublisher` - Package publishing authorization rules
@@ -37,12 +39,14 @@ This implementation adds comprehensive OpenID Connect (OIDC) authentication supp
 ### 2. Registry Client (`packages/zig/src/auth/registry.zig`)
 
 **Features:**
+
 - HTTP client for registry communication
 - OIDC-based publishing
 - Traditional token-based publishing (fallback)
 - Trusted publisher management API
 
 **Key Methods:**
+
 - `publishWithOIDC()` - Publish using OIDC token
 - `publishWithToken()` - Publish using traditional auth token
 - `addTrustedPublisher()` - Add trusted publisher to package
@@ -52,6 +56,7 @@ This implementation adds comprehensive OpenID Connect (OIDC) authentication supp
 ### 3. Enhanced Publish Command (`packages/zig/src/cli/commands/package.zig`)
 
 **Enhanced Options:**
+
 ```zig
 pub const PublishOptions = struct {
     dry_run: bool = false,
@@ -65,6 +70,7 @@ pub const PublishOptions = struct {
 ```
 
 **Features:**
+
 - Automatic OIDC detection and usage
 - Graceful fallback to token auth
 - SLSA provenance generation
@@ -74,6 +80,7 @@ pub const PublishOptions = struct {
 ### 4. Trusted Publisher Management Commands
 
 **New CLI Commands:**
+
 ```bash
 # Add trusted publisher
 pantry publisher add --package <name> --type <type> --owner <owner> --repository <repo>
@@ -86,6 +93,7 @@ pantry publisher remove --package <name> --publisher-id <id>
 ```
 
 **Command Implementation:**
+
 - `trustedPublisherAddCommand()` - Add publisher
 - `trustedPublisherListCommand()` - List publishers (table/JSON format)
 - `trustedPublisherRemoveCommand()` - Remove publisher
@@ -93,6 +101,7 @@ pantry publisher remove --package <name> --publisher-id <id>
 ### 5. Provenance Generation
 
 **SLSA Provenance:**
+
 - Automatic generation during OIDC publish
 - in-toto statement format
 - SLSA v0.2 predicate type
@@ -102,6 +111,7 @@ pantry publisher remove --package <name> --publisher-id <id>
 ### 6. Comprehensive Testing
 
 **Unit Tests (`packages/zig/src/auth/oidc_test.zig`):**
+
 - Provider configuration validation
 - Claims validation (GitHub, GitLab)
 - Token expiration validation
@@ -109,6 +119,7 @@ pantry publisher remove --package <name> --publisher-id <id>
 - Ref restriction validation
 
 **Integration Tests (`tests/oidc_integration_test.sh`):**
+
 - Provider detection
 - Publish dry-run testing
 - JWT token structure validation
@@ -119,12 +130,14 @@ pantry publisher remove --package <name> --publisher-id <id>
 ### 7. Documentation
 
 **User Documentation:**
+
 - `docs/OIDC_AUTHENTICATION.md` - Complete guide (10k+ words)
 - `docs/OIDC_QUICKSTART.md` - Quick start guide
 - `docs/OIDC_MIGRATION_GUIDE.md` - Migration from token auth
 - `docs/OIDC_IMPLEMENTATION_SUMMARY.md` - Technical overview
 
 **Examples:**
+
 - `examples/github-actions-oidc-publish.yml` - Complete workflow example
 
 ## Supported CI/CD Providers
@@ -176,10 +189,12 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
       - run: npm install
       - run: npm test
       - run: pantry publish  # OIDC automatic!
+
 ```
 
 ### Trusted Publisher Setup
@@ -349,12 +364,14 @@ To complete the implementation:
 ## Benefits
 
 ### For Users
+
 - ✅ No more managing NPM_TOKEN secrets
 - ✅ Automatic, secure publishing from CI/CD
 - ✅ Supply chain security via provenance
 - ✅ Easy setup and migration
 
 ### For Security
+
 - ✅ Short-lived tokens (1 hour)
 - ✅ Workflow-specific authorization
 - ✅ Automatic token rotation
@@ -362,6 +379,7 @@ To complete the implementation:
 - ✅ SLSA compliance
 
 ### For Maintainers
+
 - ✅ Reduced support burden (no token issues)
 - ✅ Better security posture
 - ✅ Industry-standard approach
@@ -385,6 +403,7 @@ To complete the implementation:
 ## Credits
 
 Implementation based on:
+
 - npm's trusted publishers specification
 - GitHub Actions OIDC documentation
 - SLSA provenance specification

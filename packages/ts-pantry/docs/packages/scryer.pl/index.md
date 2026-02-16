@@ -6,7 +6,7 @@
 
 - **Domain**: `scryer.pl`
 - **Name**: `Scryer Prolog`
-- **Homepage**: https://www.scryer.pl
+- **Homepage**: <https://www.scryer.pl>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/scryer.pl/package.yml)
 
 ## Installation

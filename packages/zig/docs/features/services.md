@@ -5,6 +5,7 @@ Pantry manages background services (databases, caches, web servers) with simple 
 ## Overview
 
 Pantry includes 31 pre-configured services and supports:
+
 - **launchd** on macOS
 - **systemd** on Linux
 - Manual start/stop/restart
@@ -17,32 +18,41 @@ Pantry includes 31 pre-configured services and supports:
 Pantry comes with 31 pre-configured services:
 
 **Databases**:
+
 - postgres, mysql, mariadb, mongodb
 - cassandra, couchdb
 
 **Caches**:
+
 - redis, memcached
 
 **Message Queues**:
+
 - rabbitmq, kafka
 
 **Search/Analytics**:
+
 - elasticsearch
 
 **Infrastructure**:
+
 - nginx, apache, caddy, traefik, haproxy, varnish, squid
 - php-fpm
 
 **Service Discovery**:
+
 - etcd, consul
 
 **Secrets**:
+
 - vault
 
 **Storage**:
+
 - minio
 
 **Monitoring**:
+
 - prometheus, grafana, jaeger, zipkin
 - node-exporter, blackbox-exporter, alertmanager, loki
 
@@ -86,9 +96,9 @@ Define services in `pantry.json` to start them automatically:
 
 ```bash
 cd my-app
-# 🚀 Starting service: postgres...
+# 🚀 Starting service: postgres
 # ✅ postgres started
-# 🚀 Starting service: redis...
+# 🚀 Starting service: redis
 # ✅ redis started
 ```
 
@@ -167,7 +177,7 @@ Full configuration with ports, environment, and health checks:
 
 ```bash
 cd postgres-app
-# 🚀 Starting service: postgres...
+# 🚀 Starting service: postgres
 # ✅ postgres started
 
 pantry run dev
@@ -210,11 +220,11 @@ pantry run dev
 
 ```bash
 cd full-stack-app
-# 🚀 Starting service: postgres...
+# 🚀 Starting service: postgres
 # ✅ postgres started
-# 🚀 Starting service: redis...
+# 🚀 Starting service: redis
 # ✅ redis started
-# 🚀 Starting service: nginx...
+# 🚀 Starting service: nginx
 # ✅ nginx started
 
 pantry run dev
@@ -388,8 +398,10 @@ Add README section explaining service requirements:
 ## Services
 
 This project requires:
+
 - PostgreSQL 15+ (auto-started by Pantry)
 - Redis 7+ (auto-started by Pantry)
+
 ```
 
 ### 3. Use health checks

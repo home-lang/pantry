@@ -6,7 +6,7 @@
 
 - **Domain**: `kpt.dev`
 - **Name**: `kpt`
-- **Homepage**: https://kpt.dev
+- **Homepage**: <https://kpt.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kpt.dev/package.yml)
 
 ## Installation

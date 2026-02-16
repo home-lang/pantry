@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/kylef/swiftenv`
 - **Name**: `swiftenv`
-- **Homepage**: https://swiftenv.fuller.li/
+- **Homepage**: <https://swiftenv.fuller.li/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/kylef/swiftenv/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `ordinals.com`
 - **Name**: `ord`
-- **Homepage**: https://ordinals.com/
+- **Homepage**: <https://ordinals.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ordinals.com/package.yml)
 
 ## Installation

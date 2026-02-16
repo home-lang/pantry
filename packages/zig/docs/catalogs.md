@@ -256,6 +256,7 @@ Then run `pantry install` to update all packages.
 Pantry looks for catalogs in two places (in order of precedence):
 
 1. **Inside workspaces object** (recommended):
+
    ```json
    {
        "workspaces": {
@@ -266,6 +267,7 @@ Pantry looks for catalogs in two places (in order of precedence):
    ```
 
 2. **Top level** (also supported):
+
    ```json
    {
        "catalog": { ... },
@@ -282,10 +284,10 @@ When you run `pantry install` in a workspace:
 1. **Load Catalogs**: Pantry reads the root `package.json` and loads all catalog definitions
 2. **Discover Members**: Finds all workspace members based on the `workspaces.packages` patterns
 3. **Resolve References**: For each workspace member:
-   - Reads the member's `package.json`
-   - Finds dependencies with `catalog:` references
-   - Resolves them using the appropriate catalog
-   - Warns if a catalog reference can't be resolved
+   * Reads the member's `package.json`
+   * Finds dependencies with `catalog:` references
+   * Resolves them using the appropriate catalog
+   * Warns if a catalog reference can't be resolved
 4. **Install**: Installs the resolved dependencies
 
 ### Example Output
@@ -519,6 +521,7 @@ pantry install
 ### Problem: Catalog reference not resolving
 
 **Solution**: Check that:
+
 1. The root package.json has the catalog defined
 2. The package name in the catalog matches exactly
 3. You're running `pantry install` from the workspace root
@@ -526,6 +529,7 @@ pantry install
 ### Problem: Wrong version being installed
 
 **Solution**:
+
 1. Check if there are multiple catalog definitions (workspaces vs top-level)
 2. Verify the catalog name in the reference matches the catalog definition
 3. Clear the lockfile and reinstall: `rm pantry.lock && pantry install`
@@ -533,11 +537,12 @@ pantry install
 ### Problem: Catalog not found warning
 
 **Solution**:
+
 ```bash
 # Check your root package.json structure
 cat package.json | grep -A 10 "catalog"
 
-# Ensure the catalog is in the right location:
+# Ensure the catalog is in the right location
 # Either workspaces.catalog or top-level catalog
 ```
 
@@ -595,7 +600,7 @@ cat package.json | grep -A 10 "catalog"
 
 ## See Also
 
-- [Workspaces](./workspaces.md) - Learn about monorepo workspaces
-- [Dependencies](./dependencies.md) - Dependency management basics
-- [Overrides](./overrides-resolutions.md) - Control metadependency versions
-- [pantry install](./commands/install.md) - Install command reference
+* [Workspaces](./workspaces.md) - Learn about monorepo workspaces
+* [Dependencies](./dependencies.md) - Dependency management basics
+* [Overrides](./overrides-resolutions.md) - Control metadependency versions
+* [pantry install](./commands/install.md) - Install command reference

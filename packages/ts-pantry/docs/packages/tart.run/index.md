@@ -6,7 +6,7 @@
 
 - **Domain**: `tart.run`
 - **Name**: `tart`
-- **Homepage**: https://tart.run
+- **Homepage**: <https://tart.run>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tart.run/package.yml)
 
 ## Installation

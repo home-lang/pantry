@@ -21,7 +21,7 @@ mkdir -p ~/.local/bin
 
 # Create a custom shim file
 cat > ~/.local/bin/custom-node << EOF
-#!/bin/sh
+# !/bin/sh
 exec pkgx -q node@22.0.0 --max-old-space-size=4096 "\$@"
 EOF
 
@@ -34,13 +34,13 @@ chmod +x ~/.local/bin/custom-node
 pantry's shims generally follow this template:
 
 ```sh
-#!/usr/bin/env -S pkgx -q [package]@[version]
+# !/usr/bin/env -S pkgx -q [package]@[version]
 ```
 
 For more complex requirements, you might want to use:
 
 ```sh
-#!/bin/sh
+# !/bin/sh
 # Custom environment settings
 export NODE_OPTIONS="--max-old-space-size=8192"
 export DEBUG=true
@@ -54,12 +54,12 @@ exec pkgx -q [package]@[version] "$@"
 Create shims that integrate with pantry's environment system:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Custom Node.js shim with environment awareness
 
 # Check if we're in a pantry environment
 if [ -n "$pantry_ENV_HASH" ]; then
-  # Use environment-specific binary if available
+# Use environment-specific binary if available
   ENV_NODE="$HOME/.local/share/pantry/envs/$pantry_ENV_HASH/bin/node"
   if [ -x "$ENV_NODE" ]; then
     exec "$ENV_NODE" "$@"
@@ -75,7 +75,7 @@ exec pkgx -q node@22 "$@"
 Sometimes, you might want to create a shim for a specific command within a package:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Use TypeScript compiler from a specific version of TypeScript
 exec pkgx -q typescript@5.0.0 tsc "$@"
 ```
@@ -85,7 +85,7 @@ exec pkgx -q typescript@5.0.0 tsc "$@"
 Lock a shim to a specific package version:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Ensure we always use Node.js 22 for this shim
 exec pkgx -q node@22 "$@"
 ```
@@ -95,7 +95,7 @@ exec pkgx -q node@22 "$@"
 Add environment variables to a shim:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Set environment variables
 export NODE_ENV=production
 export DEBUG=false
@@ -109,7 +109,7 @@ exec pkgx -q node "$@"
 Create shims that directly reference installed binaries for better performance:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Direct execution shim (faster than pkgx resolution)
 # Update path based on your actual installation
 DIRECT_PATH="$HOME/.local/pkgs/nodejs.org/v22.0.0/bin/node"
@@ -117,7 +117,7 @@ DIRECT_PATH="$HOME/.local/pkgs/nodejs.org/v22.0.0/bin/node"
 if [ -x "$DIRECT_PATH" ]; then
   exec "$DIRECT_PATH" "$@"
 else
-  # Fallback to pkgx
+# Fallback to pkgx
   exec pkgx -q node@22 "$@"
 fi
 ```
@@ -127,7 +127,7 @@ fi
 Create shims that provide feedback when used:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Shim with custom messaging
 if [ "$pantry_SHOW_ENV_MESSAGES" = "true" ]; then
   echo "🚀 Using custom Node.js shim" >&2
@@ -141,7 +141,7 @@ exec pkgx -q node@22 "$@"
 Create shims that run multiple commands in sequence:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Run ESLint then Prettier
 echo "🔍 Running ESLint..." >&2
 pkgx -q eslint "$@" && {
@@ -155,23 +155,23 @@ pkgx -q eslint "$@" && {
 Create shims that behave differently based on the platform:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Platform-specific behavior
 case "$(uname)" in
   Darwin)
-    # macOS-specific options
+# macOS-specific options
     exec pkgx -q python@3.12 -m venv "$@"
     ;;
   Linux)
-    # Linux-specific options
+# Linux-specific options
     exec pkgx -q python@3.11 -m venv "$@"
     ;;
-  CYGWIN*|MINGW*|MSYS*)
-    # Windows-specific options
+  CYGWIN_|MINGW_|MSYS_)
+# Windows-specific options
     exec pkgx -q python@3.12 -m venv "$@"
     ;;
-  *)
-    # Default fallback
+  _)
+# Default fallback
     exec pkgx -q python@3.11 -m venv "$@"
     ;;
 esac
@@ -182,12 +182,12 @@ esac
 Create shims that detect project context:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Project-aware Node.js shim
 
 # Check for project-specific Node version
 if [ -f package.json ]; then
-  # Extract Node version from engines field (requires jq)
+# Extract Node version from engines field (requires jq)
   if command -v jq >/dev/null 2>&1; then
     NODE_VERSION=$(jq -r '.engines.node // empty' package.json 2>/dev/null)
     if [ -n "$NODE_VERSION" ]; then
@@ -211,11 +211,11 @@ exec pkgx -q node@22 "$@"
 Create a debug version of a shim:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Debug shim with detailed information
 if [ "$pantry_DEBUG_SHIMS" = "true" ]; then
   echo "🐛 Debug Info:" >&2
-  echo "  Arguments: $*" >&2
+  echo "  Arguments: $_" >&2
   echo "  Working directory: $(pwd)" >&2
   echo "  PATH: $PATH" >&2
   echo "  Environment hash: $pantry_ENV_HASH" >&2
@@ -234,7 +234,7 @@ fi
 Create shims with multiple fallback strategies:
 
 ```bash
-#!/bin/sh
+# !/bin/sh
 # Multi-fallback shim
 
 # Try environment-specific binary first
@@ -318,18 +318,22 @@ cat > ~/my-shims/README.md << EOF
 # Custom pantry Shims
 
 ## Development Shims
+
 - \`node-dev\`: Node.js with development optimizations
 - \`python-dev\`: Python with debugging enabled
 
 ## Production Shims
+
 - \`node-prod\`: Node.js with production settings
 - \`python-prod\`: Python with performance optimizations
 
 ## Debug Shims
+
 - \`node-debug\`: Node.js with verbose debugging
 - \`python-debug\`: Python with debug information
 
 ## Platform-Specific Shims
+
 - \`node-macos\`: macOS-optimized Node.js
 - \`python-linux\`: Linux-optimized Python
 
@@ -343,7 +347,7 @@ EOF
 Create a script to generate shims dynamically:
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # generate-shim.sh - Dynamic shim generator
 
 PACKAGE="$1"
@@ -360,14 +364,14 @@ fi
 case "$TYPE" in
   debug)
     cat > "$OUTPUT_DIR/$PACKAGE" << EOF
-#!/bin/sh
+# !/bin/sh
 echo "🐛 Debugging $PACKAGE@$VERSION" >&2
 exec pkgx -v -q $PACKAGE@$VERSION "\$@"
 EOF
     ;;
   performance)
     cat > "$OUTPUT_DIR/$PACKAGE" << EOF
-#!/bin/sh
+# !/bin/sh
 # Performance-optimized shim
 DIRECT_PATH="\$HOME/.local/pkgs/$PACKAGE/v$VERSION/bin/$PACKAGE"
 if [ -x "\$DIRECT_PATH" ]; then
@@ -377,9 +381,9 @@ else
 fi
 EOF
     ;;
-  *)
+  _)
     cat > "$OUTPUT_DIR/$PACKAGE" << EOF
-#!/bin/sh
+# !/bin/sh
 exec pkgx -q $PACKAGE@$VERSION "\$@"
 EOF
     ;;

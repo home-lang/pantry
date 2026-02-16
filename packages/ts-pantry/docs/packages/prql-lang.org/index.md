@@ -6,7 +6,7 @@
 
 - **Domain**: `prql-lang.org`
 - **Name**: `prql`
-- **Homepage**: https://prql-lang.org
+- **Homepage**: <https://prql-lang.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/prql-lang.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/thinkst/opencanary`
 - **Name**: `opencanaryd`
-- **Homepage**: http://opencanary.org
+- **Homepage**: <http://opencanary.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/thinkst/opencanary/package.yml)
 
 ## Installation

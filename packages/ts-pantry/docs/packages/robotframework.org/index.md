@@ -6,7 +6,7 @@
 
 - **Domain**: `robotframework.org`
 - **Name**: `robot`
-- **Homepage**: https://robotframework.org/
+- **Homepage**: <https://robotframework.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/robotframework.org/package.yml)
 
 ## Installation

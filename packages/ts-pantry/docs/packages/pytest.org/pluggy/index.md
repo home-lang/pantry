@@ -6,7 +6,7 @@
 
 - **Domain**: `pytest.org/pluggy`
 - **Name**: `pluggy`
-- **Homepage**: https://pluggy.readthedocs.io/en/latest/
+- **Homepage**: <https://pluggy.readthedocs.io/en/latest/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pytest.org/pluggy/package.yml)
 
 ## Installation

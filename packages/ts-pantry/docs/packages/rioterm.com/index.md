@@ -6,7 +6,7 @@
 
 - **Domain**: `rioterm.com`
 - **Name**: `rio`
-- **Homepage**: https://rioterm.com
+- **Homepage**: <https://rioterm.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rioterm.com/package.yml)
 
 ## Installation

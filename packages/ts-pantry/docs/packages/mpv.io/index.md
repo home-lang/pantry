@@ -6,7 +6,7 @@
 
 - **Domain**: `mpv.io`
 - **Name**: `mpv`
-- **Homepage**: https://mpv.io
+- **Homepage**: <https://mpv.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mpv.io/package.yml)
 
 ## Installation

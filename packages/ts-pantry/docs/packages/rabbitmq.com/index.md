@@ -6,7 +6,7 @@
 
 - **Domain**: `rabbitmq.com`
 - **Name**: `rabbitmq`
-- **Homepage**: https://www.rabbitmq.com/
+- **Homepage**: <https://www.rabbitmq.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rabbitmq.com/package.yml)
 
 ## Installation

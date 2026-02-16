@@ -6,7 +6,7 @@
 
 - **Domain**: `keephq.dev`
 - **Name**: `keep`
-- **Homepage**: https://keephq.dev
+- **Homepage**: <https://keephq.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/keephq.dev/package.yml)
 
 ## Installation

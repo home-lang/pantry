@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/benjaminp/six`
 - **Name**: `six`
-- **Homepage**: https://six.readthedocs.io/
+- **Homepage**: <https://six.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/benjaminp/six/package.yml)
 
 ## Installation

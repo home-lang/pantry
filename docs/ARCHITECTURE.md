@@ -91,14 +91,18 @@ Shell integration is the **heart of pantry's UX**. It enables automatic environm
 ### Integration Flow
 
 ```
+
 1. User runs: `pantry dev:integrate`
+
    └─> Adds hook to ~/.zshrc or ~/.bashrc
 
 2. Shell startup:
+
    └─> eval "$(pantry dev:shellcode)"
        └─> Generates shell functions and hooks
 
 3. User runs: cd /path/to/project
+
    └─> Triggers __pantry_chpwd (zsh) or __pantry_prompt_command (bash)
        └─> Calls __pantry_switch_environment
            ├─> Cache lookup (instant if cached)
@@ -129,25 +133,30 @@ The `shellcode()` function generates a complete shell script that:
 **Logic Flow**:
 
 ```bash
+
 1. SUPER FAST PATH: Check if PWD unchanged → return immediately (0 syscalls)
 
 2. ULTRA FAST PATH: If already in project and still in subdirectory → skip
 
 3. INSTANT DEACTIVATION: If left project directory
+
    ├─> Show deactivation message
    ├─> Remove project paths from PATH
    └─> Clear environment variables
 
 4. CACHE LOOKUP: Walk up directory tree checking cache
+
    ├─> Tier 1: In-memory hash map (instant)
    ├─> Tier 2: Indexed cache file (fast disk lookup)
    └─> Cache hit → activate immediately (skip expensive work)
 
 5. PROJECT DETECTION (cache miss only):
+
    ├─> Scan for dependency files (package.json, Cargo.toml, etc.)
    └─> Use binary detection as fallback
 
 6. ENVIRONMENT ACTIVATION:
+
    ├─> Compute environment directory hash
    ├─> Check if environment exists
    ├─> If exists: activate (update PATH, set vars)
@@ -167,19 +176,23 @@ The `shellcode()` function generates a complete shell script that:
 
 ```bash
 Tier 1: In-memory hash map
+
   - ZSH: Associative array (__LP_CACHE_MAP)
   - Bash: Dynamic variable names (__LP_CACHE_<encoded_path>)
   - Lookup: O(1), zero syscalls
 
 Tier 2: Disk cache file (~/.cache/pantry/shell_cache/env_cache)
+
   - Format: project_dir|dep_file|dep_mtime|env_dir
   - Fast awk-based lookup (single syscall)
   - Validated on read (checks env dir exists, dep file mtime)
 
 Tier 3: Filesystem walk (fallback)
+
   - Walks up directory tree checking for dependency files
   - Only triggered on cache miss
   - Results written to cache for future use
+
 ```
 
 **Cache Writing**: `src/dev/shellcode.ts:216`
@@ -205,7 +218,7 @@ Tier 3: Filesystem walk (fallback)
 3. Appends integration line:
 
    ```bash
-   # Added by pantry
+# Added by pantry
    command -v pantry >/dev/null 2>&1 && eval "$(pantry dev:shellcode)"
    ```
 
@@ -380,8 +393,10 @@ pantry uses `ts-pkgx` (v0.4.93+) for package metadata:
 <project_name>_<dir_hash>[-d<deps_hash>]
 
 Examples:
+
   - my-app_208a31ec
   - pantry_208a31ec-d1a2b3c4  (with dependency file hash)
+
 ```
 
 **Hashing**:
@@ -593,6 +608,7 @@ interface Command {
 **Flow**:
 
 ```
+
 1. CLI definition (using clapp fluent API)
 2. User runs command: `pantry install node`
 3. clapp parses arguments and options
@@ -600,6 +616,7 @@ interface Command {
 5. Action handler resolves command from registry
 6. Executes command.run({ argv, env })
 7. Exits with returned code
+
 ```
 
 **Example** (install command - `bin/cli.ts:57`):
@@ -674,26 +691,33 @@ cli
 ### Environment Lifecycle
 
 ```
+
 1. PROJECT DETECTION
+
    └─> Finds dependency files (package.json, Cargo.toml, etc.)
 
 2. ENVIRONMENT CREATION
+
    └─> Computes environment hash
    └─> Creates directory: ~/.local/share/pantry/envs/<hash>/
 
 3. DEPENDENCY INSTALLATION
+
    └─> Installs packages to environment directory
    └─> Creates binary wrappers in env/bin/
 
 4. CACHE REGISTRATION
+
    └─> Adds entry to ~/.cache/pantry/shell_cache/env_cache
    └─> Maps project directory → environment directory
 
 5. ENVIRONMENT ACTIVATION (automatic on cd)
+
    └─> Modifies PATH to prioritize environment binaries
    └─> Sets environment variables (BUN_INSTALL, etc.)
 
 6. ENVIRONMENT DEACTIVATION (automatic on cd out)
+
    └─> Removes environment paths from PATH
    └─> Clears environment variables
 ```
@@ -1021,7 +1045,7 @@ interface ServiceDefinition {
 
 ```bash
 $ pantry install postgres  # Installs PostgreSQL
-# If autoStart=true:
+# If autoStart=true
 ✅ Service postgres initialized and started
 ```
 

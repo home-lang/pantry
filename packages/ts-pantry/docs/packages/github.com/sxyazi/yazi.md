@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/sxyazi/yazi`
 - **Name**: `yazi`
-- **Homepage**: https://yazi-rs.github.io
+- **Homepage**: <https://yazi-rs.github.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/sxyazi/yazi/package.yml)
 
 ## Installation

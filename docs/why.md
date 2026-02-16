@@ -1,4 +1,4 @@
-# Why pantry?
+# Why pantry
 
 ## The Problem
 
@@ -67,7 +67,7 @@ pantry dev:on
 pantry bootstrap
 ```
 
-## Why Now?
+## Why Now
 
 As software development becomes increasingly complex, the tools we use to manage our environments should become simpler. pantry represents a modern approach to package management that embraces isolation, speed, and cross-platform compatibility. This software is by the team that created Stacks.js, and in order to automate the onboarding process, we needed a better package manager.
 

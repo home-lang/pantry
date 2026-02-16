@@ -6,7 +6,7 @@
 
 - **Domain**: `scons.org`
 - **Name**: `scons`
-- **Homepage**: https://www.scons.org/
+- **Homepage**: <https://www.scons.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/scons.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `cython.org/libcython`
 - **Name**: `libcython`
-- **Homepage**: https://cython.org
+- **Homepage**: <https://cython.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cython.org/libcython/package.yml)
 
 ## Installation

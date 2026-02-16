@@ -6,7 +6,7 @@
 
 - **Domain**: `mongodb.com`
 - **Name**: `mongodb`
-- **Homepage**: https://www.mongodb.com/
+- **Homepage**: <https://www.mongodb.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mongodb.com/package.yml)
 
 ## Installation

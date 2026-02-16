@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/opencore-amr`
 - **Name**: `aac-enc`
-- **Homepage**: https://sourceforge.net/projects/opencore-amr/
+- **Homepage**: <https://sourceforge.net/projects/opencore-amr/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/opencore-amr/package.yml)
 
 ## Installation

@@ -4,11 +4,11 @@ This page answers the most commonly asked questions about pantry. If you don't f
 
 ## General Questions
 
-### What is pantry?
+### What is pantry
 
 pantry is a modern package manager built on top of the pkgx Pantry that provides fast, isolated package management with automatic environment activation. _If needed, it's designed to work alongside existing package managers like Homebrew without conflicts._
 
-### How is pantry different from Homebrew?
+### How is pantry different from Homebrew
 
 | Feature | pantry | Homebrew |
 |---------|-----------|----------|
@@ -19,7 +19,7 @@ pantry is a modern package manager built on top of the pkgx Pantry that provides
 | **Conflict with Homebrew** | ❌ No conflicts | N/A |
 | **Focus** | Development environments | System tools & GUI apps |
 
-### Can I use pantry alongside Homebrew?
+### Can I use pantry alongside Homebrew
 
 **Yes, absolutely!** pantry is designed to coexist peacefully with Homebrew:
 
@@ -33,7 +33,7 @@ brew install --cask visual-studio-code  # GUI app via Homebrew
 pantry install node@22               # Development tool via pantry
 ```
 
-### Do I need to uninstall other package managers?
+### Do I need to uninstall other package managers
 
 **No!** pantry works best as a complement to existing tools:
 
@@ -43,7 +43,7 @@ pantry install node@22               # Development tool via pantry
 
 ## Installation & Setup
 
-### Where does pantry install packages?
+### Where does pantry install packages
 
 pantry follows a clear installation hierarchy:
 
@@ -51,9 +51,9 @@ pantry follows a clear installation hierarchy:
 2. **Fallback**: `~/.local` (user-specific)
 3. **Custom**: Any path you specify with `--path`
 
-**Important**: pantry **never** installs to `/opt/homebrew` to avoid conflicts with Homebrew.
+**Important**: pantry**never** installs to `/opt/homebrew` to avoid conflicts with Homebrew.
 
-### Why does pantry ask for my password?
+### Why does pantry ask for my password
 
 pantry requests sudo privileges only when:
 
@@ -66,7 +66,7 @@ You can avoid sudo by:
 - Installing to user directory: `pantry install --path ~/.local node@22`
 - Fixing `/usr/local` permissions: `sudo chown -R $(whoami) /usr/local`
 
-### How do I completely uninstall pantry?
+### How do I completely uninstall pantry
 
 ```bash
 # Use the built-in uninstall command
@@ -79,13 +79,13 @@ sed -i '/pantry/d' ~/.zshrc ~/.bashrc
 npm uninstall -g ts-pantry
 ```
 
-### Can I install pantry without npm/bun?
+### Can I install pantry without npm/bun
 
 Currently, pantry is distributed via npm/bun/yarn/pnpm. However, after global installation, pantry can bootstrap itself and install its own dependencies (including Bun) independently.
 
 ## Environment Management
 
-### How do environment activations work?
+### How do environment activations work
 
 When you enter a directory with a dependency file (e.g. `deps.yaml`, `dependencies.yaml`, `pkgx.yml`, `pantry.yml`, `package.json`, `pyproject.toml`):
 
@@ -99,7 +99,7 @@ When you enter a directory with a dependency file (e.g. `deps.yaml`, `dependenci
 
 When you leave the directory, everything is automatically restored.
 
-### Why isn't my environment activating?
+### Why isn't my environment activating
 
 **Check shell integration:**
 
@@ -120,7 +120,7 @@ cat dependencies.yaml
 pantry dev:dump --dryrun
 ```
 
-### Why didn't my tool version switch after I changed deps.yaml?
+### Why didn't my tool version switch after I changed deps.yaml
 
 When you cd into a project, pantry now derives the environment directory from:
 
@@ -167,7 +167,7 @@ If the env didn’t change, confirm the `dep_file` is the one you edited and tha
 
 Tip: if you previously activated a project and then edited dependencies, simply `cd .. && cd my-project` to pick up the new env.
 
-### Can I disable shell messages?
+### Can I disable shell messages
 
 **Yes!** You have several options:
 
@@ -183,7 +183,7 @@ export pantry_SHELL_DEACTIVATION_MESSAGE="Done"
 echo 'export default { showShellMessages: false }' > pantry.config.ts
 ```
 
-### How do I clean up old environments?
+### How do I clean up old environments
 
 ```bash
 # Remove environments older than 30 days
@@ -196,7 +196,7 @@ pantry env:clean --force
 pantry env:remove environment_hash_here
 ```
 
-### How do I safely clean up without removing essential tools?
+### How do I safely clean up without removing essential tools
 
 Use the `--keep-global` option to preserve global dependencies during cleanup:
 
@@ -234,18 +234,18 @@ dependencies:
 - Maintains system stability during cleanup
 - Preserves tools you rely on globally across projects
 
-### Can multiple projects share the same environment?
+### Can multiple projects share the same environment
 
 Currently, each project gets its own isolated environment based on its path. This ensures complete isolation but means:
 
-- **Different paths** = **Different environments** (even with identical dependencies)
-- **Same path** = **Same environment** (environment is reused)
+- **Different paths**=**Different environments** (even with identical dependencies)
+- **Same path**=**Same environment** (environment is reused)
 
 This design prevents conflicts between projects but may use more disk space.
 
 ## Package Management
 
-### Why do I need to specify versions?
+### Why do I need to specify versions
 
 pantry requires explicit versions for predictability and isolation:
 
@@ -263,7 +263,7 @@ This ensures:
 - **No surprise updates** that break your project
 - **Clear dependency tracking**
 
-### How do I find available package versions?
+### How do I find available package versions
 
 ```bash
 # Search with pantry's built-in search
@@ -273,7 +273,7 @@ pantry search node
 pantry info node --versions
 ```
 
-### Can I install packages not available in pkgx?
+### Can I install packages not available in pkgx
 
 Currently, pantry uses the pkgx registry through ts-pkgx. If a package isn't available, you can:
 
@@ -286,7 +286,7 @@ brew install some-package  # macOS
 apt install some-package   # Ubuntu/Debian
 ```
 
-### How do I update packages?
+### How do I update packages
 
 pantry uses **immutable packages** - instead of updating, you install new versions:
 
@@ -301,7 +301,7 @@ pantry remove node@22
 # dependencies.yaml: node@23 (instead of node@22)
 ```
 
-### Why can't I install packages globally?
+### Why can't I install packages globally
 
 pantry encourages **project-specific environments** instead of global installations:
 
@@ -316,6 +316,7 @@ npm install -g typescript  # Global installation
 ```yaml
 # dependencies.yaml
 dependencies:
+
   - node@22
   - typescript@5.0
 
@@ -347,6 +348,7 @@ env:
 # dependencies.yaml - All packages global
 global: true
 dependencies:
+
   - node@22
   - typescript@5.0
   - bun@1.2.3
@@ -363,7 +365,7 @@ env:
 
 ## Configuration & Customization
 
-### Where should I put my configuration file?
+### Where should I put my configuration file
 
 pantry looks for configuration in this order:
 
@@ -373,7 +375,7 @@ pantry looks for configuration in this order:
 4. `.pantryrc` (home directory)
 5. `~/.config/pantry/config.json`
 
-### How do I configure pantry for my team?
+### How do I configure pantry for my team
 
 **Project-specific configuration:**
 
@@ -394,19 +396,23 @@ export default {
 export pantry_SHELL_ACTIVATION_MESSAGE="💻 Working on {path}"
 ```
 
-### Can I use pantry in CI/CD?
+### Can I use pantry in CI/CD
 
 **Absolutely!** pantry works great in CI/CD:
 
 ```yaml
 # GitHub Actions example
+
 - name: Install pantry
+
   run: npm install -g ts-pantry
 
 - name: Bootstrap environment
+
   run: pantry bootstrap --skip-shell-integration
 
 - name: Install project dependencies
+
   run: pantry dev:on
 ```
 
@@ -477,6 +483,7 @@ pantry dev:on  # Force activation
 ```yaml
 # Correct format
 dependencies:
+
   - node@22
 
 env:
@@ -492,7 +499,7 @@ pantry dev:dump --verbose  # Shows what would be set
 
 ## Performance & Limits
 
-### How much disk space does pantry use?
+### How much disk space does pantry use
 
 - **Base installation**: ~50MB (pkgx + Bun)
 - **Per environment**: 10MB - 500MB depending on packages
@@ -505,7 +512,7 @@ pantry env:list --verbose  # Shows sizes
 du -sh ~/.local/share/pantry/envs/*
 ```
 
-### Is there a limit on the number of environments?
+### Is there a limit on the number of environments
 
 No hard limit, but consider:
 
@@ -513,7 +520,7 @@ No hard limit, but consider:
 - **Performance** - Many environments can slow shell activation
 - **Management** - Use `env:clean` to remove old environments
 
-### How fast is package installation?
+### How fast is package installation
 
 pantry is significantly faster than traditional package managers:
 
@@ -523,7 +530,7 @@ pantry is significantly faster than traditional package managers:
 
 ## Migration & Compatibility
 
-### Can I migrate from nvm/rbenv/pyenv?
+### Can I migrate from nvm/rbenv/pyenv
 
 **Yes!** See our [Migration Guide](./migration.md) for detailed steps. The general process:
 
@@ -532,7 +539,7 @@ pantry is significantly faster than traditional package managers:
 3. **Test each project** with pantry environments
 4. **Gradually remove** old version managers
 
-### Will this break my existing projects?
+### Will this break my existing projects
 
 **No!** pantry is designed for safe migration:
 
@@ -540,13 +547,14 @@ pantry is significantly faster than traditional package managers:
 - **Project-specific** - only affects directories with `dependencies.yaml`
 - **Reversible** - Easy to disable or uninstall
 
-### How do I convert .nvmrc files?
+### How do I convert .nvmrc files
 
 ```bash
 # Automatically convert
 NODE_VERSION=$(cat .nvmrc)
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@${NODE_VERSION}
 
 env:
@@ -554,7 +562,7 @@ env:
 EOF
 ```
 
-### Does pantry work with Starship prompt?
+### Does pantry work with Starship prompt
 
 **Yes!** pantry is fully compatible with Starship. However, you might see timeout warnings when Starship tries to detect tool versions:
 
@@ -568,7 +576,7 @@ EOF
 # Add this at the top of your starship.toml
 command_timeout = 5000
 
-# Rest of your configuration...
+# Rest of your configuration
 [git_branch]
 symbol = "🌱 "
 
@@ -582,7 +590,7 @@ This gives Starship 5 seconds (instead of the default) to execute commands, whic
 
 ## Advanced Usage
 
-### Can I create custom package templates?
+### Can I create custom package templates
 
 **Yes!** Create reusable templates:
 
@@ -593,6 +601,7 @@ mkdir ~/.pantry-templates
 # Create Node.js template
 cat > ~/.pantry-templates/node-webapp.yaml << EOF
 dependencies:
+
   - node@22
   - yarn@1.22
   - typescript@5.0
@@ -606,7 +615,7 @@ EOF
 cp ~/.pantry-templates/node-webapp.yaml ./dependencies.yaml
 ```
 
-### Can I use pantry in Docker?
+### Can I use pantry in Docker
 
 **Yes!** pantry works in containers:
 
@@ -623,12 +632,12 @@ RUN pantry bootstrap --skip-shell-integration
 RUN pantry dev:on
 ```
 
-### How do I script with pantry?
+### How do I script with pantry
 
 **Environment activation in scripts:**
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 cd my-project
 
 # Activate environment
@@ -642,14 +651,14 @@ python --version
 
 ## Getting Help
 
-### Where can I get support?
+### Where can I get support
 
-- **Documentation**: [https://pantry.sh](https://pantry.sh)
+- **Documentation**: [<https://pantry.s>h](https://pantry.sh)
 - **GitHub Discussions**: [Ask questions](https://github.com/stacksjs/pantry/discussions)
 - **Discord**: [Real-time chat](https://discord.gg/stacksjs)
 - **Issues**: [Report bugs](https://github.com/stacksjs/pantry/issues)
 
-### How do I report a bug?
+### How do I report a bug
 
 When reporting issues, include:
 
@@ -659,7 +668,7 @@ When reporting issues, include:
 4. **Configuration**: Your `pantry.config.ts` (sanitized)
 5. **Environment**: Output of `pantry env:list`
 
-### How can I contribute?
+### How can I contribute
 
 - **Documentation**: Improve guides and examples
 - **Code**: Submit pull requests
@@ -667,10 +676,10 @@ When reporting issues, include:
 - **Testing**: Report bugs and edge cases
 - **Feedback**: Share your use cases and feature requests
 
-### Is pantry open source?
+### Is pantry open source
 
 **Yes!** pantry is open source under the MIT license:
 
-- **GitHub**: [https://github.com/stacksjs/pantry](https://github.com/stacksjs/pantry)
+- **GitHub**: [<https://github.com/stacksjs/pantr>y](https://github.com/stacksjs/pantry)
 - **License**: [MIT License](https://github.com/stacksjs/pantry/blob/main/LICENSE.md)
-- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/pantry/blob/main/https://github.com/stacksjs/contributing)
+- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/pantry/blob/main/<https://github.com/stacksjs/contributin>g)

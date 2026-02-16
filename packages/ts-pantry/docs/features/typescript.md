@@ -35,31 +35,47 @@ ts-pkgx automatically generates TypeScript files for each package with comprehen
 import type { PkgxPackage } from '../types'
 
 /**
+
  * Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
  *
+
  * **Programs:** bun
+
  *
+
  * **Install:** `pkgx bun.sh`
+
  *
+
  * **Homepage:** https://bun.sh
+
  *
+
  * **GitHub:** https://github.com/oven-sh/bun
+
  *
+
  * @see https://ts-pkgx.netlify.app/packages/bunsh
+
  */
 export const bunPackage: PkgxPackage = {
   name: 'Bun',
   domain: 'bun.sh',
   description: 'Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one',
   /**
+
    * List of executable programs provided by this package
    * @see https://ts-pkgx.netlify.app/usage
+
    */
   programs: ['bun'] as const,
   /**
+
    * List of available versions of this package
    * From newest version to oldest.
    * @see https://ts-pkgx.netlify.app/usage
+
    */
   versions: ['1.2.15', '1.2.14',] as const,
   // ... other properties with comprehensive JSDoc
@@ -112,7 +128,9 @@ All API functions come with proper TypeScript types and comprehensive JSDoc:
 
 ```typescript
 /**
+
  * Fetches package information using the pantry-based approach
+
  */
 async function fetchPantryPackageWithMetadata(
   packageName: string,
@@ -127,7 +145,9 @@ async function fetchPantryPackageWithMetadata(
 ): Promise<{ packageInfo: PkgxPackage } | null>
 
 /**
+
  * Saves package information to both cache and output directories
+
  */
 function saveToCacheAndOutput(
   packageName: string,
@@ -239,10 +259,14 @@ ts-pkgx generates a comprehensive index file with rich JSDoc documentation:
 import type { PkgxPackage } from '../types'
 
 /**
+
  * Access all packages with comprehensive JSDoc documentation and alias support.
+
  *
+
  * This pantry object provides both domain-based and alias-based access to packages.
  * Alias properties point to the same objects as their domain counterparts.
+
  */
 export interface Pantry {
   // Domain-based properties
@@ -251,20 +275,28 @@ export interface Pantry {
 
   // Alias properties (same objects as domains)
   /**
+
    * Bun - Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one
+
    *
+
    * **Programs:** bun
    * **Install:** `pkgx bun.sh`
    * @see https://ts-pkgx.netlify.app/packages/bunsh
+
    */
   bun: PkgxPackage // Same as bunsh
 
   /**
+
    * Node.js - JavaScript runtime built on Chrome's V8 JavaScript engine
+
    *
+
    * **Programs:** node, npm, npx
    * **Install:** `pkgx nodejs.org`
    * @see https://ts-pkgx.netlify.app/packages/nodejsorg
+
    */
   node: PkgxPackage // Same as nodejsorg
 }
@@ -275,18 +307,18 @@ export interface Pantry {
 The generated packages provide excellent TypeScript intellisense:
 
 1. **Hovering over `pantry.bun`** shows:
-   - Complete package description
-   - Programs provided
-   - Installation command
-   - Links to documentation
+   * Complete package description
+   * Programs provided
+   * Installation command
+   * Links to documentation
 
 2. **Hovering over `pantry.bun.versions`** shows:
-   - "From newest version to oldest."
-   - Link to usage documentation
+   * "From newest version to oldest."
+   * Link to usage documentation
 
 3. **Hovering over `pantry.bun.programs`** shows:
-   - "List of executable programs provided by this package"
-   - Link to usage documentation
+   * "List of executable programs provided by this package"
+   * Link to usage documentation
 
 ## Domain Utilities with Type Safety
 

@@ -6,7 +6,7 @@
 
 - **Domain**: `invisible-island.net/lynx`
 - **Name**: `lynx`
-- **Homepage**: https://invisible-island.net/lynx/
+- **Homepage**: <https://invisible-island.net/lynx/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/invisible-island.net/lynx/package.yml)
 
 ## Installation

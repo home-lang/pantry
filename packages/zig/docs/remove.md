@@ -113,6 +113,7 @@ Remove packages without any console output.
 ### Dependencies Check
 
 `pantry remove` will:
+
 1. Check both `dependencies` and `devDependencies`
 2. Remove the package from whichever section it's found in
 3. Delete the package directory from `pantry/`
@@ -121,6 +122,7 @@ Remove packages without any console output.
 ### Error Handling
 
 If a package is not found in either `dependencies` or `devDependencies`:
+
 - A warning is displayed
 - The command continues processing other packages
 - Exit code is `1` only if NO packages were found
@@ -128,6 +130,7 @@ If a package is not found in either `dependencies` or `devDependencies`:
 ### Global Removal
 
 When using `--global`:
+
 - Packages are removed from `~/.pantry/global/packages`
 - No `package.json` is modified
 - Only the global installation directory is affected
@@ -137,6 +140,7 @@ When using `--global`:
 ## Configuration Files
 
 `pantry remove` supports multiple configuration file formats:
+
 - `pantry.json`
 - `pantry.jsonc` (JSON with comments)
 - `package.json`

@@ -6,7 +6,7 @@
 
 - **Domain**: `sagiegurari.github.io/duckscript`
 - **Name**: `duckscript`
-- **Homepage**: https://sagiegurari.github.io/duckscript
+- **Homepage**: <https://sagiegurari.github.io/duckscript>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sagiegurari.github.io/duckscript/package.yml)
 
 ## Installation

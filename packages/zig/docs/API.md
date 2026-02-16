@@ -547,11 +547,13 @@ defer {
 ## Thread Safety
 
 ### Thread-Safe Components
+
 - `EnvCache` - Uses RwLock for concurrent access
 - `PackageCache` - Lock-free reads, RCU writes
 - `Installer` - Safe for concurrent installs of different packages
 
 ### Non-Thread-Safe Components
+
 - `EnvironmentManager` - Use mutex if shared across threads
 - `ShellCommands` - Create per-thread instance
 

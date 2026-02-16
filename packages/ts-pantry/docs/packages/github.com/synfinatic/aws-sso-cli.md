@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/synfinatic/aws-sso-cli`
 - **Name**: `aws-sso`
-- **Homepage**: https://synfinatic.github.io/aws-sso-cli/
+- **Homepage**: <https://synfinatic.github.io/aws-sso-cli/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/synfinatic/aws-sso-cli/package.yml)
 
 ## Installation

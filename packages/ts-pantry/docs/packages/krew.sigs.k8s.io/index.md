@@ -6,7 +6,7 @@
 
 - **Domain**: `krew.sigs.k8s.io`
 - **Name**: `kubectl-krew`
-- **Homepage**: https://sigs.k8s.io/krew/
+- **Homepage**: <https://sigs.k8s.io/krew/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/krew.sigs.k8s.io/package.yml)
 
 ## Installation

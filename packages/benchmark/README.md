@@ -8,7 +8,7 @@ This document contains performance benchmarks for pantry's caching system and fi
 
 The enhanced caching system delivers **10,000x - 50,000x performance improvements**:
 
-- **Cache Hit**: Sub-microsecond (<0.001ms) - **99.9%+ faster than disk I/O**
+- **Cache Hit**: Sub-microsecond (<0.001ms) -**99.9%+ faster than disk I/O**
 - **Cache Miss**: Sub-microsecond (<0.001ms) - Instant fallback
 - **Cache Write**: 7.3ms avg (debounced, non-blocking)
 
@@ -16,7 +16,7 @@ The enhanced caching system delivers **10,000x - 50,000x performance improvement
 
 The Bun-based approaches are **dramatically faster** than the current shell implementation:
 
-- **Bun Direct (sync)**: **99.7% faster** on average
+- **Bun Direct (sync)**:**99.7% faster** on average
 - **Shell (current)**: 16-105ms depending on depth
 
 ## 📊 Detailed Results
@@ -46,7 +46,7 @@ Cache Write: 7.251ms avg (debounced, non-blocking)
 
 **Key Metrics:**
 
-- **Cache Hit**: Sub-microsecond (0.000ms) - **99.9%+ faster than disk I/O**
+- **Cache Hit**: Sub-microsecond (0.000ms) -**99.9%+ faster than disk I/O**
 - **Cache Miss**: Sub-microsecond (0.000ms) - Instant fallback
 - **Cache Write**: 7.3ms avg (debounced, doesn't block shell)
 

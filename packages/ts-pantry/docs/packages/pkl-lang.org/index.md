@@ -6,7 +6,7 @@
 
 - **Domain**: `pkl-lang.org`
 - **Name**: `pkl-lang`
-- **Homepage**: https://pkl-lang.org
+- **Homepage**: <https://pkl-lang.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pkl-lang.org/package.yml)
 
 ## Installation

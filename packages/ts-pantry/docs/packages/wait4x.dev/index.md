@@ -6,7 +6,7 @@
 
 - **Domain**: `wait4x.dev`
 - **Name**: `wait4x`
-- **Homepage**: https://wait4x.dev
+- **Homepage**: <https://wait4x.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wait4x.dev/package.yml)
 
 ## Installation

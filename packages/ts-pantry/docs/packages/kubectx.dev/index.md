@@ -6,7 +6,7 @@
 
 - **Domain**: `kubectx.dev`
 - **Name**: `kube`
-- **Homepage**: https://kubectx.dev
+- **Homepage**: <https://kubectx.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubectx.dev/package.yml)
 
 ## Installation

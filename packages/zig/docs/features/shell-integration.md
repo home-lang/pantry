@@ -5,6 +5,7 @@ Pantry integrates seamlessly with your shell to provide automatic environment ac
 ## Overview
 
 Shell integration enables:
+
 - Automatic environment activation on `cd`
 - Runtime version switching per project
 - PATH management for binaries
@@ -20,6 +21,7 @@ pantry shell:integrate
 ```
 
 This command:
+
 1. Detects your shell (zsh, bash, or fish)
 2. Generates shell-specific hook code
 3. Appends hooks to your RC file (~/.zshrc, ~/.bashrc, ~/.config/fish/config.fish)
@@ -55,6 +57,7 @@ pantry shell:init fish | source
 ### Directory change detection
 
 When you `cd` into a directory, Pantry:
+
 1. Checks for `pantry.json`, `package.json`, or lockfiles
 2. Computes project hash from dependencies
 3. Looks up environment in cache (1-hour TTL)
@@ -92,6 +95,7 @@ pantry shell:activate /path/to/project
 ```
 
 This is useful for:
+
 - Activating without `cd`
 - Testing environment setup
 - CI/CD pipelines
@@ -130,8 +134,8 @@ echo '{"dependencies":{"bun":"1.3.0"}}' > pantry.json
 
 # Activate (happens automatically on cd)
 cd .
-# 🔧 Setting up environment...
-# 📦 Installing bun@1.3.0...
+# 🔧 Setting up environment
+# 📦 Installing bun@1.3.0
 # ✅ Environment ready: my-app
 
 which bun
@@ -149,8 +153,8 @@ bun --version
 vim pantry.json  # Change bun: "1.3.0" → "1.3.1"
 
 cd .
-# 🔄 Dependencies changed, updating environment...
-# 📦 Installing bun@1.3.1...
+# 🔄 Dependencies changed, updating environment
+# 📦 Installing bun@1.3.1
 # ✅ Environment updated
 
 bun --version
@@ -193,12 +197,12 @@ which node
 
 ```bash
 cd my-app
-# 🔧 Setting up environment...
-# 📦 Installing node@20.10.0...
+# 🔧 Setting up environment
+# 📦 Installing node@20.10.0
 # ✅ Environment ready: my-app
-# 🚀 Starting service: postgres...
+# 🚀 Starting service: postgres
 # ✅ postgres started
-# 🚀 Starting service: redis...
+# 🚀 Starting service: redis
 # ✅ redis started
 ```
 
@@ -241,15 +245,15 @@ You can add custom logic to the activation process:
 ```bash
 # ~/.zshrc
 _pantry_hook() {
-  # Run pantry activation
+# Run pantry activation
   eval "$(pantry shell:activate "$PWD")"
 
-  # Custom logic after activation
+# Custom logic after activation
   if [ -f ".envrc" ]; then
     source .envrc
   fi
 
-  # Show project info
+# Show project info
   if [ -n "$PANTRY_CURRENT_PROJECT" ]; then
     echo "📂 Project: $(basename $PANTRY_CURRENT_PROJECT)"
   fi
@@ -283,7 +287,7 @@ pantry shell:integrate
 _pantry_hook() {
   eval "$(pantry shell:activate "$PWD")"
 
-  # Your custom logic here
+# Your custom logic here
   [ -f .env ] && source .env
 }
 ```
@@ -342,11 +346,11 @@ cd .
 # Check PATH priority
 echo $PATH | tr ':' '\n'
 
-# Should see pantry paths first:
+# Should see pantry paths first
 # /Users/you/.pantry/runtimes/bun/1.3.0/bin
 # /path/to/project/pantry/.bin
 # /Users/you/.pantry/envs/hash/bin
-# ... system paths ...
+# ... system paths
 ```
 
 ### Services not starting

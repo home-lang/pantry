@@ -6,7 +6,7 @@
 
 - **Domain**: `wxwidgets.org`
 - **Name**: `wxwidgets`
-- **Homepage**: https://www.wxwidgets.org
+- **Homepage**: <https://www.wxwidgets.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wxwidgets.org/package.yml)
 
 ## Installation

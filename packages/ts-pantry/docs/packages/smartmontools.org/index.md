@@ -6,7 +6,7 @@
 
 - **Domain**: `smartmontools.org`
 - **Name**: `smartmontools`
-- **Homepage**: https://www.smartmontools.org/
+- **Homepage**: <https://www.smartmontools.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/smartmontools.org/package.yml)
 
 ## Installation

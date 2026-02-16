@@ -163,6 +163,7 @@ ts-pkgx generate-index --output-dir ./custom/packages
 ```
 
 The generated index includes:
+
 - Comprehensive JSDoc documentation for each package
 - Alias properties for easy access
 - Type-safe property names
@@ -181,6 +182,7 @@ ts-pkgx generate-ts --cache-dir ./custom-cache --output-dir ./ts-packages
 ```
 
 This generates TypeScript files with:
+
 - Rich JSDoc documentation
 - Alias-based variable naming
 - Comprehensive type information
@@ -208,6 +210,7 @@ ts-pkgx generate-docs --output-dir ./custom-docs
 ```
 
 This creates well-organized documentation with:
+
 - Package categorization
 - Complete package information
 - Installation instructions
@@ -242,7 +245,7 @@ bun run compile
 # Compile for all supported platforms
 bun run compile:all
 
-# Available platforms:
+# Available platforms
 # - Linux x64/ARM64
 # - Windows x64
 # - macOS x64/ARM64
@@ -335,6 +338,7 @@ ts-pkgx fetch problematic-package --no-cache
 ## Resource Management
 
 The CLI automatically manages browser resources and includes safety mechanisms:
+
 - **Automatic cleanup**: Browser resources are cleaned up after operations
 - **Force exit timeout**: Prevents hung processes (25-minute maximum runtime)
 - **Signal handling**: Graceful shutdown on SIGINT/SIGTERM

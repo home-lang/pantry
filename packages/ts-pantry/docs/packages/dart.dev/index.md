@@ -6,7 +6,7 @@
 
 - **Domain**: `dart.dev`
 - **Name**: `dart`
-- **Homepage**: https://dart.dev
+- **Homepage**: <https://dart.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dart.dev/package.yml)
 
 ## Installation

@@ -51,9 +51,11 @@ jobs:
       id-token: write
       contents: read
     steps:
+
       - uses: actions/checkout@v4
       - run: curl -fsSL https://pantry.sh/install.sh | bash
       - run: pantry publish
+
 ```
 
 ## Step 4: Publish
@@ -99,6 +101,7 @@ Ensure `id-token: write` permission is set in your workflow.
 ### Claims Mismatch
 
 Verify the workflow file path in npm trusted publisher config matches exactly:
+
 - ✅ `.github/workflows/publish.yml`
 - ❌ `publish.yml`
 
@@ -113,8 +116,10 @@ Verify the workflow file path in npm trusted publisher config matches exactly:
 Publish to npm AND your custom registry:
 
 ```yaml
+
 - run: pantry publish --registry https://registry.npmjs.org
 - run: pantry publish --registry https://registry.pantry.dev
+
 ```
 
 Both use OIDC. No tokens needed. 🎉

@@ -6,7 +6,7 @@
 
 - **Domain**: `gtk.org/gtk4`
 - **Name**: `gtk4`
-- **Homepage**: https://gtk.org/
+- **Homepage**: <https://gtk.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gtk.org/gtk4/package.yml)
 
 ## Installation

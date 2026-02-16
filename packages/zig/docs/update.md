@@ -182,16 +182,18 @@ Shows detailed information about the update process.
 ### Version Resolution
 
 **Semver-Compatible (default):**
-- Respects version constraints in `package.json`
-- `^1.2.3` updates to latest `1.x.x`
-- `~1.2.3` updates to latest `1.2.x`
-- `>=1.2.3` updates to latest available
+
+* Respects version constraints in `package.json`
+* `^1.2.3` updates to latest `1.x.x`
+* `~1.2.3` updates to latest `1.2.x`
+* `>=1.2.3` updates to latest available
 
 **Latest Mode (`--latest`):**
-- Ignores semver constraints
-- Always updates to the absolute latest version
-- May introduce breaking changes
-- Updates `package.json` with new version range
+
+* Ignores semver constraints
+* Always updates to the absolute latest version
+* May introduce breaking changes
+* Updates `package.json` with new version range
 
 ### Update Process
 
@@ -205,20 +207,22 @@ Shows detailed information about the update process.
 ### Dependency Groups
 
 Updates are applied to:
-- **dependencies** - Always updated
-- **devDependencies** - Updated unless `--production` flag is used
-- **optionalDependencies** - Updated if present
-- **peerDependencies** - Not automatically updated
+
+* **dependencies** - Always updated
+* **devDependencies** - Updated unless `--production` flag is used
+* **optionalDependencies** - Updated if present
+* **peerDependencies** - Not automatically updated
 
 ***
 
 ## Configuration Files
 
 `pantry update` supports multiple configuration file formats:
-- `pantry.json`
-- `pantry.jsonc` (JSON with comments)
-- `package.json`
-- `package.jsonc`
+
+* `pantry.json`
+* `pantry.jsonc` (JSON with comments)
+* `package.json`
+* `package.jsonc`
 
 ***
 
@@ -278,13 +282,15 @@ pantry update
 ```
 
 **Pros:**
-- Lower risk of breaking changes
-- Follows semantic versioning
-- Easier to debug issues
+
+* Lower risk of breaking changes
+* Follows semantic versioning
+* Easier to debug issues
 
 **Cons:**
-- May miss important features
-- Could miss security patches in major versions
+
+* May miss important features
+* Could miss security patches in major versions
 
 ### Aggressive
 
@@ -294,14 +300,16 @@ pantry update --latest
 ```
 
 **Pros:**
-- Always on cutting edge
-- Access to latest features
-- Best security coverage
+
+* Always on cutting edge
+* Access to latest features
+* Best security coverage
 
 **Cons:**
-- Higher risk of breaking changes
-- More time spent on updates
-- May require code changes
+
+* Higher risk of breaking changes
+* More time spent on updates
+* May require code changes
 
 ### Hybrid
 
@@ -314,9 +322,10 @@ pantry update typescript eslint --latest
 ```
 
 **Best of both worlds:**
-- Safe updates for core dependencies
-- Latest versions for dev tools
-- Balanced approach
+
+* Safe updates for core dependencies
+* Latest versions for dev tools
+* Balanced approach
 
 ***
 
@@ -365,17 +374,17 @@ Error: Failed to fetch package metadata
 
 ## Notes
 
-- Updates respect `minimumReleaseAge` configuration (default: 3 days)
-- Packages in `minimumReleaseAgeExcludes` can be updated immediately
-- Use `--dry-run` to preview changes before applying
-- Lockfile (`.freezer`) is automatically updated
-- Use `--no-save` to update `pantry` without changing `package.json`
+* Updates respect `minimumReleaseAge` configuration (default: 3 days)
+* Packages in `minimumReleaseAgeExcludes` can be updated immediately
+* Use `--dry-run` to preview changes before applying
+* Lockfile (`.freezer`) is automatically updated
+* Use `--no-save` to update `pantry` without changing `package.json`
 
 ***
 
 ## See Also
 
-- [pantry install](./install.md) - Install packages
-- [pantry remove](./remove.md) - Remove packages
-- [pantry list](./list.md) - List installed packages
-- [pantry clean](./clean.md) - Clean dependencies and cache
+* [pantry install](./install.md) - Install packages
+* [pantry remove](./remove.md) - Remove packages
+* [pantry list](./list.md) - List installed packages
+* [pantry clean](./clean.md) - Clean dependencies and cache

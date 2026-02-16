@@ -141,7 +141,7 @@ If `chsh` doesn't work:
 1. Make sure the zsh path is in `/etc/shells`:
 
    ```bash
-   # Add your zsh path to allowed shells
+# Add your zsh path to allowed shells
    echo "/path/to/zsh/bin/zsh" | sudo tee -a /etc/shells
    ```
 

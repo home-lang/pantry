@@ -6,7 +6,7 @@
 
 - **Domain**: `libuv.org`
 - **Name**: `libuv`
-- **Homepage**: https://libuv.org/
+- **Homepage**: <https://libuv.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libuv.org/package.yml)
 
 ## Installation

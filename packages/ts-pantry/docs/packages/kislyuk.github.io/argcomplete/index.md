@@ -6,7 +6,7 @@
 
 - **Domain**: `kislyuk.github.io/argcomplete`
 - **Name**: `argcomplete`
-- **Homepage**: https://kislyuk.github.io/argcomplete/
+- **Homepage**: <https://kislyuk.github.io/argcomplete/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kislyuk.github.io/argcomplete/package.yml)
 
 ## Installation

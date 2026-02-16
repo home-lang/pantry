@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/texinfo`
 - **Name**: `texinfo`
-- **Homepage**: https://www.gnu.org/software/texinfo/
+- **Homepage**: <https://www.gnu.org/software/texinfo/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/texinfo/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `rucio.cern.ch/rucio-client`
 - **Name**: `rucio-client`
-- **Homepage**: http://rucio.cern.ch
+- **Homepage**: <http://rucio.cern.ch>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rucio.cern.ch/rucio-client/package.yml)
 
 ## Installation

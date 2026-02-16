@@ -6,7 +6,7 @@
 
 - **Domain**: `html-tidy.org`
 - **Name**: `tidy`
-- **Homepage**: https://www.html-tidy.org/
+- **Homepage**: <https://www.html-tidy.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/html-tidy.org/package.yml)
 
 ## Installation

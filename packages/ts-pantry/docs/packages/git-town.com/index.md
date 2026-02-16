@@ -6,7 +6,7 @@
 
 - **Domain**: `git-town.com`
 - **Name**: `git-town`
-- **Homepage**: https://www.git-town.com/
+- **Homepage**: <https://www.git-town.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/git-town.com/package.yml)
 
 ## Installation

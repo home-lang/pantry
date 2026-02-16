@@ -15,11 +15,11 @@
    - Files: All readFileAlloc calls updated
 
 4. ✅ **std.time.milliTimestamp()** - Function moved
-   - Changed: `std.time.milliTimestamp()` → `std.time.timestamp() * std.time.ms_per_s`
+   - Changed: `std.time.milliTimestamp()` → `std.time.timestamp() * std.time.ms*per*s`
    - File: `src/config/loader.zig:82`
 
 5. ✅ **Lockfile integration** - Added pantry.lock support
-   - New: `src/cli/commands/install/lockfile_hooks.zig`
+   - New: `src/cli/commands/install/lockfile*hooks.zig`
    - Modified: `src/cli/commands/install/core.zig`
 
 6. ✅ **Lifecycle hooks** - Pre/post install hooks
@@ -31,68 +31,80 @@
 ## ⚠️ Remaining Issues (13 errors)
 
 ### 1. File.readToEndAlloc() removed (4 locations)
+
 **Error:** `no field or member function named 'readToEndAlloc' in 'fs.File'`
 
 **Cause:** File API refactored to use Io-based readers
 
 **Files affected:**
+
 - `src/cli/commands/audit.zig:334`
 - `src/cli/commands/registry.zig:169`
 - `src/deps/parser.zig:794`
 - Other locations using `file.readToEndAlloc()`
 
 **Fix needed:**
+
 ```zig
 // Old (Zig 0.15.2):
-const content = try file.readToEndAlloc(allocator, max_size);
+const content = try file.readToEndAlloc(allocator, max*size);
 
 // New (Zig 0.16-dev):
-var io: Io = .init_single_threaded;
+var io: Io = .init*single*threaded;
 var buf: [4096]u8 = undefined;
 const reader = file.reader(io, &buf);
-const content = try reader.readAllAlloc(allocator, max_size);
+const content = try reader.readAllAlloc(allocator, max*size);
 ```
 
 ### 2. File.readAll() removed (1 location)
+
 **Error:** `no field or member function named 'readAll' in 'fs.File'`
 
 **File affected:**
+
 - `src/services/platform.zig:282`
 
 **Fix needed:**
+
 ```zig
 // Old:
-const n = try child.stdout.?.readAll(&stdout_buf);
+const n = try child.stdout.?.readAll(&stdout*buf);
 
 // New:
-var io: Io = .init_single_threaded;
+var io: Io = .init*single*threaded;
 var buf: [4096]u8 = undefined;
 const reader = child.stdout.?.reader(io, &buf);
-const n = try reader.readAll(&stdout_buf);
+const n = try reader.readAll(&stdout*buf);
 ```
 
 ### 3. Dir.AccessOptions.mode removed (1 location)
+
 **Error:** `no field named 'mode' in struct 'Io.Dir.AccessOptions'`
 
 **File affected:**
+
 - `src/cli/commands/px.zig:40`
 
 **Fix needed:**
+
 ```zig
 // Old:
-try dir.access(name, .{ .mode = .read_only });
+try dir.access(name, .{ .mode = .read*only });
 
 // New:
 try dir.access(name, .{}); // mode parameter removed
 ```
 
 ### 4. Io.Timestamp type mismatch (1 location)
+
 **Error:** `expected integer or vector, found 'Io.Timestamp'`
 
 **File affected:**
+
 - `src/install/installer.zig:1173`
 
 **Fix needed:**
+
 ```zig
 // Old:
 const mtime: i128 = @intCast(stat.mtime);
@@ -102,9 +114,11 @@ const mtime: i128 = stat.mtime.ns(); // or similar Timestamp API
 ```
 
 ### 5. Auth modules missing 'io' field (2 locations)
+
 **Error:** `missing struct field: io`
 
 **Files affected:**
+
 - `src/auth/oidc.zig:592`
 - `src/auth/registry.zig:15`
 
@@ -112,21 +126,26 @@ const mtime: i128 = stat.mtime.ns(); // or similar Timestamp API
 Add `io: Io` parameter to structs/functions that need it for File operations
 
 ### 6. signing.zig local variable address (1 location)
-**Error:** `returning address of expired local variable 'public_key'`
+
+**Error:** `returning address of expired local variable 'public*key'`
 
 **File affected:**
+
 - `src/auth/signing.zig:215`
 
 **Fix needed:**
+
 ```zig
-// The function returns &public_key where public_key is a local [32]u8
+// The function returns &public*key where public*key is a local [32]u8
 // Need to heap-allocate or change return type
 ```
 
 ### 7. Other readToEndAlloc usages (12 more locations)
+
 **Files affected:**
+
 - `src/install/downloader.zig:353`
-- `src/cache/env_cache.zig:324`
+- `src/cache/env*cache.zig:324`
 - `src/cache/optimized.zig:270`
 - `src/workspace/core.zig:144`
 - `src/workspace/commands.zig:177`
@@ -140,6 +159,7 @@ All need the same Io-based reader pattern as #1.
 ## Migration Strategy
 
 ### Phase 1: When Zig 0.16 stabilizes
+
 1. Update all `readToEndAlloc` → Io-based reader pattern
 2. Update all `readAll` → Io-based reader pattern
 3. Remove `.mode` from AccessOptions calls
@@ -148,11 +168,13 @@ All need the same Io-based reader pattern as #1.
 6. Fix signing.zig memory lifetime
 
 ### Phase 2: Test thoroughly
+
 - Run full test suite with Zig 0.16 stable
 - Check for any new API changes
 - Update benchmarks
 
 ### Phase 3: Document
+
 - Update README with Zig version requirement
 - Add migration guide for users
 

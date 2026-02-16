@@ -6,7 +6,7 @@
 
 - **Domain**: `tectonic-typesetting.github.io`
 - **Name**: `tectonic`
-- **Homepage**: https://tectonic-typesetting.github.io/
+- **Homepage**: <https://tectonic-typesetting.github.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tectonic-typesetting.github.io/package.yml)
 
 ## Installation

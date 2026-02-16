@@ -69,14 +69,17 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Install Pantry
+
         run: curl -fsSL https://pantry.sh/install | bash
 
       - name: Publish to npm
+
         run: pantry publish
-        # No NPM_TOKEN needed! OIDC handles authentication
+# No NPM_TOKEN needed! OIDC handles authentication
 ```
 
 2. **Configure Trusted Publisher** (one-time setup)
@@ -181,7 +184,7 @@ pantry publish --no-provenance
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--dry-run` | Test without actually publishing | `false` |
-| `--registry <url>` | Custom registry URL | `https://registry.npmjs.org` |
+| `--registry <url>` | Custom registry URL | `<https://registry.npmjs.org>` |
 | `--use-oidc` | Enable OIDC authentication | `true` |
 | `--provenance` | Generate provenance metadata | `true` |
 | `--access <level>` | Package access level | `public` |
@@ -215,12 +218,14 @@ Example output:
 Trusted Publishers for my-package:
 
 1. Type: github-action
+
    Owner: my-org
    Repository: my-repo
    Workflow: .github/workflows/publish.yml
    Environment: production
 
 2. Type: gitlab-ci
+
    Owner: my-org
    Repository: my-project
 ```
@@ -344,6 +349,7 @@ my-package-1.0.0.provenance.json
 **Error**: `OIDC authentication not available`
 
 **Solutions**:
+
 - Ensure `id-token: write` permission is set in your workflow
 - Verify you're running in a supported CI/CD environment
 - Check that the environment variable is accessible
@@ -353,6 +359,7 @@ my-package-1.0.0.provenance.json
 **Error**: `ExpiredToken`
 
 **Solutions**:
+
 - OIDC tokens typically expire after 1 hour
 - Ensure the publish step runs soon after checkout
 - Check if your workflow is running for an extended time
@@ -362,6 +369,7 @@ my-package-1.0.0.provenance.json
 **Error**: `ClaimsMismatch`
 
 **Solutions**:
+
 - Verify the trusted publisher configuration matches your workflow
 - Check repository owner/name match exactly
 - Ensure workflow path is correct (include `.github/workflows/`)
@@ -372,6 +380,7 @@ my-package-1.0.0.provenance.json
 **Error**: `Error: Failed to request OIDC token`
 
 **Solutions**:
+
 - Add `id-token: write` to workflow permissions
 - Ensure you're using actions/checkout@v4 or later
 - Check organization/repository settings allow OIDC
@@ -381,6 +390,7 @@ my-package-1.0.0.provenance.json
 **Error**: `Registry does not support OIDC`
 
 **Solutions**:
+
 - Verify the registry URL is correct
 - Check if the registry has OIDC support enabled
 - Fall back to traditional token auth with `--no-oidc`
@@ -395,6 +405,7 @@ name: Release and Publish
 on:
   push:
     tags:
+
       - 'v*'
 
 permissions:
@@ -406,23 +417,29 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
+
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install dependencies
+
         run: npm install
 
       - name: Run tests
+
         run: npm test
 
       - name: Build
+
         run: npm run build
 
       - name: Publish to npm
+
         run: pantry publish
 ```
 
@@ -434,10 +451,14 @@ publish:
   stage: deploy
   image: node:20
   only:
+
     - tags
+
   script:
+
     - curl -fsSL https://pantry.sh/install | bash
     - pantry publish
+
   environment:
     name: production
 ```
@@ -445,10 +466,13 @@ publish:
 ### Multi-Registry Publishing
 
 ```yaml
+
 - name: Publish to npm
+
   run: pantry publish --registry https://registry.npmjs.org
 
 - name: Publish to GitHub Packages
+
   run: pantry publish --registry https://npm.pkg.github.com
 ```
 
@@ -481,13 +505,15 @@ pantry publisher list --package my-pkg
 ### Conditional OIDC Usage
 
 ```yaml
+
 - name: Publish
+
   run: |
     if [ -n "$GITHUB_ACTIONS" ]; then
-      # Use OIDC in CI
+# Use OIDC in CI
       pantry publish
     else
-      # Use traditional token locally
+# Use traditional token locally
       pantry publish --no-oidc
     fi
   env:
@@ -501,7 +527,7 @@ pantry publisher list --package my-pkg
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `GITHUB_ACTIONS` | Indicates GitHub Actions environment | `true` |
-| `ACTIONS_ID_TOKEN_REQUEST_URL` | OIDC token request URL (GitHub) | `https://...` |
+| `ACTIONS_ID_TOKEN_REQUEST_URL` | OIDC token request URL (GitHub) | `<https://...>` |
 | `ACTIONS_ID_TOKEN_REQUEST_TOKEN` | Request token (GitHub) | `***` |
 | `CI_JOB_JWT_V2` | OIDC token (GitLab) | `eyJ...` |
 | `BITBUCKET_STEP_OIDC_TOKEN` | OIDC token (Bitbucket) | `eyJ...` |
@@ -536,6 +562,7 @@ pantry publisher --help
 ## Support
 
 For issues or questions:
-- GitHub Issues: https://github.com/pantry-sh/pantry/issues
-- Documentation: https://pantry.sh/docs
-- Community: https://discord.gg/pantry
+
+- GitHub Issues: <https://github.com/pantry-sh/pantry/issues>
+- Documentation: <https://pantry.sh/docs>
+- Community: <https://discord.gg/pantry>

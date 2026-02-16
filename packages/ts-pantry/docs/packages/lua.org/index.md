@@ -6,7 +6,7 @@
 
 - **Domain**: `lua.org`
 - **Name**: `lua`
-- **Homepage**: https://www.lua.org/
+- **Homepage**: <https://www.lua.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lua.org/package.yml)
 
 ## Installation

@@ -2,17 +2,21 @@
 
 This guide will help you migrate from traditional token-based authentication to OIDC for publishing packages.
 
-## Why Migrate?
+## Why Migrate
 
 ### Current Approach (Token-Based)
+
 ```yaml
+
 - name: Publish
+
   run: npm publish
   env:
     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
 **Issues:**
+
 - ❌ Long-lived tokens stored in secrets
 - ❌ Tokens can be compromised if leaked
 - ❌ No workflow-specific access control
@@ -20,16 +24,19 @@ This guide will help you migrate from traditional token-based authentication to 
 - ❌ No provenance/attestation
 
 ### New Approach (OIDC)
+
 ```yaml
 permissions:
   id-token: write
 
 - name: Publish
+
   run: pantry publish
-  # No secrets needed!
+# No secrets needed
 ```
 
 **Benefits:**
+
 - ✅ Short-lived tokens (1 hour)
 - ✅ Automatic token generation
 - ✅ Workflow-specific access control
@@ -44,14 +51,14 @@ permissions:
 Before migrating, document your current publishing workflow:
 
 ```bash
-# What packages do you publish?
+# What packages do you publish
 npm whoami
 npm access ls-packages
 
-# What workflows publish them?
+# What workflows publish them
 # Review .github/workflows/*.yml files
 
-# What environments are used?
+# What environments are used
 # Check GitHub repository settings > Environments
 ```
 
@@ -61,7 +68,7 @@ For each package, add a trusted publisher configuration.
 
 #### Option A: Using npm Web UI (Recommended First Time)
 
-1. Go to https://www.npmjs.com/package/your-package/access
+1. Go to <https://www.npmjs.com/package/your-package/access>
 2. Click "Publishing Access"
 3. Click "Add Trusted Publisher"
 4. Select your CI/CD provider (e.g., "GitHub Actions")
@@ -109,8 +116,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -118,6 +127,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm publish
+
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
@@ -139,22 +149,26 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # ADD THIS: Environment protection (optional)
+# ADD THIS: Environment protection (optional)
     environment: production
 
     steps:
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+
         with:
           node-version: '20'
 
       - run: npm ci
       - run: npm test
 
-      # CHANGED: Use pantry publish instead of npm publish
+# CHANGED: Use pantry publish instead of npm publish
+
       - name: Publish with OIDC
+
         run: npx pantry publish
-      # No NODE_AUTH_TOKEN needed!
+# No NODE_AUTH_TOKEN needed
 ```
 
 ### Step 4: Test the Migration
@@ -162,11 +176,14 @@ jobs:
 #### Option 1: Test with Dry Run
 
 ```yaml
+
 - name: Test OIDC (Dry Run)
+
   run: npx pantry publish --dry-run
 ```
 
 This will:
+
 - Detect the OIDC provider
 - Request an OIDC token
 - Validate the token
@@ -242,7 +259,9 @@ If you need to rollback to token-based auth:
 
 ```yaml
 # Keep both methods temporarily
+
 - name: Publish
+
   run: |
     if pantry publish; then
       echo "Published with OIDC"
@@ -266,11 +285,13 @@ If you need to rollback to token-based auth:
 ### Issue 1: Missing `id-token: write` Permission
 
 **Error:**
+
 ```
 Error: OIDC token not available
 ```
 
 **Solution:**
+
 ```yaml
 permissions:
   id-token: write  # Add this!
@@ -280,6 +301,7 @@ permissions:
 ### Issue 2: Trusted Publisher Mismatch
 
 **Error:**
+
 ```
 Error: Claims mismatch
 ```
@@ -291,7 +313,7 @@ Verify your trusted publisher configuration matches exactly:
 # Check configured publisher
 pantry publisher list --package your-package
 
-# Verify it matches:
+# Verify it matches
 # - owner: correct org/username
 # - repository: correct repo name
 # - workflow: exact path to .yml file
@@ -300,12 +322,14 @@ pantry publisher list --package your-package
 ### Issue 3: Environment Not Found
 
 **Error:**
+
 ```
 Error: Environment 'production' not found
 ```
 
 **Solution:**
 Either:
+
 1. Create the environment in GitHub Settings > Environments
 2. Or remove `environment:` from your workflow
 3. Or remove environment restriction from trusted publisher
@@ -335,15 +359,18 @@ jobs:
     strategy:
       matrix:
         package:
+
           - packages/core
           - packages/cli
           - packages/utils
 
     steps:
+
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
 
       - name: Publish ${{ matrix.package }}
+
         run: |
           cd ${{ matrix.package }}
           npx pantry publish
@@ -354,10 +381,13 @@ Configure trusted publisher for each package in the monorepo.
 ### Scenario 2: Multiple Registries
 
 ```yaml
+
 - name: Publish to npm
+
   run: npx pantry publish --registry https://registry.npmjs.org
 
 - name: Publish to GitHub Packages
+
   run: npx pantry publish --registry https://npm.pkg.github.com
 ```
 
@@ -366,11 +396,14 @@ Add trusted publishers on each registry.
 ### Scenario 3: Conditional Publishing
 
 ```yaml
+
 - name: Publish to npm
+
   if: github.event_name == 'release'
   run: npx pantry publish
 
 - name: Publish to npm (beta)
+
   if: github.ref == 'refs/heads/develop'
   run: npx pantry publish --tag beta
 ```
@@ -385,10 +418,14 @@ Ensure your trusted publisher allows the necessary refs.
 publish:
   stage: deploy
   script:
+
     - npm ci
     - npm publish
+
   only:
+
     - tags
+
   environment:
     name: production
 ```
@@ -400,15 +437,19 @@ publish:
   stage: deploy
   image: node:20
   script:
+
     - npm ci
     - npm run build
     - npx pantry publish
+
   only:
+
     - tags
+
   environment:
     name: production
-  # No id_tokens configuration needed for GitLab
-  # Token is automatically available
+# No id_tokens configuration needed for GitLab
+# Token is automatically available
 ```
 
 Configure trusted publisher:
@@ -430,9 +471,9 @@ After migration, validate your setup:
 pantry publisher list --package your-package
 
 # 2. Verify workflow permissions
-# In .github/workflows/publish.yml, confirm:
-# permissions:
-#   id-token: write
+# In .github/workflows/publish.yml, confirm
+# permissions
+# id-token: write
 
 # 3. Test dry-run
 pantry publish --dry-run
@@ -450,8 +491,8 @@ If you encounter issues during migration:
 
 1. Check the [troubleshooting guide](./OIDC_AUTHENTICATION.md#troubleshooting)
 2. Review [GitHub Actions OIDC docs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect)
-3. Open an issue: https://github.com/pantry-sh/pantry/issues
-4. Ask in Discord: https://discord.gg/pantry
+3. Open an issue: <https://github.com/pantry-sh/pantry/issues>
+4. Ask in Discord: <https://discord.gg/pantry>
 
 ## Timeline Recommendation
 

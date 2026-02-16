@@ -6,7 +6,7 @@
 
 - **Domain**: `localstack.cloud/cli`
 - **Name**: `localstack`
-- **Homepage**: https://localstack.cloud/
+- **Homepage**: <https://localstack.cloud/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/localstack.cloud/cli/package.yml)
 
 ## Installation

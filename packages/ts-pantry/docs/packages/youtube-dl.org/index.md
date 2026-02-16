@@ -6,7 +6,7 @@
 
 - **Domain**: `youtube-dl.org`
 - **Name**: `youtube-dl`
-- **Homepage**: https://ytdl-org.github.io/youtube-dl/
+- **Homepage**: <https://ytdl-org.github.io/youtube-dl/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/youtube-dl.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `spawn.link`
 - **Name**: `spawn.link`
-- **Homepage**: https://trapexit.github.io/mergerfs/
+- **Homepage**: <https://trapexit.github.io/mergerfs/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/spawn.link/package.yml)
 
 ## Installation

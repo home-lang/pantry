@@ -6,7 +6,7 @@
 
 - **Domain**: `sftpgo.com`
 - **Name**: `sftpgo`
-- **Homepage**: https://sftpgo.com
+- **Homepage**: <https://sftpgo.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sftpgo.com/package.yml)
 
 ## Installation

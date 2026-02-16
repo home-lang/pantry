@@ -20,7 +20,7 @@ Decentralized, peer to peer payment network
 
 Open Source implementation of advanced blockchain features extending the Bitcoin protocol
 
-**Programs**: bench_bitcoin, elements-cli, elements-tx, elements-util, elements-wallet, elementsd, test_bitcoin
+**Programs**: bench*bitcoin, elements-cli, elements-tx, elements-util, elements-wallet, elementsd, test*bitcoin
 
 **Install**: `launchpad install elementsproject.org`
 

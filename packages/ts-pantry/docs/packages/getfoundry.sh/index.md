@@ -6,7 +6,7 @@
 
 - **Domain**: `getfoundry.sh`
 - **Name**: `getfoundry.sh`
-- **Homepage**: https://getfoundry.sh
+- **Homepage**: <https://getfoundry.sh>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/getfoundry.sh/package.yml)
 
 ## Installation

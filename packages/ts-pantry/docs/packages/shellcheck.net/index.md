@@ -6,7 +6,7 @@
 
 - **Domain**: `shellcheck.net`
 - **Name**: `shellcheck`
-- **Homepage**: https://www.shellcheck.net/
+- **Homepage**: <https://www.shellcheck.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/shellcheck.net/package.yml)
 
 ## Installation

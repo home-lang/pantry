@@ -6,7 +6,7 @@
 
 - **Domain**: `versity.com/versitygw`
 - **Name**: `versitygw`
-- **Homepage**: https://www.versity.com/products/versitygw/
+- **Homepage**: <https://www.versity.com/products/versitygw/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/versity.com/versitygw/package.yml)
 
 ## Installation

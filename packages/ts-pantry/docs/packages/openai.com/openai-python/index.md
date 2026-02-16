@@ -6,7 +6,7 @@
 
 - **Domain**: `openai.com/openai-python`
 - **Name**: `openai`
-- **Homepage**: https://pypi.org/project/openai/
+- **Homepage**: <https://pypi.org/project/openai/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openai.com/openai-python/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `ohmyposh.dev`
 - **Name**: `oh-my-posh`
-- **Homepage**: https://ohmyposh.dev
+- **Homepage**: <https://ohmyposh.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ohmyposh.dev/package.yml)
 
 ## Installation

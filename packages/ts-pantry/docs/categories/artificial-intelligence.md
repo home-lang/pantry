@@ -38,7 +38,7 @@ Autonomous agents for everyone
 
 ### [github.com/AntonOsika/gpt-engineer](../packages/github.com/AntonOsika/gpt-engineer.md) (GPT Engineer)
 
-Platform to experiment with the AI Software Engineer. Terminal based. NOTE: Very different from https://gptengineer.app
+Platform to experiment with the AI Software Engineer. Terminal based. NOTE: Very different from <https://gptengineer.app>
 
 **Programs**: gpte, gpt-engineer
 

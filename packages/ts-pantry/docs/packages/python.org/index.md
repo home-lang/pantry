@@ -6,7 +6,7 @@
 
 - **Domain**: `python.org`
 - **Name**: `python`
-- **Homepage**: https://www.python.org
+- **Homepage**: <https://www.python.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/python.org/package.yml)
 
 ## Installation

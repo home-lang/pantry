@@ -16,12 +16,14 @@ npm install ts-pantry
 import { cleanSystem, clearCache } from 'ts-pantry'
 
 /**
+
  * Clear all cached packages and downloads
  * @param options Configuration options for cache clearing
  * @param options.dryRun Whether to preview what would be cleared without actually clearing
  * @param options.force Skip confirmation prompts
  * @param options.verbose Enable verbose output
  * @returns Promise resolving to cache clearing results
+
  */
 async function clearCache(options?: {
   dryRun?: boolean
@@ -35,6 +37,7 @@ async function clearCache(options?: {
 }>
 
 /**
+
  * Perform comprehensive cleanup of all pantry-managed resources
  * @param options Configuration options for system cleanup
  * @param options.dryRun Whether to preview what would be removed without actually removing
@@ -42,6 +45,7 @@ async function clearCache(options?: {
  * @param options.keepCache Keep cached downloads (only remove installed packages)
  * @param options.verbose Enable verbose output during cleanup
  * @returns Promise resolving to cleanup results
+
  */
 async function cleanSystem(options?: {
   dryRun?: boolean
@@ -60,29 +64,35 @@ async function cleanSystem(options?: {
 ### Installation Module
 
 ```typescript
-import { install, install_bun, install_prefix } from 'ts-pantry'
+import { install, install*bun, install*prefix } from 'ts-pantry'
 
 /**
+
  * Install one or more packages
  * @param args Package names to install
  * @param basePath Path where packages should be installed
  * @returns Array of installed file paths
+
  */
 async function install(args: string[], basePath: string): Promise<string[]>
 
 /**
+
  * Get the default installation prefix
  * @returns Path object representing the installation prefix
+
  */
-function install_prefix(): Path
+function install*prefix(): Path
 
 /**
+
  * Install Bun from official GitHub releases
  * @param installPath Path where Bun should be installed
  * @param version Optional specific version to install
  * @returns Array of installed file paths
+
  */
-async function install_bun(installPath: string, version?: string): Promise<string[]>
+async function install*bun(installPath: string, version?: string): Promise<string[]>
 ```
 
 ### Package Management Module
@@ -91,6 +101,7 @@ async function install_bun(installPath: string, version?: string): Promise<strin
 import { update, updateAllPackages, updateSpecificPackages } from 'ts-pantry'
 
 /**
+
  * Update packages to newer versions
  * @param packages Array of package names to update (empty array for all packages)
  * @param options Update configuration options
@@ -98,6 +109,7 @@ import { update, updateAllPackages, updateSpecificPackages } from 'ts-pantry'
  * @param options.dryRun Preview what would be updated without actually updating
  * @param options.verbose Enable verbose output during updates
  * @returns Promise that resolves when updates are complete
+
  */
 async function update(
   packages: string[],
@@ -109,6 +121,7 @@ async function update(
 ): Promise<void>
 
 /**
+
  * Update specific packages by name
  * @param packages Array of package names to update
  * @param options Update configuration options
@@ -116,6 +129,7 @@ async function update(
  * @param options.dryRun Preview what would be updated without actually updating
  * @param options.verbose Enable verbose output during updates
  * @returns Promise that resolves when updates are complete
+
  */
 async function updateSpecificPackages(
   packages: string[],
@@ -127,12 +141,14 @@ async function updateSpecificPackages(
 ): Promise<void>
 
 /**
+
  * Update all installed packages
  * @param options Update configuration options
  * @param options.latest Force update to latest versions, ignoring constraints
  * @param options.dryRun Preview what would be updated without actually updating
  * @param options.verbose Enable verbose output during updates
  * @returns Promise that resolves when updates are complete
+
  */
 async function updateAllPackages(
   options?: {
@@ -146,21 +162,25 @@ async function updateAllPackages(
 ### Shim Module
 
 ```typescript
-import { create_shim, shim_dir } from 'ts-pantry'
+import { create*shim, shim*dir } from 'ts-pantry'
 
 /**
+
  * Create shims for packages
  * @param args Package names to create shims for
  * @param basePath Directory where shims should be created
  * @returns Array of created shim file paths
+
  */
-async function create_shim(args: string[], basePath: string): Promise<string[]>
+async function create*shim(args: string[], basePath: string): Promise<string[]>
 
 /**
+
  * Get the default shim directory
  * @returns Path object representing the shim directory
+
  */
-function shim_dir(): Path
+function shim*dir(): Path
 ```
 
 ### Development Environment Module
@@ -169,24 +189,30 @@ function shim_dir(): Path
 import { datadir, dump, integrate, shellcode } from 'ts-pantry'
 
 /**
+
  * Generate shell integration code for automatic environment activation
  * @returns Shell script code for integration with bash/zsh
+
  */
 function shellcode(): string
 
 /**
+
  * Get the data directory for environment storage
  * @returns Path object representing the data directory
+
  */
 function datadir(): Path
 
 /**
+
  * Generate environment setup script for a project directory
  * @param cwd Project directory path
  * @param opts Configuration options
  * @param opts.dryrun Whether to dry run the environment script generation
  * @param opts.quiet Whether to suppress output
  * @returns Promise that resolves when environment script is generated
+
  */
 async function dump(
   cwd: string,
@@ -194,9 +220,11 @@ async function dump(
 ): Promise<void>
 
 /**
+
  * Integrate shell environment with automatic activation hooks
  * @param directory Project directory to integrate
  * @returns Promise that resolves when integration is complete
+
  */
 async function integrate(directory: string): Promise<void>
 ```
@@ -207,10 +235,12 @@ async function integrate(directory: string): Promise<void>
 import { update } from 'ts-pantry'
 
 /**
+
  * Update packages to newer versions
  * @param packages Array of package names to update (or undefined for all)
  * @param options Update options
  * @returns Promise resolving when update completes
+
  */
 async function update(packages?: string[], options?: { latest?: boolean, dryRun?: boolean }): Promise<void>
 ```
@@ -221,9 +251,11 @@ async function update(packages?: string[], options?: { latest?: boolean, dryRun?
 import { list } from 'ts-pantry'
 
 /**
+
  * List installed packages
  * @param basePath Path to list packages from
  * @returns Array of installations
+
  */
 async function list(basePath: string): Promise<Installation[]>
 
@@ -247,7 +279,7 @@ interface pantryConfig {
   verbose: boolean
   /** Path where binaries should be installed (default: /usr/local if writable, ~/.local otherwise) */
   installationPath: string
-  /** Password for sudo operations, loaded from .env SUDO_PASSWORD (default: '') */
+  /** Password for sudo operations, loaded from .env SUDO*PASSWORD (default: '') */
   sudoPassword: string
   /** Whether to enable dev-aware installations (default: true) */
   devAware: boolean
@@ -286,7 +318,9 @@ const defaultConfig: pantryConfig
 import { parseVersion, Version } from 'ts-pantry'
 
 /**
+
  * Simple class to represent semantic versions
+
  */
 class Version {
   raw: string
@@ -299,9 +333,11 @@ class Version {
 }
 
 /**
+
  * Helper to parse a version string into a Version object
  * @param versionStr Version string to parse
  * @returns Version object or null if invalid
+
  */
 function parseVersion(versionStr: string): Version | null
 ```
@@ -312,7 +348,9 @@ function parseVersion(versionStr: string): Version | null
 import { Path } from 'ts-pantry'
 
 /**
+
  * Path utility class for handling file system paths
+
  */
 class Path {
   string: string
@@ -333,22 +371,30 @@ import {
 } from 'ts-pantry'
 
 /**
+
  * Activate development environment for a directory
+
  */
 async function activateDevEnv(directory: string): Promise<void>
 
 /**
+
  * Add a directory to the system PATH
+
  */
 async function addToPath(directory: string): Promise<void>
 
 /**
+
  * Bootstrap pantry installation with essential tools
+
  */
 async function bootstrap(options?: { path?: string, verbose?: boolean, force?: boolean }): Promise<void>
 
 /**
+
  * Check if a directory is in the system PATH
+
  */
 function isInPath(directory: string): boolean
 ```
@@ -359,7 +405,7 @@ function isInPath(directory: string): boolean
 
 ```typescript
 interface JsonResponse {
-  runtime_env: Record<string, Record<string, string>>
+  runtime*env: Record<string, Record<string, string>>
   pkgs: Installation[]
   env: Record<string, Record<string, string>>
   pkg: Installation
@@ -464,10 +510,10 @@ console.log('Would remove packages:', previewResult.removedPackages)
 ### Basic Package Installation
 
 ```typescript
-import { install, install_prefix } from 'ts-pantry'
+import { install, install*prefix } from 'ts-pantry'
 
 // Install a package
-const installPath = install_prefix()
+const installPath = install*prefix()
 const installedFiles = await install(['node@22'], installPath.string)
 console.log('Installed files:', installedFiles)
 ```
@@ -516,22 +562,23 @@ const dependencyConfig = `
 # Top-level global flag (applies to all packages)
 global: true
 dependencies:
-  # Uses top-level global: true
-  - node@22
-  - python@3.12
+# Uses top-level global: true
 
-  # Individual override to local installation
+  * node@22
+  * python@3.12
+
+# Individual override to local installation
   typescript@5.0:
     version: 5.0.4
     global: false
 
-  # Individual global configuration
+# Individual global configuration
   git@2.42:
     version: 2.42.0
     global: true
 
 env:
-  NODE_ENV: development
+  NODE*ENV: development
 `
 
 // Generate environment with global flag support
@@ -560,8 +607,10 @@ dependencies:
 services:
   enabled: true
   autoStart:
-    - postgres
-    - redis
+
+    * postgres
+    * redis
+
 ```
 
 At runtime, the environment generator detects `services.enabled` and starts each service in `autoStart`.
@@ -581,7 +630,7 @@ services:
   infer: true
 ```
 
-This will auto-start services based on `.env` (e.g., `DB_CONNECTION=pgsql` and `CACHE_DRIVER=redis` → `postgres` and `redis`).
+This will auto-start services based on `.env` (e.g., `DB*CONNECTION=pgsql` and `CACHE*DRIVER=redis` → `postgres` and `redis`).
 
 Project-level post-setup commands can be configured via top-level `postSetup` in `pantry.config.ts`:
 
@@ -653,10 +702,10 @@ const topLevelWithOverrides = {
 ### Creating Shims
 
 ```typescript
-import { create_shim, shim_dir } from 'ts-pantry'
+import { create*shim, shim*dir } from 'ts-pantry'
 
 // Create shims for packages
-const shimPath = shim_dir()
+const shimPath = shim*dir()
 const createdShims = await create_shim(['node', 'python'], shimPath.string)
 console.log('Created shims:', createdShims)
 ```
@@ -734,12 +783,12 @@ pantry provides several CLI commands for cache and system management:
 pantry cache:clear [options]
 pantry cache:clean [options]  # Alias for cache:clear
 
-# Options:
-#   --dry-run    Show what would be cleared without actually clearing
-#   --force      Skip confirmation prompts
-#   --verbose    Enable verbose output
+# Options
+# --dry-run    Show what would be cleared without actually clearing
+# --force      Skip confirmation prompts
+# --verbose    Enable verbose output
 
-# Examples:
+# Examples
 pantry cache:clear --dry-run     # Preview cache cleanup
 pantry cache:clear --force       # Clear without confirmation
 pantry cache:clean --verbose     # Clear with detailed output
@@ -751,13 +800,13 @@ pantry cache:clean --verbose     # Clear with detailed output
 # Remove all pantry-installed packages and environments
 pantry clean [options]
 
-# Options:
-#   --dry-run      Show what would be removed without actually removing
-#   --force        Skip confirmation prompts
-#   --keep-cache   Keep cached downloads (only remove installed packages)
-#   --verbose      Enable verbose output during cleanup
+# Options
+# --dry-run      Show what would be removed without actually removing
+# --force        Skip confirmation prompts
+# --keep-cache   Keep cached downloads (only remove installed packages)
+# --verbose      Enable verbose output during cleanup
 
-# Examples:
+# Examples
 pantry clean --dry-run           # Preview complete cleanup
 pantry clean --force             # Complete system reset
 pantry clean --keep-cache        # Remove packages but preserve cache
@@ -765,10 +814,10 @@ pantry clean --keep-cache        # Remove packages but preserve cache
 
 ### Command Safety Features
 
-- **Confirmation Required:** Both commands require `--force` for actual operations
-- **Dry-Run Mode:** Preview exactly what will be affected with `--dry-run`
-- **Targeted Cleanup:** Only removes pantry-specific directories
-- **Graceful Error Handling:** Continues operation even if some files can't be removed
+* **Confirmation Required:** Both commands require `--force` for actual operations
+* **Dry-Run Mode:** Preview exactly what will be affected with `--dry-run`
+* **Targeted Cleanup:** Only removes pantry-specific directories
+* **Graceful Error Handling:** Continues operation even if some files can't be removed
 
 ## Service Management API
 

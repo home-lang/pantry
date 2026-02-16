@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/TomWright/dasel`
 - **Name**: `dasel`
-- **Homepage**: https://daseldocs.tomwright.me
+- **Homepage**: <https://daseldocs.tomwright.me>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/TomWright/dasel/package.yml)
 
 ## Installation

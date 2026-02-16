@@ -6,7 +6,7 @@
 
 - **Domain**: `pygments.org`
 - **Name**: `pygmentize`
-- **Homepage**: https://pygments.org/
+- **Homepage**: <https://pygments.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pygments.org/package.yml)
 
 ## Installation

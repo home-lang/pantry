@@ -6,7 +6,7 @@
 
 - **Domain**: `po4a.org`
 - **Name**: `po4a`
-- **Homepage**: http://po4a.org/
+- **Homepage**: <http://po4a.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/po4a.org/package.yml)
 
 ## Installation

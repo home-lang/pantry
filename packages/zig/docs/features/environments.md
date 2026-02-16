@@ -5,11 +5,13 @@ Pantry creates isolated, per-project environments with automatic dependency mana
 ## Overview
 
 Each project gets its own isolated environment based on:
+
 - Project dependencies
 - Runtime versions
 - Configuration hash
 
 Environments are:
+
 - **Hash-based** - Unique identifier per configuration
 - **Cached** - 1-hour TTL for instant reactivation
 - **Automatic** - Created and managed transparently
@@ -70,9 +72,9 @@ When you enter a project directory:
 
 ```bash
 cd my-project
-# 🔧 Setting up environment...
-# 📦 Installing bun@1.3.0...
-# 📦 Installing dependencies...
+# 🔧 Setting up environment
+# 📦 Installing bun@1.3.0
+# 📦 Installing dependencies
 # ✅ Environment ready: my-project (abc123)
 ```
 
@@ -90,7 +92,7 @@ cd my-project
 ```bash
 vim pantry.json  # Change version
 cd .
-# 🔄 Dependencies changed, updating environment...
+# 🔄 Dependencies changed, updating environment
 # 📦 Processing updates from pantry.json
 # ✅ Environment updated (def456)
 # New hash: def456cba321
@@ -99,6 +101,7 @@ cd .
 ### Cleanup
 
 Environments are automatically cleaned when:
+
 - Not used for >1 hour
 - Cache is full
 - Manual cleanup command
@@ -112,6 +115,7 @@ pantry env:list
 ```
 
 Output:
+
 ```
 📦 Development Environments
 
@@ -155,12 +159,14 @@ pantry env:clean --older-than=7
 ### Two-tier cache
 
 **Fast cache** (Ring buffer):
+
 - 8 most recent environments
 - L1 cache optimized
 - <50μs lookup
 - In-memory only
 
 **Slow cache** (Disk):
+
 - All environments
 - ~1ms lookup
 - Persisted to disk
@@ -169,6 +175,7 @@ pantry env:clean --older-than=7
 ### Cache invalidation
 
 Cache is invalidated when:
+
 - Dependency file modified (mtime check)
 - TTL expires (1 hour)
 - Manual cache clear

@@ -6,7 +6,7 @@
 
 - **Domain**: `mcmc-jags.sourceforge.io`
 - **Name**: `jags`
-- **Homepage**: https://mcmc-jags.sourceforge.io
+- **Homepage**: <https://mcmc-jags.sourceforge.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mcmc-jags.sourceforge.io/package.yml)
 
 ## Installation

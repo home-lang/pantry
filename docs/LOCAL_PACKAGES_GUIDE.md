@@ -26,6 +26,7 @@ The simplest way to use a local package is with a path:
 ```
 
 **Auto-detection:** Pantry automatically detects paths starting with:
+
 - `~/` - Home directory
 - `./` - Current directory (relative)
 - `../` - Parent directory (relative)
@@ -172,7 +173,7 @@ pantry link
 cd ~/Code/my-project
 
 # Reference the linked package
-# In pantry.json:
+# In pantry.json
 {
   "dependencies": {
     "zig-config": "link:zig-config"
@@ -194,11 +195,11 @@ pantry unlink
 
 ```bash
 pantry link:list
-# Output:
-# Linked packages:
-#   zig-config -> ~/Code/zig-config
-#   zig-cli -> ~/Code/zig-cli
-#   zig-bump -> ~/Code/zig-bump
+# Output
+# Linked packages
+# zig-config -> ~/Code/zig-config
+# zig-cli -> ~/Code/zig-cli
+# zig-bump -> ~/Code/zig-bump
 ```
 
 ## Link Registry

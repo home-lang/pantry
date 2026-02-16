@@ -153,11 +153,13 @@ ts-pkgx resolve-deps deps.yaml --pantry-dir ./custom-pantry --max-depth 5
 ### Supported File Formats
 
 The resolver supports these dependency file formats:
+
 - `deps.yaml` / `deps.yml`
 - `dependencies.yaml` / `dependencies.yml`
 - `pkgx.yaml` / `pkgx.yml`
 
 Example dependency file:
+
 ```yaml
 dependencies:
   bun.sh: ^1.2.16
@@ -169,6 +171,7 @@ dependencies:
 ### Output Format
 
 The command provides detailed output including:
+
 - All unique packages to install with resolved versions
 - Version conflicts detected and resolved
 - OS-specific dependencies (when enabled)

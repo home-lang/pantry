@@ -31,6 +31,7 @@ Define multiple executables with custom names:
 ```
 
 This creates symlinks:
+
 - `pantry/.bin/mytool` → `pantry/my-package/v1.0.0/dist/mytool.sh`
 - `pantry/.bin/helper` → `pantry/my-package/v1.0.0/scripts/helper.sh`
 - `pantry/.bin/cli` → `pantry/my-package/v1.0.0/build/cli`
@@ -48,6 +49,7 @@ For packages with a single executable:
 ```
 
 This creates:
+
 - `pantry/.bin/my-tool` → `pantry/my-tool/v1.0.0/bin/my-tool`
 
 The executable name is derived from the basename of the path.
@@ -102,6 +104,7 @@ PATH=/path/to/project/pantry/.bin:/path/to/env/bin:$PATH
 ```
 
 Usage:
+
 ```bash
 cd my-project
 pantry install dev-tools
@@ -122,6 +125,7 @@ deploy
 ```
 
 Usage:
+
 ```bash
 pantry install mycli
 mycli --help
@@ -155,8 +159,9 @@ mycli --help
 ```
 
 Make sure `dist/index.js` has a shebang:
+
 ```javascript
-#!/usr/bin/env node
+# !/usr/bin/env node
 console.log('Hello from mycli');
 ```
 
@@ -181,11 +186,11 @@ console.log('Hello from mycli');
 All executables should have proper shebangs:
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # or
-#!/usr/bin/env node
+# !/usr/bin/env node
 # or
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 ```
 
 ### 2. Make Files Executable
@@ -243,6 +248,7 @@ If a package doesn't define a `bin` field, Pantry falls back to:
 2. Standard `bin/` directory convention
 
 Example package registry entry:
+
 ```zig
 .{
     .name = "bun",
@@ -295,26 +301,31 @@ project/
 **Solutions:**
 
 1. Check if package is installed:
+
    ```bash
    ls pantry/.bin/
    ```
 
 2. Verify bin field in package:
+
    ```bash
    cat pantry/my-package/v1.0.0/pantry.json
    ```
 
 3. Check if file exists:
+
    ```bash
    ls -la pantry/my-package/v1.0.0/dist/mytool.sh
    ```
 
 4. Verify executable permissions:
+
    ```bash
    chmod +x pantry/my-package/v1.0.0/dist/mytool.sh
    ```
 
 5. Reinstall package:
+
    ```bash
    pantry install --force my-package
    ```
@@ -336,16 +347,19 @@ project/
 **Solutions:**
 
 1. Ensure shell integration is activated:
+
    ```bash
    source ~/.bashrc  # or ~/.zshrc
    ```
 
 2. Check environment variables:
+
    ```bash
    echo $pantry_BIN_PATH
    ```
 
 3. Manually test:
+
    ```bash
    ./pantry/.bin/mytool
    ```
@@ -357,11 +371,13 @@ project/
 **Solutions:**
 
 1. Make executable:
+
    ```bash
    chmod +x pantry/.bin/mytool
    ```
 
 2. Check source file permissions:
+
    ```bash
    ls -la pantry/my-package/v1.0.0/dist/mytool.sh
    ```

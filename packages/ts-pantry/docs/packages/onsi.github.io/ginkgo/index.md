@@ -6,7 +6,7 @@
 
 - **Domain**: `onsi.github.io/ginkgo`
 - **Name**: `ginkgo`
-- **Homepage**: http://onsi.github.io/ginkgo/
+- **Homepage**: <http://onsi.github.io/ginkgo/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/onsi.github.io/ginkgo/package.yml)
 
 ## Installation

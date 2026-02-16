@@ -6,7 +6,7 @@
 
 - **Domain**: `xcfile.dev`
 - **Name**: `xc`
-- **Homepage**: https://xcfile.dev/
+- **Homepage**: <https://xcfile.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xcfile.dev/package.yml)
 
 ## Installation

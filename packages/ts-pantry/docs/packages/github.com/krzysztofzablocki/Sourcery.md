@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/krzysztofzablocki/Sourcery`
 - **Name**: `Sourcery`
-- **Homepage**: http://merowing.info
+- **Homepage**: <http://merowing.info>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/krzysztofzablocki/Sourcery/package.yml)
 
 ## Installation

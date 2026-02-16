@@ -6,7 +6,7 @@
 
 - **Domain**: `mozilla.org/nss`
 - **Name**: `nss`
-- **Homepage**: https://firefox-source-docs.mozilla.org/security/nss/index.html
+- **Homepage**: <https://firefox-source-docs.mozilla.org/security/nss/index.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mozilla.org/nss/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `vanna.ai`
 - **Name**: `Vanna`
-- **Homepage**: https://vanna.ai/docs/
+- **Homepage**: <https://vanna.ai/docs/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vanna.ai/package.yml)
 
 ## Installation

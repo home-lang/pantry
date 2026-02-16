@@ -6,7 +6,7 @@
 
 - **Domain**: `xpra.org`
 - **Name**: `xpra`
-- **Homepage**: https://xpra.org/
+- **Homepage**: <https://xpra.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xpra.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/rbenv/rbenv`
 - **Name**: `rbenv`
-- **Homepage**: https://rbenv.org
+- **Homepage**: <https://rbenv.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/rbenv/rbenv/package.yml)
 
 ## Installation

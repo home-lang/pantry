@@ -72,6 +72,7 @@ cd my-first-pantry-project
 # Create a dependency file
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - typescript@5.0
 
@@ -80,7 +81,7 @@ env:
   PROJECT_NAME: my-first-project
 EOF
 
-# Environment automatically activates!
+# Environment automatically activates
 # You should see: ✅ Environment activated for /path/to/my-first-pantry-project
 ```
 
@@ -99,7 +100,7 @@ echo $PROJECT_NAME      # Should show: my-first-project
 pantry list
 ```
 
-## What Just Happened?
+## What Just Happened
 
 🎉 **Congratulations!** You've just:
 
@@ -135,6 +136,7 @@ pantry env:clean --dry-run
 mkdir python-project && cd python-project
 cat > dependencies.yaml << EOF
 dependencies:
+
   - python@3.12
   - pip
 
@@ -146,6 +148,7 @@ EOF
 mkdir fullstack-project && cd fullstack-project
 cat > dependencies.yaml << EOF
 dependencies:
+
   - node@22
   - python@3.12
   - postgresql@15
@@ -181,7 +184,7 @@ export pantry_SHOW_ENV_MESSAGES=false
 
 ## Troubleshooting
 
-### Environment Not Activating?
+### Environment Not Activating
 
 1. Make sure shell integration is set up:
 
@@ -201,7 +204,7 @@ export pantry_SHOW_ENV_MESSAGES=false
    ls -la dependencies.yaml
    ```
 
-### Package Not Found?
+### Package Not Found
 
 1. Check the exact package name:
 
@@ -215,7 +218,7 @@ export pantry_SHOW_ENV_MESSAGES=false
    pantry install --verbose node@22
    ```
 
-### Need Help?
+### Need Help
 
 ```bash
 # Get help for any command
@@ -235,7 +238,7 @@ Ready to dive deeper? Check out these guides:
 - **[Examples](./examples.md)** - Real-world usage examples
 - **[Environment Management](./features/environment-management.md)** - Advanced environment features
 
-## What Makes pantry Different?
+## What Makes pantry Different
 
 - **🚀 Fast** - No waiting around for package installations
 - **🔒 Isolated** - Each project gets its own environment

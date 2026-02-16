@@ -2,7 +2,7 @@
 
 pantry provides a powerful shim creation system that makes package executables available across your system without modifying the global environment.
 
-## What are Shims?
+## What are Shims
 
 Shims are lightweight executable scripts that point to the actual binaries. When you run a shim, it transparently forwards the command to the actual binary, along with any arguments you provide.
 
@@ -53,7 +53,7 @@ When you create a shim for a package, pantry:
 The generated shim looks like this:
 
 ```sh
-#!/usr/bin/env -S pkgx -q! node@22.12.0
+# !/usr/bin/env -S pkgx -q! node@22.12.0
 ```
 
 This tells your system to use pkgx to run the specific version of the package.
@@ -113,6 +113,6 @@ After creating shims, you can verify they're working:
 # Check if a shim is available
 which node
 
-# Should output something like:
+# Should output something like
 # /home/user/.local/bin/node
 ```

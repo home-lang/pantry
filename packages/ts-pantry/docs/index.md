@@ -35,5 +35,3 @@ features:
     icon: "⚙️"
     details: "Use pre-compiled binaries for faster execution without needing a JavaScript runtime."
 ---
-
-<Home />

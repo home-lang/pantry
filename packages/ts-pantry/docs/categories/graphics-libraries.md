@@ -36,13 +36,13 @@ Simple Directmedia Layer
 
 ---
 
-### [libsdl.org/SDL_image](../packages/libsdl.org/SDL_image/index.md) (SDL_image)
+### [libsdl.org/SDL*image](../packages/libsdl.org/SDL*image/index.md) (SDL*image)
 
 Image decoding for many popular formats for Simple Directmedia Layer.
 
 **Programs**: None specified
 
-**Install**: `launchpad install libsdl.org/SDL_image`
+**Install**: `launchpad install libsdl.org/SDL*image`
 
 ---
 

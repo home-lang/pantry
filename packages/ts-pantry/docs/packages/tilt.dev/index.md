@@ -6,7 +6,7 @@
 
 - **Domain**: `tilt.dev`
 - **Name**: `tilt`
-- **Homepage**: https://tilt.dev/
+- **Homepage**: <https://tilt.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tilt.dev/package.yml)
 
 ## Installation

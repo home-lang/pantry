@@ -6,7 +6,7 @@
 
 - **Domain**: `swift.org`
 - **Name**: `swift`
-- **Homepage**: https://swift.org
+- **Homepage**: <https://swift.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/swift.org/package.yml)
 
 ## Installation

@@ -4,7 +4,7 @@
 
 Pantry supports npm's `"overrides"` and Yarn's `"resolutions"` in `package.json`. These are mechanisms for specifying a version range for **metadependencies**—the dependencies of your dependencies.
 
-## What are Metadependencies?
+## What are Metadependencies
 
 Metadependencies are dependencies of your dependencies. For example, if your project depends on package `foo`, and `foo` depends on package `bar`, then `bar` is a metadependency of your project.
 
@@ -14,7 +14,7 @@ Your Project
       └─ bar (metadependency)
 ```
 
-## Why Use Overrides?
+## Why Use Overrides
 
 Overrides and resolutions are useful for several scenarios:
 
@@ -210,6 +210,7 @@ You can override a package to use a specific GitHub commit, branch, or tag:
 Pantry currently only supports **top-level overrides**. Nested overrides (where you specify different versions for the same package depending on the parent) are not supported.
 
 **Supported (top-level):**
+
 ```json
 {
   "overrides": {
@@ -219,6 +220,7 @@ Pantry currently only supports **top-level overrides**. Nested overrides (where 
 ```
 
 **Not Supported (nested):**
+
 ```json
 {
   "overrides": {
@@ -242,6 +244,7 @@ If your override isn't working:
 1. **Check the package name**: Make sure you're using the exact package name as it appears in the registry
 2. **Check the version range**: Ensure the version range is valid and the version exists
 3. **Clear cache**: Try clearing your Pantry cache and reinstalling:
+
    ```bash
    rm -rf pantry
    pantry install
@@ -296,6 +299,7 @@ Prefer version ranges over exact versions to allow for patch updates:
 ### 3. Keep Overrides Temporary
 
 Overrides should be temporary solutions. Ideally:
+
 1. Override the problematic version
 2. Report the issue to the package maintainers
 3. Remove the override once the packages update their dependencies
@@ -303,6 +307,7 @@ Overrides should be temporary solutions. Ideally:
 ### 4. Test Thoroughly
 
 Always test your application after adding overrides to ensure:
+
 - The application still works correctly
 - No runtime errors occur
 - All features function as expected

@@ -6,7 +6,7 @@
 
 - **Domain**: `asciinema.org`
 - **Name**: `asciinema`
-- **Homepage**: https://asciinema.org
+- **Homepage**: <https://asciinema.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/asciinema.org/package.yml)
 
 ## Installation

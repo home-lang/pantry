@@ -6,7 +6,7 @@
 
 - **Domain**: `aws.amazon.com/cdk`
 - **Name**: `aws/cdk`
-- **Homepage**: https://aws.amazon.com/cdk
+- **Homepage**: <https://aws.amazon.com/cdk>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aws.amazon.com/cdk/package.yml)
 
 ## Installation

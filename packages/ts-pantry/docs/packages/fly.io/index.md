@@ -6,7 +6,7 @@
 
 - **Domain**: `fly.io`
 - **Name**: `fly`
-- **Homepage**: https://fly.io
+- **Homepage**: <https://fly.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fly.io/package.yml)
 
 ## Installation

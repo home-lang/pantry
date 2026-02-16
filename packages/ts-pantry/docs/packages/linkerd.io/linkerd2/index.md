@@ -6,7 +6,7 @@
 
 - **Domain**: `linkerd.io/linkerd2`
 - **Name**: `linkerd`
-- **Homepage**: https://linkerd.io
+- **Homepage**: <https://linkerd.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/linkerd.io/linkerd2/package.yml)
 
 ## Installation

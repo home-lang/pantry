@@ -6,7 +6,7 @@
 
 - **Domain**: `cscope.sourceforge.io`
 - **Name**: `cscope.sourceforge`
-- **Homepage**: https://cscope.sourceforge.net/
+- **Homepage**: <https://cscope.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cscope.sourceforge.io/package.yml)
 
 ## Installation

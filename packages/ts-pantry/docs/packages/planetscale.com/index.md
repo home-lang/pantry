@@ -6,7 +6,7 @@
 
 - **Domain**: `planetscale.com`
 - **Name**: `pscale`
-- **Homepage**: https://www.planetscale.com/
+- **Homepage**: <https://www.planetscale.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/planetscale.com/package.yml)
 
 ## Installation

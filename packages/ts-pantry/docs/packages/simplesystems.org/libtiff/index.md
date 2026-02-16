@@ -6,7 +6,7 @@
 
 - **Domain**: `simplesystems.org/libtiff`
 - **Name**: `tiff`
-- **Homepage**: https://libtiff.gitlab.io/libtiff/
+- **Homepage**: <https://libtiff.gitlab.io/libtiff/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/simplesystems.org/libtiff/package.yml)
 
 ## Installation

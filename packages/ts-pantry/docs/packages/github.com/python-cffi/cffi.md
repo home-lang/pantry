@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/python-cffi/cffi`
 - **Name**: `cffi`
-- **Homepage**: https://cffi.readthedocs.io/en/latest/
+- **Homepage**: <https://cffi.readthedocs.io/en/latest/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/python-cffi/cffi/package.yml)
 
 ## Installation

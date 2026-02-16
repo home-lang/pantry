@@ -6,7 +6,7 @@
 
 - **Domain**: `felixkratz.github.io/SketchyBar`
 - **Name**: `sketchybar`
-- **Homepage**: https://felixkratz.github.io/SketchyBar/
+- **Homepage**: <https://felixkratz.github.io/SketchyBar/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/felixkratz.github.io/SketchyBar/package.yml)
 
 ## Installation

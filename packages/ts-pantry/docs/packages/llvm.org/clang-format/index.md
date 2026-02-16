@@ -6,7 +6,7 @@
 
 - **Domain**: `llvm.org/clang-format`
 - **Name**: `clang-format`
-- **Homepage**: http://llvm.org
+- **Homepage**: <http://llvm.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/llvm.org/clang-format/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `bytebase.com`
 - **Name**: `bytebase`
-- **Homepage**: https://www.bytebase.com
+- **Homepage**: <https://www.bytebase.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bytebase.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `min.io`
 - **Name**: `minio`
-- **Homepage**: https://min.io
+- **Homepage**: <https://min.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/min.io/package.yml)
 
 ## Installation

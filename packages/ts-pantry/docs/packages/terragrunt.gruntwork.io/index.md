@@ -6,7 +6,7 @@
 
 - **Domain**: `terragrunt.gruntwork.io`
 - **Name**: `terragrunt`
-- **Homepage**: https://terragrunt.gruntwork.io/
+- **Homepage**: <https://terragrunt.gruntwork.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/terragrunt.gruntwork.io/package.yml)
 
 ## Installation

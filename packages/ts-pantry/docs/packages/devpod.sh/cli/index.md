@@ -6,7 +6,7 @@
 
 - **Domain**: `devpod.sh/cli`
 - **Name**: `devpod`
-- **Homepage**: https://devpod.sh
+- **Homepage**: <https://devpod.sh>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/devpod.sh/cli/package.yml)
 
 ## Installation

@@ -39,17 +39,18 @@ Control installation location using the `global` flag in dependency files:
 ```yaml
 # dependencies.yaml
 dependencies:
-  # Global installation (system-wide, available everywhere)
+# Global installation (system-wide, available everywhere)
   node@22:
     version: 22.1.0
     global: true
 
-  # Local installation (project-specific, isolated)
+# Local installation (project-specific, isolated)
   typescript@5.0:
     version: 5.0.4
     global: false
 
-  # String format defaults to local installation
+# String format defaults to local installation
+
   - eslint@8.50
 
 env:
@@ -64,11 +65,12 @@ Apply global installation to all dependencies by default:
 # dependencies.yaml
 global: true  # Install all packages globally unless overridden
 dependencies:
+
   - node@22
   - python@3.12
   - git@2.42
 
-  # Selective override to local installation
+# Selective override to local installation
   typescript@5.0:
     version: 5.0.4
     global: false

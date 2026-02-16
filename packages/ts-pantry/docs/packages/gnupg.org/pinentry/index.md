@@ -6,7 +6,7 @@
 
 - **Domain**: `gnupg.org/pinentry`
 - **Name**: `pinentry`
-- **Homepage**: https://www.gnupg.org/related_software/pinentry/
+- **Homepage**: <https://www.gnupg.org/related_software/pinentry/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnupg.org/pinentry/package.yml)
 
 ## Installation
@@ -69,4 +69,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

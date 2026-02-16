@@ -6,7 +6,7 @@
 
 - **Domain**: `dns.lookup.dog`
 - **Name**: `dog`
-- **Homepage**: https://dns.lookup.dog/
+- **Homepage**: <https://dns.lookup.dog/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dns.lookup.dog/package.yml)
 
 ## Installation

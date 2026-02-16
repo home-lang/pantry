@@ -6,7 +6,7 @@
 
 - **Domain**: `tea.xyz`
 - **Name**: `tea/cli`
-- **Homepage**: https://pkgx.sh
+- **Homepage**: <https://pkgx.sh>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tea.xyz/package.yml)
 
 ## Installation

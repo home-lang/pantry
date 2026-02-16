@@ -6,7 +6,7 @@
 
 - **Domain**: `apache.org/arrow`
 - **Name**: `arrow`
-- **Homepage**: https://arrow.apache.org/
+- **Homepage**: <https://arrow.apache.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apache.org/arrow/package.yml)
 
 ## Installation

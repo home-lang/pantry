@@ -126,7 +126,7 @@ pantry outdated <filter>
 
 **--silent** - Don't log anything
 
-**--verbose** or **-v** - Verbose logging
+**--verbose**or**-v** - Verbose logging
 
 **--no-progress** - Disable the progress bar
 
@@ -216,9 +216,9 @@ The `outdated` command displays results in a clean table format:
 
 ### Reading the Output
 
-- When **Update** ≠ **Latest**: A newer major version exists but breaks semver constraints
-- When **Current** = **Update** = **Latest**: Package is fully up to date
-- When **Current** ≠ **Update**: An update is available within your version range
+* When **Update**≠**Latest**: A newer major version exists but breaks semver constraints
+* When **Current**=**Update**=**Latest**: Package is fully up to date
+* When **Current**≠**Update**: An update is available within your version range
 
 ***
 
@@ -235,10 +235,10 @@ Pantry respects semver ranges in your package.json:
 
 ### Semver Constraints
 
-- `^` (caret): Compatible with minor/patch updates
-- `~` (tilde): Compatible with patch updates only
-- `*`: Any version
-- Exact: No updates unless you change package.json
+* `^` (caret): Compatible with minor/patch updates
+* `~` (tilde): Compatible with patch updates only
+* `*`: Any version
+* Exact: No updates unless you change package.json
 
 ***
 
@@ -321,8 +321,9 @@ If no packages appear outdated:
 ```
 
 This means:
-- All packages are at their latest compatible versions
-- No newer versions exist within your semver ranges
+
+* All packages are at their latest compatible versions
+* No newer versions exist within your semver ranges
 
 ### Package Not Found
 
@@ -353,9 +354,9 @@ No special flags needed - it just works!
 
 The `outdated` command is designed to be fast:
 
-- **Local checking**: Reads from package.json directly
-- **No network calls**: Version comparisons done locally (in current implementation)
-- **Smart filtering**: Only processes packages matching your filters
+* **Local checking**: Reads from package.json directly
+* **No network calls**: Version comparisons done locally (in current implementation)
+* **Smart filtering**: Only processes packages matching your filters
 
 ***
 
@@ -364,50 +365,54 @@ The `outdated` command is designed to be fast:
 ### vs npm outdated
 
 **Similar features:**
-- Table format output
-- Semver range awareness
-- Filter support
+
+* Table format output
+* Semver range awareness
+* Filter support
 
 **Pantry specific:**
-- Faster execution
-- JSONC support built-in
-- Consistent with Pantry CLI style
+
+* Faster execution
+* JSONC support built-in
+* Consistent with Pantry CLI style
 
 ### vs yarn outdated
 
 **Similar philosophy:**
-- Shows Current, Update, Latest columns
-- Workspace support
-- Pattern matching
+
+* Shows Current, Update, Latest columns
+* Workspace support
+* Pattern matching
 
 **Pantry specific:**
-- Integrated with Pantry package management
-- Unified cache system
-- Cross-platform consistency
+
+* Integrated with Pantry package management
+* Unified cache system
+* Cross-platform consistency
 
 ***
 
 ## Exit Codes
 
-- `0`: Success (packages may or may not be outdated)
-- `1`: Error (no package.json found, parse error, etc.)
+* `0`: Success (packages may or may not be outdated)
+* `1`: Error (no package.json found, parse error, etc.)
 
 ***
 
 ## Notes
 
-- Dev dependencies are marked with `(dev)` in the output
-- Scoped packages (`@scope/name`) are fully supported
-- Glob patterns use `*` for wildcard matching
-- Negation patterns start with `!`
-- The command shows all packages by default
-- Filter patterns are case-sensitive
+* Dev dependencies are marked with `(dev)` in the output
+* Scoped packages (`@scope/name`) are fully supported
+* Glob patterns use `*` for wildcard matching
+* Negation patterns start with `!`
+* The command shows all packages by default
+* Filter patterns are case-sensitive
 
 ***
 
 ## See Also
 
-- [pantry update](./update.md) - Update packages to newer versions
-- [pantry install](./install.md) - Install packages
-- [pantry list](./list.md) - List installed packages
-- [pantry remove](./remove.md) - Remove packages
+* [pantry update](./update.md) - Update packages to newer versions
+* [pantry install](./install.md) - Install packages
+* [pantry list](./list.md) - List installed packages
+* [pantry remove](./remove.md) - Remove packages

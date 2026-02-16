@@ -6,7 +6,7 @@
 
 - **Domain**: `llvm.org`
 - **Name**: `llvm`
-- **Homepage**: http://llvm.org
+- **Homepage**: <http://llvm.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/llvm.org/package.yml)
 
 ## Installation

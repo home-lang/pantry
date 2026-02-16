@@ -6,7 +6,7 @@
 
 - **Domain**: `jonas.github.io/tig`
 - **Name**: `tig`
-- **Homepage**: https://jonas.github.io/tig/
+- **Homepage**: <https://jonas.github.io/tig/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jonas.github.io/tig/package.yml)
 
 ## Installation

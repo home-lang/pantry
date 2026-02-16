@@ -6,7 +6,7 @@
 
 - **Domain**: `schollz.com/croc`
 - **Name**: `croc`
-- **Homepage**: https://schollz.com/software/croc6
+- **Homepage**: <https://schollz.com/software/croc6>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/schollz.com/croc/package.yml)
 
 ## Installation

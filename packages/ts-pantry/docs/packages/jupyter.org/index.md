@@ -6,7 +6,7 @@
 
 - **Domain**: `jupyter.org`
 - **Name**: `jupyter`
-- **Homepage**: https://jupyterlab.readthedocs.io/
+- **Homepage**: <https://jupyterlab.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jupyter.org/package.yml)
 
 ## Installation

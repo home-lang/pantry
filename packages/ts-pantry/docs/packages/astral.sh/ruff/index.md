@@ -6,7 +6,7 @@
 
 - **Domain**: `astral.sh/ruff`
 - **Name**: `ruff`
-- **Homepage**: https://docs.astral.sh/ruff/
+- **Homepage**: <https://docs.astral.sh/ruff/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/astral.sh/ruff/package.yml)
 
 ## Installation

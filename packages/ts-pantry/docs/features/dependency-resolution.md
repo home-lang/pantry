@@ -190,6 +190,7 @@ ts-pkgx resolve-deps deps.yaml --verbose --install-command
 🔍 Resolving dependencies from deps.yaml...
 
 📋 All unique packages to install:
+
   1. bun.sh (1.2.16)
   2. nodejs.org (20.0.0)
   3. python.org (3.12.0)
@@ -379,7 +380,7 @@ catch (error) {
 ### CI/CD Pipeline
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # ci-resolve-deps.sh
 
 # Resolve all dependencies and output JSON for further processing

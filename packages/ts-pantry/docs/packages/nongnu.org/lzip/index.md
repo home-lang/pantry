@@ -6,7 +6,7 @@
 
 - **Domain**: `nongnu.org/lzip`
 - **Name**: `lzip`
-- **Homepage**: https://www.nongnu.org/lzip/
+- **Homepage**: <https://www.nongnu.org/lzip/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nongnu.org/lzip/package.yml)
 
 ## Installation

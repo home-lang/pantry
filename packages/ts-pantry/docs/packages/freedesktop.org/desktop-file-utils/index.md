@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/desktop-file-utils`
 - **Name**: `desktop-file-utils`
-- **Homepage**: https://wiki.freedesktop.org/www/Software/desktop-file-utils/
+- **Homepage**: <https://wiki.freedesktop.org/www/Software/desktop-file-utils/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/desktop-file-utils/package.yml)
 
 ## Installation

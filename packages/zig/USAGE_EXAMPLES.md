@@ -3,6 +3,7 @@
 Comprehensive examples for all new Pantry features.
 
 ## Table of Contents
+
 - [Package Initialization](#package-initialization)
 - [Dependency Visualization](#dependency-visualization)
 - [Package Signing & Verification](#package-signing--verification)
@@ -25,6 +26,7 @@ pantry init
 ```
 
 **Interactive prompts:**
+
 ```
 📦 Initializing pantry.json
 
@@ -35,9 +37,11 @@ Description: A sample project
 ✅ Created pantry.json
 
 📝 Next steps:
+
    1. Add dependencies: pantry add <package>@<version>
    2. Install packages: pantry install
    3. Add scripts to the 'scripts' section
+
 ```
 
 ### Auto-Detection
@@ -45,6 +49,7 @@ Description: A sample project
 If `pantry init` detects existing config files, it adapts:
 
 **TypeScript/Node Project** (has `tsconfig.json` or `package.json`):
+
 ```json
 {
   "name": "my-ts-project",
@@ -68,6 +73,7 @@ If `pantry init` detects existing config files, it adapts:
 ```
 
 **Generic Project**:
+
 ```json
 {
   "name": "my-project",
@@ -95,6 +101,7 @@ pantry tree
 ```
 
 **Output:**
+
 ```
 ├── ⚬ bun@1.3.0
 ├── ⚬ typescript@5.0.0
@@ -112,6 +119,7 @@ pantry tree --no-versions
 ```
 
 **Output:**
+
 ```
 ├── ⚬ bun
 ├── ⚬ typescript
@@ -142,6 +150,7 @@ pantry tree --json
 ```
 
 **Output:**
+
 ```json
 {
   "dependencies": [
@@ -168,6 +177,7 @@ pantry tree --peer
 ```
 
 **Output:**
+
 ```
 ├── ⚬ react@18.2.0
 │   ├── ⚬ loose-envify@1.4.0
@@ -195,6 +205,7 @@ pantry generate-key
 ```
 
 **Output:**
+
 ```
 🔐 Generated Ed25519 keypair
 
@@ -205,6 +216,7 @@ Private Key (keep secret!):
 ed25519_private:9876543210fed...
 
 📝 Save your private key securely!
+
    - Do NOT commit to version control
    - Consider using a secrets manager
    - Backup in a secure location
@@ -235,6 +247,7 @@ pantry sign dist/mypackage-1.0.0.tar.gz <private-key> -o dist/mypackage-1.0.0.ta
 ```
 
 **Output:**
+
 ```
 🔏 Signing package...
 
@@ -271,6 +284,7 @@ pantry verify dist/mypackage-1.0.0.tar.gz -v
 ```
 
 **Success Output:**
+
 ```
 🔍 Verifying package signature...
 
@@ -282,6 +296,7 @@ pantry verify dist/mypackage-1.0.0.tar.gz -v
 ```
 
 **Failure Output:**
+
 ```
 ❌ Signature verification failed!
    Reason: Public key not in keyring
@@ -343,15 +358,18 @@ pantry install  # Fails with helpful message
 ```
 
 **Output when package not in cache:**
+
 ```
 🔌 Offline mode enabled - using cache only
 
 ❌ bun@1.3.0 not found in cache (offline mode)
 
 💡 Suggestions:
+
    1. Install while online to cache the package
    2. Check your version requirements in pantry.json
    3. Disable offline mode temporarily: unset PANTRY_OFFLINE
+
 ```
 
 ### Cache Location
@@ -362,7 +380,7 @@ Packages are cached at: `~/.pantry/cache/packages/`
 # View cached packages
 ls ~/.pantry/cache/packages/
 
-# Example structure:
+# Example structure
 # ~/.pantry/cache/packages/
 # ├── bun/
 # │   ├── 1.3.0/
@@ -370,8 +388,8 @@ ls ~/.pantry/cache/packages/
 # ├── typescript/
 # │   └── 5.0.0/
 # └── @types/
-#     └── node/
-#         └── 20.0.0/
+# └── node/
+# └── 20.0.0/
 ```
 
 ---
@@ -456,6 +474,7 @@ pantry install
 ```
 
 **Output:**
+
 ```
 ➤ Installing 5 package(s)...
 ✓ bun@1.3.0
@@ -465,13 +484,16 @@ pantry install
 ❌ Error: Network connection failed
 
 💡 Suggestions:
+
    1. Check your internet connection
    2. Try again with --offline flag to use cached packages
    3. Check if a proxy is required (HTTP_PROXY environment variable)
    4. Verify the registry URL is accessible
+
 ```
 
 **Solution:**
+
 ```bash
 # Try offline mode
 export PANTRY_OFFLINE=1
@@ -491,16 +513,20 @@ pantry install --global
 ```
 
 **Output:**
+
 ```
 ❌ Error: Permission denied
 
 💡 Suggestions:
+
    1. Try running with appropriate permissions
    2. Check file/directory ownership
    3. Use --global flag to install system-wide (requires sudo)
+
 ```
 
 **Solution:**
+
 ```bash
 # Install to user directory instead
 pantry install --user
@@ -518,16 +544,20 @@ pantry install
 ```
 
 **Output:**
+
 ```
 ❌ Error: Insufficient disk space
 
 💡 Suggestions:
+
    1. Free up disk space
    2. Run 'pantry cache:clear' to remove cached packages
    3. Check available disk space with 'df -h'
+
 ```
 
 **Solution:**
+
 ```bash
 # Clear cache
 pantry cache:clear
@@ -548,18 +578,22 @@ pantry install
 ```
 
 **Output:**
+
 ```
 ✗ bun@1.3.0 (failed: InvalidCharacter)
 
 ❌ Error: Package appears to be corrupted
 
 💡 Suggestions:
+
    1. Clear cache: pantry cache:clear
    2. Try installing again
    3. Report the issue if it persists
+
 ```
 
 **Solution:**
+
 ```bash
 # Clear specific package from cache
 pantry cache:clear
@@ -577,17 +611,21 @@ pantry install
 ```
 
 **Output:**
+
 ```
 ❌ Error: Version conflict detected
 
 💡 Suggestions:
+
    1. Check dependency versions in pantry.json
    2. Try updating to compatible versions
    3. Use 'pantry tree' to visualize dependency conflicts
    4. Consider using version ranges instead of exact versions
+
 ```
 
 **Solution:**
+
 ```bash
 # Visualize the dependency tree
 pantry tree
@@ -609,6 +647,7 @@ pantry install
 ```
 
 **Output:**
+
 ```
 ➤ Installing 5 package(s)...
 ✓ bun@1.3.0
@@ -624,6 +663,7 @@ pantry install
 ```
 
 The rollback feature:
+
 - Creates checkpoints before installation
 - Records all installed files and directories
 - Creates backups of existing files
@@ -631,6 +671,7 @@ The rollback feature:
 - Provides recovery suggestions
 
 **Manual Recovery:**
+
 ```bash
 # Clean and start fresh
 pantry clean
@@ -680,7 +721,7 @@ cd ~/project1 && pantry install
 cd ~/project2 && pantry install
 cd ~/project3 && pantry install
 
-# All installations use cache - no network needed!
+# All installations use cache - no network needed
 ```
 
 ### Scenario 3: Corporate Environment
@@ -704,7 +745,7 @@ pantry install
 ### Scenario 4: CI/CD Pipeline
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # .github/workflows/build.yml
 
 # Install dependencies from lockfile
@@ -727,28 +768,33 @@ pantry test
 ## Tips & Best Practices
 
 ### Package Signing
+
 - **Always** keep private keys secure and never commit them
 - Use environment variables or secrets managers for CI/CD
 - Maintain a keyring file per environment (dev, staging, prod)
 - Rotate keys periodically
 
 ### Offline Mode
+
 - Pre-cache packages before traveling or going offline
 - Use `--offline` flag in CI/CD for faster, reproducible builds
 - Combine with `--frozen-lockfile` for maximum reproducibility
 
 ### Proxy Configuration
+
 - Add proxy config to shell profile (~/.zshrc, ~/.bashrc)
 - Use NO_PROXY for internal company domains
 - Test proxy configuration with `--verbose` flag
 
 ### Error Recovery
+
 - Always read the contextual suggestions provided
 - Use `pantry tree` to debug dependency conflicts
 - Keep caches clean with periodic `pantry cache:clear`
 - Use `pantry clean` for nuclear option (complete reset)
 
 ### General
+
 - Use `pantry tree` regularly to understand dependencies
 - Enable `--verbose` for debugging
 - Check `pantry.lock` into version control

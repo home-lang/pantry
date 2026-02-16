@@ -6,7 +6,7 @@
 
 - **Domain**: `git-lfs.com`
 - **Name**: `git-lfs`
-- **Homepage**: https://git-lfs.github.com/
+- **Homepage**: <https://git-lfs.github.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/git-lfs.com/package.yml)
 
 ## Installation

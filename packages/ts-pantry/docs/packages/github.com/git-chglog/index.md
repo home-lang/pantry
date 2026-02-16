@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/git-chglog`
 - **Name**: `git-chglog`
-- **Homepage**: https://godoc.org/github.com/git-chglog/git-chglog
+- **Homepage**: <https://godoc.org/github.com/git-chglog/git-chglog>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/git-chglog/package.yml)
 
 ## Installation

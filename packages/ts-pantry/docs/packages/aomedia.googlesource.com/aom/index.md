@@ -6,7 +6,7 @@
 
 - **Domain**: `aomedia.googlesource.com/aom`
 - **Name**: `aom`
-- **Homepage**: https://aomedia.googlesource.com/aom
+- **Homepage**: <https://aomedia.googlesource.com/aom>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aomedia.googlesource.com/aom/package.yml)
 
 ## Installation

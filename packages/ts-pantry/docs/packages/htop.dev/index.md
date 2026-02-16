@@ -6,7 +6,7 @@
 
 - **Domain**: `htop.dev`
 - **Name**: `htop`
-- **Homepage**: https://htop.dev/
+- **Homepage**: <https://htop.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/htop.dev/package.yml)
 
 ## Installation

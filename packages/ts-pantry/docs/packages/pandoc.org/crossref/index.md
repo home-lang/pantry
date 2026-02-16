@@ -6,7 +6,7 @@
 
 - **Domain**: `pandoc.org/crossref`
 - **Name**: `pandoc-crossref`
-- **Homepage**: https://lierdakil.github.io/pandoc-crossref/
+- **Homepage**: <https://lierdakil.github.io/pandoc-crossref/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pandoc.org/crossref/package.yml)
 
 ## Installation

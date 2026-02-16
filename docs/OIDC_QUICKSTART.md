@@ -14,7 +14,7 @@ First, you need to tell npm that your GitHub repository is allowed to publish yo
 
 ### Using Web UI (Recommended for First-Time Setup)
 
-1. Go to https://www.npmjs.com/package/your-package/access
+1. Go to <https://www.npmjs.com/package/your-package/access>
 2. Click "Publishing Access"
 3. Click "Add Trusted Publisher"
 4. Select "GitHub Actions"
@@ -58,29 +58,35 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
+
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install dependencies
+
         run: npm install
 
       - name: Build
+
         run: npm run build
 
       - name: Publish with OIDC
+
         run: npx pantry publish
 ```
 
 **Key Points:**
+
 - `id-token: write` permission is **required**
 - No `NPM_TOKEN` secret needed!
 - Works automatically in CI
 
-## Step 3: Test It!
+## Step 3: Test It
 
 ### Create a Release
 
@@ -112,7 +118,7 @@ npm view your-package@1.0.0
 
 You should see the new version!
 
-## That's It!
+## That's It
 
 Your package is now published using OIDC authentication. No secrets to manage, no tokens to rotate!
 
@@ -138,6 +144,7 @@ permissions:
 ### "Claims mismatch"
 
 **Solution**: Verify your trusted publisher configuration matches exactly:
+
 - Repository owner must match
 - Repository name must match
 - Workflow path must match (including `.github/workflows/`)
@@ -145,6 +152,7 @@ permissions:
 ### "Permission denied"
 
 **Solution**: Check that:
+
 1. You're a maintainer of the package on npm
 2. The trusted publisher is correctly configured
 3. Your workflow is running from the correct repository
@@ -159,11 +167,15 @@ publish:
   stage: deploy
   image: node:20
   only:
+
     - tags
+
   script:
+
     - npm install
     - npm run build
     - npx pantry publish
+
 ```
 
 Configure the trusted publisher:
@@ -176,7 +188,7 @@ pantry publisher add \
   --repository your-project
 ```
 
-## Need Help?
+## Need Help
 
 - Check the [full documentation](./OIDC_AUTHENTICATION.md)
 - Open an issue on [GitHub](https://github.com/pantry-sh/pantry/issues)

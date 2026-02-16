@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/cargo-tarpaulin`
 - **Name**: `cargo-tarpaulin`
-- **Homepage**: https://crates.io/crates/cargo-tarpaulin
+- **Homepage**: <https://crates.io/crates/cargo-tarpaulin>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/cargo-tarpaulin/package.yml)
 
 ## Installation

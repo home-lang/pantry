@@ -6,7 +6,7 @@
 
 - **Domain**: `beyondgrep.com`
 - **Name**: `ack`
-- **Homepage**: https://beyondgrep.com/
+- **Homepage**: <https://beyondgrep.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/beyondgrep.com/package.yml)
 
 ## Installation

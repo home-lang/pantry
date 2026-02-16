@@ -214,15 +214,21 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
+
       - uses: actions/checkout@v4
       - name: Install pantry
+
         run: npm install -g ts-pantry
+
       - name: Install dependencies with pantry
+
         run: pantry install node@22 python@3.12
+
       - name: Test environment activation
+
         run: |
           cd test-project
-          # Environment should activate automatically with shell integration
+# Environment should activate automatically with shell integration
 ```
 
 ## Platform-specific Configuration

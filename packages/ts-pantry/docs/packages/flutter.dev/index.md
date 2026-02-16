@@ -6,7 +6,7 @@
 
 - **Domain**: `flutter.dev`
 - **Name**: `flutter`
-- **Homepage**: https://flutter.dev
+- **Homepage**: <https://flutter.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/flutter.dev/package.yml)
 
 ## Installation

@@ -47,7 +47,7 @@ Classify and handle different types of errors:
 
 ```typescript
 function classifyError(error: any, packageName: string): {
-  type: 'not_found' | 'timeout' | 'parse_error' | 'network_error' | 'unknown'
+  type: 'not*found' | 'timeout' | 'parse*error' | 'network*error' | 'unknown'
   retryable: boolean
   message: string
 } {
@@ -55,7 +55,7 @@ function classifyError(error: any, packageName: string): {
 
   if (errorString.includes('404') || errorString.includes('Not Found')) {
     return {
-      type: 'not_found',
+      type: 'not*found',
       retryable: false, // No point retrying a 404
       message: `Package ${packageName} not found`
     }
@@ -71,7 +71,7 @@ function classifyError(error: any, packageName: string): {
 
   if (errorString.includes('JSON') || errorString.includes('parse')) {
     return {
-      type: 'parse_error',
+      type: 'parse*error',
       retryable: true, // Parsing errors might be temporary
       message: `Error parsing data for ${packageName}`
     }
@@ -79,7 +79,7 @@ function classifyError(error: any, packageName: string): {
 
   if (errorString.includes('network') || errorString.includes('connect') || errorString.includes('ECONNREFUSED')) {
     return {
-      type: 'network_error',
+      type: 'network*error',
       retryable: true, // Network errors are often temporary
       message: `Network error fetching ${packageName}`
     }
@@ -130,7 +130,7 @@ async function createFallbackPackage(
     aliases: subPath ? [subPath] : undefined,
     fullPath: packageName,
     // Additional error information
-    _error: {
+    *error: {
       message: error.message,
       timestamp: new Date().toISOString(),
       classified: classifyError(error, packageName)
@@ -268,12 +268,12 @@ async function batchFetchWithGracefulDegradation(
   }
 
   // Process in batches to avoid overwhelming resources
-  const BATCH_SIZE = 10
-  const batches = Math.ceil(packageNames.length / BATCH_SIZE)
+  const BATCH*SIZE = 10
+  const batches = Math.ceil(packageNames.length / BATCH*SIZE)
 
   for (let i = 0; i < batches; i++) {
-    const start = i * BATCH_SIZE
-    const end = Math.min(start + BATCH_SIZE, packageNames.length)
+    const start = i * BATCH*SIZE
+    const end = Math.min(start + BATCH*SIZE, packageNames.length)
     const batch = packageNames.slice(start, end)
 
     console.log(`Processing batch ${i + 1}/${batches} (packages ${start + 1}-${end})`)
@@ -310,7 +310,7 @@ async function batchFetchWithGracefulDegradation(
     const failureRate = results.failed.length / (results.succeeded.length + results.failed.length)
     if (failureRate > 0.5 && batch.length > 1) {
       console.warn(`High failure rate (${failureRate.toFixed(2)}), reducing batch size and slowing down`)
-      BATCH_SIZE = Math.max(1, Math.floor(BATCH_SIZE / 2))
+      BATCH*SIZE = Math.max(1, Math.floor(BATCH_SIZE / 2))
       await new Promise(resolve => setTimeout(resolve, 5000)) // Cool-down period
     }
   }

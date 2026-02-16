@@ -6,7 +6,7 @@
 
 - **Domain**: `xerces.apache.org/xerces-c`
 - **Name**: `xerces-c`
-- **Homepage**: https://xerces.apache.org/xerces-c/
+- **Homepage**: <https://xerces.apache.org/xerces-c/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xerces.apache.org/xerces-c/package.yml)
 
 ## Installation

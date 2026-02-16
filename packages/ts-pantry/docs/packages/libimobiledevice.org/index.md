@@ -6,7 +6,7 @@
 
 - **Domain**: `libimobiledevice.org`
 - **Name**: `idevicedate`
-- **Homepage**: https://www.libimobiledevice.org/
+- **Homepage**: <https://www.libimobiledevice.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libimobiledevice.org/package.yml)
 
 ## Installation

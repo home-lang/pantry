@@ -6,7 +6,7 @@
 
 - **Domain**: `gradle.org`
 - **Name**: `gradle`
-- **Homepage**: https://www.gradle.org/
+- **Homepage**: <https://www.gradle.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gradle.org/package.yml)
 
 ## Installation

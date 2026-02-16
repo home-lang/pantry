@@ -6,7 +6,7 @@
 
 - **Domain**: `orhun.dev/gpg-tui`
 - **Name**: `gpg-tui`
-- **Homepage**: https://blog.orhun.dev/introducing-gpg-tui/
+- **Homepage**: <https://blog.orhun.dev/introducing-gpg-tui/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/orhun.dev/gpg-tui/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `sass-lang.com/libsass`
 - **Name**: `libsass`
-- **Homepage**: https://sass-lang.com/libsass
+- **Homepage**: <https://sass-lang.com/libsass>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sass-lang.com/libsass/package.yml)
 
 ## Installation

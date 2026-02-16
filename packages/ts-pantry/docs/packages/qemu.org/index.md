@@ -6,7 +6,7 @@
 
 - **Domain**: `qemu.org`
 - **Name**: `qemu`
-- **Homepage**: https://www.qemu.org/
+- **Homepage**: <https://www.qemu.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/qemu.org/package.yml)
 
 ## Installation

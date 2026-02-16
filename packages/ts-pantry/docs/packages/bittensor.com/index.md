@@ -6,7 +6,7 @@
 
 - **Domain**: `bittensor.com`
 - **Name**: `Bittensor`
-- **Homepage**: https://www.bittensor.com/
+- **Homepage**: <https://www.bittensor.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bittensor.com/package.yml)
 
 ## Installation

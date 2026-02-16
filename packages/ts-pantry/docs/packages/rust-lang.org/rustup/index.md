@@ -6,7 +6,7 @@
 
 - **Domain**: `rust-lang.org/rustup`
 - **Name**: `rustup`
-- **Homepage**: https://rust-lang.github.io/rustup/
+- **Homepage**: <https://rust-lang.github.io/rustup/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.org/rustup/package.yml)
 
 ## Installation

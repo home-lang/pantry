@@ -63,6 +63,7 @@ For pkgx compatibility, pantry also supports:
 
 ```yaml
 dependencies:
+
   - node@22
   - python@3.12
   - gnu.org/wget@1.21
@@ -82,7 +83,7 @@ Control where packages are installed using the `global` flag:
 ```yaml
 # dependencies.yaml
 dependencies:
-  # Global packages (installed to /usr/local)
+# Global packages (installed to /usr/local)
   node@22:
     version: 22.1.0
     global: true
@@ -90,12 +91,13 @@ dependencies:
     version: 3.12.1
     global: true
 
-  # Local packages (project-specific installation)
+# Local packages (project-specific installation)
   typescript@5.0:
     version: 5.0.4
     global: false
 
-  # String format defaults to local
+# String format defaults to local
+
   - eslint@8.50
 
 env:
@@ -108,11 +110,12 @@ env:
 # dependencies.yaml
 global: true  # Install all packages globally by default
 dependencies:
+
   - node@22
   - python@3.12
   - git@2.42
 
-  # Override specific packages to be local
+# Override specific packages to be local
   typescript@5.0:
     version: 5.0.4
     global: false
@@ -396,6 +399,7 @@ Environments work seamlessly with development tools:
 
 ```yaml
 dependencies:
+
   - node@22
   - typescript@5.0
   - yarn@1.22
@@ -409,6 +413,7 @@ env:
 
 ```yaml
 dependencies:
+
   - python@3.12
   - pip
   - poetry@1.5
@@ -527,7 +532,7 @@ env:
 Use JSON output for automation:
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 # Clean up environments larger than 100MB
 
 envs=$(pantry env:list --format json)
@@ -543,7 +548,9 @@ Clean up environments in CI pipelines:
 
 ```yaml
 # GitHub Actions example
+
 - name: Clean old environments
+
   run: |
     pantry env:clean --older-than 1 --force
 ```

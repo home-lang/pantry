@@ -6,7 +6,7 @@
 
 - **Domain**: `jfrog.com/jfrog-cli`
 - **Name**: `jfrog-cli`
-- **Homepage**: https://www.jfrog.com/confluence/display/CLI/JFrog+CLI
+- **Homepage**: <https://www.jfrog.com/confluence/display/CLI/JFrog+CLI>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jfrog.com/jfrog-cli/package.yml)
 
 ## Installation

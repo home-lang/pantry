@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/binutils`
 - **Name**: `binutils`
-- **Homepage**: https://www.gnu.org/software/binutils/binutils.html
+- **Homepage**: <https://www.gnu.org/software/binutils/binutils.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/binutils/package.yml)
 
 ## Installation

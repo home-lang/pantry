@@ -234,6 +234,7 @@ console.log(nodePackage.domain) // 'nodejs.org'
 ts-pkgx uses intelligent alias-based naming for better developer experience:
 
 1. **Packages with aliases use the primary alias for naming:**
+
    ```typescript
    import {
      bunPackage, // For bun.sh (alias: 'bun') - NOT bunshPackage
@@ -243,6 +244,7 @@ ts-pkgx uses intelligent alias-based naming for better developer experience:
    ```
 
 2. **Packages without aliases use domain-based naming:**
+
    ```typescript
    import {
      astgrepgithubioPackage, // For ast-grep.github.io (no alias)
@@ -251,6 +253,7 @@ ts-pkgx uses intelligent alias-based naming for better developer experience:
    ```
 
 3. **Nested paths are concatenated:**
+
    ```typescript
    import { agwanamegitcryptPackage } from 'ts-pkgx' // For 'agwa.name/git-crypt'
    ```

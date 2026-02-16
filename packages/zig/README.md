@@ -2,13 +2,14 @@
 
 > High-performance dependency manager refactored from TypeScript/Bun to Zig for 20-50x performance improvements.
 
-## Project Status: 🎉 All 8 Phases Complete - Production Ready!
+## Project Status: 🎉 All 8 Phases Complete - Production Ready
 
 This is a high-performance Zig refactor of the TypeScript/Bun implementation, achieving 20-50x performance improvements over the original TypeScript/Bun version.
 
 ## Features
 
 ### 🚀 Core Features
+
 - **Lightning-Fast Package Installation** - Concurrent installation with optimal parallelism
 - **Smart Environment Activation** - Auto-detects version changes and updates dependencies
 - **Aggressive Caching** - 1-hour TTL with mtime-based invalidation for instant performance
@@ -17,6 +18,7 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation, ac
 - **Custom Registries** - Support for custom npm-compatible registries
 
 ### 📦 Package Management
+
 - **Native Config Format** - Uses `pantry.json`, `pantry.jsonc`, or `config/deps.ts` (TypeScript config)
 - **Universal Support** - Fallback support for other package managers (Cargo.toml, pyproject.toml, Gemfile, go.mod, composer.json)
 - **Runtime Version Management** - Pin runtime versions (e.g., `"bun": "1.3.0"`) - automatically downloads and activates
@@ -32,6 +34,7 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation, ac
 - **Error Recovery** - Automatic rollback on failures with contextual suggestions
 
 ### 🔧 Service Management
+
 - **31 Pre-configured Services** - nginx, postgres, redis, mongodb, mysql, and more
 - **Auto-Start from Config** - Services automatically start when entering a project
 - **Multi-Platform** - launchd for macOS, systemd for Linux
@@ -40,12 +43,14 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation, ac
 - **Health Checks** - Optional health check commands per service
 
 ### 🐚 Shell Integration
+
 - **Multi-Shell Support** - zsh, bash, fish with automatic detection
 - **Seamless Activation** - Auto-activates environments on directory change
 - **PATH Management** - Automatic PATH updates for installed binaries
 - **Hook Generation** - Custom shell hooks for advanced workflows
 
 ### ⚡ Performance
+
 - **20-50x Faster** than npm, yarn, pnpm
 - **Sub-millisecond Hashing** - FNV-1a for small strings, MD5 for large
 - **Lock-Free Caching** - Atomic operations for zero-lock reads
@@ -140,12 +145,14 @@ zig build compile-all
 ## New Commands
 
 ### Package Initialization
+
 ```bash
 # Initialize a new pantry.json file interactively
 pantry init
 ```
 
 ### Dependency Visualization
+
 ```bash
 # Display dependency tree
 pantry tree
@@ -167,6 +174,7 @@ pantry tree --json
 ```
 
 ### Package Signing & Verification
+
 ```bash
 # Generate Ed25519 keypair
 pantry generate-key
@@ -179,6 +187,7 @@ pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
 ```
 
 ### Offline Mode & Proxy Support
+
 ```bash
 # Enable offline mode (uses cache only)
 export PANTRY_OFFLINE=1
@@ -195,7 +204,9 @@ pantry install
 ```
 
 ### Error Recovery
+
 When installations fail, pantry provides contextual suggestions:
+
 - **Network errors**: Check connection, try `--offline` flag
 - **Permission errors**: Check ownership, may need elevated permissions
 - **Disk space errors**: Clear cache with `pantry cache:clear`
@@ -246,6 +257,7 @@ packages/zig/
 ### All Phases Complete! ✅
 
 **Phase 1: Foundation & Core Utilities** ✅
+
 - Platform abstraction layer with compile-time platform detection
 - Ultra-fast hashing using FNV-1a for small strings (< 32 bytes)
 - String interning for pointer-based equality (5 ns/op)
@@ -253,6 +265,7 @@ packages/zig/
 - Full test coverage and benchmarks
 
 **Phase 2: Caching System** ✅
+
 - Environment cache with TTL support (1-hour default for shell activation)
 - Ring buffer fast cache (8 entries, L1-optimized, lock-free)
 - Package download cache with SHA256 verification
@@ -260,6 +273,7 @@ packages/zig/
 - Automatic cleanup of expired entries
 
 **Phase 3: Package Management** ✅
+
 - Package specification types and metadata structures
 - Installed package tracking
 - Dependency extraction from pantry.json, config/deps.ts, and other formats
@@ -267,11 +281,13 @@ packages/zig/
 - Custom registry support
 
 **Phase 4: Environment Management** ✅
+
 - Environment manager with hash-based identification
 - Environment creation, loading, listing, removal
 - Dependency file tracking with mtime-based change detection
 
 **Phase 5: Shell Integration** ✅
+
 - Shell detection (zsh, bash, fish)
 - Hook generation for each shell
 - Activation script generation with PATH modification
@@ -279,6 +295,7 @@ packages/zig/
 - Smart environment activation with auto-install
 
 **Phase 6: Installation Logic** ✅
+
 - Package installer with concurrent installation
 - Install from cache and network
 - Package listing and uninstall functionality
@@ -286,6 +303,7 @@ packages/zig/
 - Global package installation
 
 **Phase 7: CLI Commands** ✅
+
 - Full command suite: install, add, remove, list, update
 - Cache management: cache:stats, cache:clear
 - Environment commands: env:list, env:remove, env:clean
@@ -294,6 +312,7 @@ packages/zig/
 - Utility commands: doctor, dev, init
 
 **Phase 8: Service Management** ✅
+
 - 31 service definitions (nginx, postgres, redis, mongodb, etc.)
 - launchd integration for macOS
 - systemd integration for Linux
@@ -301,6 +320,7 @@ packages/zig/
 - Full integration tests for all services
 
 **Phase 9: Smart Environment Activation** ✅
+
 - Automatic detection of version changes in dependency files
 - Auto-install/update when versions change (e.g., bun 1.3.0 → 1.3.1)
 - 1-hour aggressive caching to avoid redundant checks
@@ -313,18 +333,19 @@ packages/zig/
 Exceeding all performance targets:
 
 - **Small string hashing (FNV-1a):** < 1 ns/op (24+ billion ops/sec)
-- **Large string hashing (MD5):** 163 ns/op - **1,200x faster than 200μs target**
+- **Large string hashing (MD5):**163 ns/op -**1,200x faster than 200μs target**
 - **String interning (cache hit):** 5 ns/op (200+ million ops/sec)
 - **Pointer comparison:** < 1 ns/op (instant)
 - **Path resolution:** ~6μs/op (home), ~12μs/op (cache)
 
 ### Test Coverage
 
-**181 tests passing** ✅ | **29 test files** | **Estimated 85%+ coverage**
+**181 tests passing**✅ |**29 test files**|**Estimated 85%+ coverage**
 
 Comprehensive test suites covering:
 
 **Unit Tests:**
+
 - ✅ Core utilities (string hashing, platform detection, error handling)
 - ✅ Caching system (environment cache, package cache, TTL validation)
 - ✅ Package management (types, metadata, publishing)
@@ -334,6 +355,7 @@ Comprehensive test suites covering:
 - ✅ Service management (31 services across macOS and Linux)
 
 **Integration Tests:**
+
 - ✅ End-to-end workflows (installation, publishing, registry)
 - ✅ Workspace support (monorepo testing)
 - ✅ Override resolution and version conflicts
@@ -341,6 +363,7 @@ Comprehensive test suites covering:
 - ✅ Configuration parsing (pantry.json, pantry.jsonc, config/deps.ts)
 
 **Advanced Test Types:**
+
 - ✅ Concurrent testing (race condition detection)
 - ✅ Fuzz testing (edge case discovery)
 - ✅ Property-based testing (invariant validation)
@@ -348,6 +371,7 @@ Comprehensive test suites covering:
 - ✅ Regression testing (bug prevention)
 
 **Coverage by Module:**
+
 - ✅ Core (95%+) - platform, string, error
 - ✅ Cache (90%+) - env cache, package cache
 - ✅ Packages (85%+) - types, metadata, publishing
@@ -358,6 +382,7 @@ Comprehensive test suites covering:
 - ✅ CLI (80%+) - commands, parsing, execution
 
 **Running Coverage:**
+
 ```bash
 # Generate coverage report
 zig build coverage
@@ -388,6 +413,7 @@ open zig-out/coverage/html/index.html
 Comprehensive benchmarks comparing pantry against npm, pnpm, yarn, and bun across common package manager operations.
 
 ### Test Environment
+
 - **Hardware**: M1 MacBook Pro, 16GB RAM, 512GB SSD
 - **OS**: macOS 13.5
 - **Node**: v20.10.0
@@ -399,6 +425,7 @@ Comprehensive benchmarks comparing pantry against npm, pnpm, yarn, and bun acros
   - pantry: 1.0.0 (Zig 0.15.2, ReleaseSmall)
 
 ### Benchmark Methodology
+
 Each benchmark run 10 times, median value reported. Cache cleared between runs unless specified. Project: React + 10 common dependencies (total ~150 packages with transitive deps).
 
 ---
@@ -409,13 +436,13 @@ Installing React app from scratch with empty cache.
 
 | Package Manager | Time | Memory Peak | Disk I/O |
 |-----------------|------|-------------|----------|
-| **pantry** | **2.1s** | **8.2 MB** | **52 MB/s** |
+| **pantry**|**2.1s**|**8.2 MB**|**52 MB/s** |
 | bun | 3.8s | 95 MB | 48 MB/s |
 | pnpm | 8.4s | 120 MB | 35 MB/s |
 | yarn | 12.7s | 180 MB | 28 MB/s |
 | npm | 18.3s | 210 MB | 25 MB/s |
 
-**Result**: pantry is **1.8x faster than bun**, **4x faster than pnpm**, **6x faster than yarn**, and **8.7x faster than npm**.
+**Result**: pantry is**1.8x faster than bun**,**4x faster than pnpm**,**6x faster than yarn**, and**8.7x faster than npm**.
 
 ---
 
@@ -425,13 +452,13 @@ Installing with warm cache (packages already downloaded).
 
 | Package Manager | Time | Memory Peak |
 |-----------------|------|-------------|
-| **pantry** | **0.31s** | **3.1 MB** |
+| **pantry**|**0.31s**|**3.1 MB** |
 | bun | 0.95s | 42 MB |
 | pnpm | 1.8s | 68 MB |
 | yarn | 4.2s | 95 MB |
 | npm | 6.5s | 115 MB |
 
-**Result**: pantry is **3x faster than bun**, **5.8x faster than pnpm**, **13.5x faster than yarn**, and **21x faster than npm**.
+**Result**: pantry is**3x faster than bun**,**5.8x faster than pnpm**,**13.5x faster than yarn**, and**21x faster than npm**.
 
 ---
 
@@ -441,13 +468,13 @@ Installing from existing lockfile (most common CI scenario).
 
 | Package Manager | Time | Memory Peak | CPU Usage |
 |-----------------|------|-------------|-----------|
-| **pantry** | **0.42s** | **4.8 MB** | **180%** |
+| **pantry**|**0.42s**|**4.8 MB**|**180%** |
 | bun | 1.2s | 58 MB | 220% |
 | pnpm | 2.1s | 75 MB | 190% |
 | yarn | 5.8s | 110 MB | 150% |
 | npm | 8.9s | 135 MB | 140% |
 
-**Result**: pantry is **2.9x faster than bun**, **5x faster than pnpm**, **13.8x faster than yarn**, and **21.2x faster than npm**.
+**Result**: pantry is**2.9x faster than bun**,**5x faster than pnpm**,**13.8x faster than yarn**, and**21.2x faster than npm**.
 
 ---
 
@@ -457,13 +484,13 @@ Adding lodash to existing project.
 
 | Package Manager | Time |
 |-----------------|------|
-| **pantry** | **0.18s** |
+| **pantry**|**0.18s** |
 | bun | 0.52s |
 | pnpm | 1.1s |
 | yarn | 2.4s |
 | npm | 3.7s |
 
-**Result**: pantry is **2.9x faster than bun**, **6.1x faster than pnpm**, **13.3x faster than yarn**, and **20.6x faster than npm**.
+**Result**: pantry is**2.9x faster than bun**,**6.1x faster than pnpm**,**13.3x faster than yarn**, and**20.6x faster than npm**.
 
 ---
 
@@ -473,13 +500,13 @@ Removing lodash from project.
 
 | Package Manager | Time |
 |-----------------|------|
-| **pantry** | **0.09s** |
+| **pantry**|**0.09s** |
 | bun | 0.31s |
 | pnpm | 0.68s |
 | yarn | 1.9s |
 | npm | 2.8s |
 
-**Result**: pantry is **3.4x faster than bun**, **7.6x faster than pnpm**, **21x faster than yarn**, and **31x faster than npm**.
+**Result**: pantry is**3.4x faster than bun**,**7.6x faster than pnpm**,**21x faster than yarn**, and**31x faster than npm**.
 
 ---
 
@@ -489,13 +516,13 @@ Updating all packages to latest versions.
 
 | Package Manager | Time | Network Requests |
 |-----------------|------|------------------|
-| **pantry** | **1.8s** | **152** |
+| **pantry**|**1.8s**|**152** |
 | bun | 4.2s | 189 |
 | pnpm | 9.1s | 245 |
 | yarn | 15.3s | 312 |
 | npm | 22.1s | 387 |
 
-**Result**: pantry is **2.3x faster than bun**, **5.1x faster than pnpm**, **8.5x faster than yarn**, and **12.3x faster than npm**.
+**Result**: pantry is**2.3x faster than bun**,**5.1x faster than pnpm**,**8.5x faster than yarn**, and**12.3x faster than npm**.
 
 ---
 
@@ -505,13 +532,13 @@ Installing workspace with 20 packages, 500+ total dependencies.
 
 | Package Manager | Time | Memory Peak | Parallel Jobs |
 |-----------------|------|-------------|---------------|
-| **pantry** | **4.2s** | **15 MB** | **Auto (8)** |
+| **pantry**|**4.2s**|**15 MB**|**Auto (8)** |
 | bun | 9.8s | 180 MB | Auto (8) |
 | pnpm | 18.5s | 280 MB | 4 |
 | yarn | 42.1s | 450 MB | 4 |
 | npm | 68.7s | 520 MB | 1 |
 
-**Result**: pantry is **2.3x faster than bun**, **4.4x faster than pnpm**, **10x faster than yarn**, and **16.4x faster than npm**.
+**Result**: pantry is**2.3x faster than bun**,**4.4x faster than pnpm**,**10x faster than yarn**, and**16.4x faster than npm**.
 
 ---
 
@@ -521,13 +548,13 @@ Time from command invocation to first output.
 
 | Package Manager | Time |
 |-----------------|------|
-| **pantry** | **3.2ms** |
+| **pantry**|**3.2ms** |
 | bun | 12ms |
 | pnpm | 45ms |
 | yarn | 125ms |
 | npm | 185ms |
 
-**Result**: pantry is **3.8x faster than bun**, **14x faster than pnpm**, **39x faster than yarn**, and **57.8x faster than npm**.
+**Result**: pantry is**3.8x faster than bun**,**14x faster than pnpm**,**39x faster than yarn**, and**57.8x faster than npm**.
 
 ---
 
@@ -537,13 +564,13 @@ Time to check if package is in cache (1000 iterations).
 
 | Package Manager | Average Time per Lookup |
 |-----------------|-------------------------|
-| **pantry** | **42μs** |
+| **pantry**|**42μs** |
 | bun | 180μs |
 | pnpm | 2.8ms |
 | yarn | 4.2ms |
 | npm | 6.5ms |
 
-**Result**: pantry is **4.3x faster than bun**, **66.7x faster than pnpm**, **100x faster than yarn**, and **154x faster than npm**.
+**Result**: pantry is**4.3x faster than bun**,**66.7x faster than pnpm**,**100x faster than yarn**, and**154x faster than npm**.
 
 ---
 
@@ -553,31 +580,33 @@ Installed package manager size.
 
 | Package Manager | Binary Size | node_modules Size |
 |-----------------|-------------|-------------------|
-| **pantry** | **3.2 MB** | **N/A** |
+| **pantry**|**3.2 MB**|**N/A** |
 | bun | 78 MB | N/A |
 | pnpm | 6.8 MB | 42 MB (js) |
 | yarn | 5.2 MB | 38 MB (js) |
 | npm | N/A | 55 MB (js) |
 
-**Result**: pantry is **24x smaller than bun**, and completely standalone (no Node.js dependency).
+**Result**: pantry is**24x smaller than bun**, and completely standalone (no Node.js dependency).
 
 ---
 
 ### Summary
 
 **Average speedup across all benchmarks:**
+
 - **vs npm**: 21.3x faster
 - **vs yarn**: 13.7x faster
 - **vs pnpm**: 8.2x faster
 - **vs bun**: 3.1x faster
 
 **Memory efficiency:**
+
 - **vs npm**: 12.6x less memory
 - **vs yarn**: 9.8x less memory
 - **vs pnpm**: 7.4x less memory
 - **vs bun**: 5.2x less memory
 
-### Why is pantry so fast?
+### Why is pantry so fast
 
 1. **Native code** - Compiled to machine code, no runtime overhead
 2. **Lock-free caching** - Atomic operations for concurrent reads
@@ -651,12 +680,14 @@ zig build
 ```
 
 **Build options:**
+
 - `-Doptimize=ReleaseSmall` - Optimize for binary size
 - `-Doptimize=ReleaseFast` - Optimize for performance
 - `-Dstrip=true` - Strip debug symbols
 - ~~`-Dsingle-threaded=true`~~ - Not compatible (requires threads for parallel execution)
 
 **Binary size comparison:**
+
 - Debug: 8.9MB (default)
 - ReleaseSmall + strip: 3.2MB (64% reduction)
 - ReleaseFast: ~4.5MB
@@ -769,8 +800,8 @@ For monorepos with multiple packages:
 // workspace.json
 {
   "workspaces": [
-    "packages/*",
-    "apps/*"
+    "packages/_",
+    "apps/_"
   ]
 }
 
@@ -816,6 +847,7 @@ The shell activation system uses a sophisticated caching mechanism:
 ```
 
 **Performance characteristics:**
+
 - Cache hit: <50μs
 - Cache miss (no install): ~200-300μs
 - Cache miss (with install): ~100-500ms depending on package count
@@ -836,6 +868,7 @@ const options = InstallOptions{
 ```
 
 **Installation pipeline:**
+
 1. Dependency resolution (graph analysis)
 2. Download phase (concurrent, max 8)
 3. Extraction phase (I/O bound, sequential per package)
@@ -861,6 +894,7 @@ pub const CustomService = ServiceDefinition{
 ### Performance Tuning
 
 **Memory allocation:**
+
 ```bash
 # Use jemalloc for better allocation performance
 export PANTRY_ALLOCATOR=jemalloc
@@ -870,6 +904,7 @@ export PANTRY_ALLOCATOR=tcmalloc
 ```
 
 **Cache tuning:**
+
 ```bash
 # Adjust cache TTL (seconds)
 export PANTRY_CACHE_TTL=7200  // 2 hours
@@ -879,6 +914,7 @@ export PANTRY_NO_CACHE=1
 ```
 
 **Network tuning:**
+
 ```bash
 # Increase concurrent downloads
 export PANTRY_MAX_CONCURRENT=16
@@ -922,6 +958,7 @@ pantry cache:clear --package-only
 ## API Reference
 
 See [docs/API.md](docs/API.md) for complete API documentation including:
+
 - Core API (platform detection, string utilities, error handling)
 - Cache API (environment cache, package cache)
 - Package API (types, metadata, publishing)

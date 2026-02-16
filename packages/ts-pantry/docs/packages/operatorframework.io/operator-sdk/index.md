@@ -6,7 +6,7 @@
 
 - **Domain**: `operatorframework.io/operator-sdk`
 - **Name**: `operator-sdk`
-- **Homepage**: https://sdk.operatorframework.io/
+- **Homepage**: <https://sdk.operatorframework.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/operatorframework.io/operator-sdk/package.yml)
 
 ## Installation

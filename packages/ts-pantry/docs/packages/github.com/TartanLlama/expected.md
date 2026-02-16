@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/TartanLlama/expected`
 - **Name**: `expected`
-- **Homepage**: https://tl.tartanllama.xyz
+- **Homepage**: <https://tl.tartanllama.xyz>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/TartanLlama/expected/package.yml)
 
 ## Installation

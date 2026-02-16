@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/portfolio_rs`
 - **Name**: `portfolio_rs`
-- **Homepage**: https://crates.io/crates/portfolio_rs
+- **Homepage**: <https://crates.io/crates/portfolio_rs>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/portfolio_rs/package.yml)
 
 ## Installation
@@ -63,4 +63,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

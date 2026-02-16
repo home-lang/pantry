@@ -6,7 +6,7 @@
 
 - **Domain**: `etcd.io`
 - **Name**: `etcd`
-- **Homepage**: https://etcd.io
+- **Homepage**: <https://etcd.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/etcd.io/package.yml)
 
 ## Installation

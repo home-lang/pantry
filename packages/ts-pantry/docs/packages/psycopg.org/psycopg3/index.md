@@ -6,7 +6,7 @@
 
 - **Domain**: `psycopg.org/psycopg3`
 - **Name**: `psycopg3`
-- **Homepage**: https://www.psycopg.org/psycopg3/
+- **Homepage**: <https://www.psycopg.org/psycopg3/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/psycopg.org/psycopg3/package.yml)
 
 ## Installation

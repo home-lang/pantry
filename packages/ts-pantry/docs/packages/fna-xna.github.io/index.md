@@ -6,7 +6,7 @@
 
 - **Domain**: `fna-xna.github.io`
 - **Name**: `fna-xna.github`
-- **Homepage**: https://fna-xna.github.io/
+- **Homepage**: <https://fna-xna.github.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fna-xna.github.io/package.yml)
 
 ## Installation
