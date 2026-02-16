@@ -30,7 +30,7 @@
     "format:check": "pickier run --mode format --check",
     "changelog": "bunx --bun logsmith --verbose",
     "changelog:generate": "bunx --bun logsmith --output CHANGELOG.md",
-    "release": "bun run changelog:generate && bunx --bun bumpx prompt --recursive",
+    "release": "bun --bun run changelog:generate && bunx --bun bumpx prompt --recursive",
     "publish:oidc": "./scripts/publish-oidc.sh",
     "publish:dry-run": "./scripts/publish-oidc.sh --dry-run",
     "dev:docs": "bun bunpress dev docs",

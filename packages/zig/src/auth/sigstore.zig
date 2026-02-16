@@ -189,8 +189,6 @@ pub const FulcioClient = struct {
         );
         defer self.allocator.free(request_body);
 
-        style.print("Requesting signing certificate from Fulcio...\n", .{});
-
         const uri = try std.Uri.parse(url);
 
         const extra_headers = [_]http.Header{
@@ -220,8 +218,6 @@ pub const FulcioClient = struct {
             style.print("Fulcio request failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
             return error.FulcioCertificateRequestFailed;
         }
-
-        style.print("✓ Received signing certificate from Fulcio\n", .{});
 
         // The response may have escaped newlines (\n as literal characters)
         // Unescape them to get proper PEM format
@@ -376,8 +372,6 @@ pub const RekorClient = struct {
             payload_hash_hex[i * 2 + 1] = hex_chars[byte & 0x0F];
         }
 
-        style.print("Submitting attestation to Rekor transparency log...\n", .{});
-
         // Build Rekor intoto v0.0.2 entry with:
         // - Double-base64 payload and sig (required by Rekor intoto v0.0.2)
         // - publicKey inside signatures (required by Rekor)
@@ -450,15 +444,12 @@ pub const RekorClient = struct {
             return error.RekorSubmissionFailed;
         }
 
-        style.print("✓ Attestation recorded in Rekor transparency log\n", .{});
-
         // Parse the response to extract log entry details
         var entry = try parseRekorResponse(self.allocator, body);
 
         // If inclusionProof is missing, fetch the entry by UUID to get it
         // (the POST response may not include it immediately)
         if (entry.inclusion_proof == null) {
-            style.print("Fetching inclusion proof from Rekor...\n", .{});
             if (self.fetchEntryByUUID(entry.uuid)) |full_entry| {
                 // Copy over the inclusion proof and body
                 entry.inclusion_proof = full_entry.inclusion_proof;
@@ -1049,8 +1040,6 @@ pub fn createSignedProvenance(
     // 2. Generate ephemeral ECDSA keypair
     // Note: Zig's std.crypto has ECDSA support
     // For now, we'll use a simplified approach
-    style.print("Generating ephemeral signing key...\n", .{});
-
     // TODO: Generate actual ECDSA P-256 keypair
     // For now, this is a placeholder - real implementation needs crypto
     const keypair = try generateEphemeralKeypair(allocator);
@@ -1113,8 +1102,6 @@ pub fn createSignedProvenance(
         dsse_envelope,
         &rekor_entry,
     );
-
-    style.print("✓ Created Sigstore bundle with provenance attestation\n", .{});
 
     return bundle;
 }

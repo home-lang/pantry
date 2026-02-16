@@ -850,8 +850,6 @@ fn publishSingleToNpm(
     config_path: []const u8,
     options: PublishOptions,
 ) !CommandResult {
-    style.print("Publishing package from {s}...\n", .{config_path});
-
     // Import auth modules
     const registry = @import("../../auth/registry.zig");
     const publish_lib = @import("../../packages/publish.zig");
@@ -879,7 +877,7 @@ fn publishSingleToNpm(
         return CommandResult.err(allocator, "Error: Invalid package version");
     };
 
-    style.print("Publishing {s}@{s}...\n", .{ metadata.name, metadata.version });
+    style.print("Publishing {s}@{s}...\n\n", .{ metadata.name, metadata.version });
 
     // Determine registry URL (priority: CLI flag > publishConfig > default)
     const registry_url = if (!std.mem.eql(u8, options.registry, "https://registry.npmjs.org"))
@@ -888,8 +886,6 @@ fn publishSingleToNpm(
         pc.registry orelse options.registry // Use publishConfig if available
     else
         options.registry; // Fall back to default
-
-    style.print("Registry: {s}\n", .{registry_url});
 
     // Parse package.json for lifecycle scripts
     const config_content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch null;
@@ -917,9 +913,18 @@ fn publishSingleToNpm(
     }
 
     // Create tarball
-    const tarball_path = try createTarball(allocator, package_dir, metadata.name, metadata.version);
-    defer allocator.free(tarball_path);
-    defer io_helper.deleteFile(tarball_path) catch {};
+    const tarball_info = try createTarball(allocator, package_dir, metadata.name, metadata.version);
+    defer allocator.free(tarball_info.path);
+    defer io_helper.deleteFile(tarball_info.path) catch {};
+
+    // Print tarball summary (bun-style)
+    style.print("Total files: {d}\n", .{tarball_info.total_files});
+    style.print("Shasum: {s}\n", .{&tarball_info.shasum});
+    style.print("Integrity: {s}\n", .{&tarball_info.integrity});
+    var unpacked_buf: [32]u8 = undefined;
+    var packed_buf: [32]u8 = undefined;
+    style.print("Unpacked size: {s}\n", .{formatSize(&unpacked_buf, tarball_info.unpacked_size)});
+    style.print("Packed size: {s}\n", .{formatSize(&packed_buf, tarball_info.packed_size)});
 
     // Run postpack script (after tarball creation)
     if (scripts_obj) |scripts| {
@@ -927,6 +932,23 @@ fn publishSingleToNpm(
             return CommandResult.err(allocator, "postpack lifecycle script failed");
         }
     }
+
+    // Print publish config
+    const tag_str: []const u8 = if (metadata.publish_config) |pc|
+        if (pc.tag) |t| t else "latest"
+    else
+        "latest";
+    style.print("\nTag: {s}\n", .{tag_str});
+
+    // Determine access level
+    const access_str: []const u8 = if (metadata.publish_config) |pc|
+        if (pc.access) |a| a else if (metadata.name[0] == '@') "restricted" else "public"
+    else if (metadata.name[0] == '@')
+        "restricted"
+    else
+        "public";
+    style.print("Access: {s}\n", .{access_str});
+    style.print("Registry: {s}\n", .{registry_url});
 
     // Initialize registry client
     var registry_client = try registry.RegistryClient.init(allocator, registry_url);
@@ -953,12 +975,17 @@ fn publishSingleToNpm(
             &registry_client,
             metadata.name,
             metadata.version,
-            tarball_path,
+            tarball_info.path,
             options.provenance,
         );
 
         if (result.success) {
-            style.print("✓ Package published successfully using OIDC\n", .{});
+            if (options.provenance) {
+                style.print("\n✓ Sigstore provenance attached\n", .{});
+                style.print("✓ Published {s}@{s} with provenance\n", .{ metadata.name, metadata.version });
+            } else {
+                style.print("\n✓ Published {s}@{s}\n", .{ metadata.name, metadata.version });
+            }
             // Run post-publish scripts: publish → postpublish
             if (scripts_obj) |scripts| {
                 _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
@@ -981,49 +1008,53 @@ fn publishSingleToNpm(
 
     // Fallback to token authentication
     // Check NPM_TOKEN first, then NODE_AUTH_TOKEN (used by setup-node action), then ~/.pantry/credentials
-    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch
-        io_helper.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch
-        readPantryCredential(allocator, "NPM_TOKEN") catch
-        readPantryCredential(allocator, "npm_token") catch
-        promptAndSaveToken(allocator) catch |err| {
-        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound or err == error.EndOfStream) {
-            // Check if running in CI (non-interactive)
-            const is_ci = io_helper.getEnvVarOwned(allocator, "CI") catch null;
-            if (is_ci) |ci| {
-                allocator.free(ci);
-                return CommandResult.err(
-                    allocator,
-                    \\Error: No authentication method available in CI.
-                    \\
-                    \\Ensure NPM_TOKEN secret is set in your repository:
-                    \\  gh secret set NPM_TOKEN
-                    \\
-                    \\Or configure OIDC trusted publishing on npm.
-                    ,
-                );
-            }
-            return CommandResult.err(
-                allocator,
-                \\Error: No authentication method available.
-                \\
-                \\To fix this, you can either:
-                \\  1. Set NPM_TOKEN environment variable
-                \\  2. Create ~/.pantry/credentials with your npm token:
-                \\     NPM_TOKEN=npm_xxxxxxxxxxxx
-                \\  3. Use OIDC authentication in GitHub Actions (recommended for CI)
-                \\
-                \\Get your npm token from: https://www.npmjs.com/settings/tokens
-                ,
-            );
-        }
-        return CommandResult.err(allocator, "Error: Failed to read auth token");
+    const auth_token = io_helper.getEnvVarOwned(allocator, "NPM_TOKEN") catch blk: {
+        break :blk io_helper.getEnvVarOwned(allocator, "NODE_AUTH_TOKEN") catch blk2: {
+            break :blk2 readPantryCredential(allocator, "NPM_TOKEN") catch blk3: {
+                break :blk3 readPantryCredential(allocator, "npm_token") catch blk4: {
+                    break :blk4 promptAndSaveToken(allocator) catch |err| {
+                        if (err == error.EnvironmentVariableNotFound or err == error.FileNotFound or err == error.EndOfStream) {
+                            // Check if running in CI (non-interactive)
+                            const is_ci = io_helper.getEnvVarOwned(allocator, "CI") catch null;
+                            if (is_ci) |ci| {
+                                allocator.free(ci);
+                                return CommandResult.err(
+                                    allocator,
+                                    \\Error: No authentication method available in CI.
+                                    \\
+                                    \\Ensure NPM_TOKEN secret is set in your repository:
+                                    \\  gh secret set NPM_TOKEN
+                                    \\
+                                    \\Or configure OIDC trusted publishing on npm.
+                                    ,
+                                );
+                            }
+                            return CommandResult.err(
+                                allocator,
+                                \\Error: No authentication method available.
+                                \\
+                                \\To fix this, you can either:
+                                \\  1. Set NPM_TOKEN environment variable
+                                \\  2. Create ~/.pantry/credentials with your npm token:
+                                \\     NPM_TOKEN=npm_xxxxxxxxxxxx
+                                \\  3. Use OIDC authentication in GitHub Actions (recommended for CI)
+                                \\
+                                \\Get your npm token from: https://www.npmjs.com/settings/tokens
+                                ,
+                            );
+                        }
+                        return CommandResult.err(allocator, "Error: Failed to read auth token");
+                    };
+                };
+            };
+        };
     };
     defer allocator.free(auth_token);
 
     const response = registry_client.publishWithToken(
         metadata.name,
         metadata.version,
-        tarball_path,
+        tarball_info.path,
         auth_token,
     ) catch |err| {
         const err_msg = try std.fmt.allocPrint(
@@ -1039,17 +1070,33 @@ fn publishSingleToNpm(
     }
 
     if (response.success) {
-        style.print("✓ Package published successfully\n", .{});
+        style.print("\n✓ Published {s}@{s}\n", .{ metadata.name, metadata.version });
         // Run post-publish scripts: publish → postpublish
         if (scripts_obj) |scripts| {
             _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
         }
         return .{ .exit_code = 0 };
     } else {
+        // Clean error output: "{status} {status_text}: {url}\n - {message}"
+        const status_text: []const u8 = switch (response.status_code) {
+            401 => "Unauthorized",
+            403 => "Forbidden",
+            404 => "Not Found",
+            409 => "Conflict",
+            422 => "Unprocessable Entity",
+            else => "Error",
+        };
+
+        const error_summary = if (response.error_details) |d| (d.summary orelse response.message orelse "Unknown error") else (response.message orelse "Unknown error");
+
+        style.print("\n{d} {s}: {s}/{s}\n", .{ response.status_code, status_text, registry_url, metadata.name });
+        style.print(" - {s}\n", .{error_summary});
+        style.print("Registry: {s}\n", .{registry_url});
+
         const err_msg = try std.fmt.allocPrint(
             allocator,
-            "Error: Failed to publish package (status {d}): {s}",
-            .{ response.status_code, response.message orelse "Unknown error" },
+            "{d} {s}: {s}",
+            .{ response.status_code, status_text, error_summary },
         );
         return CommandResult.err(allocator, err_msg);
     }
@@ -1081,8 +1128,6 @@ fn attemptOIDCPublish(
     };
     defer provider.deinit(allocator);
 
-    style.print("Detected OIDC provider: {s}\n", .{provider.name});
-
     // Get OIDC token from environment
     const raw_token = try oidc.getTokenFromEnvironment(allocator, &provider) orelse return .{
         .success = false,
@@ -1091,27 +1136,20 @@ fn attemptOIDCPublish(
     defer allocator.free(raw_token);
 
     // Verify token signature against provider's JWKS
-    style.print("Verifying OIDC token signature...\n", .{});
-    const sig_valid = oidc.verifyTokenSignature(allocator, raw_token, &provider) catch |err| {
-        style.print("Warning: Could not verify token signature: {any}\n", .{err});
-        style.print("Proceeding with unverified token (registry will validate)\n", .{});
+    const sig_valid = oidc.verifyTokenSignature(allocator, raw_token, &provider) catch {
         // Continue anyway - registry will do final validation
         return attemptOIDCPublishUnverified(allocator, registry_client, package_name, version, tarball_path, generate_provenance, raw_token, &provider);
     };
 
     if (!sig_valid) {
-        style.print("Error: OIDC token signature verification failed\n", .{});
         return .{
             .success = false,
             .error_message = try allocator.dupe(u8, "OIDC token signature verification failed"),
         };
     }
 
-    style.print("✓ Token signature verified\n", .{});
-
     // Decode and validate token (signature already verified)
     var token = oidc.validateTokenComplete(allocator, raw_token, &provider, null) catch |err| {
-        style.print("Error: Token validation failed: {any}\n", .{err});
         return .{
             .success = false,
             .error_message = try std.fmt.allocPrint(allocator, "Token validation failed: {any}", .{err}),
@@ -1119,37 +1157,13 @@ fn attemptOIDCPublish(
     };
     defer token.deinit(allocator);
 
-    // Print token info for transparency
-    style.print("OIDC Claims:\n", .{});
-    style.print("  Issuer: {s}\n", .{token.claims.iss});
-    style.print("  Audience: {s}\n", .{token.claims.aud});
-    style.print("  Subject: {s}\n", .{token.claims.sub});
-    if (token.claims.repository) |repo| {
-        style.print("  Repository: {s}\n", .{repo});
-    }
-    if (token.claims.ref) |ref| {
-        style.print("  Ref: {s}\n", .{ref});
-    }
-    if (token.claims.sha) |sha| {
-        style.print("  SHA: {s}\n", .{sha});
-    }
-    if (token.claims.job_workflow_ref) |jwr| {
-        style.print("  Job Workflow Ref: {s}\n", .{jwr});
-    }
-    if (token.claims.event_name) |event| {
-        style.print("  Event: {s}\n", .{event});
-    }
-
     // Generate Sigstore provenance bundle if requested
     var sigstore_bundle: ?[]const u8 = null;
     defer if (sigstore_bundle) |bundle| allocator.free(bundle);
 
     if (generate_provenance) {
-        style.print("\nGenerating Sigstore provenance attestation...\n", .{});
-
         // Read tarball for hashing
         const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch |err| {
-            style.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
             return .{
                 .success = false,
                 .error_message = try std.fmt.allocPrint(allocator, "Could not read tarball: {any}", .{err}),
@@ -1164,15 +1178,7 @@ fn attemptOIDCPublish(
             package_name,
             version,
             tarball_data,
-        ) catch |err| blk: {
-            style.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
-            style.print("Continuing without provenance attestation...\n", .{});
-            break :blk null;
-        };
-
-        if (sigstore_bundle != null) {
-            style.print("✓ Sigstore provenance bundle created\n", .{});
-        }
+        ) catch null;
     }
 
     // Publish package with provenance bundle
@@ -1189,30 +1195,20 @@ fn attemptOIDCPublish(
     }
 
     if (!response.success) {
-        style.print("OIDC publish failed with status {d}\n", .{response.status_code});
-        if (response.message) |msg| {
-            style.print("Response: {s}\n", .{msg});
-        }
-
         // Build error message from response
         var error_msg: []const u8 = undefined;
         var is_version_conflict = false;
 
         if (response.error_details) |details| {
             if (details.code) |code| {
-                style.print("Error code: {s}\n", .{code});
                 if (std.mem.eql(u8, code, "EPUBLISHCONFLICT")) {
                     is_version_conflict = true;
                 }
             }
             if (details.summary) |summary| {
-                style.print("Error: {s}\n", .{summary});
                 error_msg = try allocator.dupe(u8, summary);
             } else {
                 error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
-            }
-            if (details.suggestion) |suggestion| {
-                style.print("Suggestion: {s}\n", .{suggestion});
             }
         } else {
             error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
@@ -1250,28 +1246,17 @@ fn attemptOIDCPublishUnverified(
 
     // At least validate expiration
     oidc.validateExpiration(&token.claims) catch |err| {
-        style.print("Error: Token validation failed: {any}\n", .{err});
         return .{
             .success = false,
             .error_message = try std.fmt.allocPrint(allocator, "Token expired or invalid: {any}", .{err}),
         };
     };
 
-    // Print token info
-    style.print("OIDC Claims (unverified):\n", .{});
-    style.print("  Issuer: {s}\n", .{token.claims.iss});
-    style.print("  Subject: {s}\n", .{token.claims.sub});
-    if (token.claims.repository) |repo| {
-        style.print("  Repository: {s}\n", .{repo});
-    }
-
     // Generate Sigstore provenance bundle if requested
     var sigstore_bundle: ?[]const u8 = null;
     defer if (sigstore_bundle) |bundle| allocator.free(bundle);
 
     if (generate_provenance) {
-        style.print("\nGenerating Sigstore provenance attestation...\n", .{});
-
         // Read tarball for hashing
         if (io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024)) |tarball_data| {
             defer allocator.free(tarball_data);
@@ -1282,17 +1267,8 @@ fn attemptOIDCPublishUnverified(
                 package_name,
                 version,
                 tarball_data,
-            ) catch |err| blk: {
-                style.print("Warning: Could not create Sigstore provenance: {any}\n", .{err});
-                break :blk null;
-            };
-
-            if (sigstore_bundle != null) {
-                style.print("✓ Sigstore provenance bundle created\n", .{});
-            }
-        } else |err| {
-            style.print("Warning: Could not read tarball for provenance: {any}\n", .{err});
-        }
+            ) catch null;
+        } else |_| {}
     }
 
     // Publish with provenance - registry will validate token
@@ -1337,13 +1313,34 @@ fn attemptOIDCPublishUnverified(
     return .{ .success = true };
 }
 
+/// Info about a created tarball for clean publish output
+const TarballInfo = struct {
+    path: []const u8,
+    packed_size: u64,
+    unpacked_size: u64,
+    total_files: usize,
+    shasum: [40]u8,
+    integrity: [95]u8,
+};
+
+/// Format byte size as human-readable string (e.g. "3.56KB", "0.98MB")
+fn formatSize(buf: []u8, size: u64) []const u8 {
+    if (size < 1024) {
+        return std.fmt.bufPrint(buf, "{d}B", .{size}) catch "?";
+    } else if (size < 1024 * 1024) {
+        return std.fmt.bufPrint(buf, "{d:.2}KB", .{@as(f64, @floatFromInt(size)) / 1024.0}) catch "?";
+    } else {
+        return std.fmt.bufPrint(buf, "{d:.2}MB", .{@as(f64, @floatFromInt(size)) / (1024.0 * 1024.0)}) catch "?";
+    }
+}
+
 /// Create tarball for package following npm's `files` array and publish standards
 fn createTarball(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
     package_name: []const u8,
     version: []const u8,
-) ![]const u8 {
+) !TarballInfo {
     // Sanitize package name for tarball filename (replace @ and / with -)
     var sanitized_name = try allocator.alloc(u8, package_name.len);
     defer allocator.free(sanitized_name);
@@ -1419,8 +1416,6 @@ fn createTarball(
 
     if (files_array) |files| {
         // Whitelist mode: only copy files specified in `files` array + always-included files
-        style.print("Using 'files' array from package.json ({d} entries)\n", .{files.len});
-
         // Copy always-included files first
         for (always_include) |filename| {
             const src = try std.fs.path.join(allocator, &[_][]const u8{ package_dir, filename });
@@ -1472,8 +1467,6 @@ fn createTarball(
             };
             if (!cp_ok) {
                 style.print("  Warning: cp failed for '{s}': {s}\n", .{ file_entry, cp.stderr });
-            } else {
-                style.print("  + {s}\n", .{file_entry});
             }
         }
 
@@ -1518,7 +1511,6 @@ fn createTarball(
         }
     } else {
         // No `files` array - use exclusion-based approach (legacy behavior)
-        style.print("No 'files' array in package.json, using exclusion-based copy\n", .{});
 
         const src_path = try std.fmt.allocPrint(allocator, "{s}/", .{package_dir});
         defer allocator.free(src_path);
@@ -1537,7 +1529,6 @@ fn createTarball(
             const pantry_content = io_helper.readFileAlloc(allocator, pantryignore_path, 64 * 1024) catch null;
             if (pantry_content) |c| {
                 if (c.len > 0) {
-                    style.print("Using .pantryignore for additional exclusions\n", .{});
                     break :blk c;
                 }
                 allocator.free(c);
@@ -1548,7 +1539,6 @@ fn createTarball(
             const npm_content = io_helper.readFileAlloc(allocator, npmignore_path, 64 * 1024) catch null;
             if (npm_content) |c| {
                 if (c.len > 0) {
-                    style.print("Using .npmignore for additional exclusions\n", .{});
                     break :blk c;
                 }
                 allocator.free(c);
@@ -1566,7 +1556,6 @@ fn createTarball(
                 if (trimmed.len == 0 or trimmed[0] == '#' or trimmed[0] == '!') continue;
                 if (extra_exclude_count < extra_excludes.len) {
                     extra_excludes[extra_exclude_count] = std.fmt.allocPrint(allocator, "--exclude={s}", .{trimmed}) catch continue;
-                    style.print("  + exclude: {s}\n", .{trimmed});
                     extra_exclude_count += 1;
                 }
             }
@@ -1682,19 +1671,39 @@ fn createTarball(
         }
     }
 
-    // Debug: list staging directory contents before creating tarball
+    // Compute unpacked size and file count from staging directory before tarball creation
+    var unpacked_size: u64 = 0;
+    var total_files: usize = 0;
     {
-        const ls_cmd = try std.fmt.allocPrint(allocator, "find {s} -type f | head -50", .{staging_pkg});
-        defer allocator.free(ls_cmd);
-        const ls = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", ls_cmd }) catch null;
-        if (ls) |l| {
-            defer allocator.free(l.stdout);
-            defer allocator.free(l.stderr);
-            if (l.stdout.len > 0) {
-                style.print("Staging contents:\n{s}\n", .{l.stdout});
-            } else {
-                style.print("WARNING: Staging directory is empty!\n", .{});
+        const du_cmd = try std.fmt.allocPrint(allocator, "find {s} -type f -exec stat -f%z {{}} + 2>/dev/null || find {s} -type f -exec stat -c%s {{}} +", .{ staging_pkg, staging_pkg });
+        defer allocator.free(du_cmd);
+        const du = io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", du_cmd }) catch null;
+        if (du) |d| {
+            defer allocator.free(d.stdout);
+            defer allocator.free(d.stderr);
+            var lines = std.mem.splitScalar(u8, d.stdout, '\n');
+            while (lines.next()) |line| {
+                const trimmed = std.mem.trim(u8, line, " \t\r");
+                if (trimmed.len == 0) continue;
+                if (std.fmt.parseInt(u64, trimmed, 10)) |sz| {
+                    unpacked_size += sz;
+                    total_files += 1;
+                } else |_| {}
             }
+        }
+    }
+
+    // Print "packed" lines for key files (like bun does)
+    {
+        const key_files = [_][]const u8{ "package.json", "README.md", "README", "LICENSE", "LICENSE.md", "CHANGELOG.md" };
+        for (key_files) |filename| {
+            const fpath = std.fs.path.join(allocator, &[_][]const u8{ staging_pkg, filename }) catch continue;
+            defer allocator.free(fpath);
+            const stat = io_helper.statFile(fpath) catch continue;
+            const fsize: u64 = @intCast(stat.size);
+            var size_buf: [32]u8 = undefined;
+            const size_str = formatSize(&size_buf, fsize);
+            style.print("packed {s} {s}\n", .{ size_str, filename });
         }
     }
 
@@ -1714,30 +1723,57 @@ fn createTarball(
     io_helper.deleteTree(staging_base) catch {};
 
     if (result.term != .exited or result.term.exited != 0) {
-        style.print("Tarball creation failed. Exit: {any}\n", .{result.term});
-        style.print("stderr: {s}\n", .{result.stderr});
         return error.TarballCreationFailed;
     }
 
-    // Check tarball size - warn if too big (npm limit is ~200MB but packages should be small)
-    const size: u64 = blk: {
+    // Get packed (tarball) size
+    const packed_size: u64 = blk: {
         const stat = io_helper.statFile(tarball_path) catch break :blk 0;
         break :blk @intCast(stat.size);
     };
-    style.print("Tarball size: {d} bytes ({d:.2} KB)\n", .{ size, @as(f64, @floatFromInt(size)) / 1024.0 });
 
-    if (size > 50 * 1024 * 1024) { // 50MB warning
-        style.print("WARNING: Tarball is very large! Check for unwanted files.\n", .{});
-        // List first few entries to debug
-        const peek_cmd = try std.fmt.allocPrint(allocator, "tar -tzf {s} | head -20", .{tarball_path});
-        defer allocator.free(peek_cmd);
-        const peek = try io_helper.childRun(allocator, &[_][]const u8{ "sh", "-c", peek_cmd });
-        defer allocator.free(peek.stdout);
-        defer allocator.free(peek.stderr);
-        style.print("First 20 entries:\n{s}\n", .{peek.stdout});
+    if (packed_size > 50 * 1024 * 1024) { // 50MB warning
+        style.print("WARNING: Tarball is very large ({d:.2}MB)! Check for unwanted files.\n", .{@as(f64, @floatFromInt(packed_size)) / (1024.0 * 1024.0)});
     }
 
-    return tarball_path;
+    // Compute SHA-1 shasum and SHA-512 integrity from tarball
+    const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch {
+        return TarballInfo{
+            .path = tarball_path,
+            .packed_size = packed_size,
+            .unpacked_size = unpacked_size,
+            .total_files = total_files,
+            .shasum = [_]u8{'0'} ** 40,
+            .integrity = [_]u8{'0'} ** 95,
+        };
+    };
+    defer allocator.free(tarball_data);
+
+    // SHA-1 shasum (hex)
+    const hex_chars = "0123456789abcdef";
+    var sha1: [20]u8 = undefined;
+    std.crypto.hash.Sha1.hash(tarball_data, &sha1, .{});
+    var shasum: [40]u8 = undefined;
+    for (sha1, 0..) |byte, i| {
+        shasum[i * 2] = hex_chars[byte >> 4];
+        shasum[i * 2 + 1] = hex_chars[byte & 0x0F];
+    }
+
+    // SHA-512 integrity (base64)
+    var sha512: [64]u8 = undefined;
+    std.crypto.hash.sha2.Sha512.hash(tarball_data, &sha512, .{});
+    var integrity: [95]u8 = undefined;
+    @memcpy(integrity[0..7], "sha512-");
+    _ = std.base64.standard.Encoder.encode(integrity[7..], &sha512);
+
+    return TarballInfo{
+        .path = tarball_path,
+        .packed_size = packed_size,
+        .unpacked_size = unpacked_size,
+        .total_files = total_files,
+        .shasum = shasum,
+        .integrity = integrity,
+    };
 }
 
 /// Sort monorepo packages by dependency order using topological sort (Kahn's algorithm).

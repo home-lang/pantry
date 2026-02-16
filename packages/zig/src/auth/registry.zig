@@ -2,7 +2,6 @@ const std = @import("std");
 const io_helper = @import("../io_helper.zig");
 const http = std.http;
 const oidc = @import("oidc.zig");
-const style = @import("../cli/style.zig");
 
 /// Decompress gzip data if it looks like gzip (starts with magic bytes 0x1f 0x8b)
 /// Returns a copy of the data if not gzip, or the decompressed data if it is.
@@ -225,8 +224,6 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
-        style.print("Publishing to URL: {s}\n", .{url});
-
         // Read tarball using io_helper (blocking std.fs API)
         const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024); // 100 MB max
         defer self.allocator.free(tarball);
@@ -320,9 +317,6 @@ pub const RegistryClient = struct {
         );
         defer self.allocator.free(url);
 
-        style.print("Exchanging OIDC token with npm registry for {s}...\n", .{package_name});
-        style.print("Token exchange URL: {s}\n", .{url});
-
         const uri = try std.Uri.parse(url);
 
         const auth_header = try std.fmt.allocPrint(
@@ -351,32 +345,32 @@ pub const RegistryClient = struct {
         var response = try req.receiveHead(&redirect_buffer);
 
         const body_reader = response.reader(&.{});
-        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+        const raw_body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
             error.StreamTooLong => return error.ResponseTooLarge,
             else => |e| return e,
         };
+        defer self.allocator.free(raw_body);
+
+        // Decompress if gzip (npm CDN sometimes ignores Accept-Encoding header)
+        const body = try maybeDecompressGzip(self.allocator, raw_body);
         defer self.allocator.free(body);
 
         if (response.head.status != .ok and response.head.status != .created) {
-            style.print("npm token exchange failed with status {d}: {s}\n", .{ @intFromEnum(response.head.status), body });
             return null;
         }
 
         // Parse JSON response to extract token
         const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, body, .{}) catch {
-            style.print("Failed to parse npm token response\n", .{});
             return null;
         };
         defer parsed.deinit();
 
         if (parsed.value.object.get("token")) |token_val| {
             if (token_val == .string) {
-                style.print("✓ Received npm publish token\n", .{});
                 return try self.allocator.dupe(u8, token_val.string);
             }
         }
 
-        style.print("npm token response missing 'token' field: {s}\n", .{body});
         return null;
     }
 
@@ -419,8 +413,6 @@ pub const RegistryClient = struct {
             .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
-
-        style.print("Publishing to URL: {s}\n", .{url});
 
         // Read tarball using io_helper (blocking std.fs API)
         const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024); // 100 MB max
@@ -523,8 +515,6 @@ pub const RegistryClient = struct {
             .{ self.registry_url, encoded_name },
         );
         defer self.allocator.free(url);
-
-        style.print("Publishing to URL (token): {s}\n", .{url});
 
         // Read tarball using io_helper (blocking std.fs API)
         const tarball = try io_helper.readFileAlloc(self.allocator, tarball_path, 100 * 1024 * 1024);
@@ -722,10 +712,14 @@ pub const RegistryClient = struct {
 
         // Read response body
         const body_reader = response.reader(&.{});
-        const body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
+        const raw_body = body_reader.allocRemaining(self.allocator, std.Io.Limit.limited(1024 * 1024)) catch |err| switch (err) {
             error.StreamTooLong => return error.ResponseTooLarge,
             else => |e| return e,
         };
+        defer self.allocator.free(raw_body);
+
+        // Decompress if gzip (npm CDN sometimes ignores Accept-Encoding header)
+        const body = try maybeDecompressGzip(self.allocator, raw_body);
         defer self.allocator.free(body);
 
         // Parse publishers from JSON
@@ -1144,13 +1138,26 @@ pub const RegistryError = error{
 };
 
 /// Parse error details from NPM registry JSON response
+/// npm responses vary in format:
+///   {"error": "Forbidden", "message": "Package name too similar..."}
+///   {"error": "Package name too similar to existing package..."}
+///   {"error": "code E403", "reason": "..."}
+///   Plain text error body (non-JSON)
 fn parseErrorDetails(allocator: std.mem.Allocator, body: []const u8) ?PublishResponse.ErrorDetails {
     const parsed = std.json.parseFromSlice(
         std.json.Value,
         allocator,
         body,
         .{},
-    ) catch return null;
+    ) catch {
+        // Non-JSON body — treat the whole body as the error summary
+        if (body.len > 0 and body.len < 2048) {
+            return PublishResponse.ErrorDetails{
+                .summary = allocator.dupe(u8, body) catch null,
+            };
+        }
+        return null;
+    };
     defer parsed.deinit();
 
     if (parsed.value != .object) return null;
@@ -1158,34 +1165,58 @@ fn parseErrorDetails(allocator: std.mem.Allocator, body: []const u8) ?PublishRes
 
     var details = PublishResponse.ErrorDetails{};
 
-    // npm returns error messages in the "error" field
+    // Extract explicit "code" field (e.g., "E403", "EOTP", "EPUBLISHCONFLICT")
+    if (obj.get("code")) |code_val| {
+        if (code_val == .string) {
+            details.code = allocator.dupe(u8, code_val.string) catch null;
+        }
+    }
+
+    // Extract "error" field — may be a short code or a full message
+    var error_str: ?[]const u8 = null;
     if (obj.get("error")) |err_val| {
         if (err_val == .string) {
-            const err_str = err_val.string;
+            error_str = err_val.string;
 
-            // Check for version conflict (trying to republish existing version)
-            if (std.mem.indexOf(u8, err_str, "cannot publish over the previously published version") != null or
-                std.mem.indexOf(u8, err_str, "Cannot publish over previously published version") != null)
+            // Check for version conflict
+            if (std.mem.indexOf(u8, err_val.string, "cannot publish over the previously published version") != null or
+                std.mem.indexOf(u8, err_val.string, "Cannot publish over previously published version") != null)
             {
                 details.code = allocator.dupe(u8, "EPUBLISHCONFLICT") catch null;
-                details.summary = allocator.dupe(u8, err_str) catch null;
+                details.summary = allocator.dupe(u8, err_val.string) catch null;
                 details.suggestion = allocator.dupe(u8, "Bump the version in package.json before publishing. Use 'npm version patch/minor/major' or edit manually.") catch null;
                 return details;
             }
 
-            details.code = allocator.dupe(u8, err_str) catch null;
+            // If no explicit code yet, and this looks like a short code, use it as code
+            if (details.code == null and err_val.string.len <= 20) {
+                details.code = allocator.dupe(u8, err_val.string) catch null;
+            }
         }
     }
 
+    // Extract summary from "message" field (preferred)
     if (obj.get("message")) |msg_val| {
-        if (msg_val == .string) {
+        if (msg_val == .string and msg_val.string.len > 0) {
             details.summary = allocator.dupe(u8, msg_val.string) catch null;
         }
     }
 
-    if (obj.get("reason")) |reason_val| {
-        if (reason_val == .string) {
-            details.summary = allocator.dupe(u8, reason_val.string) catch null;
+    // Fallback: try "reason" field
+    if (details.summary == null) {
+        if (obj.get("reason")) |reason_val| {
+            if (reason_val == .string and reason_val.string.len > 0) {
+                details.summary = allocator.dupe(u8, reason_val.string) catch null;
+            }
+        }
+    }
+
+    // Fallback: if "error" field is a long string (a message, not a code), use it as summary
+    if (details.summary == null) {
+        if (error_str) |err_s| {
+            if (err_s.len > 20) {
+                details.summary = allocator.dupe(u8, err_s) catch null;
+            }
         }
     }
 
