@@ -7,7 +7,7 @@
  *
  * @install `launchpad install libsoup.org`
  * @dependencies `gnome.org/glib-networking`, `gnutls.org`, `rockdaboot.github.io/libpsl`, ... (+7 more) (includes OS-specific dependencies with `os:package` format)
- * @buildDependencies `mesonbuild.com`, `python.org@~3.11`, `gnome.org/vala` - required only when building from source
+ * @buildDependencies `mesonbuild.com`, `python.org@~3.11`, `gnome.org/vala`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -66,11 +66,13 @@ export const libsouporgPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
     'mesonbuild.com',
     'python.org@~3.11',
     'gnome.org/vala',
+    'linux:nixos.org/patchelf',
   ] as const,
   /**
   * Available versions from newest to oldest.
