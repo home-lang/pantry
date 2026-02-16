@@ -3,7 +3,7 @@
  *
  * @domain `soldeer.xyz`
  * @programs `soldeer`
- * @version `0.10.0` (10 versions available)
+ * @version `0.10.1` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install soldeer.xyz`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "soldeer"
  * console.log(pkg.description) // "Solidity Package Manager written in rust and in..."
  * console.log(pkg.programs)    // ["soldeer"]
- * console.log(pkg.versions[0]) // "0.10.0" (latest)
+ * console.log(pkg.versions[0]) // "0.10.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/soldeer-xyz.md
@@ -61,6 +61,7 @@ export const soldeerxyzPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.1',
     '0.10.0',
     '0.9.0',
     '0.8.0',

@@ -25,20 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 10 versions</summary>
+<summary>Show all 11 versions</summary>
 
-- `0.10.0`, `0.9.0`, `0.8.0`, `0.7.1`, `0.7.0`
-- `0.6.1`, `0.6.0`, `0.5.4`, `0.5.3`, `0.5.2`
+- `0.10.1`, `0.10.0`, `0.9.0`, `0.8.0`, `0.7.1`
+- `0.7.0`, `0.6.1`, `0.6.0`, `0.5.4`, `0.5.3`
+- `0.5.2`
 
 </details>
 
-**Latest Version**: `0.10.0`
+**Latest Version**: `0.10.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +soldeer.xyz@0.10.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +soldeer.xyz@0.10.1 -- $SHELL -i
 ```
 
 ## Usage Examples
