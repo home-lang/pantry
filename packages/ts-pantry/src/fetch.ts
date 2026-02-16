@@ -2149,17 +2149,12 @@ export async function fetchPantryPackageWithMetadata(
     // First, get basic package info from pantry files
     const pantryInfo = await readPantryPackageInfo(packageName, pantryDir)
 
-    if (!pantryInfo) {
-      console.warn(`No pantry information found for ${packageName}`)
-      return null
-    }
-
     // Then fetch additional metadata from pkgx.dev
     try {
       const webData = await fetchPantryPackage(packageName, options)
 
       // Get alias overrides for this domain
-      const domain = pantryInfo.domain || webData.packageInfo.domain
+      const domain = pantryInfo?.domain || webData.packageInfo.domain
       const aliasOverrides = getAliasOverrides(domain)
 
       // Determine final aliases
@@ -2179,22 +2174,22 @@ export async function fetchPantryPackageWithMetadata(
       const combinedPackageInfo: PkgxPackage = {
         ...webData.packageInfo,
         // Override with pantry data where available
-        dependencies: pantryInfo.dependencies && pantryInfo.dependencies.length > 0
+        dependencies: pantryInfo?.dependencies && pantryInfo.dependencies.length > 0
           ? pantryInfo.dependencies
           : webData.packageInfo.dependencies,
-        buildDependencies: pantryInfo.buildDependencies && pantryInfo.buildDependencies.length > 0
+        buildDependencies: pantryInfo?.buildDependencies && pantryInfo.buildDependencies.length > 0
           ? pantryInfo.buildDependencies
           : webData.packageInfo.buildDependencies,
-        companions: pantryInfo.companions && pantryInfo.companions.length > 0
+        companions: pantryInfo?.companions && pantryInfo.companions.length > 0
           ? pantryInfo.companions
           : webData.packageInfo.companions,
-        domain: pantryInfo.domain || webData.packageInfo.domain,
+        domain: pantryInfo?.domain || webData.packageInfo.domain,
         // For name, prefer web data (which extracts actual program names) over pantry data (which uses generic path segments)
         // Only use pantry name if web data doesn't have a name
-        name: webData.packageInfo.name || pantryInfo.name || packageName.split('/').pop() || packageName,
+        name: webData.packageInfo.name || pantryInfo?.name || packageName.split('/').pop() || packageName,
         // Use pantry URLs if available, otherwise fallback to web data
-        homepageUrl: pantryInfo.homepageUrl || webData.packageInfo.homepageUrl,
-        githubUrl: pantryInfo.githubUrl || webData.packageInfo.githubUrl,
+        homepageUrl: pantryInfo?.homepageUrl || webData.packageInfo.homepageUrl,
+        githubUrl: pantryInfo?.githubUrl || webData.packageInfo.githubUrl,
         // Apply alias overrides
         aliases: finalAliases,
       }
@@ -2206,6 +2201,11 @@ export async function fetchPantryPackageWithMetadata(
       }
     }
     catch (webError) {
+      if (!pantryInfo) {
+        console.warn(`No pantry or web data available for ${packageName}:`, webError)
+        return null
+      }
+
       console.warn(`Failed to fetch web metadata for ${packageName}, using pantry data only:`, webError)
 
       // Create a minimal package from pantry data only
