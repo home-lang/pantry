@@ -201,9 +201,13 @@ function detectPlatform(): { platform: string; os: string; arch: string } {
 /**
  * Discover all buildable packages from pantry YAML files
  */
-function discoverPackages(): BuildablePackage[] {
+function discoverPackages(targetPlatform?: string): BuildablePackage[] {
   const pantryDir = join(process.cwd(), 'src', 'pantry')
   const packages: BuildablePackage[] = []
+  // Parse target platform for filtering
+  const [targetOs, targetArch] = targetPlatform ? targetPlatform.split('-') : ['', '']
+  const targetOsName = targetOs === 'darwin' ? 'darwin' : targetOs === 'linux' ? 'linux' : ''
+  const targetArchName = targetArch === 'arm64' ? 'aarch64' : targetArch === 'x86-64' ? 'x86-64' : targetArch === 'x86_64' ? 'x86-64' : ''
 
   // Recursively find all package.yml files
   function findYamls(dir: string, prefix: string = ''): void {
@@ -222,8 +226,22 @@ function discoverPackages(): BuildablePackage[] {
           const content = readFileSync(yamlPath, 'utf-8')
           const recipe = parseYaml(content)
 
+          // Check platform compatibility
+          if (targetOsName && recipe.platforms) {
+            const platforms = Array.isArray(recipe.platforms) ? recipe.platforms : [String(recipe.platforms)]
+            const isCompatible = platforms.some((p: string) => {
+              const ps = String(p).trim()
+              if (ps === targetOsName) return true
+              if (ps === `${targetOsName}/${targetArchName}`) return true
+              return false
+            })
+            if (!isCompatible) {
+              return // Skip: platform not supported
+            }
+          }
+
           const hasDistributable = !!(recipe.distributable?.url)
-          const hasBuildScript = !!(recipe.build?.script)
+          const hasBuildScript = !!(recipe.build?.script) || Array.isArray(recipe.build)
 
           // Check if build script references props/
           const needsProps = content.includes('props/')
@@ -243,13 +261,25 @@ function discoverPackages(): BuildablePackage[] {
             return
           }
 
-          // Extract dependency domains for ordering
+          // Extract dependency domains for ordering (from both TS metadata and YAML)
           const depDomains: string[] = []
           const allDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
           for (const dep of allDeps) {
-            // Parse dep domain from strings like "go.dev@^1.18", "python.org@>=3.9<3.13"
             const depDomain = dep.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim()
             if (depDomain) depDomains.push(depDomain)
+          }
+          // Also extract YAML build deps for ordering
+          const yamlBuildDeps = recipe.build?.dependencies
+          if (yamlBuildDeps && typeof yamlBuildDeps === 'object') {
+            for (const key of Object.keys(yamlBuildDeps)) {
+              if (key.includes('.') || key.includes('/')) depDomains.push(key)
+              // Handle platform-specific nested deps
+              if (/^(darwin|linux)/.test(key) && typeof yamlBuildDeps[key] === 'object') {
+                for (const subKey of Object.keys(yamlBuildDeps[key])) {
+                  if (subKey.includes('.') || subKey.includes('/')) depDomains.push(subKey)
+                }
+              }
+            }
           }
 
           packages.push({
@@ -533,9 +563,11 @@ Options:
     process.exit(0)
   }
 
-  // Discover all buildable packages
-  console.log('Discovering buildable packages...')
-  let allPackages = discoverPackages()
+  // Discover all buildable packages (pass platform for filtering)
+  const { platform: detectedPlatformForDiscovery } = detectPlatform()
+  const discoveryPlatform = values.platform || detectedPlatformForDiscovery
+  console.log(`Discovering buildable packages for ${discoveryPlatform}...`)
+  let allPackages = discoverPackages(discoveryPlatform)
 
   // Filter to packages with build scripts (compilable from source)
   // Skip packages that are handled by sync-packages.ts (pre-built binaries)

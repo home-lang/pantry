@@ -240,9 +240,9 @@ function parseYaml(content: string): Record<string, any> {
     let value: any = trimmed.slice(colonIndex + 1).trim()
 
     // Handle different value types
-    if (value === '' || value === '|') {
+    if (value === '' || value === '|' || value === '|-') {
       // Object or multi-line string
-      if (value === '|') {
+      if (value === '|' || value === '|-') {
         // Multi-line string block
         const blockLines: string[] = []
         let j = i + 1
@@ -270,12 +270,13 @@ function parseYaml(content: string): Record<string, any> {
           // It's an array
           currentObj[key] = []
           stack.push({ indent, obj: currentObj[key] })
-        } else if (nextLine.includes(':') && nextLineIndent > indent) {
-          // It's an object (has key-value pairs)
+        } else if (nextLine.includes(':') && !nextLine.includes('://') && nextLineIndent > indent) {
+          // It's an object (has key-value pairs) — but not URLs like https://...
           currentObj[key] = {}
           stack.push({ indent, obj: currentObj[key] })
         } else if (nextLineIndent > indent && nextLine) {
           // It's a plain text block (like script content without | marker)
+          // Standard YAML folding: join lines with spaces (for URLs, plain values)
           const blockLines: string[] = []
           const blockIndent = nextLineIndent
           while (j < lines.length) {
@@ -288,7 +289,8 @@ function parseYaml(content: string): Record<string, any> {
               break
             }
           }
-          currentObj[key] = blockLines.filter(l => l && !l.startsWith('#')).join('\n')
+          // Use space-join (YAML folding) for plain scalars
+          currentObj[key] = blockLines.filter(l => l && !l.startsWith('#')).join(' ')
           i = j - 1
         } else {
           // Empty object
@@ -577,6 +579,34 @@ function domainToKey(domain: string): string {
   return domain.replace(/[.\-/]/g, '').toLowerCase()
 }
 
+// Extract dependency domains from YAML build.dependencies object
+// Handles both flat: { "domain.com": ">=1.0" } and platform-specific: { linux: { "domain.com": "*" } }
+function extractYamlDeps(depsObj: any, platform: string): string[] {
+  if (!depsObj || typeof depsObj !== 'object') return []
+  const [os] = platform.split('-')
+  const osName = os === 'darwin' ? 'darwin' : 'linux'
+  const deps: string[] = []
+
+  for (const [key, value] of Object.entries(depsObj)) {
+    // Check if this is a platform key (darwin, linux, darwin/aarch64)
+    if (/^(darwin|linux)(\/.*)?$/.test(key)) {
+      // Only include deps from matching platform
+      const [condOs] = key.split('/')
+      if (condOs === osName && typeof value === 'object' && value !== null) {
+        for (const [subKey] of Object.entries(value)) {
+          if (subKey.includes('.') || subKey.includes('/')) {
+            deps.push(subKey)
+          }
+        }
+      }
+    } else if (key.includes('.') || key.includes('/')) {
+      // Regular dependency domain
+      deps.push(key)
+    }
+  }
+  return deps
+}
+
 // Parse dependency string to get domain
 function parseDep(dep: string): string {
   let domain = dep
@@ -700,31 +730,41 @@ async function downloadDependencies(
       depPaths[`deps.${domain}.version.patch`] = depVParts[2] || '0'
       depPaths[`deps.${domain}.version.marketing`] = `${depVParts[0] || '0'}.${depVParts[1] || '0'}`
 
-      // Fix meson venv: replace hardcoded python3 shebang from build environment
-      // The meson binary in S3 has a venv with a hardcoded python3 path that doesn't exist at runtime
+      // Fix meson: the S3 meson has a broken venv with hardcoded python3 paths.
+      // Replace with a wrapper that uses system meson or system python3.
       if (domain === 'mesonbuild.com') {
         try {
           const mesonBin = join(depInstallDir, 'bin', 'meson')
           if (existsSync(mesonBin)) {
-            const mesonContent = readFileSync(mesonBin, 'utf-8')
-            if (mesonContent.startsWith('#!') && mesonContent.includes('/venv/bin/python')) {
-              // Replace hardcoded venv python with system python3
-              const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
-              writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
-              console.log(`   - Fixed meson shebang to use system python3`)
+            // Test if the meson binary actually works
+            let mesonWorks = false
+            try {
+              execSync(`"${mesonBin}" --version`, { stdio: 'pipe', timeout: 5000 })
+              mesonWorks = true
+            } catch { /* broken venv */ }
+
+            if (!mesonWorks) {
+              // Check if system meson exists (installed via apt/brew in CI)
+              let systemMeson = ''
+              try {
+                systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe' }).trim()
+              } catch { /* not found */ }
+
+              if (systemMeson) {
+                // Replace with wrapper that calls system meson
+                writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
+                console.log(`   - Replaced broken meson with system meson wrapper`)
+              } else {
+                // Try to fix the shebang to use system python3
+                const mesonContent = readFileSync(mesonBin, 'utf-8')
+                const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
+                writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
+                console.log(`   - Fixed meson shebang to use system python3`)
+              }
             }
           }
-          // Also fix the venv activation scripts if they exist
-          const venvDir = join(depInstallDir, 'venv')
-          if (existsSync(venvDir)) {
-            // Create a symlink to system python3 in the venv
-            const venvBin = join(venvDir, 'bin', 'python3')
-            try {
-              execSync(`rm -f "${venvBin}" && ln -sf "$(which python3)" "${venvBin}"`, { stdio: 'pipe' })
-            } catch { /* ignore */ }
-          }
         } catch (e: any) {
-          console.log(`   - Warning: Could not fix meson venv: ${e.message}`)
+          console.log(`   - Warning: Could not fix meson: ${e.message}`)
         }
       }
 
@@ -775,25 +815,40 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     pkg.buildDependencies.forEach((d: string) => console.log(`  - ${d}`))
   }
 
-  // Download dependencies from S3 if bucket is provided
-  let depPaths: Record<string, string> = {}
-  if (bucket && region && depsDir) {
-    const allDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
-    depPaths = await downloadDependencies(allDeps, depsDir, platform, bucket, region)
-    console.log(`\nDownloaded ${Object.keys(depPaths).length / 2} dependencies`)
-  }
-
-  // Find package.yml for build instructions
+  // Find and parse package.yml FIRST (before dep download) so we can extract YAML build deps
   const pantryPath = join(process.cwd(), 'src', 'pantry', pkgName, 'package.yml')
   if (!existsSync(pantryPath)) {
     throw new Error(`Build recipe not found at ${pantryPath}`)
   }
 
-  // Parse package.yml for build instructions only
   const yamlContent = readFileSync(pantryPath, 'utf-8')
   const recipe = parseYaml(yamlContent) as PackageRecipe
-
   console.log(`\nBuild recipe: ${pantryPath}`)
+
+  // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
+  const yamlBuildDeps = extractYamlDeps(recipe.build?.dependencies, platform)
+  const yamlRuntimeDeps = extractYamlDeps(recipe.dependencies, platform)
+  if (yamlBuildDeps.length > 0) {
+    console.log(`\nYAML build dependencies: ${yamlBuildDeps.join(', ')}`)
+  }
+
+  // Download dependencies from S3 if bucket is provided
+  let depPaths: Record<string, string> = {}
+  if (bucket && region && depsDir) {
+    // Merge TS metadata deps + YAML deps (deduplicate by domain)
+    const tsDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
+    const allDepDomains = new Set<string>()
+    const allDeps: string[] = []
+    for (const dep of [...tsDeps, ...yamlBuildDeps, ...yamlRuntimeDeps]) {
+      const domain = parseDep(dep)
+      if (!allDepDomains.has(domain)) {
+        allDepDomains.add(domain)
+        allDeps.push(dep)
+      }
+    }
+    depPaths = await downloadDependencies(allDeps, depsDir, platform, bucket, region)
+    console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies`)
+  }
 
   // Create directories
   mkdirSync(buildDir, { recursive: true })

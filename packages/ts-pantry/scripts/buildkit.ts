@@ -517,6 +517,25 @@ export function generateBuildScript(
     sections.push('  export -f sed')
     sections.push('fi')
     sections.push('')
+
+    // macOS: install -D shim (GNU extension not available on macOS)
+    sections.push('# install -D shim for macOS (GNU extension)')
+    sections.push('if ! /usr/bin/install -D /dev/null /tmp/_install_test 2>/dev/null; then')
+    sections.push('  install() {')
+    sections.push('    local args=() has_D=false')
+    sections.push('    for arg in "$@"; do')
+    sections.push('      if [ "$arg" = "-D" ]; then has_D=true; else args+=("$arg"); fi')
+    sections.push('    done')
+    sections.push('    if $has_D; then')
+    sections.push('      local dest="${args[-1]}"')
+    sections.push('      mkdir -p "$(dirname "$dest")"')
+    sections.push('    fi')
+    sections.push('    /usr/bin/install "${args[@]}"')
+    sections.push('  }')
+    sections.push('  export -f install')
+    sections.push('fi')
+    sections.push('rm -f /tmp/_install_test')
+    sections.push('')
   }
 
   // bkpyvenv shim — creates Python venvs for pip-based packages

@@ -202,6 +202,15 @@ jobs:
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons
 
+      - name: Setup Rust toolchain
+        run: |
+          if ! command -v cargo &>/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+            source "$HOME/.cargo/env"
+          fi
+          # Ensure pip packages needed for building are available
+          pip3 install setuptools meson 2>/dev/null || python3 -m pip install setuptools meson 2>/dev/null || true
+
       - name: Verify toolchains
         run: |
           echo "=== Toolchain versions ==="
