@@ -580,8 +580,11 @@ Options:
   allPackages = allPackages.filter(p => !preBuiltDomains.has(p.domain))
 
   // Filter to packages that actually have build scripts (skip metadata-only packages)
-  const withoutScript = allPackages.filter(p => !p.hasBuildScript)
-  allPackages = allPackages.filter(p => p.hasBuildScript)
+  // Skip this filter for targeted builds (-p) since the parser may miss some build scripts
+  const withoutScript = values.package ? [] : allPackages.filter(p => !p.hasBuildScript)
+  if (!values.package) {
+    allPackages = allPackages.filter(p => p.hasBuildScript)
+  }
 
   // Platform-aware filtering: skip packages that can't build on this platform
   const { platform: detectedPlatformEarly } = detectPlatform()
