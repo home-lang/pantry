@@ -2,7 +2,7 @@ const std = @import("std");
 
 /// Resolve dependency path - uses workspace root pantry/ directory (created by `pantry install`)
 /// For local dev: `pantry install` symlinks from ~/Code/Libraries/*
-/// For CI: workflow clones deps into pantry/
+/// For CI: workflow clones deps into pantry/ at workspace root
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
     _ = fallback_path;
     // pantry/ folder is at the workspace root (../../ from packages/zig/)
