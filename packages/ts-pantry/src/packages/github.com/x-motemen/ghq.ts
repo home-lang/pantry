@@ -3,7 +3,7 @@
  *
  * @domain `github.com/x-motemen/ghq`
  * @programs `ghq`
- * @version `1.9.3` (13 versions available)
+ * @version `1.9.4` (14 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/x-motemen/ghq`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "ghq"
  * console.log(pkg.description) // "Remote repository management made easy"
  * console.log(pkg.programs)    // ["ghq"]
- * console.log(pkg.versions[0]) // "1.9.3" (latest)
+ * console.log(pkg.versions[0]) // "1.9.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/x-motemen/ghq.md
@@ -67,6 +67,7 @@ export const ghqPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.9.4',
     '1.9.3',
     '1.9.2',
     '1.9.0',
