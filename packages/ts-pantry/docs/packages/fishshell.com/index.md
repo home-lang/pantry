@@ -27,23 +27,23 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 24 versions</summary>
+<summary>Show all 25 versions</summary>
 
-- `4.4.0`, `4.3.3`, `4.3.2`, `4.3.1`, `4.3.0`
-- `4.2.1`, `4.2.0`, `4.1.2`, `4.1.1`, `4.1.0`
-- `4.0.9`, `4.0.8`, `4.0.6`, `4.0.2`, `4.0.1`
-- `4.0.0`, `3.7.1`, `3.7.0`, `3.6.4`, `3.6.3`
-- `3.6.2`, `3.6.1`, `3.6.0`, `3.5.1`
+- `4.5.0`, `4.4.0`, `4.3.3`, `4.3.2`, `4.3.1`
+- `4.3.0`, `4.2.1`, `4.2.0`, `4.1.2`, `4.1.1`
+- `4.1.0`, `4.0.9`, `4.0.8`, `4.0.6`, `4.0.2`
+- `4.0.1`, `4.0.0`, `3.7.1`, `3.7.0`, `3.6.4`
+- `3.6.3`, `3.6.2`, `3.6.1`, `3.6.0`, `3.5.1`
 
 </details>
 
-**Latest Version**: `4.4.0`
+**Latest Version**: `4.5.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +fishshell.com@4.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +fishshell.com@4.5.0 -- $SHELL -i
 ```
 
 ## Dependencies
