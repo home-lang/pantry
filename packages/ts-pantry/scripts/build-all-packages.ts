@@ -727,6 +727,9 @@ Options:
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
     'heasarc.gsfc.nasa.gov/cfitsio', // NASA HEASARC server frequently unreachable (timeout)
+    'brxken128.github.io/dexios', // Rust "unnecessary qualification" lint errors with modern rustc (unmaintained)
+    'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
+    'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
   ])
 
   let platformSkipped = 0

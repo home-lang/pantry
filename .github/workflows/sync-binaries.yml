@@ -225,7 +225,7 @@ jobs:
             libgl-dev libglu1-mesa-dev \
             clang llvm-dev libclang-dev \
             libgnutls28-dev liblua5.4-dev \
-            libcap-ng-dev libslirp-dev libssh-dev \
+            libcap-dev libcap-ng-dev libslirp-dev libssh-dev \
             libspeexdsp-dev libmaxminddb-dev libsmi2-dev \
             libc-ares-dev libre2-dev libpcap-dev \
             libnl-3-dev libnl-genl-3-dev \
@@ -378,7 +378,7 @@ jobs:
             libgl-dev libglu1-mesa-dev \
             clang llvm-dev libclang-dev \
             libgnutls28-dev liblua5.4-dev \
-            libcap-ng-dev libslirp-dev libssh-dev \
+            libcap-dev libcap-ng-dev libslirp-dev libssh-dev \
             libspeexdsp-dev libmaxminddb-dev libsmi2-dev \
             libc-ares-dev libre2-dev libpcap-dev \
             libnl-3-dev libnl-genl-3-dev \
