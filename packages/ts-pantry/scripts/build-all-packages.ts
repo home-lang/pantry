@@ -386,7 +386,7 @@ function tryBuildVersion(
     cwd: join(process.cwd()),
     env: { ...process.env },
     stdio: 'inherit',
-    timeout: 45 * 60 * 1000, // 45 min per package (Rust builds with multiple cargo installs need this)
+    timeout: 60 * 60 * 1000, // 60 min per package (codex needs ~50 min for 3 cargo installs)
   })
 }
 
