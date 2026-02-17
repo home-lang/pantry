@@ -24,7 +24,8 @@ build:
       - --enable-sql
       - --enable-sql_codegen
       - --enable-dbm
-      - --enable-stl
+    darwin:
+      CXXFLAGS: -std=c++14
 
 test:
   script: |
