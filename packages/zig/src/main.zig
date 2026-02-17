@@ -40,9 +40,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const offline = ctx.hasOption("offline");
     const filter = ctx.getOption("filter");
 
-    if (force) {
-        style.print("Warning: --force option is not yet implemented\n", .{});
-    }
+    // --force flag is handled by install options below
 
     // Note: --offline flag sets offline mode for this process
     // The offline module checks PANTRY_OFFLINE env var, but we can't easily set it in Zig 0.16
@@ -86,6 +84,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .include_peer = include_peer,
         .ignore_scripts = ignore_scripts,
         .verbose = verbose,
+        .force = force,
         .filter = filter,
         .linker = pantry_config.install.linker,
     };

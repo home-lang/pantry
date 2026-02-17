@@ -97,12 +97,15 @@ pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !t
 pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []const u8, options: types.InstallOptions) !types.CommandResult {
     // Parse flags and filter out non-package arguments
     var is_global = false;
+    var opts = options;
     var package_args = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
     defer package_args.deinit(allocator);
 
     for (args) |arg| {
         if (std.mem.eql(u8, arg, "-g") or std.mem.eql(u8, arg, "--global")) {
             is_global = true;
+        } else if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) {
+            opts.force = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             try package_args.append(allocator, arg);
         }
@@ -133,8 +136,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // ── FAST PATH: check if everything is already up-to-date ──
         // This avoids expensive workspace detection, config loading, hooks, etc.
-        if (try tryFastUpToDate(allocator, cwd, start_time)) |result| {
-            return result;
+        // Skipped when --force is set (user wants to re-download everything)
+        if (!opts.force) {
+            if (try tryFastUpToDate(allocator, cwd, start_time)) |result| {
+                return result;
+            }
         }
 
         // Combined lookup: find both deps file and workspace file in a single directory walk
@@ -320,6 +326,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             style.printOffline();
         }
 
+        // Show force mode indicator
+        if (opts.force) {
+            style.print("{s}Force mode:{s} ignoring cache and lockfile\n", .{ style.yellow, style.reset });
+        }
+
         // Try to resume from a previous interrupted install, or create a fresh checkpoint
         var checkpoint = recovery.InstallCheckpoint.loadFromDisk(allocator, proj_dir) catch null orelse recovery.InstallCheckpoint.init(allocator);
         defer checkpoint.deinit();
@@ -429,30 +440,33 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     const clean_name = helpers.stripDisplayPrefix(ctx.deps[i].name);
 
                     // Skip packages that match lockfile and exist at destination
-                    if (ctx.lockfile_packages) |lf_pkgs| {
-                        if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc)) {
-                            ctx.results[i] = .{
-                                .name = clean_name,
-                                .version = ctx.deps[i].version,
-                                .success = true,
-                                .error_msg = null,
-                                .install_time_ms = 0,
-                            };
-                            continue;
+                    // (bypassed when --force is set)
+                    if (!ctx.opts.force) {
+                        if (ctx.lockfile_packages) |lf_pkgs| {
+                            if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc)) {
+                                ctx.results[i] = .{
+                                    .name = clean_name,
+                                    .version = ctx.deps[i].version,
+                                    .success = true,
+                                    .error_msg = null,
+                                    .install_time_ms = 0,
+                                };
+                                continue;
+                            }
                         }
-                    }
 
-                    // Skip packages already installed in a previous interrupted run (resume)
-                    if (ctx.resume_packages) |resume_pkgs| {
-                        if (resume_pkgs.contains(clean_name)) {
-                            ctx.results[i] = .{
-                                .name = clean_name,
-                                .version = ctx.deps[i].version,
-                                .success = true,
-                                .error_msg = null,
-                                .install_time_ms = 0,
-                            };
-                            continue;
+                        // Skip packages already installed in a previous interrupted run (resume)
+                        if (ctx.resume_packages) |resume_pkgs| {
+                            if (resume_pkgs.contains(clean_name)) {
+                                ctx.results[i] = .{
+                                    .name = clean_name,
+                                    .version = ctx.deps[i].version,
+                                    .success = true,
+                                    .error_msg = null,
+                                    .install_time_ms = 0,
+                                };
+                                continue;
+                            }
                         }
                     }
 
@@ -486,7 +500,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .bin = bin_dir,
             .cwd_path = cwd,
             .shared_installer = &shared_installer,
-            .opts = options,
+            .opts = opts,
             .lockfile_packages = null, // Fast path already checked; slow path installs everything
             .resume_packages = if (resuming) &checkpoint.installed_packages else null,
         };

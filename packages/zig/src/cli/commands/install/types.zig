@@ -29,6 +29,7 @@ pub const InstallOptions = struct {
     ignore_scripts: bool = false, // Don't run lifecycle scripts
     verbose: bool = false, // Verbose output
     quiet: bool = false, // Quiet output (suppress non-essential messages)
+    force: bool = false, // Force re-download, ignore cache and lockfile
     filter: ?[]const u8 = null, // Filter pattern for workspace packages
     linker: LinkerMode = .isolated, // Linker strategy (default: isolated, opt-in: hoisted)
 };

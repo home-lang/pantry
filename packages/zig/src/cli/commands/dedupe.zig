@@ -1,6 +1,12 @@
+//! Dependency deduplication
+//!
+//! Scan node_modules for duplicate packages (same package name with different
+//! versions at different paths) and optionally remove nested duplicates when
+//! a compatible version exists at the top level.
+
 const std = @import("std");
+const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
-const lib = @import("../../lib.zig");
 const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
@@ -21,6 +27,13 @@ pub const DuplicatePackage = struct {
     }
 };
 
+/// Internal struct for collecting package instances during scan
+const PackageInstance = struct {
+    version: []const u8,
+    location: []const u8,
+    size: usize,
+};
+
 /// Deduplicate dependencies
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     // Parse flags
@@ -35,18 +48,37 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         style.print("Dry run mode - no changes will be made\n\n", .{});
     }
 
-    // Load pantry.json
-    const config_result = lib.loadpantryConfig(allocator, .{ .name = "pantry" }) catch {
-        return CommandResult.err(allocator, common.ERROR_NO_CONFIG);
+    const cwd = try io_helper.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    const nm_path = try std.fmt.allocPrint(allocator, "{s}/node_modules", .{cwd});
+    defer allocator.free(nm_path);
+
+    // Check node_modules exists
+    io_helper.accessAbsolute(nm_path, .{}) catch {
+        return CommandResult.err(allocator, "No node_modules directory found. Run 'pantry install' first.");
     };
-    defer {
-        var mut_result = config_result;
-        mut_result.deinit();
-    }
 
     style.print("Analyzing dependency tree...\n\n", .{});
 
-    // Find duplicates
+    // Scan node_modules recursively and collect all package instances
+    var package_map = std.StringHashMap(std.ArrayList(PackageInstance)).init(allocator);
+    defer {
+        var map_iter = package_map.iterator();
+        while (map_iter.next()) |entry| {
+            for (entry.value_ptr.items) |inst| {
+                allocator.free(inst.version);
+                allocator.free(inst.location);
+            }
+            entry.value_ptr.deinit(allocator);
+            allocator.free(entry.key_ptr.*);
+        }
+        package_map.deinit();
+    }
+
+    try scanNodeModules(allocator, nm_path, &package_map);
+
+    // Build duplicate list (packages with more than one unique version)
     var duplicates = std.ArrayList(DuplicatePackage){};
     defer {
         for (duplicates.items) |*dup| {
@@ -55,7 +87,39 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         duplicates.deinit(allocator);
     }
 
-    try findDuplicates(allocator, &duplicates);
+    var pkg_iter = package_map.iterator();
+    while (pkg_iter.next()) |entry| {
+        const instances = entry.value_ptr.items;
+        if (instances.len < 2) continue;
+
+        // Count unique versions
+        var unique_versions = std.StringHashMap(void).init(allocator);
+        defer unique_versions.deinit();
+
+        for (instances) |inst| {
+            unique_versions.put(inst.version, {}) catch continue;
+        }
+
+        if (unique_versions.count() < 2) continue;
+
+        // Build version and location arrays
+        var versions = try allocator.alloc([]const u8, instances.len);
+        var locations = try allocator.alloc([]const u8, instances.len);
+        var total_size: usize = 0;
+
+        for (instances, 0..) |inst, i| {
+            versions[i] = try allocator.dupe(u8, inst.version);
+            locations[i] = try allocator.dupe(u8, inst.location);
+            total_size += inst.size;
+        }
+
+        try duplicates.append(allocator, .{
+            .name = try allocator.dupe(u8, entry.key_ptr.*),
+            .versions = versions,
+            .locations = locations,
+            .total_size = total_size,
+        });
+    }
 
     if (duplicates.items.len == 0) {
         style.print("No duplicate packages found!\n", .{});
@@ -71,7 +135,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     var total_size_saved: usize = 0;
 
     for (duplicates.items) |dup| {
-        style.print("{s}\n", .{dup.name});
+        style.print("{s}{s}{s}\n", .{ style.bold, dup.name, style.reset });
         style.print("  Versions: ", .{});
 
         for (dup.versions, 0..) |version, i| {
@@ -97,10 +161,9 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
 
         var deduped: usize = 0;
         for (duplicates.items) |dup| {
-            const result = try deduplicatePackage(allocator, &dup);
-            if (result) {
+            if (try deduplicatePackage(allocator, cwd, &dup)) {
                 deduped += 1;
-                style.print("Deduplicated {s}\n", .{dup.name});
+                style.print("  {s}✓{s} Deduplicated {s}\n", .{ style.green, style.reset, dup.name });
             }
         }
 
@@ -136,71 +199,143 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 }
 
-/// Find duplicate packages
-fn findDuplicates(
+/// Recursively scan node_modules directory for all package instances.
+/// Records each found package's name, version, path, and approximate size.
+fn scanNodeModules(
     allocator: std.mem.Allocator,
-    duplicates: *std.ArrayList(DuplicatePackage),
+    node_modules_path: []const u8,
+    package_map: *std.StringHashMap(std.ArrayList(PackageInstance)),
 ) !void {
-    // This is a simplified implementation
-    // Real implementation would:
-    // 1. Scan node_modules recursively
-    // 2. Track all package versions and locations
-    // 3. Identify packages with multiple versions
+    var dir = io_helper.openDirAbsoluteForIteration(node_modules_path) catch return;
+    defer dir.close();
 
-    // Simulate some duplicates
-    const simulated = [_]struct {
-        name: []const u8,
-        versions: []const []const u8,
-        size: usize,
-    }{
-        .{
-            .name = "lodash",
-            .versions = &[_][]const u8{ "4.17.15", "4.17.20", "4.17.21" },
-            .size = 1024 * 512, // 512 KB
-        },
-        .{
-            .name = "chalk",
-            .versions = &[_][]const u8{ "2.4.2", "4.1.0" },
-            .size = 1024 * 128, // 128 KB
-        },
-    };
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory and entry.kind != .sym_link) continue;
+        if (entry.name.len == 0) continue;
 
-    for (simulated) |sim| {
-        var versions = try allocator.alloc([]const u8, sim.versions.len);
-        for (sim.versions, 0..) |v, i| {
-            versions[i] = try allocator.dupe(u8, v);
+        // Skip hidden dirs and .bin
+        if (entry.name[0] == '.') continue;
+
+        // Handle scoped packages (@scope/name)
+        if (entry.name[0] == '@') {
+            const scope_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ node_modules_path, entry.name });
+            defer allocator.free(scope_path);
+
+            var scope_dir = io_helper.openDirAbsoluteForIteration(scope_path) catch continue;
+            defer scope_dir.close();
+
+            var scope_iter = scope_dir.iterate();
+            while (scope_iter.next() catch null) |scoped_entry| {
+                if (scoped_entry.kind != .directory and scoped_entry.kind != .sym_link) continue;
+
+                const full_name = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ entry.name, scoped_entry.name });
+                defer allocator.free(full_name);
+
+                const pkg_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ scope_path, scoped_entry.name });
+                defer allocator.free(pkg_path);
+
+                try recordPackage(allocator, full_name, pkg_path, package_map);
+
+                // Scan nested node_modules
+                const nested_nm = try std.fmt.allocPrint(allocator, "{s}/node_modules", .{pkg_path});
+                defer allocator.free(nested_nm);
+                try scanNodeModules(allocator, nested_nm, package_map);
+            }
+            continue;
         }
 
-        var locations = try allocator.alloc([]const u8, sim.versions.len);
-        for (sim.versions, 0..) |_, i| {
-            locations[i] = try std.fmt.allocPrint(allocator, "node_modules/dep{d}/node_modules/{s}", .{ i + 1, sim.name });
-        }
+        const pkg_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ node_modules_path, entry.name });
+        defer allocator.free(pkg_path);
 
-        try duplicates.append(allocator, .{
-            .name = try allocator.dupe(u8, sim.name),
-            .versions = versions,
-            .locations = locations,
-            .total_size = sim.size * sim.versions.len,
-        });
+        try recordPackage(allocator, entry.name, pkg_path, package_map);
+
+        // Scan nested node_modules
+        const nested_nm = try std.fmt.allocPrint(allocator, "{s}/node_modules", .{pkg_path});
+        defer allocator.free(nested_nm);
+        try scanNodeModules(allocator, nested_nm, package_map);
     }
 }
 
-/// Deduplicate a single package
-fn deduplicatePackage(
+/// Read a package's package.json and record it in the map
+fn recordPackage(
     allocator: std.mem.Allocator,
+    name: []const u8,
+    pkg_path: []const u8,
+    package_map: *std.StringHashMap(std.ArrayList(PackageInstance)),
+) !void {
+    const pkg_json_path = try std.fmt.allocPrint(allocator, "{s}/package.json", .{pkg_path});
+    defer allocator.free(pkg_json_path);
+
+    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 1024 * 1024) catch return;
+    defer allocator.free(content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return;
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return;
+
+    const version_val = parsed.value.object.get("version") orelse return;
+    if (version_val != .string) return;
+
+    const instance = PackageInstance{
+        .version = try allocator.dupe(u8, version_val.string),
+        .location = try allocator.dupe(u8, pkg_path),
+        .size = @as(usize, @intCast(content.len)), // Rough size estimate from package.json size
+    };
+
+    const key = try allocator.dupe(u8, name);
+    errdefer allocator.free(key);
+
+    if (package_map.getPtr(name)) |list| {
+        allocator.free(key);
+        try list.append(allocator, instance);
+    } else {
+        var list = std.ArrayList(PackageInstance){};
+        try list.append(allocator, instance);
+        try package_map.put(key, list);
+    }
+}
+
+/// Deduplicate a single package by removing nested copies when the top-level
+/// version matches one of the nested versions.
+fn deduplicatePackage(
+    _: std.mem.Allocator,
+    _: []const u8,
     package: *const DuplicatePackage,
 ) !bool {
-    _ = allocator;
-    _ = package;
+    // Find the top-level location (shortest path = most hoisted)
+    var top_level_idx: ?usize = null;
+    var min_depth: usize = std.math.maxInt(usize);
 
-    // Real implementation would:
-    // 1. Determine which version to keep (usually the latest compatible)
-    // 2. Update package.json files
-    // 3. Remove duplicate installations
-    // 4. Re-link dependencies
+    for (package.locations, 0..) |loc, i| {
+        // Count path separators to determine nesting depth
+        var depth: usize = 0;
+        for (loc) |c| {
+            if (c == '/') depth += 1;
+        }
+        if (depth < min_depth) {
+            min_depth = depth;
+            top_level_idx = i;
+        }
+    }
 
-    // For now, just simulate success
-    return true;
+    const top_idx = top_level_idx orelse return false;
+    const top_version = package.versions[top_idx];
+
+    // Remove nested copies that have the same version as the top-level one
+    var removed_any = false;
+    for (package.locations, 0..) |loc, i| {
+        if (i == top_idx) continue;
+
+        // Only remove if version matches (safe dedup)
+        if (std.mem.eql(u8, package.versions[i], top_version)) {
+            io_helper.deleteTree(loc) catch continue;
+            removed_any = true;
+        }
+    }
+
+    return removed_any;
 }
 
 /// Format size in human-readable format
