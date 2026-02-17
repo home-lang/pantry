@@ -478,9 +478,6 @@ export function generateBuildScript(
     // Modern GCC/Clang treat certain warnings as errors (C23 defaults) — relax them
     sections.push('export CFLAGS="-fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-function-pointer-types ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-fPIC ${CXXFLAGS:-}"')
-    // -ldl: some packages need explicit libdl for dlsym (harmless on glibc 2.34+ where it's in libc)
-    // -Wl,-rpath: ensure built binaries can find their own libs
-    sections.push(`export LDFLAGS="-ldl -Wl,-rpath,${prefix}/lib \${LDFLAGS:-}"`)
   }
   sections.push('')
 
