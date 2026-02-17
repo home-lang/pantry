@@ -615,6 +615,7 @@ Options:
     'alsa-project.org/alsa-lib', 'alsa-project.org/alsa-plugins', 'alsa-project.org/alsa-utils',
     'elfutils.org', 'freedesktop.org/libbsd', 'kernel.org/linux-headers',
     'musl.libc.org', 'pagure.io/libaio', 'strace.io', 'systemd.io',
+    'nixos.org/patchelf', // ELF binary patcher, Linux-only
     'spawn.link', 'postgrest.org', 'gitlab.com/procps-ng/procps',
     'apptainer.org', // Linux container runtime
     'apple.com/remote_cmds', // ironically Linux-buildable only in certain configs
@@ -724,6 +725,8 @@ Options:
     'gnu.org/source-highlight', // C++17 removed dynamic exception specs (throw()), unmaintained
     'microbrew.org/md5sha1sum', // OpenSSL lib path in multiarch dirs (/usr/lib/x86_64-linux-gnu)
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
+    'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
+    'heasarc.gsfc.nasa.gov/cfitsio', // NASA HEASARC server frequently unreachable (timeout)
   ])
 
   let platformSkipped = 0
