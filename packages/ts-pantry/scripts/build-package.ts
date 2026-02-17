@@ -1310,6 +1310,16 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     })
   } catch (error: any) {
     console.error('❌ Build script failed')
+    // Dump config.log if it exists (key for diagnosing "C compiler cannot create executables")
+    const configLog = join(buildDir, 'config.log')
+    if (existsSync(configLog)) {
+      const logContent = readFileSync(configLog, 'utf-8')
+      // Show the last 3000 chars — that's where the error details are
+      const tail = logContent.length > 3000 ? logContent.slice(-3000) : logContent
+      console.error('\n--- config.log (tail) ---')
+      console.error(tail)
+      console.error('--- End config.log ---')
+    }
     // Print the generated script for debugging
     console.error('\n--- Generated build script ---')
     console.error(bashScript.slice(0, 8000))

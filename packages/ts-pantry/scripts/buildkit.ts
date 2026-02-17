@@ -818,6 +818,24 @@ export function generateBuildScript(
   sections.push('__setup_cc_wrapper')
   sections.push('')
 
+  // Diagnostic: verify compiler can create executables (helps debug configure failures)
+  sections.push('# Compiler diagnostic')
+  sections.push('echo "int main(){return 0;}" > "$TMPDIR/_cc_test.c"')
+  sections.push('if cc "$TMPDIR/_cc_test.c" -o "$TMPDIR/_cc_test" 2>"$TMPDIR/_cc_diag.log"; then')
+  sections.push('  echo "[buildkit] compiler check: OK ($(which cc))"')
+  sections.push('  rm -f "$TMPDIR/_cc_test.c" "$TMPDIR/_cc_test" "$TMPDIR/_cc_diag.log"')
+  sections.push('else')
+  sections.push('  echo "[buildkit] compiler check: FAILED ($(which cc))" >&2')
+  sections.push('  echo "[buildkit] CFLAGS=$CFLAGS" >&2')
+  sections.push('  echo "[buildkit] LDFLAGS=$LDFLAGS" >&2')
+  sections.push('  echo "[buildkit] PATH=$PATH" >&2')
+  sections.push('  cat "$TMPDIR/_cc_diag.log" >&2')
+  sections.push('  echo "[buildkit] Trying without wrapper:" >&2')
+  sections.push('  /usr/bin/gcc "$TMPDIR/_cc_test.c" -o "$TMPDIR/_cc_test" 2>&1 || true')
+  sections.push('  rm -f "$TMPDIR/_cc_test.c" "$TMPDIR/_cc_test" "$TMPDIR/_cc_diag.log"')
+  sections.push('fi')
+  sections.push('')
+
   // macOS: force system AR/RANLIB when binutils is a dep (brewkit)
   // "gcc needs Apple's ar/ranlib combo on darwin or link failure occurs"
   if (osName === 'darwin') {
