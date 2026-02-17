@@ -1,6 +1,5 @@
 distributable:
   url: https://github.com/pkgxdev/pkgm/releases/download/{{ version.tag }}/pkgm-{{ version }}.tgz
-  strip-components: 0
 
 versions:
   github: pkgxdev/pkgm

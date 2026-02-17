@@ -26,11 +26,9 @@ build:
     - --prefix={{prefix}}
     - --disable-pcre
     - --disable-pcre2
-    - --without-libpsl
+    - --without-libps1
     - --without-included-regex
     - --with-ssl=openssl
-    - --without-metalink
-    - --sysconfdir={{prefix}}/etc
 
 test:
   wget tea.xyz

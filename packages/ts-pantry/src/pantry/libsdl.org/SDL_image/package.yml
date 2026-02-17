@@ -1,5 +1,5 @@
 distributable:
-  url: https://github.com/libsdl-org/SDL_image/releases/download/release-{{version}}/SDL2_image-{{version}}.tar.gz
+  url: https://github.com/libsdl-org/SDL_image/releases/download/release-2.6.3/SDL2_image-2.6.3.tar.gz
   strip-components: 1
 
 versions:

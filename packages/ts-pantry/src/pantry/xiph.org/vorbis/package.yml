@@ -1,5 +1,5 @@
 distributable:
-  url: https://downloads.xiph.org/releases/vorbis/libvorbis-{{version}}.tar.xz
+  url: https://downloads.xiph.org/releases/vorbis/libvorbis-1.3.7.tar.xz
   strip-components: 1
 
 versions:
