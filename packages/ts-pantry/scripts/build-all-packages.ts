@@ -690,6 +690,11 @@ Options:
     'snyk.io', // Binary distribution, no compilable source
     'pkl-lang.org', // Gradle/Java build system
     'quickwit.io', // Complex Rust workspace with many dependencies
+    'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
+    'foundry-rs.github.io', // All download tags return 404 (project restructured)
+    'wez.github.io/wezterm', // Source tarball download fails
+    'replibyte.com', // Cargo build with complex deps (sqlx, tokio-postgres)
+    'invisible-island.net/dialog', // Complex version format with date suffix
   ])
 
   let platformSkipped = 0
