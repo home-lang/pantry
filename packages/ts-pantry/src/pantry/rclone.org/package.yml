@@ -1,5 +1,5 @@
 distributable:
-  url: https://github.com/rclone/rclone/archive/v1.63.0.tar.gz
+  url: https://github.com/rclone/rclone/archive/v{{version}}.tar.gz
   strip-components: 1
 versions:
   github: rclone/rclone

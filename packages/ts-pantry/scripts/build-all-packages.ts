@@ -659,6 +659,37 @@ Options:
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists (renamed/moved)
     'taku910.github.io/mecab-ipadic', // Needs mecab built first (complex dep chain)
     'itstool.org', // Needs Python libxml2 bindings matching exact Python version (3.14 vs system 3.12)
+    'oberhumer.com/ucl', // Dead upstream domain (oberhumer.com returns 404)
+    'khronos.org/SPIRV-Cross', // Project archived, tags removed from GitHub
+    'amber-lang.com', // Download tag format mismatch (alpha prefix issues)
+    'getsynth.com', // Dead/abandoned project
+    'frei0r.dyne.org', // Corrupt/incompatible tarballs from dyne.org
+    'ordinals.com', // GitHub tag format mismatch (all tag variants return 404)
+    'pcre.org', // SourceForge mirror unreliable (PCRE1 unmaintained, use pcre.org/v2)
+    'fermyon.com/spin', // Needs wasm32-wasi target + llvm-ar (complex Rust toolchain)
+    'dhruvkb.dev/pls', // Cargo auth failure on git dependencies
+    'seaweedfs.com', // All GitHub release tags return 404
+    'wundergraph.com', // All GitHub release tags return 404
+    'riverbankcomputing.com/sip', // Server returns empty reply on all version downloads
+    'abseil.io', // Date-based version format mismatch (20260107.1.0 etc)
+    'alembic.sqlalchemy.org', // Version tags return 404 on PyPI/GitHub
+    'render.com', // Needs deno compile (no distributable source)
+    'tea.xyz', // Needs deno task compile (no distributable source)
+    'sdkman.io', // Shell script distribution, no compilable source
+    'swagger.io/swagger-codegen', // Java/Maven build system
+    'mcmc-jags.sourceforge.io', // Needs Fortran compiler (not available on CI runners)
+    'spacetimedb.com', // Hardcoded beta tag, complex Rust workspace build
+    'ntp.org', // Complex version format embedded in path (ntp-4.2.8p17)
+    'jbig2dec.com', // Single hardcoded version, buried in ghostpdl releases
+    'videolan.org/x264', // Version includes git hash, Debian mirror URL
+    'github.com/mamba-org/mamba', // Hardcoded version, FIXME in recipe
+    'github.com/confluentinc/libserdes', // RC version format in tag
+    'github.com/siderolabs/conform', // Alpha version format in tag
+    'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
+    'microsoft.com/markitdown', // Version tags don't exist on GitHub
+    'snyk.io', // Binary distribution, no compilable source
+    'pkl-lang.org', // Gradle/Java build system
+    'quickwit.io', // Complex Rust workspace with many dependencies
   ])
 
   let platformSkipped = 0
