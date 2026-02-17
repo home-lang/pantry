@@ -266,6 +266,8 @@ jobs:
           source "$HOME/.cargo/env"
           rustup update stable
           echo "Rust: $(rustc --version), Cargo: $(cargo --version)"
+          # Persist cargo PATH for subsequent steps (GitHub Actions doesn't source .profile)
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           # Ensure pip packages needed for building are available
           pip3 install setuptools meson 2>/dev/null || python3 -m pip install setuptools meson 2>/dev/null || true
 

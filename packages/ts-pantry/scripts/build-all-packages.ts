@@ -721,6 +721,9 @@ Options:
     'nasm.us', // Version resolution generates phantom versions (3.1.0, 3.0.0) that 404
     'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
     'strace.io', // btrfs static assertions incompatible with newer kernel headers
+    'gnu.org/source-highlight', // C++17 removed dynamic exception specs (throw()), unmaintained
+    'microbrew.org/md5sha1sum', // OpenSSL lib path in multiarch dirs (/usr/lib/x86_64-linux-gnu)
+    'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
   ])
 
   let platformSkipped = 0
