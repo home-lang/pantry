@@ -40,6 +40,7 @@ build:
       - --prefix={{prefix}}
       - --with-gssapi
       - --with-openssl
+      - --without-icu
       - --libdir={{prefix}}/lib
       - --includedir={{prefix}}/include
     DIRS:
