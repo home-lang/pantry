@@ -287,13 +287,63 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
     };
 }
 
-/// Check available disk space
+/// Check available disk space using libc statvfs (linked via -lc)
 fn checkDiskSpace(allocator: std.mem.Allocator) !CheckResult {
     const name = try allocator.dupe(u8, "Disk Space");
 
-    // Simplified check - real implementation would use statvfs or similar
-    const message = try allocator.dupe(u8, "Sufficient disk space available");
+    const cache_dir = Paths.cache(allocator) catch {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "Could not determine cache path; skipping disk check"),
+        };
+    };
+    defer allocator.free(cache_dir);
 
+    // Use C libc statvfs which is available on both macOS and Linux
+    const c = @cImport(@cInclude("sys/statvfs.h"));
+    var stat: c.struct_statvfs = undefined;
+
+    // Null-terminate the path for C
+    const c_path = try allocator.dupeZ(u8, cache_dir);
+    defer allocator.free(c_path);
+
+    if (c.statvfs(c_path.ptr, &stat) != 0) {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "Could not query filesystem stats"),
+        };
+    }
+
+    const block_size: u64 = @intCast(stat.f_frsize);
+    const available_bytes: u64 = @as(u64, @intCast(stat.f_bavail)) * block_size;
+    const total_bytes: u64 = @as(u64, @intCast(stat.f_blocks)) * block_size;
+    const available_mb = available_bytes / (1024 * 1024);
+    const total_gb = total_bytes / (1024 * 1024 * 1024);
+
+    // Warn if less than 500 MB available
+    const min_required_mb: u64 = 500;
+
+    if (available_mb < min_required_mb) {
+        const message = try std.fmt.allocPrint(
+            allocator,
+            "Low disk space: {d} MB available ({d} GB total)",
+            .{ available_mb, total_gb },
+        );
+        return .{
+            .name = name,
+            .passed = false,
+            .message = message,
+            .suggestion = try allocator.dupe(u8, "Free up disk space or run 'pantry cache clean'"),
+        };
+    }
+
+    const message = try std.fmt.allocPrint(
+        allocator,
+        "{d} MB available ({d} GB total)",
+        .{ available_mb, total_gb },
+    );
     return .{
         .name = name,
         .passed = true,
@@ -301,16 +351,69 @@ fn checkDiskSpace(allocator: std.mem.Allocator) !CheckResult {
     };
 }
 
-/// Check network connectivity
+/// Check network connectivity by making a HEAD request to the npm registry
 fn checkNetwork(allocator: std.mem.Allocator) !CheckResult {
     const name = try allocator.dupe(u8, "Network Connectivity");
 
-    // Simplified check - real implementation would try to connect to registry
-    const message = try allocator.dupe(u8, "Network check skipped (not implemented)");
+    const http = std.http;
 
+    var client = http.Client{ .allocator = allocator, .io = io_helper.getIo() };
+    defer client.deinit();
+
+    const uri = std.Uri.parse("https://registry.npmjs.org/") catch {
+        return .{
+            .name = name,
+            .passed = false,
+            .message = try allocator.dupe(u8, "Failed to parse registry URL"),
+        };
+    };
+
+    var req = client.request(.HEAD, uri, .{}) catch {
+        return .{
+            .name = name,
+            .passed = false,
+            .message = try allocator.dupe(u8, "Cannot connect to npm registry (https://registry.npmjs.org)"),
+            .suggestion = try allocator.dupe(u8, "Check your internet connection or proxy settings"),
+        };
+    };
+    defer req.deinit();
+
+    req.sendBodiless() catch {
+        return .{
+            .name = name,
+            .passed = false,
+            .message = try allocator.dupe(u8, "Failed to send request to npm registry"),
+            .suggestion = try allocator.dupe(u8, "Check your internet connection or firewall"),
+        };
+    };
+
+    var redirect_buffer: [4096]u8 = undefined;
+    const response = req.receiveHead(&redirect_buffer) catch {
+        return .{
+            .name = name,
+            .passed = false,
+            .message = try allocator.dupe(u8, "No response from npm registry"),
+            .suggestion = try allocator.dupe(u8, "Check your internet connection or DNS settings"),
+        };
+    };
+
+    if (response.head.status == .ok) {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "Connected to npm registry (https://registry.npmjs.org)"),
+        };
+    }
+
+    const message = try std.fmt.allocPrint(
+        allocator,
+        "npm registry returned status {d}",
+        .{@intFromEnum(response.head.status)},
+    );
     return .{
         .name = name,
-        .passed = true,
+        .passed = false,
         .message = message,
+        .suggestion = try allocator.dupe(u8, "Registry may be temporarily down; try again later"),
     };
 }

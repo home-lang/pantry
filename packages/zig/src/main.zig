@@ -922,12 +922,7 @@ fn cacheStatsAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const format = ctx.getOption("format") orelse "table";
 
-    // TODO: Implement format option
-    if (!std.mem.eql(u8, format, "table")) {
-        style.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
-    }
-
-    const result = try lib.commands.cacheStatsCommand(allocator, &[_][]const u8{});
+    const result = try lib.commands.cacheStatsCommand(allocator, &[_][]const u8{format});
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -942,10 +937,12 @@ fn cacheClearAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const force = ctx.hasOption("force");
 
-    // TODO: Implement force option (skip confirmation prompt when added)
-    _ = force;
+    const args: []const []const u8 = if (force)
+        &[_][]const u8{"--force"}
+    else
+        &[_][]const u8{};
 
-    const result = try lib.commands.cacheClearCommand(allocator, &[_][]const u8{});
+    const result = try lib.commands.cacheClearCommand(allocator, args);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {

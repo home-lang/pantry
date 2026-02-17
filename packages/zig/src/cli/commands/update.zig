@@ -264,7 +264,9 @@ fn updateConfigFile(
     try updateJsonFile(allocator, file, package_name, new_version);
 }
 
-/// Update version in a JSON config file
+/// Update version in a JSON config file.
+/// Uses text-level scanning to preserve formatting, indentation, and trailing
+/// commas exactly as they were — only the version string value changes.
 fn updateJsonFile(
     allocator: std.mem.Allocator,
     file: std.Io.File,
@@ -275,39 +277,40 @@ fn updateJsonFile(
     const content = try file.readToEndAlloc(io_helper.io, allocator, 10 * 1024 * 1024);
     defer allocator.free(content);
 
-    // Find the package in dependencies and update version
-    // We'll do a simple text replacement to preserve formatting/comments
     var result = std.ArrayList(u8).init(allocator);
     defer result.deinit();
 
-    // Pattern to find: "package_name": "version" in dependencies
-    // We need to handle both dependencies and devDependencies sections
-    // Pre-allocate the search pattern once (not per-iteration)
+    // Build the search key: "package_name"
     const pattern = try std.fmt.allocPrint(allocator, "\"{s}\"", .{package_name});
     defer allocator.free(pattern);
+
+    // Dependency section markers we recognise
+    const dep_sections = [_][]const u8{
+        "\"dependencies\"",
+        "\"devDependencies\"",
+        "\"peerDependencies\"",
+        "\"optionalDependencies\"",
+    };
 
     var i: usize = 0;
     var in_dependencies = false;
     var brace_depth: usize = 0;
 
     while (i < content.len) {
-        // Track if we're inside dependencies object
-        if (i + 19 < content.len) { // "peerDependencies" = 18 chars + quotes
-            if (std.mem.startsWith(u8, content[i..], "\"dependencies\"") or
-                std.mem.startsWith(u8, content[i..], "\"devDependencies\"") or
-                std.mem.startsWith(u8, content[i..], "\"peerDependencies\""))
-            {
-                in_dependencies = true;
-                brace_depth = 0;
-            }
-        } else if (i + 16 < content.len) {
-            if (std.mem.startsWith(u8, content[i..], "\"dependencies\"")) {
-                in_dependencies = true;
-                brace_depth = 0;
+        // --- detect entry into a dependency section ---
+        if (!in_dependencies or brace_depth == 0) {
+            for (dep_sections) |section| {
+                if (i + section.len <= content.len and
+                    std.mem.startsWith(u8, content[i..], section))
+                {
+                    in_dependencies = true;
+                    brace_depth = 0;
+                    break;
+                }
             }
         }
 
-        // Track brace depth when in dependencies
+        // --- track brace depth to know when we leave the section ---
         if (in_dependencies) {
             if (content[i] == '{') {
                 brace_depth += 1;
@@ -321,72 +324,69 @@ fn updateJsonFile(
             }
         }
 
-        // Look for package name pattern when in dependencies
-        if (in_dependencies and brace_depth > 0) {
-            if (i + pattern.len <= content.len and std.mem.startsWith(u8, content[i..], pattern)) {
-                // Found the package, copy the key
-                try result.appendSlice(pattern);
-                i += pattern.len;
+        // --- inside a dependency object, look for our package key ---
+        if (in_dependencies and brace_depth > 0 and
+            i + pattern.len <= content.len and
+            std.mem.startsWith(u8, content[i..], pattern))
+        {
+            // Copy the key verbatim
+            try result.appendSlice(content[i .. i + pattern.len]);
+            i += pattern.len;
 
-                // Skip whitespace and colon
-                while (i < content.len and (content[i] == ' ' or content[i] == '\t' or content[i] == ':')) {
-                    try result.append(content[i]);
+            // Copy whitespace / colon / whitespace between key and value
+            while (i < content.len and (content[i] == ' ' or content[i] == '\t' or
+                content[i] == '\n' or content[i] == '\r' or content[i] == ':'))
+            {
+                try result.append(content[i]);
+                i += 1;
+            }
+
+            // Expect opening quote of the version string
+            if (i < content.len and content[i] == '"') {
+                const version_start = i + 1; // position after opening "
+                i += 1; // skip opening quote
+
+                // Walk to closing quote, handling escape sequences
+                while (i < content.len and content[i] != '"') {
+                    if (content[i] == '\\' and i + 1 < content.len) {
+                        i += 1; // skip escaped char
+                    }
                     i += 1;
                 }
-
-                // Skip whitespace after colon
-                while (i < content.len and (content[i] == ' ' or content[i] == '\t')) {
-                    try result.append(content[i]);
-                    i += 1;
+                if (i < content.len) {
+                    i += 1; // skip closing quote
                 }
 
-                // Now we should be at the version string
-                if (i < content.len and content[i] == '"') {
-                    // Find the end of the version string, handling escape sequences
-                    const version_start = i;
-                    i += 1; // skip opening quote
-                    while (i < content.len and content[i] != '"') {
-                        if (content[i] == '\\' and i + 1 < content.len) {
-                            i += 1; // skip escaped character
-                        }
-                        i += 1;
+                // Extract the old version to preserve its range prefix
+                const old_version = content[version_start .. i - 1];
+                var prefix: []const u8 = "";
+                if (old_version.len > 0) {
+                    if (old_version[0] == '^' or old_version[0] == '~') {
+                        prefix = old_version[0..1];
+                    } else if (std.mem.startsWith(u8, old_version, ">=") or
+                        std.mem.startsWith(u8, old_version, "<="))
+                    {
+                        prefix = old_version[0..2];
+                    } else if (old_version[0] == '>' or old_version[0] == '<') {
+                        prefix = old_version[0..1];
                     }
-                    if (i < content.len) {
-                        i += 1; // skip closing quote
-                    }
-
-                    // Check if the old version had a prefix (^, ~, etc.)
-                    // Guard: ensure we found the closing quote
-                    if (i <= version_start + 1) {
-                        continue;
-                    }
-                    const old_version = content[version_start + 1 .. i - 1];
-                    var prefix: []const u8 = "";
-                    if (old_version.len > 0) {
-                        if (old_version[0] == '^' or old_version[0] == '~') {
-                            prefix = old_version[0..1];
-                        } else if (std.mem.startsWith(u8, old_version, ">=") or
-                            std.mem.startsWith(u8, old_version, "<="))
-                        {
-                            prefix = old_version[0..2];
-                        }
-                    }
-
-                    // Write new version with prefix preserved
-                    try result.append('"');
-                    try result.appendSlice(prefix);
-                    try result.appendSlice(new_version);
-                    try result.append('"');
-                    continue;
                 }
+
+                // Write the new version with the original prefix preserved
+                try result.append('"');
+                try result.appendSlice(prefix);
+                try result.appendSlice(new_version);
+                try result.append('"');
+                continue;
             }
         }
 
+        // --- default: copy byte as-is ---
         try result.append(content[i]);
         i += 1;
     }
 
-    // Write back to file
+    // Write back to file (truncate to new length)
     try file.seekTo(io_helper.io, 0);
     try io_helper.writeAllToFile(file, result.items);
     try file.setEndPos(io_helper.io, result.items.len);

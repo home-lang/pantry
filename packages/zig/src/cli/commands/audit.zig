@@ -9,6 +9,7 @@
 //! - JSON output support
 
 const std = @import("std");
+const http = std.http;
 const io_helper = @import("../../io_helper.zig");
 const lib = @import("../../lib.zig");
 const common = @import("common.zig");
@@ -565,129 +566,155 @@ fn generateScannerReport(
 // Vulnerability Querying
 // ============================================================================
 
-/// Query NPM registry for vulnerabilities
+/// Query NPM registry for vulnerabilities using the bulk advisory API.
+/// POST https://registry.npmjs.org/-/npm/v1/security/advisories/bulk
+/// Body: { "package_name": ["version"], ... }
 fn queryVulnerabilities(
     allocator: std.mem.Allocator,
     deps_map: std.StringHashMap(common.DependencyInfo),
     vulnerabilities: *std.ArrayList(Vulnerability),
 ) !void {
-    // Build audit request payload
-    var dependencies_obj = std.json.ObjectMap.init(allocator);
-    defer dependencies_obj.deinit();
+    // Build the bulk advisory request body:
+    // { "lodash": ["4.17.15"], "express": ["4.17.1"], ... }
+    var payload = std.json.ObjectMap.init(allocator);
+    defer payload.deinit();
 
     var it = deps_map.iterator();
     while (it.next()) |entry| {
         const dep_info = entry.value_ptr;
-        const version_value = std.json.Value{ .string = dep_info.version };
-        try dependencies_obj.put(entry.key_ptr.*, version_value);
+        // Strip range prefix to get the bare version
+        var ver = dep_info.version;
+        if (ver.len > 0 and (ver[0] == '^' or ver[0] == '~')) {
+            ver = ver[1..];
+        } else if (std.mem.startsWith(u8, ver, ">=") or std.mem.startsWith(u8, ver, "<=")) {
+            ver = ver[2..];
+        }
+
+        var arr = std.json.Array.init(allocator);
+        try arr.append(.{ .string = ver });
+        try payload.put(entry.key_ptr.*, .{ .array = arr });
     }
 
-    // For now, simulate a vulnerability database check
-    // In production, this would make HTTP request to:
-    // POST https://registry.npmjs.org/-/npm/v1/security/audits/quick
-    //
-    // Example known vulnerable packages for demonstration:
-    const known_vulns = [_]struct {
-        name: []const u8,
-        vulnerable_version: []const u8,
-    }{
-        .{ .name = "lodash", .vulnerable_version = "<4.17.21" },
-        .{ .name = "minimist", .vulnerable_version = "<1.2.6" },
-        .{ .name = "axios", .vulnerable_version = "<0.21.1" },
-        .{ .name = "node-fetch", .vulnerable_version = "<2.6.7" },
-    };
+    const payload_value = std.json.Value{ .object = payload };
+    const json_bytes = std.json.Stringify.valueAlloc(allocator, payload_value, .{}) catch return;
+    defer allocator.free(json_bytes);
 
-    // Check each dependency against known vulnerabilities
-    var dep_iter = deps_map.iterator();
-    while (dep_iter.next()) |entry| {
-        const pkg_name = entry.key_ptr.*;
-        const dep_info = entry.value_ptr;
+    // Make HTTP request to npm bulk advisory endpoint
+    var client = http.Client{ .allocator = allocator, .io = io_helper.getIo() };
+    defer client.deinit();
 
-        // Check against known vulnerabilities
-        for (known_vulns) |vuln_pattern| {
-            if (std.mem.eql(u8, pkg_name, vuln_pattern.name)) {
-                // Check if version matches vulnerable pattern
-                if (isVersionVulnerable(dep_info.version, vuln_pattern.vulnerable_version)) {
-                    const vuln = try createVulnerability(
-                        allocator,
-                        pkg_name,
-                        dep_info.version,
-                        vuln_pattern.vulnerable_version,
-                    );
-                    try vulnerabilities.append(allocator, vuln);
-                }
-            }
+    const uri = std.Uri.parse("https://registry.npmjs.org/-/npm/v1/security/advisories/bulk") catch return;
+
+    var req = client.request(.POST, uri, .{
+        .extra_headers = &[_]http.Header{
+            .{ .name = "Content-Type", .value = "application/json" },
+        },
+    }) catch return;
+    defer req.deinit();
+
+    // Use sendBodyComplete which sets transfer_encoding and writes body in one call
+    const json_buf = @constCast(json_bytes);
+    req.sendBodyComplete(json_buf) catch return;
+
+    var redirect_buffer: [4096]u8 = undefined;
+    var response = req.receiveHead(&redirect_buffer) catch return;
+
+    if (response.head.status != .ok) return;
+
+    const body_reader = response.reader(&.{});
+    const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch return;
+    defer allocator.free(body);
+
+    // Parse the response — npm returns:
+    // { "package_name": [ { "id": 123, "title": "...", "severity": "high",
+    //     "vulnerable_versions": "<4.17.21", "patched_versions": ">=4.17.21",
+    //     "url": "https://github.com/advisories/GHSA-...", "cwe": ["CWE-79"] }, ... ] }
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{}) catch return;
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return;
+
+    var pkg_iter = parsed.value.object.iterator();
+    while (pkg_iter.next()) |pkg_entry| {
+        const pkg_name = pkg_entry.key_ptr.*;
+        const advisories_val = pkg_entry.value_ptr.*;
+
+        if (advisories_val != .array) continue;
+
+        for (advisories_val.array.items) |advisory| {
+            if (advisory != .object) continue;
+            const adv = advisory.object;
+
+            const vuln = parseAdvisory(allocator, pkg_name, adv) catch continue;
+            try vulnerabilities.append(allocator, vuln);
         }
     }
 }
 
-/// Check if a version matches a vulnerability pattern
-fn isVersionVulnerable(version: []const u8, pattern: []const u8) bool {
-    // Simple version comparison - in production would use semver library
-    // For now, just check if it starts with the vulnerable prefix
-    if (std.mem.startsWith(u8, pattern, "<")) {
-        const min_version = pattern[1..];
-        // Simplified: just string comparison (not proper semver)
-        return std.mem.lessThan(u8, version, min_version);
-    }
-    return false;
-}
-
-/// Create a vulnerability report
-fn createVulnerability(
+/// Parse a single advisory object from the npm API response into a Vulnerability.
+fn parseAdvisory(
     allocator: std.mem.Allocator,
     package_name: []const u8,
-    current_version: []const u8,
-    vulnerable_versions: []const u8,
+    adv: std.json.ObjectMap,
 ) !Vulnerability {
-    // Generate CVE ID (in production, this comes from the API)
-    const cve_id = try std.fmt.allocPrint(
-        allocator,
-        "CVE-2024-{d}",
-        .{blk: {
-            var seed: [8]u8 = undefined;
-            io_helper.randomBytes(&seed);
-            var prng = std.Random.DefaultPrng.init(@bitCast(seed));
-            break :blk prng.random().intRangeAtMost(u32, 10000, 99999);
-        }},
-    );
+    // Advisory ID — npm uses numeric IDs; we stringify them or use "url" as id
+    const id_str = if (adv.get("github_advisory_id")) |gha|
+        (if (gha == .string) try allocator.dupe(u8, gha.string) else try allocator.dupe(u8, "unknown"))
+    else if (adv.get("id")) |id_val| blk: {
+        break :blk switch (id_val) {
+            .integer => |n| try std.fmt.allocPrint(allocator, "NPMSA-{d}", .{n}),
+            .string => try allocator.dupe(u8, id_val.string),
+            else => try allocator.dupe(u8, "unknown"),
+        };
+    } else try allocator.dupe(u8, "unknown");
 
-    const title = try std.fmt.allocPrint(
-        allocator,
-        "Security vulnerability in {s}",
-        .{package_name},
-    );
-
-    const url = try std.fmt.allocPrint(
-        allocator,
-        "https://nvd.nist.gov/vuln/detail/{s}",
-        .{cve_id},
-    );
-
-    // Determine severity based on package popularity (simplified)
-    const severity: Severity = if (std.mem.eql(u8, package_name, "lodash") or
-        std.mem.eql(u8, package_name, "axios"))
-        .high
-    else if (std.mem.eql(u8, package_name, "minimist"))
-        .moderate
+    const title = if (adv.get("title")) |t|
+        (if (t == .string) try allocator.dupe(u8, t.string) else try std.fmt.allocPrint(allocator, "Vulnerability in {s}", .{package_name}))
     else
-        .low;
+        try std.fmt.allocPrint(allocator, "Vulnerability in {s}", .{package_name});
 
-    const patched = try std.fmt.allocPrint(
-        allocator,
-        ">={s}",
-        .{current_version},
-    );
+    const severity_str = if (adv.get("severity")) |s|
+        (if (s == .string) s.string else "low")
+    else
+        "low";
+    const severity = Severity.fromString(severity_str) orelse .low;
+
+    const vulnerable_versions = if (adv.get("vulnerable_versions")) |vv|
+        (if (vv == .string) try allocator.dupe(u8, vv.string) else try allocator.dupe(u8, "*"))
+    else
+        try allocator.dupe(u8, "*");
+
+    const patched_versions = if (adv.get("patched_versions")) |pv|
+        (if (pv == .string) try allocator.dupe(u8, pv.string) else null)
+    else
+        null;
+
+    const url = if (adv.get("url")) |u|
+        (if (u == .string) try allocator.dupe(u8, u.string) else try std.fmt.allocPrint(allocator, "https://www.npmjs.com/advisories", .{}))
+    else
+        try std.fmt.allocPrint(allocator, "https://www.npmjs.com/advisories", .{});
+
+    // CWE — npm returns an array of strings
+    var cwe: ?[]const u8 = null;
+    if (adv.get("cwe")) |cwe_val| {
+        if (cwe_val == .array and cwe_val.array.items.len > 0) {
+            if (cwe_val.array.items[0] == .string) {
+                cwe = try allocator.dupe(u8, cwe_val.array.items[0].string);
+            }
+        } else if (cwe_val == .string) {
+            cwe = try allocator.dupe(u8, cwe_val.string);
+        }
+    }
 
     return Vulnerability{
-        .id = cve_id,
+        .id = id_str,
         .title = title,
         .severity = severity,
         .package_name = try allocator.dupe(u8, package_name),
-        .vulnerable_versions = try allocator.dupe(u8, vulnerable_versions),
-        .patched_versions = patched,
+        .vulnerable_versions = vulnerable_versions,
+        .patched_versions = patched_versions,
         .url = url,
-        .cwe = try allocator.dupe(u8, "CWE-79"),
+        .cwe = cwe,
     };
 }
 

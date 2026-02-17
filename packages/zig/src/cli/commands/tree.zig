@@ -105,25 +105,26 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         allocator.free(deps);
     }
 
-    // Build dependency tree
+    // Build dependency tree with transitive resolution from node_modules
     var root = try PackageNode.init(allocator, "root", "0.0.0", .normal);
     defer root.deinit();
+
+    // Track visited packages to prevent infinite cycles
+    var visited = std.StringHashMap(void).init(allocator);
+    defer visited.deinit();
 
     for (deps) |dep| {
         // Filter based on options
         if (!options.show_dev and dep.dep_type == .dev) continue;
         if (!options.show_peer and dep.dep_type == .peer) continue;
 
-        const node = try PackageNode.init(
-            allocator,
-            dep.name,
-            dep.version,
-            switch (dep.dep_type) {
-                .normal => .normal,
-                .dev => .dev,
-                .peer => .peer,
-            },
-        );
+        const dep_type: PackageNode.DepType = switch (dep.dep_type) {
+            .normal => .normal,
+            .dev => .dev,
+            .peer => .peer,
+        };
+
+        const node = try buildNodeFromModules(allocator, cwd, dep.name, dep.version, dep_type, &visited, options.max_depth orelse 10, 0);
         try root.dependencies.append(root.allocator, node);
     }
 
@@ -147,6 +148,82 @@ pub fn treeCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     }
 
     return .{ .exit_code = 0 };
+}
+
+/// Build a PackageNode by reading transitive dependencies from node_modules.
+/// Falls back to a leaf node (no children) when the package.json cannot be read.
+fn buildNodeFromModules(
+    allocator: std.mem.Allocator,
+    project_root: []const u8,
+    name: []const u8,
+    version: []const u8,
+    dep_type: PackageNode.DepType,
+    visited: *std.StringHashMap(void),
+    max_depth: usize,
+    depth: usize,
+) !*PackageNode {
+    const node = try PackageNode.init(allocator, name, version, dep_type);
+
+    // Stop recursing if we've hit the depth limit or already visited this package
+    if (depth >= max_depth) return node;
+    if (visited.contains(name)) return node;
+
+    // Mark as visited (use the node's owned name slice so the key lives long enough)
+    try visited.put(node.name, {});
+
+    // Try to read node_modules/<name>/package.json for transitive deps
+    const pkg_json_path = try std.fmt.allocPrint(
+        allocator,
+        "{s}/node_modules/{s}/package.json",
+        .{ project_root, name },
+    );
+    defer allocator.free(pkg_json_path);
+
+    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch {
+        // Package not installed or unreadable — return as leaf
+        _ = visited.remove(name);
+        return node;
+    };
+    defer allocator.free(content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+        _ = visited.remove(name);
+        return node;
+    };
+    defer parsed.deinit();
+
+    if (parsed.value != .object) {
+        _ = visited.remove(name);
+        return node;
+    }
+
+    const obj = parsed.value.object;
+
+    // Read "dependencies" from the package.json
+    if (obj.get("dependencies")) |deps_val| {
+        if (deps_val == .object) {
+            var it = deps_val.object.iterator();
+            while (it.next()) |entry| {
+                const child_name = entry.key_ptr.*;
+                const child_ver = if (entry.value_ptr.* == .string) entry.value_ptr.string else "*";
+
+                const child = try buildNodeFromModules(
+                    allocator,
+                    project_root,
+                    child_name,
+                    child_ver,
+                    .normal,
+                    visited,
+                    max_depth,
+                    depth + 1,
+                );
+                try node.dependencies.append(node.allocator, child);
+            }
+        }
+    }
+
+    _ = visited.remove(name);
+    return node;
 }
 
 fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: TreeOptions) !void {

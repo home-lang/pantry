@@ -6,6 +6,7 @@
 //! Example: A React component library has React as a peer dependency
 
 const std = @import("std");
+const SemverConstraint = @import("../../registry/npm.zig").SemverConstraint;
 
 /// Peer dependency requirement
 pub const PeerDependency = struct {
@@ -276,11 +277,60 @@ pub const PeerDependencyManager = struct {
     }
 };
 
-/// Check if a version satisfies a range (simplified)
+/// Check if a version satisfies a semver range constraint.
+/// Supports compound ranges separated by spaces (e.g. ">=1.0.0 <2.0.0")
+/// and logical OR ranges separated by "||" (e.g. "^1.0.0 || ^2.0.0").
 fn satisfiesRange(version: []const u8, range: []const u8) bool {
-    // Simplified implementation - always returns true
-    // Real implementation would use proper semver range matching
-    _ = version;
-    _ = range;
+    // Handle wildcard / empty ranges
+    if (range.len == 0 or std.mem.eql(u8, range, "*") or std.mem.eql(u8, range, "latest")) {
+        return true;
+    }
+
+    // Split on "||" for logical OR groups — any group matching is sufficient
+    var or_iter = std.mem.splitSequence(u8, range, "||");
+    while (or_iter.next()) |or_segment| {
+        const trimmed = std.mem.trim(u8, or_segment, " \t");
+        if (trimmed.len == 0) continue;
+
+        if (satisfiesAndGroup(version, trimmed)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/// Check if a version satisfies all constraints in a space-separated AND group.
+/// e.g. ">=1.0.0 <2.0.0" means version must satisfy BOTH constraints.
+fn satisfiesAndGroup(version: []const u8, group: []const u8) bool {
+    var pos: usize = 0;
+    while (pos < group.len) {
+        // Skip whitespace
+        while (pos < group.len and (group[pos] == ' ' or group[pos] == '\t')) {
+            pos += 1;
+        }
+        if (pos >= group.len) break;
+
+        // Find end of this constraint token
+        const start = pos;
+        // Advance past operator prefix
+        while (pos < group.len and (group[pos] == '^' or group[pos] == '~' or
+            group[pos] == '>' or group[pos] == '<' or group[pos] == '=' or group[pos] == 'v'))
+        {
+            pos += 1;
+        }
+        // Advance past version number (digits, dots, hyphens, plus)
+        while (pos < group.len and group[pos] != ' ' and group[pos] != '\t') {
+            pos += 1;
+        }
+
+        const token = std.mem.trim(u8, group[start..pos], " \t");
+        if (token.len == 0) continue;
+
+        const constraint = SemverConstraint.parse(token) catch return false;
+        if (!constraint.satisfies(version)) {
+            return false;
+        }
+    }
     return true;
 }

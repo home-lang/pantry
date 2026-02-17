@@ -12,13 +12,49 @@ const cache = lib.cache;
 // Cache Stats Command
 // ============================================================================
 
-/// Show cache statistics
-pub fn cacheStatsCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
+/// Show cache statistics.
+/// Accepts a format argument: "table" (default), "json", or "minimal".
+pub fn cacheStatsCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
 
     const stats = pkg_cache.stats();
 
+    // Determine output format from args (first non-flag argument is treated as format)
+    var format: []const u8 = "table";
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "json") or
+            std.mem.eql(u8, arg, "minimal") or
+            std.mem.eql(u8, arg, "table"))
+        {
+            format = arg;
+        }
+    }
+
+    if (std.mem.eql(u8, format, "json")) {
+        const json_msg = try std.fmt.allocPrint(
+            allocator,
+            "{{\"total_packages\":{d},\"total_size\":{d},\"total_size_mb\":{d:.2}}}",
+            .{
+                stats.total_packages,
+                stats.total_size,
+                @as(f64, @floatFromInt(stats.total_size)) / 1024.0 / 1024.0,
+            },
+        );
+        return .{ .exit_code = 0, .message = json_msg };
+    } else if (std.mem.eql(u8, format, "minimal")) {
+        const msg = try std.fmt.allocPrint(
+            allocator,
+            "{d} packages, {d:.2} MB",
+            .{
+                stats.total_packages,
+                @as(f64, @floatFromInt(stats.total_size)) / 1024.0 / 1024.0,
+            },
+        );
+        return .{ .exit_code = 0, .message = msg };
+    }
+
+    // Default: table format
     style.print("Cache Statistics:\n\n", .{});
     style.print("  Total packages: {d}\n", .{stats.total_packages});
     style.print("  Total size: {d} bytes ({d:.2} MB)\n", .{
@@ -33,12 +69,46 @@ pub fn cacheStatsCommand(allocator: std.mem.Allocator, _: []const []const u8) !C
 // Cache Clear Command
 // ============================================================================
 
-/// Clear all cache
-pub fn cacheClearCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
+/// Clear all cache.
+/// When `force` is false (default), prompts for confirmation unless stdin is not a tty.
+pub fn cacheClearCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
 
     const stats_before = pkg_cache.stats();
+
+    // Check for --force flag
+    var force = false;
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) {
+            force = true;
+        }
+    }
+
+    if (!force and stats_before.total_packages > 0) {
+        style.print("This will remove {d} cached package(s) ({d:.2} MB). Continue? [y/N] ", .{
+            stats_before.total_packages,
+            @as(f64, @floatFromInt(stats_before.total_size)) / 1024.0 / 1024.0,
+        });
+
+        // Read a single line from stdin for confirmation
+        // Read a line from stdin using POSIX read
+        var buf: [16]u8 = undefined;
+        var pos: usize = 0;
+        while (pos < buf.len) {
+            const n = std.posix.read(std.posix.STDIN_FILENO, buf[pos..][0..1]) catch break;
+            if (n == 0) break;
+            if (buf[pos] == '\n') break;
+            pos += 1;
+        }
+        const answer = std.mem.trim(u8, buf[0..pos], " \t\r");
+
+        if (!std.mem.eql(u8, answer, "y") and !std.mem.eql(u8, answer, "Y") and
+            !std.mem.eql(u8, answer, "yes"))
+        {
+            return CommandResult.success(allocator, "Aborted");
+        }
+    }
 
     style.print("Clearing cache...\n", .{});
     try pkg_cache.clear();
