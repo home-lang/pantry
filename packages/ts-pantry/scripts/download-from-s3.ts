@@ -332,7 +332,10 @@ async function installFromConfig(
     installDir: string
     skipFallback: boolean
   }
-): Promise<{ success: string[]; failed: string[] }> {
+): Promise<{
+  success: string[]
+  failed: string[]
+}> {
   const config = parsePantryYaml(configPath)
 
   if (!config) {

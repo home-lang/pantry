@@ -69,7 +69,8 @@ function looksLikeKeyValue(trimmedLine: string): boolean {
 // Only strips when # is preceded by a space (YAML spec: not inside quoted strings, not in URLs)
 function stripYamlComment(val: string): string {
   // Don't strip from quoted strings
-  if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) return val
+  if ((val.startsWith('\'') && val.endsWith('\'')) || (val.startsWith('"') && val.endsWith('"')))
+    return val
   // Find ` #` pattern — must be preceded by a space
   const idx = val.indexOf(' #')
   if (idx < 0) return val
@@ -124,7 +125,10 @@ function parseYamlValue(
       while (j < lines.length) {
         const bl = lines[j]
         const blt = bl.trim()
-        if (!blt || blt.startsWith('#')) { j++; continue }
+        if (!blt || blt.startsWith('#')) {
+          j++
+          continue
+        }
         const bli = bl.search(/\S/)
         if (bli >= blockIndent && blt.startsWith('- ')) {
           const itemContent = blt.slice(2)
@@ -136,7 +140,12 @@ function parseYamlValue(
             while (j < lines.length) {
               const ml = lines[j]
               const mli = ml.search(/\S/)
-              if (ml.trim() === '' || mli >= mlIndent) { mlLines.push(ml.slice(mlIndent) || ''); j++ } else break
+              if (ml.trim() === '' || mli >= mlIndent) {
+                mlLines.push(ml.slice(mlIndent) || '')
+                j++
+              } else {
+                break
+              }
             }
             runArr.push(mlLines.join('\n').trim())
           } else {
@@ -172,7 +181,8 @@ function parseYamlValue(
 
   // Plain inline value — strip YAML inline comments
   let val = stripYamlComment(rawVal)
-  if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1)
+  if (val.startsWith('\'') && val.endsWith('\''))
+    val = val.slice(1, -1)
   if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1)
   return val
 }
@@ -182,7 +192,10 @@ function parseYaml(content: string): Record<string, any> {
   const result: Record<string, any> = {}
   const lines = content.split('\n')
   // Stack now stores the actual object to add properties to
-  const stack: { indent: number; obj: any }[] = [{ indent: -1, obj: result }]
+  const stack: Array<{
+    indent: number
+    obj: any
+  }> = [{ indent: -1, obj: result }]
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
@@ -237,8 +250,10 @@ function parseYaml(content: string): Record<string, any> {
               firstVal = firstVal.value
             }
           } else {
-            if (firstVal.startsWith("'") && firstVal.endsWith("'")) firstVal = firstVal.slice(1, -1)
-            if (firstVal.startsWith('"') && firstVal.endsWith('"')) firstVal = firstVal.slice(1, -1)
+            if (firstVal.startsWith('\'') && firstVal.endsWith('\''))
+              firstVal = firstVal.slice(1, -1)
+            if (firstVal.startsWith('"') && firstVal.endsWith('"'))
+              firstVal = firstVal.slice(1, -1)
           }
           itemObj[firstKey] = firstVal
 
@@ -246,7 +261,10 @@ function parseYaml(content: string): Record<string, any> {
           while (i + 1 < lines.length) {
             const nextLine = lines[i + 1]
             const nextTrimmed = nextLine.trim()
-            if (!nextTrimmed || nextTrimmed.startsWith('#')) { i++; continue }
+            if (!nextTrimmed || nextTrimmed.startsWith('#')) {
+              i++
+              continue
+            }
             const nextIndent = nextLine.search(/\S/)
             if (nextIndent >= siblingIndent && !nextTrimmed.startsWith('- ')) {
               const nc = nextTrimmed.indexOf(':')
@@ -263,8 +281,10 @@ function parseYaml(content: string): Record<string, any> {
                     i++
                   }
                 } else {
-                  if (sibVal.startsWith("'") && sibVal.endsWith("'")) sibVal = sibVal.slice(1, -1)
-                  if (sibVal.startsWith('"') && sibVal.endsWith('"')) sibVal = sibVal.slice(1, -1)
+                  if (sibVal.startsWith('\'') && sibVal.endsWith('\''))
+                    sibVal = sibVal.slice(1, -1)
+                  if (sibVal.startsWith('"') && sibVal.endsWith('"'))
+                    sibVal = sibVal.slice(1, -1)
                   i++
                 }
                 itemObj[sibKey] = sibVal
@@ -291,8 +311,16 @@ function parseYaml(content: string): Record<string, any> {
           while (i + 1 < lines.length) {
             const nextLine = lines[i + 1]
             const nextTrimmed = nextLine.trim()
-            if (!nextTrimmed) { i++; continue } // skip blank lines
-            if (nextTrimmed.startsWith('#')) { i++; continue } // skip comments in continuation
+            // skip blank lines
+            if (!nextTrimmed) {
+              i++
+              continue
+            }
+            // skip comments in continuation
+            if (nextTrimmed.startsWith('#')) {
+              i++
+              continue
+            }
             const nextIndent = nextLine.search(/\S/)
             if (nextIndent >= contIndent && !nextTrimmed.startsWith('- ')) {
               // Strip inline comments (# ...) from continuation lines
@@ -396,8 +424,10 @@ function parseYaml(content: string): Record<string, any> {
         if (colonPos > 0) {
           const k = pair.slice(0, colonPos).trim()
           let v: any = pair.slice(colonPos + 1).trim()
-          if (v.startsWith('"') && v.endsWith('"')) v = v.slice(1, -1)
-          if (v.startsWith("'") && v.endsWith("'")) v = v.slice(1, -1)
+          if (v.startsWith('"') && v.endsWith('"'))
+            v = v.slice(1, -1)
+          if (v.startsWith('\'') && v.endsWith('\''))
+            v = v.slice(1, -1)
           if (v === 'true') v = true
           else if (v === 'false') v = false
           else if (/^\d+$/.test(v)) v = parseInt(v, 10)
@@ -411,7 +441,7 @@ function parseYaml(content: string): Record<string, any> {
       currentObj[key] = inner ? inner.split(',').map((v: string) => {
         v = v.trim()
         if (v.startsWith('"') && v.endsWith('"')) return v.slice(1, -1)
-        if (v.startsWith("'") && v.endsWith("'")) return v.slice(1, -1)
+        if (v.startsWith('\'') && v.endsWith('\'')) return v.slice(1, -1)
         return v
       }) : []
     } else {
@@ -442,7 +472,12 @@ interface PackageRecipe {
   dependencies?: Record<string, any>
   build?: {
     dependencies?: Record<string, any>
-    script?: (string | { run: string; if?: string; 'working-directory'?: string; prop?: string })[]
+    script?: Array<string | {
+      run: string
+      if?: string
+      'working-directory'?: string
+      prop?: string
+    }>
     env?: Record<string, any>
   }
   versions?: any
@@ -510,7 +545,12 @@ function determineVersionTag(yamlContent: string, version: string): string {
 }
 
 // Load build overrides from src/pantry/{domain}/build-overrides.json
-function getBuildOverrides(pkgName: string): { description?: string; extraConfigureArgs?: string[] } | null {
+interface BuildOverrides {
+  description?: string
+  extraConfigureArgs?: string[]
+}
+
+function getBuildOverrides(pkgName: string): BuildOverrides | null {
   const overridesPath = join(process.cwd(), 'src', 'pantry', pkgName, 'build-overrides.json')
   if (!existsSync(overridesPath)) return null
 

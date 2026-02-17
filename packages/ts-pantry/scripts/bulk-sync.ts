@@ -23,7 +23,12 @@ interface PackageInfo {
   githubUrl?: string
 }
 
-function detectPlatform(): { platform: string; pkgxPlatform: string } {
+interface BulkSyncPlatformInfo {
+  platform: string
+  pkgxPlatform: string
+}
+
+function detectPlatform(): BulkSyncPlatformInfo {
   const os = process.platform === 'darwin' ? 'darwin' : 'linux'
   const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64'
   return {
@@ -122,7 +127,12 @@ function findBestVersion(ourVersion: string, pkgxVersions: string[]): string | n
   return pkgxVersions[pkgxVersions.length - 1]
 }
 
-async function downloadFromPkgx(domain: string, version: string, destDir: string): Promise<{ success: boolean; actualVersion?: string }> {
+interface DownloadResult {
+  success: boolean
+  actualVersion?: string
+}
+
+async function downloadFromPkgx(domain: string, version: string, destDir: string): Promise<DownloadResult> {
   const { pkgxPlatform } = detectPlatform()
   const [os, arch] = pkgxPlatform.split('/')
 
@@ -208,7 +218,7 @@ async function downloadFromPkgx(domain: string, version: string, destDir: string
 }
 
 // Fallback: Download from GitHub Releases
-async function downloadFromGitHub(domain: string, version: string, githubUrl: string, programs: readonly string[] | undefined, destDir: string): Promise<{ success: boolean; actualVersion?: string }> {
+async function downloadFromGitHub(domain: string, version: string, githubUrl: string, programs: readonly string[] | undefined, destDir: string): Promise<DownloadResult> {
   const { platform } = detectPlatform()
   const os = process.platform === 'darwin' ? 'darwin' : 'linux'
   const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64'
@@ -246,7 +256,13 @@ async function downloadFromGitHub(domain: string, version: string, githubUrl: st
       return { success: false }
     }
 
-    const release = await response.json() as { tag_name: string; assets: { name: string; browser_download_url: string }[] }
+    const release = await response.json() as {
+      tag_name: string
+      assets: Array<{
+        name: string
+        browser_download_url: string
+      }>
+    }
     const releaseVersion = release.tag_name.replace(/^v/, '')
 
     // Find the right asset for our platform
@@ -258,11 +274,11 @@ async function downloadFromGitHub(domain: string, version: string, githubUrl: st
       .filter(a => {
         const name = a.name.toLowerCase()
         // Must be a downloadable archive or binary
-        return name.endsWith('.tar.gz') || name.endsWith('.tgz') ||
-               name.endsWith('.zip') || name.endsWith('.tar.xz') ||
-               (!name.includes('.') && !name.endsWith('.sha256') && !name.endsWith('.sig'))  ||
-               // Single binary without extension (check for platform in name)
-               (osPatterns.some(p => name.includes(p)) && !name.endsWith('.sha256') && !name.endsWith('.sig') && !name.endsWith('.sbom'))
+        return name.endsWith('.tar.gz') || name.endsWith('.tgz')
+          || name.endsWith('.zip') || name.endsWith('.tar.xz')
+          || (!name.includes('.') && !name.endsWith('.sha256') && !name.endsWith('.sig'))
+          // Single binary without extension (check for platform in name)
+          || (osPatterns.some(p => name.includes(p)) && !name.endsWith('.sha256') && !name.endsWith('.sig') && !name.endsWith('.sbom'))
       })
       .map(a => {
         const name = a.name.toLowerCase()

@@ -333,9 +333,9 @@ function isMachO(filePath: string): boolean {
 
     // Mach-O magic: feedface, feedfacf, cafebabe (universal), bebafeca
     const magic = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]
-    return magic === 0xfeedface || magic === 0xfeedfacf ||
-           magic === 0xcafebabe || magic === 0xbebafeca ||
-           magic === 0xcffaedfe || magic === 0xcefaedfe
+    return magic === 0xfeedface || magic === 0xfeedfacf
+      || magic === 0xcafebabe || magic === 0xbebafeca
+      || magic === 0xcffaedfe || magic === 0xcefaedfe
   } catch {
     return false
   }

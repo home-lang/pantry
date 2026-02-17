@@ -32,7 +32,13 @@ interface PackageConfig {
   needsCompile?: boolean
 }
 
-function detectPlatform(): { platform: string; os: string; arch: string } {
+interface SyncPlatformInfo {
+  platform: string
+  os: string
+  arch: string
+}
+
+function detectPlatform(): SyncPlatformInfo {
   const os = process.platform === 'darwin' ? 'darwin' : 'linux'
   const arch = process.arch === 'arm64' ? 'arm64' : 'x86-64'
   return { platform: `${os}-${arch}`, os, arch }
@@ -139,7 +145,10 @@ const packages: Record<string, PackageConfig> = {
     name: 'node',
     getLatestVersion: async () => {
       const response = await fetch('https://nodejs.org/dist/index.json')
-      const data = await response.json() as { version: string; lts: boolean | string }[]
+      const data = await response.json() as Array<{
+        version: string
+        lts: boolean | string
+      }>
       // Get latest LTS
       const lts = data.find(v => v.lts)
       return lts ? lts.version.replace(/^v/, '') : data[0].version.replace(/^v/, '')
@@ -206,7 +215,12 @@ const packages: Record<string, PackageConfig> = {
     getLatestVersion: async () => {
       // Get latest from PostgreSQL website
       const response = await fetch('https://www.postgresql.org/versions.json')
-      const data = await response.json() as { major: string; latestMinor: number; current?: boolean; supported?: boolean }[]
+      const data = await response.json() as Array<{
+        major: string
+        latestMinor: number
+        current?: boolean
+        supported?: boolean
+      }>
       // Find the current version, or the latest supported one
       const current = data.find(v => v.current) || data.filter(v => v.supported).pop()
       if (!current) throw new Error('No current PostgreSQL version found')
@@ -315,7 +329,10 @@ exec node "$(dirname "$0")/yarn.js" "$@"
     name: 'go',
     getLatestVersion: async () => {
       const response = await fetch('https://go.dev/dl/?mode=json')
-      const data = await response.json() as { version: string; stable: boolean }[]
+      const data = await response.json() as Array<{
+        version: string
+        stable: boolean
+      }>
       const stable = data.find(v => v.stable)
       return stable ? stable.version.replace(/^go/, '') : '1.23.0'
     },
@@ -359,7 +376,10 @@ exec node "$(dirname "$0")/yarn.js" "$@"
       // Get latest from astral-sh/python-build-standalone
       const response = await fetch('https://api.github.com/repos/astral-sh/python-build-standalone/releases/latest', { headers: githubHeaders() })
       if (!response.ok) return '3.13.12'
-      const data = await response.json() as { tag_name: string; assets: { name: string }[] }
+      const data = await response.json() as {
+        tag_name: string
+        assets: Array<{ name: string }>
+      }
       // Find the highest 3.x version from the asset names
       const versions = data.assets
         .map(a => a.name.match(/cpython-(\d+\.\d+\.\d+)\+/)?.[1])
@@ -397,13 +417,18 @@ exec node "$(dirname "$0")/yarn.js" "$@"
 // Main
 // ============================================
 
+interface SyncResult {
+  status: string
+  version: string
+}
+
 async function syncPackage(
   pkgKey: string,
   config: PackageConfig,
   bucket: string,
   region: string,
   force: boolean
-): Promise<{ status: 'skipped' | 'uploaded' | 'failed'; version: string }> {
+): Promise<SyncResult> {
   const { platform } = detectPlatform()
 
   console.log(`\n${'─'.repeat(50)}`)
@@ -563,7 +588,7 @@ Examples:
   }
 
   // Sync each package
-  const results: Record<string, { status: string; version: string }> = {}
+  const results: Record<string, SyncResult> = {}
 
   for (const [key, config] of packagesToSync) {
     results[config.domain] = await syncPackage(key, config, bucket, region, values.force || false)

@@ -174,7 +174,10 @@ function evaluateVersionRange(range: string, version: string): boolean {
   const vParts = version.split('.').map(Number)
 
   // Parse compound ranges (e.g. ">=3.8<3.8.4")
-  const constraints: { op: string; ver: number[] }[] = []
+  const constraints: Array<{
+    op: string
+    ver: number[]
+  }> = []
   const re = /(>=|<=|>|<|~|\^|=)?(\d+(?:\.\d+)*)/g
   let match: RegExpExecArray | null
   while ((match = re.exec(range)) !== null) {
@@ -643,7 +646,7 @@ export function generateBuildScript(
   sections.push('      mkdir -p "$prefix/bin"')
   sections.push('      for cmd_name in "$@"; do')
   sections.push('        if [ -f "$prefix/venv/bin/$cmd_name" ]; then')
-  sections.push("          printf '#!/bin/sh\\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\\nexec \"$SCRIPT_DIR/../venv/bin/%s\" \"$@\"\\n' \"$cmd_name\" > \"$prefix/bin/$cmd_name\"")
+  sections.push('          printf \'#!/bin/sh\\nSCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"\\nexec "$SCRIPT_DIR/../venv/bin/%s" "$@"\\n\' "$cmd_name" > "$prefix/bin/$cmd_name"')
   sections.push('          chmod +x "$prefix/bin/$cmd_name"')
   sections.push('        fi')
   sections.push('      done')
@@ -667,7 +670,7 @@ export function generateBuildScript(
   sections.push('  "$prefix/venv/bin/pip" install "$_pip_dir"')
   sections.push('  mkdir -p "$(dirname "$target")"')
   sections.push('  if [ -f "$prefix/venv/bin/$cmd_name" ]; then')
-  sections.push("    printf '#!/bin/sh\\nSCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\\nexec \"$SCRIPT_DIR/../venv/bin/%s\" \"$@\"\\n' \"$cmd_name\" > \"$target\"")
+  sections.push('    printf \'#!/bin/sh\\nSCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"\\nexec "$SCRIPT_DIR/../venv/bin/%s" "$@"\\n\' "$cmd_name" > "$target"')
   sections.push('    chmod +x "$target"')
   sections.push('  fi')
   sections.push('}')
@@ -765,7 +768,7 @@ export function generateBuildScript(
   sections.push('    [ -n "$real_cc" ] || continue')
   // Use single-quoted heredoc (<<'CCEOF') to prevent shell expansion.
   // Embed the real compiler path via sed replacement after writing.
-  sections.push("    cat > \"$wrapper_dir/$cc_name\" <<'CCEOF'")
+  sections.push('    cat > "$wrapper_dir/$cc_name" <<\'CCEOF\'')
   sections.push('#!/bin/bash')
   sections.push('args=()')
   sections.push('has_shared=false')

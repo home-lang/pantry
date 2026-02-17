@@ -1917,7 +1917,7 @@ Each package can be accessed using \`getPackage(name)\` or directly via \`pantry
           .replace(/\s+/g, ' ') // Replace multiple whitespace/newlines with single space
           .replace(/\{\{/g, '&lbrace;&lbrace;')
           .replace(/\}\}/g, '&rbrace;&rbrace;') // Template variables (complete and incomplete)
-          .replace(/'/g, '&#39;') // Single quotes
+          .replace(/\x27/g, '&#39;') // Single quotes
           .replace(/"/g, '&quot;') // Double quotes
           .replace(/</g, '&lt;') // Less than
           .replace(/>/g, '&gt;') // Greater than

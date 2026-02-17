@@ -40,7 +40,10 @@ const { pantry } = await import(packagesPath)
 function parseYaml(content: string): Record<string, any> {
   const result: Record<string, any> = {}
   const lines = content.split('\n')
-  const stack: { indent: number; obj: any }[] = [{ indent: -1, obj: result }]
+  const stack: Array<{
+    indent: number
+    obj: any
+  }> = [{ indent: -1, obj: result }]
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
@@ -82,14 +85,19 @@ function parseYaml(content: string): Record<string, any> {
           while (i + 1 < lines.length) {
             const nextLine = lines[i + 1]
             const nextTrimmed = nextLine.trim()
-            if (!nextTrimmed || nextTrimmed.startsWith('#')) { i++; continue }
+            if (!nextTrimmed || nextTrimmed.startsWith('#')) {
+              i++
+              continue
+            }
             const nextIndent = nextLine.search(/\S/)
             if (nextIndent === siblingIndent && !nextTrimmed.startsWith('- ') && nextTrimmed.includes(':')) {
               const ci = nextTrimmed.indexOf(':')
               const sibKey = nextTrimmed.slice(0, ci).trim()
               let sibVal: any = nextTrimmed.slice(ci + 1).trim()
-              if (sibVal.startsWith("'") && sibVal.endsWith("'")) sibVal = sibVal.slice(1, -1)
-              if (sibVal.startsWith('"') && sibVal.endsWith('"')) sibVal = sibVal.slice(1, -1)
+              if (sibVal.startsWith('\'') && sibVal.endsWith('\''))
+                sibVal = sibVal.slice(1, -1)
+              if (sibVal.startsWith('"') && sibVal.endsWith('"'))
+                sibVal = sibVal.slice(1, -1)
               itemObj[sibKey] = sibVal
               i++
             } else {
@@ -155,7 +163,7 @@ function parseYaml(content: string): Record<string, any> {
           stack.push({ indent, obj: currentObj[key] })
         }
       }
-    } else if (value.startsWith("'") && value.endsWith("'")) {
+    } else if (value.startsWith('\'') && value.endsWith('\'')) {
       currentObj[key] = value.slice(1, -1)
     } else if (value.startsWith('"') && value.endsWith('"')) {
       currentObj[key] = value.slice(1, -1)
@@ -192,7 +200,13 @@ function domainToKey(domain: string): string {
   return domain.replace(/[.\-/]/g, '').toLowerCase()
 }
 
-function detectPlatform(): { platform: string; os: string; arch: string } {
+interface BuildPlatformInfo {
+  platform: string
+  os: string
+  arch: string
+}
+
+function detectPlatform(): BuildPlatformInfo {
   const os = process.platform === 'darwin' ? 'darwin' : 'linux'
   const arch = process.arch === 'arm64' ? 'arm64' : 'x86-64'
   return { platform: `${os}-${arch}`, os, arch }
@@ -376,13 +390,18 @@ function tryBuildVersion(
   })
 }
 
+interface BuildResult {
+  status: 'skipped' | 'uploaded' | 'failed'
+  error?: string
+}
+
 async function buildAndUpload(
   pkg: BuildablePackage,
   bucket: string,
   region: string,
   platform: string,
   force: boolean,
-): Promise<{ status: 'skipped' | 'uploaded' | 'failed'; error?: string }> {
+): Promise<BuildResult> {
   const { domain, name, versions } = pkg
   let version = pkg.latestVersion
 
@@ -807,7 +826,7 @@ Options:
   }
 
   // Build each package
-  const results: Record<string, { status: string; version: string; error?: string }> = {}
+  const results: Record<string, BuildResult & { version: string }> = {}
 
   for (const pkg of packagesToBuild) {
     const result = await buildAndUpload(pkg, bucket, region, platform, force)

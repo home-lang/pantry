@@ -225,10 +225,10 @@ async function extractEmbeddedData(html: string): Promise<Record<string, any>> {
 
   // Pattern 2: window.__INITIAL_STATE__ or similar
   const statePatterns = [
-    /window\.__INITIAL_STATE__\s*=\s*(\{.*?\});/s,
-    /window\.__STATE__\s*=\s*(\{.*?\});/s,
-    /window\.INITIAL_DATA\s*=\s*(\{.*?\});/s,
-    /window\.__APOLLO_STATE__\s*=\s*(\{.*?\});/s,
+    new RegExp('window\\.__INITIAL_STATE__\\s*=\\s*(\\{.*?\\});', 's'),
+    new RegExp('window\\.__STATE__\\s*=\\s*(\\{.*?\\});', 's'),
+    new RegExp('window\\.INITIAL_DATA\\s*=\\s*(\\{.*?\\});', 's'),
+    new RegExp('window\\.__APOLLO_STATE__\\s*=\\s*(\\{.*?\\});', 's'),
   ]
 
   for (const pattern of statePatterns) {

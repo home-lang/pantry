@@ -58,7 +58,13 @@ type Scenario = 'cold' | 'warm' | 'reinstall'
 
 // ── CLI Argument Parsing ───────────────────────────────────────────────────
 
-function parseArgs(): { fixtures: Fixture[]; scenarios: Scenario[]; managers: string[] } {
+interface BenchmarkArgs {
+  fixtures: Fixture[]
+  scenarios: Scenario[]
+  managers: string[]
+}
+
+function parseArgs(): BenchmarkArgs {
   const args = process.argv.slice(2)
   let fixtures: Fixture[] = [...FIXTURES]
   let scenarios: Scenario[] = ['cold', 'warm', 'reinstall']

@@ -58,7 +58,12 @@ function domainToKeys(domain: string): string[] {
 }
 
 // Parse dependency string to get domain and version
-function parseDep(dep: string): { domain: string; version?: string } {
+interface ParsedDep {
+  domain: string
+  version?: string
+}
+
+function parseDep(dep: string): ParsedDep {
   // Handle formats like:
   // - "curl.se^8"
   // - "openssl.org"

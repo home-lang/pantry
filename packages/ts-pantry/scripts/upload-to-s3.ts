@@ -151,7 +151,11 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
   console.log(`\n📦 Found ${artifactDirs.length} artifacts to upload`)
 
   // S3 key structure: packages/pantry/{domain}/{version}/{platform}/{filename}
-  const uploadedPlatforms: Record<string, { tarball: string; sha256: string; size: number }> = {}
+  const uploadedPlatforms: Record<string, {
+    tarball: string
+    sha256: string
+    size: number
+  }> = {}
 
   for (const artifactDir of artifactDirs) {
     const artifactPath = join(artifactsDir, artifactDir)
