@@ -1,5 +1,5 @@
 distributable:
-  url: https://github.com/zeromq/libzmq/releases/download/v4.3.4/zeromq-4.3.4.tar.gz
+  url: https://github.com/zeromq/libzmq/releases/download/v{{version}}/zeromq-{{version}}.tar.gz
   strip-components: 1
 
 versions:
