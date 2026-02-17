@@ -3,7 +3,7 @@
  *
  * @domain `mise.jdx.dev`
  * @programs `rtx`, `mise`
- * @version `2026.2.15` (436 versions available)
+ * @version `2026.2.15` (439 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mise.jdx.dev`
@@ -78,7 +78,9 @@ export const misejdxdevPackage = {
   */
   versions: [
     '2026.2.15',
+    '2026.2.14',
     '2026.2.13',
+    '2026.2.12',
     '2026.2.11',
     '2026.2.10',
     '2026.2.9',
@@ -93,6 +95,7 @@ export const misejdxdevPackage = {
     '2026.2.0',
     '2026.1.12',
     '2026.1.11',
+    '2026.1.10',
     '2026.1.9',
     '2026.1.8',
     '2026.1.7',

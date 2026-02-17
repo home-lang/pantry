@@ -3,7 +3,7 @@
  *
  * @domain `opendev.org/openstack/python-openstackclient`
  * @programs `openstack`, `openstack-inventory`
- * @version `8.3.0` (24 versions available)
+ * @version `9.0.0` (25 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install opendev.org/openstack/python-openstackclient`
@@ -17,7 +17,7 @@
  * const pkg = pantry.opendevorgopenstackpythonopenstackclient
  * console.log(pkg.name)        // "openstack"
  * console.log(pkg.programs)    // ["openstack", "openstack-inventory"]
- * console.log(pkg.versions[0]) // "8.3.0" (latest)
+ * console.log(pkg.versions[0]) // "9.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/opendev-org/openstack/python-openstackclient.md
@@ -74,6 +74,7 @@ export const opendevorgopenstackpythonopenstackclientPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.0.0',
     '8.3.0',
     '8.2.0',
     '8.1.0',

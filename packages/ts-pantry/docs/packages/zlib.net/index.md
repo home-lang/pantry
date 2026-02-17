@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4 versions</summary>
+<summary>Show all 5 versions</summary>
 
-- `1.3.1`, `1.3.0`, `1.2.13`, `1.2.12`
+- `1.3.2`, `1.3.1`, `1.3.0`, `1.2.13`, `1.2.12`
 
 </details>
 
-**Latest Version**: `1.3.1`
+**Latest Version**: `1.3.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +zlib.net@1.3.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +zlib.net@1.3.2 -- $SHELL -i
 ```
 
 ## Usage Examples
