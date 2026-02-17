@@ -476,7 +476,9 @@ export function generateBuildScript(
     sections.push('export CXXFLAGS="-Wno-error=incompatible-function-pointer-types ${CXXFLAGS:-}"')
   } else if (osName === 'linux' && archName === 'x86-64') {
     // Modern GCC/Clang treat certain warnings as errors (C23 defaults) — relax them
-    sections.push('export CFLAGS="-fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-function-pointer-types ${CFLAGS:-}"')
+    // Note: -Wno-error=incompatible-function-pointer-types is Clang-only; GCC has
+    // -Wno-error=incompatible-pointer-types instead (GCC errors on the Clang form)
+    sections.push('export CFLAGS="-fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-fPIC ${CXXFLAGS:-}"')
   }
   sections.push('')
