@@ -538,6 +538,18 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
+  // Python: make system dist-packages visible to S3-downloaded Python
+  // (e.g., python3-libxml2, python3-lxml installed via apt are in /usr/lib/python3/dist-packages)
+  if (osName === 'linux') {
+    sections.push('# Include system Python dist-packages so S3 Python can find system modules')
+    sections.push('for _pydir in /usr/lib/python3/dist-packages /usr/lib/python3.*/dist-packages; do')
+    sections.push('  if [ -d "$_pydir" ]; then')
+    sections.push('    export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$_pydir"')
+    sections.push('  fi')
+    sections.push('done')
+    sections.push('')
+  }
+
   // Wrap sed to handle nullglob (empty glob → no file args) and use GNU sed on macOS
   sections.push('# sed wrapper: use GNU sed on macOS + handle empty nullglob gracefully')
   sections.push('__real_sed="$(command -v gsed 2>/dev/null || command -v sed)"')

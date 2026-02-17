@@ -213,7 +213,7 @@ jobs:
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
             boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
-            libyaml jansson libedit
+            libyaml jansson libedit libzip lapack
 
       - name: Setup Rust toolchain
         run: |
