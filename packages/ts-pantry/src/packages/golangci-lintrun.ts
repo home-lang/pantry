@@ -3,7 +3,7 @@
  *
  * @domain `golangci-lint.run`
  * @programs `golangci-lint`
- * @version `2.9.0` (67 versions available)
+ * @version `2.10.0` (68 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install golangci-lint.run`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "golangci-lint"
  * console.log(pkg.description) // "Fast linters runner for Go"
  * console.log(pkg.programs)    // ["golangci-lint"]
- * console.log(pkg.versions[0]) // "2.9.0" (latest)
+ * console.log(pkg.versions[0]) // "2.10.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/golangci-lint-run.md
@@ -68,6 +68,7 @@ export const golangcilintrunPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.10.0',
     '2.9.0',
     '2.8.0',
     '2.7.2',
