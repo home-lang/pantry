@@ -696,6 +696,10 @@ Options:
     'replibyte.com', // Cargo build with complex deps (sqlx, tokio-postgres)
     'invisible-island.net/dialog', // Complex version format with date suffix
     'jetporch.com', // Dead project, GitHub repo/tags removed
+    'plakar.io', // cockroachdb/swiss uses Go internals broken in Go 1.26 (needs version-pinned Go)
+    'projectdiscovery.io/nuclei', // bytedance/sonic uses Go internals broken in Go 1.26
+    'syncthing.net', // Build system rejects Go 1.26 (not in compat.yaml)
+    'ipfscluster.io', // cockroachdb/swiss uses Go internals broken in Go 1.26
   ])
 
   let platformSkipped = 0
