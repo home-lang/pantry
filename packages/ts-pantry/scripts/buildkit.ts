@@ -389,13 +389,15 @@ export function processScript(
       const wd = item['working-directory']
       if (wd) {
         const expandedWd = applyTokens(wd, tokens)
+        // Use a variable to avoid running shell expansions (e.g. $(mktemp -d)) twice
         run = [
           'OLDWD="$PWD"',
-          `mkdir -p "${expandedWd}"`,
-          `cd "${expandedWd}"`,
+          `_BUILDKIT_WD="${expandedWd}"`,
+          'mkdir -p "$_BUILDKIT_WD"',
+          'cd "$_BUILDKIT_WD"',
           run.trim(),
           'cd "$OLDWD"',
-          'unset OLDWD',
+          'unset OLDWD _BUILDKIT_WD',
         ].join('\n')
       }
 
@@ -852,9 +854,10 @@ export function generateBuildScript(
   const wd = recipe.build?.['working-directory']
   if (wd) {
     const expandedWd = applyTokens(wd, tokens)
-    // If relative, it's a subdirectory of buildDir; if absolute, use as-is
-    sections.push(`mkdir -p "${expandedWd}"`)
-    sections.push(`cd "${expandedWd}"`)
+    // Use a variable to avoid running shell expansions (e.g. $(mktemp -d)) twice
+    sections.push(`_BUILDKIT_WD="${expandedWd}"`)
+    sections.push('mkdir -p "$_BUILDKIT_WD"')
+    sections.push('cd "$_BUILDKIT_WD"')
   }
   sections.push('')
 
