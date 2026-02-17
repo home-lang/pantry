@@ -695,6 +695,7 @@ Options:
     'wez.github.io/wezterm', // Source tarball download fails
     'replibyte.com', // Cargo build with complex deps (sqlx, tokio-postgres)
     'invisible-island.net/dialog', // Complex version format with date suffix
+    'jetporch.com', // Dead project, GitHub repo/tags removed
   ])
 
   let platformSkipped = 0
