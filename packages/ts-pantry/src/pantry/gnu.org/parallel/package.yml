@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/parallel/parallel-{{version.raw}}.tar.bz2
+  url: https://ftpmirror.gnu.org/gnu/parallel/parallel-{{version.raw}}.tar.bz2
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/parallel/
+  url: https://ftpmirror.gnu.org/gnu/parallel/
   match: /parallel-\d+\.tar\.bz2/
   strip:
     - /^parallel-/

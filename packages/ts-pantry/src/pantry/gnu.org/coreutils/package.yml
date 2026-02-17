@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/coreutils/coreutils-{{ version.raw }}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/coreutils/coreutils-{{ version.raw }}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/coreutils/
+  url: https://ftpmirror.gnu.org/gnu/coreutils/
   match: /coreutils-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /coreutils-/

@@ -1,8 +1,8 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/groff/groff-{{version}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/groff/groff-{{version}}.tar.gz
   strip-components: 1
 versions:
-  url: https://ftp.gnu.org/gnu/groff/
+  url: https://ftpmirror.gnu.org/gnu/groff/
   match: /groff-\d+\.\d+\.\d+\.tar\.gz/
   strip:
     - /^groff-/

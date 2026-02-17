@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/autoconf-archive/autoconf-archive-{{ version.raw }}.tar.xz
+  url: https://ftpmirror.gnu.org/gnu/autoconf-archive/autoconf-archive-{{ version.raw }}.tar.xz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/autoconf-archive/
+  url: https://ftpmirror.gnu.org/gnu/autoconf-archive/
   match: /autoconf-archive-(\d+\.\d+(\.\d+)?)\.tar\.xz/
   strip:
     - /autoconf-archive-/

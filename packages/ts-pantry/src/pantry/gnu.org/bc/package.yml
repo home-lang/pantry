@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/bc/bc-{{version.raw}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/bc/bc-{{version.raw}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/bc/
+  url: https://ftpmirror.gnu.org/gnu/bc/
   match: /bc-\d+\.\d+\.\d+\.tar\.gz/
   strip:
     - /^bc-/

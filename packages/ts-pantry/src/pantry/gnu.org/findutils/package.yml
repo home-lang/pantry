@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/findutils/findutils-{{version}}.tar.xz
+  url: https://ftpmirror.gnu.org/gnu/findutils/findutils-{{version}}.tar.xz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/findutils/
+  url: https://ftpmirror.gnu.org/gnu/findutils/
   match: /findutils-\d+\.\d+\.\d+\.tar\.xz/
   strip:
     - /^findutils-/

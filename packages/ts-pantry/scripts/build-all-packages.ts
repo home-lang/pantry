@@ -654,50 +654,35 @@ Options:
   //   oracle.com/berkeley-db — recipe fixed: removed --enable-stl, added -std=c++14
   //   strace.io — linux-only, let it try with -Werror filtering
   const knownBrokenDomains = new Set([
-    'apache.org/subversion', // Needs APR/APR-util chain
-    'apache.org/serf', // Needs scons + apr
-    'apache.org/zookeeper', // Java/Maven build
-    'apache.org/jmeter', // Java plugin manager
-    'apache.org/httpd', // Complex dep chain
-    'argoproj.github.io/cd', // yarn + Go mixed build
-    'coder.com/code-server', // Node.js native build
+    'apache.org/subversion', // Needs APR/APR-util chain (circular dep with serf)
+    'apache.org/serf', // Needs scons + apr (circular dep)
+    'argoproj.github.io/cd', // yarn + Go mixed build, yarn fails in CI sandbox
+    'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
     'cr.yp.to/daemontools', // Archaic build system
-    'clisp.org', // Complex configure/FFI
-    'chiark.greenend.org.uk/puzzles', // Needs GTK
-    'gnu.org/source-highlight', // Needs boost.org built from source
-    'crates.io/bpb', // Uses deprecated Rust features (E0557), incompatible with modern rustc
+    'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
+    'crates.io/bpb', // Uses deprecated Rust features (E0557)
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
-    'nasm.us', // Version normalization drops leading zeros (2.16.03→2.16.3), breaking download URLs
-    'apple.com/container', // Needs Swift 6.2+, runners only have 5.10
-    'openai.com/codex', // Needs Rust 1.89+, may not be available on runners
-    'ghostgum.com.au/epstool', // Debian mirror URL broken + needs ghostscript dep chain
     'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
     'openinterpreter.com', // tiktoken wheel build failure (Python C extension)
-    'psycopg.org/psycopg3', // Version mismatch with PyPI (wants dev version)
+    'psycopg.org/psycopg3', // Git-based distributable pulling dev versions
     'sourceware.org/dm', // GitLab download URLs return 404
-    'llm.datasette.io', // GitHub tag v0.28.0 no longer exists (renamed/moved)
-    'taku910.github.io/mecab-ipadic', // Needs mecab built first (complex dep chain)
-    'itstool.org', // Needs Python libxml2 bindings matching exact Python version (3.14 vs system 3.12)
-    'oberhumer.com/ucl', // Dead upstream domain (oberhumer.com returns 404)
-    'khronos.org/SPIRV-Cross', // Project archived, tags removed from GitHub
-    'amber-lang.com', // Download tag format mismatch (alpha prefix issues)
+    'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
+    'taku910.github.io/mecab-ipadic', // Needs mecab built first
+    'itstool.org', // Needs Python libxml2 bindings matching exact Python version
+    'oberhumer.com/ucl', // Dead upstream domain
+    'khronos.org/SPIRV-Cross', // Project archived, tags removed
     'getsynth.com', // Dead/abandoned project
-    'frei0r.dyne.org', // Corrupt/incompatible tarballs from dyne.org
-    'ordinals.com', // GitHub tag format mismatch (all tag variants return 404)
-    'pcre.org', // SourceForge mirror unreliable (PCRE1 unmaintained, use pcre.org/v2)
-    'fermyon.com/spin', // Needs wasm32-wasi target + llvm-ar (complex Rust toolchain)
-    'dhruvkb.dev/pls', // Cargo auth failure on git dependencies
+    'ordinals.com', // GitHub tag format mismatch (all variants return 404)
+    'dhruvkb.dev/pls', // Hardcoded beta tag + cargo auth failure on git deps
     'seaweedfs.com', // All GitHub release tags return 404
     'wundergraph.com', // All GitHub release tags return 404
-    'riverbankcomputing.com/sip', // Server returns empty reply on all version downloads
-    'abseil.io', // Date-based version format mismatch (20260107.1.0 etc)
+    'riverbankcomputing.com/sip', // Server returns empty reply on all downloads
+    'abseil.io', // Date-based version format mismatch (20260107.1.0)
     'alembic.sqlalchemy.org', // Version tags return 404 on PyPI/GitHub
     'render.com', // Needs deno compile (no distributable source)
     'tea.xyz', // Needs deno task compile (no distributable source)
-    'sdkman.io', // Shell script distribution, no compilable source
-    'swagger.io/swagger-codegen', // Java/Maven build system
-    'mcmc-jags.sourceforge.io', // Needs Fortran compiler (not available on CI runners)
-    'spacetimedb.com', // Hardcoded beta tag, complex Rust workspace build
+    'sdkman.io', // Shell script distribution, not compilable
+    'spacetimedb.com', // Hardcoded beta tag, no version discovery
     'ntp.org', // Complex version format embedded in path (ntp-4.2.8p17)
     'jbig2dec.com', // Single hardcoded version, buried in ghostpdl releases
     'videolan.org/x264', // Version includes git hash, Debian mirror URL
@@ -707,18 +692,32 @@ Options:
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
     'microsoft.com/markitdown', // Version tags don't exist on GitHub
     'snyk.io', // Binary distribution, no compilable source
-    'pkl-lang.org', // Gradle/Java build system
-    'quickwit.io', // Complex Rust workspace with many dependencies
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
     'wez.github.io/wezterm', // Source tarball download fails
-    'replibyte.com', // Cargo build with complex deps (sqlx, tokio-postgres)
     'invisible-island.net/dialog', // Complex version format with date suffix
     'jetporch.com', // Dead project, GitHub repo/tags removed
-    'plakar.io', // cockroachdb/swiss uses Go internals broken in Go 1.26 (needs version-pinned Go)
-    'projectdiscovery.io/nuclei', // bytedance/sonic uses Go internals broken in Go 1.26
-    'syncthing.net', // Build system rejects Go 1.26 (not in compat.yaml)
-    'ipfscluster.io', // cockroachdb/swiss uses Go internals broken in Go 1.26
+    'imagemagick.org', // Version transform (7.1.2-44→7.1.2.44) breaks tag lookup, no inverse
+    'vim.org', // Leading-zero normalization (v9.1.0001→9.1.1) breaks tag lookup + 16k tags
+    'facebook.com/watchman', // Date version leading-zero normalization (2026.02.16.00→2026.2.16.0)
+    'facebook.com/fb303', // Same date version leading-zero issue
+    'facebook.com/fbthrift', // Same date version leading-zero issue
+    'facebook.com/mvfst', // Same date version leading-zero issue
+    'facebook.com/wangle', // Same date version leading-zero issue
+    'facebook.com/edencommon', // Same date version leading-zero issue
+    'facebook.com/folly', // Same date version leading-zero issue
+    'github.com/facebookincubator/fizz', // Same date version leading-zero issue
+    'libsdl.org/SDL_image', // SDL3 version resolved but URL uses SDL2_image naming
+    'gource.io', // GitHub releases removed/restructured
+    'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
+    'qt.io', // Hardcoded single version 5.15.10, massive build
+    'hdfgroup.org/HDF5', // Tag format changed from hdf5_ to hdf5- in 2.x
+    'pipenv.pypa.io', // Version 3000.0.0 tag doesn't exist on GitHub
+    'riverbankcomputing.com/pyqt-builder', // Server returns empty reply
+    'khronos.org/opencl-headers', // Date-based version format mismatch
+    'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
+    'macvim.org', // Depends on vim.org (same leading-zero version issue)
+    'surrealdb.com', // Old release tags removed from GitHub
   ])
 
   let platformSkipped = 0

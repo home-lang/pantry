@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/gperf/gperf-{{version.raw}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/gperf/gperf-{{version.raw}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/gperf/
+  url: https://ftpmirror.gnu.org/gnu/gperf/
   match: /gperf-\d+(\.\d+)+\.tar\.gz/
   strip:
     - /gperf-/

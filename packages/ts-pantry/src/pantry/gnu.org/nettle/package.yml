@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/nettle/nettle-{{version.raw}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/nettle/nettle-{{version.raw}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/nettle
+  url: https://ftpmirror.gnu.org/gnu/nettle
   match: /nettle-\d+(\.\d+)+\.tar\.gz/
   strip:
     - /^nettle-/

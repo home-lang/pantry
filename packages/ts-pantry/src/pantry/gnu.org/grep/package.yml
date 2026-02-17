@@ -1,9 +1,9 @@
 distributable:
-   url: https://ftp.gnu.org/gnu/grep/grep-{{version.raw}}.tar.gz
+   url: https://ftpmirror.gnu.org/gnu/grep/grep-{{version.raw}}.tar.gz
    strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/grep/
+  url: https://ftpmirror.gnu.org/gnu/grep/
   match: /grep-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /grep-/

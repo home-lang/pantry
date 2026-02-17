@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/diffutils/diffutils-{{ version.raw }}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/diffutils/diffutils-{{ version.raw }}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/diffutils/
+  url: https://ftpmirror.gnu.org/gnu/diffutils/
   match: /diffutils-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /diffutils-/

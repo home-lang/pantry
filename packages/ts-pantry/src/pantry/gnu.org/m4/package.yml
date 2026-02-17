@@ -1,5 +1,5 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/m4/m4-{{ version }}.tar.xz
+  url: https://ftpmirror.gnu.org/gnu/m4/m4-{{ version }}.tar.xz
   strip-components: 1
 
 versions:

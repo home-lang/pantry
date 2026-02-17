@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/sed/sed-{{version.raw}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/sed/sed-{{version.raw}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/sed/
+  url: https://ftpmirror.gnu.org/gnu/sed/
   match: /sed-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /sed-/

@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/libunistring/libunistring-{{version.raw}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/libunistring/libunistring-{{version.raw}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/libunistring/
+  url: https://ftpmirror.gnu.org/gnu/libunistring/
   match: /libunistring-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /libunistring-/

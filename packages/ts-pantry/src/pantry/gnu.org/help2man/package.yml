@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/help2man/help2man-{{version}}.tar.xz
+  url: https://ftpmirror.gnu.org/gnu/help2man/help2man-{{version}}.tar.xz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/help2man/
+  url: https://ftpmirror.gnu.org/gnu/help2man/
   match: /help2man-\d+\.\d+\.\d+\.tar\.xz/
   strip:
     - /^help2man-/

@@ -1,5 +1,5 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/bison/bison-{{ version }}.tar.xz
+  url: https://ftpmirror.gnu.org/gnu/bison/bison-{{ version }}.tar.xz
   strip-components: 1
 
 versions:

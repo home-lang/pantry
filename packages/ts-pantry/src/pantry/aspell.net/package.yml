@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/aspell/aspell-{{ version }}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/aspell/aspell-{{ version }}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/aspell/
+  url: https://ftpmirror.gnu.org/gnu/aspell/
   match: /aspell-\d+\.\d+(\.\d+)*.tar.gz/
   strip:
     - /aspell-/
@@ -132,7 +132,7 @@ build:
     # Some of the configures below need the PATH updated.
     PATH="$PATH:{{ prefix }}/bin"
     for url in "${urls[@]}"; do
-      curl -O "https://ftp.gnu.org/gnu/aspell/dict/$url.tar.bz2"
+      curl -O "https://ftpmirror.gnu.org/gnu/aspell/dict/$url.tar.bz2"
       filename=$(echo "$url" | sed 's/[^\/]*\///')
       tar -xjf $filename.tar.bz2
       cd $filename

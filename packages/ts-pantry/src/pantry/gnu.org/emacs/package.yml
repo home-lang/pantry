@@ -1,5 +1,5 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/emacs/emacs-{{ version.raw }}.tar.xz
+  url: https://ftpmirror.gnu.org/gnu/emacs/emacs-{{ version.raw }}.tar.xz
   strip-components: 1
 
 versions:

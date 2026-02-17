@@ -1,8 +1,8 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/libsigsegv/libsigsegv-{{version.marketing}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/libsigsegv/libsigsegv-{{version.marketing}}.tar.gz
   strip-components: 1
 versions:
-  url: https://ftp.gnu.org/gnu/libsigsegv/
+  url: https://ftpmirror.gnu.org/gnu/libsigsegv/
   match: /libsigsegv-(\d+\.\d+(\.\d+)?).tar.gz/
   strip:
     - /^libsigsegv-/

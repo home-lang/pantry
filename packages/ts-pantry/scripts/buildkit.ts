@@ -826,6 +826,9 @@ export function generateBuildScript(
     sections.push('fi')
   }
   sections.push('export PATH="$GOPATH/bin:${GOROOT:+$GOROOT/bin:}$PATH"')
+  // Allow Go to auto-download the correct toolchain version per go.mod
+  // This fixes packages that use //go:linkname with internal APIs broken in newer Go
+  sections.push('export GOTOOLCHAIN=auto')
   sections.push('')
 
   // Working directory — always cd to buildDir first, then to any subdirectory

@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/stow/stow-{{version}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/stow/stow-{{version}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/stow/
+  url: https://ftpmirror.gnu.org/gnu/stow/
   match: /stow-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /stow-/

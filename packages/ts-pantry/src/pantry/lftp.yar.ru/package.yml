@@ -40,4 +40,4 @@ provides:
   - bin/lftp
   - bin/lftpget
 
-test: lftp -c "open ftp.gnu.org; ls"
+test: lftp -c "open ftpmirror.gnu.org; ls"

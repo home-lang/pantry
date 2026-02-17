@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/ncurses/ncurses-{{ version.raw }}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/ncurses/ncurses-{{ version.raw }}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/ncurses/
+  url: https://ftpmirror.gnu.org/gnu/ncurses/
   match: /ncurses-\d+(\.\d+)+.tar.gz/
   strip:
     - /ncurses-/

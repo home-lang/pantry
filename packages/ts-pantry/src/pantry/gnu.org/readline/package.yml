@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/readline/readline-{{ version.raw }}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/readline/readline-{{ version.raw }}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/readline/
+  url: https://ftpmirror.gnu.org/gnu/readline/
   match: /readline-\d+\.\d+(\.\d+)?\.tar\.gz/
   strip:
     - /readline-/

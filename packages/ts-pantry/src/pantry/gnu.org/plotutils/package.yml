@@ -1,8 +1,8 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/plotutils/plotutils-{{version.raw}}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/plotutils/plotutils-{{version.raw}}.tar.gz
   strip-components: 1
 versions:
-  url: https://ftp.gnu.org/gnu/plotutils/
+  url: https://ftpmirror.gnu.org/gnu/plotutils/
   match: /plotutils-\d+\.\d+(\.\d+)?\.tar\.gz/
   strip:
     - /plotutils-/

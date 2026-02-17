@@ -3,7 +3,7 @@
 distributable: ~
 
 versions:
-  url: https://ftp.gnu.org/gnu/ed/
+  url: https://ftpmirror.gnu.org/gnu/ed/
   match: /ed-\d+\.\d+\.\d+\.tar\.lz/
   strip:
     - /^ed-/
@@ -14,7 +14,7 @@ build:
     curl.se: '*'
     nongnu.org/lzip: '*'
   script:
-    - curl -L "https://ftp.gnu.org/gnu/ed/ed-{{version.raw}}.tar.lz" | lzip -d | tar -x --strip-components=1
+    - curl -L "https://ftpmirror.gnu.org/gnu/ed/ed-{{version.raw}}.tar.lz" | lzip -d | tar -x --strip-components=1
     - ./configure --prefix={{prefix}}
     - make
     - make install

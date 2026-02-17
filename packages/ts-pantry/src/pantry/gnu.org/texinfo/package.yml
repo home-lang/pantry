@@ -1,9 +1,9 @@
 distributable:
-  url: https://ftp.gnu.org/gnu/texinfo/texinfo-{{ version.raw }}.tar.gz
+  url: https://ftpmirror.gnu.org/gnu/texinfo/texinfo-{{ version.raw }}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://ftp.gnu.org/gnu/texinfo/
+  url: https://ftpmirror.gnu.org/gnu/texinfo/
   match: /texinfo-(\d+\.\d+(\.\d+)?)\.tar\.gz/
   strip:
     - /texinfo-/
