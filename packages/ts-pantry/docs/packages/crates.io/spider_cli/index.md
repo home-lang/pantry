@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 353 versions</summary>
+<summary>Show all 354 versions</summary>
 
+- `2.45.20`
 - `2.44.13`
 - `2.43.20`, `2.43.18`, `2.43.13`, `2.43.3`, `2.43.2`, `2.43.1`, `2.43.0`
 - `2.42.0`
@@ -75,13 +76,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.44.13`
+**Latest Version**: `2.45.20`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/spider_cli@2.44.13 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/spider_cli@2.45.20 -- $SHELL -i
 ```
 
 ## Usage Examples

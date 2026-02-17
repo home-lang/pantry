@@ -3,7 +3,7 @@
  *
  * @domain `akuity.io/kargo`
  * @programs `kargo`
- * @version `1.9.2` (66 versions available)
+ * @version `1.9.3` (69 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install akuity.io/kargo`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "kargo"
  * console.log(pkg.description) // "Application lifecycle orchestration"
  * console.log(pkg.programs)    // ["kargo"]
- * console.log(pkg.versions[0]) // "1.9.2" (latest)
+ * console.log(pkg.versions[0]) // "1.9.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/akuity-io/kargo.md
@@ -68,9 +68,11 @@ export const akuityiokargoPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.9.3',
     '1.9.2',
     '1.9.1',
     '1.9.0',
+    '1.8.11',
     '1.8.10',
     '1.8.9',
     '1.8.8',
@@ -82,6 +84,7 @@ export const akuityiokargoPackage = {
     '1.8.2',
     '1.8.1',
     '1.8.0',
+    '1.7.8',
     '1.7.7',
     '1.7.6',
     '1.7.5',
