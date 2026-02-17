@@ -1,5 +1,5 @@
 distributable:
-  url: https://github.com/openslide/openslide/releases/download/v3.4.1/openslide-3.4.1.tar.xz
+  url: https://github.com/openslide/openslide/releases/download/v{{version}}/openslide-{{version}}.tar.xz
   strip-components: 1
 
 versions:

@@ -772,13 +772,9 @@ cli
       fs.writeFileSync(tempPath, new Uint8Array(buffer))
       console.log(`Downloaded ${buffer.byteLength} bytes`)
 
-      // Remove existing pantry directory if it exists
-      if (fs.existsSync(pantryDirPath)) {
-        fs.rmSync(pantryDirPath, { recursive: true, force: true })
-        console.log(`Removed existing ${pantryDirPath}`)
-      }
-
-      // Create pantry directory
+      // Preserve existing pantry directory — only add new packages from upstream
+      // (existing package.yml files may have local fixes: recipe corrections,
+      // {{version}} URLs, build flag fixes, etc. that upstream doesn't have yet)
       fs.mkdirSync(pantryDirPath, { recursive: true })
 
       // Extract pantry.tgz using tar command (first to temp directory)
@@ -807,26 +803,51 @@ cli
         tar.on('error', reject)
       })
 
-      // Move the contents of the projects folder to the pantry directory
+      // Merge upstream projects into pantry directory
+      // Only ADD new packages — never overwrite existing package.yml files
+      // (our local recipes may have fixes that upstream doesn't have yet)
       const tempProjectsDir = path.join(tempExtractDir, 'projects')
       if (fs.existsSync(tempProjectsDir)) {
         const projects = fs.readdirSync(tempProjectsDir)
-        console.log(`Moving ${projects.length} projects from temp directory...`)
+        let added = 0
+        let skipped = 0
 
+        // Recursively merge: add new directories/files, skip existing package.yml
+        const mergeDir = (srcDir: string, destDir: string) => {
+          if (!fs.existsSync(destDir)) {
+            fs.mkdirSync(destDir, { recursive: true })
+          }
+          for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+            const srcPath = path.join(srcDir, entry.name)
+            const destPath = path.join(destDir, entry.name)
+            if (entry.isDirectory()) {
+              mergeDir(srcPath, destPath)
+            } else if (entry.name === 'package.yml') {
+              if (fs.existsSync(destPath)) {
+                skipped++
+              } else {
+                fs.renameSync(srcPath, destPath)
+                added++
+              }
+            } else {
+              // Non-package.yml files (fixtures, patches): only add if missing
+              if (!fs.existsSync(destPath)) {
+                fs.renameSync(srcPath, destPath)
+              }
+            }
+          }
+        }
+
+        console.log(`Merging ${projects.length} projects from upstream...`)
         for (const project of projects) {
           const sourcePath = path.join(tempProjectsDir, project)
           const destPath = path.join(pantryDirPath, project)
-
-          // Remove destination if it exists
-          if (fs.existsSync(destPath)) {
-            fs.rmSync(destPath, { recursive: true, force: true })
+          if (fs.statSync(sourcePath).isDirectory()) {
+            mergeDir(sourcePath, destPath)
           }
-
-          // Move the project directory
-          fs.renameSync(sourcePath, destPath)
         }
 
-        console.log(`Successfully moved ${projects.length} projects to ${pantryDirPath}`)
+        console.log(`Merged upstream pantry: ${added} new packages added, ${skipped} existing preserved`)
       }
       else {
         console.log('Warning: No projects directory found in extracted pantry')
