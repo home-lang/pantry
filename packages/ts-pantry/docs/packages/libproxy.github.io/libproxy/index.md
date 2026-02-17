@@ -27,8 +27,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 10 versions</summary>
 
-- `0.5.12`, `0.5.11`, `0.5.10`, `0.5.9`, `0.5.8`
-- `0.5.7`, `0.5.6`, `0.5.5`, `0.5.4`, `0.5.3`
+- `0.5.12`, `0.5.11`, `0.5.10`, `0.5.9`, `0.5.8`, `0.5.7`, `0.5.6`, `0.5.5`, `0.5.4`, `0.5.3`
 
 </details>
 

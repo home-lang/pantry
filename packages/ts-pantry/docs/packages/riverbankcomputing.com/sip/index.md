@@ -32,8 +32,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `6.8.3`, `6.8.2`, `6.8.1`, `6.8.0`, `6.7.11`
-- `6.7.0`
+- `6.8.3`, `6.8.2`, `6.8.1`, `6.8.0`
+- `6.7.11`, `6.7.0`
 
 </details>
 

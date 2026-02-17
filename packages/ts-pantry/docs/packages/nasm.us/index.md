@@ -28,7 +28,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `3.1.0`, `3.0.0`, `2.16.3`, `2.16.2`, `2.15.5`
+- `3.1.0`
+- `3.0.0`
+- `2.16.3`, `2.16.2`
+- `2.15.5`
 
 </details>
 

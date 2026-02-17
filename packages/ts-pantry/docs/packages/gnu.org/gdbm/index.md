@@ -29,7 +29,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `1.26.0`, `1.25.0`, `1.24.0`, `1.23.0`
+- `1.26.0`
+- `1.25.0`
+- `1.24.0`
+- `1.23.0`
 
 </details>
 

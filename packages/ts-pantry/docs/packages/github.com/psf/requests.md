@@ -27,8 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `2.32.5`, `2.32.4`, `2.32.3`, `2.32.2`, `2.32.1`
-- `2.32.0`, `2.31.0`
+- `2.32.5`, `2.32.4`, `2.32.3`, `2.32.2`, `2.32.1`, `2.32.0`
+- `2.31.0`
 
 </details>
 

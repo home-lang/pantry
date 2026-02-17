@@ -39,8 +39,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 10 versions</summary>
 
-- `2.4.66`, `2.4.65`, `2.4.64`, `2.4.63`, `2.4.62`
-- `2.4.61`, `2.4.60`, `2.4.59`, `2.4.58`, `2.4.57`
+- `2.4.66`, `2.4.65`, `2.4.64`, `2.4.63`, `2.4.62`, `2.4.61`, `2.4.60`, `2.4.59`, `2.4.58`, `2.4.57`
 
 </details>
 

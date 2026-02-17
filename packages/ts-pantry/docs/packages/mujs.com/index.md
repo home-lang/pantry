@@ -28,8 +28,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `1.3.8`, `1.3.7`, `1.3.6`, `1.3.5`, `1.3.4`
-- `1.3.3`
+- `1.3.8`, `1.3.7`, `1.3.6`, `1.3.5`, `1.3.4`, `1.3.3`
 
 </details>
 

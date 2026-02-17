@@ -29,7 +29,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `10.47.0`, `10.46.0`, `10.44.0`, `10.43.0`, `10.42.0`
+- `10.47.0`
+- `10.46.0`
+- `10.44.0`
+- `10.43.0`
+- `10.42.0`
 
 </details>
 

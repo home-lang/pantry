@@ -31,7 +31,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `4.7.1`, `4.7.0`, `4.6.0`, `4.5.1`, `4.5.0`
+- `4.7.1`, `4.7.0`
+- `4.6.0`
+- `4.5.1`, `4.5.0`
 
 </details>
 

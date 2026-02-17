@@ -28,8 +28,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `3.13.0`, `3.12.2`, `3.12.1`, `3.12.0`, `3.11.1`
-- `3.11.0`, `3.10.0`, `3.9.2`
+- `3.13.0`
+- `3.12.2`, `3.12.1`, `3.12.0`
+- `3.11.1`, `3.11.0`
+- `3.10.0`
+- `3.9.2`
 
 </details>
 

@@ -28,8 +28,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `0.4.42`, `0.4.41`, `0.4.40`, `0.4.39`, `0.4.38`
-- `0.4.37`, `0.4.36`, `0.4.35`, `0.4.34`
+- `0.4.42`, `0.4.41`, `0.4.40`, `0.4.39`, `0.4.38`, `0.4.37`, `0.4.36`, `0.4.35`, `0.4.34`
 
 </details>
 

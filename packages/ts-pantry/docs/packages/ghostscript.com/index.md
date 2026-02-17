@@ -59,8 +59,12 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `10.6.0`, `10.5.1`, `10.4.0`, `10.3.1`, `10.3.0`
-- `10.2.1`, `10.2.0`, `10.1.2`
+- `10.6.0`
+- `10.5.1`
+- `10.4.0`
+- `10.3.1`, `10.3.0`
+- `10.2.1`, `10.2.0`
+- `10.1.2`
 
 </details>
 

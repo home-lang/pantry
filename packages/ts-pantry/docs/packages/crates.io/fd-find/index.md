@@ -27,8 +27,14 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `10.3.0`, `10.2.0`, `10.1.0`, `10.0.0`, `9.0.0`
-- `8.7.1`, `8.7.0`, `8.6.0`, `8.5.3`
+- `10.3.0`
+- `10.2.0`
+- `10.1.0`
+- `10.0.0`
+- `9.0.0`
+- `8.7.1`, `8.7.0`
+- `8.6.0`
+- `8.5.3`
 
 </details>
 

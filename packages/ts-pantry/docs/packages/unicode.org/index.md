@@ -38,8 +38,15 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `78.2.0`, `78.1.0`, `77.1.0`, `76.1.0`, `75.1.0`
-- `74.2.0`, `74.1.0`, `73.2.0`, `71.1.0`
+- `78.2.0`
+- `78.1.0`
+- `77.1.0`
+- `76.1.0`
+- `75.1.0`
+- `74.2.0`
+- `74.1.0`
+- `73.2.0`
+- `71.1.0`
 
 </details>
 

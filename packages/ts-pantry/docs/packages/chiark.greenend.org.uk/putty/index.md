@@ -32,7 +32,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `0.83.0`, `0.82.0`, `0.81.0`, `0.80.0`, `0.79.0`
+- `0.83.0`
+- `0.82.0`
+- `0.81.0`
+- `0.80.0`
+- `0.79.0`
 - `0.78.0`
 
 </details>

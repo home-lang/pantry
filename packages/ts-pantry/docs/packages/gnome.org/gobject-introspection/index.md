@@ -31,7 +31,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `1.86.0`, `1.84.0`, `1.83.4`, `1.83.2`, `1.82.0`
+- `1.86.0`
+- `1.84.0`
+- `1.83.4`, `1.83.2`
+- `1.82.0`
 - `1.72.0`
 
 </details>

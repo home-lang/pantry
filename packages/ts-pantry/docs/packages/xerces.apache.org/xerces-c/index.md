@@ -41,7 +41,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 3 versions</summary>
 
-- `3.3.0`, `3.2.5`, `3.2.4`
+- `3.3.0`
+- `3.2.5`, `3.2.4`
 
 </details>
 

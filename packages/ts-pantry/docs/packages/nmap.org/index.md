@@ -29,7 +29,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `7.98.0`, `7.97.0`, `7.96.0`, `7.95.0`, `7.94.0`
+- `7.98.0`
+- `7.97.0`
+- `7.96.0`
+- `7.95.0`
+- `7.94.0`
 - `7.93.0`
 
 </details>

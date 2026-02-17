@@ -31,8 +31,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `0.12.22`, `0.12.21`, `0.12.20`, `0.12.19`, `0.12.18`
-- `0.12.17`, `0.12.15`, `0.12.14`
+- `0.12.22`, `0.12.21`, `0.12.20`, `0.12.19`, `0.12.18`, `0.12.17`, `0.12.15`, `0.12.14`
 
 </details>
 

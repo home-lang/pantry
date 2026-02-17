@@ -27,8 +27,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `1.4.2`, `1.4.1`, `1.4.0`, `1.3.0`, `1.2.1`
-- `1.2.0`, `1.1.1`, `1.1.0`, `1.0.4`
+- `1.4.2`, `1.4.1`, `1.4.0`
+- `1.3.0`
+- `1.2.1`, `1.2.0`
+- `1.1.1`, `1.1.0`
+- `1.0.4`
 
 </details>
 

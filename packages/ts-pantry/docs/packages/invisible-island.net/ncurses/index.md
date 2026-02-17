@@ -37,7 +37,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `6.6.0`, `6.5.0`, `6.4.0`, `6.3.0`
+- `6.6.0`
+- `6.5.0`
+- `6.4.0`
+- `6.3.0`
 
 </details>
 

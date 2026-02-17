@@ -27,7 +27,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `20250625.0.0`, `20240930.0.0`, `20240927.0.0`, `20231117.0.0`
+- `20250625.0.0`
+- `20240930.0.0`
+- `20240927.0.0`
+- `20231117.0.0`
 
 </details>
 

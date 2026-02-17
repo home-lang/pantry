@@ -27,8 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `3.5.2`, `3.5.1`, `3.5.0`, `3.4.8`, `3.4.7`
-- `3.4.6`, `3.4.5`, `3.4.4`, `3.4.3`
+- `3.5.2`, `3.5.1`, `3.5.0`
+- `3.4.8`, `3.4.7`, `3.4.6`, `3.4.5`, `3.4.4`, `3.4.3`
 
 </details>
 

@@ -35,8 +35,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `1.16.2`, `1.16.0`, `1.15.92`, `1.15.90`, `1.15.12`
-- `1.15.10`, `1.15.8`
+- `1.16.2`, `1.16.0`
+- `1.15.92`, `1.15.90`, `1.15.12`, `1.15.10`, `1.15.8`
 
 </details>
 

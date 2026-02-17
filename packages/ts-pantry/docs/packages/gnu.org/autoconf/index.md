@@ -33,7 +33,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 2 versions</summary>
 
-- `2.72.0`, `2.71.0`
+- `2.72.0`
+- `2.71.0`
 
 </details>
 

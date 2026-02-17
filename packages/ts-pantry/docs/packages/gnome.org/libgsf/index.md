@@ -29,8 +29,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `1.14.55`, `1.14.54`, `1.14.53`, `1.14.52`, `1.14.51`
-- `1.14.50`
+- `1.14.55`, `1.14.54`, `1.14.53`, `1.14.52`, `1.14.51`, `1.14.50`
 
 </details>
 

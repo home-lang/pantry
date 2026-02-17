@@ -37,8 +37,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `0.22.0`, `0.21.5`, `0.21.4`, `0.21.3`, `0.21.2`
-- `0.21.1`
+- `0.22.0`
+- `0.21.5`, `0.21.4`, `0.21.3`, `0.21.2`, `0.21.1`
 
 </details>
 

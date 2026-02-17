@@ -31,7 +31,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 3 versions</summary>
 
-- `1.27.1.2`, `1.27.1.1`, `1.25.3.2`
+- `1.27.1.2`, `1.27.1.1`
+- `1.25.3.2`
 
 </details>
 

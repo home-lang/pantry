@@ -27,8 +27,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `1.5.30`, `1.5.29`, `1.5.28`, `1.5.27`, `1.5.26`
-- `1.5.25`, `1.5.24`, `1.5.23`
+- `1.5.30`, `1.5.29`, `1.5.28`, `1.5.27`, `1.5.26`, `1.5.25`, `1.5.24`, `1.5.23`
 
 </details>
 

@@ -27,7 +27,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `2026.2.4`, `2026.2.3`, `2026.1.30`, `0.4.5`, `0.4.4`
+- `2026.2.4`, `2026.2.3`
+- `2026.1.30`
+- `0.4.5`, `0.4.4`
 
 </details>
 

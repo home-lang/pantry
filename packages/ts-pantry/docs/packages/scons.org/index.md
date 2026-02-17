@@ -27,8 +27,12 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `4.10.1`, `4.10.0`, `4.9.1`, `4.9.0`, `4.8.1`
-- `4.8.0`, `4.7.0`, `4.6.0`, `4.5.2`
+- `4.10.1`, `4.10.0`
+- `4.9.1`, `4.9.0`
+- `4.8.1`, `4.8.0`
+- `4.7.0`
+- `4.6.0`
+- `4.5.2`
 
 </details>
 

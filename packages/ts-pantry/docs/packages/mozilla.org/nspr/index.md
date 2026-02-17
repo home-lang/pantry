@@ -27,7 +27,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `4.38.1`, `4.36.2`, `4.36.1`, `4.34.1`
+- `4.38.1`
+- `4.36.2`, `4.36.1`
+- `4.34.1`
 
 </details>
 

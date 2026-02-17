@@ -27,8 +27,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `2.19.2`, `2.19.1`, `2.19.0`, `2.18.0`, `2.17.2`
-- `2.17.1`, `2.17.0`, `2.15.0`, `2.14.0`
+- `2.19.2`, `2.19.1`, `2.19.0`
+- `2.18.0`
+- `2.17.2`, `2.17.1`, `2.17.0`
+- `2.15.0`
+- `2.14.0`
 
 </details>
 

@@ -27,7 +27,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `2025.7.22`, `2024.10.24`, `2024.5.8`, `2023.12.14`, `2023.4.17`
+- `2025.7.22`
+- `2024.10.24`
+- `2024.5.8`
+- `2023.12.14`
+- `2023.4.17`
 
 </details>
 

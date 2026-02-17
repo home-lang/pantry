@@ -27,8 +27,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `1.38.1`, `1.38.0`, `1.37.2`, `1.37.1`, `1.37.0`
-- `1.36.0`, `1.35.1`, `1.35.0`
+- `1.38.1`, `1.38.0`
+- `1.37.2`, `1.37.1`, `1.37.0`
+- `1.36.0`
+- `1.35.1`, `1.35.0`
 
 </details>
 

@@ -28,8 +28,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `0.12.1`, `0.12.0`, `0.11.0`, `0.10.0`, `0.9.1`
-- `0.9.0`
+- `0.12.1`, `0.12.0`
+- `0.11.0`
+- `0.10.0`
+- `0.9.1`, `0.9.0`
 
 </details>
 

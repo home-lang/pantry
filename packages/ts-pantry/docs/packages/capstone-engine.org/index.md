@@ -27,8 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `5.0.7`, `5.0.6`, `5.0.5`, `5.0.3`, `5.0.2`
-- `5.0.1`, `5.0.0`, `4.0.2`
+- `5.0.7`, `5.0.6`, `5.0.5`, `5.0.3`, `5.0.2`, `5.0.1`, `5.0.0`
+- `4.0.2`
 
 </details>
 

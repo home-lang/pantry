@@ -27,8 +27,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `2.36.19`, `2.36.18`, `2.36.17`, `2.36.16`, `2.36.15`
-- `2.36.14`, `2.36.13`
+- `2.36.19`, `2.36.18`, `2.36.17`, `2.36.16`, `2.36.15`, `2.36.14`, `2.36.13`
 
 </details>
 

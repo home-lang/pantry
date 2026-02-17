@@ -27,7 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `1.3.2`, `1.3.1`, `1.3.0`, `1.2.13`, `1.2.12`
+- `1.3.2`, `1.3.1`, `1.3.0`
+- `1.2.13`, `1.2.12`
 
 </details>
 

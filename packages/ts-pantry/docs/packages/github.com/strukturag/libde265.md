@@ -33,8 +33,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `1.0.16`, `1.0.15`, `1.0.14`, `1.0.13`, `1.0.12`
-- `1.0.11`
+- `1.0.16`, `1.0.15`, `1.0.14`, `1.0.13`, `1.0.12`, `1.0.11`
 
 </details>
 

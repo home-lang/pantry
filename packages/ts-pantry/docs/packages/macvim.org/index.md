@@ -38,7 +38,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `182.0.0`, `181.0.0`, `180.0.0`, `179.0.0`, `178.0.0`
+- `182.0.0`
+- `181.0.0`
+- `180.0.0`
+- `179.0.0`
+- `178.0.0`
 - `177.0.0`
 
 </details>

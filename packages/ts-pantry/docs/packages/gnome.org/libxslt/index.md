@@ -28,8 +28,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `1.1.45`, `1.1.43`, `1.1.42`, `1.1.41`, `1.1.40`
-- `1.1.39`, `1.1.38`, `1.1.37`
+- `1.1.45`, `1.1.43`, `1.1.42`, `1.1.41`, `1.1.40`, `1.1.39`, `1.1.38`, `1.1.37`
 
 </details>
 

@@ -30,7 +30,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `5.9.0`, `5.8.1`, `5.8.0`, `5.7.0`
+- `5.9.0`
+- `5.8.1`, `5.8.0`
+- `5.7.0`
 
 </details>
 

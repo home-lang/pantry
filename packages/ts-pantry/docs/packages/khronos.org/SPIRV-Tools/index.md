@@ -36,8 +36,13 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `2026.1.0`, `2025.5.0`, `2025.4.0`, `2025.1.0`, `2024.3.0`
-- `2024.2.0`, `2024.1.0`
+- `2026.1.0`
+- `2025.5.0`
+- `2025.4.0`
+- `2025.1.0`
+- `2024.3.0`
+- `2024.2.0`
+- `2024.1.0`
 
 </details>
 

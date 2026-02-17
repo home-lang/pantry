@@ -30,7 +30,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 2 versions</summary>
 
-- `0.28.0`, `0.27.0`
+- `0.28.0`
+- `0.27.0`
 
 </details>
 

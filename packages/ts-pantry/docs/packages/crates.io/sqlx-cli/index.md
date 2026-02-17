@@ -28,8 +28,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `0.8.6`, `0.8.5`, `0.8.3`, `0.8.2`, `0.8.1`
-- `0.8.0`, `0.7.4`
+- `0.8.6`, `0.8.5`, `0.8.3`, `0.8.2`, `0.8.1`, `0.8.0`
+- `0.7.4`
 
 </details>
 

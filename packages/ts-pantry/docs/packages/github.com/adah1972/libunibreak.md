@@ -27,7 +27,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 3 versions</summary>
 
-- `6.1.0`, `6.0.0`, `5.1.0`
+- `6.1.0`
+- `6.0.0`
+- `5.1.0`
 
 </details>
 

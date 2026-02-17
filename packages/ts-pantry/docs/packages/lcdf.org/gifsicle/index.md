@@ -27,7 +27,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `1.96.0`, `1.95.0`, `1.94.0`, `1.93.0`
+- `1.96.0`
+- `1.95.0`
+- `1.94.0`
+- `1.93.0`
 
 </details>
 

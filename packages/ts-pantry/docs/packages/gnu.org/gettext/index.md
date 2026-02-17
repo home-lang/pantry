@@ -48,8 +48,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 8 versions</summary>
 
-- `1.0.0`, `0.22.5`, `0.22.4`, `0.22.3`, `0.22.2`
-- `0.22.1`, `0.22.0`, `0.21.1`
+- `1.0.0`
+- `0.22.5`, `0.22.4`, `0.22.3`, `0.22.2`, `0.22.1`, `0.22.0`
+- `0.21.1`
 
 </details>
 

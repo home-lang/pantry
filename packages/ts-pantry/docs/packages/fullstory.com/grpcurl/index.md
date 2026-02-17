@@ -27,7 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `1.9.3`, `1.9.2`, `1.9.1`, `1.9.0`, `1.8.9`
+- `1.9.3`, `1.9.2`, `1.9.1`, `1.9.0`
+- `1.8.9`
 
 </details>
 

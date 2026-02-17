@@ -27,8 +27,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `1.25.4`, `1.23.0`, `1.22.5`, `1.22.0`, `1.21.6`
-- `1.21.5`, `1.21.4`, `1.21.3`, `1.21.1`
+- `1.25.4`
+- `1.23.0`
+- `1.22.5`, `1.22.0`
+- `1.21.6`, `1.21.5`, `1.21.4`, `1.21.3`, `1.21.1`
 
 </details>
 

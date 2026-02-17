@@ -27,8 +27,13 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 10 versions</summary>
 
-- `0.11.0`, `0.10.1`, `0.10.0`, `0.9.1`, `0.9.0`
-- `0.8.1`, `0.8.0`, `0.7.0`, `0.6.0`, `0.5.1`
+- `0.11.0`
+- `0.10.1`, `0.10.0`
+- `0.9.1`, `0.9.0`
+- `0.8.1`, `0.8.0`
+- `0.7.0`
+- `0.6.0`
+- `0.5.1`
 
 </details>
 

@@ -30,8 +30,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `1.12.0`, `1.11.2`, `1.11.1`, `1.11.0`, `1.10.3`
-- `1.10.1`, `1.8.12`
+- `1.12.0`
+- `1.11.2`, `1.11.1`, `1.11.0`
+- `1.10.3`, `1.10.1`
+- `1.8.12`
 
 </details>
 

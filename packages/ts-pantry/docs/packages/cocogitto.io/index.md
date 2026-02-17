@@ -27,8 +27,14 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `6.5.0`, `6.4.0`, `6.3.0`, `6.2.0`, `6.1.0`
-- `6.0.1`, `6.0.0`, `5.6.0`, `5.5.0`
+- `6.5.0`
+- `6.4.0`
+- `6.3.0`
+- `6.2.0`
+- `6.1.0`
+- `6.0.1`, `6.0.0`
+- `5.6.0`
+- `5.5.0`
 
 </details>
 

@@ -53,8 +53,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `1.22.2`, `1.22.1`, `1.22.0`, `1.21.3`, `1.21.2`
-- `1.21.1`, `1.21.0`, `1.20.2`, `1.20.1`
+- `1.22.2`, `1.22.1`, `1.22.0`
+- `1.21.3`, `1.21.2`, `1.21.1`, `1.21.0`
+- `1.20.2`, `1.20.1`
 
 </details>
 

@@ -30,7 +30,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `1.1.1`, `1.1.0`, `1.0.0`, `0.8.1`
+- `1.1.1`, `1.1.0`
+- `1.0.0`
+- `0.8.1`
 
 </details>
 

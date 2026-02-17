@@ -27,8 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `4.5.2`, `4.5.1`, `4.5.0`, `4.4.38`, `4.4.37`
-- `4.4.36`, `4.4.35`, `4.4.34`, `4.4.33`
+- `4.5.2`, `4.5.1`, `4.5.0`
+- `4.4.38`, `4.4.37`, `4.4.36`, `4.4.35`, `4.4.34`, `4.4.33`
 
 </details>
 

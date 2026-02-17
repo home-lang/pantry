@@ -27,7 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `8.3.1`, `8.3.0`, `8.2.2`, `8.2.1`, `8.2.0`
+- `8.3.1`, `8.3.0`
+- `8.2.2`, `8.2.1`, `8.2.0`
 - `8.1.8`, `8.1.7`
 
 </details>

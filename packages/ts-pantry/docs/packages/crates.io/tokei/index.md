@@ -27,7 +27,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 3 versions</summary>
 
-- `14.0.0`, `13.0.0`, `12.1.2`
+- `14.0.0`
+- `13.0.0`
+- `12.1.2`
 
 </details>
 

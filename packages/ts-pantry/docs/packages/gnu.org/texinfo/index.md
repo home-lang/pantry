@@ -35,7 +35,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 5 versions</summary>
 
-- `7.2.0`, `7.1.1`, `7.1.0`, `7.0.3`, `7.0.1`
+- `7.2.0`
+- `7.1.1`, `7.1.0`
+- `7.0.3`, `7.0.1`
 
 </details>
 

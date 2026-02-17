@@ -27,8 +27,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `3.18.1`, `3.18.0`, `3.17.4`, `3.17.3`, `3.17.2`
-- `3.17.1`, `2.9.9`
+- `3.18.1`, `3.18.0`
+- `3.17.4`, `3.17.3`, `3.17.2`, `3.17.1`
+- `2.9.9`
 
 </details>
 

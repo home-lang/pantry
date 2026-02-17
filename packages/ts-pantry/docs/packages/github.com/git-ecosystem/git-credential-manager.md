@@ -27,7 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `2.7.2`, `2.7.1`, `2.7.0`, `2.6.1`
+- `2.7.2`, `2.7.1`, `2.7.0`
+- `2.6.1`
 
 </details>
 

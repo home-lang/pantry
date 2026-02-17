@@ -27,8 +27,13 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `3.6a`, `3.6.0`, `3.5a`, `3.5.0`, `3.4.0`
-- `3.3a`, `3.3.0`
+- `3.6a`
+- `3.6.0`
+- `3.5a`
+- `3.5.0`
+- `3.4.0`
+- `3.3a`
+- `3.3.0`
 
 </details>
 

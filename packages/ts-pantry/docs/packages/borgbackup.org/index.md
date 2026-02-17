@@ -28,7 +28,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `1.4.3`, `1.4.2`, `1.4.1`, `1.2.9`
+- `1.4.3`, `1.4.2`, `1.4.1`
+- `1.2.9`
 
 </details>
 

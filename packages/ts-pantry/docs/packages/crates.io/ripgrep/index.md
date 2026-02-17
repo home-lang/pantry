@@ -27,8 +27,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 9 versions</summary>
 
-- `15.1.0`, `15.0.0`, `14.1.1`, `14.1.0`, `14.0.3`
-- `14.0.2`, `14.0.1`, `14.0.0`, `13.0.0`
+- `15.1.0`
+- `15.0.0`
+- `14.1.1`, `14.1.0`
+- `14.0.3`, `14.0.2`, `14.0.1`, `14.0.0`
+- `13.0.0`
 
 </details>
 

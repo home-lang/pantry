@@ -27,7 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 2 versions</summary>
 
-- `2023.8.4`, `2021.12.17`
+- `2023.8.4`
+- `2021.12.17`
 
 </details>
 

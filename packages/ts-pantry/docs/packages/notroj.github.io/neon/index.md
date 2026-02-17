@@ -27,8 +27,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `0.36.0`, `0.35.0`, `0.34.2`, `0.34.1`, `0.34.0`
-- `0.33.0`, `0.32.5`
+- `0.36.0`
+- `0.35.0`
+- `0.34.2`, `0.34.1`, `0.34.0`
+- `0.33.0`
+- `0.32.5`
 
 </details>
 

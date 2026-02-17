@@ -27,8 +27,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `0.10.2`, `0.10.1`, `0.10.0`, `0.9.4`, `0.9.3`
-- `0.9.2`, `0.9.1`
+- `0.10.2`, `0.10.1`, `0.10.0`
+- `0.9.4`, `0.9.3`, `0.9.2`, `0.9.1`
 
 </details>
 

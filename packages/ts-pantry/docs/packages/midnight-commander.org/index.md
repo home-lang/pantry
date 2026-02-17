@@ -30,8 +30,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `4.8.33`, `4.8.32`, `4.8.31`, `4.8.30`, `4.8.29`
-- `4.8.28`
+- `4.8.33`, `4.8.32`, `4.8.31`, `4.8.30`, `4.8.29`, `4.8.28`
 
 </details>
 

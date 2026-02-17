@@ -34,7 +34,11 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `0.74.0`, `0.73.0`, `0.72.0`, `0.71.0`, `0.70.0`
+- `0.74.0`
+- `0.73.0`
+- `0.72.0`
+- `0.71.0`
+- `0.70.0`
 - `0.69.0`
 
 </details>

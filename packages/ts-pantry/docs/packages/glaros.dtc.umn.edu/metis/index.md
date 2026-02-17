@@ -32,7 +32,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 4 versions</summary>
 
-- `5.2.1.2`, `5.2.1.1`, `5.1.0.4`, `5.1.0.3`
+- `5.2.1.2`, `5.2.1.1`
+- `5.1.0.4`, `5.1.0.3`
 
 </details>
 

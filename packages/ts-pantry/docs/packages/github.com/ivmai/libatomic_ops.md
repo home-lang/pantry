@@ -27,7 +27,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `7.10.0`, `7.8.4`, `7.8.2`, `7.8.0`, `7.6.16`
+- `7.10.0`
+- `7.8.4`, `7.8.2`, `7.8.0`
+- `7.6.16`
 - `7.4.20`
 
 </details>

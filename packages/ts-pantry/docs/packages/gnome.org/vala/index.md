@@ -31,8 +31,7 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `0.56.18`, `0.56.17`, `0.56.16`, `0.56.15`, `0.56.14`
-- `0.56.13`
+- `0.56.18`, `0.56.17`, `0.56.16`, `0.56.15`, `0.56.14`, `0.56.13`
 
 </details>
 

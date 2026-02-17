@@ -27,7 +27,10 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 6 versions</summary>
 
-- `5.33.0`, `5.32.0`, `5.31.0`, `5.30.1`, `5.30.0`
+- `5.33.0`
+- `5.32.0`
+- `5.31.0`
+- `5.30.1`, `5.30.0`
 - `5.29.0`
 
 </details>

@@ -28,8 +28,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 10 versions</summary>
 
-- `3.3.1`, `3.3.0`, `3.2.9`, `3.2.8.1`, `3.2.8`
-- `3.2.7`, `3.2.6`, `3.2.5`, `3.2.4`, `3.2.3`
+- `3.3.1`, `3.3.0`
+- `3.2.9`, `3.2.8.1`, `3.2.8`, `3.2.7`, `3.2.6`, `3.2.5`, `3.2.4`, `3.2.3`
 
 </details>
 

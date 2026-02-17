@@ -29,7 +29,9 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 3 versions</summary>
 
-- `4.21.0`, `4.20.0`, `4.19.0`
+- `4.21.0`
+- `4.20.0`
+- `4.19.0`
 
 </details>
 

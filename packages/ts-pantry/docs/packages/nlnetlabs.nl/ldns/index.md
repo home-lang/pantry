@@ -28,7 +28,8 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 3 versions</summary>
 
-- `1.9.0`, `1.8.4`, `1.8.3`
+- `1.9.0`
+- `1.8.4`, `1.8.3`
 
 </details>
 
