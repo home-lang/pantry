@@ -658,6 +658,7 @@ Options:
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists (renamed/moved)
     'taku910.github.io/mecab-ipadic', // Needs mecab built first (complex dep chain)
+    'itstool.org', // Needs Python libxml2 bindings matching exact Python version (3.14 vs system 3.12)
   ])
 
   let platformSkipped = 0

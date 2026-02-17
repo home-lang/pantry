@@ -195,7 +195,14 @@ function parseYaml(content: string): Record<string, any> {
     const indent = line.search(/\S/)
 
     // Pop stack to correct indent level
+    // Exception: don't pop an array if the current line is a list item at the same indent
+    // (YAML allows sequences at the same indent as their mapping key, e.g.:
+    //   ARGS:
+    //   - item1     ← same indent as ARGS: — this is the value of ARGS)
     while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
+      if (trimmed.startsWith('- ') && Array.isArray(stack[stack.length - 1].obj) && stack[stack.length - 1].indent === indent) {
+        break
+      }
       stack.pop()
     }
 

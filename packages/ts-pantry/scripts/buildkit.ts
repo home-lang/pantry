@@ -467,6 +467,10 @@ export function generateBuildScript(
   if (osName === 'darwin') {
     sections.push('export MACOSX_DEPLOYMENT_TARGET=11.0')
     sections.push(`export LDFLAGS="-Wl,-rpath,${prefix} \${LDFLAGS:-}"`)
+    // Modern Clang treats these warnings as errors by default, breaking older packages
+    // (e.g. pixman 0.40 has incompatible function pointer types)
+    sections.push('export CFLAGS="-Wno-error=incompatible-function-pointer-types -Wno-error=int-conversion -Wno-error=implicit-function-declaration ${CFLAGS:-}"')
+    sections.push('export CXXFLAGS="-Wno-error=incompatible-function-pointer-types ${CXXFLAGS:-}"')
   } else if (osName === 'linux' && archName === 'x86-64') {
     sections.push('export CFLAGS="-fPIC ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-fPIC ${CXXFLAGS:-}"')
@@ -590,7 +594,12 @@ export function generateBuildScript(
     sections.push('  install() {')
     sections.push('    local args=() has_D=false')
     sections.push('    for arg in "$@"; do')
-    sections.push('      if [ "$arg" = "-D" ]; then has_D=true; else args+=("$arg"); fi')
+    sections.push('      case "$arg" in')
+    sections.push('        -D) has_D=true ;;')
+    // Handle combined flags like -Dm755, -Dm644 — extract -D, keep -m...
+    sections.push('        -D*) has_D=true; args+=("-${arg#-D}") ;;')
+    sections.push('        *) args+=("$arg") ;;')
+    sections.push('      esac')
     sections.push('    done')
     sections.push('    if $has_D; then')
     // Use bash 3.2 compatible syntax (no negative array indices)
