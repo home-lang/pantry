@@ -475,10 +475,12 @@ export function generateBuildScript(
     sections.push('export CFLAGS="-Wno-error=incompatible-function-pointer-types -Wno-error=int-conversion -Wno-error=implicit-function-declaration ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-Wno-error=incompatible-function-pointer-types ${CXXFLAGS:-}"')
   } else if (osName === 'linux' && archName === 'x86-64') {
-    sections.push('export CFLAGS="-fPIC ${CFLAGS:-}"')
+    // Modern GCC/Clang treat certain warnings as errors (C23 defaults) — relax them
+    sections.push('export CFLAGS="-fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-function-pointer-types ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-fPIC ${CXXFLAGS:-}"')
-    // Note: Do NOT add -pie to LDFLAGS — it breaks shared library builds
-    // (causes "undefined reference to main" when linking .so files)
+    // -ldl: some packages need explicit libdl for dlsym (harmless on glibc 2.34+ where it's in libc)
+    // -Wl,-rpath: ensure built binaries can find their own libs
+    sections.push(`export LDFLAGS="-ldl -Wl,-rpath,${prefix}/lib \${LDFLAGS:-}"`)
   }
   sections.push('')
 
