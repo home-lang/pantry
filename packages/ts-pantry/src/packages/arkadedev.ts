@@ -3,7 +3,7 @@
  *
  * @domain `arkade.dev`
  * @programs `arkade`
- * @version `0.11.80` (72 versions available)
+ * @version `0.11.81` (73 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install arkade.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "Arkade"
  * console.log(pkg.description) // "Open Source Marketplace For Developer Tools"
  * console.log(pkg.programs)    // ["arkade"]
- * console.log(pkg.versions[0]) // "0.11.80" (latest)
+ * console.log(pkg.versions[0]) // "0.11.81" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/arkade-dev.md
@@ -68,6 +68,7 @@ export const arkadedevPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.11.81',
     '0.11.80',
     '0.11.79',
     '0.11.76',
