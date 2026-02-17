@@ -572,6 +572,21 @@ export function generateBuildScript(
     sections.push('')
   }
 
+  // pip: avoid permission errors with system Python on Linux
+  sections.push('# pip: avoid permission errors when system Python is externally-managed')
+  sections.push('export PIP_BREAK_SYSTEM_PACKAGES=1')
+  sections.push('export PIP_IGNORE_INSTALLED=1')
+  sections.push('')
+
+  // Linux multiarch: ensure linker can find libs in /usr/lib/x86_64-linux-gnu
+  if (osName === 'linux') {
+    sections.push('# Multiarch library paths (Debian/Ubuntu)')
+    sections.push('if [ -d "/usr/lib/x86_64-linux-gnu" ]; then')
+    sections.push('  export LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:${LIBRARY_PATH:-}"')
+    sections.push('fi')
+    sections.push('')
+  }
+
   // Wrap sed to handle nullglob (empty glob → no file args) and use GNU sed on macOS
   sections.push('# sed wrapper: use GNU sed on macOS + handle empty nullglob gracefully')
   sections.push('__real_sed="$(command -v gsed 2>/dev/null || command -v sed)"')
@@ -854,6 +869,15 @@ export function generateBuildScript(
   sections.push('  git add -A 2>/dev/null || true')
   sections.push('  git commit -qm "init" --allow-empty 2>/dev/null || true')
   sections.push(`  git tag -a "v${version}" -m "v${version}" --force 2>/dev/null || true`)
+  sections.push('fi')
+  sections.push('')
+
+  // Ensure cargo is still reachable (recipe env/toolchain setup can shadow it)
+  sections.push('# Cargo PATH recovery — ensure cargo is reachable after all env setup')
+  sections.push('if ! command -v cargo &>/dev/null; then')
+  sections.push('  for _cdir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
+  sections.push('    if [ -x "$_cdir/cargo" ]; then export PATH="$_cdir:$PATH"; break; fi')
+  sections.push('  done')
   sections.push('fi')
   sections.push('')
 

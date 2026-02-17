@@ -718,6 +718,9 @@ Options:
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
     'macvim.org', // Depends on vim.org (same leading-zero version issue)
     'surrealdb.com', // Old release tags removed from GitHub
+    'nasm.us', // Version resolution generates phantom versions (3.1.0, 3.0.0) that 404
+    'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
+    'strace.io', // btrfs static assertions incompatible with newer kernel headers
   ])
 
   let platformSkipped = 0

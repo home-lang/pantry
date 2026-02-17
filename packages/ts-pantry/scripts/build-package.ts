@@ -27,22 +27,61 @@ function findSystemPrefix(domain: string): string {
     'gnu.org/libtool': 'libtool', 'perl.org': 'perl', 'ruby-lang.org': 'ruby',
     'openjdk.org': 'java', 'adoptium.net': 'java',
   }
-  // Extract likely binary name from domain
+
+  // Domain -> pkg-config package name (for library-only packages without binaries)
+  const pkgConfigMap: Record<string, string> = {
+    'boost.org': 'boost_system', 'zlib.net': 'zlib', 'openssl.org': 'openssl',
+    'sourceware.org/libffi': 'libffi', 'sourceware.org/bzip2': 'bzip2',
+    'gnome.org/glib': 'glib-2.0', 'gnome.org/gobject-introspection': 'gobject-introspection-1.0',
+    'gnome.org/pango': 'pango', 'gnome.org/atk': 'atk', 'gnome.org/libxml2': 'libxml-2.0',
+    'cairographics.org': 'cairo', 'harfbuzz.org': 'harfbuzz', 'freetype.org': 'freetype2',
+    'libpng.org': 'libpng', 'pcre.org': 'libpcre', 'pcre.org/v2': 'libpcre2-8',
+    'libevent.org': 'libevent', 'pixman.org': 'pixman-1', 'freedesktop.org/fontconfig': 'fontconfig',
+    'x.org/x11': 'x11', 'x.org/xcb': 'xcb', 'x.org/protocol': 'xproto',
+    'gnutls.org': 'gnutls', 'libusb.info': 'libusb-1.0', 'libarchive.org': 'libarchive',
+    'unicode.org': 'icu-uc', 'gnupg.org/libgcrypt': 'libgcrypt',
+    'gnupg.org/libgpg-error': 'gpg-error', 'gnupg.org/libassuan': 'libassuan',
+  }
+
+  // 1. Try to find via binary in PATH
   const lastPart = domain.split('/').pop() || ''
   const binaryName = domainMap[domain] || domainMap[lastPart] || lastPart
   try {
     const whichPath = execSync(`command -v ${binaryName} 2>/dev/null`, { encoding: 'utf-8' }).trim()
     if (whichPath && existsSync(whichPath)) {
-      // Binary at /X/Y/bin/name → prefix is /X/Y
       const binDir = dirname(whichPath)
       const prefix = dirname(binDir)
-      // Sanity check: prefix should have a bin directory
       if (binDir.endsWith('/bin') || binDir.endsWith('/sbin')) {
         return prefix
       }
     }
   } catch { /* binary not found */ }
-  return existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+
+  // 2. Try pkg-config to find library prefix
+  const pkgName = pkgConfigMap[domain]
+  if (pkgName) {
+    try {
+      const prefix = execSync(`pkg-config --variable=prefix ${pkgName} 2>/dev/null`, { encoding: 'utf-8' }).trim()
+      if (prefix && existsSync(prefix)) return prefix
+    } catch { /* pkg-config failed */ }
+  }
+
+  // 3. On macOS, try brew --prefix
+  if (process.platform === 'darwin') {
+    const brewNames = [lastPart, domain.replace(/\//g, '-'), binaryName]
+    for (const name of brewNames) {
+      try {
+        const prefix = execSync(`brew --prefix ${name} 2>/dev/null`, { encoding: 'utf-8' }).trim()
+        if (prefix && existsSync(prefix)) return prefix
+      } catch { /* not installed via brew */ }
+    }
+  }
+
+  // 4. Default: /usr on Linux (where apt installs), /usr/local on macOS
+  if (process.platform === 'darwin') {
+    return existsSync('/usr/local/include') ? '/usr/local' : '/usr'
+  }
+  return '/usr'
 }
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname

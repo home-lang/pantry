@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: macos-15
             platform: darwin-arm64
           - os: ubuntu-latest
             platform: linux-x86-64
@@ -144,7 +144,7 @@ jobs:
       matrix:
         batch: ${{ fromJson(needs.discover.outputs.batches) }}
         platform:
-          - os: macos-14
+          - os: macos-15
             name: darwin-arm64
           - os: ubuntu-latest
             name: linux-x86-64
@@ -233,6 +233,20 @@ jobs:
             libpam0g-dev libudev-dev \
             libarchive-dev libusb-1.0-0-dev \
             libjemalloc-dev libvterm-dev
+
+      - name: Setup Xcode (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Select latest Xcode 26.x for Swift 6.2+ support (needed for apple.com/container etc)
+          XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XCODE_PATH" ]; then
+            sudo xcode-select -s "$XCODE_PATH"
+            echo "Selected Xcode: $XCODE_PATH"
+          else
+            echo "No Xcode 26.x found, using default"
+          fi
+          swift --version
+          xcodebuild -version
 
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
