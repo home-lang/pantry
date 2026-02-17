@@ -2,7 +2,7 @@
  * **babashka** - pkgx package
  *
  * @domain `babashka.org`
- * @version `1.12.214` (2 versions available)
+ * @version `1.12.215` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install babashka.org`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.babashkaorg
  * console.log(pkg.name)        // "babashka"
- * console.log(pkg.versions[0]) // "1.12.214" (latest)
+ * console.log(pkg.versions[0]) // "1.12.215" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/babashka-org.md
@@ -58,6 +58,7 @@ export const babashkaorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.12.215',
     '1.12.214',
     '1.12.213',
   ] as const,
