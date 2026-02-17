@@ -33,6 +33,11 @@ pub const findProjectServices = services.findProjectServices;
 // TOML parser
 pub const toml_parser = @import("config/toml.zig");
 
+// .npmrc configuration
+pub const npmrc = @import("config/npmrc.zig");
+pub const NpmrcConfig = npmrc.NpmrcConfig;
+pub const loadNpmrc = npmrc.loadNpmrc;
+
 // pantry.toml project configuration
 pub const pantry_config = @import("config/pantry_config.zig");
 pub const PantryConfig = pantry_config.PantryConfig;

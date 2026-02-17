@@ -376,6 +376,17 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
+        // Load .npmrc configuration for custom registries and auth tokens
+        var npmrc_config = lib.config.loadNpmrc(allocator, cwd) catch lib.config.NpmrcConfig.init(allocator);
+        defer npmrc_config.deinit();
+
+        // Apply .npmrc registry override to environment if present
+        if (npmrc_config.registry) |custom_registry| {
+            if (opts.verbose) {
+                style.print("Using registry from .npmrc: {s}\n", .{custom_registry});
+            }
+        }
+
         // Clean Bun-style output - just show what we're installing
         style.printInstalling(deps_to_install.len);
 
@@ -386,6 +397,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var shared_installer = try install.Installer.init(allocator, &pkg_cache);
         allocator.free(shared_installer.data_dir);
         shared_installer.data_dir = try allocator.dupe(u8, env_dir);
+
+        // Configure installer with .npmrc settings
+        if (npmrc_config.registry) |custom_registry| {
+            shared_installer.setRegistryUrl(custom_registry);
+        }
+
         defer shared_installer.deinit();
 
         // Install results storage
@@ -776,6 +793,24 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Save pantry.lock
         try lockfile_hooks.saveLockfile(&lock_file, cwd);
+
+        // Apply patches from patchedDependencies in package.json
+        {
+            const patch_mod = @import("../../../install/patches.zig");
+            const patch_result = patch_mod.applyPatches(allocator, proj_dir, opts.verbose) catch |err| blk: {
+                if (opts.verbose) {
+                    style.print("Warning: Failed to apply patches: {}\n", .{err});
+                }
+                break :blk patch_mod.PatchResult{ .applied = 0, .failed = 0, .skipped = 0 };
+            };
+            if (patch_result.applied > 0 or patch_result.failed > 0) {
+                style.print("Patches: {d} applied", .{patch_result.applied});
+                if (patch_result.failed > 0) {
+                    style.print(", {s}{d} failed{s}", .{ style.red, patch_result.failed, style.reset });
+                }
+                style.print("\n", .{});
+            }
+        }
 
         // Get Pantry version and hash for display
         const pantry_version = version_options.version;

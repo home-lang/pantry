@@ -318,8 +318,44 @@ pub fn installSinglePackage(
         std.mem.eql(u8, lookup_name, "ziglang.org");
     const is_zig_dev = lib.install.downloader.isZigDevVersion(dep.version);
 
+    // Check if this is a git dependency (git+https://, git+ssh://, git://)
+    const is_git_dep = std.mem.startsWith(u8, dep.version, "git+") or
+        std.mem.startsWith(u8, dep.version, "git://") or
+        (dep.source == .git);
+
+    // Check if this is a URL dependency (https:// tarball)
+    const is_url_dep = !is_git_dep and
+        (std.mem.startsWith(u8, dep.version, "https://") or
+        std.mem.startsWith(u8, dep.version, "http://"));
+
     // Check if this is a GitHub dependency
-    const spec = if (dep.source == .github and dep.github_ref != null) blk: {
+    const spec = if (is_git_dep) blk: {
+        // Generic git URL: git+https://example.com/repo.git#ref
+        const url_and_ref = dep.version;
+        var git_url = url_and_ref;
+        var git_ref: []const u8 = "main";
+
+        if (std.mem.indexOf(u8, url_and_ref, "#")) |hash_pos| {
+            git_url = url_and_ref[0..hash_pos];
+            git_ref = url_and_ref[hash_pos + 1 ..];
+        }
+
+        break :blk lib.packages.PackageSpec{
+            .name = lookup_name,
+            .version = git_ref,
+            .source = .git,
+            .url = git_url,
+            .branch = git_ref,
+        };
+    } else if (is_url_dep) blk: {
+        // URL tarball: https://example.com/package-1.0.0.tgz
+        break :blk lib.packages.PackageSpec{
+            .name = lookup_name,
+            .version = dep.version,
+            .source = .http,
+            .url = dep.version,
+        };
+    } else if (dep.source == .github and dep.github_ref != null) blk: {
         const gh_ref = dep.github_ref.?;
         const repo_str = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ gh_ref.owner, gh_ref.repo });
         defer allocator.free(repo_str);

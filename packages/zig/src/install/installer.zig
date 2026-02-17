@@ -217,6 +217,8 @@ pub const Installer = struct {
     installing_stack: *InstallingStack,
     /// Two-level npm cache: registry JSON by name + resolution by name@constraint
     npm_cache: *NpmCache,
+    /// Custom npm registry URL (from .npmrc), null = use default
+    custom_registry_url: ?[]const u8 = null,
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
@@ -237,8 +239,15 @@ pub const Installer = struct {
         };
     }
 
+    /// Set custom npm registry URL (from .npmrc configuration)
+    pub fn setRegistryUrl(self: *Installer, url: []const u8) void {
+        if (self.custom_registry_url) |old| self.allocator.free(old);
+        self.custom_registry_url = self.allocator.dupe(u8, url) catch null;
+    }
+
     pub fn deinit(self: *Installer) void {
         self.allocator.free(self.data_dir);
+        if (self.custom_registry_url) |url| self.allocator.free(url);
         self.installing_stack.deinit();
         self.allocator.destroy(self.installing_stack);
         self.npm_cache.deinit();
@@ -265,6 +274,16 @@ pub const Installer = struct {
         // Check if this is a GitHub dependency
         if (spec.source == .github) {
             return try self.installFromGitHub(spec, options);
+        }
+
+        // Check if this is a generic git dependency (git+https://, git+ssh://, git://)
+        if (spec.source == .git) {
+            return try self.installFromGit(spec, options);
+        }
+
+        // Check if this is a URL dependency (https:// tarball)
+        if (spec.source == .http) {
+            return try self.installFromUrl(spec, options);
         }
 
         // Check if this is a Zig from ziglang.org (dev or stable)
@@ -570,6 +589,240 @@ pub const Installer = struct {
 
         const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, spec.version),
+            .install_path = install_dir,
+            .from_cache = false,
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install a package from a generic git URL (git+https://, git+ssh://, git://)
+    fn installFromGit(
+        self: *Installer,
+        spec: PackageSpec,
+        options: InstallOptions,
+    ) !InstallResult {
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+
+        const git_url_raw = spec.url orelse return error.InvalidGitUrl;
+
+        // Strip git+ prefix if present (git+https:// -> https://, git+ssh:// -> ssh://)
+        const git_url = if (std.mem.startsWith(u8, git_url_raw, "git+"))
+            git_url_raw[4..]
+        else
+            git_url_raw;
+
+        // Determine ref (branch/tag/commit) from spec
+        const ref = spec.branch orelse spec.tag orelse spec.version;
+
+        // Determine install location
+        const install_dir = if (options.project_root) |project_root| blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry/{s}",
+                .{ project_root, spec.name },
+            );
+        } else blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/packages/git/{s}/{s}",
+                .{ self.data_dir, spec.name, spec.version },
+            );
+        };
+        errdefer self.allocator.free(install_dir);
+
+        // Check if already installed
+        const already_installed = !options.force and blk: {
+            io_helper.accessAbsolute(install_dir, .{}) catch break :blk false;
+            break :blk true;
+        };
+
+        if (already_installed) {
+            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            return InstallResult{
+                .name = try self.allocator.dupe(u8, spec.name),
+                .version = try self.allocator.dupe(u8, spec.version),
+                .install_path = install_dir,
+                .from_cache = true,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        }
+
+        if (!options.quiet) {
+            style.print("  → Cloning from git: {s}#{s}\n", .{ git_url, ref });
+        }
+
+        // Create temp directory for cloning
+        const home_dir = try Paths.home(self.allocator);
+        defer self.allocator.free(home_dir);
+        const temp_dir = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/.pantry/.tmp/git-{s}-{s}",
+            .{ home_dir, spec.name, spec.version },
+        );
+        defer {
+            self.allocator.free(temp_dir);
+            io_helper.deleteTree(temp_dir) catch {};
+        }
+
+        // Clone with specified ref
+        var clone_result = try io_helper.childRun(self.allocator, &[_][]const u8{
+            "git", "clone", "--depth", "1", "--branch", ref, git_url, temp_dir,
+        });
+
+        // If branch-specific clone failed, try without branch
+        if (clone_result.term.exited != 0) {
+            self.allocator.free(clone_result.stdout);
+            self.allocator.free(clone_result.stderr);
+            clone_result = try io_helper.childRun(self.allocator, &[_][]const u8{
+                "git", "clone", "--depth", "1", git_url, temp_dir,
+            });
+        }
+        defer {
+            self.allocator.free(clone_result.stdout);
+            self.allocator.free(clone_result.stderr);
+        }
+
+        if (clone_result.term.exited != 0) {
+            if (!options.quiet) {
+                style.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
+            }
+            return error.GitCloneFailed;
+        }
+
+        // Move contents to install directory
+        try io_helper.makePath(install_dir);
+        var temp_dir_handle = try io_helper.openDirForIteration(temp_dir);
+        defer temp_dir_handle.close();
+
+        var iter = temp_dir_handle.iterate();
+        while (iter.next() catch null) |entry| {
+            var src_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const src_path = std.fmt.bufPrint(&src_buf, "{s}/{s}", .{ temp_dir, entry.name }) catch continue;
+            var dst_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const dest_path = std.fmt.bufPrint(&dst_buf, "{s}/{s}", .{ install_dir, entry.name }) catch continue;
+            io_helper.rename(src_path, dest_path) catch continue;
+        }
+
+        if (options.project_root) |project_root| {
+            try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
+        }
+
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        return InstallResult{
+            .name = try self.allocator.dupe(u8, spec.name),
+            .version = try self.allocator.dupe(u8, spec.version),
+            .install_path = install_dir,
+            .from_cache = false,
+            .install_time_ms = @intCast(end_time - start_time),
+        };
+    }
+
+    /// Install a package from a URL (tarball download)
+    fn installFromUrl(
+        self: *Installer,
+        spec: PackageSpec,
+        options: InstallOptions,
+    ) !InstallResult {
+        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+
+        const download_url = spec.url orelse return error.NoUrlProvided;
+
+        // Validate URL scheme to prevent SSRF
+        if (!std.mem.startsWith(u8, download_url, "https://") and
+            !std.mem.startsWith(u8, download_url, "http://"))
+        {
+            return error.InvalidUrlScheme;
+        }
+
+        // Determine install location
+        const install_dir = if (options.project_root) |project_root| blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/pantry/{s}",
+                .{ project_root, spec.name },
+            );
+        } else blk: {
+            break :blk try std.fmt.allocPrint(
+                self.allocator,
+                "{s}/packages/url/{s}/{s}",
+                .{ self.data_dir, spec.name, spec.version },
+            );
+        };
+        errdefer self.allocator.free(install_dir);
+
+        // Check if already installed
+        const already_installed = !options.force and blk: {
+            io_helper.accessAbsolute(install_dir, .{}) catch break :blk false;
+            break :blk true;
+        };
+
+        if (already_installed) {
+            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            return InstallResult{
+                .name = try self.allocator.dupe(u8, spec.name),
+                .version = try self.allocator.dupe(u8, spec.version),
+                .install_path = install_dir,
+                .from_cache = true,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
+        }
+
+        if (!options.quiet) {
+            style.print("  → Downloading from URL: {s}\n", .{download_url});
+        }
+
+        // Download tarball to temp location
+        const tmp_dir = io_helper.getTempDir();
+        const safe_name = try std.mem.replaceOwned(u8, self.allocator, spec.name, "/", "__");
+        defer self.allocator.free(safe_name);
+        const tarball_path = try std.fmt.allocPrint(
+            self.allocator,
+            "{s}/pantry-url-{s}.tgz",
+            .{ tmp_dir, safe_name },
+        );
+        defer {
+            self.allocator.free(tarball_path);
+            io_helper.deleteFile(tarball_path) catch {};
+        }
+
+        io_helper.httpDownloadFile(self.allocator, download_url, tarball_path) catch {
+            if (!options.quiet) {
+                style.print("  ✗ Failed to download: {s}\n", .{download_url});
+            }
+            return error.DownloadFailed;
+        };
+
+        // Create install directory and extract
+        try io_helper.makePath(install_dir);
+
+        {
+            const tarball_data = try io_helper.readFileAlloc(self.allocator, tarball_path, 500 * 1024 * 1024);
+            defer self.allocator.free(tarball_data);
+
+            var dest = try io_helper.cwd().openDir(io_helper.io, install_dir, .{});
+            defer dest.close(io_helper.io);
+
+            var input_reader: std.Io.Reader = .fixed(tarball_data);
+            var window_buf: [65536]u8 = undefined;
+            var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+            std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{
+                .strip_components = 1,
+            }) catch |err| {
+                if (!options.quiet) {
+                    style.print("  ✗ Failed to extract tarball: {}\n", .{err});
+                }
+                return error.ExtractionFailed;
+            };
+        }
+
+        if (options.project_root) |project_root| {
+            try self.createNpmShims(project_root, spec.name, install_dir);
+        }
+
+        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
             .version = try self.allocator.dupe(u8, spec.version),
@@ -917,7 +1170,9 @@ pub const Installer = struct {
             cached_json
         else blk: {
             // Fetch from npm registry using native HTTP (no curl subprocess)
-            const npm_url = try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}", .{name});
+            // Uses custom registry from .npmrc if configured, otherwise default npm registry
+            const registry_base = self.custom_registry_url orelse "https://registry.npmjs.org";
+            const npm_url = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ registry_base, name });
             defer self.allocator.free(npm_url);
 
             const response_body = io_helper.httpGet(self.allocator, npm_url) catch

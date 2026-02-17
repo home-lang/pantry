@@ -9,6 +9,7 @@ pub const runtime = @import("install/runtime.zig");
 pub const downloader = @import("install/downloader.zig");
 pub const recovery = @import("install/recovery.zig");
 pub const offline = @import("install/offline.zig");
+pub const patches = @import("install/patches.zig");
 
 // Re-export main types
 pub const Installer = installer.Installer;
