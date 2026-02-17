@@ -2306,14 +2306,24 @@ This package can also be accessed using these aliases:
 <summary>Show all ${pkg.versions.length} versions</summary>
 
 `
-        // Show versions in a more readable format
-        const versionChunks = []
-        for (let i = 0; i < pkg.versions.length; i += 5) {
-          versionChunks.push(pkg.versions.slice(i, i + 5))
-        }
+        // Group versions by minor version (e.g., all 25.6.x on one line, all 25.5.x on next)
+        // For date-based versions (e.g., 2024.01.x), this groups by month
+        const versionGroups: Map<string, string[]> = new Map()
+        const groupOrder: string[] = []
 
-        versionChunks.forEach((chunk) => {
-          content += `- ${chunk.map(v => `\`${v}\``).join(', ')}\n`
+        pkg.versions.forEach((v: string) => {
+          const parts = v.split('.')
+          const groupKey = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : parts[0]
+          if (!versionGroups.has(groupKey)) {
+            versionGroups.set(groupKey, [])
+            groupOrder.push(groupKey)
+          }
+          versionGroups.get(groupKey)!.push(v)
+        })
+
+        groupOrder.forEach((group) => {
+          const versions = versionGroups.get(group)!
+          content += `- ${versions.map(v => `\`${v}\``).join(', ')}\n`
         })
 
         content += `\n</details>
