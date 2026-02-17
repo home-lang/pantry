@@ -455,6 +455,12 @@ export function generateBuildScript(
   sections.push('shopt -s nullglob')
   sections.push('')
 
+  // TMPDIR: keep temp files inside build home to avoid filling /tmp in CI
+  // (ported from brewkit's build-script.ts)
+  sections.push('# Temp directory inside build dir (avoid filling /tmp in CI)')
+  sections.push(`export TMPDIR="${buildDir}/.tmp"; mkdir -p "$TMPDIR"`)
+  sections.push('')
+
   // Default compiler flags (from brewkit's flags())
   // Set BEFORE recipe env so recipes can override if needed
   sections.push('# Default compiler flags')
@@ -718,6 +724,64 @@ export function generateBuildScript(
     if (osName === 'darwin') {
       sections.push(`export DYLD_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_LIBRARY_PATH:-}"`)
     }
+
+    // CMAKE_PREFIX_PATH: help CMake find deps (ported from brewkit)
+    const depPrefixes = Object.entries(depPaths)
+      .filter(([k]) => k.endsWith('.prefix'))
+      .map(([, v]) => v)
+    if (depPrefixes.length > 0) {
+      sections.push(`export CMAKE_PREFIX_PATH="${depPrefixes.join(':')}:\${CMAKE_PREFIX_PATH:-}"`)
+    }
+
+    sections.push('')
+  }
+
+  // Compiler wrapper: filter -Werror and resolve -shared/-pie conflicts
+  // Ported from brewkit's toolchain shim — prevents hundreds of build failures
+  // from upstream packages that have warnings treated as errors
+  sections.push('# Compiler wrapper: strip -Werror, resolve -shared/-pie conflicts (from brewkit)')
+  sections.push('__setup_cc_wrapper() {')
+  sections.push('  local wrapper_dir="${TMPDIR:-/tmp}/_cc_wrapper"')
+  sections.push('  mkdir -p "$wrapper_dir"')
+  sections.push('  for cc_name in cc gcc clang c++ g++ clang++; do')
+  sections.push('    local real_cc')
+  sections.push('    real_cc="$(command -v "$cc_name" 2>/dev/null || true)"')
+  sections.push('    [ -n "$real_cc" ] || continue')
+  sections.push('    cat > "$wrapper_dir/$cc_name" <<CCEOF')
+  sections.push('#!/bin/bash')
+  sections.push('args=()')
+  sections.push('has_shared=false')
+  sections.push('for arg in "\\$@"; do')
+  sections.push('  case "\\$arg" in')
+  sections.push('    -Werror|-Werror=*) continue ;;  # filter -Werror (brewkit shim)')
+  sections.push('    -shared) has_shared=true; args+=("\\$arg") ;;')
+  sections.push('    *) args+=("\\$arg") ;;')
+  sections.push('  esac')
+  sections.push('done')
+  sections.push('# When building shared libs (-shared), strip -pie which causes')
+  sections.push('# "undefined reference to main" (brewkit shim)')
+  sections.push('if \\$has_shared; then')
+  sections.push('  new_args=()')
+  sections.push('  for arg in "\\${args[@]}"; do')
+  sections.push('    [ "\\$arg" = "-pie" ] || new_args+=("\\$arg")')
+  sections.push('  done')
+  sections.push('  args=("\\${new_args[@]}")')
+  sections.push('fi')
+  sections.push(`exec "$real_cc" "\\${args[@]}"`)
+  sections.push('CCEOF')
+  sections.push('    chmod +x "$wrapper_dir/$cc_name"')
+  sections.push('  done')
+  sections.push('  export PATH="$wrapper_dir:$PATH"')
+  sections.push('}')
+  sections.push('__setup_cc_wrapper')
+  sections.push('')
+
+  // macOS: force system AR/RANLIB when binutils is a dep (brewkit)
+  // "gcc needs Apple's ar/ranlib combo on darwin or link failure occurs"
+  if (osName === 'darwin') {
+    sections.push('# Force system AR/RANLIB on macOS (brewkit: avoids link failures with gcc)')
+    sections.push('if [ -x /usr/bin/ar ]; then export AR=/usr/bin/ar; fi')
+    sections.push('if [ -x /usr/bin/ranlib ]; then export RANLIB=/usr/bin/ranlib; fi')
     sections.push('')
   }
 
@@ -749,6 +813,19 @@ export function generateBuildScript(
     sections.push(`mkdir -p "${expandedWd}"`)
     sections.push(`cd "${expandedWd}"`)
   }
+  sections.push('')
+
+  // Git init for Python packages that use setuptools-scm (ported from brewkit's bkpyvenv)
+  // Many Python builds fail without git metadata for version detection
+  sections.push('# Git init for setuptools-scm compatibility (brewkit)')
+  sections.push('if [ ! -d .git ] && { [ -f setup.py ] || [ -f pyproject.toml ]; }; then')
+  sections.push('  git init -q 2>/dev/null || true')
+  sections.push('  git config user.name "buildkit" 2>/dev/null || true')
+  sections.push('  git config user.email "buildkit@local" 2>/dev/null || true')
+  sections.push('  git add -A 2>/dev/null || true')
+  sections.push('  git commit -qm "init" --allow-empty 2>/dev/null || true')
+  sections.push(`  git tag -a "v${version}" -m "v${version}" --force 2>/dev/null || true`)
+  sections.push('fi')
   sections.push('')
 
   // User script from pantry YAML

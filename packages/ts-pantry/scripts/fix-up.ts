@@ -48,7 +48,10 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
 
 /**
  * Fix macOS Mach-O binaries using install_name_tool
- * Simplified version of brewkit's fix-machos.rb
+ * Enhanced with brewkit's fix-machos.rb patterns:
+ * - Fixes dylib IDs and install_name references to other libs
+ * - Preserves entitlements during codesigning
+ * - Handles build-path references in linked libraries
  */
 function fixMachoRpaths(prefix: string): void {
   console.log('  Fixing Mach-O rpaths...')
@@ -61,14 +64,14 @@ function fixMachoRpaths(prefix: string): void {
       if (!isMachO(filePath)) return
 
       try {
-        // Get current rpaths
+        // Get full load commands
         const otoolOutput = execSync(`otool -l "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
 
         // Remove any build-dir rpaths
         const rpathMatches = otoolOutput.matchAll(/path\s+(.+?)\s+\(offset/g)
         for (const match of rpathMatches) {
           const rpath = match[1]
-          if (rpath.startsWith('/tmp') || rpath.includes('+brewing')) {
+          if (rpath.startsWith('/tmp') || rpath.includes('+brewing') || rpath.includes('buildkit')) {
             try {
               execSync(`install_name_tool -delete_rpath "${rpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
             } catch { /* rpath might not exist */ }
@@ -84,12 +87,12 @@ function fixMachoRpaths(prefix: string): void {
           } catch { /* ignore */ }
         }
 
-        // Fix install_names that reference build paths
+        // Fix the dylib's own install ID (from brewkit's fix-machos.rb)
         const idOutput = execSync(`otool -D "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
-        const lines = idOutput.trim().split('\n')
-        if (lines.length > 1) {
-          const currentId = lines[1].trim()
-          if (currentId.startsWith('/tmp') || currentId.includes('+brewing')) {
+        const idLines = idOutput.trim().split('\n')
+        if (idLines.length > 1) {
+          const currentId = idLines[1].trim()
+          if (currentId.startsWith('/tmp') || currentId.includes('+brewing') || currentId.includes('buildkit')) {
             const newId = `@rpath/${basename(filePath)}`
             try {
               execSync(`install_name_tool -id "${newId}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
@@ -97,10 +100,32 @@ function fixMachoRpaths(prefix: string): void {
           }
         }
 
-        // Re-sign (required on Apple Silicon)
+        // Fix references to OTHER libraries that have build-path install_names
+        // (brewkit's fix-machos.rb does this — critical for proper relocation)
+        const depOutput = execSync(`otool -L "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
+        const depLines = depOutput.trim().split('\n').slice(1) // skip first line (filename)
+        for (const depLine of depLines) {
+          const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
+          if (!depMatch) continue
+          const depPath = depMatch[1].trim()
+          if (depPath.startsWith('/tmp') || depPath.includes('+brewing') || depPath.includes('buildkit')) {
+            const depName = basename(depPath)
+            const newDepPath = `@rpath/${depName}`
+            try {
+              execSync(`install_name_tool -change "${depPath}" "${newDepPath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+            } catch { /* ignore */ }
+          }
+        }
+
+        // Re-sign with entitlement preservation (from brewkit's fix-machos.rb)
         try {
-          execSync(`codesign --force --sign - "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-        } catch { /* ignore signing errors */ }
+          execSync(`codesign --force --sign - --preserve-metadata=entitlements "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+        } catch {
+          // If --preserve-metadata fails, fall back to simple re-sign
+          try {
+            execSync(`codesign --force --sign - "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+          } catch { /* ignore signing errors */ }
+        }
       } catch {
         // Not a Mach-O or otool failed, skip
       }
@@ -110,7 +135,10 @@ function fixMachoRpaths(prefix: string): void {
 
 /**
  * Fix Linux ELF binaries using patchelf
- * Simplified version of brewkit's fix-elf.ts
+ * Enhanced with brewkit's fix-elf.ts patterns:
+ * - Uses --force-rpath (RPATH not RUNPATH, so LD_LIBRARY_PATH takes precedence)
+ * - Preserves existing $ORIGIN-relative rpaths and merges with new ones
+ * - Skips script files (.py, .pyc, .pl, .sh)
  */
 function fixElfRpaths(prefix: string): void {
   console.log('  Fixing ELF rpaths...')
@@ -123,21 +151,42 @@ function fixElfRpaths(prefix: string): void {
     return
   }
 
+  const skipExts = new Set(['.py', '.pyc', '.pl', '.sh', '.rb', '.js', '.ts'])
+
   const dirs = ['bin', 'sbin', 'lib', 'libexec'].filter(d => existsSync(join(prefix, d)))
 
   for (const dir of dirs) {
     const dirPath = join(prefix, dir)
     walkFiles(dirPath, (filePath) => {
+      // Skip script files early (performance, from brewkit)
+      if (skipExts.has(extname(filePath))) return
       if (!isELF(filePath)) return
 
       try {
         // Check if dynamically linked
-        const fileOutput = execSync(`file "${filePath}"`, { encoding: 'utf-8' })
-        if (fileOutput.includes('statically linked')) return
+        const fileOutput = execSync(`file --mime-type "${filePath}"`, { encoding: 'utf-8' })
+        if (!fileOutput.includes('application/x-executable') &&
+            !fileOutput.includes('application/x-sharedlib') &&
+            !fileOutput.includes('application/x-pie-executable')) return
 
-        // Set relative RPATH
+        // Get existing rpaths and preserve $ORIGIN-relative ones (from brewkit)
+        let existingRpaths: string[] = []
+        try {
+          const rp = execSync(`patchelf --print-rpath "${filePath}" 2>/dev/null`, { encoding: 'utf-8' }).trim()
+          if (rp) existingRpaths = rp.split(':')
+        } catch { /* no rpath */ }
+
+        // Build merged rpath: our relative path + existing $ORIGIN paths
         const relRpath = dir === 'lib' ? '$ORIGIN' : '$ORIGIN/../lib'
-        execSync(`patchelf --set-rpath "${relRpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+        const rpathSet = new Set([relRpath])
+        for (const rp of existingRpaths) {
+          if (rp.startsWith('$ORIGIN')) rpathSet.add(rp)
+          // Skip absolute paths (build-time artifacts)
+        }
+        const mergedRpath = [...rpathSet].join(':')
+
+        // Use --force-rpath: sets RPATH (not RUNPATH) — LD_LIBRARY_PATH takes precedence (brewkit)
+        execSync(`patchelf --force-rpath --set-rpath "${mergedRpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
       } catch {
         // Not an ELF or patchelf failed, skip
       }
