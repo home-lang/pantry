@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/dundee/gdu`
 - **Name**: `gdu`
-- **Homepage**: <https://www.gnu.org/software/coreutils/>
+- **Homepage**: https://www.gnu.org/software/coreutils/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/dundee/gdu/package.yml)
 
 ## Installation

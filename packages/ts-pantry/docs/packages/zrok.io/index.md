@@ -6,7 +6,7 @@
 
 - **Domain**: `zrok.io`
 - **Name**: `zrok`
-- **Homepage**: <https://zrok.io>
+- **Homepage**: https://zrok.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/zrok.io/package.yml)
 
 ## Installation

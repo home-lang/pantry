@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/psf/requests`
 - **Name**: `requests`
-- **Homepage**: <https://requests.readthedocs.io/en/latest/>
+- **Homepage**: https://requests.readthedocs.io/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/psf/requests/package.yml)
 
 ## Installation

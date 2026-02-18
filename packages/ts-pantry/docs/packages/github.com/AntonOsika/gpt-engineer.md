@@ -1,6 +1,6 @@
 # GPT Engineer
 
-> Platform to experiment with the AI Software Engineer. Terminal based. NOTE: Very different from <https://gptengineer.app>
+> Platform to experiment with the AI Software Engineer. Terminal based. NOTE: Very different from https://gptengineer.app
 
 ## Package Information
 

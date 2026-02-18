@@ -6,7 +6,7 @@
 
 - **Domain**: `argoproj.github.io/workflows`
 - **Name**: `argo-workflows`
-- **Homepage**: <https://argoproj.io>
+- **Homepage**: https://argoproj.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/argoproj.github.io/workflows/package.yml)
 
 ## Installation

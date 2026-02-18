@@ -6,7 +6,7 @@
 
 - **Domain**: `gitleaks.io`
 - **Name**: `gitleaks`
-- **Homepage**: <https://gitleaks.io>
+- **Homepage**: https://gitleaks.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gitleaks.io/package.yml)
 
 ## Installation

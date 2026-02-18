@@ -6,7 +6,7 @@
 
 - **Domain**: `materialize.com`
 - **Name**: `mz`
-- **Homepage**: <https://materialize.com>
+- **Homepage**: https://materialize.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/materialize.com/package.yml)
 
 ## Installation

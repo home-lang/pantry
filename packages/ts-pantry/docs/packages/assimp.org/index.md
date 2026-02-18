@@ -6,7 +6,7 @@
 
 - **Domain**: `assimp.org`
 - **Name**: `assimp`
-- **Homepage**: <https://www.assimp.org/>
+- **Homepage**: https://www.assimp.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/assimp.org/package.yml)
 
 ## Installation

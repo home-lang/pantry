@@ -6,7 +6,7 @@
 
 - **Domain**: `dozzle.dev`
 - **Name**: `dozzle`
-- **Homepage**: <https://dozzle.dev/>
+- **Homepage**: https://dozzle.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dozzle.dev/package.yml)
 
 ## Installation

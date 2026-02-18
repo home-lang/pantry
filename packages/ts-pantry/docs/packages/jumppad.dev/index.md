@@ -6,7 +6,7 @@
 
 - **Domain**: `jumppad.dev`
 - **Name**: `jumppad`
-- **Homepage**: <https://jumppad.dev>
+- **Homepage**: https://jumppad.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jumppad.dev/package.yml)
 
 ## Installation

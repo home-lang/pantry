@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/Parchive/par2cmdline`
 - **Name**: `par2`
-- **Homepage**: <http://parchive.sourceforge.net>
+- **Homepage**: http://parchive.sourceforge.net
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/Parchive/par2cmdline/package.yml)
 
 ## Installation

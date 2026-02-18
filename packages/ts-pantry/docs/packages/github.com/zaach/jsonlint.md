@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/zaach/jsonlint`
 - **Name**: `jsonlint`
-- **Homepage**: <http://zaach.github.com/jsonlint/>
+- **Homepage**: http://zaach.github.com/jsonlint/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/zaach/jsonlint/package.yml)
 
 ## Installation

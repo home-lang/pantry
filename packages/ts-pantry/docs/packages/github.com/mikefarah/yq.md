@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/mikefarah/yq`
 - **Name**: `yq`
-- **Homepage**: <https://mikefarah.gitbook.io/yq/>
+- **Homepage**: https://mikefarah.gitbook.io/yq/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/mikefarah/yq/package.yml)
 
 ## Installation

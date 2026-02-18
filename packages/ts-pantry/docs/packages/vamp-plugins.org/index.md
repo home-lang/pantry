@@ -6,7 +6,7 @@
 
 - **Domain**: `vamp-plugins.org`
 - **Name**: `vamp`
-- **Homepage**: <https://www.vamp-plugins.org/>
+- **Homepage**: https://www.vamp-plugins.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vamp-plugins.org/package.yml)
 
 ## Installation

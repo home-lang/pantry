@@ -6,7 +6,7 @@
 
 - **Domain**: `cocogitto.io`
 - **Name**: `cog`
-- **Homepage**: <https://docs.cocogitto.io>
+- **Homepage**: https://docs.cocogitto.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cocogitto.io/package.yml)
 
 ## Installation

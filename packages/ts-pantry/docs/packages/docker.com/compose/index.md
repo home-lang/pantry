@@ -6,7 +6,7 @@
 
 - **Domain**: `docker.com/compose`
 - **Name**: `docker-compose`
-- **Homepage**: <https://docs.docker.com/compose/>
+- **Homepage**: https://docs.docker.com/compose/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/docker.com/compose/package.yml)
 
 ## Installation

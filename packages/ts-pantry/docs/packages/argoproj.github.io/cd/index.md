@@ -6,7 +6,7 @@
 
 - **Domain**: `argoproj.github.io/cd`
 - **Name**: `argo-cd`
-- **Homepage**: <https://argoproj.github.io/cd/>
+- **Homepage**: https://argoproj.github.io/cd/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/argoproj.github.io/cd/package.yml)
 
 ## Installation
@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 168 versions</summary>
+<summary>Show all 169 versions</summary>
 
-- `3.3.0`
+- `3.3.1`, `3.3.0`
 - `3.2.6`, `3.2.5`, `3.2.4`, `3.2.3`, `3.2.2`, `3.2.1`, `3.2.0`
 - `3.1.12`, `3.1.11`, `3.1.10`, `3.1.9`, `3.1.8`, `3.1.7`, `3.1.6`, `3.1.5`, `3.1.4`, `3.1.3`, `3.1.2`, `3.1.1`, `3.1.0`
 - `3.0.23`, `3.0.22`, `3.0.21`, `3.0.20`, `3.0.19`, `3.0.18`, `3.0.17`, `3.0.16`, `3.0.15`, `3.0.14`, `3.0.13`, `3.0.12`, `3.0.11`, `3.0.6`, `3.0.5`, `3.0.4`, `3.0.3`, `3.0.2`, `3.0.1`, `3.0.0`
@@ -43,13 +43,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.3.0`
+**Latest Version**: `3.3.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +argoproj.github.io/cd@3.3.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +argoproj.github.io/cd@3.3.1 -- $SHELL -i
 ```
 
 ## Usage Examples

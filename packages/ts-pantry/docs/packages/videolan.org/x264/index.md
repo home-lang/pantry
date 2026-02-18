@@ -6,7 +6,7 @@
 
 - **Domain**: `videolan.org/x264`
 - **Name**: `x264`
-- **Homepage**: <https://www.videolan.org/developers/x264.html>
+- **Homepage**: https://www.videolan.org/developers/x264.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/videolan.org/x264/package.yml)
 
 ## Installation

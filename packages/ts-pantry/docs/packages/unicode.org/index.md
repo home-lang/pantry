@@ -6,7 +6,7 @@
 
 - **Domain**: `unicode.org`
 - **Name**: `unicode`
-- **Homepage**: <https://icu.unicode.org/>
+- **Homepage**: https://icu.unicode.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/unicode.org/package.yml)
 
 ## Installation

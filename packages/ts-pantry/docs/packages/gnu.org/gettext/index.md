@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/gettext`
 - **Name**: `gettext`
-- **Homepage**: <https://www.gnu.org/software/gettext/>
+- **Homepage**: https://www.gnu.org/software/gettext/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/gettext/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `micro-editor.github.io`
 - **Name**: `micro`
-- **Homepage**: <https://micro-editor.github.io>
+- **Homepage**: https://micro-editor.github.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/micro-editor.github.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `dagger.io`
 - **Name**: `dagger`
-- **Homepage**: <https://dagger.io>
+- **Homepage**: https://dagger.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dagger.io/package.yml)
 
 ## Installation

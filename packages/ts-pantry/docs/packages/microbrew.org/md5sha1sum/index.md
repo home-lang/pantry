@@ -6,7 +6,7 @@
 
 - **Domain**: `microbrew.org/md5sha1sum`
 - **Name**: `md5sha1sum`
-- **Homepage**: <http://microbrew.org/tools/md5sha1sum/>
+- **Homepage**: http://microbrew.org/tools/md5sha1sum/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/microbrew.org/md5sha1sum/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/jasper-software/jasper`
 - **Name**: `jasper`
-- **Homepage**: <https://ece.engr.uvic.ca/~frodo/jasper/>
+- **Homepage**: https://ece.engr.uvic.ca/~frodo/jasper/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/jasper-software/jasper/package.yml)
 
 ## Installation

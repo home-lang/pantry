@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/gollum/gollum`
 - **Name**: `gollum`
-- **Homepage**: <https://gollum.readthedocs.io/en/latest/>
+- **Homepage**: https://gollum.readthedocs.io/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/gollum/gollum/package.yml)
 
 ## Installation

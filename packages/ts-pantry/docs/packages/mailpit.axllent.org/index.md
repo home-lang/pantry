@@ -6,7 +6,7 @@
 
 - **Domain**: `mailpit.axllent.org`
 - **Name**: `mailpit`
-- **Homepage**: <https://mailpit.axllent.org/>
+- **Homepage**: https://mailpit.axllent.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mailpit.axllent.org/package.yml)
 
 ## Installation

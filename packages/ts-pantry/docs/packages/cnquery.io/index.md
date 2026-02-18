@@ -6,7 +6,7 @@
 
 - **Domain**: `cnquery.io`
 - **Name**: `cnquery`
-- **Homepage**: <https://cnquery.io>
+- **Homepage**: https://cnquery.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cnquery.io/package.yml)
 
 ## Installation

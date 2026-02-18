@@ -6,7 +6,7 @@
 
 - **Domain**: `cilium.io/cilium`
 - **Name**: `cilium`
-- **Homepage**: <https://cilium.io>
+- **Homepage**: https://cilium.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cilium.io/cilium/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `kubernetes.io/kubectl`
 - **Name**: `kubectl`
-- **Homepage**: <https://kubernetes.io/docs/reference/kubectl/>
+- **Homepage**: https://kubernetes.io/docs/reference/kubectl/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubernetes.io/kubectl/package.yml)
 
 ## Installation

@@ -95,4 +95,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

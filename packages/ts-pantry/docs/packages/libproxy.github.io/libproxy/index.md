@@ -6,7 +6,7 @@
 
 - **Domain**: `libproxy.github.io/libproxy`
 - **Name**: `libproxy`
-- **Homepage**: <https://libproxy.github.io/libproxy/>
+- **Homepage**: https://libproxy.github.io/libproxy/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libproxy.github.io/libproxy/package.yml)
 
 ## Installation

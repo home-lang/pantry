@@ -6,7 +6,7 @@
 
 - **Domain**: `csie.ntu.edu.tw/cjlin/liblinear`
 - **Name**: `liblinear`
-- **Homepage**: <https://www.csie.ntu.edu.tw/~cjlin/liblinear/>
+- **Homepage**: https://www.csie.ntu.edu.tw/~cjlin/liblinear/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/csie.ntu.edu.tw/cjlin/liblinear/package.yml)
 
 ## Installation

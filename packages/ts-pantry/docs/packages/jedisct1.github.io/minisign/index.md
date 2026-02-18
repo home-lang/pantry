@@ -6,7 +6,7 @@
 
 - **Domain**: `jedisct1.github.io/minisign`
 - **Name**: `minisign`
-- **Homepage**: <https://jedisct1.github.io/minisign/>
+- **Homepage**: https://jedisct1.github.io/minisign/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jedisct1.github.io/minisign/package.yml)
 
 ## Installation

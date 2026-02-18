@@ -6,7 +6,7 @@
 
 - **Domain**: `xplr.dev`
 - **Name**: `xplr`
-- **Homepage**: <https://xplr.dev>
+- **Homepage**: https://xplr.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xplr.dev/package.yml)
 
 ## Installation

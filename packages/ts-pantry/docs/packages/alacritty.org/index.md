@@ -6,7 +6,7 @@
 
 - **Domain**: `alacritty.org`
 - **Name**: `alacritty`
-- **Homepage**: <https://alacritty.org>
+- **Homepage**: https://alacritty.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/alacritty.org/package.yml)
 
 ## Installation

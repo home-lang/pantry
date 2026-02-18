@@ -6,7 +6,7 @@
 
 - **Domain**: `qpdf.sourceforge.io`
 - **Name**: `qpdf`
-- **Homepage**: <https://qpdf.sourceforge.io/>
+- **Homepage**: https://qpdf.sourceforge.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/qpdf.sourceforge.io/package.yml)
 
 ## Installation

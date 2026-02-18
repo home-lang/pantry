@@ -6,7 +6,7 @@
 
 - **Domain**: `spacetimedb.com`
 - **Name**: `spacetime`
-- **Homepage**: <https://spacetimedb.com>
+- **Homepage**: https://spacetimedb.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/spacetimedb.com/package.yml)
 
 ## Installation

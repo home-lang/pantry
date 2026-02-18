@@ -6,7 +6,7 @@
 
 - **Domain**: `tukaani.org/xz`
 - **Name**: `xz`
-- **Homepage**: <https://tukaani.org/xz/>
+- **Homepage**: https://tukaani.org/xz/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tukaani.org/xz/package.yml)
 
 ## Installation

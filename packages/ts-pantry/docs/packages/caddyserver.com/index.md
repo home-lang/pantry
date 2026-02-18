@@ -6,7 +6,7 @@
 
 - **Domain**: `caddyserver.com`
 - **Name**: `caddy`
-- **Homepage**: <https://caddyserver.com/>
+- **Homepage**: https://caddyserver.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/caddyserver.com/package.yml)
 
 ## Installation

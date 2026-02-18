@@ -6,7 +6,7 @@
 
 - **Domain**: `kornel.ski/dssim`
 - **Name**: `dssim`
-- **Homepage**: <https://kornel.ski/dssim>
+- **Homepage**: https://kornel.ski/dssim
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kornel.ski/dssim/package.yml)
 
 ## Installation

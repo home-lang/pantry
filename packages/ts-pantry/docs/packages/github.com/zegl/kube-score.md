@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/zegl/kube-score`
 - **Name**: `kube-score`
-- **Homepage**: <https://kube-score.com>
+- **Homepage**: https://kube-score.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/zegl/kube-score/package.yml)
 
 ## Installation

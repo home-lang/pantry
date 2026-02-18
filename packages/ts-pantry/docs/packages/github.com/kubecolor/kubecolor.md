@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/kubecolor/kubecolor`
 - **Name**: `kubecolor`
-- **Homepage**: <https://kubecolor.github.io/>
+- **Homepage**: https://kubecolor.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/kubecolor/kubecolor/package.yml)
 
 ## Installation

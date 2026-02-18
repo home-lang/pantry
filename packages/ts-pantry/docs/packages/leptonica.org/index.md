@@ -6,7 +6,7 @@
 
 - **Domain**: `leptonica.org`
 - **Name**: `leptonica`
-- **Homepage**: <http://www.leptonica.org/>
+- **Homepage**: http://www.leptonica.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/leptonica.org/package.yml)
 
 ## Installation

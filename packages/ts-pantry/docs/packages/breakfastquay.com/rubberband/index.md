@@ -6,7 +6,7 @@
 
 - **Domain**: `breakfastquay.com/rubberband`
 - **Name**: `rubberband`
-- **Homepage**: <https://breakfastquay.com/rubberband/>
+- **Homepage**: https://breakfastquay.com/rubberband/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/breakfastquay.com/rubberband/package.yml)
 
 ## Installation

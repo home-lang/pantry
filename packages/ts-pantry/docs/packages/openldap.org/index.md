@@ -6,7 +6,7 @@
 
 - **Domain**: `openldap.org`
 - **Name**: `ldap`
-- **Homepage**: <https://www.openldap.org/software/>
+- **Homepage**: https://www.openldap.org/software/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openldap.org/package.yml)
 
 ## Installation

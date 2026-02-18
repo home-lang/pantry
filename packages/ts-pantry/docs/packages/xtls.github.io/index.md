@@ -6,7 +6,7 @@
 
 - **Domain**: `xtls.github.io`
 - **Name**: `xray-core`
-- **Homepage**: <https://xtls.github.io/>
+- **Homepage**: https://xtls.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xtls.github.io/package.yml)
 
 ## Installation

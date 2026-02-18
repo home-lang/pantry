@@ -6,7 +6,7 @@
 
 - **Domain**: `vektra.github.io/mockery`
 - **Name**: `mockery`
-- **Homepage**: <https://vektra.github.io/mockery/>
+- **Homepage**: https://vektra.github.io/mockery/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vektra.github.io/mockery/package.yml)
 
 ## Installation

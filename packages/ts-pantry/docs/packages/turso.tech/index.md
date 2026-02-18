@@ -6,7 +6,7 @@
 
 - **Domain**: `turso.tech`
 - **Name**: `turso`
-- **Homepage**: <https://turso.tech>
+- **Homepage**: https://turso.tech
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/turso.tech/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gohugo.io`
 - **Name**: `hugo`
-- **Homepage**: <https://gohugo.io/>
+- **Homepage**: https://gohugo.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gohugo.io/package.yml)
 
 ## Installation

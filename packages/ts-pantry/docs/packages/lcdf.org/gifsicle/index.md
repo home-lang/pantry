@@ -6,7 +6,7 @@
 
 - **Domain**: `lcdf.org/gifsicle`
 - **Name**: `gifsicle`
-- **Homepage**: <https://www.lcdf.org/gifsicle/>
+- **Homepage**: https://www.lcdf.org/gifsicle/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lcdf.org/gifsicle/package.yml)
 
 ## Installation

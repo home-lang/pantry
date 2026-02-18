@@ -6,7 +6,7 @@
 
 - **Domain**: `rubocop.org`
 - **Name**: `rubocop`
-- **Homepage**: <https://docs.rubocop.org>
+- **Homepage**: https://docs.rubocop.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rubocop.org/package.yml)
 
 ## Installation

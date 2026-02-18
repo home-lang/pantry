@@ -6,7 +6,7 @@
 
 - **Domain**: `idleberg.github.io/krampus`
 - **Name**: `krampus`
-- **Homepage**: <https://pkg.go.dev/github.com/idleberg/krampus>
+- **Homepage**: https://pkg.go.dev/github.com/idleberg/krampus
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/idleberg.github.io/krampus/package.yml)
 
 ## Installation

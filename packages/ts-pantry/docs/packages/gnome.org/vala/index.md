@@ -6,7 +6,7 @@
 
 - **Domain**: `gnome.org/vala`
 - **Name**: `vala`
-- **Homepage**: <https://wiki.gnome.org/Projects/Vala>
+- **Homepage**: https://wiki.gnome.org/Projects/Vala
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/vala/package.yml)
 
 ## Installation

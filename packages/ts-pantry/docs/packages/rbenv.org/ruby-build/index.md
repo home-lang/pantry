@@ -6,7 +6,7 @@
 
 - **Domain**: `rbenv.org/ruby-build`
 - **Name**: `ruby-build`
-- **Homepage**: <https://rbenv.org/man/ruby-build.1>
+- **Homepage**: https://rbenv.org/man/ruby-build.1
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rbenv.org/ruby-build/package.yml)
 
 ## Installation

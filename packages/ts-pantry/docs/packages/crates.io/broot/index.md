@@ -1,12 +1,12 @@
 # broot
 
-> A new way to see and navigate directory trees : <https://dystroy.org/broot>
+> A new way to see and navigate directory trees : https://dystroy.org/broot
 
 ## Package Information
 
 - **Domain**: `crates.io/broot`
 - **Name**: `broot`
-- **Homepage**: <https://dystroy.org/broot/>
+- **Homepage**: https://dystroy.org/broot/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/broot/package.yml)
 
 ## Installation

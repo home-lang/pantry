@@ -6,7 +6,7 @@
 
 - **Domain**: `maven.apache.org`
 - **Name**: `mvn`
-- **Homepage**: <https://maven.apache.org/>
+- **Homepage**: https://maven.apache.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/maven.apache.org/package.yml)
 
 ## Installation

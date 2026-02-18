@@ -6,7 +6,7 @@
 
 - **Domain**: `wimlib.net`
 - **Name**: `wimlib`
-- **Homepage**: <https://wimlib.net/>
+- **Homepage**: https://wimlib.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wimlib.net/package.yml)
 
 ## Installation

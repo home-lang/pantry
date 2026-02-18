@@ -6,7 +6,7 @@
 
 - **Domain**: `gomplate.ca`
 - **Name**: `gomplate`
-- **Homepage**: <https://gomplate.ca/>
+- **Homepage**: https://gomplate.ca/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gomplate.ca/package.yml)
 
 ## Installation

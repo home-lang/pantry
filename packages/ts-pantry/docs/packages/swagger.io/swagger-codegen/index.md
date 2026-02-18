@@ -6,7 +6,7 @@
 
 - **Domain**: `swagger.io/swagger-codegen`
 - **Name**: `swagger-codegen`
-- **Homepage**: <https://swagger.io/tools/swagger-codegen/>
+- **Homepage**: https://swagger.io/tools/swagger-codegen/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/swagger.io/swagger-codegen/package.yml)
 
 ## Installation

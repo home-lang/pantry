@@ -6,7 +6,7 @@
 
 - **Domain**: `ruby-lang.org`
 - **Name**: `ruby-lang`
-- **Homepage**: <https://www.ruby-lang.org/>
+- **Homepage**: https://www.ruby-lang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ruby-lang.org/package.yml)
 
 ## Installation

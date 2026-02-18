@@ -6,7 +6,7 @@
 
 - **Domain**: `mupdf.com`
 - **Name**: `mupdf`
-- **Homepage**: <https://mupdf.com/>
+- **Homepage**: https://mupdf.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mupdf.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `ast-grep.github.io`
 - **Name**: `ast-grep.github`
-- **Homepage**: <https://ast-grep.github.io/>
+- **Homepage**: https://ast-grep.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ast-grep.github.io/package.yml)
 
 ## Installation

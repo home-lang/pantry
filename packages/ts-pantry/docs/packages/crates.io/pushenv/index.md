@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/pushenv`
 - **Name**: `pushenv`
-- **Homepage**: <https://crates.io/crates/pushenv>
+- **Homepage**: https://crates.io/crates/pushenv
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/pushenv/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `savannah.nongnu.org/attr`
 - **Name**: `attr`
-- **Homepage**: <https://savannah.nongnu.org/projects/attr>
+- **Homepage**: https://savannah.nongnu.org/projects/attr
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/savannah.nongnu.org/attr/package.yml)
 
 ## Installation

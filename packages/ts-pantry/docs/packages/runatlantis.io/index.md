@@ -6,7 +6,7 @@
 
 - **Domain**: `runatlantis.io`
 - **Name**: `atlantis`
-- **Homepage**: <https://www.runatlantis.io/>
+- **Homepage**: https://www.runatlantis.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/runatlantis.io/package.yml)
 
 ## Installation

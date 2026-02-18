@@ -6,7 +6,7 @@
 
 - **Domain**: `strace.io`
 - **Name**: `strace`
-- **Homepage**: <https://strace.io/>
+- **Homepage**: https://strace.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/strace.io/package.yml)
 
 ## Installation

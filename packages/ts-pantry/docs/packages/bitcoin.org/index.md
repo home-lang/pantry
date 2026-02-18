@@ -6,7 +6,7 @@
 
 - **Domain**: `bitcoin.org`
 - **Name**: `bitcoin`
-- **Homepage**: <https://bitcoincore.org/>
+- **Homepage**: https://bitcoincore.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bitcoin.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `certbot.eff.org`
 - **Name**: `certbot`
-- **Homepage**: <https://certbot.eff.org/>
+- **Homepage**: https://certbot.eff.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/certbot.eff.org/package.yml)
 
 ## Installation

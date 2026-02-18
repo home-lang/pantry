@@ -6,7 +6,7 @@
 
 - **Domain**: `mvdan.cc/gofumpt`
 - **Name**: `gofumpt`
-- **Homepage**: <https://pkg.go.dev/mvdan.cc/gofumpt>
+- **Homepage**: https://pkg.go.dev/mvdan.cc/gofumpt
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mvdan.cc/gofumpt/package.yml)
 
 ## Installation

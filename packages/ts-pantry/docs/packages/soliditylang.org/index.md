@@ -6,7 +6,7 @@
 
 - **Domain**: `soliditylang.org`
 - **Name**: `soliditylang`
-- **Homepage**: <https://soliditylang.org>
+- **Homepage**: https://soliditylang.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/soliditylang.org/package.yml)
 
 ## Installation

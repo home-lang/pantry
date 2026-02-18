@@ -6,7 +6,7 @@
 
 - **Domain**: `harding.motd.ca/autossh`
 - **Name**: `autossh`
-- **Homepage**: <https://www.harding.motd.ca/autossh/>
+- **Homepage**: https://www.harding.motd.ca/autossh/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/harding.motd.ca/autossh/package.yml)
 
 ## Installation

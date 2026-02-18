@@ -6,7 +6,7 @@
 
 - **Domain**: `libjpeg-turbo.org`
 - **Name**: `libjpeg-turbo`
-- **Homepage**: <https://libjpeg-turbo.org>
+- **Homepage**: https://libjpeg-turbo.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libjpeg-turbo.org/package.yml)
 
 ## Installation

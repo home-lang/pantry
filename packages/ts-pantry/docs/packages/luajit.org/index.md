@@ -6,7 +6,7 @@
 
 - **Domain**: `luajit.org`
 - **Name**: `luajit`
-- **Homepage**: <http://luajit.org>
+- **Homepage**: http://luajit.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/luajit.org/package.yml)
 
 ## Installation

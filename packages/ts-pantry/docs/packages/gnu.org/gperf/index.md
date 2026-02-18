@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/gperf`
 - **Name**: `gperf`
-- **Homepage**: <https://www.gnu.org/software/gperf/>
+- **Homepage**: https://www.gnu.org/software/gperf/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/gperf/package.yml)
 
 ## Installation

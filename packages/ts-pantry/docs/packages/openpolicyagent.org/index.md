@@ -6,7 +6,7 @@
 
 - **Domain**: `openpolicyagent.org`
 - **Name**: `opa`
-- **Homepage**: <https://www.openpolicyagent.org>
+- **Homepage**: https://www.openpolicyagent.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openpolicyagent.org/package.yml)
 
 ## Installation

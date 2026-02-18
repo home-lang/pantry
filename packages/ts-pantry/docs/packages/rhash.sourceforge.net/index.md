@@ -6,7 +6,7 @@
 
 - **Domain**: `rhash.sourceforge.net`
 - **Name**: `rhash.sourceforge`
-- **Homepage**: <https://sourceforge.net/projects/rhash/>
+- **Homepage**: https://sourceforge.net/projects/rhash/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rhash.sourceforge.net/package.yml)
 
 ## Installation

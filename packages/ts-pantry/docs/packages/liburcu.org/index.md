@@ -6,7 +6,7 @@
 
 - **Domain**: `liburcu.org`
 - **Name**: `liburcu`
-- **Homepage**: <http://liburcu.org>
+- **Homepage**: http://liburcu.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/liburcu.org/package.yml)
 
 ## Installation

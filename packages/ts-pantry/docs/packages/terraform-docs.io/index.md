@@ -6,7 +6,7 @@
 
 - **Domain**: `terraform-docs.io`
 - **Name**: `terraform-docs`
-- **Homepage**: <https://terraform-docs.io>
+- **Homepage**: https://terraform-docs.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/terraform-docs.io/package.yml)
 
 ## Installation

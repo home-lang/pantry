@@ -6,7 +6,7 @@
 
 - **Domain**: `k3d.io`
 - **Name**: `k3d`
-- **Homepage**: <https://k3d.io>
+- **Homepage**: https://k3d.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/k3d.io/package.yml)
 
 ## Installation

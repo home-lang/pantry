@@ -6,7 +6,7 @@
 
 - **Domain**: `google.com/firebase-tools`
 - **Name**: `firebase`
-- **Homepage**: <https://firebase.google.com/docs/cli/>
+- **Homepage**: https://firebase.google.com/docs/cli/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/google.com/firebase-tools/package.yml)
 
 ## Installation

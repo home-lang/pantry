@@ -6,7 +6,7 @@
 
 - **Domain**: `redis.io`
 - **Name**: `redis`
-- **Homepage**: <http://redis.io>
+- **Homepage**: http://redis.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/redis.io/package.yml)
 
 ## Installation

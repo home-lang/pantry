@@ -6,7 +6,7 @@
 
 - **Domain**: `proj.org`
 - **Name**: `proj`
-- **Homepage**: <https://proj.org/>
+- **Homepage**: https://proj.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/proj.org/package.yml)
 
 ## Installation

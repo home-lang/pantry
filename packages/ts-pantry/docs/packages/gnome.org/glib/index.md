@@ -6,7 +6,7 @@
 
 - **Domain**: `gnome.org/glib`
 - **Name**: `glib`
-- **Homepage**: <https://docs.gtk.org/glib/>
+- **Homepage**: https://docs.gtk.org/glib/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/glib/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `watchexec.github.io`
 - **Name**: `watchexec`
-- **Homepage**: <https://watchexec.github.io/>
+- **Homepage**: https://watchexec.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/watchexec.github.io/package.yml)
 
 ## Installation

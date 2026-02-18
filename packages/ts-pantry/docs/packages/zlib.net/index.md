@@ -6,7 +6,7 @@
 
 - **Domain**: `zlib.net`
 - **Name**: `zlib`
-- **Homepage**: <http://zlib.net/>
+- **Homepage**: http://zlib.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/zlib.net/package.yml)
 
 ## Installation

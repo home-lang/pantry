@@ -6,7 +6,7 @@
 
 - **Domain**: `pocketbase.io`
 - **Name**: `pocketbase`
-- **Homepage**: <https://pocketbase.io/>
+- **Homepage**: https://pocketbase.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pocketbase.io/package.yml)
 
 ## Installation

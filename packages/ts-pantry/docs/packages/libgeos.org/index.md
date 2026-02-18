@@ -6,7 +6,7 @@
 
 - **Domain**: `libgeos.org`
 - **Name**: `geos-config`
-- **Homepage**: <https://libgeos.org/>
+- **Homepage**: https://libgeos.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libgeos.org/package.yml)
 
 ## Installation

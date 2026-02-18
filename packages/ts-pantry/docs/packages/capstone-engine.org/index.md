@@ -6,7 +6,7 @@
 
 - **Domain**: `capstone-engine.org`
 - **Name**: `cstool`
-- **Homepage**: <https://www.capstone-engine.org/>
+- **Homepage**: https://www.capstone-engine.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/capstone-engine.org/package.yml)
 
 ## Installation

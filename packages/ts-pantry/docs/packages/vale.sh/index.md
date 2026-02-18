@@ -6,7 +6,7 @@
 
 - **Domain**: `vale.sh`
 - **Name**: `vale`
-- **Homepage**: <https://vale.sh/>
+- **Homepage**: https://vale.sh/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vale.sh/package.yml)
 
 ## Installation

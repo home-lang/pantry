@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/tmux/tmux`
 - **Name**: `tmux`
-- **Homepage**: <https://tmux.github.io/>
+- **Homepage**: https://tmux.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/tmux/tmux/package.yml)
 
 ## Installation

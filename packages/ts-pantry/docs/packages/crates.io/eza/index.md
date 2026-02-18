@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/eza`
 - **Name**: `eza`
-- **Homepage**: <https://eza.rocks>
+- **Homepage**: https://eza.rocks
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/eza/package.yml)
 
 ## Installation

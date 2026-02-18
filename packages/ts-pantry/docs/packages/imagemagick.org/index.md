@@ -6,7 +6,7 @@
 
 - **Domain**: `imagemagick.org`
 - **Name**: `imagemagick`
-- **Homepage**: <https://imagemagick.org/index.php>
+- **Homepage**: https://imagemagick.org/index.php
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/imagemagick.org/package.yml)
 
 ## Installation

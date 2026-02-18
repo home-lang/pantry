@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/cavif`
 - **Name**: `cavif`
-- **Homepage**: <https://lib.rs/cavif>
+- **Homepage**: https://lib.rs/cavif
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/cavif/package.yml)
 
 ## Installation

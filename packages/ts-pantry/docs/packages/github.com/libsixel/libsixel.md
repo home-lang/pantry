@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/libsixel/libsixel`
 - **Name**: `libsixel`
-- **Homepage**: <http://nanno.dip.jp/softlib/man/rlogin/#REGWIND>
+- **Homepage**: http://nanno.dip.jp/softlib/man/rlogin/#REGWIND
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/libsixel/libsixel/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/nettle`
 - **Name**: `nettle`
-- **Homepage**: <https://www.lysator.liu.se/~nisse/nettle/>
+- **Homepage**: https://www.lysator.liu.se/~nisse/nettle/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/nettle/package.yml)
 
 ## Installation

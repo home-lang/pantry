@@ -6,7 +6,7 @@
 
 - **Domain**: `people.redhat.com/sgrubb/libcap-ng`
 - **Name**: `libcap-ng`
-- **Homepage**: <https://people.redhat.com/sgrubb/libcap-ng/>
+- **Homepage**: https://people.redhat.com/sgrubb/libcap-ng/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/people.redhat.com/sgrubb/libcap-ng/package.yml)
 
 ## Installation

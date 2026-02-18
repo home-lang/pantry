@@ -6,7 +6,7 @@
 
 - **Domain**: `alsa-project.org/alsa-lib`
 - **Name**: `aserver`
-- **Homepage**: <https://www.alsa-project.org/>
+- **Homepage**: https://www.alsa-project.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/alsa-project.org/alsa-lib/package.yml)
 
 ## Installation

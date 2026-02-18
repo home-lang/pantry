@@ -6,7 +6,7 @@
 
 - **Domain**: `ccache.dev`
 - **Name**: `ccache`
-- **Homepage**: <https://ccache.dev/>
+- **Homepage**: https://ccache.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ccache.dev/package.yml)
 
 ## Installation

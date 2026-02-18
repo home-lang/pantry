@@ -6,7 +6,7 @@
 
 - **Domain**: `rpm.org/popt`
 - **Name**: `popt`
-- **Homepage**: <http://ftp.rpm.org/popt/>
+- **Homepage**: http://ftp.rpm.org/popt/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rpm.org/popt/package.yml)
 
 ## Installation

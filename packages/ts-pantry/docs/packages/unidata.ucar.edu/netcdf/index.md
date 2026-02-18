@@ -6,7 +6,7 @@
 
 - **Domain**: `unidata.ucar.edu/netcdf`
 - **Name**: `netcdf`
-- **Homepage**: <https://www.unidata.ucar.edu/software/netcdf/>
+- **Homepage**: https://www.unidata.ucar.edu/software/netcdf/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/unidata.ucar.edu/netcdf/package.yml)
 
 ## Installation

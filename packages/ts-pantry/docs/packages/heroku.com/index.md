@@ -6,7 +6,7 @@
 
 - **Domain**: `heroku.com`
 - **Name**: `heroku`
-- **Homepage**: <https://www.npmjs.com/package/heroku/>
+- **Homepage**: https://www.npmjs.com/package/heroku/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/heroku.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `notroj.github.io/neon`
 - **Name**: `neon-config`
-- **Homepage**: <https://notroj.github.io/neon/>
+- **Homepage**: https://notroj.github.io/neon/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/notroj.github.io/neon/package.yml)
 
 ## Installation

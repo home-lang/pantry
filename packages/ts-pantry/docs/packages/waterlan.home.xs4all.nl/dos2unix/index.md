@@ -6,7 +6,7 @@
 
 - **Domain**: `waterlan.home.xs4all.nl/dos2unix`
 - **Name**: `dos2unix`
-- **Homepage**: <https://waterlan.home.xs4all.nl/dos2unix.html>
+- **Homepage**: https://waterlan.home.xs4all.nl/dos2unix.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/waterlan.home.xs4all.nl/dos2unix/package.yml)
 
 ## Installation

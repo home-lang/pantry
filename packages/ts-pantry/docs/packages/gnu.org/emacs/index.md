@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/emacs`
 - **Name**: `emacs`
-- **Homepage**: <https://www.gnu.org/software/emacs/>
+- **Homepage**: https://www.gnu.org/software/emacs/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/emacs/package.yml)
 
 ## Installation

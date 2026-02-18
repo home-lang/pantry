@@ -6,7 +6,7 @@
 
 - **Domain**: `streamlink.github.io`
 - **Name**: `streamlink`
-- **Homepage**: <https://streamlink.github.io/>
+- **Homepage**: https://streamlink.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/streamlink.github.io/package.yml)
 
 ## Installation

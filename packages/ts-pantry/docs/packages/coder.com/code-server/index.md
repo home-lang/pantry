@@ -6,7 +6,7 @@
 
 - **Domain**: `coder.com/code-server`
 - **Name**: `code-server`
-- **Homepage**: <https://coder.com>
+- **Homepage**: https://coder.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/coder.com/code-server/package.yml)
 
 ## Installation

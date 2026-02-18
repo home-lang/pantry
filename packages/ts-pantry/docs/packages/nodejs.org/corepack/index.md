@@ -6,7 +6,7 @@
 
 - **Domain**: `nodejs.org/corepack`
 - **Name**: `corepack`
-- **Homepage**: <https://nodejs.org/>
+- **Homepage**: https://nodejs.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nodejs.org/corepack/package.yml)
 
 ## Installation

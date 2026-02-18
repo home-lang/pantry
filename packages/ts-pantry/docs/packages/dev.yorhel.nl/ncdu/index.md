@@ -6,7 +6,7 @@
 
 - **Domain**: `dev.yorhel.nl/ncdu`
 - **Name**: `ncdu`
-- **Homepage**: <https://dev.yorhel.nl/ncdu>
+- **Homepage**: https://dev.yorhel.nl/ncdu
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dev.yorhel.nl/ncdu/package.yml)
 
 ## Installation

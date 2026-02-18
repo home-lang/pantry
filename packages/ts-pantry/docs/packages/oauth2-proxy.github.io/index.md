@@ -6,7 +6,7 @@
 
 - **Domain**: `oauth2-proxy.github.io`
 - **Name**: `oauth2-proxy`
-- **Homepage**: <https://oauth2-proxy.github.io/oauth2-proxy/>
+- **Homepage**: https://oauth2-proxy.github.io/oauth2-proxy/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/oauth2-proxy.github.io/package.yml)
 
 ## Installation

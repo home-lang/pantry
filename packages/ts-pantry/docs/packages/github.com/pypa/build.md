@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/pypa/build`
 - **Name**: `pyproject-build`
-- **Homepage**: <https://build.pypa.io>
+- **Homepage**: https://build.pypa.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/pypa/build/package.yml)
 
 ## Installation

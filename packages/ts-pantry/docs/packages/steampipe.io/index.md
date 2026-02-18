@@ -6,7 +6,7 @@
 
 - **Domain**: `steampipe.io`
 - **Name**: `steampipe`
-- **Homepage**: <https://steampipe.io/>
+- **Homepage**: https://steampipe.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/steampipe.io/package.yml)
 
 ## Installation

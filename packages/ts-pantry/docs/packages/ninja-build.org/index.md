@@ -6,7 +6,7 @@
 
 - **Domain**: `ninja-build.org`
 - **Name**: `ninja`
-- **Homepage**: <https://ninja-build.org/>
+- **Homepage**: https://ninja-build.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ninja-build.org/package.yml)
 
 ## Installation

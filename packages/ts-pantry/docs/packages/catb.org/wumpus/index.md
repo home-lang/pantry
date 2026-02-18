@@ -6,7 +6,7 @@
 
 - **Domain**: `catb.org/wumpus`
 - **Name**: `wumpus`
-- **Homepage**: <http://www.catb.org/~esr/wumpus/>
+- **Homepage**: http://www.catb.org/~esr/wumpus/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/catb.org/wumpus/package.yml)
 
 ## Installation

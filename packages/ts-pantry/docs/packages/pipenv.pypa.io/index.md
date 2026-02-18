@@ -1,12 +1,12 @@
 # pipenv
 
-> Python Development Workflow for Humans.
+>  Python Development Workflow for Humans.
 
 ## Package Information
 
 - **Domain**: `pipenv.pypa.io`
 - **Name**: `pipenv`
-- **Homepage**: <https://pipenv.pypa.io>
+- **Homepage**: https://pipenv.pypa.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pipenv.pypa.io/package.yml)
 
 ## Installation

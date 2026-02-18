@@ -6,7 +6,7 @@
 
 - **Domain**: `practical-scheme.net/gauche`
 - **Name**: `gauche`
-- **Homepage**: <https://practical-scheme.net/gauche/>
+- **Homepage**: https://practical-scheme.net/gauche/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/practical-scheme.net/gauche/package.yml)
 
 ## Installation

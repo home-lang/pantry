@@ -20,7 +20,7 @@ launchpad install github.com/fastfloat/fast_float
 
 This package provides the following executable programs:
 
-_No programs specified_
+*No programs specified*
 
 ## Available Versions
 
@@ -65,4 +65,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

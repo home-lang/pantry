@@ -6,7 +6,7 @@
 
 - **Domain**: `openinterpreter.com`
 - **Name**: `open-interpreter`
-- **Homepage**: <http://openinterpreter.com/>
+- **Homepage**: http://openinterpreter.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openinterpreter.com/package.yml)
 
 ## Installation

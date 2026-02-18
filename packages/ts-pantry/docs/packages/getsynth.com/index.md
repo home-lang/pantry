@@ -6,7 +6,7 @@
 
 - **Domain**: `getsynth.com`
 - **Name**: `synth`
-- **Homepage**: <https://www.getsynth.com/>
+- **Homepage**: https://www.getsynth.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/getsynth.com/package.yml)
 
 ## Installation

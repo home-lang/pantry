@@ -6,7 +6,7 @@
 
 - **Domain**: `pdm.fming.dev`
 - **Name**: `pdm`
-- **Homepage**: <https://pdm.fming.dev>
+- **Homepage**: https://pdm.fming.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pdm.fming.dev/package.yml)
 
 ## Installation

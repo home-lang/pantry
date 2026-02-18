@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/spider_cli`
 - **Name**: `spider`
-- **Homepage**: <https://spider.cloud>
+- **Homepage**: https://spider.cloud
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/spider_cli/package.yml)
 
 ## Installation
@@ -106,4 +106,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/passbolt/go-passbolt-cli`
 - **Name**: `go-passbolt-cli`
-- **Homepage**: <https://passbolt.com>
+- **Homepage**: https://passbolt.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/passbolt/go-passbolt-cli/package.yml)
 
 ## Installation

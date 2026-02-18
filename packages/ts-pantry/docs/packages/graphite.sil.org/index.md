@@ -6,7 +6,7 @@
 
 - **Domain**: `graphite.sil.org`
 - **Name**: `gr2fonttest`
-- **Homepage**: <https://graphite.sil.org/>
+- **Homepage**: https://graphite.sil.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/graphite.sil.org/package.yml)
 
 ## Installation

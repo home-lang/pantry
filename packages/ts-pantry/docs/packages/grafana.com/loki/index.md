@@ -6,7 +6,7 @@
 
 - **Domain**: `grafana.com/loki`
 - **Name**: `loki`
-- **Homepage**: <https://grafana.com/loki>
+- **Homepage**: https://grafana.com/loki
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/grafana.com/loki/package.yml)
 
 ## Installation

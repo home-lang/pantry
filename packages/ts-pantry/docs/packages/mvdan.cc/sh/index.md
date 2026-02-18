@@ -6,7 +6,7 @@
 
 - **Domain**: `mvdan.cc/sh`
 - **Name**: `shfmt`
-- **Homepage**: <https://pkg.go.dev/mvdan.cc/sh/v3>
+- **Homepage**: https://pkg.go.dev/mvdan.cc/sh/v3
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mvdan.cc/sh/package.yml)
 
 ## Installation

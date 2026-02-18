@@ -6,7 +6,7 @@
 
 - **Domain**: `symfony.com`
 - **Name**: `symfony`
-- **Homepage**: <https://symfony.com/download>
+- **Homepage**: https://symfony.com/download
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/symfony.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/bison`
 - **Name**: `bison`
-- **Homepage**: <https://www.gnu.org/software/bison/>
+- **Homepage**: https://www.gnu.org/software/bison/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/bison/package.yml)
 
 ## Installation

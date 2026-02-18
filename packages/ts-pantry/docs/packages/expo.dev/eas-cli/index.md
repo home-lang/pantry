@@ -6,7 +6,7 @@
 
 - **Domain**: `expo.dev/eas-cli`
 - **Name**: `eas`
-- **Homepage**: <https://docs.expo.dev/eas/>
+- **Homepage**: https://docs.expo.dev/eas/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/expo.dev/eas-cli/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/srgn`
 - **Name**: `srgn`
-- **Homepage**: <https://crates.io/crates/srgn/>
+- **Homepage**: https://crates.io/crates/srgn/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/srgn/package.yml)
 
 ## Installation

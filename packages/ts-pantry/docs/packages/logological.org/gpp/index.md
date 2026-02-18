@@ -6,7 +6,7 @@
 
 - **Domain**: `logological.org/gpp`
 - **Name**: `gpp`
-- **Homepage**: <https://logological.org/gpp>
+- **Homepage**: https://logological.org/gpp
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/logological.org/gpp/package.yml)
 
 ## Installation

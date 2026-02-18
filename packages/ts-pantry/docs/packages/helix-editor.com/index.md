@@ -6,7 +6,7 @@
 
 - **Domain**: `helix-editor.com`
 - **Name**: `hx`
-- **Homepage**: <https://helix-editor.com>
+- **Homepage**: https://helix-editor.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/helix-editor.com/package.yml)
 
 ## Installation

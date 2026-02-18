@@ -1,12 +1,12 @@
 # xml
 
-> Read-only mirror of <https://gitlab.gnome.org/GNOME/libxml2>
+> Read-only mirror of https://gitlab.gnome.org/GNOME/libxml2
 
 ## Package Information
 
 - **Domain**: `gnome.org/libxml2`
 - **Name**: `xml`
-- **Homepage**: <http://xmlsoft.org/>
+- **Homepage**: http://xmlsoft.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/libxml2/package.yml)
 
 ## Installation

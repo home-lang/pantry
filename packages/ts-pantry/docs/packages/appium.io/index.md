@@ -6,7 +6,7 @@
 
 - **Domain**: `appium.io`
 - **Name**: `appium`
-- **Homepage**: <https://appium.io/>
+- **Homepage**: https://appium.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/appium.io/package.yml)
 
 ## Installation

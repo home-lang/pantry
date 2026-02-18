@@ -6,7 +6,7 @@
 
 - **Domain**: `dotenv-linter.github.io`
 - **Name**: `dotenv-linter`
-- **Homepage**: <https://dotenv-linter.github.io>
+- **Homepage**: https://dotenv-linter.github.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dotenv-linter.github.io/package.yml)
 
 ## Installation

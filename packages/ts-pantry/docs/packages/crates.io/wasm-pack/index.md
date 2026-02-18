@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/wasm-pack`
 - **Name**: `wasm-pack`
-- **Homepage**: <https://rustwasm.github.io/wasm-pack/>
+- **Homepage**: https://rustwasm.github.io/wasm-pack/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/wasm-pack/package.yml)
 
 ## Installation

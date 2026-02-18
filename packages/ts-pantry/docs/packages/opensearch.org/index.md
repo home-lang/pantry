@@ -6,7 +6,7 @@
 
 - **Domain**: `opensearch.org`
 - **Name**: `opensearch`
-- **Homepage**: <https://opensearch.org/docs/latest/opensearch/index/>
+- **Homepage**: https://opensearch.org/docs/latest/opensearch/index/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/opensearch.org/package.yml)
 
 ## Installation

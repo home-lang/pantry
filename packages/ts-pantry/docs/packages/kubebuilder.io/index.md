@@ -6,7 +6,7 @@
 
 - **Domain**: `kubebuilder.io`
 - **Name**: `kubebuilder`
-- **Homepage**: <http://book.kubebuilder.io>
+- **Homepage**: http://book.kubebuilder.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubebuilder.io/package.yml)
 
 ## Installation

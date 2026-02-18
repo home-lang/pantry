@@ -6,7 +6,7 @@
 
 - **Domain**: `deno.land`
 - **Name**: `deno`
-- **Homepage**: <https://deno.com/>
+- **Homepage**: https://deno.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/deno.land/package.yml)
 
 ## Installation

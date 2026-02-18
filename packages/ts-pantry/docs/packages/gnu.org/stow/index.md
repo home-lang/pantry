@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/stow`
 - **Name**: `stow`
-- **Homepage**: <https://www.gnu.org/software/stow/>
+- **Homepage**: https://www.gnu.org/software/stow/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/stow/package.yml)
 
 ## Installation

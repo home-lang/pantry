@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/allure-framework/allure2`
 - **Name**: `allure`
-- **Homepage**: <https://allurereport.org/>
+- **Homepage**: https://allurereport.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/allure-framework/allure2/package.yml)
 
 ## Installation

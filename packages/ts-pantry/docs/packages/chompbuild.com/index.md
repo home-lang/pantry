@@ -6,7 +6,7 @@
 
 - **Domain**: `chompbuild.com`
 - **Name**: `chomp`
-- **Homepage**: <https://chompbuild.com>
+- **Homepage**: https://chompbuild.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/chompbuild.com/package.yml)
 
 ## Installation

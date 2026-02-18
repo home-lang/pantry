@@ -6,7 +6,7 @@
 
 - **Domain**: `openshift.com`
 - **Name**: `oc`
-- **Homepage**: <https://www.openshift.com/>
+- **Homepage**: https://www.openshift.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openshift.com/package.yml)
 
 ## Installation

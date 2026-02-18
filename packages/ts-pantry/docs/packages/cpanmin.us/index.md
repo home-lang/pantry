@@ -6,7 +6,7 @@
 
 - **Domain**: `cpanmin.us`
 - **Name**: `cpanm`
-- **Homepage**: <http://cpanmin.us>
+- **Homepage**: http://cpanmin.us
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cpanmin.us/package.yml)
 
 ## Installation

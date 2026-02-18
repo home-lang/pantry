@@ -6,7 +6,7 @@
 
 - **Domain**: `cairographics.org`
 - **Name**: `cairo-trace`
-- **Homepage**: <https://cairographics.org/>
+- **Homepage**: https://cairographics.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cairographics.org/package.yml)
 
 ## Installation

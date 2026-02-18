@@ -6,7 +6,7 @@
 
 - **Domain**: `aquasecurity.github.io/tfsec`
 - **Name**: `tfsec`
-- **Homepage**: <https://aquasecurity.github.io/tfsec/latest/>
+- **Homepage**: https://aquasecurity.github.io/tfsec/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aquasecurity.github.io/tfsec/package.yml)
 
 ## Installation

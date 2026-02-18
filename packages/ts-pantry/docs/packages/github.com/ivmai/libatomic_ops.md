@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/ivmai/libatomic_ops`
 - **Name**: `libatomic_ops`
-- **Homepage**: <https://github.com/ivmai/libatomic_ops/wiki/Download>
+- **Homepage**: https://github.com/ivmai/libatomic_ops/wiki/Download
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/ivmai/libatomic_ops/package.yml)
 
 ## Installation
@@ -20,7 +20,7 @@ launchpad install github.com/ivmai/libatomic_ops
 
 This package provides the following executable programs:
 
-_No programs specified_
+*No programs specified*
 
 ## Available Versions
 
@@ -64,4 +64,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

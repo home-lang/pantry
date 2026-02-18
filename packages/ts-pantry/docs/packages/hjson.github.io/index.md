@@ -6,7 +6,7 @@
 
 - **Domain**: `hjson.github.io`
 - **Name**: `hjson`
-- **Homepage**: <https://hjson.github.io/>
+- **Homepage**: https://hjson.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hjson.github.io/package.yml)
 
 ## Installation

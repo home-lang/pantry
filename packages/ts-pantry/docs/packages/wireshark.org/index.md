@@ -6,7 +6,7 @@
 
 - **Domain**: `wireshark.org`
 - **Name**: `wireshark`
-- **Homepage**: <https://www.wireshark.org>
+- **Homepage**: https://www.wireshark.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wireshark.org/package.yml)
 
 ## Installation

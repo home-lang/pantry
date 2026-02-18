@@ -6,7 +6,7 @@
 
 - **Domain**: `volta.sh`
 - **Name**: `volta`
-- **Homepage**: <https://volta.sh>
+- **Homepage**: https://volta.sh
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/volta.sh/package.yml)
 
 ## Installation

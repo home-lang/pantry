@@ -6,7 +6,7 @@
 
 - **Domain**: `kubecm.cloud`
 - **Name**: `kubecm`
-- **Homepage**: <https://kubecm.cloud>
+- **Homepage**: https://kubecm.cloud
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubecm.cloud/package.yml)
 
 ## Installation

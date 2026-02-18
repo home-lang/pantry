@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/bats-core/bats-core`
 - **Name**: `bats`
-- **Homepage**: <https://bats-core.readthedocs.io/>
+- **Homepage**: https://bats-core.readthedocs.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/bats-core/bats-core/package.yml)
 
 ## Installation

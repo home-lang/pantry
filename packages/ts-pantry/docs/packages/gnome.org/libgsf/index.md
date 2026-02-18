@@ -6,7 +6,7 @@
 
 - **Domain**: `gnome.org/libgsf`
 - **Name**: `gsf`
-- **Homepage**: <https://gitlab.gnome.org/GNOME/libgsf>
+- **Homepage**: https://gitlab.gnome.org/GNOME/libgsf
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/libgsf/package.yml)
 
 ## Installation

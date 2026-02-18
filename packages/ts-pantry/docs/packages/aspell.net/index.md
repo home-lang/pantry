@@ -6,7 +6,7 @@
 
 - **Domain**: `aspell.net`
 - **Name**: `aspell`
-- **Homepage**: <http://aspell.net/>
+- **Homepage**: http://aspell.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aspell.net/package.yml)
 
 ## Installation

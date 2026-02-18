@@ -6,7 +6,7 @@
 
 - **Domain**: `lxml.de`
 - **Name**: `lxml.de`
-- **Homepage**: <https://lxml.de/>
+- **Homepage**: https://lxml.de/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lxml.de/package.yml)
 
 ## Installation

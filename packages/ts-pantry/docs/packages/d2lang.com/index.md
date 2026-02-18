@@ -6,7 +6,7 @@
 
 - **Domain**: `d2lang.com`
 - **Name**: `d2`
-- **Homepage**: <https://d2lang.com/>
+- **Homepage**: https://d2lang.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/d2lang.com/package.yml)
 
 ## Installation

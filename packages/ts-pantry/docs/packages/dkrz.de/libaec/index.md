@@ -6,7 +6,7 @@
 
 - **Domain**: `dkrz.de/libaec`
 - **Name**: `libaec`
-- **Homepage**: <https://gitlab.dkrz.de/k202009/libaec>
+- **Homepage**: https://gitlab.dkrz.de/k202009/libaec
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dkrz.de/libaec/package.yml)
 
 ## Installation

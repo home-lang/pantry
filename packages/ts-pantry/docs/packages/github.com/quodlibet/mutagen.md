@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/quodlibet/mutagen`
 - **Name**: `mutagen`
-- **Homepage**: <https://mutagen.readthedocs.io>
+- **Homepage**: https://mutagen.readthedocs.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/quodlibet/mutagen/package.yml)
 
 ## Installation

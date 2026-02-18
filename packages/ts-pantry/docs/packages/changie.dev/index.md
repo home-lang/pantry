@@ -6,7 +6,7 @@
 
 - **Domain**: `changie.dev`
 - **Name**: `changie`
-- **Homepage**: <https://changie.dev/>
+- **Homepage**: https://changie.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/changie.dev/package.yml)
 
 ## Installation

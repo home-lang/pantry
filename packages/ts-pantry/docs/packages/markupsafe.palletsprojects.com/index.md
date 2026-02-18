@@ -6,7 +6,7 @@
 
 - **Domain**: `markupsafe.palletsprojects.com`
 - **Name**: `markupsafe.palletsprojects`
-- **Homepage**: <https://markupsafe.palletsprojects.com>
+- **Homepage**: https://markupsafe.palletsprojects.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/markupsafe.palletsprojects.com/package.yml)
 
 ## Installation

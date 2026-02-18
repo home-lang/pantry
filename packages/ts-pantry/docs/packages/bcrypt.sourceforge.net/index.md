@@ -6,7 +6,7 @@
 
 - **Domain**: `bcrypt.sourceforge.net`
 - **Name**: `bcrypt`
-- **Homepage**: <https://bcrypt.sourceforge.net/>
+- **Homepage**: https://bcrypt.sourceforge.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/bcrypt.sourceforge.net/package.yml)
 
 ## Installation

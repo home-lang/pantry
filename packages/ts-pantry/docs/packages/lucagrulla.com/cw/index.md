@@ -6,7 +6,7 @@
 
 - **Domain**: `lucagrulla.com/cw`
 - **Name**: `cw`
-- **Homepage**: <https://www.lucagrulla.com/cw>
+- **Homepage**: https://www.lucagrulla.com/cw
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lucagrulla.com/cw/package.yml)
 
 ## Installation

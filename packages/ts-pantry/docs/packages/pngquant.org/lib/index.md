@@ -6,7 +6,7 @@
 
 - **Domain**: `pngquant.org/lib`
 - **Name**: `libimagequant`
-- **Homepage**: <https://pngquant.org/lib>
+- **Homepage**: https://pngquant.org/lib
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pngquant.org/lib/package.yml)
 
 ## Installation

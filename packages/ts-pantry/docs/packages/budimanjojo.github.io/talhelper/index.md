@@ -6,7 +6,7 @@
 
 - **Domain**: `budimanjojo.github.io/talhelper`
 - **Name**: `talhelper`
-- **Homepage**: <https://budimanjojo.github.io/talhelper/latest/>
+- **Homepage**: https://budimanjojo.github.io/talhelper/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/budimanjojo.github.io/talhelper/package.yml)
 
 ## Installation

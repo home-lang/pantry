@@ -6,7 +6,7 @@
 
 - **Domain**: `mkcert.dev`
 - **Name**: `mkcert`
-- **Homepage**: <https://mkcert.dev>
+- **Homepage**: https://mkcert.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mkcert.dev/package.yml)
 
 ## Installation

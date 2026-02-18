@@ -6,7 +6,7 @@
 
 - **Domain**: `solana.com`
 - **Name**: `solana`
-- **Homepage**: <https://solana.com>
+- **Homepage**: https://solana.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/solana.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `htslib.org`
 - **Name**: `htslib`
-- **Homepage**: <https://www.htslib.org/>
+- **Homepage**: https://www.htslib.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/htslib.org/package.yml)
 
 ## Installation

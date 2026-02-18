@@ -6,7 +6,7 @@
 
 - **Domain**: `tcpdump.org`
 - **Name**: `pcap-config`
-- **Homepage**: <https://www.tcpdump.org/>
+- **Homepage**: https://www.tcpdump.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tcpdump.org/package.yml)
 
 ## Installation

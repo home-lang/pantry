@@ -6,7 +6,7 @@
 
 - **Domain**: `agpt.co`
 - **Name**: `Auto-GPT`
-- **Homepage**: <https://agpt.co>
+- **Homepage**: https://agpt.co
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/agpt.co/package.yml)
 
 ## Installation

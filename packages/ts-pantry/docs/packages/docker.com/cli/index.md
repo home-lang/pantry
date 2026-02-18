@@ -6,7 +6,7 @@
 
 - **Domain**: `docker.com/cli`
 - **Name**: `docker/cli`
-- **Homepage**: <https://www.docker.com/>
+- **Homepage**: https://www.docker.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/docker.com/cli/package.yml)
 
 ## Installation

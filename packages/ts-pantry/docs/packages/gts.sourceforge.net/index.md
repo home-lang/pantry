@@ -6,7 +6,7 @@
 
 - **Domain**: `gts.sourceforge.net`
 - **Name**: `gts.sourceforge`
-- **Homepage**: <https://gts.sourceforge.net/>
+- **Homepage**: https://gts.sourceforge.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gts.sourceforge.net/package.yml)
 
 ## Installation

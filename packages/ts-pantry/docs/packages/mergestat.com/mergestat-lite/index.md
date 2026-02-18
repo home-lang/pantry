@@ -6,7 +6,7 @@
 
 - **Domain**: `mergestat.com/mergestat-lite`
 - **Name**: `mergestat`
-- **Homepage**: <https://mergestat.com/>
+- **Homepage**: https://mergestat.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mergestat.com/mergestat-lite/package.yml)
 
 ## Installation

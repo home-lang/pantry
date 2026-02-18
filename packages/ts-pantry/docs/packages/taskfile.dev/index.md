@@ -6,7 +6,7 @@
 
 - **Domain**: `taskfile.dev`
 - **Name**: `task`
-- **Homepage**: <https://taskfile.dev>
+- **Homepage**: https://taskfile.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/taskfile.dev/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `rust-lang.org/rust-bindgen`
 - **Name**: `bindgen`
-- **Homepage**: <https://rust-lang.github.io/rust-bindgen/>
+- **Homepage**: https://rust-lang.github.io/rust-bindgen/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.org/rust-bindgen/package.yml)
 
 ## Installation

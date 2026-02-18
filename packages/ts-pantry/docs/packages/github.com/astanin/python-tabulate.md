@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/astanin/python-tabulate`
 - **Name**: `tabulate`
-- **Homepage**: <https://pypi.org/project/tabulate/>
+- **Homepage**: https://pypi.org/project/tabulate/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/astanin/python-tabulate/package.yml)
 
 ## Installation

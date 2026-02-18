@@ -6,7 +6,7 @@
 
 - **Domain**: `networkx.org`
 - **Name**: `networkx`
-- **Homepage**: <https://networkx.org>
+- **Homepage**: https://networkx.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/networkx.org/package.yml)
 
 ## Installation

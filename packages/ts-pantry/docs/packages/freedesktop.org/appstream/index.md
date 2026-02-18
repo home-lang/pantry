@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/appstream`
 - **Name**: `appstreamcli`
-- **Homepage**: <https://www.freedesktop.org/wiki/Distributions/AppStream/>
+- **Homepage**: https://www.freedesktop.org/wiki/Distributions/AppStream/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/appstream/package.yml)
 
 ## Installation

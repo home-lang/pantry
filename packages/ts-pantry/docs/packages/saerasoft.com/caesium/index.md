@@ -6,7 +6,7 @@
 
 - **Domain**: `saerasoft.com/caesium`
 - **Name**: `caesiumclt`
-- **Homepage**: <http://saerasoft.com/caesium>
+- **Homepage**: http://saerasoft.com/caesium
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/saerasoft.com/caesium/package.yml)
 
 ## Installation

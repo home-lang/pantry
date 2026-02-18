@@ -6,7 +6,7 @@
 
 - **Domain**: `google.com/protobuf-go`
 - **Name**: `protoc-gen-go`
-- **Homepage**: <https://developers.google.com/protocol-buffers>
+- **Homepage**: https://developers.google.com/protocol-buffers
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/google.com/protobuf-go/package.yml)
 
 ## Installation

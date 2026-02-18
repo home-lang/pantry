@@ -6,7 +6,7 @@
 
 - **Domain**: `paulfitz.github.io/daff`
 - **Name**: `daff`
-- **Homepage**: <https://paulfitz.github.io/daff>
+- **Homepage**: https://paulfitz.github.io/daff
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/paulfitz.github.io/daff/package.yml)
 
 ## Installation

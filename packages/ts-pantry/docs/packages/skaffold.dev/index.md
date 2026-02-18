@@ -6,7 +6,7 @@
 
 - **Domain**: `skaffold.dev`
 - **Name**: `skaffold`
-- **Homepage**: <https://skaffold.dev/>
+- **Homepage**: https://skaffold.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/skaffold.dev/package.yml)
 
 ## Installation

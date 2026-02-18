@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/faac`
 - **Name**: `faac`
-- **Homepage**: <https://sourceforge.net/projects/faac/>
+- **Homepage**: https://sourceforge.net/projects/faac/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/faac/package.yml)
 
 ## Installation

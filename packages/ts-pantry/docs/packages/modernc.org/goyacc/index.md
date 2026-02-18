@@ -6,7 +6,7 @@
 
 - **Domain**: `modernc.org/goyacc`
 - **Name**: `modernc.org/goyacc`
-- **Homepage**: <https://pkg.go.dev/modernc.org/goyacc>
+- **Homepage**: https://pkg.go.dev/modernc.org/goyacc
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/modernc.org/goyacc/package.yml)
 
 ## Installation

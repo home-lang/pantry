@@ -6,7 +6,7 @@
 
 - **Domain**: `pandoc.org`
 - **Name**: `pandoc`
-- **Homepage**: <https://pandoc.org/>
+- **Homepage**: https://pandoc.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pandoc.org/package.yml)
 
 ## Installation

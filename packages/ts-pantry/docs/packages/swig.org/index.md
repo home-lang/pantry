@@ -6,7 +6,7 @@
 
 - **Domain**: `swig.org`
 - **Name**: `swig`
-- **Homepage**: <https://www.swig.org/>
+- **Homepage**: https://www.swig.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/swig.org/package.yml)
 
 ## Installation

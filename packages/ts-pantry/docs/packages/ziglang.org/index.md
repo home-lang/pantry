@@ -6,7 +6,7 @@
 
 - **Domain**: `ziglang.org`
 - **Name**: `zig`
-- **Homepage**: <https://ziglang.org/>
+- **Homepage**: https://ziglang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ziglang.org/package.yml)
 
 ## Installation

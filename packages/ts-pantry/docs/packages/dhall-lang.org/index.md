@@ -6,7 +6,7 @@
 
 - **Domain**: `dhall-lang.org`
 - **Name**: `dhall`
-- **Homepage**: <https://dhall-lang.org/>
+- **Homepage**: https://dhall-lang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dhall-lang.org/package.yml)
 
 ## Installation

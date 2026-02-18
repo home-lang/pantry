@@ -6,7 +6,7 @@
 
 - **Domain**: `invisible-island.net/ncurses`
 - **Name**: `ncurses`
-- **Homepage**: <https://invisible-island.net/ncurses/announce.html>
+- **Homepage**: https://invisible-island.net/ncurses/announce.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/invisible-island.net/ncurses/package.yml)
 
 ## Installation

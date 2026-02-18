@@ -6,7 +6,7 @@
 
 - **Domain**: `vcluster.com`
 - **Name**: `vcluster`
-- **Homepage**: <https://www.vcluster.com>
+- **Homepage**: https://www.vcluster.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vcluster.com/package.yml)
 
 ## Installation

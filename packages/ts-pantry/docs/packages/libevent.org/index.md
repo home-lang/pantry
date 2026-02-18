@@ -6,7 +6,7 @@
 
 - **Domain**: `libevent.org`
 - **Name**: `libevent`
-- **Homepage**: <https://libevent.org>
+- **Homepage**: https://libevent.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libevent.org/package.yml)
 
 ## Installation

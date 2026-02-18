@@ -6,7 +6,7 @@
 
 - **Domain**: `terratag.io`
 - **Name**: `terratag`
-- **Homepage**: <https://terratag.io>
+- **Homepage**: https://terratag.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/terratag.io/package.yml)
 
 ## Installation

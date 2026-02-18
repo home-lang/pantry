@@ -6,7 +6,7 @@
 
 - **Domain**: `circleci.com`
 - **Name**: `circleci`
-- **Homepage**: <https://circleci.com/docs/2.0/local-cli/>
+- **Homepage**: https://circleci.com/docs/2.0/local-cli/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/circleci.com/package.yml)
 
 ## Installation

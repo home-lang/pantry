@@ -6,7 +6,7 @@
 
 - **Domain**: `squawkhq.com`
 - **Name**: `squawk`
-- **Homepage**: <https://squawkhq.com>
+- **Homepage**: https://squawkhq.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/squawkhq.com/package.yml)
 
 ## Installation

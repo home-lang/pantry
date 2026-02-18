@@ -6,7 +6,7 @@
 
 - **Domain**: `mercure.rocks`
 - **Name**: `mercure`
-- **Homepage**: <https://mercure.rocks>
+- **Homepage**: https://mercure.rocks
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mercure.rocks/package.yml)
 
 ## Installation

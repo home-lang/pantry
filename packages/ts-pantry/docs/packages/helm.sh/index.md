@@ -6,7 +6,7 @@
 
 - **Domain**: `helm.sh`
 - **Name**: `helm`
-- **Homepage**: <https://helm.sh/>
+- **Homepage**: https://helm.sh/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/helm.sh/package.yml)
 
 ## Installation

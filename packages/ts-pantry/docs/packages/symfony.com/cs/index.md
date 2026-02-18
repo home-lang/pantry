@@ -6,7 +6,7 @@
 
 - **Domain**: `symfony.com/cs`
 - **Name**: `php-cs-fixer`
-- **Homepage**: <https://cs.symfony.com/>
+- **Homepage**: https://cs.symfony.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/symfony.com/cs/package.yml)
 
 ## Installation
@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 85 versions</summary>
+<summary>Show all 86 versions</summary>
 
-- `3.94.0`
+- `3.94.1`, `3.94.0`
 - `3.93.1`, `3.93.0`
 - `3.92.5`, `3.92.4`, `3.92.3`, `3.92.2`, `3.92.1`, `3.92.0`
 - `3.91.3`, `3.91.2`, `3.91.1`, `3.91.0`
@@ -73,13 +73,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.94.0`
+**Latest Version**: `3.94.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +symfony.com/cs@3.94.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +symfony.com/cs@3.94.1 -- $SHELL -i
 ```
 
 ## Dependencies

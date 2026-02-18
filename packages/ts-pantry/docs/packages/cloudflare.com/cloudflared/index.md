@@ -6,7 +6,7 @@
 
 - **Domain**: `cloudflare.com/cloudflared`
 - **Name**: `cloudflared`
-- **Homepage**: <https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide>
+- **Homepage**: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cloudflare.com/cloudflared/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `developers.yubico.com/yubikey-manager`
 - **Name**: `yubikey-manager`
-- **Homepage**: <https://developers.yubico.com/yubikey-manager/>
+- **Homepage**: https://developers.yubico.com/yubikey-manager/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/developers.yubico.com/yubikey-manager/package.yml)
 
 ## Installation

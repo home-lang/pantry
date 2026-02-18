@@ -6,7 +6,7 @@
 
 - **Domain**: `yasm.tortall.net`
 - **Name**: `yasm`
-- **Homepage**: <https://yasm.tortall.net/>
+- **Homepage**: https://yasm.tortall.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/yasm.tortall.net/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `microcks.io`
 - **Name**: `microcks-cli`
-- **Homepage**: <https://microcks.io>
+- **Homepage**: https://microcks.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/microcks.io/package.yml)
 
 ## Installation

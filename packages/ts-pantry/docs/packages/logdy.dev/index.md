@@ -6,7 +6,7 @@
 
 - **Domain**: `logdy.dev`
 - **Name**: `logdy`
-- **Homepage**: <https://logdy.dev>
+- **Homepage**: https://logdy.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/logdy.dev/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `virtualenv.pypa.io`
 - **Name**: `virtualenv`
-- **Homepage**: <https://virtualenv.pypa.io/>
+- **Homepage**: https://virtualenv.pypa.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/virtualenv.pypa.io/package.yml)
 
 ## Installation

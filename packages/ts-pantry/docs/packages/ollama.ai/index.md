@@ -6,7 +6,7 @@
 
 - **Domain**: `ollama.ai`
 - **Name**: `ollama`
-- **Homepage**: <https://ollama.com/>
+- **Homepage**: https://ollama.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ollama.ai/package.yml)
 
 ## Installation

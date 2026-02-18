@@ -6,7 +6,7 @@
 
 - **Domain**: `atlasgo.io`
 - **Name**: `atlas`
-- **Homepage**: <https://atlasgo.io>
+- **Homepage**: https://atlasgo.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/atlasgo.io/package.yml)
 
 ## Installation

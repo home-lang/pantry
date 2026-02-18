@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/libbsd`
 - **Name**: `libbsd`
-- **Homepage**: <https://libbsd.freedesktop.org/>
+- **Homepage**: https://libbsd.freedesktop.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/libbsd/package.yml)
 
 ## Installation

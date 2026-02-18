@@ -6,7 +6,7 @@
 
 - **Domain**: `pwmt.org/zathura`
 - **Name**: `zathura`
-- **Homepage**: <https://pwmt.org/projects/zathura>
+- **Homepage**: https://pwmt.org/projects/zathura
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pwmt.org/zathura/package.yml)
 
 ## Installation

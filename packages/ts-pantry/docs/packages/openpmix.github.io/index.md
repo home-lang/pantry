@@ -6,7 +6,7 @@
 
 - **Domain**: `openpmix.github.io`
 - **Name**: `openpmix.github`
-- **Homepage**: <https://openpmix.github.io/>
+- **Homepage**: https://openpmix.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openpmix.github.io/package.yml)
 
 ## Installation

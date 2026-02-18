@@ -6,7 +6,7 @@
 
 - **Domain**: `prettier.io`
 - **Name**: `prettier`
-- **Homepage**: <https://prettier.io/>
+- **Homepage**: https://prettier.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/prettier.io/package.yml)
 
 ## Installation

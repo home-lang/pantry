@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/KhronosGroup/Vulkan-Headers`
 - **Name**: `Vulkan-Headers`
-- **Homepage**: <https://www.vulkan.org/>
+- **Homepage**: https://www.vulkan.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/KhronosGroup/Vulkan-Headers/package.yml)
 
 ## Installation

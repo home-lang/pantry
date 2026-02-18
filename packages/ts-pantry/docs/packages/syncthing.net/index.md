@@ -6,7 +6,7 @@
 
 - **Domain**: `syncthing.net`
 - **Name**: `syncthing`
-- **Homepage**: <https://syncthing.net/>
+- **Homepage**: https://syncthing.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/syncthing.net/package.yml)
 
 ## Installation

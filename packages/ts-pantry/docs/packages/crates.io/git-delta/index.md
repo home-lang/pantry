@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/git-delta`
 - **Name**: `delta`
-- **Homepage**: <https://dandavison.github.io/delta/>
+- **Homepage**: https://dandavison.github.io/delta/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/git-delta/package.yml)
 
 ## Installation

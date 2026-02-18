@@ -6,7 +6,7 @@
 
 - **Domain**: `kotlinlang.org`
 - **Name**: `kotlinlang`
-- **Homepage**: <https://kotlinlang.org/>
+- **Homepage**: https://kotlinlang.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kotlinlang.org/package.yml)
 
 ## Installation

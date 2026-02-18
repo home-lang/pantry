@@ -6,7 +6,7 @@
 
 - **Domain**: `replibyte.com`
 - **Name**: `replibyte`
-- **Homepage**: <https://www.replibyte.com>
+- **Homepage**: https://www.replibyte.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/replibyte.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/asciidoc-py/asciidoc-py`
 - **Name**: `asciidoc`
-- **Homepage**: <https://asciidoc-py.github.io/>
+- **Homepage**: https://asciidoc-py.github.io/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/asciidoc-py/asciidoc-py/package.yml)
 
 ## Installation

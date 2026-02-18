@@ -6,7 +6,7 @@
 
 - **Domain**: `docutils.org`
 - **Name**: `docutils`
-- **Homepage**: <https://docutils.sourceforge.io>
+- **Homepage**: https://docutils.sourceforge.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/docutils.org/package.yml)
 
 ## Installation

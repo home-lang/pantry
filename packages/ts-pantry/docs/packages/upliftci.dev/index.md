@@ -6,7 +6,7 @@
 
 - **Domain**: `upliftci.dev`
 - **Name**: `uplift`
-- **Homepage**: <https://upliftci.dev>
+- **Homepage**: https://upliftci.dev
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/upliftci.dev/package.yml)
 
 ## Installation

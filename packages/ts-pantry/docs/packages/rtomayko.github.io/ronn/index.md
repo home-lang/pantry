@@ -6,7 +6,7 @@
 
 - **Domain**: `rtomayko.github.io/ronn`
 - **Name**: `ronn`
-- **Homepage**: <http://rtomayko.github.com/ronn/>
+- **Homepage**: http://rtomayko.github.com/ronn/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rtomayko.github.io/ronn/package.yml)
 
 ## Installation

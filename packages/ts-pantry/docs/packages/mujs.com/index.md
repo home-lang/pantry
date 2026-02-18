@@ -6,7 +6,7 @@
 
 - **Domain**: `mujs.com`
 - **Name**: `mujs`
-- **Homepage**: <https://www.mujs.com/>
+- **Homepage**: https://www.mujs.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mujs.com/package.yml)
 
 ## Installation

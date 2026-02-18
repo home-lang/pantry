@@ -6,7 +6,7 @@
 
 - **Domain**: `riverbankcomputing.com/sip`
 - **Name**: `sip`
-- **Homepage**: <https://python-sip.readthedocs.io/en/latest/>
+- **Homepage**: https://python-sip.readthedocs.io/en/latest/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/riverbankcomputing.com/sip/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `microsoft.com/PowerShell`
 - **Name**: `pwsh`
-- **Homepage**: <https://microsoft.com/PowerShell>
+- **Homepage**: https://microsoft.com/PowerShell
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/microsoft.com/PowerShell/package.yml)
 
 ## Installation

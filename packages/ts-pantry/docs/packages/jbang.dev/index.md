@@ -6,7 +6,7 @@
 
 - **Domain**: `jbang.dev`
 - **Name**: `jbang`
-- **Homepage**: <https://jbang.dev/>
+- **Homepage**: https://jbang.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jbang.dev/package.yml)
 
 ## Installation

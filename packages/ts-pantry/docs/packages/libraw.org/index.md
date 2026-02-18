@@ -6,7 +6,7 @@
 
 - **Domain**: `libraw.org`
 - **Name**: `libraw`
-- **Homepage**: <https://www.libraw.org/>
+- **Homepage**: https://www.libraw.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libraw.org/package.yml)
 
 ## Installation
@@ -82,4 +82,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

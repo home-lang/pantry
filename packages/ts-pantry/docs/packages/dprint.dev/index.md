@@ -6,7 +6,7 @@
 
 - **Domain**: `dprint.dev`
 - **Name**: `dprint`
-- **Homepage**: <https://dprint.dev/>
+- **Homepage**: https://dprint.dev/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dprint.dev/package.yml)
 
 ## Installation

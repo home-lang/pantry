@@ -6,7 +6,7 @@
 
 - **Domain**: `tcl-lang.org/expect`
 - **Name**: `expect`
-- **Homepage**: <https://core.tcl-lang.org/expect/index>
+- **Homepage**: https://core.tcl-lang.org/expect/index
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tcl-lang.org/expect/package.yml)
 
 ## Installation

@@ -1,12 +1,12 @@
 # webp
 
-> Mirror only. Please do not send pull requests. See <https://chromium.googlesource.com/webm/libwebp/+/HEAD/CONTRIBUTING.md.>
+> Mirror only. Please do not send pull requests. See https://chromium.googlesource.com/webm/libwebp/+/HEAD/CONTRIBUTING.md.
 
 ## Package Information
 
 - **Domain**: `google.com/webp`
 - **Name**: `webp`
-- **Homepage**: <https://developers.google.com/speed/webp/>
+- **Homepage**: https://developers.google.com/speed/webp/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/google.com/webp/package.yml)
 
 ## Installation

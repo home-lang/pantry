@@ -6,7 +6,7 @@
 
 - **Domain**: `radicle.org`
 - **Name**: `radicle`
-- **Homepage**: <https://app.radicle.network/alt-clients.radicle.eth/radicle-cli>
+- **Homepage**: https://app.radicle.network/alt-clients.radicle.eth/radicle-cli
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/radicle.org/package.yml)
 
 ## Installation

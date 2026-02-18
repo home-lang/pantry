@@ -6,7 +6,7 @@
 
 - **Domain**: `wails.io`
 - **Name**: `wails`
-- **Homepage**: <https://wails.io>
+- **Homepage**: https://wails.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wails.io/package.yml)
 
 ## Installation

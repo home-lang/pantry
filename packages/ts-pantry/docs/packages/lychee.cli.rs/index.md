@@ -6,7 +6,7 @@
 
 - **Domain**: `lychee.cli.rs`
 - **Name**: `lychee`
-- **Homepage**: <https://lychee.cli.rs/>
+- **Homepage**: https://lychee.cli.rs/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lychee.cli.rs/package.yml)
 
 ## Installation

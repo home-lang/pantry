@@ -6,7 +6,7 @@
 
 - **Domain**: `gstreamer.freedesktop.org/orc`
 - **Name**: `orc`
-- **Homepage**: <https://gstreamer.freedesktop.org/projects/orc.html>
+- **Homepage**: https://gstreamer.freedesktop.org/projects/orc.html
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gstreamer.freedesktop.org/orc/package.yml)
 
 ## Installation

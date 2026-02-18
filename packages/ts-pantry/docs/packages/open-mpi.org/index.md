@@ -6,7 +6,7 @@
 
 - **Domain**: `open-mpi.org`
 - **Name**: `open-mpi`
-- **Homepage**: <https://www.open-mpi.org>
+- **Homepage**: https://www.open-mpi.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/open-mpi.org/package.yml)
 
 ## Installation
@@ -80,4 +80,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-_This documentation was auto-generated from package data._
+*This documentation was auto-generated from package data.*

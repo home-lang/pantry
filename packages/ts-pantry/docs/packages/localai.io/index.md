@@ -6,7 +6,7 @@
 
 - **Domain**: `localai.io`
 - **Name**: `LocalAI`
-- **Homepage**: <https://localai.io>
+- **Homepage**: https://localai.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/localai.io/package.yml)
 
 ## Installation

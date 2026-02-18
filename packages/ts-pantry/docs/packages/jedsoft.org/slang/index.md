@@ -6,7 +6,7 @@
 
 - **Domain**: `jedsoft.org/slang`
 - **Name**: `s-lang`
-- **Homepage**: <https://www.jedsoft.org/slang/>
+- **Homepage**: https://www.jedsoft.org/slang/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jedsoft.org/slang/package.yml)
 
 ## Installation

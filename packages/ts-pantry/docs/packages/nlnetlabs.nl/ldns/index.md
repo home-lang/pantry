@@ -6,7 +6,7 @@
 
 - **Domain**: `nlnetlabs.nl/ldns`
 - **Name**: `ldns`
-- **Homepage**: <https://nlnetlabs.nl/projects/ldns/>
+- **Homepage**: https://nlnetlabs.nl/projects/ldns/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nlnetlabs.nl/ldns/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gnome.org/pango`
 - **Name**: `pango`
-- **Homepage**: <https://www.gtk.org/docs/architecture/pango>
+- **Homepage**: https://www.gtk.org/docs/architecture/pango
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/pango/package.yml)
 
 ## Installation

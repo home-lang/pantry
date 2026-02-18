@@ -6,7 +6,7 @@
 
 - **Domain**: `ko.build`
 - **Name**: `ko`
-- **Homepage**: <https://ko.build>
+- **Homepage**: https://ko.build
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ko.build/package.yml)
 
 ## Installation

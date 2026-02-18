@@ -6,7 +6,7 @@
 
 - **Domain**: `openjdk.org`
 - **Name**: `openjdk`
-- **Homepage**: <https://openjdk.java.net/>
+- **Homepage**: https://openjdk.java.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openjdk.org/package.yml)
 
 ## Installation

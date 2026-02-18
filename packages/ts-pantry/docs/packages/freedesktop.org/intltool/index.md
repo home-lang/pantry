@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/intltool`
 - **Name**: `intltool`
-- **Homepage**: <https://wiki.freedesktop.org/www/Software/intltool>
+- **Homepage**: https://wiki.freedesktop.org/www/Software/intltool
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/intltool/package.yml)
 
 ## Installation

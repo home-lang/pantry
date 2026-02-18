@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/git-gone`
 - **Name**: `git-gone`
-- **Homepage**: <https://crates.io/crates/git-gone>
+- **Homepage**: https://crates.io/crates/git-gone
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/git-gone/package.yml)
 
 ## Installation

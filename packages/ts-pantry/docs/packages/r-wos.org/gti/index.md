@@ -6,7 +6,7 @@
 
 - **Domain**: `r-wos.org/gti`
 - **Name**: `gti`
-- **Homepage**: <https://r-wos.org/hacks/gti>
+- **Homepage**: https://r-wos.org/hacks/gti
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/r-wos.org/gti/package.yml)
 
 ## Installation

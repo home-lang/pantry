@@ -6,7 +6,7 @@
 
 - **Domain**: `direnv.net`
 - **Name**: `direnv`
-- **Homepage**: <https://direnv.net/>
+- **Homepage**: https://direnv.net/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/direnv.net/package.yml)
 
 ## Installation

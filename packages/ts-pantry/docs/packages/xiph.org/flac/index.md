@@ -6,7 +6,7 @@
 
 - **Domain**: `xiph.org/flac`
 - **Name**: `flac`
-- **Homepage**: <https://xiph.org/flac/>
+- **Homepage**: https://xiph.org/flac/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xiph.org/flac/package.yml)
 
 ## Installation

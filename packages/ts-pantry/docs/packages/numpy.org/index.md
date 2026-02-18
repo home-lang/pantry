@@ -6,7 +6,7 @@
 
 - **Domain**: `numpy.org`
 - **Name**: `f2py`
-- **Homepage**: <https://www.numpy.org/>
+- **Homepage**: https://www.numpy.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/numpy.org/package.yml)
 
 ## Installation

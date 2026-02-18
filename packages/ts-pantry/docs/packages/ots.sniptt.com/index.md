@@ -6,7 +6,7 @@
 
 - **Domain**: `ots.sniptt.com`
 - **Name**: `ots`
-- **Homepage**: <https://ots.sniptt.com>
+- **Homepage**: https://ots.sniptt.com
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ots.sniptt.com/package.yml)
 
 ## Installation

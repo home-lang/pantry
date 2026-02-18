@@ -6,7 +6,7 @@
 
 - **Domain**: `pantsbuild.org/scie-pants`
 - **Name**: `scie-pants`
-- **Homepage**: <https://www.pantsbuild.org/docs/installation>
+- **Homepage**: https://www.pantsbuild.org/docs/installation
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pantsbuild.org/scie-pants/package.yml)
 
 ## Installation

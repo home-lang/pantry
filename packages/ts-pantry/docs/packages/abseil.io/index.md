@@ -6,7 +6,7 @@
 
 - **Domain**: `abseil.io`
 - **Name**: `abseil`
-- **Homepage**: <https://abseil.io>
+- **Homepage**: https://abseil.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/abseil.io/package.yml)
 
 ## Installation

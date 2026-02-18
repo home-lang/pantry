@@ -6,7 +6,7 @@
 
 - **Domain**: `freeglut.sourceforge.io`
 - **Name**: `freeglut.sourceforge`
-- **Homepage**: <http://freeglut.sourceforge.net>
+- **Homepage**: http://freeglut.sourceforge.net
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freeglut.sourceforge.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `apptainer.org`
 - **Name**: `apptainer`
-- **Homepage**: <https://apptainer.org/>
+- **Homepage**: https://apptainer.org/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apptainer.org/package.yml)
 
 ## Installation

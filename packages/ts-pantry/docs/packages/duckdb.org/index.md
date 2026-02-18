@@ -6,7 +6,7 @@
 
 - **Domain**: `duckdb.org`
 - **Name**: `duckdb`
-- **Homepage**: <https://www.duckdb.org>
+- **Homepage**: https://www.duckdb.org
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/duckdb.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `kluctl.io`
 - **Name**: `kluctl`
-- **Homepage**: <https://kluctl.io>
+- **Homepage**: https://kluctl.io
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kluctl.io/package.yml)
 
 ## Installation

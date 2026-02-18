@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/exa`
 - **Name**: `exa`
-- **Homepage**: <https://the.exa.website/>
+- **Homepage**: https://the.exa.website/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/exa/package.yml)
 
 ## Installation

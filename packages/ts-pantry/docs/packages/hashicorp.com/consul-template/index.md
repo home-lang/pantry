@@ -6,7 +6,7 @@
 
 - **Domain**: `hashicorp.com/consul-template`
 - **Name**: `consul-template`
-- **Homepage**: <https://www.hashicorp.com/>
+- **Homepage**: https://www.hashicorp.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hashicorp.com/consul-template/package.yml)
 
 ## Installation

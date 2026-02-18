@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/moby/buildkit`
 - **Name**: `buildkit`
-- **Homepage**: <https://github.com/moby/moby/issues/34227>
+- **Homepage**: https://github.com/moby/moby/issues/34227
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/moby/buildkit/package.yml)
 
 ## Installation

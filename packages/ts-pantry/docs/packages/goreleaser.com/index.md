@@ -6,7 +6,7 @@
 
 - **Domain**: `goreleaser.com`
 - **Name**: `goreleaser`
-- **Homepage**: <https://goreleaser.com/>
+- **Homepage**: https://goreleaser.com/
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/goreleaser.com/package.yml)
 
 ## Installation
