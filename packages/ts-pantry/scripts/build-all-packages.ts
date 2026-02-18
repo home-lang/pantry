@@ -657,6 +657,9 @@ Options:
   //   microbrew.org/md5sha1sum — buildkit now auto-configures OpenSSL paths
   //   oracle.com/berkeley-db — recipe fixed: removed --enable-stl, added -std=c++14
   //   strace.io — linux-only, let it try with -Werror filtering
+  //   abseil.io, vim.org, facebook.com/*, pwmt.org/*, khronos.org/opencl-headers,
+  //     macvim.org, github.com/facebookincubator/fizz — GitHub tag resolution now
+  //     handles leading-zero normalization via API lookup (resolveGitHubTag)
   const knownBrokenDomains = new Set([
     'apache.org/subversion', // Needs APR/APR-util chain (circular dep with serf)
     'apache.org/serf', // Needs scons + apr (circular dep)
@@ -693,7 +696,6 @@ Options:
     'seaweedfs.com', // All GitHub release tags return 404
     'wundergraph.com', // All GitHub release tags return 404
     'riverbankcomputing.com/sip', // Server returns empty reply on all downloads
-    'abseil.io', // Date-based version format mismatch (20260107.1.0)
     'alembic.sqlalchemy.org', // Version tags return 404 on PyPI/GitHub
     'render.com', // Needs deno compile (no distributable source)
     'tea.xyz', // Needs deno task compile (no distributable source)
@@ -713,16 +715,6 @@ Options:
     'wez.github.io/wezterm', // Source tarball download fails
     'invisible-island.net/dialog', // Complex version format with date suffix
     'jetporch.com', // Dead project, GitHub repo/tags removed
-    'imagemagick.org', // Version transform (7.1.2-44→7.1.2.44) breaks tag lookup, no inverse
-    'vim.org', // Leading-zero normalization (v9.1.0001→9.1.1) breaks tag lookup + 16k tags
-    'facebook.com/watchman', // Date version leading-zero normalization (2026.02.16.00→2026.2.16.0)
-    'facebook.com/fb303', // Same date version leading-zero issue
-    'facebook.com/fbthrift', // Same date version leading-zero issue
-    'facebook.com/mvfst', // Same date version leading-zero issue
-    'facebook.com/wangle', // Same date version leading-zero issue
-    'facebook.com/edencommon', // Same date version leading-zero issue
-    'facebook.com/folly', // Same date version leading-zero issue
-    'github.com/facebookincubator/fizz', // Same date version leading-zero issue
     'libsdl.org/SDL_image', // SDL3 version resolved but URL uses SDL2_image naming
     'gource.io', // GitHub releases removed/restructured
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
@@ -730,9 +722,7 @@ Options:
     'hdfgroup.org/HDF5', // Tag format changed from hdf5_ to hdf5- in 2.x
     'pipenv.pypa.io', // Version 3000.0.0 tag doesn't exist on GitHub
     'riverbankcomputing.com/pyqt-builder', // Server returns empty reply
-    'khronos.org/opencl-headers', // Date-based version format mismatch
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
-    'macvim.org', // Depends on vim.org (same leading-zero version issue)
     'surrealdb.com', // Old release tags removed from GitHub
     'nasm.us', // Version resolution generates phantom versions (3.1.0, 3.0.0) that 404
     'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
@@ -745,8 +735,6 @@ Options:
     'brxken128.github.io/dexios', // Rust "unnecessary qualification" lint errors with modern rustc (unmaintained)
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
-    'pwmt.org/girara', // Date version leading-zero normalization (2026.02.04→2026.2.4) breaks tag lookup
-    'pwmt.org/zathura', // Depends on pwmt.org/girara (same date version issue)
   ])
 
   let platformSkipped = 0

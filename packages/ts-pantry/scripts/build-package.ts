@@ -538,7 +538,7 @@ function interpolate(template: string | any, vars: Record<string, string>): stri
 }
 
 /**
- * Determine version.tag from the YAML versions.strip pattern
+ * Determine version.tag from the YAML versions.strip pattern (fast heuristic).
  * In pkgx, version.tag = the original git tag before strip was applied.
  * Default github strip is /^v/ (removes v prefix from tags like v1.0.0)
  * But if tag doesn't have v prefix, version = tag (strip is no-op)
@@ -573,6 +573,99 @@ function determineVersionTag(yamlContent: string, version: string): string {
 
   // Default: assume v prefix (most common for github releases)
   return `v${version}`
+}
+
+/**
+ * Resolve the actual GitHub tag for a version by querying the GitHub API.
+ * This handles cases where version normalization loses information (leading zeros, etc).
+ *
+ * For example: version "2026.2.9.0" might map to tag "v2026.02.09.00" on GitHub.
+ * The heuristic determineVersionTag() can't recover this, but the API can.
+ *
+ * Returns { tag, rawVersion } or null if no match found.
+ */
+async function resolveGitHubTag(yamlContent: string, version: string): Promise<{ tag: string, rawVersion: string } | null> {
+  // Extract GitHub repo from YAML versions section
+  const ghMatch = yamlContent.match(/github:\s*([^\s#]+)/)
+  if (!ghMatch) return null
+
+  // Strip /tags suffix if present (used for tag-based discovery like vim/vim/tags)
+  const repo = ghMatch[1].trim().replace(/\/tags$/, '').replace(/\/releases$/, '')
+
+  // Extract strip pattern (defaults to /^v/ for github sources)
+  // Handle multi-line strip format (e.g. strip:\n  - /^release-/)
+  let stripRegex: RegExp = /^v/
+  const stripInlineMatch = yamlContent.match(/strip:\s*\/(.+)\//)
+  const stripArrayMatch = yamlContent.match(/strip:\s*\n\s+-\s*\/(.+)\//)
+  if (stripInlineMatch) {
+    stripRegex = new RegExp(stripInlineMatch[1])
+  } else if (stripArrayMatch) {
+    stripRegex = new RegExp(stripArrayMatch[1])
+  }
+
+  // Extract transform function if present (e.g. transform: v => v.replace('-', '.'))
+  let transformFn: ((v: string) => string | undefined) | null = null
+  const transformMatch = yamlContent.match(/transform:\s*['"]*(.+?)['"]*$/)
+  if (transformMatch) {
+    try {
+      // eslint-disable-next-line no-new-func
+      transformFn = new Function(`return (${transformMatch[1].trim()})`)() as any
+    } catch { /* ignore parse errors — fall back to no transform */ }
+  }
+
+  const token = process.env.GITHUB_TOKEN
+  const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
+  if (token) headers.Authorization = `token ${token}`
+
+  // Normalize a version string: strip leading zeros from each numeric component
+  function normalizeVersion(v: string): string {
+    return v.split('.').map(c => {
+      const n = Number.parseInt(c, 10)
+      return Number.isNaN(n) ? c : String(n)
+    }).join('.')
+  }
+
+  // Search through paginated tag results (up to 5 pages = 500 tags)
+  for (let page = 1; page <= 5; page++) {
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${repo}/tags?per_page=100&page=${page}`,
+        { headers },
+      )
+      if (!response.ok) {
+        console.log(`⚠️  GitHub API returned ${response.status} for ${repo} tags`)
+        return null
+      }
+
+      const tags: Array<{ name: string }> = await response.json() as any
+      if (tags.length === 0) break
+
+      for (const t of tags) {
+        const tagName = t.name
+        // Apply strip pattern to get the raw version
+        let stripped = tagName.replace(stripRegex, '')
+
+        // Apply transform if present (e.g. imagemagick: v.replace('-', '.'))
+        if (transformFn) {
+          try {
+            const transformed = transformFn(stripped)
+            if (transformed !== undefined) stripped = String(transformed)
+          } catch { /* ignore transform errors */ }
+        }
+
+        // Normalize the stripped version and compare
+        if (normalizeVersion(stripped) === version) {
+          // rawVersion = the stripped (and possibly transformed) version
+          return { tag: tagName, rawVersion: stripped }
+        }
+      }
+    } catch (err: any) {
+      console.log(`⚠️  GitHub API error for ${repo}: ${err.message}`)
+      return null
+    }
+  }
+
+  return null
 }
 
 // Load build overrides from src/pantry/{domain}/build-overrides.json
@@ -1077,7 +1170,20 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   // Determine version.tag from the versions.strip pattern in YAML
   // In pkgx, version.tag is the original git tag before strip was applied
   // Default strip for github: sources is /^v/ — but only if tag actually has v prefix
-  const versionTag = determineVersionTag(yamlContent, version)
+  let versionTag = determineVersionTag(yamlContent, version)
+  let versionRaw = version
+
+  // For URLs using version.tag or version.raw, resolve the actual GitHub tag via API
+  // This handles leading-zero normalization (e.g. 2026.2.9.0 → v2026.02.09.00)
+  const rawDistUrl = typeof recipe.distributable?.url === 'string' ? recipe.distributable.url : ''
+  if (rawDistUrl.includes('version.tag') || rawDistUrl.includes('version.raw')) {
+    const resolved = await resolveGitHubTag(yamlContent, version)
+    if (resolved) {
+      versionTag = resolved.tag
+      versionRaw = resolved.rawVersion
+      console.log(`📌 Resolved GitHub tag: ${resolved.tag} (raw: ${resolved.rawVersion})`)
+    }
+  }
 
   // Setup template variables
   const cpuCount = (await import('node:os')).cpus().length
@@ -1085,7 +1191,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   const vMinor = version.split('.')[1] || '0'
   const templateVars: Record<string, string> = {
     'version': version,
-    'version.raw': version,
+    'version.raw': versionRaw,
     'version.tag': versionTag,
     'version.major': vMajor,
     'version.minor': vMinor,
