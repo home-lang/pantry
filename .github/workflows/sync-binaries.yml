@@ -246,8 +246,25 @@ jobs:
           swift --version
           xcodebuild -version
 
+      - name: Cache Homebrew packages
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+            /opt/homebrew/Cellar
+            /opt/homebrew/opt
+            /opt/homebrew/lib
+            /opt/homebrew/include
+          key: brew-build-tools-${{ runner.os }}-v2
+          restore-keys: |
+            brew-build-tools-${{ runner.os }}-
+
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
             boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
@@ -255,7 +272,7 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2
+            libsecret libfido2 || true
 
       - name: Setup Rust toolchain
         run: |
@@ -292,7 +309,7 @@ jobs:
     if: github.event.inputs.packages == '' && needs.discover.outputs.total != '0'
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 6
       matrix:
         batch: ${{ fromJson(needs.discover.outputs.batches) }}
         platform:
@@ -389,7 +406,6 @@ jobs:
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'
         run: |
-          # Select latest Xcode 26.x for Swift 6.2+ support (needed for apple.com/container etc)
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XCODE_PATH" ]; then
             sudo xcode-select -s "$XCODE_PATH"
@@ -400,8 +416,25 @@ jobs:
           swift --version
           xcodebuild -version
 
+      - name: Cache Homebrew packages
+        if: runner.os == 'macOS'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+            /opt/homebrew/Cellar
+            /opt/homebrew/opt
+            /opt/homebrew/lib
+            /opt/homebrew/include
+          key: brew-build-tools-${{ runner.os }}-v2
+          restore-keys: |
+            brew-build-tools-${{ runner.os }}-
+
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+          HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
             boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
@@ -409,7 +442,7 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2
+            libsecret libfido2 || true
 
       - name: Setup Rust toolchain
         run: |
