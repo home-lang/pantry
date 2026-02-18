@@ -36,6 +36,9 @@ build:
       - --enable-loadable-i18n
       - --enable-xthreads
       - --enable-specs=no
+    linux:
+      ARGS:
+        - --disable-local-transport
 
 test:
   script: |
