@@ -87,7 +87,7 @@ pub fn verifyArchiveIntegrity(
     defer file.close(io_helper.io);
 
     var header: [6]u8 = undefined;
-    const n = std.posix.read(file.handle, &header) catch return false;
+    const n = io_helper.platformRead(file.handle, &header) catch return false;
     if (n < 2) return false;
 
     if (std.mem.eql(u8, format, "tar.gz")) {
@@ -112,7 +112,7 @@ pub fn computeChecksum(allocator: std.mem.Allocator, file_path: []const u8) ![]c
     var hasher = Sha256.init(.{});
     var buf: [65536]u8 = undefined; // 64KB read buffer
     while (true) {
-        const n = std.posix.read(file.handle, &buf) catch |err| switch (err) {
+        const n = io_helper.platformRead(file.handle, &buf) catch |err| switch (err) {
             error.WouldBlock => continue,
             else => return err,
         };

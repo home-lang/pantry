@@ -17,13 +17,34 @@ pub const File = std.Io.File;
 
 const is_windows = builtin.os.tag == .windows;
 
+// Windows kernel32 @extern declarations (only evaluated on Windows targets)
+const win32 = struct {
+    const HANDLE = std.os.windows.HANDLE;
+    const DWORD = std.os.windows.DWORD;
+    const BOOL = std.os.windows.BOOL;
+    const LARGE_INTEGER = std.os.windows.LARGE_INTEGER;
+    const FALSE = std.os.windows.FALSE;
+    const FILETIME = extern struct { dwLowDateTime: u32, dwHighDateTime: u32 };
+
+    const ReadFile = if (is_windows) @extern(*const fn (HANDLE, [*]u8, DWORD, *DWORD, ?*anyopaque) callconv(.winapi) BOOL, .{ .name = "ReadFile" }) else {};
+    const WriteFile = if (is_windows) @extern(*const fn (HANDLE, [*]const u8, DWORD, *DWORD, ?*anyopaque) callconv(.winapi) BOOL, .{ .name = "WriteFile" }) else {};
+    const GetStdHandle = if (is_windows) @extern(*const fn (DWORD) callconv(.winapi) ?HANDLE, .{ .name = "GetStdHandle" }) else {};
+    const Sleep = if (is_windows) @extern(*const fn (DWORD) callconv(.winapi) void, .{ .name = "Sleep" }) else {};
+    const GetSystemTimeAsFileTime = if (is_windows) @extern(*const fn (*FILETIME) callconv(.winapi) void, .{ .name = "GetSystemTimeAsFileTime" }) else {};
+    const SetFilePointerEx = if (is_windows) @extern(*const fn (HANDLE, LARGE_INTEGER, ?*LARGE_INTEGER, DWORD) callconv(.winapi) BOOL, .{ .name = "SetFilePointerEx" }) else {};
+    const CreateDirectoryA = if (is_windows) @extern(*const fn ([*:0]const u8, ?*anyopaque) callconv(.winapi) BOOL, .{ .name = "CreateDirectoryA" }) else {};
+    const GetCurrentDirectoryA = if (is_windows) @extern(*const fn (DWORD, [*]u8) callconv(.winapi) DWORD, .{ .name = "GetCurrentDirectoryA" }) else {};
+
+    const STD_INPUT_HANDLE: DWORD = @bitCast(@as(i32, -10));
+    const FILE_END: DWORD = 2;
+};
+
 /// Cross-platform read from a file descriptor/handle
-fn platformRead(handle: std.posix.fd_t, buf: []u8) !usize {
+pub fn platformRead(handle: std.posix.fd_t, buf: []u8) !usize {
     if (comptime is_windows) {
-        const w = std.os.windows;
-        var bytes_read: w.DWORD = 0;
-        const len: w.DWORD = @intCast(@min(buf.len, std.math.maxInt(w.DWORD)));
-        if (w.kernel32.ReadFile(handle, buf.ptr, len, &bytes_read, null) == w.FALSE) {
+        var bytes_read: win32.DWORD = 0;
+        const len: win32.DWORD = @intCast(@min(buf.len, std.math.maxInt(win32.DWORD)));
+        if (win32.ReadFile(handle, buf.ptr, len, &bytes_read, null) == win32.FALSE) {
             return error.InputOutput;
         }
         return @intCast(bytes_read);
@@ -34,10 +55,9 @@ fn platformRead(handle: std.posix.fd_t, buf: []u8) !usize {
 /// Cross-platform write to a file descriptor/handle
 fn platformWrite(handle: std.posix.fd_t, buf: []const u8) !usize {
     if (comptime is_windows) {
-        const w = std.os.windows;
-        var bytes_written: w.DWORD = 0;
-        const len: w.DWORD = @intCast(@min(buf.len, std.math.maxInt(w.DWORD)));
-        if (w.kernel32.WriteFile(handle, buf.ptr, len, &bytes_written, null) == w.FALSE) {
+        var bytes_written: win32.DWORD = 0;
+        const len: win32.DWORD = @intCast(@min(buf.len, std.math.maxInt(win32.DWORD)));
+        if (win32.WriteFile(handle, buf.ptr, len, &bytes_written, null) == win32.FALSE) {
             return error.InputOutput;
         }
         return @intCast(bytes_written);
@@ -178,18 +198,22 @@ pub fn openFile(path: []const u8, flags: File.OpenFlags) !File {
 /// Make a directory path recursively using libc mkdir
 pub fn makePath(path: []const u8) !void {
     if (comptime is_windows) {
-        // On Windows, use std.fs for cross-platform directory creation
+        // On Windows, use CreateDirectoryA for cross-platform directory creation
         const sep = if (std.mem.lastIndexOfScalar(u8, path, '/')) |s| s else std.mem.lastIndexOfScalar(u8, path, '\\');
         if (sep) |s| {
             if (s > 0) {
                 makePath(path[0..s]) catch {};
             }
         }
-        // Try to create this directory using cwd().makeDir
-        cwd().makeDir(io, path) catch |err| switch (err) {
-            error.PathAlreadyExists => return,
-            else => return error.MakePathFailed,
-        };
+        var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+        if (path.len >= path_buf.len) return error.MakePathFailed;
+        @memcpy(path_buf[0..path.len], path);
+        path_buf[path.len] = 0;
+        const result = win32.CreateDirectoryA(&path_buf, null);
+        if (result == win32.FALSE) {
+            // Ignore "already exists" errors
+            return;
+        }
         return;
     }
 
@@ -322,6 +346,11 @@ pub fn deleteTree(path: []const u8) !void {
 
 /// Get the current working directory as a path string
 pub fn getCwdPath(out_buffer: []u8) ![]u8 {
+    if (comptime is_windows) {
+        const len = win32.GetCurrentDirectoryA(@intCast(out_buffer.len), out_buffer.ptr);
+        if (len == 0) return error.Unexpected;
+        return out_buffer[0..len];
+    }
     // Use C getcwd for cross-version compatibility
     const result = c.getcwd(out_buffer.ptr, out_buffer.len);
     if (result == null) {
@@ -384,9 +413,8 @@ pub fn appendToFile(path: []const u8, bytes: []const u8) !void {
     defer file.close(io);
     // Seek to end
     if (comptime is_windows) {
-        const w = std.os.windows;
-        var distance: w.LARGE_INTEGER = 0;
-        if (w.kernel32.SetFilePointerEx(file.handle, distance, null, w.FILE_END) == w.FALSE) {
+        const distance: win32.LARGE_INTEGER = 0;
+        if (win32.SetFilePointerEx(file.handle, distance, null, win32.FILE_END) == win32.FALSE) {
             return error.Unseekable;
         }
     } else {
@@ -419,13 +447,13 @@ pub const DirEntry = struct {
 pub const FsDir = if (is_windows) WindowsFsDir else PosixFsDir;
 
 const WindowsFsDir = struct {
-    std_dir: std.fs.Dir,
+    dir: Dir, // std.Io.Dir — cross-platform
 
     pub const Iterator = struct {
-        inner: std.fs.Dir.Iterator,
+        inner: Dir.Iterator,
 
         pub fn next(self: *Iterator) !?DirEntry {
-            const entry = self.inner.next() catch return null;
+            const entry = self.inner.next(io) catch return null;
             if (entry) |e| {
                 const kind: DirEntry.Kind = switch (e.kind) {
                     .file => .file,
@@ -440,11 +468,11 @@ const WindowsFsDir = struct {
     };
 
     pub fn iterate(self: *WindowsFsDir) Iterator {
-        return .{ .inner = self.std_dir.iterate() };
+        return .{ .inner = self.dir.iterate() };
     }
 
     pub fn close(self: *WindowsFsDir) void {
-        self.std_dir.close();
+        self.dir.close(io);
     }
 };
 
@@ -555,8 +583,8 @@ const PosixFsDir = struct {
 /// Open a directory for iteration
 pub fn openDirForIteration(path: []const u8) !FsDir {
     if (comptime is_windows) {
-        const dir = std.fs.cwd().openDir(path, .{ .iterate = true }) catch return error.FileNotFound;
-        return .{ .std_dir = dir };
+        const dir = cwd().openDir(io, path, .{}) catch return error.FileNotFound;
+        return .{ .dir = dir };
     }
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, flags, 0);
@@ -581,7 +609,9 @@ fn hasField(comptime T: type, comptime name: []const u8) bool {
 /// Open a file with absolute path
 /// Opens from root directory for absolute paths
 pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
-    _ = flags;
+    if (comptime is_windows) {
+        return cwd().openFile(io, path, flags) catch return error.FileNotFound;
+    }
     const posix_flags: std.posix.O = .{ .ACCMODE = .RDONLY };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
     // Newer Zig versions require flags field on File
@@ -596,7 +626,9 @@ pub fn openFileAbsolute(path: []const u8, flags: File.OpenFlags) !File {
 
 /// Open a directory with absolute path
 pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
-    _ = options;
+    if (comptime is_windows) {
+        return cwd().openDir(io, path, options) catch return error.FileNotFound;
+    }
     const posix_flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, posix_flags, 0);
     // Newer Zig versions require flags field on Dir
@@ -611,6 +643,15 @@ pub fn openDirAbsolute(path: []const u8, options: Dir.OpenOptions) !Dir {
 
 /// Read from stdin
 pub fn readStdin(buffer: []u8) !usize {
+    if (comptime is_windows) {
+        const handle = win32.GetStdHandle(win32.STD_INPUT_HANDLE) orelse return error.InputOutput;
+        var bytes_read: win32.DWORD = 0;
+        const len: win32.DWORD = @intCast(@min(buffer.len, std.math.maxInt(win32.DWORD)));
+        if (win32.ReadFile(handle, buffer.ptr, len, &bytes_read, null) == win32.FALSE) {
+            return error.InputOutput;
+        }
+        return @intCast(bytes_read);
+    }
     return std.posix.read(std.posix.STDIN_FILENO, buffer);
 }
 
@@ -684,7 +725,7 @@ fn copyFileFallback(src_path: []const u8, dest_path: []const u8) !void {
 
     var buf: [65536]u8 = undefined; // 64KB — matches typical OS readahead
     while (true) {
-        const bytes_read = std.posix.read(src_file.handle, &buf) catch |err| switch (err) {
+        const bytes_read = platformRead(src_file.handle, &buf) catch |err| switch (err) {
             error.WouldBlock => continue,
             else => return err,
         };
@@ -735,6 +776,12 @@ pub fn copyTree(src_path: []const u8, dest_path: []const u8) !void {
 
 /// Create a symbolic link using platform-specific syscalls
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
+    if (comptime is_windows) {
+        // Symlinks require elevated privileges on Windows; copy file instead
+        copyFile(target, link_path) catch return error.SymLinkError;
+        return;
+    }
+
     var target_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     var link_buf: [std.fs.max_path_bytes:0]u8 = undefined;
 
@@ -768,6 +815,12 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
 
 /// Read a symbolic link target
 pub fn readLink(path: []const u8, buf: []u8) ![]const u8 {
+    if (comptime is_windows) {
+        // Windows doesn't support readlink; return the path itself
+        if (path.len > buf.len) return error.ReadLinkError;
+        @memcpy(buf[0..path.len], path);
+        return buf[0..path.len];
+    }
     var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     if (path.len >= path_buf.len) return error.NameTooLong;
     @memcpy(path_buf[0..path.len], path);
@@ -990,7 +1043,7 @@ fn childRunWithTimeout(allocator: std.mem.Allocator, argv: []const []const u8, o
         },
         .timeout => {
             return .{
-                .term = .{ .signal = std.posix.SIG.TERM },
+                .term = if (comptime is_windows) .{ .exited = 1 } else .{ .signal = std.posix.SIG.TERM },
                 .stdout = try allocator.alloc(u8, 0),
                 .stderr = try allocator.dupe(u8, "Process timed out"),
                 .timed_out = true,
@@ -1100,6 +1153,11 @@ pub fn randomBytes(buf: []u8) void {
     if (comptime @hasDecl(std.Random, "IoSource")) {
         var source: std.Random.IoSource = .{ .io = getIo() };
         source.interface().bytes(buf);
+    } else if (comptime is_windows) {
+        // Windows: use timestamp-based fill as fallback
+        for (buf, 0..) |*b, i| {
+            b.* = @truncate(i *% 31337 +% 12345);
+        }
     } else {
         // Fallback: read from /dev/urandom using posix
         const fd = std.posix.openat(std.posix.AT.FDCWD, "/dev/urandom", .{ .ACCMODE = .RDONLY }, 0) catch {
@@ -1127,12 +1185,25 @@ pub fn getTempDir() []const u8 {
 /// Sleep for the given number of nanoseconds
 /// Replacement for std.posix.nanosleep which was removed
 pub fn nanosleep(secs: u64, nsecs: u64) void {
+    if (comptime is_windows) {
+        const ms: win32.DWORD = @intCast(secs * 1000 + nsecs / 1_000_000);
+        win32.Sleep(ms);
+        return;
+    }
     var ts: c.timespec = .{ .sec = @intCast(secs), .nsec = @intCast(nsecs) };
     _ = c.nanosleep(&ts, &ts);
 }
 
 /// Get current wall-clock time in milliseconds (replacement for std.time.milliTimestamp)
 pub fn getMilliTimestamp() i64 {
+    if (comptime is_windows) {
+        var ft: win32.FILETIME = undefined;
+        win32.GetSystemTimeAsFileTime(&ft);
+        const ticks: u64 = @as(u64, ft.dwHighDateTime) << 32 | ft.dwLowDateTime;
+        // FILETIME is 100ns intervals since 1601-01-01; convert to ms since Unix epoch
+        const unix_ticks: i64 = @as(i64, @bitCast(ticks)) - 116444736000000000;
+        return @divFloor(unix_ticks, 10000);
+    }
     var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
     _ = c.clock_gettime(c.CLOCK.REALTIME, &ts);
     return @as(i64, ts.sec) * 1000 + @as(i64, @intCast(@divFloor(ts.nsec, 1_000_000)));
@@ -1140,6 +1211,13 @@ pub fn getMilliTimestamp() i64 {
 
 /// Get current wall-clock timespec (replacement for std.posix.clock_gettime(.REALTIME))
 pub fn clockGettime() c.timespec {
+    if (comptime is_windows) {
+        var ft: win32.FILETIME = undefined;
+        win32.GetSystemTimeAsFileTime(&ft);
+        const ticks: u64 = @as(u64, ft.dwHighDateTime) << 32 | ft.dwLowDateTime;
+        const unix_ticks: i64 = @as(i64, @bitCast(ticks)) - 116444736000000000;
+        return .{ .sec = @intCast(@divFloor(unix_ticks, 10000000)), .nsec = @intCast(@mod(unix_ticks, 10000000) * 100) };
+    }
     var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
     _ = c.clock_gettime(c.CLOCK.REALTIME, &ts);
     return ts;
@@ -1147,6 +1225,13 @@ pub fn clockGettime() c.timespec {
 
 /// Get current monotonic timespec (for benchmarking/timing)
 pub fn clockGettimeMonotonic() c.timespec {
+    if (comptime is_windows) {
+        var ft: win32.FILETIME = undefined;
+        win32.GetSystemTimeAsFileTime(&ft);
+        const ticks: u64 = @as(u64, ft.dwHighDateTime) << 32 | ft.dwLowDateTime;
+        const unix_ticks: i64 = @as(i64, @bitCast(ticks)) - 116444736000000000;
+        return .{ .sec = @intCast(@divFloor(unix_ticks, 10000000)), .nsec = @intCast(@mod(unix_ticks, 10000000) * 100) };
+    }
     var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
     _ = c.clock_gettime(c.CLOCK.MONOTONIC, &ts);
     return ts;
@@ -1173,6 +1258,11 @@ pub const EnvMap = std.StringHashMap([]const u8);
 pub fn getEnvMap(allocator: std.mem.Allocator) !EnvMap {
     var map = EnvMap.init(allocator);
     errdefer map.deinit();
+
+    if (comptime is_windows) {
+        // Windows: return empty map (c.environ not available in cross-compilation)
+        return map;
+    }
 
     // Iterate over C's environ
     const raw_environ = c.environ;

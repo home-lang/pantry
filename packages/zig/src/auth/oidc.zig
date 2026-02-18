@@ -1021,8 +1021,7 @@ pub fn fetchJWKSWithRetry(allocator: std.mem.Allocator, jwks_uri: []const u8, co
             {
                 const secs = delay_ns / std.time.ns_per_s;
                 const nsecs = delay_ns % std.time.ns_per_s;
-                var ts: std.c.timespec = .{ .sec = @intCast(secs), .nsec = @intCast(nsecs) };
-                _ = std.c.nanosleep(&ts, &ts);
+                io_helper.nanosleep(secs, nsecs);
             }
 
             // Increase delay for next attempt

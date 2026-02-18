@@ -2,11 +2,10 @@ const std = @import("std");
 const testing = std.testing;
 const lib = @import("lib");
 const oidc = lib.auth.oidc;
+const io_helper = @import("../io_helper.zig");
 /// Get current timespec (Zig 0.16 compatible)
 fn getTimespec() std.c.timespec {
-    var ts: std.c.timespec = .{ .sec = 0, .nsec = 0 };
-    _ = std.c.clock_gettime(std.c.CLOCK.REALTIME, &ts);
-    return ts;
+    return io_helper.clockGettime();
 }
 
 /// Get current Unix timestamp (Zig 0.16 compatible)

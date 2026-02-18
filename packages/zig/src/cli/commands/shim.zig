@@ -131,8 +131,10 @@ fn createShim(
 
     try io_helper.writeAllToFile(fs_file, shim_content);
 
-    // Make executable (chmod +x)
-    _ = std.posix.system.fchmod(fs_file.handle, 0o755);
+    // Make executable (chmod +x) — not available on Windows
+    if (comptime @import("builtin").os.tag != .windows) {
+        _ = std.posix.system.fchmod(fs_file.handle, 0o755);
+    }
 
     return shim_path;
 }

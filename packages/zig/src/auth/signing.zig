@@ -124,8 +124,7 @@ pub fn signPackageEd25519(
         .signature = sig_b64,
         .key_id = key_id,
         .timestamp = blk: {
-            var ts: std.c.timespec = .{ .sec = 0, .nsec = 0 };
-            _ = std.c.clock_gettime(std.c.CLOCK.REALTIME, &ts);
+            const ts = io_helper.clockGettime();
             break :blk @as(i64, ts.sec);
         },
         .key_url = null,

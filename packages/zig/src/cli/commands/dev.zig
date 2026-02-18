@@ -179,7 +179,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
     ;
 
     // Write to stdout (not stderr!) so eval can capture it
-    const stdout_file = std.fs.File{ .handle = std.posix.STDOUT_FILENO };
+    const stdout_file = std.io.getStdOut();
     try stdout_file.writeAll(shellcode);
     try stdout_file.writeAll("\n");
     _ = allocator;
@@ -194,7 +194,7 @@ pub fn devMd5Command(allocator: std.mem.Allocator, path: []const u8) !CommandRes
 
     if (is_stdin) {
         // Read from stdin (Zig 0.15 API)
-        const stdin_file = std.fs.File{ .handle = std.posix.STDIN_FILENO };
+        const stdin_file = std.io.getStdIn();
         var buf: [4096]u8 = undefined;
         while (true) {
             const bytes_read = try stdin_file.read(&buf);

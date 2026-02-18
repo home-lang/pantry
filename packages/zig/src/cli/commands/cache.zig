@@ -1,7 +1,9 @@
 //! Cache management commands: stats, clear, clean
 
 const std = @import("std");
+const builtin = @import("builtin");
 const lib = @import("../../lib.zig");
+const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const style = @import("../style.zig");
 
@@ -92,11 +94,10 @@ pub fn cacheClearCommand(allocator: std.mem.Allocator, args: []const []const u8)
         });
 
         // Read a single line from stdin for confirmation
-        // Read a line from stdin using POSIX read
         var buf: [16]u8 = undefined;
         var pos: usize = 0;
         while (pos < buf.len) {
-            const n = std.posix.read(std.posix.STDIN_FILENO, buf[pos..][0..1]) catch break;
+            const n = io_helper.readStdin(buf[pos..][0..1]) catch break;
             if (n == 0) break;
             if (buf[pos] == '\n') break;
             pos += 1;

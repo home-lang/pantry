@@ -1,10 +1,9 @@
 const std = @import("std");
 const testing = std.testing;
 const signing = @import("signing.zig");
+const io_helper = @import("../io_helper.zig");
 fn clockGettime() std.c.timespec {
-    var ts: std.c.timespec = .{ .sec = 0, .nsec = 0 };
-    _ = std.c.clock_gettime(std.c.CLOCK.REALTIME, &ts);
-    return ts;
+    return io_helper.clockGettime();
 }
 
 test "Generate Ed25519 keypair" {
