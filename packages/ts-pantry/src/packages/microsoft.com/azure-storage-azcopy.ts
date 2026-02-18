@@ -3,7 +3,7 @@
  *
  * @domain `microsoft.com/azure-storage-azcopy`
  * @programs `azcopy`
- * @version `10.32.0` (17 versions available)
+ * @version `10.32.1` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install microsoft.com/azure-storage-azcopy`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "azcopy"
  * console.log(pkg.description) // "The new Azure Storage data transfer utility - A..."
  * console.log(pkg.programs)    // ["azcopy"]
- * console.log(pkg.versions[0]) // "10.32.0" (latest)
+ * console.log(pkg.versions[0]) // "10.32.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/microsoft-com/azure-storage-azcopy.md
@@ -67,6 +67,7 @@ export const microsoftcomazurestorageazcopyPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.32.1',
     '10.32.0',
     '10.31.1',
     '10.31.0',

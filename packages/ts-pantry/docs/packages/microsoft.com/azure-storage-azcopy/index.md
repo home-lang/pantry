@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
-- `10.32.0`
+- `10.32.1`, `10.32.0`
 - `10.31.1`, `10.31.0`
 - `10.30.1`, `10.30.0`
 - `10.29.1`, `10.29.0`
@@ -41,13 +41,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.32.0`
+**Latest Version**: `10.32.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +microsoft.com/azure-storage-azcopy@10.32.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +microsoft.com/azure-storage-azcopy@10.32.1 -- $SHELL -i
 ```
 
 ## Usage Examples
