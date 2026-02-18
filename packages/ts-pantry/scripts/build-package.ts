@@ -1331,10 +1331,10 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         console.error('--- End config.log ---')
       }
     }
-    // Print the generated script for debugging
-    console.error('\n--- Generated build script ---')
-    console.error(bashScript.slice(0, 8000))
-    if (bashScript.length > 8000) console.error(`... (truncated, ${bashScript.length} total chars)`)
+    // Print the generated script for debugging (show last 3000 chars to see user script)
+    console.error('\n--- Generated build script (tail) ---')
+    const scriptTail = bashScript.length > 3000 ? bashScript.slice(-3000) : bashScript
+    console.error(scriptTail)
     console.error('--- End script ---')
     throw error
   }
