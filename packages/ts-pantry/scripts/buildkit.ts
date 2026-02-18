@@ -876,6 +876,19 @@ export function generateBuildScript(
   sections.push('export GOTOOLCHAIN=auto')
   sections.push('')
 
+  // GCC spec file workaround: if the source tree contains a `specs/` directory,
+  // GCC on Linux (Ubuntu 24.04) tries to read it as a spec file and fails with:
+  //   "fatal error: cannot read spec file './specs': Is a directory"
+  // Rename it before building and restore after (affects xorgproto and potentially others).
+  if (osName === 'linux') {
+    sections.push('# GCC spec file workaround: rename specs/ to _specs/ to prevent GCC confusion')
+    sections.push(`if [ -d "${buildDir}/specs" ]; then`)
+    sections.push(`  mv "${buildDir}/specs" "${buildDir}/_specs_renamed"`)
+    sections.push(`  _BUILDKIT_SPECS_RENAMED=1`)
+    sections.push('fi')
+    sections.push('')
+  }
+
   // Working directory — always cd to buildDir first, then to any subdirectory
   sections.push(`cd "${buildDir}"`)
   const wd = recipe.build?.['working-directory']
@@ -919,6 +932,15 @@ export function generateBuildScript(
   } else {
     sections.push('echo "No build script found in recipe"')
     sections.push('exit 1')
+  }
+
+  // Restore renamed specs/ directory (for packages that reference it during install)
+  if (osName === 'linux') {
+    sections.push('')
+    sections.push('# Restore specs/ directory if it was renamed')
+    sections.push('if [ "${_BUILDKIT_SPECS_RENAMED:-}" = "1" ]; then')
+    sections.push(`  mv "${buildDir}/_specs_renamed" "${buildDir}/specs" 2>/dev/null || true`)
+    sections.push('fi')
   }
 
   return sections.join('\n')
