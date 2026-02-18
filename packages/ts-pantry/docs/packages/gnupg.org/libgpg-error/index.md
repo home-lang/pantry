@@ -28,8 +28,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
+- `1.59.0`
 - `1.57.0`
 - `1.56.0`
 - `1.55.0`
@@ -45,13 +46,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.57.0`
+**Latest Version**: `1.59.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnupg.org/libgpg-error@1.57.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnupg.org/libgpg-error@1.59.0 -- $SHELL -i
 ```
 
 ## Usage Examples

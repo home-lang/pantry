@@ -3,7 +3,7 @@
  *
  * @domain `gnupg.org/libgpg-error`
  * @programs `gpg-error`, `gpg-error-config`, `gpgrt-config`, `yat2m`
- * @version `1.57.0` (12 versions available)
+ * @version `1.59.0` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnupg.org/libgpg-error`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "libgpg-error"
  * console.log(pkg.description) // "Common error values for all GnuPG components"
  * console.log(pkg.programs)    // ["gpg-error", "gpg-error-config", ...]
- * console.log(pkg.versions[0]) // "1.57.0" (latest)
+ * console.log(pkg.versions[0]) // "1.59.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnupg-org/libgpg-error.md
@@ -64,6 +64,7 @@ export const gnupgorglibgpgerrorPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.59.0',
     '1.57.0',
     '1.56.0',
     '1.55.0',
