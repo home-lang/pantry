@@ -3,7 +3,7 @@
  *
  * @domain `github.com/peripheryapp/periphery`
  * @programs `periphery`
- * @version `3.5.1` (11 versions available)
+ * @version `3.6.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/peripheryapp/periphery`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "periphery"
  * console.log(pkg.description) // "A tool to identify unused code in Swift projects."
  * console.log(pkg.programs)    // ["periphery"]
- * console.log(pkg.versions[0]) // "3.5.1" (latest)
+ * console.log(pkg.versions[0]) // "3.6.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/peripheryapp/periphery.md
@@ -76,6 +76,7 @@ export const peripheryPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.6.0',
     '3.5.1',
     '3.5.0',
     '3.4.0',

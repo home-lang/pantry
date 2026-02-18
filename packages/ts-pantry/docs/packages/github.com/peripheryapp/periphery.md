@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 11 versions</summary>
+<summary>Show all 12 versions</summary>
 
+- `3.6.0`
 - `3.5.1`, `3.5.0`
 - `3.4.0`
 - `3.3.0`
@@ -37,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.5.1`
+**Latest Version**: `3.6.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/peripheryapp/periphery@3.5.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/peripheryapp/periphery@3.6.0 -- $SHELL -i
 ```
 
 ## Dependencies
