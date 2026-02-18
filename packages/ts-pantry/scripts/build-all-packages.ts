@@ -669,6 +669,12 @@ Options:
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // Uses deprecated Rust features (E0557)
+    'crates.io/didyoumean', // native-tls compilation error (E0004) with modern rustc
+    'crates.io/drill', // Rust compilation errors with modern rustc
+    'crates.io/mask', // rust-lld linker error (raw-dylibs directory issue)
+    'crates.io/pqrs', // Rust compilation errors with modern rustc
+    'crates.io/rust-kanban', // Rust compilation errors with modern rustc
+    'crates.io/spider_cli', // Rust compilation errors with modern rustc
     'fabianlindfors.se/reshape', // Rust compile error with modern rustc
     'frei0r.dyne.org', // Source tarball corrupt/invalid from upstream server
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
