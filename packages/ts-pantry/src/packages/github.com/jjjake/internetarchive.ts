@@ -3,7 +3,7 @@
  *
  * @domain `github.com/jjjake/internetarchive`
  * @programs `ia`
- * @version `5.7.2` (19 versions available)
+ * @version `5.8.0` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/jjjake/internetarchive`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "ia"
  * console.log(pkg.description) // "Python wrapper for the various Internet Archive..."
  * console.log(pkg.programs)    // ["ia"]
- * console.log(pkg.versions[0]) // "5.7.2" (latest)
+ * console.log(pkg.versions[0]) // "5.8.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/jjjake/internetarchive.md
@@ -68,6 +68,7 @@ export const internetarchivePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.8.0',
     '5.7.2',
     '5.7.1',
     '5.7.0',
