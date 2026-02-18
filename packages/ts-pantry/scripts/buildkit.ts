@@ -1023,12 +1023,12 @@ export function generateBuildScript(
   sections.push('  fi')
   sections.push('done')
   sections.push('')
-  // Final check: if cargo still not found, try to exec it directly to see what error we get
+  // Final check: if cargo still not found, try to find it anywhere.
+  // Use `|| true` to prevent SIGPIPE from `find|head` crashing with `set -eo pipefail`.
   sections.push('if ! command -v cargo &>/dev/null; then')
   sections.push('  echo "[buildkit] WARN: cargo not found in PATH before user script" >&2')
-  sections.push('  echo "[buildkit] PATH=$PATH" >&2')
   sections.push('  # Last resort: try to find cargo anywhere and add it')
-  sections.push('  _found_cargo="$(find "$REAL_HOME" /usr -name cargo -type f -perm +111 2>/dev/null | head -1)"')
+  sections.push('  _found_cargo="$(find "$REAL_HOME/.cargo" /usr/local/bin /usr/bin -name cargo -type f 2>/dev/null | head -1 || true)"')
   sections.push('  if [ -n "$_found_cargo" ]; then')
   sections.push('    echo "[buildkit] Found cargo at $_found_cargo, adding to PATH" >&2')
   sections.push('    export PATH="$(dirname "$_found_cargo"):$PATH"')
