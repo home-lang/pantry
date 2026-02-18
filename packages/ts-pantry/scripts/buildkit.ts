@@ -1073,6 +1073,24 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
+  // Python environment fix: on Debian/Ubuntu, /usr/lib/python3/dist-packages/ is in
+  // sys.path for ALL Python 3.x (including our S3 Python). The Debian-patched setuptools
+  // has install_layout which breaks standard wheel builds with:
+  //   AttributeError: install_layout. Did you mean: 'install_platlib'?
+  // Fix: install standard setuptools/wheel into our Python's site-packages (takes precedence)
+  // and ensure `python` resolves to our Python (recipes often use bare `python` not `python3`).
+  sections.push('# Python environment setup')
+  sections.push('if command -v python3 &>/dev/null; then')
+  // Ensure `python` command resolves to our python3 (many recipes use bare `python`)
+  sections.push('  if ! command -v python &>/dev/null; then')
+  sections.push('    ln -sf "$(command -v python3)" "${TMPDIR:-/tmp}/_cc_wrapper/python" 2>/dev/null || true')
+  sections.push('  fi')
+  // Install fresh setuptools/wheel to override Debian-patched versions
+  sections.push('  python3 -m ensurepip --upgrade 2>/dev/null || true')
+  sections.push('  python3 -m pip install --upgrade pip setuptools wheel 2>/dev/null || true')
+  sections.push('fi')
+  sections.push('')
+
   // User script from pantry YAML
   // Handle `build: { script: [...] }`, `build: [...]` (direct array), and `build: "cmd"` (string) formats
   const buildScript = typeof recipe.build === 'string' ? [recipe.build] : Array.isArray(recipe.build) ? recipe.build : recipe.build?.script

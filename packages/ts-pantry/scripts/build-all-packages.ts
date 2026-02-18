@@ -739,6 +739,9 @@ Options:
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
     'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup
     'khanacademy.org/genqlient', // Pinned golang.org/x/tools@v0.24.0 incompatible with Go 1.26
+    'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
+    'elixir-lang.org', // Erlang dep has hardcoded build-time paths (erlexec not found)
+    'elixir-lang.org/otp-27', // Same erlang relocatability issue
   ])
 
   let platformSkipped = 0

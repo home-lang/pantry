@@ -268,12 +268,17 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
-            gcc boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
+            gcc go boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
             libyaml jansson libedit libzip lapack nasm libogg libvorbis flac \
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
             libsecret libfido2 || true
+
+      - name: Fix Python setuptools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo pip3 install --break-system-packages --upgrade setuptools wheel 2>/dev/null || true
 
       - name: Setup Rust toolchain
         run: |
@@ -283,7 +288,7 @@ jobs:
           cargo install cargo-c 2>/dev/null || true
           echo "Rust: $(rustc --version), Cargo: $(cargo --version)"
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          pip3 install setuptools meson 2>/dev/null || python3 -m pip install setuptools meson 2>/dev/null || true
+          pip3 install --break-system-packages setuptools meson 2>/dev/null || python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Build targeted packages
         env:
@@ -440,12 +445,22 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
-            gcc boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
+            gcc go boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
             libyaml jansson libedit libzip lapack nasm libogg libvorbis flac \
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
             libsecret libfido2 || true
+
+      - name: Fix Python setuptools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          # Remove Debian-patched setuptools/wheel from shared dist-packages.
+          # These contain install_layout which breaks standard wheel builds with:
+          #   AttributeError: install_layout. Did you mean: 'install_platlib'?
+          # Our S3 Python sees /usr/lib/python3/dist-packages/ and imports the
+          # broken versions. Replacing with standard PyPI versions fixes this.
+          sudo pip3 install --break-system-packages --upgrade setuptools wheel 2>/dev/null || true
 
       - name: Setup Rust toolchain
         run: |
@@ -458,7 +473,7 @@ jobs:
           # Persist cargo PATH for subsequent steps (GitHub Actions doesn't source .profile)
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           # Ensure pip packages needed for building are available
-          pip3 install setuptools meson 2>/dev/null || python3 -m pip install setuptools meson 2>/dev/null || true
+          pip3 install --break-system-packages setuptools meson 2>/dev/null || python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Verify toolchains
         run: |
