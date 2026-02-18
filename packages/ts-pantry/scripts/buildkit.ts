@@ -706,6 +706,30 @@ export function generateBuildScript(
   // Do NOT export -f python-venv.sh: only called from our build script
   sections.push('')
 
+  // python-venv.py — create executable script in build dir so YAML recipes can call it as a command
+  sections.push('# python-venv.py script (pkgx compatibility — some recipes call python-venv.py instead of .sh)')
+  sections.push('mkdir -p "${SRCROOT:-$PWD}/.tmp"')
+  sections.push('cat > "${SRCROOT:-$PWD}/.tmp/python-venv.py" << \'PVENV_EOF\'')
+  sections.push('#!/bin/bash')
+  sections.push('# python-venv.py shim — same logic as python-venv.sh')
+  sections.push('target="$1"')
+  sections.push('prefix="$(dirname "$(dirname "$target")")"')
+  sections.push('cmd_name="$(basename "$target")"')
+  sections.push('python3 -m venv "$prefix/venv"')
+  sections.push('"$prefix/venv/bin/pip" install --upgrade pip setuptools wheel 2>/dev/null || true')
+  sections.push('_pip_dir="."')
+  sections.push('if [ -n "$SRCROOT" ] && [ -d "$SRCROOT" ]; then _pip_dir="$SRCROOT"; fi')
+  sections.push('"$prefix/venv/bin/pip" install "$_pip_dir"')
+  sections.push('mkdir -p "$(dirname "$target")"')
+  sections.push('if [ -f "$prefix/venv/bin/$cmd_name" ]; then')
+  sections.push('  printf \'#!/bin/sh\\nSCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"\\nexec "$SCRIPT_DIR/../venv/bin/%s" "$@"\\n\' "$cmd_name" > "$target"')
+  sections.push('  chmod +x "$target"')
+  sections.push('fi')
+  sections.push('PVENV_EOF')
+  sections.push('chmod +x "${SRCROOT:-$PWD}/.tmp/python-venv.py"')
+  sections.push('export PATH="${SRCROOT:-$PWD}/.tmp:$PATH"')
+  sections.push('')
+
   // fix-shebangs.ts shim — replaces hardcoded interpreter paths with #!/usr/bin/env
   sections.push('# fix-shebangs.ts shim (brewkit compatibility)')
   sections.push('fix-shebangs.ts() {')
