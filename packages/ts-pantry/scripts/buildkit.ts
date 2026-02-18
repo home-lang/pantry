@@ -541,9 +541,12 @@ export function generateBuildScript(
   sections.push('echo "[buildkit] Rust: cargo=$(command -v cargo 2>/dev/null || echo NOT_FOUND), REAL_HOME=$REAL_HOME, _cargo_found=$_cargo_found"')
   sections.push('')
 
-  // Go toolchain — detect GOPATH but defer GOROOT until after deps are on PATH
-  sections.push('# Go toolchain (GOPATH only; GOROOT set after deps)')
-  sections.push('export GOPATH="$REAL_HOME/go"')
+  // Go toolchain — set default GOPATH only if recipe didn't already set it
+  const recipeEnv = recipe.build?.env ? platformReduce(recipe.build.env, platform) : {}
+  sections.push('# Go toolchain (GOPATH default; GOROOT set after deps)')
+  if (!recipeEnv.GOPATH) {
+    sections.push('export GOPATH="$REAL_HOME/go"')
+  }
   sections.push('mkdir -p "$GOPATH"')
   sections.push('')
 
