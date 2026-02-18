@@ -326,7 +326,7 @@ pub fn installSinglePackage(
     // Check if this is a URL dependency (https:// tarball)
     const is_url_dep = !is_git_dep and
         (std.mem.startsWith(u8, dep.version, "https://") or
-        std.mem.startsWith(u8, dep.version, "http://"));
+            std.mem.startsWith(u8, dep.version, "http://"));
 
     // Check if this is a GitHub dependency
     const spec = if (is_git_dep) blk: {
