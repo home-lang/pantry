@@ -860,12 +860,14 @@ export function generateBuildScript(
   // - Compile-only (-c): gcc defaults to ./source.o — add -o $orig/source.o
   // Critical for autotools' "checking whether the C compiler works" test
   // which intentionally strips -o from the link command.
-  sections.push('  if ! $_has_output; then')
-  sections.push('    if $_has_compile_only && [ -n "$_last_source" ]; then')
+  // Only add default -o when source files are present (not for preprocessor
+  // invocations like "cpp -" or "gcc -E -" which write to stdout)
+  sections.push('  if ! $_has_output && [ -n "$_last_source" ]; then')
+  sections.push('    if $_has_compile_only; then')
   sections.push('      _src_base="${_last_source##*/}"')
   sections.push('      _obj_name="${_src_base%.*}.o"')
   sections.push('      _final_args+=("-o" "$_orig_cwd/$_obj_name")')
-  sections.push('    elif ! $_has_compile_only; then')
+  sections.push('    else')
   sections.push('      _final_args+=("-o" "$_orig_cwd/a.out")')
   sections.push('    fi')
   sections.push('  fi')
