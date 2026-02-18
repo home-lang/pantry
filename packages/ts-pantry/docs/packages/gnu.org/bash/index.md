@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/bash`
 - **Name**: `bash`
-- **Homepage**: https://www.gnu.org/software/bash/
+- **Homepage**: <https://www.gnu.org/software/bash/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/bash/package.yml)
 
 ## Installation

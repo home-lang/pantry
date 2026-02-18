@@ -6,7 +6,7 @@
 
 - **Domain**: `cruft.github.io`
 - **Name**: `cruft`
-- **Homepage**: https://cruft.github.io/cruft/
+- **Homepage**: <https://cruft.github.io/cruft/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cruft.github.io/package.yml)
 
 ## Installation

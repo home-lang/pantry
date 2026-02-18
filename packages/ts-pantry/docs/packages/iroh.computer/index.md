@@ -6,7 +6,7 @@
 
 - **Domain**: `iroh.computer`
 - **Name**: `iroh`
-- **Homepage**: https://iroh.computer
+- **Homepage**: <https://iroh.computer>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/iroh.computer/package.yml)
 
 ## Installation

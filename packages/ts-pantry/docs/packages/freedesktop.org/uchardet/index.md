@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/uchardet`
 - **Name**: `uchardet`
-- **Homepage**: https://www.freedesktop.org/wiki/Software/uchardet/
+- **Homepage**: <https://www.freedesktop.org/wiki/Software/uchardet/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/uchardet/package.yml)
 
 ## Installation

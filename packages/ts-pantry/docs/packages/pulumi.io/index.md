@@ -6,7 +6,7 @@
 
 - **Domain**: `pulumi.io`
 - **Name**: `pulumi`
-- **Homepage**: https://pulumi.io/
+- **Homepage**: <https://pulumi.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pulumi.io/package.yml)
 
 ## Installation

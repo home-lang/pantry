@@ -6,7 +6,7 @@
 
 - **Domain**: `littlecms.com`
 - **Name**: `littlecms`
-- **Homepage**: https://www.littlecms.com/
+- **Homepage**: <https://www.littlecms.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/littlecms.com/package.yml)
 
 ## Installation

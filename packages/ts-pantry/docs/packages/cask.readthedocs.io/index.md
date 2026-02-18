@@ -6,7 +6,7 @@
 
 - **Domain**: `cask.readthedocs.io`
 - **Name**: `cask`
-- **Homepage**: https://cask.readthedocs.io/
+- **Homepage**: <https://cask.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cask.readthedocs.io/package.yml)
 
 ## Installation

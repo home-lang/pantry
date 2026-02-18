@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/mono0926/LicensePlist`
 - **Name**: `license-plist`
-- **Homepage**: https://www.slideshare.net/mono0926/licenseplist-a-license-list-generator-of-all-your-dependencies-for-ios-applications
+- **Homepage**: <https://www.slideshare.net/mono0926/licenseplist-a-license-list-generator-of-all-your-dependencies-for-ios-applications>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/mono0926/LicensePlist/package.yml)
 
 ## Installation

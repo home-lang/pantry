@@ -6,7 +6,7 @@
 
 - **Domain**: `cuelang.org`
 - **Name**: `cue`
-- **Homepage**: https://cuelang.org/
+- **Homepage**: <https://cuelang.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cuelang.org/package.yml)
 
 ## Installation

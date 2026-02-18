@@ -6,7 +6,7 @@
 
 - **Domain**: `openmp.llvm.org`
 - **Name**: `libomp`
-- **Homepage**: http://llvm.org
+- **Homepage**: <http://llvm.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openmp.llvm.org/package.yml)
 
 ## Installation

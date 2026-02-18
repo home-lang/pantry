@@ -6,7 +6,7 @@
 
 - **Domain**: `libgit2.org`
 - **Name**: `git2`
-- **Homepage**: https://libgit2.github.com/
+- **Homepage**: <https://libgit2.github.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libgit2.org/package.yml)
 
 ## Installation

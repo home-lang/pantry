@@ -6,7 +6,7 @@
 
 - **Domain**: `libarchive.org`
 - **Name**: `libarchive`
-- **Homepage**: https://www.libarchive.org
+- **Homepage**: <https://www.libarchive.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libarchive.org/package.yml)
 
 ## Installation

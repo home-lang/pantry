@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/source-highlight`
 - **Name**: `source-highlight`
-- **Homepage**: https://www.gnu.org/software/src-highlite/
+- **Homepage**: <https://www.gnu.org/software/src-highlite/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/source-highlight/package.yml)
 
 ## Installation

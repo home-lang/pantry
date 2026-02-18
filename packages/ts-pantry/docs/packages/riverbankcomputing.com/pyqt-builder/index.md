@@ -6,7 +6,7 @@
 
 - **Domain**: `riverbankcomputing.com/pyqt-builder`
 - **Name**: `pyqt-bundle`
-- **Homepage**: https://pyqt-builder.readthedocs.io/
+- **Homepage**: <https://pyqt-builder.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/riverbankcomputing.com/pyqt-builder/package.yml)
 
 ## Installation

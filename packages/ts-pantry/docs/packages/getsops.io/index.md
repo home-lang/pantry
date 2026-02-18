@@ -6,7 +6,7 @@
 
 - **Domain**: `getsops.io`
 - **Name**: `sops`
-- **Homepage**: https://getsops.io/
+- **Homepage**: <https://getsops.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/getsops.io/package.yml)
 
 ## Installation

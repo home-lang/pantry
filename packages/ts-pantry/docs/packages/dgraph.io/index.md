@@ -6,7 +6,7 @@
 
 - **Domain**: `dgraph.io`
 - **Name**: `dgraph`
-- **Homepage**: https://dgraph.io/docs
+- **Homepage**: <https://dgraph.io/docs>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dgraph.io/package.yml)
 
 ## Installation

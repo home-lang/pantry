@@ -6,7 +6,7 @@
 
 - **Domain**: `opentofu.org`
 - **Name**: `tofu`
-- **Homepage**: https://opentofu.org
+- **Homepage**: <https://opentofu.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/opentofu.org/package.yml)
 
 ## Installation

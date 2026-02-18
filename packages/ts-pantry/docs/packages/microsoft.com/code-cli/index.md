@@ -6,7 +6,7 @@
 
 - **Domain**: `microsoft.com/code-cli`
 - **Name**: `vscode cli`
-- **Homepage**: https://code.visualstudio.com
+- **Homepage**: <https://code.visualstudio.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/microsoft.com/code-cli/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `hugo.wang/cicada`
 - **Name**: `cicada`
-- **Homepage**: https://hugo.wang/cicada/
+- **Homepage**: <https://hugo.wang/cicada/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hugo.wang/cicada/package.yml)
 
 ## Installation

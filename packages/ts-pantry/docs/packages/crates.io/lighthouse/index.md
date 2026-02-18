@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/lighthouse`
 - **Name**: `lighthouse`
-- **Homepage**: https://lighthouse.sigmaprime.io/
+- **Homepage**: <https://lighthouse.sigmaprime.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/lighthouse/package.yml)
 
 ## Installation

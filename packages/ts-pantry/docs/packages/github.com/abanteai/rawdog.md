@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/abanteai/rawdog`
 - **Name**: `rawdog`
-- **Homepage**: https://mentat.ai
+- **Homepage**: <https://mentat.ai>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/abanteai/rawdog/package.yml)
 
 ## Installation

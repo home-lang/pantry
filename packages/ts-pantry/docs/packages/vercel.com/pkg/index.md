@@ -6,7 +6,7 @@
 
 - **Domain**: `vercel.com/pkg`
 - **Name**: `pkg`
-- **Homepage**: https://npmjs.com/pkg
+- **Homepage**: <https://npmjs.com/pkg>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/vercel.com/pkg/package.yml)
 
 ## Installation

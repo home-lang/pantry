@@ -6,7 +6,7 @@
 
 - **Domain**: `glfw.org`
 - **Name**: `glfw`
-- **Homepage**: https://www.glfw.org
+- **Homepage**: <https://www.glfw.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/glfw.org/package.yml)
 
 ## Installation

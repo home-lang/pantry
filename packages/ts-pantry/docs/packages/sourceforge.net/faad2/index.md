@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/faad2`
 - **Name**: `faad`
-- **Homepage**: https://sourceforge.net/projects/faac/
+- **Homepage**: <https://sourceforge.net/projects/faac/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/faad2/package.yml)
 
 ## Installation

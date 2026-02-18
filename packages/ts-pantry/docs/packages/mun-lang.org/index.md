@@ -6,7 +6,7 @@
 
 - **Domain**: `mun-lang.org`
 - **Name**: `mun`
-- **Homepage**: https://mun-lang.org
+- **Homepage**: <https://mun-lang.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mun-lang.org/package.yml)
 
 ## Installation

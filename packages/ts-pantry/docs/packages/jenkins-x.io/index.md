@@ -6,7 +6,7 @@
 
 - **Domain**: `jenkins-x.io`
 - **Name**: `Jenkins X`
-- **Homepage**: https://jenkins-x.io/
+- **Homepage**: <https://jenkins-x.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jenkins-x.io/package.yml)
 
 ## Installation

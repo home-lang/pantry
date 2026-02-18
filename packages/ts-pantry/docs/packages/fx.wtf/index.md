@@ -6,7 +6,7 @@
 
 - **Domain**: `fx.wtf`
 - **Name**: `fx`
-- **Homepage**: https://fx.wtf
+- **Homepage**: <https://fx.wtf>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fx.wtf/package.yml)
 
 ## Installation

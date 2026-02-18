@@ -6,7 +6,7 @@
 
 - **Domain**: `onefetch.dev`
 - **Name**: `onefetch`
-- **Homepage**: https://onefetch.dev/
+- **Homepage**: <https://onefetch.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/onefetch.dev/package.yml)
 
 ## Installation

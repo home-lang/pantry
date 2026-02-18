@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/zellij`
 - **Name**: `zellij`
-- **Homepage**: https://zellij.dev
+- **Homepage**: <https://zellij.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/zellij/package.yml)
 
 ## Installation

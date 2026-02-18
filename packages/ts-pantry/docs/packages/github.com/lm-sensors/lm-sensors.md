@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/lm-sensors/lm-sensors`
 - **Name**: `sensors`
-- **Homepage**: https://hwmon.wiki.kernel.org/
+- **Homepage**: <https://hwmon.wiki.kernel.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/lm-sensors/lm-sensors/package.yml)
 
 ## Installation

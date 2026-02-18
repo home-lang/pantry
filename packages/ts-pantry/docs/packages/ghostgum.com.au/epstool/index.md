@@ -6,7 +6,7 @@
 
 - **Domain**: `ghostgum.com.au/epstool`
 - **Name**: `epstool`
-- **Homepage**: http://www.ghostgum.com.au/software/epstool.htm
+- **Homepage**: <http://www.ghostgum.com.au/software/epstool.htm>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ghostgum.com.au/epstool/package.yml)
 
 ## Installation

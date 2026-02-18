@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/rtx-cli`
 - **Name**: `rtx-cli`
-- **Homepage**: https://mise.jdx.dev
+- **Homepage**: <https://mise.jdx.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/rtx-cli/package.yml)
 
 ## Installation

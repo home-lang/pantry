@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/evilmartians/lefthook`
 - **Name**: `lefthook`
-- **Homepage**: http://lefthook.dev/
+- **Homepage**: <http://lefthook.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/evilmartians/lefthook/package.yml)
 
 ## Installation

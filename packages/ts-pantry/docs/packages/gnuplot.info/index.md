@@ -6,7 +6,7 @@
 
 - **Domain**: `gnuplot.info`
 - **Name**: `gnuplot`
-- **Homepage**: http://www.gnuplot.info/
+- **Homepage**: <http://www.gnuplot.info/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnuplot.info/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `midnight-commander.org`
 - **Name**: `Midnight Commander`
-- **Homepage**: https://www.midnight-commander.org/
+- **Homepage**: <https://www.midnight-commander.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/midnight-commander.org/package.yml)
 
 ## Installation

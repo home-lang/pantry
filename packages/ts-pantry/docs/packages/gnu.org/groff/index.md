@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/groff`
 - **Name**: `groff`
-- **Homepage**: https://www.gnu.org/software/groff/
+- **Homepage**: <https://www.gnu.org/software/groff/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/groff/package.yml)
 
 ## Installation

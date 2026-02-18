@@ -6,7 +6,7 @@
 
 - **Domain**: `haskell.org/cabal`
 - **Name**: `cabal`
-- **Homepage**: https://www.haskell.org/cabal/
+- **Homepage**: <https://www.haskell.org/cabal/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/haskell.org/cabal/package.yml)
 
 ## Installation

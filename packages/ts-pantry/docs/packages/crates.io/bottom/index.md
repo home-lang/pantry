@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/bottom`
 - **Name**: `btm`
-- **Homepage**: https://clementtsang.github.io/bottom/
+- **Homepage**: <https://clementtsang.github.io/bottom/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/bottom/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `giflib.sourceforge.io`
 - **Name**: `gif`
-- **Homepage**: https://giflib.sourceforge.net/
+- **Homepage**: <https://giflib.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/giflib.sourceforge.io/package.yml)
 
 ## Installation

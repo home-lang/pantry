@@ -6,7 +6,7 @@
 
 - **Domain**: `project-copacetic.github.io`
 - **Name**: `copa`
-- **Homepage**: https://project-copacetic.github.io/copacetic/
+- **Homepage**: <https://project-copacetic.github.io/copacetic/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/project-copacetic.github.io/package.yml)
 
 ## Installation

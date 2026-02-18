@@ -6,7 +6,7 @@
 
 - **Domain**: `sonarqube.org/sonarscanner`
 - **Name**: `sonar-scanner`
-- **Homepage**: http://redirect.sonarsource.com/doc/install-configure-scanner.html
+- **Homepage**: <http://redirect.sonarsource.com/doc/install-configure-scanner.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sonarqube.org/sonarscanner/package.yml)
 
 ## Installation

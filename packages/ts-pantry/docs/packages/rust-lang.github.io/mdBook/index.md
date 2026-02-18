@@ -6,7 +6,7 @@
 
 - **Domain**: `rust-lang.github.io/mdBook`
 - **Name**: `mdbook`
-- **Homepage**: https://rust-lang.github.io/mdBook/
+- **Homepage**: <https://rust-lang.github.io/mdBook/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rust-lang.github.io/mdBook/package.yml)
 
 ## Installation

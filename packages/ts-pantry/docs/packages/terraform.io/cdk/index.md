@@ -6,7 +6,7 @@
 
 - **Domain**: `terraform.io/cdk`
 - **Name**: `terraform-cdk`
-- **Homepage**: https://www.terraform.io/cdktf
+- **Homepage**: <https://www.terraform.io/cdktf>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/terraform.io/cdk/package.yml)
 
 ## Installation

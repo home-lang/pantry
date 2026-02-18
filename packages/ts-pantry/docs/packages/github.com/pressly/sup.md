@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/pressly/sup`
 - **Name**: `sup`
-- **Homepage**: https://pressly.github.io/sup
+- **Homepage**: <https://pressly.github.io/sup>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/pressly/sup/package.yml)
 
 ## Installation

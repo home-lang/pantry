@@ -505,26 +505,7 @@ interface BuildOptions {
   region?: string
 }
 
-interface PackageRecipe {
-  distributable: {
-    url: string
-    'strip-components'?: number
-    ref?: string
-  }
-  dependencies?: Record<string, any>
-  build?: {
-    dependencies?: Record<string, any>
-    script?: Array<string | {
-      run: string
-      if?: string
-      'working-directory'?: string
-      prop?: string
-    }>
-    env?: Record<string, any>
-  }
-  versions?: any
-  provides?: string[]
-}
+// PackageRecipe is imported from ./buildkit.ts (line 11)
 
 // Template variable interpolation
 function interpolate(template: string | any, vars: Record<string, string>): string {
@@ -807,7 +788,7 @@ function extractYamlDeps(depsObj: any, platform: string): string[] {
 
   for (const [key, value] of Object.entries(depsObj)) {
     // Check if this is a platform key (darwin, linux, darwin/aarch64)
-    if (/^(darwin|linux)(\/.*)?$/.test(key)) {
+    if (/^(?:darwin|linux)(?:\/.*)?$/.test(key)) {
       // Only include deps from matching platform
       const [condOs] = key.split('/')
       if (condOs === osName && typeof value === 'object' && value !== null) {
@@ -1044,7 +1025,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Apply buildkit-level recipe overrides that survive pantry YAML regeneration.
   // These fix platform-specific issues in upstream recipes without modifying the YAML files.
-  applyRecipeOverrides(recipe, domain, platform)
+  applyRecipeOverrides(recipe, pkgName, platform)
 
   console.log(`\nBuild recipe: ${pantryPath}`)
 

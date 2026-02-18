@@ -6,7 +6,7 @@
 
 - **Domain**: `rubygems.org`
 - **Name**: `rubygems`
-- **Homepage**: https://www.ruby-lang.org/
+- **Homepage**: <https://www.ruby-lang.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rubygems.org/package.yml)
 
 ## Installation

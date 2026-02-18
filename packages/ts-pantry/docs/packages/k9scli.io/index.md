@@ -6,7 +6,7 @@
 
 - **Domain**: `k9scli.io`
 - **Name**: `k9s`
-- **Homepage**: https://k9scli.io/
+- **Homepage**: <https://k9scli.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/k9scli.io/package.yml)
 
 ## Installation

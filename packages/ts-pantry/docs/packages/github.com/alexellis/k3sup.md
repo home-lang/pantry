@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/alexellis/k3sup`
 - **Name**: `k3sup`
-- **Homepage**: https://k3sup.dev
+- **Homepage**: <https://k3sup.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/alexellis/k3sup/package.yml)
 
 ## Installation

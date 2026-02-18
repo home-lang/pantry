@@ -288,7 +288,7 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
             for (const key of Object.keys(yamlBuildDeps)) {
               if (key.includes('.') || key.includes('/')) depDomains.push(key)
               // Handle platform-specific nested deps
-              if (/^(darwin|linux)/.test(key) && typeof yamlBuildDeps[key] === 'object') {
+              if (/^(?:darwin|linux)/.test(key) && typeof yamlBuildDeps[key] === 'object') {
                 for (const subKey of Object.keys(yamlBuildDeps[key])) {
                   if (subKey.includes('.') || subKey.includes('/')) depDomains.push(subKey)
                 }

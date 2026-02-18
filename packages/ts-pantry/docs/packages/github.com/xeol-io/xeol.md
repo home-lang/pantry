@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/xeol-io/xeol`
 - **Name**: `xeol`
-- **Homepage**: https://www.xeol.io/
+- **Homepage**: <https://www.xeol.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/xeol-io/xeol/package.yml)
 
 ## Installation

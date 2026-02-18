@@ -6,7 +6,7 @@
 
 - **Domain**: `cocoapods.org/xcodeproj`
 - **Name**: `xcodeproj`
-- **Homepage**: https://cocoapods.org/
+- **Homepage**: <https://cocoapods.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cocoapods.org/xcodeproj/package.yml)
 
 ## Installation

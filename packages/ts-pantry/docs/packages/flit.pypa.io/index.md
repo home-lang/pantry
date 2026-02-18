@@ -6,7 +6,7 @@
 
 - **Domain**: `flit.pypa.io`
 - **Name**: `flit`
-- **Homepage**: https://flit.pypa.io/
+- **Homepage**: <https://flit.pypa.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/flit.pypa.io/package.yml)
 
 ## Installation

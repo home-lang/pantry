@@ -6,7 +6,7 @@
 
 - **Domain**: `pressly.github.io/goose`
 - **Name**: `goose`
-- **Homepage**: https://pressly.github.io/goose/
+- **Homepage**: <https://pressly.github.io/goose/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pressly.github.io/goose/package.yml)
 
 ## Installation

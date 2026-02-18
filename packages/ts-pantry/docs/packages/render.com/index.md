@@ -6,7 +6,7 @@
 
 - **Domain**: `render.com`
 - **Name**: `render`
-- **Homepage**: https://render.com/docs/cli
+- **Homepage**: <https://render.com/docs/cli>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/render.com/package.yml)
 
 ## Installation

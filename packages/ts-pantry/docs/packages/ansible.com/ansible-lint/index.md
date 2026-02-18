@@ -6,7 +6,7 @@
 
 - **Domain**: `ansible.com/ansible-lint`
 - **Name**: `ansible-lint`
-- **Homepage**: https://ansible-lint.readthedocs.io/
+- **Homepage**: <https://ansible-lint.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ansible.com/ansible-lint/package.yml)
 
 ## Installation

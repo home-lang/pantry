@@ -6,7 +6,7 @@
 
 - **Domain**: `grpc.io`
 - **Name**: `grpc`
-- **Homepage**: https://grpc.io/
+- **Homepage**: <https://grpc.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/grpc.io/package.yml)
 
 ## Installation
@@ -102,4 +102,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

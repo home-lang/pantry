@@ -6,7 +6,7 @@
 
 - **Domain**: `fastlane.tools`
 - **Name**: `fastlane`
-- **Homepage**: https://fastlane.tools
+- **Homepage**: <https://fastlane.tools>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fastlane.tools/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `pypa.github.io/pipx`
 - **Name**: `pipx`
-- **Homepage**: https://pipx.pypa.io
+- **Homepage**: <https://pipx.pypa.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pypa.github.io/pipx/package.yml)
 
 ## Installation

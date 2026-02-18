@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/get-blessed`
 - **Name**: `get-blessed`
-- **Homepage**: https://crates.io/crates/get-blessed
+- **Homepage**: <https://crates.io/crates/get-blessed>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/get-blessed/package.yml)
 
 ## Installation

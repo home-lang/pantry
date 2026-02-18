@@ -6,7 +6,7 @@
 
 - **Domain**: `khronos.org/glslang`
 - **Name**: `glslang`
-- **Homepage**: https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/
+- **Homepage**: <https://www.khronos.org/opengles/sdk/tools/Reference-Compiler/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/khronos.org/glslang/package.yml)
 
 ## Installation

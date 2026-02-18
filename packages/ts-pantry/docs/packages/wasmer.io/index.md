@@ -6,7 +6,7 @@
 
 - **Domain**: `wasmer.io`
 - **Name**: `wasmer`
-- **Homepage**: https://wasmer.io
+- **Homepage**: <https://wasmer.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/wasmer.io/package.yml)
 
 ## Installation

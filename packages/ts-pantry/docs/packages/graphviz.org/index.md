@@ -6,7 +6,7 @@
 
 - **Domain**: `graphviz.org`
 - **Name**: `graphviz`
-- **Homepage**: https://graphviz.org/
+- **Homepage**: <https://graphviz.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/graphviz.org/package.yml)
 
 ## Installation

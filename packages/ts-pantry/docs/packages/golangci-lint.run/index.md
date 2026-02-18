@@ -6,7 +6,7 @@
 
 - **Domain**: `golangci-lint.run`
 - **Name**: `golangci-lint`
-- **Homepage**: https://golangci-lint.run/
+- **Homepage**: <https://golangci-lint.run/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/golangci-lint.run/package.yml)
 
 ## Installation

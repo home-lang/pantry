@@ -6,7 +6,7 @@
 
 - **Domain**: `pwgen.sourceforge.io`
 - **Name**: `pwgen`
-- **Homepage**: https://pwgen.sourceforge.net/
+- **Homepage**: <https://pwgen.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pwgen.sourceforge.io/package.yml)
 
 ## Installation

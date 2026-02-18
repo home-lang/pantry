@@ -6,7 +6,7 @@
 
 - **Domain**: `ipfs.tech`
 - **Name**: `ipfs`
-- **Homepage**: https://ipfs.tech/
+- **Homepage**: <https://ipfs.tech/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ipfs.tech/package.yml)
 
 ## Installation

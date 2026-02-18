@@ -6,7 +6,7 @@
 
 - **Domain**: `ffmpeg.org`
 - **Name**: `ffmpeg`
-- **Homepage**: https://ffmpeg.org/
+- **Homepage**: <https://ffmpeg.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ffmpeg.org/package.yml)
 
 ## Installation

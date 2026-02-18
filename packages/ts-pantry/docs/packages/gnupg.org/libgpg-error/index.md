@@ -6,7 +6,7 @@
 
 - **Domain**: `gnupg.org/libgpg-error`
 - **Name**: `libgpg-error`
-- **Homepage**: https://www.gnupg.org/related_software/libgpg-error/
+- **Homepage**: <https://www.gnupg.org/related_software/libgpg-error/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnupg.org/libgpg-error/package.yml)
 
 ## Installation
@@ -76,4 +76,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

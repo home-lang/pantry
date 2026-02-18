@@ -6,7 +6,7 @@
 
 - **Domain**: `palletsprojects.com/click`
 - **Name**: `python-click`
-- **Homepage**: https://click.palletsprojects.com
+- **Homepage**: <https://click.palletsprojects.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/palletsprojects.com/click/package.yml)
 
 ## Installation

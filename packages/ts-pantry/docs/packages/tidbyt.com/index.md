@@ -6,7 +6,7 @@
 
 - **Domain**: `tidbyt.com`
 - **Name**: `pixlet`
-- **Homepage**: https://tidbyt.com
+- **Homepage**: <https://tidbyt.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tidbyt.com/package.yml)
 
 ## Installation

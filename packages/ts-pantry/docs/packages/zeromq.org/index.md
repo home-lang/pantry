@@ -6,7 +6,7 @@
 
 - **Domain**: `zeromq.org`
 - **Name**: `zeromq`
-- **Homepage**: https://www.zeromq.org
+- **Homepage**: <https://www.zeromq.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/zeromq.org/package.yml)
 
 ## Installation

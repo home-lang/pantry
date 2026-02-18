@@ -6,7 +6,7 @@
 
 - **Domain**: `jpeg.org/jpegxl`
 - **Name**: `jpegxl`
-- **Homepage**: https://jpeg.org/jpegxl/index.html
+- **Homepage**: <https://jpeg.org/jpegxl/index.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jpeg.org/jpegxl/package.yml)
 
 ## Installation

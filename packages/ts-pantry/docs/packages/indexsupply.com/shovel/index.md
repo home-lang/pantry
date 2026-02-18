@@ -6,7 +6,7 @@
 
 - **Domain**: `indexsupply.com/shovel`
 - **Name**: `shovel`
-- **Homepage**: https://indexsupply.com/shovel
+- **Homepage**: <https://indexsupply.com/shovel>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/indexsupply.com/shovel/package.yml)
 
 ## Installation

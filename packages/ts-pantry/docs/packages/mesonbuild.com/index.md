@@ -6,7 +6,7 @@
 
 - **Domain**: `mesonbuild.com`
 - **Name**: `meson`
-- **Homepage**: https://mesonbuild.com/
+- **Homepage**: <https://mesonbuild.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mesonbuild.com/package.yml)
 
 ## Installation

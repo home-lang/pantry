@@ -170,7 +170,7 @@ A command-line DNS client.
 
 User-friendly command-line shell for UNIX-like operating systems
 
-**Programs**: fish, fish_indent, fish_key_reader
+**Programs**: fish, fish*indent, fish*key*reader
 
 **Install**: `launchpad install fishshell.com`
 
@@ -198,7 +198,7 @@ Fast disk usage analyzer with console interface written in Go
 
 ### [github.com/junegunn/fzf](../packages/github.com/junegunn/fzf.md) (fzf)
 
-:cherry_blossom: A command-line fuzzy finder
+:cherry*blossom: A command-line fuzzy finder
 
 **Programs**: fzf
 

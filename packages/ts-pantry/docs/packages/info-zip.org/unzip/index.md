@@ -6,7 +6,7 @@
 
 - **Domain**: `info-zip.org/unzip`
 - **Name**: `unzip`
-- **Homepage**: https://infozip.sourceforge.net/UnZip.html
+- **Homepage**: <https://infozip.sourceforge.net/UnZip.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/info-zip.org/unzip/package.yml)
 
 ## Installation

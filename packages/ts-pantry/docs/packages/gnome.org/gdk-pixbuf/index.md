@@ -6,7 +6,7 @@
 
 - **Domain**: `gnome.org/gdk-pixbuf`
 - **Name**: `gdk-pixbuf`
-- **Homepage**: https://gtk.org
+- **Homepage**: <https://gtk.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/gdk-pixbuf/package.yml)
 
 ## Installation

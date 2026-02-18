@@ -6,7 +6,7 @@
 
 - **Domain**: `trippy.cli.rs`
 - **Name**: `trip`
-- **Homepage**: https://trippy.cli.rs/
+- **Homepage**: <https://trippy.cli.rs/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/trippy.cli.rs/package.yml)
 
 ## Installation

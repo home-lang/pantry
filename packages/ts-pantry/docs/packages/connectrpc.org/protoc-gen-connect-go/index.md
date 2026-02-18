@@ -6,7 +6,7 @@
 
 - **Domain**: `connectrpc.org/protoc-gen-connect-go`
 - **Name**: `protoc-gen-connect-go`
-- **Homepage**: https://connectrpc.com
+- **Homepage**: <https://connectrpc.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/connectrpc.org/protoc-gen-connect-go/package.yml)
 
 ## Installation

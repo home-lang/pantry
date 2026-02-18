@@ -6,7 +6,7 @@
 
 - **Domain**: `ctags.io`
 - **Name**: `ctags`
-- **Homepage**: https://ctags.io
+- **Homepage**: <https://ctags.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ctags.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gtk.org/gtk3`
 - **Name**: `gtk3`
-- **Homepage**: https://gtk.org/
+- **Homepage**: <https://gtk.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gtk.org/gtk3/package.yml)
 
 ## Installation

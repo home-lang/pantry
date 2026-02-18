@@ -6,7 +6,7 @@
 
 - **Domain**: `podman.io`
 - **Name**: `podman`
-- **Homepage**: https://podman.io/
+- **Homepage**: <https://podman.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/podman.io/package.yml)
 
 ## Installation

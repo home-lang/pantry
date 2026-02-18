@@ -6,7 +6,7 @@
 
 - **Domain**: `getcomposer.org`
 - **Name**: `composer`
-- **Homepage**: https://getcomposer.org/
+- **Homepage**: <https://getcomposer.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/getcomposer.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `hurl.dev`
 - **Name**: `hurl`
-- **Homepage**: https://hurl.dev
+- **Homepage**: <https://hurl.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hurl.dev/package.yml)
 
 ## Installation

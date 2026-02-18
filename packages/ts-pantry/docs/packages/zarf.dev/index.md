@@ -1,6 +1,6 @@
 # zarf
 
-> DevSecOps for Air Gap & Limited-Connection Systems. https://zarf.dev/
+> DevSecOps for Air Gap & Limited-Connection Systems. <https://zarf.dev/>
 
 ## Package Information
 

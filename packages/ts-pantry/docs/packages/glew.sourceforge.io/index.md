@@ -6,7 +6,7 @@
 
 - **Domain**: `glew.sourceforge.io`
 - **Name**: `glew.sourceforge`
-- **Homepage**: https://glew.sourceforge.net/
+- **Homepage**: <https://glew.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/glew.sourceforge.io/package.yml)
 
 ## Installation

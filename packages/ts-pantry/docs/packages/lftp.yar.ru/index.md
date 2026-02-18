@@ -6,7 +6,7 @@
 
 - **Domain**: `lftp.yar.ru`
 - **Name**: `lftp`
-- **Homepage**: https://lftp.yar.ru/
+- **Homepage**: <https://lftp.yar.ru/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lftp.yar.ru/package.yml)
 
 ## Installation

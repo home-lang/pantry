@@ -6,7 +6,7 @@
 
 - **Domain**: `dotnet.microsoft.com`
 - **Name**: `dotnet`
-- **Homepage**: https://dotnet.microsoft.com/
+- **Homepage**: <https://dotnet.microsoft.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/dotnet.microsoft.com/package.yml)
 
 ## Installation

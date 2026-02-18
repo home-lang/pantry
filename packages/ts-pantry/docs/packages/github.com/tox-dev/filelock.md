@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/tox-dev/filelock`
 - **Name**: `filelock`
-- **Homepage**: https://py-filelock.readthedocs.io
+- **Homepage**: <https://py-filelock.readthedocs.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/tox-dev/filelock/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `ebassi.github.io/graphene`
 - **Name**: `graphene`
-- **Homepage**: http://ebassi.github.io/graphene
+- **Homepage**: <http://ebassi.github.io/graphene>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ebassi.github.io/graphene/package.yml)
 
 ## Installation

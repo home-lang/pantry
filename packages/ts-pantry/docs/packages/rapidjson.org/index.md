@@ -6,7 +6,7 @@
 
 - **Domain**: `rapidjson.org`
 - **Name**: `rapidjson`
-- **Homepage**: http://rapidjson.org/
+- **Homepage**: <http://rapidjson.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rapidjson.org/package.yml)
 
 ## Installation

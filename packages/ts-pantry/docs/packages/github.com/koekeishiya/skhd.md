@@ -1,6 +1,6 @@
 # skhd
 
->  Simple hotkey daemon for macOS
+> Simple hotkey daemon for macOS
 
 ## Package Information
 

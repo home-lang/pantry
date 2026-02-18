@@ -6,7 +6,7 @@
 
 - **Domain**: `mpg123.de`
 - **Name**: `mpg123`
-- **Homepage**: https://www.mpg123.de/
+- **Homepage**: <https://www.mpg123.de/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mpg123.de/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gdal.org`
 - **Name**: `gdal`
-- **Homepage**: https://www.gdal.org/
+- **Homepage**: <https://www.gdal.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gdal.org/package.yml)
 
 ## Installation
@@ -141,4 +141,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

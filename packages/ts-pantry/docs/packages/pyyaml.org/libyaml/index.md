@@ -6,7 +6,7 @@
 
 - **Domain**: `pyyaml.org/libyaml`
 - **Name**: `libyaml`
-- **Homepage**: http://pyyaml.org/wiki/LibYAML
+- **Homepage**: <http://pyyaml.org/wiki/LibYAML>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pyyaml.org/libyaml/package.yml)
 
 ## Installation

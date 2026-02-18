@@ -6,7 +6,7 @@
 
 - **Domain**: `hunspell.github.io`
 - **Name**: `hunspell`
-- **Homepage**: https://hunspell.github.io
+- **Homepage**: <https://hunspell.github.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hunspell.github.io/package.yml)
 
 ## Installation

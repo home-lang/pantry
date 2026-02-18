@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/dbus`
 - **Name**: `dbus`
-- **Homepage**: https://wiki.freedesktop.org/www/Software/dbus
+- **Homepage**: <https://wiki.freedesktop.org/www/Software/dbus>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/dbus/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `opus-codec.org`
 - **Name**: `opus-codec`
-- **Homepage**: https://opus-codec.org/
+- **Homepage**: <https://opus-codec.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/opus-codec.org/package.yml)
 
 ## Installation

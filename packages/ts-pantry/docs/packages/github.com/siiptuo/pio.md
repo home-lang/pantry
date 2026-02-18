@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/siiptuo/pio`
 - **Name**: `pio`
-- **Homepage**: https://platformio.org/
+- **Homepage**: <https://platformio.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/siiptuo/pio/package.yml)
 
 ## Installation

@@ -20,7 +20,7 @@ launchpad install python.org/typing_extensions
 
 This package provides the following executable programs:
 
-*No programs specified*
+_No programs specified_
 
 ## Available Versions
 
@@ -68,4 +68,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

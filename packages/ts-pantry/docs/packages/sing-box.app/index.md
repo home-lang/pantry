@@ -6,7 +6,7 @@
 
 - **Domain**: `sing-box.app`
 - **Name**: `sing-box`
-- **Homepage**: https://sing-box.sagernet.org
+- **Homepage**: <https://sing-box.sagernet.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sing-box.app/package.yml)
 
 ## Installation

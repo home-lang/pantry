@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/joshuto`
 - **Name**: `joshuto`
-- **Homepage**: https://crates.io/crates/joshuto
+- **Homepage**: <https://crates.io/crates/joshuto>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/joshuto/package.yml)
 
 ## Installation

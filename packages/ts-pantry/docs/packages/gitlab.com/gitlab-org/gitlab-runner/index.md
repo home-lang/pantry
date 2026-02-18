@@ -6,7 +6,7 @@
 
 - **Domain**: `gitlab.com/gitlab-org/gitlab-runner`
 - **Name**: `gitlab-runner`
-- **Homepage**: https://gitlab.com/gitlab-org/gitlab-runner
+- **Homepage**: <https://gitlab.com/gitlab-org/gitlab-runner>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gitlab.com/gitlab-org/gitlab-runner/package.yml)
 
 ## Installation

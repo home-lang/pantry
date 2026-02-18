@@ -6,7 +6,7 @@
 
 - **Domain**: `moonrepo.dev/moon`
 - **Name**: `moon`
-- **Homepage**: https://moonrepo.dev/moon
+- **Homepage**: <https://moonrepo.dev/moon>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/moonrepo.dev/moon/package.yml)
 
 ## Installation

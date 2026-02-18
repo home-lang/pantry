@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/wget`
 - **Name**: `wget`
-- **Homepage**: https://www.gnu.org/software/wget/
+- **Homepage**: <https://www.gnu.org/software/wget/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/wget/package.yml)
 
 ## Installation

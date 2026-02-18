@@ -6,7 +6,7 @@
 
 - **Domain**: `sympy.org`
 - **Name**: `sympy`
-- **Homepage**: https://sympy.org/
+- **Homepage**: <https://sympy.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sympy.org/package.yml)
 
 ## Installation

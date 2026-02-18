@@ -6,7 +6,7 @@
 
 - **Domain**: `fukuchi.org/qrencode`
 - **Name**: `qrencode`
-- **Homepage**: https://fukuchi.org/works/qrencode/index.html.en
+- **Homepage**: <https://fukuchi.org/works/qrencode/index.html.en>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fukuchi.org/qrencode/package.yml)
 
 ## Installation

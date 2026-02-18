@@ -6,7 +6,7 @@
 
 - **Domain**: `groonga.org`
 - **Name**: `groonga`
-- **Homepage**: https://groonga.org/
+- **Homepage**: <https://groonga.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/groonga.org/package.yml)
 
 ## Installation

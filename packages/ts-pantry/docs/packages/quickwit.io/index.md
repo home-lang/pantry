@@ -6,7 +6,7 @@
 
 - **Domain**: `quickwit.io`
 - **Name**: `quickwit`
-- **Homepage**: https://quickwit.io
+- **Homepage**: <https://quickwit.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/quickwit.io/package.yml)
 
 ## Installation

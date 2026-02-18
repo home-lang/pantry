@@ -6,7 +6,7 @@
 
 - **Domain**: `arkade.dev`
 - **Name**: `Arkade`
-- **Homepage**: https://blog.alexellis.io/kubernetes-marketplace-two-year-update/
+- **Homepage**: <https://blog.alexellis.io/kubernetes-marketplace-two-year-update/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/arkade.dev/package.yml)
 
 ## Installation

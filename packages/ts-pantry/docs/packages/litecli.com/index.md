@@ -6,7 +6,7 @@
 
 - **Domain**: `litecli.com`
 - **Name**: `litecli`
-- **Homepage**: https://litecli.com
+- **Homepage**: <https://litecli.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/litecli.com/package.yml)
 
 ## Installation

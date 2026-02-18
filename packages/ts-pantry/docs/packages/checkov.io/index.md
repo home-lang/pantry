@@ -6,7 +6,7 @@
 
 - **Domain**: `checkov.io`
 - **Name**: `checkov`
-- **Homepage**: https://www.checkov.io/
+- **Homepage**: <https://www.checkov.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/checkov.io/package.yml)
 
 ## Installation

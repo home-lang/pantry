@@ -6,7 +6,7 @@
 
 - **Domain**: `pkgx.sh/mash`
 - **Name**: `mash`
-- **Homepage**: https://mash.pkgx.sh
+- **Homepage**: <https://mash.pkgx.sh>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pkgx.sh/mash/package.yml)
 
 ## Installation

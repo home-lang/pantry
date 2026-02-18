@@ -6,7 +6,7 @@
 
 - **Domain**: `nushell.sh`
 - **Name**: `nu`
-- **Homepage**: https://www.nushell.sh
+- **Homepage**: <https://www.nushell.sh>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nushell.sh/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `libexpat.github.io`
 - **Name**: `xmlwf`
-- **Homepage**: https://libexpat.github.io/
+- **Homepage**: <https://libexpat.github.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libexpat.github.io/package.yml)
 
 ## Installation

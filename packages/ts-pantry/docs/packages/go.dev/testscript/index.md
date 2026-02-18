@@ -6,7 +6,7 @@
 
 - **Domain**: `go.dev/testscript`
 - **Name**: `testscript`
-- **Homepage**: https://github.com/rogpeppe/go-internal/tree/master/cmd/testscript
+- **Homepage**: <https://github.com/rogpeppe/go-internal/tree/master/cmd/testscript>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/go.dev/testscript/package.yml)
 
 ## Installation

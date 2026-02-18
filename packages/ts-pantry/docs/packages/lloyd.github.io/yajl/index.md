@@ -6,7 +6,7 @@
 
 - **Domain**: `lloyd.github.io/yajl`
 - **Name**: `json`
-- **Homepage**: https://lloyd.github.io/yajl/
+- **Homepage**: <https://lloyd.github.io/yajl/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lloyd.github.io/yajl/package.yml)
 
 ## Installation
@@ -62,4 +62,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

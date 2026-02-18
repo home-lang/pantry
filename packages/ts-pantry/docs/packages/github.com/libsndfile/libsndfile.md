@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/libsndfile/libsndfile`
 - **Name**: `sndfile`
-- **Homepage**: https://libsndfile.github.io/libsndfile/
+- **Homepage**: <https://libsndfile.github.io/libsndfile/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/libsndfile/libsndfile/package.yml)
 
 ## Installation

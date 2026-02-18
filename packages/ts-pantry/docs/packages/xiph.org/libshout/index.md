@@ -6,7 +6,7 @@
 
 - **Domain**: `xiph.org/libshout`
 - **Name**: `shout`
-- **Homepage**: https://icecast.org/
+- **Homepage**: <https://icecast.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/xiph.org/libshout/package.yml)
 
 ## Installation

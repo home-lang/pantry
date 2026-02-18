@@ -6,7 +6,7 @@
 
 - **Domain**: `freedesktop.org/fontconfig`
 - **Name**: `fontconfig`
-- **Homepage**: https://wiki.freedesktop.org/www/Software/fontconfig/
+- **Homepage**: <https://wiki.freedesktop.org/www/Software/fontconfig/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/freedesktop.org/fontconfig/package.yml)
 
 ## Installation

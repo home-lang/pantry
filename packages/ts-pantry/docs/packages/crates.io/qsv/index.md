@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/qsv`
 - **Name**: `qsv`
-- **Homepage**: https://qsv.dathere.com
+- **Homepage**: <https://qsv.dathere.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/qsv/package.yml)
 
 ## Installation

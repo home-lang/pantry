@@ -6,7 +6,7 @@
 
 - **Domain**: `gnupg.org/gpgme`
 - **Name**: `gpgme`
-- **Homepage**: https://www.gnupg.org/related_software/gpgme/
+- **Homepage**: <https://www.gnupg.org/related_software/gpgme/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnupg.org/gpgme/package.yml)
 
 ## Installation
@@ -68,4 +68,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+_This documentation was auto-generated from package data._

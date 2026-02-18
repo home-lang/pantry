@@ -6,7 +6,7 @@
 
 - **Domain**: `zsh.sourceforge.io`
 - **Name**: `zsh`
-- **Homepage**: https://www.zsh.org/
+- **Homepage**: <https://www.zsh.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/zsh.sourceforge.io/package.yml)
 
 ## Installation

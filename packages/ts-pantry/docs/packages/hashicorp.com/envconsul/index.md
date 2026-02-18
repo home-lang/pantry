@@ -6,7 +6,7 @@
 
 - **Domain**: `hashicorp.com/envconsul`
 - **Name**: `envconsul`
-- **Homepage**: https://www.hashicorp.com/
+- **Homepage**: <https://www.hashicorp.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hashicorp.com/envconsul/package.yml)
 
 ## Installation

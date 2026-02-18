@@ -6,7 +6,7 @@
 
 - **Domain**: `fermyon.com/spin`
 - **Name**: `spin`
-- **Homepage**: https://spinroot.com/spin/whatispin.html
+- **Homepage**: <https://spinroot.com/spin/whatispin.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fermyon.com/spin/package.yml)
 
 ## Installation

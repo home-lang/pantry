@@ -6,7 +6,7 @@
 
 - **Domain**: `ladspa.org`
 - **Name**: `ladspa`
-- **Homepage**: https://www.ladspa.org
+- **Homepage**: <https://www.ladspa.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ladspa.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `infracost.io`
 - **Name**: `infracost`
-- **Homepage**: https://www.infracost.io/docs/
+- **Homepage**: <https://www.infracost.io/docs/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/infracost.io/package.yml)
 
 ## Installation

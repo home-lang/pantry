@@ -1,6 +1,6 @@
 # kaspad
 
-> Kaspad was the reference full node Kaspa implementation written in Go (golang), now rewritten in Rust: https://github.com/kaspanet/rusty-kaspa
+> Kaspad was the reference full node Kaspa implementation written in Go (golang), now rewritten in Rust: <https://github.com/kaspanet/rusty-kaspa>
 
 ## Package Information
 

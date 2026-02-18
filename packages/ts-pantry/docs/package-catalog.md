@@ -94,7 +94,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[etcd.io](./packages/etcd.io/index.md)** () | Distributed reliable key-value store for the most critical data of a distributed system | etcd, etcdctl | 3.6.8 (+28) | `pkgx etcd` |
 | **[litecli.com](./packages/litecli.com/index.md)** () | CLI for SQLite Databases with auto-completion and syntax highlighting | litecli | 1.17.1 (+17) | `pkgx litecli` |
 | **[mongodb.com/shell](./packages/mongodb.com/shell/index.md)** () | MongoDB Shell to connect, configure, query, and work with your MongoDB database | mongosh | 2.7.0 (+42) | `pkgx mongosh` |
-| **[mysql.com](./packages/mysql.com/index.md)** () | MySQL Server, the world&#39;s most popular open source database, and MySQL Cluster, a real-time, ... | mysql_client_test, my_print_defaults, myisam_ftdump, ... (+28) | 9.6.0 (+31) | `pkgx mysql` |
+| **[mysql.com](./packages/mysql.com/index.md)** () | MySQL Server, the world&#39;s most popular open source database, and MySQL Cluster, a real-time, ... | mysql*client*test, my*print*defaults, myisam*ftdump, ... (+28) | 9.6.0 (+31) | `pkgx mysql` |
 | **[opensearch.org](./packages/opensearch.org/index.md)** () | 🔎 Open source distributed and RESTful search engine. | opensearch, opensearch-keystore, opensearch-plugin, ... (+1) | 3.5.0 (+16) | `pkgx opensearch` |
 | **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.5.0 (+24) | `pkgx postgrest` |
 | **[redis.io](./packages/redis.io/index.md)** () | Redis is an in-memory database that persists on disk. The data model is key-value, but many diffe... | redis-server, redis-cli, redis-benchmark | 8.6.0 (+55) | `pkgx redis` |
@@ -156,7 +156,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[cilium.io/hubble](./packages/cilium.io/hubble/index.md)** () | Hubble - Network, Service & Security Observability for Kubernetes using eBPF | hubble | 1.18.6 (+19) | `pkgx hubble` |
 | **[cloudnative-pg.io](./packages/cloudnative-pg.io/index.md)** () | CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreSQL databases with... | kubectl-cnpg | 1.28.1 (+16) | `pkgx kubectl-cnpg` |
 | **[github.com/helmfile/helmfile](./packages/github.com/helmfile/helmfile.md)** () | Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as Helm releases. G... | helmfile | 1.2.3 (+35) | `pkgx helmfile` |
-| **[github.com/stern/stern](./packages/github.com/stern/stern.md)** () | ⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of https://github.com/werck... | stern | 1.33.1 (+8) | `pkgx stern` |
+| **[github.com/stern/stern](./packages/github.com/stern/stern.md)** () | ⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of <https://github.com/werck...> | stern | 1.33.1 (+8) | `pkgx stern` |
 | **[github.com/yannh/kubeconform](./packages/github.com/yannh/kubeconform.md)** () | A FAST Kubernetes manifests validator, with support for Custom Resources! | kubeconform | 0.7.0 (+4) | `pkgx kubeconform` |
 | **[helm.sh](./packages/helm.sh/index.md)** () | The Kubernetes Package Manager | helm | 4.1.1 (+52) | `pkgx helm` |
 | **[istio.io](./packages/istio.io/index.md)** () | Connect, secure, control, and observe services. | istioctl | 1.29.0 (+63) | `pkgx istioctl` |
@@ -218,7 +218,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[bun.sh](./packages/bun.sh/index.md)** (bun.com) | Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one | bun, bunx | 1.3.9 (+136) | `pkgx bun.com` |
-| **[classic.yarnpkg.com](./packages/classic.yarnpkg.com/index.md)** (yarn) | The 1.x line is frozen - features and bugfixes now happen on https://github.com/yarnpkg/berry | yarn, yarnpkg | 1.22.22 (+3) | `pkgx yarn` |
+| **[classic.yarnpkg.com](./packages/classic.yarnpkg.com/index.md)** (yarn) | The 1.x line is frozen - features and bugfixes now happen on <https://github.com/yarnpkg/berry> | yarn, yarnpkg | 1.22.22 (+3) | `pkgx yarn` |
 | **[cocoapods.org](./packages/cocoapods.org/index.md)** () | Dependency manager for Cocoa projects | pod | 1.16.2 (+12) | `pkgx pod` |
 | **[getcomposer.org](./packages/getcomposer.org/index.md)** () | Dependency Manager for PHP | composer, composer.phar | 2.9.5 (+39) | `pkgx composer` |
 | **[luarocks.org](./packages/luarocks.org/index.md)** () | LuaRocks is the package manager for the Lua programming language. | luarocks, luarocks-admin | 3.13.0 (+7) | `pkgx luarocks` |
@@ -271,10 +271,10 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[curl.se](./packages/curl.se/index.md)** (curl) | A command line tool and library for transferring data with URL syntax, supporting DICT, FILE, FTP... | curl, curl-config | 8.17.0 (+27) | `pkgx curl` |
 | **[dev.yorhel.nl/ncdu](./packages/dev.yorhel.nl/ncdu/index.md)** () | NCurses Disk Usage | ncdu | 1.22.0 (+4) | `pkgx ncdu` |
 | **[dns.lookup.dog](./packages/dns.lookup.dog/index.md)** () | A command-line DNS client. | dog | 0.1.0 (+0) | `pkgx dog` |
-| **[fishshell.com](./packages/fishshell.com/index.md)** () | User-friendly command-line shell for UNIX-like operating systems | fish, fish_indent, fish_key_reader | 4.5.0 (+24) | `pkgx fish` |
+| **[fishshell.com](./packages/fishshell.com/index.md)** () | User-friendly command-line shell for UNIX-like operating systems | fish, fish*indent, fish*key*reader | 4.5.0 (+24) | `pkgx fish` |
 | **[github.com/aristocratos/btop](./packages/github.com/aristocratos/btop.md)** () | Resource monitor. C++ version and continuation of bashtop and bpytop | btop | 1.4.6 (+9) | `pkgx btop` |
 | **[github.com/dundee/gdu](./packages/github.com/dundee/gdu.md)** () | Fast disk usage analyzer with console interface written in Go | gdu | 5.33.0 (+5) | `pkgx gdu` |
-| **[github.com/junegunn/fzf](./packages/github.com/junegunn/fzf.md)** () | :cherry_blossom: A command-line fuzzy finder | fzf | 0.67.0 (+52) | `pkgx fzf` |
+| **[github.com/junegunn/fzf](./packages/github.com/junegunn/fzf.md)** () | :cherry*blossom: A command-line fuzzy finder | fzf | 0.67.0 (+52) | `pkgx fzf` |
 | **[github.com/mikefarah/yq](./packages/github.com/mikefarah/yq.md)** () | yq is a portable command-line YAML, JSON, XML, CSV, TOML and properties processor | yq | 4.52.4 (+43) | `pkgx yq` |
 | **[github.com/muesli/duf](./packages/github.com/muesli/duf.md)** () | Disk Usage/Free Utility - a better &#39;df&#39; alternative | duf | 0.9.1 (+2) | `pkgx duf` |
 | **[github.com/peltoche/lsd](./packages/github.com/peltoche/lsd.md)** () | Clone of ls with colorful output, file type icons, and more | lsd | 1.2.0 (+7) | `pkgx lsd` |
@@ -323,7 +323,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[filippo.io/age](./packages/filippo.io/age/index.md)** () | A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config ... | age, age-keygen | 1.3.1 (+4) | `pkgx age` |
 | **[filippo.io/yubikey-agent](./packages/filippo.io/yubikey-agent/index.md)** () | Seamless ssh-agent for YubiKeys and other PIV tokens | yubikey-agent | 0.1.6 (+0) | `pkgx yubikey-agent` |
 | **[mkcert.dev](./packages/mkcert.dev/index.md)** () | A simple zero-config tool to make locally trusted development certificates with any names you&#39... | mkcert | 1.4.4 (+0) | `pkgx mkcert` |
-| **[openssl.org](./packages/openssl.org/index.md)** () | TLS/SSL and crypto library with QUIC APIs | openssl, c_rehash | 3.6.1 (+42) | `pkgx OpenSSL` |
+| **[openssl.org](./packages/openssl.org/index.md)** () | TLS/SSL and crypto library with QUIC APIs | openssl, c*rehash | 3.6.1 (+42) | `pkgx OpenSSL` |
 | **[orhun.dev/gpg-tui](./packages/orhun.dev/gpg-tui/index.md)** () | Manage your GnuPG keys with ease! 🔐 | gpg-tui | 0.11.1 (+2) | `pkgx gpg-tui` |
 | **[snyk.io](./packages/snyk.io/index.md)** () | Scans and monitors projects for security vulnerabilities | snyk | 1.1302.1 (+56) | `pkgx snyk` |
 | **[vaultproject.io](./packages/vaultproject.io/index.md)** () | A tool for secrets management, encryption as a service, and privileged access management | vault | 1.21.2 (+61) | `pkgx vault` |
@@ -353,7 +353,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[cairographics.org](./packages/cairographics.org/index.md)** () | Vector graphics library with cross-device output support | cairo-trace | 1.18.4 (+3) | `pkgx cairo-trace` |
 | **[glm.g-truc.net](./packages/glm.g-truc.net/index.md)** () | OpenGL Mathematics (GLM) | - | 1.0.3 (+4) | `pkgx glm.g-truc` |
 | **[libsdl.org](./packages/libsdl.org/index.md)** () | Simple Directmedia Layer | - | 3.4.0 (+42) | `pkgx libsdl` |
-| **[libsdl.org/SDL_image](./packages/libsdl.org/SDL_image/index.md)** () | Image decoding for many popular formats for Simple Directmedia Layer. | - | 3.4.0 (+14) | `pkgx SDL_image` |
+| **[libsdl.org/SDL*image](./packages/libsdl.org/SDL*image/index.md)** () | Image decoding for many popular formats for Simple Directmedia Layer. | - | 3.4.0 (+14) | `pkgx SDL*image` |
 
 ## Gaming & Game Development
 
@@ -404,7 +404,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[bitcoin.org](./packages/bitcoin.org/index.md)** () | Decentralized, peer to peer payment network | bitcoin-cli, bitcoin-tx, bitcoin-util, ... (+2) | 30.2.0 (+23) | `pkgx bitcoin` |
-| **[elementsproject.org](./packages/elementsproject.org/index.md)** () | Open Source implementation of advanced blockchain features extending the Bitcoin protocol | bench_bitcoin, elements-cli, elements-tx, ... (+4) | 23.3.2 (+10) | `pkgx elementsproject` |
+| **[elementsproject.org](./packages/elementsproject.org/index.md)** () | Open Source implementation of advanced blockchain features extending the Bitcoin protocol | bench*bitcoin, elements-cli, elements-tx, ... (+4) | 23.3.2 (+10) | `pkgx elementsproject` |
 | **[getfoundry.sh](./packages/getfoundry.sh/index.md)** () | Foundry is a blazing fast, portable and modular toolkit for Ethereum application development writ... | forge, anvil, cast, ... (+1) | 2024.4.12 (+22) | `pkgx getfoundry.sh` |
 | **[ghostscript.com](./packages/ghostscript.com/index.md)** () | This is purely for downloads, please check the website for full information | dvipdf, eps2eps, gpcl6, ... (+30) | 10.6.0 (+7) | `pkgx ghostscript` |
 | **[solana.com](./packages/solana.com/index.md)** () | Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces. | solana, solana-keygen, solana-bench-streamer, ... (+7) | 1.18.26 (+82) | `pkgx solana` |

@@ -6,7 +6,7 @@
 
 - **Domain**: `duktape.org`
 - **Name**: `duk`
-- **Homepage**: https://duktape.org
+- **Homepage**: <https://duktape.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/duktape.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `ipython.org`
 - **Name**: `ipython`
-- **Homepage**: https://ipython.org/
+- **Homepage**: <https://ipython.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ipython.org/package.yml)
 
 ## Installation
