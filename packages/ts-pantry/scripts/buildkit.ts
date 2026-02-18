@@ -506,12 +506,20 @@ export function generateBuildScript(
   sections.push('REAL_HOME="${HOME}"')
   sections.push(`export HOME="${buildDir}/.home"`)
   sections.push('mkdir -p "$HOME"')
+  // Create symlinks to real home dirs BEFORE any toolchain search so $HOME/.cargo resolves
+  sections.push('if [ -d "$REAL_HOME/.cargo" ]; then')
+  sections.push('  ln -sfn "$REAL_HOME/.cargo" "$HOME/.cargo" 2>/dev/null || true')
+  sections.push('  ln -sfn "$REAL_HOME/.rustup" "$HOME/.rustup" 2>/dev/null || true')
+  sections.push('  export CARGO_HOME="$REAL_HOME/.cargo"')
+  sections.push('  export RUSTUP_HOME="$REAL_HOME/.rustup"')
+  sections.push('fi')
   sections.push('')
 
   // Rust toolchain — source rustup env first (most reliable), then search locations
   sections.push('# Rust toolchain')
   sections.push('_cargo_found=false')
   // Source rustup env file first — this is the canonical way to set up cargo PATH
+  // (symlinks above ensure $HOME/.cargo resolves to $REAL_HOME/.cargo)
   sections.push('if [ -f "$REAL_HOME/.cargo/env" ]; then')
   sections.push('  . "$REAL_HOME/.cargo/env"')
   sections.push('  if command -v cargo &>/dev/null; then _cargo_found=true; fi')
@@ -529,13 +537,6 @@ export function generateBuildScript(
   sections.push('  CARGO_BIN_DIR="$(dirname "$(command -v cargo)")"')
   sections.push('  export PATH="$CARGO_BIN_DIR:$PATH"')
   sections.push('  _cargo_found=true')
-  sections.push('fi')
-  // Set CARGO_HOME/RUSTUP_HOME if cargo dir exists
-  sections.push('if [ -d "$REAL_HOME/.cargo" ]; then')
-  sections.push('  export CARGO_HOME="$REAL_HOME/.cargo"')
-  sections.push('  export RUSTUP_HOME="$REAL_HOME/.rustup"')
-  sections.push('  ln -sfn "$REAL_HOME/.cargo" "$HOME/.cargo" 2>/dev/null || true')
-  sections.push('  ln -sfn "$REAL_HOME/.rustup" "$HOME/.rustup" 2>/dev/null || true')
   sections.push('fi')
   sections.push('echo "[buildkit] Rust: cargo=$(command -v cargo 2>/dev/null || echo NOT_FOUND), REAL_HOME=$REAL_HOME, _cargo_found=$_cargo_found"')
   sections.push('')
