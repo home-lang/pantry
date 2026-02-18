@@ -208,14 +208,20 @@ function fixPkgConfigFiles(prefix: string): void {
       if (!file.endsWith('.pc')) continue
 
       const filePath = join(pkgconfigDir, file)
-      const orig = readFileSync(filePath, 'utf-8')
-      const relativePath = relative(dirname(filePath), prefix)
+      try {
+        // Ensure we have read/write permissions (some installs like CUPS set restrictive perms)
+        try { execSync(`chmod u+rw "${filePath}"`, { stdio: 'pipe' }) } catch { /* ignore */ }
+        const orig = readFileSync(filePath, 'utf-8')
+        const relativePath = relative(dirname(filePath), prefix)
 
-      const text = orig.replaceAll(prefix, `\${pcfiledir}/${relativePath}`)
+        const text = orig.replaceAll(prefix, `\${pcfiledir}/${relativePath}`)
 
-      if (orig !== text) {
-        console.log(`  Fixing pkg-config: ${file}`)
-        writeFileSync(filePath, text)
+        if (orig !== text) {
+          console.log(`  Fixing pkg-config: ${file}`)
+          writeFileSync(filePath, text)
+        }
+      } catch (err: any) {
+        console.log(`  ⚠️  Could not fix pkg-config ${file}: ${err.message}`)
       }
     }
   }

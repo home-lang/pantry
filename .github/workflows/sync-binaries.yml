@@ -231,7 +231,8 @@ jobs:
             libnl-3-dev libnl-genl-3-dev \
             libpam0g-dev libudev-dev \
             libarchive-dev libusb-1.0-0-dev \
-            libjemalloc-dev libvterm-dev
+            libjemalloc-dev libvterm-dev \
+            libxslt1-dev
 
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'
@@ -279,6 +280,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source "$HOME/.cargo/env"
           rustup update stable
+          cargo install cargo-c 2>/dev/null || true
           echo "Rust: $(rustc --version), Cargo: $(cargo --version)"
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           pip3 install setuptools meson 2>/dev/null || python3 -m pip install setuptools meson 2>/dev/null || true
@@ -401,7 +403,8 @@ jobs:
             libnl-3-dev libnl-genl-3-dev \
             libpam0g-dev libudev-dev \
             libarchive-dev libusb-1.0-0-dev \
-            libjemalloc-dev libvterm-dev
+            libjemalloc-dev libvterm-dev \
+            libxslt1-dev
 
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'
@@ -450,6 +453,7 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source "$HOME/.cargo/env"
           rustup update stable
+          cargo install cargo-c 2>/dev/null || true
           echo "Rust: $(rustc --version), Cargo: $(cargo --version)"
           # Persist cargo PATH for subsequent steps (GitHub Actions doesn't source .profile)
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
