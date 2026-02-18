@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/net-tools`
 - **Name**: `net-tools`
-- **Homepage**: https://sourceforge.net/projects/net-tools/
+- **Homepage**: <https://sourceforge.net/projects/net-tools/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/net-tools/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/Mbed-TLS/mbedtls`
 - **Name**: `generic_sum`
-- **Homepage**: https://tls.mbed.org/
+- **Homepage**: <https://tls.mbed.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/Mbed-TLS/mbedtls/package.yml)
 
 ## Installation

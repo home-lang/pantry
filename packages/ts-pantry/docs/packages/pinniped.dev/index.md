@@ -6,7 +6,7 @@
 
 - **Domain**: `pinniped.dev`
 - **Name**: `pinniped`
-- **Homepage**: https://pinniped.dev
+- **Homepage**: <https://pinniped.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pinniped.dev/package.yml)
 
 ## Installation

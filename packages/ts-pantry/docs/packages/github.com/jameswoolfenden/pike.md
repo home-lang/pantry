@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/jameswoolfenden/pike`
 - **Name**: `pike`
-- **Homepage**: https://pike.lysator.liu.se/
+- **Homepage**: <https://pike.lysator.liu.se/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/jameswoolfenden/pike/package.yml)
 
 ## Installation

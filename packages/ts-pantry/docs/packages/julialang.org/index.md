@@ -6,7 +6,7 @@
 
 - **Domain**: `julialang.org`
 - **Name**: `julia`
-- **Homepage**: https://julialang.org/
+- **Homepage**: <https://julialang.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/julialang.org/package.yml)
 
 ## Installation

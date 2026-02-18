@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/shaka-project/shaka-packager`
 - **Name**: `shaka-packager`
-- **Homepage**: https://shaka-project.github.io/shaka-packager/
+- **Homepage**: <https://shaka-project.github.io/shaka-packager/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/shaka-project/shaka-packager/package.yml)
 
 ## Installation

@@ -1,12 +1,12 @@
 # json-c
 
-> https://github.com/json-c/json-c is the official code repository for json-c. See the wiki for release tarballs for download. API docs at http://json-c.github.io/json-c/
+> <https://github.com/json-c/json-c> is the official code repository for json-c. See the wiki for release tarballs for download. API docs at <http://json-c.github.io/json-c/>
 
 ## Package Information
 
 - **Domain**: `github.com/json-c/json-c`
 - **Name**: `json-c`
-- **Homepage**: https://github.com/json-c/json-c/wiki
+- **Homepage**: <https://github.com/json-c/json-c/wiki>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/json-c/json-c/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/canonical/pebble`
 - **Name**: `canonical/pebble`
-- **Homepage**: https://canonical-pebble.readthedocs-hosted.com/
+- **Homepage**: <https://canonical-pebble.readthedocs-hosted.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/canonical/pebble/package.yml)
 
 ## Installation

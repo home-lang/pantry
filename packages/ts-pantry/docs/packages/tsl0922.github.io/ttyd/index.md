@@ -6,7 +6,7 @@
 
 - **Domain**: `tsl0922.github.io/ttyd`
 - **Name**: `ttyd`
-- **Homepage**: https://tsl0922.github.io/ttyd/
+- **Homepage**: <https://tsl0922.github.io/ttyd/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tsl0922.github.io/ttyd/package.yml)
 
 ## Installation

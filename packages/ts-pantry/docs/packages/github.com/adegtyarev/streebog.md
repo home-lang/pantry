@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/adegtyarev/streebog`
 - **Name**: `gost3411-2012`
-- **Homepage**: https://www.streebog.net/
+- **Homepage**: <https://www.streebog.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/adegtyarev/streebog/package.yml)
 
 ## Installation

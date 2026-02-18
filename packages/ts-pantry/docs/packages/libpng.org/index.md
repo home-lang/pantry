@@ -6,7 +6,7 @@
 
 - **Domain**: `libpng.org`
 - **Name**: `libpng`
-- **Homepage**: http://www.libpng.org/pub/png/libpng.html
+- **Homepage**: <http://www.libpng.org/pub/png/libpng.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libpng.org/package.yml)
 
 ## Installation

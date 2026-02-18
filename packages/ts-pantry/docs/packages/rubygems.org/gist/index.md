@@ -6,7 +6,7 @@
 
 - **Domain**: `rubygems.org/gist`
 - **Name**: `gist`
-- **Homepage**: http://defunkt.io/gist/
+- **Homepage**: <http://defunkt.io/gist/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rubygems.org/gist/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `apache.org/avro`
 - **Name**: `avro`
-- **Homepage**: https://avro.apache.org/
+- **Homepage**: <https://avro.apache.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/apache.org/avro/package.yml)
 
 ## Installation

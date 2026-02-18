@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/Cyan4973/xxHash`
 - **Name**: `xxh`
-- **Homepage**: https://xxhash.com
+- **Homepage**: <https://xxhash.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/Cyan4973/xxHash/package.yml)
 
 ## Installation

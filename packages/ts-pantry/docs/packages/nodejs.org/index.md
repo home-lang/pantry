@@ -6,7 +6,7 @@
 
 - **Domain**: `nodejs.org`
 - **Name**: `node`
-- **Homepage**: https://nodejs.org/
+- **Homepage**: <https://nodejs.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nodejs.org/package.yml)
 
 ## Installation

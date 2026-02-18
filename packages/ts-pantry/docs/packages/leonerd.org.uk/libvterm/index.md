@@ -6,7 +6,7 @@
 
 - **Domain**: `leonerd.org.uk/libvterm`
 - **Name**: `libvterm`
-- **Homepage**: https://www.leonerd.org.uk/code/libvterm/
+- **Homepage**: <https://www.leonerd.org.uk/code/libvterm/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/leonerd.org.uk/libvterm/package.yml)
 
 ## Installation

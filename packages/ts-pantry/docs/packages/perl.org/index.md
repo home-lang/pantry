@@ -6,7 +6,7 @@
 
 - **Domain**: `perl.org`
 - **Name**: `perl`
-- **Homepage**: https://www.perl.org/
+- **Homepage**: <https://www.perl.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/perl.org/package.yml)
 
 ## Installation

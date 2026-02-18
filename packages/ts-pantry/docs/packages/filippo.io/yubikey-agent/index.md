@@ -6,7 +6,7 @@
 
 - **Domain**: `filippo.io/yubikey-agent`
 - **Name**: `yubikey-agent`
-- **Homepage**: https://filippo.io/yubikey-agent
+- **Homepage**: <https://filippo.io/yubikey-agent>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/filippo.io/yubikey-agent/package.yml)
 
 ## Installation

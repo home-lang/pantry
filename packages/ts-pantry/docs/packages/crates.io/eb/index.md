@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/eb`
 - **Name**: `eb`
-- **Homepage**: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3.html
+- **Homepage**: <https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/eb/package.yml)
 
 ## Installation

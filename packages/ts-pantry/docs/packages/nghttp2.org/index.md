@@ -6,7 +6,7 @@
 
 - **Domain**: `nghttp2.org`
 - **Name**: `nghttp2`
-- **Homepage**: https://nghttp2.org
+- **Homepage**: <https://nghttp2.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nghttp2.org/package.yml)
 
 ## Installation

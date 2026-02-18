@@ -6,7 +6,7 @@
 
 - **Domain**: `speex.org`
 - **Name**: `speexdec`
-- **Homepage**: https://speex.org/
+- **Homepage**: <https://speex.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/speex.org/package.yml)
 
 ## Installation

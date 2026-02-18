@@ -6,7 +6,7 @@
 
 - **Domain**: `mosh.org`
 - **Name**: `mosh`
-- **Homepage**: https://mosh.org
+- **Homepage**: <https://mosh.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mosh.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `libusb.info`
 - **Name**: `libusb.info`
-- **Homepage**: https://libusb.info
+- **Homepage**: <https://libusb.info>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libusb.info/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/JuliaStrings/utf8proc`
 - **Name**: `utf8proc`
-- **Homepage**: http://juliastrings.github.io/utf8proc/
+- **Homepage**: <http://juliastrings.github.io/utf8proc/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/JuliaStrings/utf8proc/package.yml)
 
 ## Installation

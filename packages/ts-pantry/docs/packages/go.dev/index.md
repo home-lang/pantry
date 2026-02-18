@@ -6,7 +6,7 @@
 
 - **Domain**: `go.dev`
 - **Name**: `go`
-- **Homepage**: https://go.dev
+- **Homepage**: <https://go.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/go.dev/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/libidn2`
 - **Name**: `idn2`
-- **Homepage**: https://www.gnu.org/software/libidn/#libidn2
+- **Homepage**: <https://www.gnu.org/software/libidn/#libidn2>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/libidn2/package.yml)
 
 ## Installation

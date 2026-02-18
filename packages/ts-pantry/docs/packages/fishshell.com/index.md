@@ -6,7 +6,7 @@
 
 - **Domain**: `fishshell.com`
 - **Name**: `fish`
-- **Homepage**: https://fishshell.com
+- **Homepage**: <https://fishshell.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fishshell.com/package.yml)
 
 ## Installation

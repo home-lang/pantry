@@ -6,7 +6,7 @@
 
 - **Domain**: `crazymax.dev/diun`
 - **Name**: `diun`
-- **Homepage**: https://crazymax.dev/diun/
+- **Homepage**: <https://crazymax.dev/diun/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crazymax.dev/diun/package.yml)
 
 ## Installation

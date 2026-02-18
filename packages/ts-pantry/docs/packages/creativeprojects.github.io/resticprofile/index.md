@@ -6,7 +6,7 @@
 
 - **Domain**: `creativeprojects.github.io/resticprofile`
 - **Name**: `resticprofile`
-- **Homepage**: https://creativeprojects.github.io/resticprofile/
+- **Homepage**: <https://creativeprojects.github.io/resticprofile/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/creativeprojects.github.io/resticprofile/package.yml)
 
 ## Installation

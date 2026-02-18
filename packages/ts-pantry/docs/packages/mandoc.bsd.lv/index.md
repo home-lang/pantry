@@ -6,7 +6,7 @@
 
 - **Domain**: `mandoc.bsd.lv`
 - **Name**: `mandoc.bsd.lv`
-- **Homepage**: https://mandoc.bsd.lv/
+- **Homepage**: <https://mandoc.bsd.lv/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mandoc.bsd.lv/package.yml)
 
 ## Installation

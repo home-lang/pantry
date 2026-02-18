@@ -6,7 +6,7 @@
 
 - **Domain**: `uriparser.github.io`
 - **Name**: `uriparse`
-- **Homepage**: https://uriparser.github.io/
+- **Homepage**: <https://uriparser.github.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/uriparser.github.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `boost.org`
 - **Name**: `boost`
-- **Homepage**: https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview
+- **Homepage**: <https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/boost.org/package.yml)
 
 ## Installation

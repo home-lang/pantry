@@ -6,7 +6,7 @@
 
 - **Domain**: `facebook.com/watchman`
 - **Name**: `watchman`
-- **Homepage**: https://facebook.github.io/watchman/
+- **Homepage**: <https://facebook.github.io/watchman/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/watchman/package.yml)
 
 ## Installation

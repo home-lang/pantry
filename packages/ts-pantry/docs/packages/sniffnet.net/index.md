@@ -6,7 +6,7 @@
 
 - **Domain**: `sniffnet.net`
 - **Name**: `sniffnet`
-- **Homepage**: https://sniffnet.net
+- **Homepage**: <https://sniffnet.net>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sniffnet.net/package.yml)
 
 ## Installation

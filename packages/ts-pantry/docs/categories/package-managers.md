@@ -18,7 +18,7 @@ Incredibly fast JavaScript runtime, bundler, test runner, and package manager â€
 
 ### [classic.yarnpkg.com](../packages/classic.yarnpkg.com/index.md) (classic.yarnpkg, yarn)
 
-The 1.x line is frozen - features and bugfixes now happen on https://github.com/yarnpkg/berry
+The 1.x line is frozen - features and bugfixes now happen on <https://github.com/yarnpkg/berry>
 
 **Programs**: yarn, yarnpkg
 

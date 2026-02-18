@@ -6,7 +6,7 @@
 
 - **Domain**: `pip.pypa.io`
 - **Name**: `pip`
-- **Homepage**: https://pip.pypa.io/
+- **Homepage**: <https://pip.pypa.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pip.pypa.io/package.yml)
 
 ## Installation

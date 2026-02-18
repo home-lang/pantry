@@ -6,7 +6,7 @@
 
 - **Domain**: `reacher.email/check-if-email-exists-cli`
 - **Name**: `check_if_email_exists`
-- **Homepage**: https://reacher.email
+- **Homepage**: <https://reacher.email>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/reacher.email/check-if-email-exists-cli/package.yml)
 
 ## Installation

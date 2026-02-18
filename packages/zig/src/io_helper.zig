@@ -15,6 +15,38 @@ pub const Threaded = std.Io.Threaded;
 pub const Dir = std.Io.Dir;
 pub const File = std.Io.File;
 
+const is_windows = builtin.os.tag == .windows;
+
+/// Cross-platform read from a file descriptor/handle
+fn platformRead(handle: std.posix.fd_t, buf: []u8) !usize {
+    if (comptime is_windows) {
+        const w = std.os.windows;
+        var bytes_read: w.DWORD = 0;
+        const len: w.DWORD = @intCast(@min(buf.len, std.math.maxInt(w.DWORD)));
+        if (w.kernel32.ReadFile(handle, buf.ptr, len, &bytes_read, null) == w.FALSE) {
+            return error.InputOutput;
+        }
+        return @intCast(bytes_read);
+    }
+    return std.posix.read(handle, buf);
+}
+
+/// Cross-platform write to a file descriptor/handle
+fn platformWrite(handle: std.posix.fd_t, buf: []const u8) !usize {
+    if (comptime is_windows) {
+        const w = std.os.windows;
+        var bytes_written: w.DWORD = 0;
+        const len: w.DWORD = @intCast(@min(buf.len, std.math.maxInt(w.DWORD)));
+        if (w.kernel32.WriteFile(handle, buf.ptr, len, &bytes_written, null) == w.FALSE) {
+            return error.InputOutput;
+        }
+        return @intCast(bytes_written);
+    }
+    const result = c.write(handle, buf.ptr, buf.len);
+    if (result < 0) return error.InputOutput;
+    return @intCast(result);
+}
+
 /// Global Threaded I/O backend for single-threaded blocking I/O
 /// For production code that needs an Io instance
 /// NOTE: We override .allocator from .failing to page_allocator because
@@ -60,7 +92,7 @@ pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: u
             if (buffer.len >= max_size) return error.BufferTooSmall;
             buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size));
         }
-        const n = std.posix.read(file.handle, buffer[total..]) catch |err| switch (err) {
+        const n = platformRead(file.handle, buffer[total..]) catch |err| switch (err) {
             error.WouldBlock => continue,
             else => return err,
         };
@@ -145,6 +177,22 @@ pub fn openFile(path: []const u8, flags: File.OpenFlags) !File {
 
 /// Make a directory path recursively using libc mkdir
 pub fn makePath(path: []const u8) !void {
+    if (comptime is_windows) {
+        // On Windows, use std.fs for cross-platform directory creation
+        const sep = if (std.mem.lastIndexOfScalar(u8, path, '/')) |s| s else std.mem.lastIndexOfScalar(u8, path, '\\');
+        if (sep) |s| {
+            if (s > 0) {
+                makePath(path[0..s]) catch {};
+            }
+        }
+        // Try to create this directory using cwd().makeDir
+        cwd().makeDir(io, path) catch |err| switch (err) {
+            error.PathAlreadyExists => return,
+            else => return error.MakePathFailed,
+        };
+        return;
+    }
+
     // Null-terminate the path for C API
     var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     if (path.len >= path_buf.len) return error.NameTooLong;
@@ -159,9 +207,9 @@ pub fn makePath(path: []const u8) !void {
     if (err == .EXIST) return; // Already exists
     if (err == .NOENT) {
         // Parent doesn't exist, create it first
-        if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep| {
-            if (sep > 0) {
-                try makePath(path[0..sep]);
+        if (std.mem.lastIndexOfScalar(u8, path, '/')) |sep2| {
+            if (sep2 > 0) {
+                try makePath(path[0..sep2]);
             }
         }
         // Now create this directory
@@ -177,6 +225,11 @@ pub fn makePath(path: []const u8) !void {
 /// Check access to a path (relative)
 pub fn access(path: []const u8, flags: Dir.AccessOptions) !void {
     _ = flags;
+    if (comptime is_windows) {
+        const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch return error.FileNotFound;
+        file.close(io);
+        return;
+    }
     const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
     const fd = std.posix.openat(std.posix.AT.FDCWD, path, open_flags, 0) catch return error.FileNotFound;
     std.posix.close(fd);
@@ -185,6 +238,11 @@ pub fn access(path: []const u8, flags: Dir.AccessOptions) !void {
 /// Check access to an absolute path
 pub fn accessAbsolute(path: []const u8, flags: Dir.AccessOptions) !void {
     _ = flags;
+    if (comptime is_windows) {
+        const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch return error.FileNotFound;
+        file.close(io);
+        return;
+    }
     const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
     const fd = std.posix.openat(std.posix.AT.FDCWD, path, open_flags, 0) catch return error.FileNotFound;
     std.posix.close(fd);
@@ -203,6 +261,9 @@ pub fn deleteFile(path: []const u8) !void {
     path_buf[path.len] = 0;
 
     switch (builtin.os.tag) {
+        .windows => {
+            cwd().deleteFile(io, path) catch return error.FileNotFound;
+        },
         .linux => {
             const rc = std.os.linux.unlinkat(std.os.linux.AT.FDCWD, &path_buf, 0);
             if (rc != 0) return error.FileNotFound;
@@ -223,6 +284,9 @@ fn deleteDir(path: []const u8) !void {
     path_buf[path.len] = 0;
 
     switch (builtin.os.tag) {
+        .windows => {
+            cwd().deleteDir(io, path) catch return error.DirNotEmpty;
+        },
         .linux => {
             const AT_REMOVEDIR = 0x200;
             const rc = std.os.linux.unlinkat(std.os.linux.AT.FDCWD, &path_buf, AT_REMOVEDIR);
@@ -308,14 +372,7 @@ pub fn writeAllToFile(file: File, bytes: []const u8) !void {
     const handle = file.handle;
     var remaining = bytes;
     while (remaining.len > 0) {
-        const result = c.write(handle, remaining.ptr, remaining.len);
-        if (result < 0) {
-            // On EAGAIN/EWOULDBLOCK, retry
-            const err = std.posix.errno(result);
-            if (err == .AGAIN) continue;
-            return error.InputOutput;
-        }
-        const written: usize = @intCast(result);
+        const written = platformWrite(handle, remaining) catch return error.InputOutput;
         if (written == 0) return error.UnexpectedEndOfStream;
         remaining = remaining[written..];
     }
@@ -325,10 +382,18 @@ pub fn writeAllToFile(file: File, bytes: []const u8) !void {
 pub fn appendToFile(path: []const u8, bytes: []const u8) !void {
     const file = try cwd().openFile(io, path, .{ .mode = .write_only });
     defer file.close(io);
-    // Seek to end using C lseek
-    const SEEK_END = 2;
-    const result = std.posix.system.lseek(file.handle, 0, SEEK_END);
-    if (result == -1) return error.Unseekable;
+    // Seek to end
+    if (comptime is_windows) {
+        const w = std.os.windows;
+        var distance: w.LARGE_INTEGER = 0;
+        if (w.kernel32.SetFilePointerEx(file.handle, distance, null, w.FILE_END) == w.FALSE) {
+            return error.Unseekable;
+        }
+    } else {
+        const SEEK_END = 2;
+        const result = std.posix.system.lseek(file.handle, 0, SEEK_END);
+        if (result == -1) return error.Unseekable;
+    }
     try writeAllToFile(file, bytes);
 }
 
@@ -351,7 +416,39 @@ pub const DirEntry = struct {
 };
 
 /// Directory handle wrapper - uses platform-specific directory iteration
-pub const FsDir = struct {
+pub const FsDir = if (is_windows) WindowsFsDir else PosixFsDir;
+
+const WindowsFsDir = struct {
+    std_dir: std.fs.Dir,
+
+    pub const Iterator = struct {
+        inner: std.fs.Dir.Iterator,
+
+        pub fn next(self: *Iterator) !?DirEntry {
+            const entry = self.inner.next() catch return null;
+            if (entry) |e| {
+                const kind: DirEntry.Kind = switch (e.kind) {
+                    .file => .file,
+                    .directory => .directory,
+                    .sym_link => .sym_link,
+                    else => .unknown,
+                };
+                return DirEntry{ .name = e.name, .kind = kind };
+            }
+            return null;
+        }
+    };
+
+    pub fn iterate(self: *WindowsFsDir) Iterator {
+        return .{ .inner = self.std_dir.iterate() };
+    }
+
+    pub fn close(self: *WindowsFsDir) void {
+        self.std_dir.close();
+    }
+};
+
+const PosixFsDir = struct {
     fd: std.posix.fd_t,
 
     // Platform-specific dirent type alias
@@ -446,17 +543,21 @@ pub const FsDir = struct {
         }
     };
 
-    pub fn iterate(self: *FsDir) Iterator {
+    pub fn iterate(self: *PosixFsDir) Iterator {
         return .{ .fd = self.fd, .buf = undefined, .index = 0, .end = 0, .seek = 0 };
     }
 
-    pub fn close(self: *FsDir) void {
+    pub fn close(self: *PosixFsDir) void {
         std.posix.close(self.fd);
     }
 };
 
 /// Open a directory for iteration
 pub fn openDirForIteration(path: []const u8) !FsDir {
+    if (comptime is_windows) {
+        const dir = std.fs.cwd().openDir(path, .{ .iterate = true }) catch return error.FileNotFound;
+        return .{ .std_dir = dir };
+    }
     const flags: std.posix.O = .{ .DIRECTORY = true, .CLOEXEC = true };
     const fd = try std.posix.openat(std.posix.AT.FDCWD, path, flags, 0);
     return .{ .fd = fd };

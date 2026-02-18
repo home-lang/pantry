@@ -6,7 +6,7 @@
 
 - **Domain**: `open-mpi.org/hwloc`
 - **Name**: `hwloc`
-- **Homepage**: https://www.open-mpi.org/projects/hwloc/
+- **Homepage**: <https://www.open-mpi.org/projects/hwloc/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/open-mpi.org/hwloc/package.yml)
 
 ## Installation

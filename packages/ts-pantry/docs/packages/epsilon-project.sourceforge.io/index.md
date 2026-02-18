@@ -6,7 +6,7 @@
 
 - **Domain**: `epsilon-project.sourceforge.io`
 - **Name**: `epsilon`
-- **Homepage**: https://sourceforge.net/projects/epsilon-project/
+- **Homepage**: <https://sourceforge.net/projects/epsilon-project/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/epsilon-project.sourceforge.io/package.yml)
 
 ## Installation

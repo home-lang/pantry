@@ -6,7 +6,7 @@
 
 - **Domain**: `re2c.org`
 - **Name**: `re2c`
-- **Homepage**: https://re2c.org
+- **Homepage**: <https://re2c.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/re2c.org/package.yml)
 
 ## Installation

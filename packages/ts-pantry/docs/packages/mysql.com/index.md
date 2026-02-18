@@ -6,7 +6,7 @@
 
 - **Domain**: `mysql.com`
 - **Name**: `mysql`
-- **Homepage**: http://www.mysql.com/
+- **Homepage**: <http://www.mysql.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mysql.com/package.yml)
 
 ## Installation

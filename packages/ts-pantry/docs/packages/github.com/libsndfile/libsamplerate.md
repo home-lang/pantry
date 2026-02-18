@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/libsndfile/libsamplerate`
 - **Name**: `libsamplerate`
-- **Homepage**: http://libsndfile.github.io/libsamplerate/
+- **Homepage**: <http://libsndfile.github.io/libsamplerate/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/libsndfile/libsamplerate/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `gphoto.org/libgphoto2`
 - **Name**: `gphoto2`
-- **Homepage**: http://www.gphoto.org/proj/libgphoto2/
+- **Homepage**: <http://www.gphoto.org/proj/libgphoto2/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gphoto.org/libgphoto2/package.yml)
 
 ## Installation

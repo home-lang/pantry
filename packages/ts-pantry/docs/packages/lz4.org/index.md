@@ -6,7 +6,7 @@
 
 - **Domain**: `lz4.org`
 - **Name**: `lz4`
-- **Homepage**: https://lz4.github.io/lz4/
+- **Homepage**: <https://lz4.github.io/lz4/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lz4.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `juju.is`
 - **Name**: `juju`
-- **Homepage**: https://juju.is/
+- **Homepage**: <https://juju.is/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/juju.is/package.yml)
 
 ## Installation

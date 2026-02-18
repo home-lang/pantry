@@ -6,7 +6,7 @@
 
 - **Domain**: `libssh2.org`
 - **Name**: `libssh2`
-- **Homepage**: https://libssh2.org/
+- **Homepage**: <https://libssh2.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libssh2.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `fairwinds.com/pluto`
 - **Name**: `pluto`
-- **Homepage**: https://fairwinds.com
+- **Homepage**: <https://fairwinds.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fairwinds.com/pluto/package.yml)
 
 ## Installation

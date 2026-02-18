@@ -6,7 +6,7 @@
 
 - **Domain**: `granted.dev`
 - **Name**: `granted`
-- **Homepage**: https://granted.dev
+- **Homepage**: <https://granted.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/granted.dev/package.yml)
 
 ## Installation

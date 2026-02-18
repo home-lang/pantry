@@ -6,7 +6,7 @@
 
 - **Domain**: `rigaux.org/hexedit`
 - **Name**: `hexedit`
-- **Homepage**: https://rigaux.org/hexedit.html
+- **Homepage**: <https://rigaux.org/hexedit.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rigaux.org/hexedit/package.yml)
 
 ## Installation

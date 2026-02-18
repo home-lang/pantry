@@ -6,7 +6,7 @@
 
 - **Domain**: `rsync.samba.org`
 - **Name**: `rsync`
-- **Homepage**: https://rsync.samba.org/
+- **Homepage**: <https://rsync.samba.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rsync.samba.org/package.yml)
 
 ## Installation

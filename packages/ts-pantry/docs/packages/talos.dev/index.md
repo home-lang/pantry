@@ -6,7 +6,7 @@
 
 - **Domain**: `talos.dev`
 - **Name**: `talosctl`
-- **Homepage**: https://www.talos.dev/
+- **Homepage**: <https://www.talos.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/talos.dev/package.yml)
 
 ## Installation

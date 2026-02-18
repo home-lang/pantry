@@ -6,7 +6,7 @@
 
 - **Domain**: `harfbuzz.org`
 - **Name**: `harfbuzz`
-- **Homepage**: http://harfbuzz.github.io/
+- **Homepage**: <http://harfbuzz.github.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/harfbuzz.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/wthrr`
 - **Name**: `wthrr`
-- **Homepage**: https://crates.io/crates/wthrr
+- **Homepage**: <https://crates.io/crates/wthrr>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/wthrr/package.yml)
 
 ## Installation

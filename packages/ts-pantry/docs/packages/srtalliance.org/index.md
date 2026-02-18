@@ -6,7 +6,7 @@
 
 - **Domain**: `srtalliance.org`
 - **Name**: `srt`
-- **Homepage**: https://www.srtalliance.org/
+- **Homepage**: <https://www.srtalliance.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/srtalliance.org/package.yml)
 
 ## Installation

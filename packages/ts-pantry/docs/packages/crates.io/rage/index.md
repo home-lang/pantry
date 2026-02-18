@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/rage`
 - **Name**: `rage`
-- **Homepage**: https://str4d.xyz/rage
+- **Homepage**: <https://str4d.xyz/rage>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/rage/package.yml)
 
 ## Installation

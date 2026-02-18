@@ -6,7 +6,7 @@
 
 - **Domain**: `gnupg.org/libgcrypt`
 - **Name**: `libgcrypt`
-- **Homepage**: https://gnupg.org/related_software/libgcrypt/
+- **Homepage**: <https://gnupg.org/related_software/libgcrypt/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnupg.org/libgcrypt/package.yml)
 
 ## Installation

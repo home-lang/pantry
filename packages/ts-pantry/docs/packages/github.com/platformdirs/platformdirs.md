@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/platformdirs/platformdirs`
 - **Name**: `platformdirs`
-- **Homepage**: https://platformdirs.readthedocs.io
+- **Homepage**: <https://platformdirs.readthedocs.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/platformdirs/platformdirs/package.yml)
 
 ## Installation

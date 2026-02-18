@@ -6,7 +6,7 @@
 
 - **Domain**: `plantuml.com`
 - **Name**: `plantuml`
-- **Homepage**: https://plantuml.com/
+- **Homepage**: <https://plantuml.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/plantuml.com/package.yml)
 
 ## Installation

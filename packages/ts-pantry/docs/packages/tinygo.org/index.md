@@ -6,7 +6,7 @@
 
 - **Domain**: `tinygo.org`
 - **Name**: `tinygo`
-- **Homepage**: https://tinygo.org
+- **Homepage**: <https://tinygo.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tinygo.org/package.yml)
 
 ## Installation

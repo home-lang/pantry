@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/xmlstar`
 - **Name**: `XMLStarlet`
-- **Homepage**: https://xmlstar.sourceforge.net/
+- **Homepage**: <https://xmlstar.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/xmlstar/package.yml)
 
 ## Installation

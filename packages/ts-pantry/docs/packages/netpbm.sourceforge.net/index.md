@@ -6,7 +6,7 @@
 
 - **Domain**: `netpbm.sourceforge.net`
 - **Name**: `netpbm.sourceforge`
-- **Homepage**: https://netpbm.sourceforge.net/
+- **Homepage**: <https://netpbm.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/netpbm.sourceforge.net/package.yml)
 
 ## Installation

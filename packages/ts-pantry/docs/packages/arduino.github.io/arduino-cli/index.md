@@ -6,7 +6,7 @@
 
 - **Domain**: `arduino.github.io/arduino-cli`
 - **Name**: `arduino-cli`
-- **Homepage**: https://arduino.github.io/arduino-cli/latest/
+- **Homepage**: <https://arduino.github.io/arduino-cli/latest/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/arduino.github.io/arduino-cli/package.yml)
 
 ## Installation

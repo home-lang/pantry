@@ -6,7 +6,7 @@
 
 - **Domain**: `pagure.io/xmlto`
 - **Name**: `xml`
-- **Homepage**: https://pagure.io/xmlto/
+- **Homepage**: <https://pagure.io/xmlto/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pagure.io/xmlto/package.yml)
 
 ## Installation

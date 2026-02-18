@@ -6,7 +6,7 @@
 
 - **Domain**: `google.com/googletest`
 - **Name**: `googletest`
-- **Homepage**: https://google.github.io/googletest/
+- **Homepage**: <https://google.github.io/googletest/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/google.com/googletest/package.yml)
 
 ## Installation

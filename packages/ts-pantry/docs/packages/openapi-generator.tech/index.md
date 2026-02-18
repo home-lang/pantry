@@ -6,7 +6,7 @@
 
 - **Domain**: `openapi-generator.tech`
 - **Name**: `openapi-generator`
-- **Homepage**: https://openapi-generator.tech/
+- **Homepage**: <https://openapi-generator.tech/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openapi-generator.tech/package.yml)
 
 ## Installation

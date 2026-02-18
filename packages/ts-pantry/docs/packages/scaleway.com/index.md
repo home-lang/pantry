@@ -6,7 +6,7 @@
 
 - **Domain**: `scaleway.com`
 - **Name**: `scw`
-- **Homepage**: https://www.scaleway.com/en/cli/
+- **Homepage**: <https://www.scaleway.com/en/cli/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/scaleway.com/package.yml)
 
 ## Installation

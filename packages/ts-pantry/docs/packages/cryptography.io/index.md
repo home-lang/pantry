@@ -6,7 +6,7 @@
 
 - **Domain**: `cryptography.io`
 - **Name**: `cryptography`
-- **Homepage**: https://cryptography.io
+- **Homepage**: <https://cryptography.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/cryptography.io/package.yml)
 
 ## Installation

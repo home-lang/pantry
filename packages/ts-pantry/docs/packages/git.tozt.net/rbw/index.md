@@ -6,7 +6,7 @@
 
 - **Domain**: `git.tozt.net/rbw`
 - **Name**: `rbw`
-- **Homepage**: https://git.tozt.net/rbw
+- **Homepage**: <https://git.tozt.net/rbw>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/git.tozt.net/rbw/package.yml)
 
 ## Installation

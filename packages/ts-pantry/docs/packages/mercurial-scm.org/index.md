@@ -6,7 +6,7 @@
 
 - **Domain**: `mercurial-scm.org`
 - **Name**: `mercurial-scm`
-- **Homepage**: https://mercurial-scm.org/
+- **Homepage**: <https://mercurial-scm.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mercurial-scm.org/package.yml)
 
 ## Installation

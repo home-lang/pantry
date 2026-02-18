@@ -6,7 +6,7 @@
 
 - **Domain**: `gnu.org/help2man`
 - **Name**: `help2man`
-- **Homepage**: https://www.gnu.org/software/help2man/
+- **Homepage**: <https://www.gnu.org/software/help2man/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/help2man/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `pypa.io/distlib`
 - **Name**: `distlib`
-- **Homepage**: http://distlib.readthedocs.io/
+- **Homepage**: <http://distlib.readthedocs.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pypa.io/distlib/package.yml)
 
 ## Installation

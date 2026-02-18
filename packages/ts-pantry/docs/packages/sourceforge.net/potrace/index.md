@@ -6,7 +6,7 @@
 
 - **Domain**: `sourceforge.net/potrace`
 - **Name**: `potrace`
-- **Homepage**: https://potrace.sourceforge.net/
+- **Homepage**: <https://potrace.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sourceforge.net/potrace/package.yml)
 
 ## Installation

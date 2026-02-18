@@ -6,7 +6,7 @@
 
 - **Domain**: `nasm.us`
 - **Name**: `nasm.us`
-- **Homepage**: https://www.nasm.us/
+- **Homepage**: <https://www.nasm.us/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nasm.us/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/ivmai/libatomic_ops`
 - **Name**: `libatomic_ops`
-- **Homepage**: https://github.com/ivmai/libatomic_ops/wiki/Download
+- **Homepage**: <https://github.com/ivmai/libatomic_ops/wiki/Download>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/ivmai/libatomic_ops/package.yml)
 
 ## Installation

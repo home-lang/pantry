@@ -1,12 +1,12 @@
 # qhull
 
-> Qhull development for www.qhull.org -- Qhull 2020.2 (8.1-alpha1) at https://github.com/qhull/qhull/wiki
+> Qhull development for www.qhull.org -- Qhull 2020.2 (8.1-alpha1) at <https://github.com/qhull/qhull/wiki>
 
 ## Package Information
 
 - **Domain**: `qhull.org`
 - **Name**: `qhull`
-- **Homepage**: http://www.qhull.org/
+- **Homepage**: <http://www.qhull.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/qhull.org/package.yml)
 
 ## Installation

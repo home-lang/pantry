@@ -6,7 +6,7 @@
 
 - **Domain**: `openldap.org/liblmdb`
 - **Name**: `liblmdb`
-- **Homepage**: https://www.symas.com/symas-embedded-database-lmdb
+- **Homepage**: <https://www.symas.com/symas-embedded-database-lmdb>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openldap.org/liblmdb/package.yml)
 
 ## Installation

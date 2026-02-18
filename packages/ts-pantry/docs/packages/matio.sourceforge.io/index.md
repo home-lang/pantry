@@ -6,7 +6,7 @@
 
 - **Domain**: `matio.sourceforge.io`
 - **Name**: `libmatio`
-- **Homepage**: https://matio.sourceforge.net/
+- **Homepage**: <https://matio.sourceforge.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/matio.sourceforge.io/package.yml)
 
 ## Installation

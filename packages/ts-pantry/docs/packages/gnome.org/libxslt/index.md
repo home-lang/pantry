@@ -1,12 +1,12 @@
 # xslt
 
-> Read-only mirror of https://gitlab.gnome.org/GNOME/libxslt
+> Read-only mirror of <https://gitlab.gnome.org/GNOME/libxslt>
 
 ## Package Information
 
 - **Domain**: `gnome.org/libxslt`
 - **Name**: `xslt`
-- **Homepage**: http://xmlsoft.org/XSLT/
+- **Homepage**: <http://xmlsoft.org/XSLT/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/gnome.org/libxslt/package.yml)
 
 ## Installation

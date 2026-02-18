@@ -6,7 +6,7 @@
 
 - **Domain**: `svenstaro.github.io/genact`
 - **Name**: `genact`
-- **Homepage**: https://svenstaro.github.io/genact/
+- **Homepage**: <https://svenstaro.github.io/genact/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/svenstaro.github.io/genact/package.yml)
 
 ## Installation

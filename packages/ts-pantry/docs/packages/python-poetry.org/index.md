@@ -6,7 +6,7 @@
 
 - **Domain**: `python-poetry.org`
 - **Name**: `poetry`
-- **Homepage**: https://python-poetry.org/
+- **Homepage**: <https://python-poetry.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/python-poetry.org/package.yml)
 
 ## Installation

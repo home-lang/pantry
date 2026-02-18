@@ -6,7 +6,7 @@
 
 - **Domain**: `pokt.network`
 - **Name**: `pocket`
-- **Homepage**: http://www.pokt.network
+- **Homepage**: <http://www.pokt.network>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pokt.network/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/OutOfBedlam/tine`
 - **Name**: `tine`
-- **Homepage**: https://tine.thingsme.xyz
+- **Homepage**: <https://tine.thingsme.xyz>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/OutOfBedlam/tine/package.yml)
 
 ## Installation

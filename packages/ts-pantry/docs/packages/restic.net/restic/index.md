@@ -6,7 +6,7 @@
 
 - **Domain**: `restic.net/restic`
 - **Name**: `restic`
-- **Homepage**: https://restic.net/
+- **Homepage**: <https://restic.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/restic.net/restic/package.yml)
 
 ## Installation

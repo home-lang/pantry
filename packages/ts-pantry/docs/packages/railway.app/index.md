@@ -6,7 +6,7 @@
 
 - **Domain**: `railway.app`
 - **Name**: `railway`
-- **Homepage**: https://railway.app/
+- **Homepage**: <https://railway.app/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/railway.app/package.yml)
 
 ## Installation

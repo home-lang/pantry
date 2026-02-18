@@ -6,7 +6,7 @@
 
 - **Domain**: `musepack.net`
 - **Name**: `musepack`
-- **Homepage**: https://www.musepack.net/
+- **Homepage**: <https://www.musepack.net/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/musepack.net/package.yml)
 
 ## Installation

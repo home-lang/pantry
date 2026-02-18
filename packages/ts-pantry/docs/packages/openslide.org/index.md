@@ -6,7 +6,7 @@
 
 - **Domain**: `openslide.org`
 - **Name**: `openslide`
-- **Homepage**: https://openslide.org/
+- **Homepage**: <https://openslide.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openslide.org/package.yml)
 
 ## Installation

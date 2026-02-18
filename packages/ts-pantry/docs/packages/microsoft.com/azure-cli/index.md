@@ -6,7 +6,7 @@
 
 - **Domain**: `microsoft.com/azure-cli`
 - **Name**: `az`
-- **Homepage**: https://docs.microsoft.com/cli/azure/overview
+- **Homepage**: <https://docs.microsoft.com/cli/azure/overview>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/microsoft.com/azure-cli/package.yml)
 
 ## Installation

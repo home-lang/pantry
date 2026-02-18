@@ -6,7 +6,7 @@
 
 - **Domain**: `npmjs.com`
 - **Name**: `npmjs`
-- **Homepage**: https://docs.npmjs.com/cli/
+- **Homepage**: <https://docs.npmjs.com/cli/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/npmjs.com/package.yml)
 
 ## Installation

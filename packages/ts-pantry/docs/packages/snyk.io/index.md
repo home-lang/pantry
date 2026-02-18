@@ -6,7 +6,7 @@
 
 - **Domain**: `snyk.io`
 - **Name**: `snyk`
-- **Homepage**: https://snyk.io
+- **Homepage**: <https://snyk.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/snyk.io/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `packer.io`
 - **Name**: `packer`
-- **Homepage**: https://packer.io
+- **Homepage**: <https://packer.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/packer.io/package.yml)
 
 ## Installation

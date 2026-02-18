@@ -6,7 +6,7 @@
 
 - **Domain**: `mise.jdx.dev`
 - **Name**: `mise`
-- **Homepage**: https://mise.jdx.dev
+- **Homepage**: <https://mise.jdx.dev>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mise.jdx.dev/package.yml)
 
 ## Installation

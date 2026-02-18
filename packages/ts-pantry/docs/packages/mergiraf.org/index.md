@@ -6,7 +6,7 @@
 
 - **Domain**: `mergiraf.org`
 - **Name**: `mergiraf`
-- **Homepage**: https://mergiraf.org
+- **Homepage**: <https://mergiraf.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mergiraf.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `kubeshark.co`
 - **Name**: `kubeshark`
-- **Homepage**: https://www.kubeshark.co/
+- **Homepage**: <https://www.kubeshark.co/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubeshark.co/package.yml)
 
 ## Installation

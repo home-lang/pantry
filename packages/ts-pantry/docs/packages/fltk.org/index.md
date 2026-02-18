@@ -1,12 +1,12 @@
 # fltk
 
-> FLTK - Fast Light Tool Kit - https://github.com/fltk/fltk - cross platform GUI development
+> FLTK - Fast Light Tool Kit - <https://github.com/fltk/fltk> - cross platform GUI development
 
 ## Package Information
 
 - **Domain**: `fltk.org`
 - **Name**: `fltk`
-- **Homepage**: https://www.fltk.org/
+- **Homepage**: <https://www.fltk.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/fltk.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `pnpm.io`
 - **Name**: `pnp`
-- **Homepage**: https://pnpm.io/
+- **Homepage**: <https://pnpm.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/pnpm.io/package.yml)
 
 ## Installation

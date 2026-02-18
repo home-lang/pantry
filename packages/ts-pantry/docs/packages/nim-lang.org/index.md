@@ -6,7 +6,7 @@
 
 - **Domain**: `nim-lang.org`
 - **Name**: `nim-lang`
-- **Homepage**: https://nim-lang.org
+- **Homepage**: <https://nim-lang.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/nim-lang.org/package.yml)
 
 ## Installation

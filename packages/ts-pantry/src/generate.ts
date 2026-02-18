@@ -1506,11 +1506,67 @@ export async function generateAliases(packagesDir?: string): Promise<string> {
 /**
  * Clean up trailing spaces from generated content to avoid lint errors
  */
-function cleanTrailingSpaces(content: string): string {
-  return content
+/**
+ * Clean generated markdown content to comply with pickier lint rules:
+ * - Trim trailing whitespace from each line
+ * - Wrap bare URLs in angle brackets
+ * - Collapse multiple consecutive blank lines into one
+ * - Ensure exactly one final newline
+ */
+function cleanMarkdown(content: string): string {
+  let cleaned = content
     .split('\n')
     .map(line => line.trimEnd())
     .join('\n')
+  cleaned = wrapBareUrls(cleaned)
+  // Collapse 3+ consecutive newlines into 2 (one blank line)
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n')
+  // Ensure exactly one final newline
+  cleaned = `${cleaned.trimEnd()}\n`
+  return cleaned
+}
+
+/** @deprecated Use cleanMarkdown instead */
+function cleanTrailingSpaces(content: string): string {
+  return cleanMarkdown(content)
+}
+
+/**
+ * Wrap bare URLs in angle brackets for markdown lint compliance.
+ * Skips URLs already inside markdown links [text](url), angle brackets <url>,
+ * or fenced code blocks.
+ */
+function wrapBareUrls(text: string): string {
+  // Process line by line so we can skip code blocks
+  const lines = text.split('\n')
+  let inCodeBlock = false
+  return lines.map((line) => {
+    if (line.trimStart().startsWith('```')) {
+      inCodeBlock = !inCodeBlock
+      return line
+    }
+    if (inCodeBlock)
+      return line
+
+    // Replace bare URLs that are NOT already inside []() or <> or code spans
+    return line.replace(
+      /(?<!\]\()(?<!\()(?<!<)(https?:\/\/[^\s)>\]]+)/g,
+      (match, _url, offset) => {
+        // Check if preceded by < (already wrapped)
+        if (offset > 0 && line[offset - 1] === '<')
+          return match
+        // Check if inside a markdown link: [text](url)
+        const before = line.slice(0, offset)
+        if (/\]\($/.test(before))
+          return match
+        // Check if inside a code span (between backticks)
+        const backticksBefore = (before.match(/`/g) || []).length
+        if (backticksBefore % 2 === 1)
+          return match
+        return `<${match}>`
+      },
+    )
+  }).join('\n')
 }
 
 /**
@@ -1887,7 +1943,7 @@ Each package can be accessed using \`getPackage(name)\` or directly via \`pantry
       continue
 
     content += `## ${categoryName}\n\n`
-    content += `*${validPackages.length} packages in this category*\n\n`
+    content += `${validPackages.length} packages in this category\n\n`
     content += '| Package | Description | Programs | Versions | Install |\n'
     content += '|---------|-------------|----------|----------|----------|\n'
 

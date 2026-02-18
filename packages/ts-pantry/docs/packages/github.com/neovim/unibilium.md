@@ -1,6 +1,6 @@
 # unibilium
 
-> https://github.com/neovim/neovim/blob/master/MAINTAIN.md#third-party-dependencies
+> <https://github.com/neovim/neovim/blob/master/MAINTAIN.md#third-party-dependencies>
 
 ## Package Information
 

@@ -6,7 +6,7 @@
 
 - **Domain**: `lima-vm.io`
 - **Name**: `lima-vm`
-- **Homepage**: https://lima-vm.io/
+- **Homepage**: <https://lima-vm.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lima-vm.io/package.yml)
 
 ## Installation

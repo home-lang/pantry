@@ -6,7 +6,7 @@
 
 - **Domain**: `sphinx-doc.org`
 - **Name**: `sphinx`
-- **Homepage**: https://www.sphinx-doc.org/
+- **Homepage**: <https://www.sphinx-doc.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sphinx-doc.org/package.yml)
 
 ## Installation

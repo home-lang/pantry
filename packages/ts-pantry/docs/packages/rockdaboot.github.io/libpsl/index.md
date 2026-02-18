@@ -6,7 +6,7 @@
 
 - **Domain**: `rockdaboot.github.io/libpsl`
 - **Name**: `libpsl`
-- **Homepage**: https://rockdaboot.github.io/libpsl
+- **Homepage**: <https://rockdaboot.github.io/libpsl>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rockdaboot.github.io/libpsl/package.yml)
 
 ## Installation

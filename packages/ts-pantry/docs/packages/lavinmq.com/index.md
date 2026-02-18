@@ -6,7 +6,7 @@
 
 - **Domain**: `lavinmq.com`
 - **Name**: `lavinmq`
-- **Homepage**: https://lavinmq.com
+- **Homepage**: <https://lavinmq.com>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/lavinmq.com/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `x.org/libcvt`
 - **Name**: `cvt`
-- **Homepage**: https://www.x.org
+- **Homepage**: <https://www.x.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/x.org/libcvt/package.yml)
 
 ## Installation

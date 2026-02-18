@@ -6,7 +6,7 @@
 
 - **Domain**: `crates.io/ducker`
 - **Name**: `ducker`
-- **Homepage**: https://crates.io/crates/ducker
+- **Homepage**: <https://crates.io/crates/ducker>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/crates.io/ducker/package.yml)
 
 ## Installation

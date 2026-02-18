@@ -6,7 +6,7 @@
 
 - **Domain**: `imageflow.io/imageflow_tool`
 - **Name**: `imageflow_tool`
-- **Homepage**: https://docs.imageflow.io/
+- **Homepage**: <https://docs.imageflow.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/imageflow.io/imageflow_tool/package.yml)
 
 ## Installation

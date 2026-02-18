@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/cowsay-org/cowsay`
 - **Name**: `cowsay`
-- **Homepage**: https://cowsay.diamonds
+- **Homepage**: <https://cowsay.diamonds>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/cowsay-org/cowsay/package.yml)
 
 ## Installation

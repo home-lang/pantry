@@ -6,7 +6,7 @@
 
 - **Domain**: `jless.io`
 - **Name**: `jless`
-- **Homepage**: https://jless.io/
+- **Homepage**: <https://jless.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/jless.io/package.yml)
 
 ## Installation

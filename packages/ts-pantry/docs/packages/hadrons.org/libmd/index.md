@@ -6,7 +6,7 @@
 
 - **Domain**: `hadrons.org/libmd`
 - **Name**: `libmd`
-- **Homepage**: https://www.hadrons.org/software/libmd/
+- **Homepage**: <https://www.hadrons.org/software/libmd/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/hadrons.org/libmd/package.yml)
 
 ## Installation

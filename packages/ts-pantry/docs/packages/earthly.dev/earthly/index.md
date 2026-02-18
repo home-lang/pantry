@@ -6,7 +6,7 @@
 
 - **Domain**: `earthly.dev/earthly`
 - **Name**: `earthly`
-- **Homepage**: https://earthly.dev/
+- **Homepage**: <https://earthly.dev/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/earthly.dev/earthly/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `libvips.org`
 - **Name**: `vips`
-- **Homepage**: https://libvips.github.io/libvips/
+- **Homepage**: <https://libvips.github.io/libvips/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/libvips.org/package.yml)
 
 ## Installation

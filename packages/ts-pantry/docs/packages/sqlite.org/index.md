@@ -6,7 +6,7 @@
 
 - **Domain**: `sqlite.org`
 - **Name**: `sqlite3`
-- **Homepage**: https://sqlite.org/index.html
+- **Homepage**: <https://sqlite.org/index.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/sqlite.org/package.yml)
 
 ## Installation

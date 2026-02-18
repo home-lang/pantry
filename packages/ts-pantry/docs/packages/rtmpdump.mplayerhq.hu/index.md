@@ -6,7 +6,7 @@
 
 - **Domain**: `rtmpdump.mplayerhq.hu`
 - **Name**: `rtmpdump`
-- **Homepage**: https://rtmpdump.mplayerhq.hu/
+- **Homepage**: <https://rtmpdump.mplayerhq.hu/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/rtmpdump.mplayerhq.hu/package.yml)
 
 ## Installation

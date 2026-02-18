@@ -6,7 +6,7 @@
 
 - **Domain**: `maaslalani.com/slides`
 - **Name**: `slides`
-- **Homepage**: http://maaslalani.com/slides/
+- **Homepage**: <http://maaslalani.com/slides/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/maaslalani.com/slides/package.yml)
 
 ## Installation

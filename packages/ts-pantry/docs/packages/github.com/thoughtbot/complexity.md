@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/thoughtbot/complexity`
 - **Name**: `complexity`
-- **Homepage**: https://www.gnu.org/software/complexity/
+- **Homepage**: <https://www.gnu.org/software/complexity/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/thoughtbot/complexity/package.yml)
 
 ## Installation

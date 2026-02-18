@@ -6,7 +6,7 @@
 
 - **Domain**: `oracle.com/oci-cli`
 - **Name**: `oci`
-- **Homepage**: https://docs.cloud.oracle.com/iaas/Content/API/Concepts/cliconcepts.htm
+- **Homepage**: <https://docs.cloud.oracle.com/iaas/Content/API/Concepts/cliconcepts.htm>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/oracle.com/oci-cli/package.yml)
 
 ## Installation

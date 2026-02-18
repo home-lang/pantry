@@ -6,7 +6,7 @@
 
 - **Domain**: `clisp.org`
 - **Name**: `clisp`
-- **Homepage**: https://clisp.sourceforge.io/
+- **Homepage**: <https://clisp.sourceforge.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/clisp.org/package.yml)
 
 ## Installation

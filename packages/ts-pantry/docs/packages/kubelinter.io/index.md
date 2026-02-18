@@ -6,7 +6,7 @@
 
 - **Domain**: `kubelinter.io`
 - **Name**: `kube-linter`
-- **Homepage**: https://docs.kubelinter.io/
+- **Homepage**: <https://docs.kubelinter.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/kubelinter.io/package.yml)
 
 ## Installation

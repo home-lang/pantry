@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/canonical/charmcraft`
 - **Name**: `charmcraft`
-- **Homepage**: https://charmhub.io
+- **Homepage**: <https://charmhub.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/canonical/charmcraft/package.yml)
 
 ## Installation

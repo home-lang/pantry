@@ -6,7 +6,7 @@
 
 - **Domain**: `yarnpkg.com`
 - **Name**: `yarn`
-- **Homepage**: https://yarnpkg.com/
+- **Homepage**: <https://yarnpkg.com/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/yarnpkg.com/package.yml)
 
 ## Installation

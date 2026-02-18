@@ -6,7 +6,7 @@
 
 - **Domain**: `agwa.name/git-crypt`
 - **Name**: `git-crypt`
-- **Homepage**: https://www.agwa.name/projects/git-crypt/
+- **Homepage**: <https://www.agwa.name/projects/git-crypt/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/agwa.name/git-crypt/package.yml)
 
 ## Installation

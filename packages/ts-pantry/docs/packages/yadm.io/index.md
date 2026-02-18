@@ -6,7 +6,7 @@
 
 - **Domain**: `yadm.io`
 - **Name**: `yadm`
-- **Homepage**: https://yadm.io/
+- **Homepage**: <https://yadm.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/yadm.io/package.yml)
 
 ## Installation

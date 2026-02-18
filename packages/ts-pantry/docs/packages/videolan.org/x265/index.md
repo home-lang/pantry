@@ -6,7 +6,7 @@
 
 - **Domain**: `videolan.org/x265`
 - **Name**: `x265`
-- **Homepage**: https://bitbucket.org/multicoreware/x265_git
+- **Homepage**: <https://bitbucket.org/multicoreware/x265_git>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/videolan.org/x265/package.yml)
 
 ## Installation

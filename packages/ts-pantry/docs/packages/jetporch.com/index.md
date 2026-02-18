@@ -1,6 +1,6 @@
 # jetp
 
-> Read-only mirror: see https://www.jetporch.com/community/sourcehut
+> Read-only mirror: see <https://www.jetporch.com/community/sourcehut>
 
 ## Package Information
 

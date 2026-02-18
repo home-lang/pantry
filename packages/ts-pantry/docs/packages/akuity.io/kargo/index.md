@@ -6,7 +6,7 @@
 
 - **Domain**: `akuity.io/kargo`
 - **Name**: `kargo`
-- **Homepage**: https://kargo.akuity.io/
+- **Homepage**: <https://kargo.akuity.io/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/akuity.io/kargo/package.yml)
 
 ## Installation

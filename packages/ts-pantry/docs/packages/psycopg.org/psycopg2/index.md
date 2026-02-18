@@ -6,7 +6,7 @@
 
 - **Domain**: `psycopg.org/psycopg2`
 - **Name**: `psycopg2`
-- **Homepage**: https://www.psycopg.org/
+- **Homepage**: <https://www.psycopg.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/psycopg.org/psycopg2/package.yml)
 
 ## Installation

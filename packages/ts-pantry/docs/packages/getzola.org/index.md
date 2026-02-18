@@ -1,12 +1,12 @@
 # zola
 
-> A fast static site generator in a single binary with everything built-in. https://www.getzola.org
+> A fast static site generator in a single binary with everything built-in. <https://www.getzola.org>
 
 ## Package Information
 
 - **Domain**: `getzola.org`
 - **Name**: `zola`
-- **Homepage**: https://www.getzola.org/
+- **Homepage**: <https://www.getzola.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/getzola.org/package.yml)
 
 ## Installation

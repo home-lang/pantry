@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/Ousret/charset_normalizer`
 - **Name**: `normalizer`
-- **Homepage**: https://charset-normalizer.readthedocs.io/en/latest/
+- **Homepage**: <https://charset-normalizer.readthedocs.io/en/latest/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/Ousret/charset_normalizer/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `aws.amazon.com/sam`
 - **Name**: `sam`
-- **Homepage**: https://aws.amazon.com/serverless/sam/
+- **Homepage**: <https://aws.amazon.com/serverless/sam/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/aws.amazon.com/sam/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `openssl.org`
 - **Name**: `OpenSSL`
-- **Homepage**: https://quictls.github.io/openssl
+- **Homepage**: <https://quictls.github.io/openssl>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/openssl.org/package.yml)
 
 ## Installation

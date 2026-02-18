@@ -6,7 +6,7 @@
 
 - **Domain**: `ctop.sh`
 - **Name**: `ctop`
-- **Homepage**: https://bcicen.github.io/ctop/
+- **Homepage**: <https://bcicen.github.io/ctop/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/ctop.sh/package.yml)
 
 ## Installation

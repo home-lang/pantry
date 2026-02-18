@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/go-acme/lego`
 - **Name**: `lego`
-- **Homepage**: https://go-acme.github.io/lego/
+- **Homepage**: <https://go-acme.github.io/lego/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/go-acme/lego/package.yml)
 
 ## Installation

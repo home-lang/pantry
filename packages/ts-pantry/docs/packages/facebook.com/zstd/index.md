@@ -6,7 +6,7 @@
 
 - **Domain**: `facebook.com/zstd`
 - **Name**: `zstd`
-- **Homepage**: https://facebook.github.io/zstd/
+- **Homepage**: <https://facebook.github.io/zstd/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/facebook.com/zstd/package.yml)
 
 ## Installation

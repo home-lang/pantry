@@ -6,7 +6,7 @@
 
 - **Domain**: `buildpacks.io`
 - **Name**: `pack`
-- **Homepage**: https://buildpacks.io
+- **Homepage**: <https://buildpacks.io>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/buildpacks.io/package.yml)
 
 ## Installation

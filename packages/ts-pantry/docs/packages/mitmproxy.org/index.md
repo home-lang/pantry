@@ -6,7 +6,7 @@
 
 - **Domain**: `mitmproxy.org`
 - **Name**: `mitmproxy`
-- **Homepage**: https://mitmproxy.org
+- **Homepage**: <https://mitmproxy.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mitmproxy.org/package.yml)
 
 ## Installation

@@ -6,7 +6,7 @@
 
 - **Domain**: `github.com/realm/SwiftLint`
 - **Name**: `swiftlint`
-- **Homepage**: https://realm.github.io/SwiftLint
+- **Homepage**: <https://realm.github.io/SwiftLint>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/github.com/realm/SwiftLint/package.yml)
 
 ## Installation

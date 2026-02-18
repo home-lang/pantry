@@ -6,7 +6,7 @@
 
 - **Domain**: `mariadb.com/server`
 - **Name**: `MariaDB`
-- **Homepage**: https://mariadb.org/
+- **Homepage**: <https://mariadb.org/>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mariadb.com/server/package.yml)
 
 ## Installation

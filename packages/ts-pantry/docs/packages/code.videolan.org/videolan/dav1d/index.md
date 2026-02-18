@@ -6,7 +6,7 @@
 
 - **Domain**: `code.videolan.org/videolan/dav1d`
 - **Name**: `dav1d`
-- **Homepage**: https://code.videolan.org/videolan/dav1d
+- **Homepage**: <https://code.videolan.org/videolan/dav1d>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/code.videolan.org/videolan/dav1d/package.yml)
 
 ## Installation

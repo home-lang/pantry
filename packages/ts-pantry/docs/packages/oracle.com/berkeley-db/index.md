@@ -6,7 +6,7 @@
 
 - **Domain**: `oracle.com/berkeley-db`
 - **Name**: `berkeley-db`
-- **Homepage**: https://www.oracle.com/database/technologies/related/berkeleydb.html
+- **Homepage**: <https://www.oracle.com/database/technologies/related/berkeleydb.html>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/oracle.com/berkeley-db/package.yml)
 
 ## Installation

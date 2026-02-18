@@ -6,7 +6,7 @@
 
 - **Domain**: `tcl-lang.org`
 - **Name**: `tcl-lang`
-- **Homepage**: https://www.tcl-lang.org
+- **Homepage**: <https://www.tcl-lang.org>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/tcl-lang.org/package.yml)
 
 ## Installation

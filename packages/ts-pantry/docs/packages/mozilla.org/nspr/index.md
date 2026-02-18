@@ -6,7 +6,7 @@
 
 - **Domain**: `mozilla.org/nspr`
 - **Name**: `nspr-config`
-- **Homepage**: https://hg.mozilla.org/projects/nspr
+- **Homepage**: <https://hg.mozilla.org/projects/nspr>
 - **Source**: [View on GitHub](https://github.com/pkgxdev/pantry/tree/main/projects/mozilla.org/nspr/package.yml)
 
 ## Installation
