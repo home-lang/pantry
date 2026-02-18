@@ -783,7 +783,7 @@ export function generateBuildScript(
   sections.push('__setup_cc_wrapper() {')
   sections.push('  local wrapper_dir="${TMPDIR:-/tmp}/_cc_wrapper"')
   sections.push('  mkdir -p "$wrapper_dir"')
-  sections.push('  for cc_name in cc gcc clang c++ g++ clang++; do')
+  sections.push('  for cc_name in cc gcc clang c++ g++ clang++ cpp; do')
   sections.push('    local real_cc')
   sections.push('    real_cc="$(command -v "$cc_name" 2>/dev/null || true)"')
   sections.push('    [ -n "$real_cc" ] || continue')
