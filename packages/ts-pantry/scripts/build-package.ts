@@ -188,7 +188,11 @@ function parseYamlValue(
             }
             runArr.push(mlLines.join('\n').trim())
           } else {
-            runArr.push(itemContent)
+            // Strip YAML quotes from array items (same as inline value parsing)
+            let item = itemContent
+            if (item.startsWith('\'') && item.endsWith('\'')) item = item.slice(1, -1)
+            else if (item.startsWith('"') && item.endsWith('"')) item = item.slice(1, -1)
+            runArr.push(item)
             j++
           }
         } else if (bli > blockIndent && !blt.startsWith('- ')) {
@@ -374,7 +378,11 @@ function parseYaml(content: string): Record<string, any> {
               break
             }
           }
-          currentObj.push(stripYamlComment(fullValue))
+          let cleaned = stripYamlComment(fullValue)
+          // Strip YAML quotes from array items
+          if (cleaned.startsWith('\'') && cleaned.endsWith('\'')) cleaned = cleaned.slice(1, -1)
+          else if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.slice(1, -1)
+          currentObj.push(cleaned)
         }
       }
       continue
