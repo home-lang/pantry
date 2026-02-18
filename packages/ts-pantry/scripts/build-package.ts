@@ -1314,11 +1314,22 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     const configLog = join(buildDir, 'config.log')
     if (existsSync(configLog)) {
       const logContent = readFileSync(configLog, 'utf-8')
-      // Show the last 3000 chars — that's where the error details are
-      const tail = logContent.length > 3000 ? logContent.slice(-3000) : logContent
-      console.error('\n--- config.log (tail) ---')
-      console.error(tail)
-      console.error('--- End config.log ---')
+      // Search for the actual compiler test error (not just variable dump at the end)
+      const compilerTestIdx = logContent.indexOf('whether the C compiler works')
+      if (compilerTestIdx >= 0) {
+        // Show 2000 chars around the compiler test
+        const start = Math.max(0, compilerTestIdx - 200)
+        const end = Math.min(logContent.length, compilerTestIdx + 2000)
+        console.error('\n--- config.log (compiler test section) ---')
+        console.error(logContent.slice(start, end))
+        console.error('--- End compiler test section ---')
+      } else {
+        // Fallback: show last 5000 chars
+        const tail = logContent.length > 5000 ? logContent.slice(-5000) : logContent
+        console.error('\n--- config.log (tail) ---')
+        console.error(tail)
+        console.error('--- End config.log ---')
+      }
     }
     // Print the generated script for debugging
     console.error('\n--- Generated build script ---')

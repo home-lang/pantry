@@ -868,15 +868,21 @@ export function generateBuildScript(
   sections.push('')
 
   // Diagnostic: verify compiler can create executables (helps debug configure failures)
-  sections.push('# Compiler diagnostic')
-  sections.push('echo "int main(){return 0;}" > "$TMPDIR/_cc_test.c"')
-  sections.push('if cc "$TMPDIR/_cc_test.c" -o "$TMPDIR/_cc_test" 2>"$TMPDIR/_cc_diag.log"; then')
-  sections.push('  echo "[buildkit] compiler check: OK ($(which cc))"')
+  // Test from CWD (like configure does) to verify the specs/ workaround works
+  sections.push('# Compiler diagnostic (tests from CWD like configure does)')
+  sections.push('echo "int main(){return 0;}" > conftest_buildkit.c')
+  sections.push('if gcc -o conftest_buildkit conftest_buildkit.c 2>"$TMPDIR/_cc_diag.log"; then')
+  sections.push('  echo "[buildkit] compiler check (CWD): OK ($(which gcc))"')
   sections.push('else')
-  sections.push('  echo "[buildkit] compiler check: FAILED" >&2')
+  sections.push('  echo "[buildkit] compiler check (CWD): FAILED" >&2')
+  sections.push('  echo "[buildkit] CWD=$PWD" >&2')
+  sections.push('  echo "[buildkit] specs dir exists: $([ -d specs ] && echo YES || echo NO)" >&2')
   sections.push('  cat "$TMPDIR/_cc_diag.log" >&2')
+  // Also dump the wrapper script for debugging
+  sections.push('  echo "[buildkit] wrapper script:" >&2')
+  sections.push('  cat "$(which gcc)" >&2')
   sections.push('fi')
-  sections.push('rm -f "$TMPDIR/_cc_test.c" "$TMPDIR/_cc_test" "$TMPDIR/_cc_diag.log"')
+  sections.push('rm -f conftest_buildkit.c conftest_buildkit "$TMPDIR/_cc_diag.log"')
   sections.push('')
 
   // macOS: force system AR/RANLIB when binutils is a dep (brewkit)
