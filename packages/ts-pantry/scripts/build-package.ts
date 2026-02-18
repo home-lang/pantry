@@ -605,7 +605,7 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
 
   // Extract transform function if present (e.g. transform: v => v.replace('-', '.'))
   let transformFn: ((v: string) => string | undefined) | null = null
-  const transformMatch = yamlContent.match(/transform:\s*['"]*(.+?)['"]*$/)
+  const transformMatch = yamlContent.match(/transform:\s*['"]*(.+?)['"]*$/m)
   if (transformMatch) {
     try {
       // eslint-disable-next-line no-new-func
@@ -618,11 +618,21 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
   if (token) headers.Authorization = `token ${token}`
 
   // Normalize a version string: strip leading zeros from each numeric component
+  // and remove trailing .0 components (e.g. 20260107.1 should match 20260107.1.0)
   function normalizeVersion(v: string): string {
     return v.split('.').map(c => {
       const n = Number.parseInt(c, 10)
       return Number.isNaN(n) ? c : String(n)
     }).join('.')
+  }
+
+  // Compare two versions, accounting for trailing .0 differences
+  // e.g. "20260107.1" matches "20260107.1.0" and "20260107.1.0.0"
+  function versionsMatch(tagVersion: string, targetVersion: string): boolean {
+    if (tagVersion === targetVersion) return true
+    // Strip trailing .0 components from both and compare
+    const stripTrailingZeros = (v: string) => v.replace(/(?:\.0)+$/, '')
+    return stripTrailingZeros(tagVersion) === stripTrailingZeros(targetVersion)
   }
 
   // Search through paginated tag results (up to 5 pages = 500 tags)
@@ -653,8 +663,8 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
           } catch { /* ignore transform errors */ }
         }
 
-        // Normalize the stripped version and compare
-        if (normalizeVersion(stripped) === version) {
+        // Normalize the stripped version and compare (handle trailing .0 mismatches)
+        if (versionsMatch(normalizeVersion(stripped), version)) {
           // rawVersion = the stripped (and possibly transformed) version
           return { tag: tagName, rawVersion: stripped }
         }
@@ -1177,11 +1187,14 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   // This handles leading-zero normalization (e.g. 2026.2.9.0 → v2026.02.09.00)
   const rawDistUrl = typeof recipe.distributable?.url === 'string' ? recipe.distributable.url : ''
   if (rawDistUrl.includes('version.tag') || rawDistUrl.includes('version.raw')) {
+    console.log(`🔍 Resolving GitHub tag for version ${version} (URL uses version.tag/raw)...`)
     const resolved = await resolveGitHubTag(yamlContent, version)
     if (resolved) {
       versionTag = resolved.tag
       versionRaw = resolved.rawVersion
       console.log(`📌 Resolved GitHub tag: ${resolved.tag} (raw: ${resolved.rawVersion})`)
+    } else {
+      console.log(`⚠️  Could not resolve GitHub tag for ${version}, using heuristic: ${versionTag}`)
     }
   }
 
