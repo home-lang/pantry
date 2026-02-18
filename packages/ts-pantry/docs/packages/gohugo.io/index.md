@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 153 versions</summary>
+<summary>Show all 154 versions</summary>
 
+- `0.156.0`
 - `0.155.3`, `0.155.2`, `0.155.1`, `0.155.0`
 - `0.154.5`, `0.154.4`, `0.154.3`, `0.154.2`, `0.154.1`, `0.154.0`
 - `0.153.5`, `0.153.4`, `0.153.3`, `0.153.2`, `0.153.1`, `0.153.0`
@@ -79,13 +80,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.155.3`
+**Latest Version**: `0.156.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gohugo.io@0.155.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gohugo.io@0.156.0 -- $SHELL -i
 ```
 
 ## Usage Examples
