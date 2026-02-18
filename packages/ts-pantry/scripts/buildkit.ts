@@ -773,25 +773,13 @@ export function generateBuildScript(
     sections.push('')
   }
 
-  // GCC spec file workaround (must be set BEFORE cc_wrapper shadows gcc):
-  // On Linux (Ubuntu 24.04), GCC tries to read `./specs` as a spec file.
-  // If a source tree has a `specs/` directory (e.g. xorgproto, libX11), GCC fails with:
+  // Compiler wrapper: filter -Werror, resolve -shared/-pie conflicts, and work around
+  // GCC ./specs directory issue. On Linux (Ubuntu 24.04), GCC reads `./specs` from CWD.
+  // If a source tree has a `specs/` directory (x.org packages), GCC fails with:
   //   "fatal error: cannot read spec file './specs': Is a directory"
-  // We set GCC_EXEC_PREFIX to the real GCC install directory so GCC doesn't
-  // search the current directory. Must be detected before cc_wrapper shadows gcc.
-  if (osName === 'linux') {
-    sections.push('# GCC spec file workaround: detect GCC install prefix before cc_wrapper')
-    sections.push('_gcc_install_dir="$(gcc -print-search-dirs 2>/dev/null | /usr/bin/grep "^install:" | /usr/bin/sed "s/install: //" || true)"')
-    sections.push('if [ -n "$_gcc_install_dir" ]; then')
-    sections.push('  export GCC_EXEC_PREFIX="$_gcc_install_dir"')
-    sections.push('fi')
-    sections.push('')
-  }
-
-  // Compiler wrapper: filter -Werror and resolve -shared/-pie conflicts
-  // Ported from brewkit's toolchain shim — prevents hundreds of build failures
-  // from upstream packages that have warnings treated as errors
+  // The wrapper detects this and runs GCC from /tmp with absolute paths.
   sections.push('# Compiler wrapper: strip -Werror, resolve -shared/-pie conflicts (from brewkit)')
+  sections.push('# Also works around GCC ./specs directory issue on Linux')
   sections.push('__setup_cc_wrapper() {')
   sections.push('  local wrapper_dir="${TMPDIR:-/tmp}/_cc_wrapper"')
   sections.push('  mkdir -p "$wrapper_dir"')
@@ -821,6 +809,52 @@ export function generateBuildScript(
   sections.push('  done')
   sections.push('  args=("${new_args[@]}")')
   sections.push('fi')
+  // GCC specs workaround: if ./specs is a directory, run GCC from /tmp
+  // to prevent "fatal error: cannot read spec file './specs': Is a directory"
+  // We convert relative file paths to absolute so GCC can still find them.
+  sections.push('# GCC specs/ directory workaround: run from /tmp if ./specs is a directory')
+  sections.push('if [ -d "$PWD/specs" ]; then')
+  sections.push('  _orig_cwd="$PWD"')
+  sections.push('  _final_args=()')
+  sections.push('  _next_is_output=false')
+  sections.push('  for _a in "${args[@]}"; do')
+  sections.push('    if $_next_is_output; then')
+  sections.push('      case "$_a" in /*) _final_args+=("$_a") ;; *) _final_args+=("$_orig_cwd/$_a") ;; esac')
+  sections.push('      _next_is_output=false')
+  sections.push('      continue')
+  sections.push('    fi')
+  sections.push('    case "$_a" in')
+  sections.push('      -o) _final_args+=("$_a"); _next_is_output=true ;;')
+  // Convert -I/-L/-isystem with relative paths to absolute
+  sections.push('      -I/*|-L/*) _final_args+=("$_a") ;;')
+  sections.push('      -I*) _final_args+=("-I$_orig_cwd/${_a#-I}") ;;')
+  sections.push('      -L*) _final_args+=("-L$_orig_cwd/${_a#-L}") ;;')
+  sections.push('      -isystem) _final_args+=("$_a"); _next_is_output=true ;;')
+  sections.push('      -include) _final_args+=("$_a"); _next_is_output=true ;;')
+  sections.push('      -MF) _final_args+=("$_a"); _next_is_output=true ;;')
+  // Source files: convert relative paths to absolute if the file exists
+  sections.push('      *.c|*.cc|*.cpp|*.cxx|*.C|*.S|*.s|*.m|*.mm|*.f|*.f90|*.F|*.F90)')
+  sections.push('        if [ "${_a:0:1}" != "/" ] && [ -f "$_orig_cwd/$_a" ]; then')
+  sections.push('          _final_args+=("$_orig_cwd/$_a")')
+  sections.push('        else')
+  sections.push('          _final_args+=("$_a")')
+  sections.push('        fi ;;')
+  // .o files and other relative paths that look like files
+  sections.push('      *.o|*.lo|*.la|*.a|*.so|*.dylib)')
+  sections.push('        if [ "${_a:0:1}" != "/" ]; then')
+  sections.push('          _final_args+=("$_orig_cwd/$_a")')
+  sections.push('        else')
+  sections.push('          _final_args+=("$_a")')
+  sections.push('        fi ;;')
+  sections.push('      *) _final_args+=("$_a") ;;')
+  sections.push('    esac')
+  sections.push('  done')
+  sections.push('  cd /tmp')
+  sections.push('  __REAL_CC__ "${_final_args[@]}"')
+  sections.push('  _rc=$?')
+  sections.push('  cd "$_orig_cwd"')
+  sections.push('  exit $_rc')
+  sections.push('fi')
   sections.push('exec __REAL_CC__ "${args[@]}"')
   sections.push('CCEOF')
   // Replace __REAL_CC__ placeholder with the actual compiler path
@@ -834,28 +868,13 @@ export function generateBuildScript(
   sections.push('')
 
   // Diagnostic: verify compiler can create executables (helps debug configure failures)
-  // Test both bare and with CFLAGS (configure uses: $CC $CFLAGS $CPPFLAGS $LDFLAGS conftest.c)
   sections.push('# Compiler diagnostic')
   sections.push('echo "int main(){return 0;}" > "$TMPDIR/_cc_test.c"')
   sections.push('if cc "$TMPDIR/_cc_test.c" -o "$TMPDIR/_cc_test" 2>"$TMPDIR/_cc_diag.log"; then')
-  sections.push('  echo "[buildkit] compiler check (bare): OK ($(which cc))"')
+  sections.push('  echo "[buildkit] compiler check: OK ($(which cc))"')
   sections.push('else')
-  sections.push('  echo "[buildkit] compiler check (bare): FAILED" >&2')
+  sections.push('  echo "[buildkit] compiler check: FAILED" >&2')
   sections.push('  cat "$TMPDIR/_cc_diag.log" >&2')
-  sections.push('fi')
-  // Test with CFLAGS + LDFLAGS like configure does
-  sections.push('if cc $CFLAGS $LDFLAGS "$TMPDIR/_cc_test.c" -o "$TMPDIR/_cc_test" 2>"$TMPDIR/_cc_diag.log"; then')
-  sections.push('  echo "[buildkit] compiler check (with flags): OK"')
-  sections.push('else')
-  sections.push('  echo "[buildkit] compiler check (with flags): FAILED" >&2')
-  sections.push('  echo "[buildkit] CFLAGS=$CFLAGS" >&2')
-  sections.push('  echo "[buildkit] LDFLAGS=$LDFLAGS" >&2')
-  sections.push('  echo "[buildkit] CPPFLAGS=$CPPFLAGS" >&2')
-  sections.push('  echo "[buildkit] PATH=$PATH" >&2')
-  sections.push('  echo "[buildkit] LIBRARY_PATH=$LIBRARY_PATH" >&2')
-  sections.push('  cat "$TMPDIR/_cc_diag.log" >&2')
-  sections.push('  echo "[buildkit] Trying direct /usr/bin/gcc:" >&2')
-  sections.push('  /usr/bin/gcc "$TMPDIR/_cc_test.c" -o "$TMPDIR/_cc_test" 2>&1 || true')
   sections.push('fi')
   sections.push('rm -f "$TMPDIR/_cc_test.c" "$TMPDIR/_cc_test" "$TMPDIR/_cc_diag.log"')
   sections.push('')
