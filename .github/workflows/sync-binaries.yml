@@ -16,6 +16,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: sync-binaries
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
   S3_BUCKET: pantry-registry
