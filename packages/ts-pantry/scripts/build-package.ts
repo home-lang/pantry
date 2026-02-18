@@ -346,7 +346,10 @@ function parseYaml(content: string): Record<string, any> {
           //          --prefix="..."
           //          --disable-debug
           let fullValue = value
-          const contIndent = indent + 4 // continuation lines must be indented more than `- `
+          // Continuation lines must be indented past the `- ` prefix (indent + 2).
+          // YAML plain scalars fold continuation at the content start position.
+          // e.g. `    - ./configure` has indent=4, content at 6, so contIndent=6
+          const contIndent = indent + 2
           while (i + 1 < lines.length) {
             const nextLine = lines[i + 1]
             const nextTrimmed = nextLine.trim()
