@@ -1073,21 +1073,28 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
-  // Python environment fix: on Debian/Ubuntu, /usr/lib/python3/dist-packages/ is in
-  // sys.path for ALL Python 3.x (including our S3 Python). The Debian-patched setuptools
-  // has install_layout which breaks standard wheel builds with:
+  // Python environment fix: on Debian/Ubuntu, /usr/lib/python3/dist-packages/ contains
+  // Debian-patched setuptools/wheel with install_layout that breaks standard wheel builds:
   //   AttributeError: install_layout. Did you mean: 'install_platlib'?
-  // Fix: install standard setuptools/wheel into our Python's site-packages (takes precedence)
-  // and ensure `python` resolves to our Python (recipes often use bare `python` not `python3`).
+  // pip install --upgrade installs to a LOWER priority sys.path entry, so the patched
+  // versions still take precedence. We must remove the Debian-patched files and replace.
+  // Also ensure `python` resolves to our python3 (recipes often use bare `python`).
   sections.push('# Python environment setup')
   sections.push('if command -v python3 &>/dev/null; then')
   // Ensure `python` command resolves to our python3 (many recipes use bare `python`)
   sections.push('  if ! command -v python &>/dev/null; then')
   sections.push('    ln -sf "$(command -v python3)" "${TMPDIR:-/tmp}/_cc_wrapper/python" 2>/dev/null || true')
   sections.push('  fi')
-  // Install fresh setuptools/wheel to override Debian-patched versions
-  sections.push('  python3 -m ensurepip --upgrade 2>/dev/null || true')
-  sections.push('  python3 -m pip install --upgrade pip setuptools wheel 2>/dev/null || true')
+  // Remove Debian-patched setuptools/wheel that cause install_layout errors
+  // These sit at /usr/lib/python3/dist-packages/ which has HIGHER priority than
+  // where pip install --upgrade puts new versions
+  sections.push('  if [ -f /usr/lib/python3/dist-packages/wheel/__init__.py ]; then')
+  sections.push('    sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \\')
+  sections.push('                /usr/lib/python3/dist-packages/wheel* \\')
+  sections.push('                /usr/lib/python3/dist-packages/pkg_resources* \\')
+  sections.push('                /usr/lib/python3/dist-packages/_distutils_hack* 2>/dev/null || true')
+  sections.push('    python3 -m pip install --break-system-packages setuptools wheel 2>/dev/null || true')
+  sections.push('  fi')
   sections.push('fi')
   sections.push('')
 
