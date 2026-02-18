@@ -386,7 +386,7 @@ function tryBuildVersion(
     cwd: join(process.cwd()),
     env: { ...process.env },
     stdio: 'inherit',
-    timeout: 60 * 60 * 1000, // 60 min per package (codex needs ~50 min for 3 cargo installs)
+    timeout: 30 * 60 * 1000, // 30 min per package
   })
 }
 
@@ -405,6 +405,7 @@ async function buildAndUpload(
   const { domain, name, versions } = pkg
   let version = pkg.latestVersion
 
+  const pkgStartTime = Date.now()
   console.log(`\n${'─'.repeat(60)}`)
   console.log(`📦 ${name} (${domain}) v${version}`)
   console.log(`${'─'.repeat(60)}`)
@@ -495,7 +496,8 @@ async function buildAndUpload(
   }
 
   if (lastError) {
-    console.error(`   ❌ Failed: ${lastError.message}`)
+    const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
+    console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
     return { status: 'failed', error: lastError.message }
@@ -526,7 +528,8 @@ async function buildAndUpload(
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
     try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) } catch {}
 
-    console.log(`   ✅ Uploaded ${domain}@${usedVersion}`)
+    const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
+    console.log(`   ✅ Uploaded ${domain}@${usedVersion} (${elapsed}s)`)
     return { status: 'uploaded' }
   } catch (error: any) {
     console.error(`   ❌ Failed packaging/upload: ${error.message}`)
@@ -658,6 +661,8 @@ Options:
     'apache.org/subversion', // Needs APR/APR-util chain (circular dep with serf)
     'apache.org/serf', // Needs scons + apr (circular dep)
     'argoproj.github.io/cd', // yarn + Go mixed build, yarn fails in CI sandbox
+    'argoproj.github.io/workflows', // Massive Go compilation (>60 min), exceeds per-package timeout
+    'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
     'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
@@ -840,8 +845,16 @@ Options:
 
   // Build each package
   const results: Record<string, BuildResult & { version: string }> = {}
+  const batchStartTime = Date.now()
+  const BATCH_TIME_BUDGET_MS = 100 * 60 * 1000 // 100 min — leave 10 min buffer before 110 min step timeout
 
   for (const pkg of packagesToBuild) {
+    const elapsed = Date.now() - batchStartTime
+    if (elapsed > BATCH_TIME_BUDGET_MS) {
+      const remaining = packagesToBuild.length - Object.keys(results).length
+      console.log(`\n⏱️  Batch time budget exceeded (${Math.round(elapsed / 60000)} min elapsed). Skipping remaining ${remaining} packages.`)
+      break
+    }
     const result = await buildAndUpload(pkg, bucket, region, platform, force)
     results[pkg.domain] = { ...result, version: pkg.latestVersion }
   }
