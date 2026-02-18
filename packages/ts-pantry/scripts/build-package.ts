@@ -855,9 +855,9 @@ async function downloadDependencies(
         const metadataContent = await s3.getObject(bucket, metadataKey)
         metadata = JSON.parse(metadataContent)
       } catch {
-        console.log(`   - ${domain}: not in S3, falling back to system path`)
-        // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
         const fallbackPrefix = findSystemPrefix(domain)
+        console.log(`   - ${domain}: not in S3, falling back to system path → ${fallbackPrefix}`)
+        // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
         depPaths[domain] = fallbackPrefix
         depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
@@ -867,8 +867,8 @@ async function downloadDependencies(
       const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
 
       if (!platformInfo) {
-        console.log(`   - ${domain}@${version}: no binary for ${platform}, falling back to system path`)
         const fallbackPrefix = findSystemPrefix(domain)
+        console.log(`   - ${domain}@${version}: no binary for ${platform}, falling back to system path → ${fallbackPrefix}`)
         depPaths[domain] = fallbackPrefix
         depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
@@ -1304,6 +1304,10 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   writeFileSync(scriptPath, bashScript, { mode: 0o755 })
 
   console.log(`📝 Build script written to ${scriptPath}`)
+  // Diagnostic: show if cargo is in the PATH being passed to the build script
+  const pathEntries = (process.env.PATH || '').split(':')
+  const cargoInPath = pathEntries.some(p => p.includes('.cargo'))
+  console.log(`   [diag] cargo in process.env.PATH: ${cargoInPath}${cargoInPath ? ` (${pathEntries.find(p => p.includes('.cargo'))})` : ''}`)
   console.log('\n🔨 Executing build script...')
 
   try {
