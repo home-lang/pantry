@@ -598,15 +598,25 @@ export function generateBuildScript(
     sections.push('')
   }
 
-  // Wrap sed to handle nullglob (empty glob → no file args) and use GNU sed on macOS
+  // Wrap sed to handle nullglob (empty glob → no file args) and use GNU sed on macOS.
+  // YAML recipes use GNU sed syntax (sed -i 'pattern' file), but macOS BSD sed requires
+  // sed -i '' 'pattern' file. Our wrapper auto-translates when gsed isn't available.
   sections.push('# sed wrapper: use GNU sed on macOS + handle empty nullglob gracefully')
   sections.push('__real_sed="$(command -v gsed 2>/dev/null || command -v sed)"')
+  sections.push('__sed_is_gnu=false')
+  sections.push('if "$__real_sed" --version 2>&1 | grep -q GNU; then __sed_is_gnu=true; fi')
   sections.push('sed() {')
   // With -i flag, we need at least 3 args: sed -i 'pattern' file...
   // If only 2 args (no files due to nullglob), silently succeed
   sections.push('  if [ "$1" = "-i" ] && [ $# -le 2 ]; then return 0; fi')
   // Also handle sed -i -e 'pattern' with no files (3 args, no file)
   sections.push('  if [ "$1" = "-i" ] && [ "$2" = "-e" ] && [ $# -le 3 ]; then return 0; fi')
+  // If BSD sed (not GNU), translate sed -i ... to sed -i '' ...
+  sections.push('  if ! $__sed_is_gnu && [ "$1" = "-i" ]; then')
+  sections.push('    shift')
+  sections.push('    "$__real_sed" -i \'\' "$@"')
+  sections.push('    return')
+  sections.push('  fi')
   sections.push('  "$__real_sed" "$@"')
   sections.push('}')
   // Do NOT export -f sed: exported functions pollute child process environments
@@ -1028,8 +1038,8 @@ export function generateBuildScript(
   sections.push('')
 
   // User script from pantry YAML
-  // Handle both `build: { script: [...] }` and `build: [...]` (direct array) formats
-  const buildScript = Array.isArray(recipe.build) ? recipe.build : recipe.build?.script
+  // Handle `build: { script: [...] }`, `build: [...]` (direct array), and `build: "cmd"` (string) formats
+  const buildScript = typeof recipe.build === 'string' ? [recipe.build] : Array.isArray(recipe.build) ? recipe.build : recipe.build?.script
   if (buildScript) {
     sections.push('# Build script from pantry recipe')
     sections.push(processScript(buildScript, tokens, platform, version))

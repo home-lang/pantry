@@ -250,12 +250,12 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
               return false
             })
             if (!isCompatible) {
-              return // Skip: platform not supported
+              continue // Skip: platform not supported (continue, not return, to allow child dirs)
             }
           }
 
           const hasDistributable = !!(recipe.distributable?.url)
-          const hasBuildScript = !!(recipe.build?.script) || Array.isArray(recipe.build)
+          const hasBuildScript = !!(recipe.build?.script) || Array.isArray(recipe.build) || typeof recipe.build === 'string'
 
           // Check if build script references props/
           const needsProps = content.includes('props/')
@@ -266,13 +266,13 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
           const pkg = (pantry as Record<string, any>)[key]
 
           if (!pkg || !pkg.versions || pkg.versions.length === 0) {
-            // No version data available, skip
-            return
+            // No version data available, skip (continue to allow child dirs)
+            continue
           }
 
           if (!hasDistributable) {
-            // No source to download, skip
-            return
+            // No source to download, skip (continue to allow child dirs)
+            continue
           }
 
           // Extract dependency domains for ordering (from both TS metadata and YAML)
