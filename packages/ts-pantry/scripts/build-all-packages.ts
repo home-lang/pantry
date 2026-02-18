@@ -730,6 +730,8 @@ Options:
     'brxken128.github.io/dexios', // Rust "unnecessary qualification" lint errors with modern rustc (unmaintained)
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
+    'pwmt.org/girara', // Date version leading-zero normalization (2026.02.04→2026.2.4) breaks tag lookup
+    'pwmt.org/zathura', // Depends on pwmt.org/girara (same date version issue)
   ])
 
   let platformSkipped = 0
