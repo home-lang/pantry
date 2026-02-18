@@ -1,6 +1,6 @@
 # Databases
 
-*14 packages in this category*
+14 packages in this category
 
 Database systems and data storage solutions.
 

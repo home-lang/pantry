@@ -1,6 +1,6 @@
 # Testing
 
-*1 packages in this category*
+1 packages in this category
 
 Packages related to testing.
 

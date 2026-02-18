@@ -1,6 +1,6 @@
 # Programming Languages
 
-*15 packages in this category*
+15 packages in this category
 
 Popular programming languages and their runtimes available through pkgx.
 

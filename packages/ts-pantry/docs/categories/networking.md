@@ -1,6 +1,6 @@
 # Networking
 
-*10 packages in this category*
+10 packages in this category
 
 Network tools, protocols, and communication software.
 

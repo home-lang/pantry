@@ -1,6 +1,6 @@
 # System Administration
 
-*5 packages in this category*
+5 packages in this category
 
 Packages related to system administration.
 

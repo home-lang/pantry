@@ -1,6 +1,6 @@
 # Scientific Computing
 
-*2 packages in this category*
+2 packages in this category
 
 Packages related to scientific computing.
 

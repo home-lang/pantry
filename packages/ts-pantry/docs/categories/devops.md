@@ -1,6 +1,6 @@
 # DevOps
 
-*25 packages in this category*
+25 packages in this category
 
 Tools for deployment, orchestration, and infrastructure management.
 

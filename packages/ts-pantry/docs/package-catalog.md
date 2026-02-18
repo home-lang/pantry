@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-02-18T16:26:27.972Z
+- **Last Updated**: 2026-02-18T16:29:49.385Z
 
 ## Table of Contents
 
@@ -38,11 +38,10 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 - [Scientific Computing](#scientific-computing) (2 packages)
 - [Embedded & IoT](#embedded-iot) (1 packages)
 - [Version Control](#version-control) (1 packages)
-- [Other Utilities](#other-utilities) (0 packages)
 
 ## Programming Languages
 
-*15 packages in this category*
+15 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -64,7 +63,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Artificial Intelligence
 
-*13 packages in this category*
+13 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -84,7 +83,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Databases
 
-*14 packages in this category*
+14 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -105,7 +104,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Web Development
 
-*4 packages in this category*
+4 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -116,7 +115,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## DevOps
 
-*25 packages in this category*
+25 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -148,7 +147,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Container & Kubernetes Tools
 
-*24 packages in this category*
+24 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -179,7 +178,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Monitoring & Observability
 
-*4 packages in this category*
+4 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -190,7 +189,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Build Tools & Automation
 
-*16 packages in this category*
+16 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -213,7 +212,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Package Managers
 
-*16 packages in this category*
+16 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -236,7 +235,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Editors & IDEs
 
-*8 packages in this category*
+8 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -251,7 +250,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## CLI Tools & Utilities
 
-*36 packages in this category*
+36 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -294,7 +293,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Networking
 
-*10 packages in this category*
+10 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -311,7 +310,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Security & Cryptography
 
-*12 packages in this category*
+12 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -330,7 +329,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Multimedia
 
-*9 packages in this category*
+9 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -346,7 +345,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Graphics Libraries
 
-*4 packages in this category*
+4 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -357,7 +356,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Gaming & Game Development
 
-*1 packages in this category*
+1 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -365,7 +364,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Cloud Platforms
 
-*8 packages in this category*
+8 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -380,7 +379,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Mobile Development
 
-*4 packages in this category*
+4 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -391,7 +390,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Testing
 
-*1 packages in this category*
+1 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -399,7 +398,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Cryptocurrency
 
-*5 packages in this category*
+5 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -411,7 +410,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Financial Tools
 
-*1 packages in this category*
+1 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -419,7 +418,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Documentation & Text Processing
 
-*7 packages in this category*
+7 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -433,7 +432,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## System Administration
 
-*5 packages in this category*
+5 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -445,7 +444,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Scientific Computing
 
-*2 packages in this category*
+2 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -454,7 +453,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Embedded & IoT
 
-*1 packages in this category*
+1 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -462,7 +461,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Version Control
 
-*1 packages in this category*
+1 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|

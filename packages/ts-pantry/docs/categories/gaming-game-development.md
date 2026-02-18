@@ -1,6 +1,6 @@
 # Gaming & Game Development
 
-*1 packages in this category*
+1 packages in this category
 
 Packages related to gaming & game development.
 

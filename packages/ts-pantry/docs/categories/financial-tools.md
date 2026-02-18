@@ -1,6 +1,6 @@
 # Financial Tools
 
-*1 packages in this category*
+1 packages in this category
 
 Packages related to financial tools.
 

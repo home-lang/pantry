@@ -1904,7 +1904,9 @@ Each package can be accessed using \`getPackage(name)\` or directly via \`pantry
     })
 
     const count = packagesMap.size
-    content += `- [${category}](#${slug}) (${count} packages)\n`
+    if (count > 0) {
+      content += `- [${category}](#${slug}) (${count} packages)\n`
+    }
   })
 
   content += '\n'
@@ -2337,7 +2339,7 @@ This package provides the following executable programs:
         })
       }
       else {
-        content += '*No programs specified*\n'
+        content += 'No programs specified.\n'
       }
 
       // Add aliases if available
@@ -2490,7 +2492,7 @@ console.log(\`Programs: \${pkg.programs.join(', ')}\`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+> Auto-generated from package data.
 `
 
       await fs.promises.writeFile(filepath, cleanTrailingSpaces(content))
@@ -2576,7 +2578,7 @@ async function generateCategoryPages(outputDir: string, packagesDir?: string): P
 
     let content = `# ${categoryName}
 
-*${validPackages.length} packages in this category*
+${validPackages.length} packages in this category
 
 ${categoryName === 'Programming Languages'
     ? 'Popular programming languages and their runtimes available through pkgx.'

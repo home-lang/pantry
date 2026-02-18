@@ -1,6 +1,6 @@
 # Cloud Platforms
 
-*8 packages in this category*
+8 packages in this category
 
 Packages related to cloud platforms.
 

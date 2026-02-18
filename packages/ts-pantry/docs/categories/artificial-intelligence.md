@@ -1,6 +1,6 @@
 # Artificial Intelligence
 
-*13 packages in this category*
+13 packages in this category
 
 Packages related to artificial intelligence.
 

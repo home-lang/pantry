@@ -1,6 +1,6 @@
 # Editors & IDEs
 
-*8 packages in this category*
+8 packages in this category
 
 Packages related to editors & ides.
 

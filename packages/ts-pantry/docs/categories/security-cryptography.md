@@ -1,6 +1,6 @@
 # Security & Cryptography
 
-*12 packages in this category*
+12 packages in this category
 
 Packages related to security & cryptography.
 

@@ -20,7 +20,7 @@ launchpad install libsdl.org
 
 This package provides the following executable programs:
 
-*No programs specified*
+No programs specified.
 
 ## Available Versions
 
@@ -80,4 +80,4 @@ console.log(`Programs: ${pkg.programs.join(', ')}`)
 
 ---
 
-*This documentation was auto-generated from package data.*
+> Auto-generated from package data.

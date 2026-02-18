@@ -1,6 +1,6 @@
 # Build Tools & Automation
 
-*16 packages in this category*
+16 packages in this category
 
 Packages related to build tools & automation.
 

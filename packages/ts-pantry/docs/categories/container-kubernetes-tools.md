@@ -1,6 +1,6 @@
 # Container & Kubernetes Tools
 
-*24 packages in this category*
+24 packages in this category
 
 Packages related to container & kubernetes tools.
 

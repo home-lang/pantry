@@ -1,6 +1,6 @@
 # Multimedia
 
-*9 packages in this category*
+9 packages in this category
 
 Audio, video, and image processing tools.
 

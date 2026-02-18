@@ -1,6 +1,6 @@
 # Documentation & Text Processing
 
-*7 packages in this category*
+7 packages in this category
 
 Packages related to documentation & text processing.
 

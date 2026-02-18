@@ -1,6 +1,6 @@
 # Cryptocurrency
 
-*5 packages in this category*
+5 packages in this category
 
 Packages related to cryptocurrency.
 

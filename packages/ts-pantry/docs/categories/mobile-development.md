@@ -1,6 +1,6 @@
 # Mobile Development
 
-*4 packages in this category*
+4 packages in this category
 
 Packages related to mobile development.
 

@@ -1,6 +1,6 @@
 # CLI Tools & Utilities
 
-*36 packages in this category*
+36 packages in this category
 
 Command-line utilities and system tools.
 
