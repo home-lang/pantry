@@ -3,7 +3,7 @@
  *
  * @domain `moonrepo.dev/moon`
  * @programs `moon`
- * @version `1.41.8` (81 versions available)
+ * @version `2.0.0` (82 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install moonrepo.dev/moon`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "moon"
  * console.log(pkg.description) // "A build system and monorepo management tool for..."
  * console.log(pkg.programs)    // ["moon"]
- * console.log(pkg.versions[0]) // "1.41.8" (latest)
+ * console.log(pkg.versions[0]) // "2.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/moonrepo-dev/moon.md
@@ -61,6 +61,7 @@ export const moonrepodevmoonPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.0',
     '1.41.8',
     '1.41.7',
     '1.41.6',
