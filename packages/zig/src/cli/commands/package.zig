@@ -2701,8 +2701,10 @@ pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value
     const file = try std.Io.Dir.createFileAbsolute(io_helper.io, credentials_path, .{});
     defer file.close(io_helper.io);
     try io_helper.writeAllToFile(file, new_content.items);
-    // Set restrictive permissions after writing
-    file.setPermissions(io_helper.io, std.Io.File.Permissions.fromMode(0o600)) catch {};
+    // Set restrictive permissions after writing (POSIX only)
+    if (comptime @import("builtin").os.tag != .windows) {
+        file.setPermissions(io_helper.io, std.Io.File.Permissions.fromMode(0o600)) catch {};
+    }
 }
 
 /// Save a credential to the project's .env file

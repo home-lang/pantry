@@ -112,9 +112,8 @@ pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: u
             if (buffer.len >= max_size) return error.BufferTooSmall;
             buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size));
         }
-        const n = platformRead(file.handle, buffer[total..]) catch |err| switch (err) {
-            error.WouldBlock => continue,
-            else => return err,
+        const n = platformRead(file.handle, buffer[total..]) catch |err| {
+            return err;
         };
         if (n == 0) break;
         total += n;
@@ -725,9 +724,8 @@ fn copyFileFallback(src_path: []const u8, dest_path: []const u8) !void {
 
     var buf: [65536]u8 = undefined; // 64KB — matches typical OS readahead
     while (true) {
-        const bytes_read = platformRead(src_file.handle, &buf) catch |err| switch (err) {
-            error.WouldBlock => continue,
-            else => return err,
+        const bytes_read = platformRead(src_file.handle, &buf) catch |err| {
+            return err;
         };
         if (bytes_read == 0) break;
         try writeAllToFile(dest_file, buf[0..bytes_read]);
@@ -778,8 +776,15 @@ pub fn copyTree(src_path: []const u8, dest_path: []const u8) !void {
 pub fn symLink(target: []const u8, link_path: []const u8) !void {
     if (comptime is_windows) {
         // Symlinks require elevated privileges on Windows; copy file instead
-        copyFile(target, link_path) catch return error.SymLinkError;
-        return;
+        // Check if destination already exists
+        cwd().access(io, link_path, .{}) catch |err| {
+            if (err != error.FileNotFound) return error.SymLinkError;
+            // File doesn't exist, proceed with copy
+            copyFile(target, link_path) catch return error.SymLinkError;
+            return;
+        };
+        // File exists
+        return error.PathAlreadyExists;
     }
 
     var target_buf: [std.fs.max_path_bytes:0]u8 = undefined;

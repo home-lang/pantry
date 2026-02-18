@@ -112,9 +112,8 @@ pub fn computeChecksum(allocator: std.mem.Allocator, file_path: []const u8) ![]c
     var hasher = Sha256.init(.{});
     var buf: [65536]u8 = undefined; // 64KB read buffer
     while (true) {
-        const n = io_helper.platformRead(file.handle, &buf) catch |err| switch (err) {
-            error.WouldBlock => continue,
-            else => return err,
+        const n = io_helper.platformRead(file.handle, &buf) catch |err| {
+            return err;
         };
         if (n == 0) break;
         hasher.update(buf[0..n]);

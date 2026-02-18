@@ -2230,9 +2230,8 @@ pub const Installer = struct {
         defer self.allocator.free(packages_dir);
 
         // Use FsDir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-        var dir = io_helper.openDirForIteration(packages_dir) catch |err| switch (err) {
-            error.FileNotFound => return installed,
-            else => return err,
+        var dir = io_helper.openDirForIteration(packages_dir) catch {
+            return installed;
         };
         defer dir.close();
 
