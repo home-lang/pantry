@@ -663,10 +663,14 @@ Options:
     'argoproj.github.io/cd', // yarn + Go mixed build, yarn fails in CI sandbox
     'argoproj.github.io/workflows', // Massive Go compilation (>60 min), exceeds per-package timeout
     'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
+    'docker.com/cli', // Needs go-md2man (not available) as build dependency
+    'docker.com/machine', // Same missing go-md2man dependency
     'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // Uses deprecated Rust features (E0557)
+    'fabianlindfors.se/reshape', // Rust compile error with modern rustc
+    'frei0r.dyne.org', // Source tarball corrupt/invalid from upstream server
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
     'openinterpreter.com', // tiktoken wheel build failure (Python C extension)
