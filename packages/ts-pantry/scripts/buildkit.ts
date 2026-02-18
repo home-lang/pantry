@@ -773,6 +773,21 @@ export function generateBuildScript(
     sections.push('')
   }
 
+  // GCC spec file workaround (must be set BEFORE cc_wrapper shadows gcc):
+  // On Linux (Ubuntu 24.04), GCC tries to read `./specs` as a spec file.
+  // If a source tree has a `specs/` directory (e.g. xorgproto, libX11), GCC fails with:
+  //   "fatal error: cannot read spec file './specs': Is a directory"
+  // We set GCC_EXEC_PREFIX to the real GCC install directory so GCC doesn't
+  // search the current directory. Must be detected before cc_wrapper shadows gcc.
+  if (osName === 'linux') {
+    sections.push('# GCC spec file workaround: detect GCC install prefix before cc_wrapper')
+    sections.push('_gcc_install_dir="$(gcc -print-search-dirs 2>/dev/null | /usr/bin/grep "^install:" | /usr/bin/sed "s/install: //" || true)"')
+    sections.push('if [ -n "$_gcc_install_dir" ]; then')
+    sections.push('  export GCC_EXEC_PREFIX="$_gcc_install_dir"')
+    sections.push('fi')
+    sections.push('')
+  }
+
   // Compiler wrapper: filter -Werror and resolve -shared/-pie conflicts
   // Ported from brewkit's toolchain shim — prevents hundreds of build failures
   // from upstream packages that have warnings treated as errors
@@ -876,19 +891,6 @@ export function generateBuildScript(
   sections.push('export GOTOOLCHAIN=auto')
   sections.push('')
 
-  // GCC spec file workaround: if the source tree contains a `specs/` directory,
-  // GCC on Linux (Ubuntu 24.04) tries to read it as a spec file and fails with:
-  //   "fatal error: cannot read spec file './specs': Is a directory"
-  // Rename it before building and restore after (affects xorgproto and potentially others).
-  if (osName === 'linux') {
-    sections.push('# GCC spec file workaround: rename specs/ to _specs/ to prevent GCC confusion')
-    sections.push(`if [ -d "${buildDir}/specs" ]; then`)
-    sections.push(`  mv "${buildDir}/specs" "${buildDir}/_specs_renamed"`)
-    sections.push(`  _BUILDKIT_SPECS_RENAMED=1`)
-    sections.push('fi')
-    sections.push('')
-  }
-
   // Working directory — always cd to buildDir first, then to any subdirectory
   sections.push(`cd "${buildDir}"`)
   const wd = recipe.build?.['working-directory']
@@ -934,14 +936,6 @@ export function generateBuildScript(
     sections.push('exit 1')
   }
 
-  // Restore renamed specs/ directory (for packages that reference it during install)
-  if (osName === 'linux') {
-    sections.push('')
-    sections.push('# Restore specs/ directory if it was renamed')
-    sections.push('if [ "${_BUILDKIT_SPECS_RENAMED:-}" = "1" ]; then')
-    sections.push(`  mv "${buildDir}/_specs_renamed" "${buildDir}/specs" 2>/dev/null || true`)
-    sections.push('fi')
-  }
 
   return sections.join('\n')
 }
