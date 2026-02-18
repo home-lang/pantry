@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
-import { generateBuildScript, getSkips } from './buildkit.ts'
+import { generateBuildScript, getSkips, type PackageRecipe } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 
 /**
@@ -605,6 +605,31 @@ function getBuildOverrides(pkgName: string): BuildOverrides | null {
   }
 }
 
+/**
+ * Apply buildkit-level recipe overrides that fix platform-specific issues.
+ * These live in code (not YAML) so they survive pantry YAML regeneration from upstream.
+ */
+function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: string): void {
+  const [os] = platform.split('-')
+
+  // x.org/x11: disable local-transport on Linux (sys/stropts.h removed in glibc 2.38+)
+  if (domain === 'x.org/x11' && os === 'linux') {
+    if (recipe.build?.env) {
+      const env = recipe.build.env
+      // Check for ARGS array (may be at top level or nested)
+      if (Array.isArray(env.ARGS)) {
+        env.ARGS.push('--disable-local-transport')
+      } else {
+        // Ensure linux override section exists
+        if (!env.linux) env.linux = {}
+        if (!env.linux.ARGS) env.linux.ARGS = []
+        if (!Array.isArray(env.linux.ARGS)) env.linux.ARGS = [env.linux.ARGS]
+        env.linux.ARGS.push('--disable-local-transport')
+      }
+    }
+  }
+}
+
 async function downloadSource(url: string, destDir: string, stripComponents: number = 1, ref?: string, pkgDomain?: string, pkgVersion?: string): Promise<void> {
   console.log(`📥 Downloading source from ${url}`)
 
@@ -1016,6 +1041,11 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   const yamlContent = readFileSync(pantryPath, 'utf-8')
   const recipe = parseYaml(yamlContent) as PackageRecipe
+
+  // Apply buildkit-level recipe overrides that survive pantry YAML regeneration.
+  // These fix platform-specific issues in upstream recipes without modifying the YAML files.
+  applyRecipeOverrides(recipe, domain, platform)
+
   console.log(`\nBuild recipe: ${pantryPath}`)
 
   // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
