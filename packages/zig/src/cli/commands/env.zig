@@ -11,93 +11,76 @@ const env = lib.env;
 const string = lib.string;
 
 pub fn envListCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
-    var manager = try env.EnvManager.init(allocator);
-    defer manager.deinit();
+    return envListCommandWithFormat(allocator, "table", false);
+}
 
-    var envs = try manager.list();
-    defer envs.deinit(allocator);
+pub fn envListCommandWithFormat(allocator: std.mem.Allocator, format: []const u8, verbose: bool) !CommandResult {
+    const env_commands = @import("../../env/commands.zig");
+    var commands = env_commands.EnvCommands.init(allocator);
+    defer commands.deinit();
 
-    if (envs.items.len == 0) {
-        style.print("No environments found.\n", .{});
-        return .{ .exit_code = 0 };
-    }
-
-    style.print("Environments ({d}):\n\n", .{envs.items.len});
-    for (envs.items) |hash| {
-        const hex = try string.hashToHex(hash, allocator);
-        defer allocator.free(hex);
-        style.print("  {s}\n", .{hex});
-    }
+    commands.list(format, verbose) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Error listing environments: {}", .{err});
+        return .{ .exit_code = 1, .message = msg };
+    };
 
     return .{ .exit_code = 0 };
 }
 
 pub fn envRemoveCommand(allocator: std.mem.Allocator, hash_str: []const u8) !CommandResult {
-    var manager = try env.EnvManager.init(allocator);
-    defer manager.deinit();
+    return envRemoveCommandWithForce(allocator, hash_str, false);
+}
 
-    if (hash_str.len != 32) {
-        return CommandResult.err(allocator, "Error: Invalid hash (must be 32 hex characters)");
-    }
+pub fn envRemoveCommandWithForce(allocator: std.mem.Allocator, hash_str: []const u8, force: bool) !CommandResult {
+    const env_commands = @import("../../env/commands.zig");
+    var commands = env_commands.EnvCommands.init(allocator);
+    defer commands.deinit();
 
-    var hash: [16]u8 = undefined;
-    _ = std.fmt.hexToBytes(&hash, hash_str) catch {
-        return CommandResult.err(allocator, "Error: Invalid hex string");
+    commands.remove(hash_str, force) catch |err| {
+        if (err == error.EnvironmentNotFound) {
+            return CommandResult.err(allocator, "Error: Environment not found");
+        }
+        const msg = try std.fmt.allocPrint(allocator, "Error removing environment: {}", .{err});
+        return .{ .exit_code = 1, .message = msg };
     };
-
-    style.print("Removing environment {s}...\n", .{hash_str});
-    try manager.remove(hash);
-    style.print("Done.\n", .{});
 
     return .{ .exit_code = 0 };
 }
 
 pub fn envInspectCommand(allocator: std.mem.Allocator, hash_str: []const u8) !CommandResult {
-    var manager = try env.EnvManager.init(allocator);
-    defer manager.deinit();
+    return envInspectCommandWithVerbose(allocator, hash_str, false);
+}
 
-    if (hash_str.len != 32) {
-        return CommandResult.err(allocator, "Error: Invalid hash (must be 32 hex characters)");
-    }
+pub fn envInspectCommandWithVerbose(allocator: std.mem.Allocator, hash_str: []const u8, verbose: bool) !CommandResult {
+    const env_commands = @import("../../env/commands.zig");
+    var commands = env_commands.EnvCommands.init(allocator);
+    defer commands.deinit();
 
-    var hash: [16]u8 = undefined;
-    _ = std.fmt.hexToBytes(&hash, hash_str) catch {
-        return CommandResult.err(allocator, "Error: Invalid hex string");
+    commands.inspect(hash_str, verbose, false) catch |err| {
+        if (err == error.EnvironmentNotFound) {
+            return CommandResult.err(allocator, "Error: Environment not found");
+        }
+        const msg = try std.fmt.allocPrint(allocator, "Error inspecting environment: {}", .{err});
+        return .{ .exit_code = 1, .message = msg };
     };
-
-    style.print("Environment: {s}\n\n", .{hash_str});
-    style.print("  Status: Active\n", .{});
-    style.print("  Created: (timestamp)\n", .{});
-    style.print("  Packages: (package list)\n", .{});
 
     return .{ .exit_code = 0 };
 }
 
 pub fn envCleanCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
-    var manager = try env.EnvManager.init(allocator);
-    defer manager.deinit();
+    return envCleanCommandWithOptions(allocator, false, false);
+}
 
-    style.print("Cleaning old environments...\n", .{});
+pub fn envCleanCommandWithOptions(allocator: std.mem.Allocator, dry_run: bool, force: bool) !CommandResult {
+    const env_commands = @import("../../env/commands.zig");
+    var commands = env_commands.EnvCommands.init(allocator);
+    defer commands.deinit();
 
-    // Actually clean up stale environment directories
-    const home = try lib.Paths.home(allocator);
-    defer allocator.free(home);
-    const envs_dir_path = try std.fmt.allocPrint(allocator, "{s}/.pantry/envs", .{home});
-    defer allocator.free(envs_dir_path);
-
-    var env_count: usize = 0;
-    if (io_helper.openDirAbsoluteForIteration(envs_dir_path)) |dir_val| {
-        var dir = dir_val;
-        defer dir.close();
-        var iter = dir.iterate();
-        while (iter.next() catch null) |entry| {
-            if (entry.kind == .directory) {
-                env_count += 1;
-            }
-        }
-    } else |_| {}
-
-    style.print("Found {d} environment(s)\n", .{env_count});
+    // Clean environments older than 30 days
+    commands.clean(30, dry_run, force) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Error cleaning environments: {}", .{err});
+        return .{ .exit_code = 1, .message = msg };
+    };
 
     return .{ .exit_code = 0 };
 }

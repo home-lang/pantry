@@ -119,14 +119,18 @@ pub fn infoCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 }
 
 /// List all installed packages
+/// Supports format: "table" (default), "json", "minimal"
 pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
+    return listCommandWithFormat(allocator, "table", false);
+}
+
+/// List all installed packages with format and verbose options
+pub fn listCommandWithFormat(allocator: std.mem.Allocator, format: []const u8, verbose: bool) !CommandResult {
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
 
     var installer = try install.Installer.init(allocator, &pkg_cache);
     defer installer.deinit();
-
-    style.print("Installed packages:\n\n", .{});
 
     var installed = try installer.listInstalled();
     defer {
@@ -136,11 +140,37 @@ pub fn listCommand(allocator: std.mem.Allocator, _: []const []const u8) !Command
         installed.deinit(allocator);
     }
 
-    for (installed.items) |pkg| {
-        style.print("  {s}@{s}\n", .{ pkg.name, pkg.version });
+    if (std.mem.eql(u8, format, "json")) {
+        // JSON output
+        style.print("[", .{});
+        for (installed.items, 0..) |pkg, i| {
+            if (verbose) {
+                style.print("\n  {{\"name\":\"{s}\",\"version\":\"{s}\",\"path\":\"{s}\"}}", .{ pkg.name, pkg.version, pkg.install_path });
+            } else {
+                style.print("\n  {{\"name\":\"{s}\",\"version\":\"{s}\"}}", .{ pkg.name, pkg.version });
+            }
+            if (i < installed.items.len - 1) {
+                style.print(",", .{});
+            }
+        }
+        style.print("\n]\n", .{});
+    } else if (std.mem.eql(u8, format, "minimal")) {
+        // Minimal output: just name@version per line
+        for (installed.items) |pkg| {
+            style.print("{s}@{s}\n", .{ pkg.name, pkg.version });
+        }
+    } else {
+        // Default: table format
+        style.print("Installed packages:\n\n", .{});
+        for (installed.items) |pkg| {
+            if (verbose) {
+                style.print("  {s}@{s} ({s})\n", .{ pkg.name, pkg.version, pkg.install_path });
+            } else {
+                style.print("  {s}@{s}\n", .{ pkg.name, pkg.version });
+            }
+        }
+        style.print("\n{d} package(s) installed\n", .{installed.items.len});
     }
-
-    style.print("\n{d} package(s) installed\n", .{installed.items.len});
 
     return .{ .exit_code = 0 };
 }

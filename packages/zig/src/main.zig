@@ -120,9 +120,16 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const peer = ctx.hasOption("peer");
     const verbose = ctx.hasOption("verbose");
 
-    // TODO: Implement global add (add to global dependencies)
+    // Handle global add: install to global prefix, skip config save
     if (global) {
-        style.print("Warning: --global option is not yet implemented for add command\n", .{});
+        var global_result = try lib.commands.installPackagesGloballyCommand(allocator, packages.items);
+        defer global_result.deinit(allocator);
+
+        if (global_result.message) |msg| {
+            style.print("{s}\n", .{msg});
+        }
+
+        std.process.exit(global_result.exit_code);
     }
 
     // Load pantry.toml config for linker/peer settings
@@ -621,15 +628,7 @@ fn listAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const format = ctx.getOption("format") orelse "table";
     const verbose = ctx.hasOption("verbose");
 
-    // TODO: Implement format and verbose options
-    if (!std.mem.eql(u8, format, "table")) {
-        style.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
-    }
-    if (verbose) {
-        style.print("Warning: --verbose option is not yet implemented for list command\n\n", .{});
-    }
-
-    const result = try lib.commands.listCommand(allocator, &[_][]const u8{});
+    const result = try lib.commands.listCommandWithFormat(allocator, format, verbose);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -998,15 +997,7 @@ fn envListAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const format = ctx.getOption("format") orelse "table";
     const verbose = ctx.hasOption("verbose");
 
-    // TODO: Implement format and verbose options
-    if (!std.mem.eql(u8, format, "table")) {
-        style.print("Warning: --format={s} is not yet implemented, using table format\n\n", .{format});
-    }
-    if (verbose) {
-        style.print("Warning: --verbose option is not yet implemented for env:list command\n\n", .{});
-    }
-
-    const result = try lib.commands.envListCommand(allocator, &[_][]const u8{});
+    const result = try lib.commands.envListCommandWithFormat(allocator, format, verbose);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -1026,12 +1017,7 @@ fn envInspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const verbose = ctx.hasOption("verbose");
 
-    // TODO: Implement verbose option (show more details like timestamps, sizes)
-    if (verbose) {
-        style.print("Warning: --verbose option is not yet implemented for env:inspect command\n\n", .{});
-    }
-
-    const result = try lib.commands.envInspectCommand(allocator, hash);
+    const result = try lib.commands.envInspectCommandWithVerbose(allocator, hash, verbose);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -1047,15 +1033,7 @@ fn envCleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const dry_run = ctx.hasOption("dry-run");
     const force = ctx.hasOption("force");
 
-    // TODO: Implement dry_run and force options
-    if (dry_run) {
-        style.print("Warning: --dry-run option is not yet implemented for env:clean command\n\n", .{});
-    }
-    if (force) {
-        style.print("Warning: --force option is not yet implemented for env:clean command\n\n", .{});
-    }
-
-    const result = try lib.commands.envCleanCommand(allocator, &[_][]const u8{});
+    const result = try lib.commands.envCleanCommandWithOptions(allocator, dry_run, force);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -1075,10 +1053,7 @@ fn envRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const force = ctx.hasOption("force");
 
-    // TODO: Implement force option (skip confirmation prompt when added)
-    _ = force;
-
-    const result = try lib.commands.envRemoveCommand(allocator, hash);
+    const result = try lib.commands.envRemoveCommandWithForce(allocator, hash, force);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {

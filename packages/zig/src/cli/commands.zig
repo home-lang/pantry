@@ -90,6 +90,7 @@ pub const whyCommand = package_commands.whyCommand;
 pub const searchCommand = registry_commands.searchCommand;
 pub const infoCommand = registry_commands.infoCommand;
 pub const listCommand = registry_commands.listCommand;
+pub const listCommandWithFormat = registry_commands.listCommandWithFormat;
 pub const whoamiCommand = registry_commands.whoamiCommand;
 
 // Registry publish command (uploads to Pantry registry S3)
@@ -127,9 +128,13 @@ pub const cacheCleanCommand = cache_commands.cacheCleanCommand;
 // ============================================================================
 
 pub const envListCommand = env_commands.envListCommand;
+pub const envListCommandWithFormat = env_commands.envListCommandWithFormat;
 pub const envRemoveCommand = env_commands.envRemoveCommand;
+pub const envRemoveCommandWithForce = env_commands.envRemoveCommandWithForce;
 pub const envInspectCommand = env_commands.envInspectCommand;
+pub const envInspectCommandWithVerbose = env_commands.envInspectCommandWithVerbose;
 pub const envCleanCommand = env_commands.envCleanCommand;
+pub const envCleanCommandWithOptions = env_commands.envCleanCommandWithOptions;
 pub const envLookupCommand = env_commands.envLookupCommand;
 
 // ============================================================================

@@ -255,9 +255,72 @@ pub fn devFindProjectRootCommand(allocator: std.mem.Allocator, start_dir: []cons
     return .{ .exit_code = 0 };
 }
 
-/// Dev: check-updates command - check for updates (placeholder)
-pub fn devCheckUpdatesCommand(_: std.mem.Allocator) !CommandResult {
-    // Placeholder - just exit successfully without output
-    // This is called in background by shell integration
+/// Dev: check-updates command - check for newer pantry version
+/// Called in background by shell integration. Writes update info to ~/.pantry/.update-available
+pub fn devCheckUpdatesCommand(allocator: std.mem.Allocator) !CommandResult {
+    const version_options = @import("version");
+    const current_version = version_options.version;
+
+    // Determine update marker file path
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
+        return .{ .exit_code = 0 };
+    };
+    defer allocator.free(home);
+
+    const marker_path = try std.fmt.allocPrint(allocator, "{s}/.pantry/.update-available", .{home});
+    defer allocator.free(marker_path);
+
+    // Check if we already checked recently (within 24 hours)
+    if (io_helper.statFile(marker_path)) |stat| {
+        const now_ts = io_helper.clockGettime();
+        const now_sec: i128 = @intCast(now_ts.sec);
+        const now_ns: i128 = now_sec * 1_000_000_000;
+        const file_age_ns = now_ns - stat.mtime;
+        const one_day_ns: i128 = 86400 * 1_000_000_000;
+        if (file_age_ns < one_day_ns) {
+            // Checked less than 24 hours ago, skip
+            return .{ .exit_code = 0 };
+        }
+    } else |_| {}
+
+    // Query npm registry for latest pantry version
+    const registry_url = "https://registry.npmjs.org/pantry-cli/latest";
+    const response = io_helper.httpGet(allocator, registry_url) catch {
+        // Network error - silently skip (this is a background check)
+        return .{ .exit_code = 0 };
+    };
+    defer allocator.free(response);
+
+    // Parse JSON response to get version field
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response, .{}) catch {
+        return .{ .exit_code = 0 };
+    };
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return .{ .exit_code = 0 };
+
+    const version_val = parsed.value.object.get("version") orelse return .{ .exit_code = 0 };
+    if (version_val != .string) return .{ .exit_code = 0 };
+
+    const latest_version = version_val.string;
+
+    // Compare versions - if different and latest is newer, write marker
+    if (!std.mem.eql(u8, current_version, latest_version)) {
+        // Ensure ~/.pantry directory exists
+        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry", .{home});
+        defer allocator.free(pantry_dir);
+        io_helper.makePath(pantry_dir) catch {};
+
+        // Write the latest version to the marker file
+        const file = io_helper.createFile(marker_path, .{ .truncate = true }) catch {
+            return .{ .exit_code = 0 };
+        };
+        defer io_helper.closeFile(file);
+        io_helper.writeAllToFile(file, latest_version) catch {};
+    } else {
+        // Up to date - remove marker if it exists
+        io_helper.deleteFile(marker_path) catch {};
+    }
+
     return .{ .exit_code = 0 };
 }
