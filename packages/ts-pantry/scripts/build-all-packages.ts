@@ -737,6 +737,8 @@ Options:
     'brxken128.github.io/dexios', // Rust "unnecessary qualification" lint errors with modern rustc (unmaintained)
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
+    'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup
+    'khanacademy.org/genqlient', // Pinned golang.org/x/tools@v0.24.0 incompatible with Go 1.26
   ])
 
   let platformSkipped = 0

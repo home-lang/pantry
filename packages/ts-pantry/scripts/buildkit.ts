@@ -508,12 +508,35 @@ export function generateBuildScript(
   sections.push('REAL_HOME="${HOME}"')
   sections.push(`export HOME="${buildDir}/.home"`)
   sections.push('mkdir -p "$HOME"')
-  // Create symlinks to real home dirs BEFORE any toolchain search so $HOME/.cargo resolves
+  // Create an isolated .cargo/bin directory with individual symlinks.
+  // This prevents recipes (e.g. fermyon.com/spin) from corrupting the shared cargo
+  // installation when they write into $HOME/.cargo/bin/. By using a real directory
+  // instead of a directory symlink, recipe modifications only affect our copy.
   sections.push('if [ -d "$REAL_HOME/.cargo" ]; then')
-  sections.push('  ln -sfn "$REAL_HOME/.cargo" "$HOME/.cargo" 2>/dev/null || true')
-  sections.push('  ln -sfn "$REAL_HOME/.rustup" "$HOME/.rustup" 2>/dev/null || true')
+  sections.push('  mkdir -p "$HOME/.cargo/bin"')
+  sections.push('  # Symlink individual binaries (not the directory) for isolation')
+  sections.push('  for _f in "$REAL_HOME/.cargo/bin"/*; do')
+  sections.push('    [ -e "$_f" ] && ln -sf "$_f" "$HOME/.cargo/bin/" 2>/dev/null || true')
+  sections.push('  done')
+  sections.push('  # Symlink other .cargo subdirs (registry, config, etc.) for cargo operations')
+  sections.push('  for _d in "$REAL_HOME/.cargo"/*; do')
+  sections.push('    case "$_d" in */bin) continue ;; esac')
+  sections.push('    ln -sf "$_d" "$HOME/.cargo/" 2>/dev/null || true')
+  sections.push('  done')
+  sections.push('  # Isolate .rustup: copy settings but symlink toolchains (large, read-only-ish)')
+  sections.push('  # This prevents `rustup default nightly` (e.g. dssim) from changing the')
+  sections.push('  # shared default toolchain and corrupting subsequent builds in the batch.')
+  sections.push('  if [ -d "$REAL_HOME/.rustup" ]; then')
+  sections.push('    mkdir -p "$HOME/.rustup"')
+  sections.push('    for _rd in "$REAL_HOME/.rustup"/*; do')
+  sections.push('      case "$_rd" in')
+  sections.push('        */settings.toml) cp "$_rd" "$HOME/.rustup/" 2>/dev/null || true ;;')
+  sections.push('        *) ln -sf "$_rd" "$HOME/.rustup/" 2>/dev/null || true ;;')
+  sections.push('      esac')
+  sections.push('    done')
+  sections.push('    export RUSTUP_HOME="$HOME/.rustup"')
+  sections.push('  fi')
   sections.push('  export CARGO_HOME="$REAL_HOME/.cargo"')
-  sections.push('  export RUSTUP_HOME="$REAL_HOME/.rustup"')
   sections.push('fi')
   sections.push('')
 
@@ -827,7 +850,7 @@ export function generateBuildScript(
   sections.push('__setup_cc_wrapper() {')
   sections.push('  local wrapper_dir="${TMPDIR:-/tmp}/_cc_wrapper"')
   sections.push('  mkdir -p "$wrapper_dir"')
-  sections.push('  for cc_name in cc gcc clang c++ g++ clang++ cpp; do')
+  sections.push('  for cc_name in cc gcc clang c++ g++ clang++ cpp gfortran; do')
   sections.push('    local real_cc')
   sections.push('    real_cc="$(command -v "$cc_name" 2>/dev/null || true)"')
   sections.push('    [ -n "$real_cc" ] || continue')
@@ -934,6 +957,19 @@ export function generateBuildScript(
   sections.push('  export PATH="$wrapper_dir:$PATH"')
   sections.push('}')
   sections.push('__setup_cc_wrapper')
+  sections.push('')
+
+  // Ensure gfortran is available: brew installs gcc which provides gfortran-14,
+  // but configure scripts look for plain "gfortran". Create a wrapper if needed.
+  sections.push('# Ensure gfortran is available (brew gcc provides gfortran-NN)')
+  sections.push('if ! command -v gfortran &>/dev/null; then')
+  sections.push('  for _gf in gfortran-{14,13,12,11}; do')
+  sections.push('    if command -v "$_gf" &>/dev/null; then')
+  sections.push('      ln -sf "$(command -v "$_gf")" "${TMPDIR:-/tmp}/_cc_wrapper/gfortran"')
+  sections.push('      break')
+  sections.push('    fi')
+  sections.push('  done')
+  sections.push('fi')
   sections.push('')
 
   // Diagnostic: verify compiler can create executables (helps debug configure failures)
