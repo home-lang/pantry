@@ -813,7 +813,9 @@ export function generateBuildScript(
   // to prevent "fatal error: cannot read spec file './specs': Is a directory"
   // We convert relative file paths to absolute so GCC can still find them.
   sections.push('# GCC specs/ directory workaround: run from /tmp if ./specs is a directory')
-  sections.push('if [ -d "$PWD/specs" ]; then')
+  sections.push('# Only on Linux — macOS clang does not read ./specs, and the CWD change')
+  sections.push('# breaks -Wl,-force_load,./relative paths embedded in linker flags')
+  sections.push('if [ "$(uname)" = "Linux" ] && [ -d "$PWD/specs" ]; then')
   sections.push('  _orig_cwd="$PWD"')
   sections.push('  _final_args=()')
   sections.push('  _next_is_output=false')
