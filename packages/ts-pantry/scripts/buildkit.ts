@@ -1003,24 +1003,19 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
-  // Ensure cargo is still reachable (recipe env/toolchain setup can shadow it)
-  sections.push('# Cargo PATH recovery — ensure cargo is reachable after all env setup')
-  sections.push('if ! command -v cargo &>/dev/null; then')
-  sections.push('  echo "[buildkit] cargo lost from PATH after env setup, recovering..." >&2')
-  // Try sourcing env file first (most reliable)
-  sections.push('  if [ -f "$REAL_HOME/.cargo/env" ]; then . "$REAL_HOME/.cargo/env"; fi')
-  sections.push('  if ! command -v cargo &>/dev/null; then')
-  sections.push('    for _cdir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
-  sections.push('      if [ -x "$_cdir/cargo" ]; then export PATH="$_cdir:$PATH"; break; fi')
-  sections.push('    done')
+  // Ensure cargo/go/etc are reachable — clear bash hash table and force PATH update
+  // Bash caches "command not found" results in its hash table. If any command lookup
+  // failed earlier (e.g. cargo checked before PATH was set up), bash remembers the
+  // failure even after PATH is updated. `hash -r` clears this cache.
+  sections.push('# Clear bash command hash table and ensure toolchains are in PATH')
+  sections.push('hash -r 2>/dev/null || true')
+  sections.push('# Unconditionally add cargo to PATH (hash table may have cached "not found")')
+  sections.push('for _cdir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
+  sections.push('  if [ -x "$_cdir/cargo" ]; then')
+  sections.push('    export PATH="$_cdir:$PATH"')
+  sections.push('    break')
   sections.push('  fi')
-  sections.push('  if ! command -v cargo &>/dev/null; then')
-  sections.push('    echo "[buildkit] WARNING: cargo still not found after recovery" >&2')
-  sections.push('    echo "[buildkit] REAL_HOME=$REAL_HOME" >&2')
-  sections.push('    echo "[buildkit] ls $REAL_HOME/.cargo/bin/: $(ls "$REAL_HOME/.cargo/bin/" 2>&1 | head -5)" >&2')
-  sections.push('    echo "[buildkit] PATH=$PATH" >&2')
-  sections.push('  fi')
-  sections.push('fi')
+  sections.push('done')
   sections.push('')
 
   // User script from pantry YAML
