@@ -287,9 +287,17 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
     };
 }
 
-/// Check available disk space using libc statvfs (linked via -lc)
+/// Check available disk space using df command (portable across all POSIX platforms)
 fn checkDiskSpace(allocator: std.mem.Allocator) !CheckResult {
     const name = try allocator.dupe(u8, "Disk Space");
+
+    if (comptime @import("builtin").os.tag == .windows) {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "Disk space check not supported on Windows"),
+        };
+    }
 
     const cache_dir = Paths.cache(allocator) catch {
         return .{
@@ -300,15 +308,18 @@ fn checkDiskSpace(allocator: std.mem.Allocator) !CheckResult {
     };
     defer allocator.free(cache_dir);
 
-    // Use C libc statvfs which is available on both macOS and Linux
-    const c = @cImport(@cInclude("sys/statvfs.h"));
-    var stat: c.struct_statvfs = undefined;
+    // Use df -k for portable disk space checking (avoids @cImport cross-compilation issues)
+    const result = io_helper.childRun(allocator, &.{ "df", "-k", cache_dir }) catch {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "Could not determine disk space"),
+        };
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
 
-    // Null-terminate the path for C
-    const c_path = try allocator.dupeZ(u8, cache_dir);
-    defer allocator.free(c_path);
-
-    if (c.statvfs(c_path.ptr, &stat) != 0) {
+    if (result.term != .exited or result.term.exited != 0) {
         return .{
             .name = name,
             .passed = true,
@@ -316,11 +327,30 @@ fn checkDiskSpace(allocator: std.mem.Allocator) !CheckResult {
         };
     }
 
-    const block_size: u64 = @intCast(stat.f_frsize);
-    const available_bytes: u64 = @as(u64, @intCast(stat.f_bavail)) * block_size;
-    const total_bytes: u64 = @as(u64, @intCast(stat.f_blocks)) * block_size;
-    const available_mb = available_bytes / (1024 * 1024);
-    const total_gb = total_bytes / (1024 * 1024 * 1024);
+    // Parse df -k output: header line then data line with columns:
+    // Filesystem 1K-blocks Used Available Use% Mounted-on
+    var lines = std.mem.splitScalar(u8, result.stdout, '\n');
+    _ = lines.next(); // Skip header
+    const data_line = lines.next() orelse {
+        return .{
+            .name = name,
+            .passed = true,
+            .message = try allocator.dupe(u8, "Could not parse disk stats"),
+        };
+    };
+
+    // Split by whitespace to extract columns
+    var cols = std.mem.tokenizeAny(u8, data_line, " \t");
+    _ = cols.next(); // filesystem
+    const total_kb_str = cols.next() orelse return .{ .name = name, .passed = true, .message = try allocator.dupe(u8, "Could not parse disk stats") };
+    _ = cols.next(); // used
+    const avail_kb_str = cols.next() orelse return .{ .name = name, .passed = true, .message = try allocator.dupe(u8, "Could not parse disk stats") };
+
+    const total_kb = std.fmt.parseInt(u64, total_kb_str, 10) catch return .{ .name = name, .passed = true, .message = try allocator.dupe(u8, "Could not parse disk stats") };
+    const avail_kb = std.fmt.parseInt(u64, avail_kb_str, 10) catch return .{ .name = name, .passed = true, .message = try allocator.dupe(u8, "Could not parse disk stats") };
+
+    const available_mb = avail_kb / 1024;
+    const total_gb = total_kb / (1024 * 1024);
 
     // Warn if less than 500 MB available
     const min_required_mb: u64 = 500;

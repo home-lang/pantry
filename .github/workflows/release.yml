@@ -23,8 +23,8 @@ jobs:
 
       - name: Bootstrap Zig Dependencies
         run: |
-          mkdir -p packages/zig/pantry
-          cd packages/zig/pantry
+          mkdir -p pantry
+          cd pantry
           git clone --depth 1 https://github.com/zig-utils/zig-cli.git
           git clone --depth 1 https://github.com/zig-utils/zig-config.git
           git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
@@ -39,7 +39,7 @@ jobs:
           echo "Built binaries:"
           ls -la packages/zig/zig-out/bin/
 
-          for target in linux-x86_64 linux-aarch64 macos-x86_64 macos-aarch64 windows-x86_64 freebsd-x86_64 freebsd-aarch64; do
+          for target in linux-x86_64 linux-aarch64 macos-x86_64 macos-aarch64 freebsd-x86_64 freebsd-aarch64; do
             dir="packages/zig/zig-out/bin/$target"
             if [ ! -d "$dir" ]; then
               echo "Warning: $target not found"
@@ -51,7 +51,6 @@ jobs:
               linux-aarch64)  name="pantry-linux-arm64.zip" ; bin="pantry" ;;
               macos-x86_64)   name="pantry-darwin-x64.zip" ; bin="pantry" ;;
               macos-aarch64)  name="pantry-darwin-arm64.zip" ; bin="pantry" ;;
-              windows-x86_64)  name="pantry-windows-x64.zip" ; bin="pantry.exe" ;;
               freebsd-x86_64)  name="pantry-freebsd-x64.zip" ; bin="pantry" ;;
               freebsd-aarch64) name="pantry-freebsd-arm64.zip" ; bin="pantry" ;;
             esac
@@ -71,7 +70,6 @@ jobs:
             dist/pantry-linux-arm64.zip
             dist/pantry-darwin-x64.zip
             dist/pantry-darwin-arm64.zip
-            dist/pantry-windows-x64.zip
             dist/pantry-freebsd-x64.zip
             dist/pantry-freebsd-arm64.zip
         env:
