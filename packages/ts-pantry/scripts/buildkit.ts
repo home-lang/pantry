@@ -817,6 +817,9 @@ export function generateBuildScript(
   sections.push('  _orig_cwd="$PWD"')
   sections.push('  _final_args=()')
   sections.push('  _next_is_output=false')
+  sections.push('  _has_output=false')
+  sections.push('  _has_compile_only=false')
+  sections.push('  _last_source=""')
   sections.push('  for _a in "${args[@]}"; do')
   sections.push('    if $_next_is_output; then')
   sections.push('      case "$_a" in /*) _final_args+=("$_a") ;; *) _final_args+=("$_orig_cwd/$_a") ;; esac')
@@ -824,7 +827,8 @@ export function generateBuildScript(
   sections.push('      continue')
   sections.push('    fi')
   sections.push('    case "$_a" in')
-  sections.push('      -o) _final_args+=("$_a"); _next_is_output=true ;;')
+  sections.push('      -o) _final_args+=("$_a"); _next_is_output=true; _has_output=true ;;')
+  sections.push('      -c) _final_args+=("$_a"); _has_compile_only=true ;;')
   // Convert -I/-L/-isystem with relative paths to absolute
   sections.push('      -I/*|-L/*) _final_args+=("$_a") ;;')
   sections.push('      -I*) _final_args+=("-I$_orig_cwd/${_a#-I}") ;;')
@@ -834,6 +838,7 @@ export function generateBuildScript(
   sections.push('      -MF) _final_args+=("$_a"); _next_is_output=true ;;')
   // Source files: convert relative paths to absolute if the file exists
   sections.push('      *.c|*.cc|*.cpp|*.cxx|*.C|*.S|*.s|*.m|*.mm|*.f|*.f90|*.F|*.F90)')
+  sections.push('        _last_source="$_a"')
   sections.push('        if [ "${_a:0:1}" != "/" ] && [ -f "$_orig_cwd/$_a" ]; then')
   sections.push('          _final_args+=("$_orig_cwd/$_a")')
   sections.push('        else')
@@ -849,6 +854,21 @@ export function generateBuildScript(
   sections.push('      *) _final_args+=("$_a") ;;')
   sections.push('    esac')
   sections.push('  done')
+  // When no -o flag is present, gcc outputs to CWD. Since we cd to /tmp,
+  // outputs would land in /tmp instead of the original CWD. Fix:
+  // - Link mode (no -c): gcc defaults to ./a.out — add -o $orig/a.out
+  // - Compile-only (-c): gcc defaults to ./source.o — add -o $orig/source.o
+  // Critical for autotools' "checking whether the C compiler works" test
+  // which intentionally strips -o from the link command.
+  sections.push('  if ! $_has_output; then')
+  sections.push('    if $_has_compile_only && [ -n "$_last_source" ]; then')
+  sections.push('      _src_base="${_last_source##*/}"')
+  sections.push('      _obj_name="${_src_base%.*}.o"')
+  sections.push('      _final_args+=("-o" "$_orig_cwd/$_obj_name")')
+  sections.push('    elif ! $_has_compile_only; then')
+  sections.push('      _final_args+=("-o" "$_orig_cwd/a.out")')
+  sections.push('    fi')
+  sections.push('  fi')
   sections.push('  cd /tmp')
   sections.push('  __REAL_CC__ "${_final_args[@]}"')
   sections.push('  _rc=$?')
