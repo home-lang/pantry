@@ -726,6 +726,8 @@ Options:
     'surrealdb.com', // Old release tags removed from GitHub
     'nasm.us', // Version resolution generates phantom versions (3.1.0, 3.0.0) that 404
     'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
+    'crates.io/tabiew', // Rust compilation exceeds 30 min timeout on darwin
+    'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
     'strace.io', // btrfs static assertions incompatible with newer kernel headers
     'gnu.org/source-highlight', // C++17 removed dynamic exception specs (throw()), unmaintained
     'microbrew.org/md5sha1sum', // OpenSSL lib path in multiarch dirs (/usr/lib/x86_64-linux-gnu)

@@ -470,7 +470,9 @@ export function generateBuildScript(
   // Set BEFORE recipe env so recipes can override if needed
   sections.push('# Default compiler flags')
   if (osName === 'darwin') {
-    sections.push('export MACOSX_DEPLOYMENT_TARGET=11.0')
+    // Use the system's actual macOS version — brew libraries are built for the runner's
+    // macOS version, so using a lower target (11.0) causes linker warnings/errors
+    sections.push('export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-$(sw_vers -productVersion 2>/dev/null | cut -d. -f1-2 || echo 11.0)}"')
     sections.push(`export LDFLAGS="-Wl,-rpath,${prefix} \${LDFLAGS:-}"`)
     // Modern Clang treats these warnings as errors by default, breaking older packages
     // (e.g. pixman 0.40 has incompatible function pointer types)
@@ -515,24 +517,18 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
-  // Rust toolchain — source rustup env first (most reliable), then search locations
-  sections.push('# Rust toolchain')
+  // Rust toolchain — unconditionally add all known cargo directories to PATH.
+  // Previous approach (sourcing .cargo/env + [ -f ] tests) failed on GitHub Actions
+  // because the env script uses $HOME which we've overridden, and file tests can fail
+  // on rustup proxy binaries. Instead, just add every existing cargo bin dir to PATH.
+  sections.push('# Rust toolchain — add all known cargo bin directories to PATH')
   sections.push('_cargo_found=false')
-  // Source rustup env file first — this is the canonical way to set up cargo PATH
-  // (symlinks above ensure $HOME/.cargo resolves to $REAL_HOME/.cargo)
-  sections.push('if [ -f "$REAL_HOME/.cargo/env" ]; then')
-  sections.push('  . "$REAL_HOME/.cargo/env"')
-  sections.push('  if command -v cargo &>/dev/null; then _cargo_found=true; fi')
-  sections.push('fi')
-  sections.push('if ! $_cargo_found; then')
-  sections.push('  for _cargo_dir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
-  sections.push('    if [ -f "$_cargo_dir/cargo" ]; then')
-  sections.push('      export PATH="$_cargo_dir:$PATH"')
-  sections.push('      _cargo_found=true')
-  sections.push('      break')
-  sections.push('    fi')
-  sections.push('  done')
-  sections.push('fi')
+  sections.push('for _cargo_dir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
+  sections.push('  if [ -d "$_cargo_dir" ] && ls "$_cargo_dir"/cargo* &>/dev/null; then')
+  sections.push('    export PATH="$_cargo_dir:$PATH"')
+  sections.push('    _cargo_found=true')
+  sections.push('  fi')
+  sections.push('done')
   sections.push('if ! $_cargo_found && command -v cargo &>/dev/null; then')
   sections.push('  CARGO_BIN_DIR="$(dirname "$(command -v cargo)")"')
   sections.push('  export PATH="$CARGO_BIN_DIR:$PATH"')
@@ -834,6 +830,7 @@ export function generateBuildScript(
   sections.push('for arg in "$@"; do')
   sections.push('  case "$arg" in')
   sections.push('    -Werror|-Werror=*) continue ;;  # filter -Werror (brewkit shim)')
+  sections.push('    -force_cpusubtype_ALL|-Wl,-force_cpusubtype_ALL) continue ;;  # obsolete Apple linker flag')
   sections.push('    -shared) has_shared=true; args+=("$arg") ;;')
   sections.push('    *) args+=("$arg") ;;')
   sections.push('  esac')
@@ -1009,13 +1006,25 @@ export function generateBuildScript(
   // failure even after PATH is updated. `hash -r` clears this cache.
   sections.push('# Clear bash command hash table and ensure toolchains are in PATH')
   sections.push('hash -r 2>/dev/null || true')
-  sections.push('# Unconditionally add cargo to PATH (hash table may have cached "not found")')
+  sections.push('# Re-add cargo dirs to PATH (hash table may have cached "not found")')
   sections.push('for _cdir in "$REAL_HOME/.cargo/bin" "/usr/share/rust/.cargo/bin" "/opt/homebrew/bin" "/usr/local/bin"; do')
-  sections.push('  if [ -x "$_cdir/cargo" ]; then')
-  sections.push('    export PATH="$_cdir:$PATH"')
-  sections.push('    break')
+  sections.push('  if [ -d "$_cdir" ] && ls "$_cdir"/cargo* &>/dev/null; then')
+  sections.push('    case ":$PATH:" in *:"$_cdir":*) ;; *) export PATH="$_cdir:$PATH" ;; esac')
   sections.push('  fi')
   sections.push('done')
+  sections.push('')
+  // Final check: if cargo still not found, try to exec it directly to see what error we get
+  sections.push('if ! command -v cargo &>/dev/null; then')
+  sections.push('  echo "[buildkit] WARN: cargo not found in PATH before user script" >&2')
+  sections.push('  echo "[buildkit] PATH=$PATH" >&2')
+  sections.push('  # Last resort: try to find cargo anywhere and add it')
+  sections.push('  _found_cargo="$(find "$REAL_HOME" /usr -name cargo -type f -perm +111 2>/dev/null | head -1)"')
+  sections.push('  if [ -n "$_found_cargo" ]; then')
+  sections.push('    echo "[buildkit] Found cargo at $_found_cargo, adding to PATH" >&2')
+  sections.push('    export PATH="$(dirname "$_found_cargo"):$PATH"')
+  sections.push('    hash -r 2>/dev/null || true')
+  sections.push('  fi')
+  sections.push('fi')
   sections.push('')
 
   // User script from pantry YAML

@@ -57,6 +57,22 @@ function findSystemPrefix(domain: string): string {
     }
   } catch { /* binary not found */ }
 
+  // 1b. For rust/cargo: check well-known locations (command -v may miss it)
+  if (binaryName === 'cargo' || domain.includes('rust-lang.org/cargo')) {
+    const home = process.env.HOME || process.env.REAL_HOME || ''
+    const cargoLocations = [
+      join(home, '.cargo', 'bin', 'cargo'),
+      '/usr/share/rust/.cargo/bin/cargo',
+      '/opt/homebrew/bin/cargo',
+      '/usr/local/bin/cargo',
+    ]
+    for (const loc of cargoLocations) {
+      if (existsSync(loc)) {
+        return dirname(dirname(loc)) // .cargo/bin/cargo → .cargo
+      }
+    }
+  }
+
   // 2. Try pkg-config to find library prefix
   const pkgName = pkgConfigMap[domain]
   if (pkgName) {

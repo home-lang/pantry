@@ -1,18 +1,8 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1771094417",
+  "generatedAt": "1771218217",
   "packages": {
-    "npm:@stacksjs/docs@^0.70.23": {
-      "name": "npm:@stacksjs/docs",
-      "version": "^0.70.23",
-      "source": "pkgx"
-    },
-    "typescript@^5.9.3": {
-      "name": "typescript",
-      "version": "^5.9.3",
-      "source": "pkgx"
-    },
     "ts-web-scraper@^0.1.1": {
       "name": "ts-web-scraper",
       "version": "^0.1.1",

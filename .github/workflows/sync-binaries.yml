@@ -268,8 +268,8 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
-            boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
-            libyaml jansson libedit libzip lapack nasm \
+            gcc boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
+            libyaml jansson libedit libzip lapack nasm libogg libvorbis flac \
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
@@ -440,8 +440,8 @@ jobs:
           HOMEBREW_NO_INSTALL_CLEANUP: 1
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
-            boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
-            libyaml jansson libedit libzip lapack nasm \
+            gcc boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
+            libyaml jansson libedit libzip lapack nasm libogg libvorbis flac \
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
