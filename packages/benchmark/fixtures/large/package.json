@@ -20,5 +20,6 @@
     "@testing-library/react": "^16.2.0",
     "zod": "^3.24.1",
     "react-hook-form": "^7.54.2"
-  }
+  },
+  "version": "v0.8.1"
 }

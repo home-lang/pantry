@@ -710,6 +710,7 @@ pub const PublishOptions = struct {
     use_oidc: bool = true, // Try OIDC first, fallback to token
     provenance: bool = true, // Generate provenance metadata
     use_npm: bool = false, // Set to true to publish to npm instead
+    skip: ?[]const u8 = null, // Comma-separated list of package directory names to skip
 };
 
 /// Publish a package to the registry (npm).
@@ -768,6 +769,29 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
         var succeeded: usize = 0;
 
         for (pkgs) |pkg| {
+            // Check if this package should be skipped via --skip flag
+            if (options.skip) |skip_list| {
+                const dir_name = std.fs.path.basename(pkg.path);
+                var skip_it = false;
+                var iter = std.mem.splitScalar(u8, skip_list, ',');
+                while (iter.next()) |skip_name| {
+                    const trimmed = std.mem.trim(u8, skip_name, " ");
+                    if (trimmed.len > 0 and std.mem.eql(u8, dir_name, trimmed)) {
+                        skip_it = true;
+                        break;
+                    }
+                    // Also match against the package name (from package.json)
+                    if (trimmed.len > 0 and std.mem.eql(u8, pkg.name, trimmed)) {
+                        skip_it = true;
+                        break;
+                    }
+                }
+                if (skip_it) {
+                    style.print("  Skipping {s} (--skip)\n", .{pkg.name});
+                    continue;
+                }
+            }
+
             style.print("\nPublishing {s}...\n", .{pkg.name});
 
             // Propagate root files (README, LICENSE) to package if missing
@@ -1793,13 +1817,13 @@ fn sortPackagesByDependencyOrder(
     }
 
     // Compute in-degree: how many workspace deps each package has
-    var in_degree_buf: [64]usize = undefined;
-    const in_degree = in_degree_buf[0..n];
+    const in_degree = allocator.alloc(usize, n) catch return;
+    defer allocator.free(in_degree);
     @memset(in_degree, 0);
 
     // dependents[i] stores indices of packages that depend on packages[i]
-    var dep_buf: [64]std.ArrayList(usize) = undefined;
-    const dependents = dep_buf[0..n];
+    const dependents = allocator.alloc(std.ArrayList(usize), n) catch return;
+    defer allocator.free(dependents);
     for (0..n) |i| dependents[i] = std.ArrayList(usize){};
     defer for (0..n) |i| dependents[i].deinit(allocator);
 
@@ -1829,8 +1853,8 @@ fn sortPackagesByDependencyOrder(
     }
 
     // Kahn's algorithm: process 0 in-degree first
-    var sorted_buf: [64]usize = undefined;
-    const sorted = sorted_buf[0..n];
+    const sorted = allocator.alloc(usize, n) catch return;
+    defer allocator.free(sorted);
     var sorted_count: usize = 0;
 
     var queue = std.ArrayList(usize){};
@@ -1861,8 +1885,8 @@ fn sortPackagesByDependencyOrder(
     }
 
     // Reorder packages in-place using the sorted indices
-    var tmp_buf: [64]@import("registry.zig").MonorepoPackage = undefined;
-    const tmp = tmp_buf[0..n];
+    const tmp = allocator.alloc(@import("registry.zig").MonorepoPackage, n) catch return;
+    defer allocator.free(tmp);
     for (0..n) |i| {
         tmp[i] = packages[sorted[i]];
     }

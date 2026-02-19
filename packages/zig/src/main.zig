@@ -657,11 +657,13 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const access_val = ctx.getOption("access") orelse "public";
     const tag = ctx.getOption("tag") orelse "latest";
     const registry_val = ctx.getOption("registry") orelse "https://registry.npmjs.org";
+    const skip_val = ctx.getOption("skip");
 
     const options = lib.commands.PublishOptions{
         .access = access_val,
         .tag = tag,
         .registry = registry_val,
+        .skip = skip_val,
     };
 
     const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, options);
@@ -794,6 +796,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const token = ctx.getOption("token");
     const dry_run = ctx.hasOption("dry-run");
     const use_npm = ctx.hasOption("npm");
+    const skip_val = ctx.getOption("skip");
 
     // Route --npm or --registry npm to the npm publish flow
     if (use_npm or std.mem.eql(u8, registry, "npm")) {
@@ -801,6 +804,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
             .access = access,
             .tag = tag,
             .registry = "https://registry.npmjs.org",
+            .skip = skip_val,
         };
 
         const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, npm_options);
@@ -2116,6 +2120,9 @@ pub fn main() !void {
     const npm_registry_opt = cli.Option.init("registry", "registry", "Custom registry URL", .string);
     _ = try npm_publish_cmd.addOption(npm_registry_opt);
 
+    const npm_skip_opt = cli.Option.init("skip", "skip", "Comma-separated package names or directory names to skip", .string);
+    _ = try npm_publish_cmd.addOption(npm_skip_opt);
+
     _ = npm_publish_cmd.setAction(publishAction);
     _ = try root.addCommand(npm_publish_cmd);
 
@@ -2765,6 +2772,9 @@ pub fn main() !void {
 
     const pub_npm_opt = cli.Option.init("npm", "npm", "Publish to npm registry instead of Pantry registry", .bool);
     _ = try publish_cmd.addOption(pub_npm_opt);
+
+    const pub_skip_opt = cli.Option.init("skip", "skip", "Comma-separated package names or directory names to skip", .string);
+    _ = try publish_cmd.addOption(pub_skip_opt);
 
     _ = publish_cmd.setAction(registryPublishAction);
     _ = try root.addCommand(publish_cmd);

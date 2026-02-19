@@ -1,6 +1,6 @@
 {
   "name": "bun-package-manager-basic",
-  "version": "0.7.5",
+  "version": "v0.8.1",
   "packageManager": "bun",
   "description": "Test environment for basic Bun package manager without version",
   "scripts": {
