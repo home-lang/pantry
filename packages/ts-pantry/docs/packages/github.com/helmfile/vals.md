@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 44 versions</summary>
+<summary>Show all 45 versions</summary>
 
-- `0.43.3`, `0.43.2`, `0.43.1`, `0.43.0`
+- `0.43.4`, `0.43.3`, `0.43.2`, `0.43.1`, `0.43.0`
 - `0.42.6`, `0.42.5`, `0.42.4`, `0.42.3`, `0.42.2`, `0.42.1`, `0.42.0`
 - `0.41.3`, `0.41.2`, `0.41.1`, `0.41.0`
 - `0.40.1`, `0.40.0`
@@ -46,13 +46,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.43.3`
+**Latest Version**: `0.43.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/helmfile/vals@0.43.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/helmfile/vals@0.43.4 -- $SHELL -i
 ```
 
 ## Usage Examples
