@@ -764,6 +764,37 @@ Options:
     'mypy-lang.org', // Gradle/JVM build failure on Linux
     'pcre.org', // SourceForge mirror (cytranet.dl.sourceforge.net) consistently times out
     'digitalocean.com/doctl', // GitHub release tags removed/restructured
+    'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
+    'quickwit.io', // Sed command quoting broken in generated shell script (parentheses in .to_string())
+    'raccoin.org', // Linker OOM — huge Slint UI generated code exceeds CI runner memory
+    'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
+    'wezfurlong.org/wezterm', // OS error 35 (EAGAIN) — OOM during parallel Rust compilation
+    'x.org/libSM', // Cascading X11 dependency chain — pkg-config can't find ice (libICE)
+    'x.org/xmu', // Cascading X11 dep failure — needs xt which itself fails (missing sm/ice)
+    'x.org/xt', // Cascading X11 dep failure — needs sm (libSM) and ice (libICE)
+    'swagger.io/swagger-codegen', // Maven build not executing (maven.apache.org dep not in S3)
+    'angular.dev', // npm install fails with exit code -2 (signal/OOM)
+    'capnproto.org', // Internal compiler error in GCC (gimplify_var_or_parm_decl)
+    'cmake.org', // make failure on Linux — resource exhaustion or parallel build race condition
+    'sourceforge.net/libtirpc', // libtool install fails — .libs/libtirpc.so not built
+    'werf.io', // Go compilation failure (complex build with CGO)
+    'agwa.name/git-crypt', // Man page build requires xsltproc (not installed)
+    'gnu.org/texinfo', // sed error on makeinfo binary during install
+    'gstreamer.freedesktop.org/orc', // Python SyntaxError in meson build — version incompatibility
+    'laravel.com', // libicudata.78.dylib not found — ICU dependency missing from PHP dep
+    'libimobiledevice.org/libimobiledevice-glue', // libplist pkg-config not found
+    'libsdl.org/SDL_ttf', // SDL2 not found via sdl2-config/pkg-config
+    'freedesktop.org/icon-theme', // Python SyntaxError in meson build tool
+    'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
+    'amp.rs', // Build script prop handling failure (6s crash)
+    'apache.org/apr-util', // --with-apr parameter incorrect (apr not found as dependency)
+    'crates.io/gitweb', // Rust compilation failure
+    'deepwisdom.ai', // pip faiss_cpu==1.7.4 not found (only 1.8.0+ available)
+    'developers.yubico.com/libfido2', // CMake configuration incomplete
+    'docbook.org/xsl', // cp: cannot stat 'docbook-xsl-1.79.2' (extraction layout mismatch)
+    'eksctl.io', // Go make generate-always fails
+    'gnu.org/bc', // Download 404 — bc-1.7.1.tar.gz not on ftpmirror.gnu.org
+    'libimobiledevice.org/libusbmuxd', // libplist pkg-config not found (cascading dep)
   ])
 
   let platformSkipped = 0
