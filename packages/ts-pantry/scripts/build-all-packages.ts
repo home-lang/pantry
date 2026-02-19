@@ -952,8 +952,12 @@ Options:
     'x.org/xauth', // X authentication — dep chain
     'x.org/xinput', // X input management — dep chain
     'xkbcommon.org', // Keyboard config library — meson build failure
-    'freedesktop.org/dbus', // Build failure on darwin
-    'libsoup.org', // Build failure on darwin
+    'bytebase.com', // Go compilation exceeds 30 min per-package timeout on darwin
+    'dozzle.dev', // Go compilation exceeds 30 min per-package timeout on darwin
+    'freedesktop.org/dbus', // Build failure on darwin (meson dep chain)
+    'gnu.org/gmp', // gmplib.org server unreachable (download timeout)
+    'leonerd.org.uk/libvterm', // Build script crash on darwin (2s failure)
+    'libsoup.org', // Build failure on darwin (dep chain)
     'systemd.io', // Complex linux init system — build failure
   ])
 
