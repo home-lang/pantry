@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 424 versions</summary>
+<summary>Show all 425 versions</summary>
 
-- `0.99.3`, `0.99.2`, `0.99.1`, `0.99.0`
+- `0.99.4`, `0.99.3`, `0.99.2`, `0.99.1`, `0.99.0`
 - `0.98.0`
 - `0.97.2`, `0.97.1`, `0.97.0`
 - `0.96.1`, `0.96.0`
@@ -85,13 +85,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.99.3`
+**Latest Version**: `0.99.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +terragrunt.gruntwork.io@0.99.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +terragrunt.gruntwork.io@0.99.4 -- $SHELL -i
 ```
 
 ## Dependencies
