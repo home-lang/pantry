@@ -3,7 +3,7 @@
  *
  * @domain `npmjs.com`
  * @programs `npm`, `npx`
- * @version `11.10.0` (74 versions available)
+ * @version `11.10.1` (75 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install npmjs.com`
@@ -23,7 +23,7 @@
  * console.log(pkg.name)        // "npmjs"
  * console.log(pkg.description) // "the package manager for JavaScript"
  * console.log(pkg.programs)    // ["npm", "npx"]
- * console.log(pkg.versions[0]) // "11.10.0" (latest)
+ * console.log(pkg.versions[0]) // "11.10.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/npmjs-com.md
@@ -74,6 +74,7 @@ export const npmPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '11.10.1',
     '11.10.0',
     '11.9.0',
     '11.8.0',
