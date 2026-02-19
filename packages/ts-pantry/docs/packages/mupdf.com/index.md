@@ -27,9 +27,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 40 versions</summary>
+<summary>Show all 41 versions</summary>
 
-- `1.27.1`, `1.27.0`
+- `1.27.2`, `1.27.1`, `1.27.0`
 - `1.26.12`, `1.26.11`, `1.26.10`, `1.26.9`, `1.26.8`, `1.26.7`, `1.26.6`, `1.26.5`, `1.26.4`, `1.26.3`, `1.26.2`, `1.26.1`, `1.26.0`
 - `1.25.6`, `1.25.5`, `1.25.4`, `1.25.3`, `1.25.2`, `1.25.1`, `1.25.0`
 - `1.24.11`, `1.24.10`, `1.24.9`, `1.24.8`, `1.24.7`, `1.24.6`, `1.24.5`, `1.24.4`, `1.24.3`, `1.24.2`, `1.24.1`, `1.24.0`
@@ -37,13 +37,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.27.1`
+**Latest Version**: `1.27.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +mupdf.com@1.27.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +mupdf.com@1.27.2 -- $SHELL -i
 ```
 
 ## Dependencies
