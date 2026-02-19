@@ -3,7 +3,7 @@
  *
  * @domain `github.com/anchore/grype`
  * @programs `grype`
- * @version `0.108.0` (79 versions available)
+ * @version `0.109.0` (80 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/anchore/grype`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "grype"
  * console.log(pkg.description) // "A vulnerability scanner for container images an..."
  * console.log(pkg.programs)    // ["grype"]
- * console.log(pkg.versions[0]) // "0.108.0" (latest)
+ * console.log(pkg.versions[0]) // "0.109.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/anchore/grype.md
@@ -67,6 +67,7 @@ export const grypePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.109.0',
     '0.108.0',
     '0.107.1',
     '0.107.0',

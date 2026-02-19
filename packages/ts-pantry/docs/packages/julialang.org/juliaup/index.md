@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 75 versions</summary>
+<summary>Show all 76 versions</summary>
 
-- `1.19.8`, `1.19.7`, `1.19.6`, `1.19.5`, `1.19.4`, `1.19.3`, `1.19.2`, `1.19.1`, `1.19.0`
+- `1.19.9`, `1.19.8`, `1.19.7`, `1.19.6`, `1.19.5`, `1.19.4`, `1.19.3`, `1.19.2`, `1.19.1`, `1.19.0`
 - `1.18.9`, `1.18.8`, `1.18.7`, `1.18.6`, `1.18.5`, `1.18.4`, `1.18.3`, `1.18.2`, `1.18.1`, `1.18.0`
 - `1.17.21`, `1.17.20`, `1.17.19`, `1.17.18`, `1.17.17`, `1.17.16`, `1.17.15`, `1.17.14`, `1.17.13`, `1.17.12`, `1.17.11`, `1.17.10`, `1.17.9`, `1.17.8`, `1.17.7`, `1.17.6`, `1.17.5`, `1.17.4`, `1.17.3`, `1.17.2`, `1.17.1`, `1.17.0`
 - `1.16.12`, `1.16.11`, `1.16.10`, `1.16.9`, `1.16.8`, `1.16.7`, `1.16.6`, `1.16.5`, `1.16.4`, `1.16.3`, `1.16.2`, `1.16.1`, `1.16.0`
@@ -39,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.19.8`
+**Latest Version**: `1.19.9`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +julialang.org/juliaup@1.19.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +julialang.org/juliaup@1.19.9 -- $SHELL -i
 ```
 
 ## Usage Examples
