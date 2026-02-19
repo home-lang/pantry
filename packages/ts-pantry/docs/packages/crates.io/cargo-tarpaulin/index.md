@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 16 versions</summary>
+<summary>Show all 17 versions</summary>
 
-- `0.35.1`, `0.35.0`
+- `0.35.2`, `0.35.1`, `0.35.0`
 - `0.34.1`, `0.34.0`
 - `0.33.0`
 - `0.32.8`, `0.32.7`, `0.32.6`, `0.32.5`, `0.32.4`, `0.32.3`, `0.32.2`, `0.32.1`, `0.32.0`
@@ -35,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.35.1`
+**Latest Version**: `0.35.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/cargo-tarpaulin@0.35.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/cargo-tarpaulin@0.35.2 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -3,7 +3,7 @@
  *
  * @domain `github.com/Z3Prover/z3`
  * @programs `z3`
- * @version `4.15.8` (21 versions available)
+ * @version `4.16.0` (22 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/Z3Prover/z3`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "z3"
  * console.log(pkg.description) // "High-performance theorem prover"
  * console.log(pkg.programs)    // ["z3"]
- * console.log(pkg.versions[0]) // "4.15.8" (latest)
+ * console.log(pkg.versions[0]) // "4.16.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/Z3Prover/z3.md
@@ -78,6 +78,7 @@ export const z3Package = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.16.0',
     '4.15.8',
     '4.15.7',
     '4.15.6',
