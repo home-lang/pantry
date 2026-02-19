@@ -621,7 +621,7 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
 
   // Extract transform function if present (e.g. transform: v => v.replace('-', '.'))
   let transformFn: ((v: string) => string | undefined) | null = null
-  const transformMatch = yamlContent.match(/transform:\s*['"]*(.+?)['"]*$/m)
+  const transformMatch = yamlContent.match(/transform:\s*['"]?([^\n'"]+)['"]?$/m)
   if (transformMatch) {
     try {
       // eslint-disable-next-line no-new-func

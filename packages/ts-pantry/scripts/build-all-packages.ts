@@ -734,7 +734,7 @@ Options:
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
     'heasarc.gsfc.nasa.gov/cfitsio', // NASA HEASARC server frequently unreachable (timeout)
-    'brxken128.github.io/dexios', // Rust "unnecessary qualification" lint errors with modern rustc (unmaintained)
+    'brxken128.github.io/dexios', // Rust 'unnecessary qualification' lint errors with modern rustc (unmaintained)
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
     'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup
@@ -796,7 +796,7 @@ Options:
     'gnu.org/bc', // Download 404 — bc-1.7.1.tar.gz not on ftpmirror.gnu.org
     'libimobiledevice.org/libusbmuxd', // libplist pkg-config not found (cascading dep)
     'freedesktop.org/desktop-file-utils', // Python SyntaxError in meson build tool
-    'harlequin.sh', // pip "must give at least one requirement" — build script issue
+    'harlequin.sh', // pip 'must give at least one requirement' — build script issue
     'libsdl.org/SDL_mixer', // SDL2 dependency not found
     'lloyd.github.io/yajl', // doxygen not found for doc generation in cmake build
     'musepack.net', // CMake generate step failed
