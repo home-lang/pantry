@@ -824,6 +824,16 @@ Options:
     'ccache.dev', // Build failure
     'crates.io/gitui', // Rust compilation failure (OpenSSL deps)
     'crates.io/zellij', // Rust compilation failure
+    'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
+    'zlib.net/minizip', // make failure — build system issue
+    'code.videolan.org/aribb24', // autotools make failure
+    'vapoursynth.com', // Build failure (autoreconf/automake issue)
+    'facebook.com/wangle', // CMake build failure (complex Facebook library)
+    'unidata.ucar.edu/netcdf', // cmake fix-up sed failure (HDF5 path issues)
+    'x.org/libcvt', // Python SyntaxError in meson build tool
+    'x.org/xaw', // Python SyntaxError in meson build tool (meson execution issue)
+    'sfcgal.gitlab.io', // CMake configuration failure
+    'libcxx.llvm.org', // LLVM compilation too resource-intensive for CI
   ])
 
   let platformSkipped = 0
