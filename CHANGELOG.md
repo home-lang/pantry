@@ -1,3 +1,32 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.1...v0.8.2)
+
+### 🚀 Features
+
+- add --skip flag to skip directories during monorepo publish ([95087a8](https://github.com/home-lang/pantry/commit/95087a8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.2 ([b8c1982](https://github.com/home-lang/pantry/commit/b8c1982)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update LLaMA.cpp, koyeb ([15bee53](https://github.com/home-lang/pantry/commit/15bee53)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.1...HEAD)
+
+### 🚀 Features
+
+- add --skip flag to skip directories during monorepo publish ([95087a8](https://github.com/home-lang/pantry/commit/95087a8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- update LLaMA.cpp, koyeb ([15bee53](https://github.com/home-lang/pantry/commit/15bee53)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.0...v0.8.1)
 
 ### 🚀 Features

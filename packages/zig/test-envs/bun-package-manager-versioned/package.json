@@ -1,6 +1,6 @@
 {
   "name": "bun-package-manager-versioned",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "packageManager": "bun@1.2.20",
   "description": "Test environment for versioned Bun package manager",
   "scripts": {
