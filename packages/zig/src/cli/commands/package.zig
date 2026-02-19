@@ -725,7 +725,7 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
 
     // Check for monorepo (packages/ directory with package.json files)
     const registry_cmds = @import("registry.zig");
-    const monorepo_packages = registry_cmds.detectMonorepoPackages(allocator, cwd) catch null;
+    const monorepo_packages = registry_cmds.detectMonorepoPackages(allocator, cwd, options.skip) catch null;
     defer if (monorepo_packages) |pkgs| {
         for (pkgs) |*pkg| {
             var p = pkg.*;
@@ -769,29 +769,6 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
         var succeeded: usize = 0;
 
         for (pkgs) |pkg| {
-            // Check if this package should be skipped via --skip flag
-            if (options.skip) |skip_list| {
-                const dir_name = std.fs.path.basename(pkg.path);
-                var skip_it = false;
-                var iter = std.mem.splitScalar(u8, skip_list, ',');
-                while (iter.next()) |skip_name| {
-                    const trimmed = std.mem.trim(u8, skip_name, " ");
-                    if (trimmed.len > 0 and std.mem.eql(u8, dir_name, trimmed)) {
-                        skip_it = true;
-                        break;
-                    }
-                    // Also match against the package name (from package.json)
-                    if (trimmed.len > 0 and std.mem.eql(u8, pkg.name, trimmed)) {
-                        skip_it = true;
-                        break;
-                    }
-                }
-                if (skip_it) {
-                    style.print("  Skipping {s} (--skip)\n", .{pkg.name});
-                    continue;
-                }
-            }
-
             style.print("\nPublishing {s}...\n", .{pkg.name});
 
             // Propagate root files (README, LICENSE) to package if missing

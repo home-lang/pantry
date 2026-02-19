@@ -266,7 +266,7 @@ pub const MonorepoPackage = struct {
 /// Detect monorepo packages in the packages/ directory (recursive).
 /// Returns null if no packages/ directory exists.
 /// Returns a list of non-private packages with their paths.
-pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []const u8) !?[]MonorepoPackage {
+pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []const u8, skip: ?[]const u8) !?[]MonorepoPackage {
     const packages_dir = try std.fs.path.join(allocator, &[_][]const u8{ project_root, "packages" });
     defer allocator.free(packages_dir);
 
@@ -284,7 +284,7 @@ pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []cons
     }
 
     // Recursively scan packages/ for directories containing package.json
-    try scanForPackages(allocator, packages_dir, &packages);
+    try scanForPackages(allocator, packages_dir, &packages, skip);
 
     if (packages.items.len == 0) {
         packages.deinit(allocator);
@@ -297,7 +297,7 @@ pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []cons
 /// Recursively scan a directory for subdirectories containing package.json.
 /// If a directory has package.json, it's treated as a package (not recursed further).
 /// If a directory has no package.json, recurse into its subdirectories.
-fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages: *std.ArrayList(MonorepoPackage)) !void {
+fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages: *std.ArrayList(MonorepoPackage), skip: ?[]const u8) !void {
     var dir = io_helper.openDirForIteration(dir_path) catch return;
     defer dir.close();
 
@@ -314,6 +314,23 @@ fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages:
             std.mem.startsWith(u8, entry.name, "."))
         {
             continue;
+        }
+
+        // Skip directories matching --skip flag
+        if (skip) |skip_list| {
+            var skip_iter = std.mem.splitScalar(u8, skip_list, ',');
+            var should_skip = false;
+            while (skip_iter.next()) |skip_name| {
+                const trimmed = std.mem.trim(u8, skip_name, " ");
+                if (trimmed.len > 0 and std.mem.eql(u8, entry.name, trimmed)) {
+                    should_skip = true;
+                    break;
+                }
+            }
+            if (should_skip) {
+                style.print("{s}⚠{s} Skipping {s}{s}{s} directory (--skip)\n", .{ style.yellow, style.reset, style.bold, entry.name, style.reset });
+                continue;
+            }
         }
 
         const entry_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, entry.name });
@@ -379,7 +396,7 @@ fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages:
         } else {
             // No package.json — recurse into subdirectories
             allocator.free(config_path);
-            try scanForPackages(allocator, entry_path, packages);
+            try scanForPackages(allocator, entry_path, packages, skip);
             allocator.free(entry_path);
         }
     }
@@ -410,7 +427,7 @@ pub fn registryPublishCommand(allocator: std.mem.Allocator, args: []const []cons
     defer allocator.free(cwd);
 
     // Check for monorepo (packages/ directory with package.json files)
-    const monorepo_packages = detectMonorepoPackages(allocator, cwd) catch null;
+    const monorepo_packages = detectMonorepoPackages(allocator, cwd, null) catch null;
     defer if (monorepo_packages) |pkgs| {
         for (pkgs) |*pkg| {
             var p = pkg.*;
