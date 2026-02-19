@@ -3,7 +3,7 @@
  *
  * @domain `consul.io`
  * @programs `consul`
- * @version `1.22.3` (19 versions available)
+ * @version `1.22.4` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install consul.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "consul"
  * console.log(pkg.description) // "Consul is a distributed, highly available, and ..."
  * console.log(pkg.programs)    // ["consul"]
- * console.log(pkg.versions[0]) // "1.22.3" (latest)
+ * console.log(pkg.versions[0]) // "1.22.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/consul-io.md
@@ -68,6 +68,7 @@ export const consulioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.22.4',
     '1.22.3',
     '1.22.2',
     '1.22.1',
