@@ -1056,33 +1056,32 @@ async function downloadDependencies(
       depPaths[`deps.${domain}.version.patch`] = depVParts[2] || '0'
       depPaths[`deps.${domain}.version.marketing`] = `${depVParts[0] || '0'}.${depVParts[1] || '0'}`
 
-      // Fix meson: the S3 meson has a broken venv with hardcoded python3 paths.
-      // Replace with a wrapper that uses system meson or system python3.
+      // Fix meson: the S3 meson binary is often a shell script with a broken venv
+      // shebang that gets interpreted by Python instead of shell, causing:
+      //   SyntaxError: invalid syntax (on SCRIPT_DIR="$(cd...")
+      // Always replace with a system meson wrapper when system meson is available,
+      // regardless of whether the S3 version "appears" to work (it may pass --version
+      // but fail during actual builds when PATH resolves differently).
       if (domain === 'mesonbuild.com') {
         try {
           const mesonBin = join(depInstallDir, 'bin', 'meson')
           if (existsSync(mesonBin)) {
-            // Test if the meson binary actually works
-            let mesonWorks = false
+            // Check if system meson exists (installed via apt/brew in CI)
+            let systemMeson = ''
             try {
-              execSync(`"${mesonBin}" --version`, { stdio: 'pipe', timeout: 5000 })
-              mesonWorks = true
-            } catch { /* broken venv */ }
+              systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe', env: { ...process.env, PATH: `/usr/local/bin:/opt/homebrew/bin:/usr/bin:${process.env.PATH}` } }).trim()
+              // Don't use our own S3 meson as "system" meson
+              if (systemMeson.includes('buildkit-deps')) systemMeson = ''
+            } catch { /* not found */ }
 
-            if (!mesonWorks) {
-              // Check if system meson exists (installed via apt/brew in CI)
-              let systemMeson = ''
-              try {
-                systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe' }).trim()
-              } catch { /* not found */ }
-
-              if (systemMeson) {
-                // Replace with wrapper that calls system meson
-                writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
-                console.log(`   - Replaced broken meson with system meson wrapper`)
-              } else {
-                // Try to fix the shebang to use system python3
-                const mesonContent = readFileSync(mesonBin, 'utf-8')
+            if (systemMeson) {
+              // Always replace with wrapper that calls system meson
+              writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
+              console.log(`   - Replaced S3 meson with system meson wrapper (${systemMeson})`)
+            } else {
+              // No system meson — try to fix the shebang to use system python3
+              const mesonContent = readFileSync(mesonBin, 'utf-8')
+              if (mesonContent.startsWith('#!') && !mesonContent.startsWith('#!/usr/bin/env python3')) {
                 const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
                 writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
                 console.log(`   - Fixed meson shebang to use system python3`)
