@@ -952,6 +952,9 @@ Options:
     'x.org/xauth', // X authentication — dep chain
     'x.org/xinput', // X input management — dep chain
     'xkbcommon.org', // Keyboard config library — meson build failure
+    'freedesktop.org/dbus', // Build failure on darwin
+    'libsoup.org', // Build failure on darwin
+    'systemd.io', // Complex linux init system — build failure
   ])
 
   let platformSkipped = 0
