@@ -56,6 +56,10 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
           cd /tmp/ts-cloud && bun install
+          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
+          # Revert to ./src/ since bun handles .ts imports natively
+          cd /tmp/ts-cloud/packages/ts-cloud
+          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
           rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
           mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
           ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
@@ -120,6 +124,10 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
           cd /tmp/ts-cloud && bun install
+          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
+          # Revert to ./src/ since bun handles .ts imports natively
+          cd /tmp/ts-cloud/packages/ts-cloud
+          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
           rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
           mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
           ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
@@ -172,6 +180,10 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
           cd /tmp/ts-cloud && bun install
+          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
+          # Revert to ./src/ since bun handles .ts imports natively
+          cd /tmp/ts-cloud/packages/ts-cloud
+          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
           rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
           mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
           ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
@@ -360,6 +372,10 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
           cd /tmp/ts-cloud && bun install
+          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
+          # Revert to ./src/ since bun handles .ts imports natively
+          cd /tmp/ts-cloud/packages/ts-cloud
+          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
           rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
           mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
           ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
