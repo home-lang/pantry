@@ -3,7 +3,7 @@
  *
  * @domain `koyeb.com`
  * @programs `koyeb`
- * @version `5.9.0` (40 versions available)
+ * @version `5.9.1` (41 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install koyeb.com`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "koyeb"
  * console.log(pkg.description) // "Koyeb cli"
  * console.log(pkg.programs)    // ["koyeb"]
- * console.log(pkg.versions[0]) // "5.9.0" (latest)
+ * console.log(pkg.versions[0]) // "5.9.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/koyeb-com.md
@@ -67,6 +67,7 @@ export const koyebcomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.9.1',
     '5.9.0',
     '5.8.0',
     '5.7.0',

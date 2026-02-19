@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 40 versions</summary>
+<summary>Show all 41 versions</summary>
 
-- `5.9.0`
+- `5.9.1`, `5.9.0`
 - `5.8.0`
 - `5.7.0`
 - `5.6.0`
@@ -57,13 +57,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `5.9.0`
+**Latest Version**: `5.9.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +koyeb.com@5.9.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +koyeb.com@5.9.1 -- $SHELL -i
 ```
 
 ## Usage Examples
