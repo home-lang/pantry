@@ -1,7 +1,7 @@
 {
   "name": "ts-pantry",
   "type": "module",
-  "version": "0.8.1",
+  "version": "0.8.0",
   "description": "A library & CLI for managing packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",

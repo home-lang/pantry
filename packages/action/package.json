@@ -1,6 +1,6 @@
 {
   "name": "pantry-installer",
-  "version": "0.8.1",
+  "version": "0.8.0",
   "description": "GitHub Action to install packages using pantry.",
   "author": "Stacks.js <hello@stacks.js.org>",
   "license": "MIT",
