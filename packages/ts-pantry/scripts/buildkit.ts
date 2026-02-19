@@ -487,6 +487,14 @@ export function generateBuildScript(
   }
   sections.push('')
 
+  // Ensure Homebrew tools are available on macOS (glibtool, gsed, etc.)
+  if (osName === 'darwin') {
+    sections.push('# Ensure Homebrew paths are available on macOS')
+    sections.push('case ":$PATH:" in *:/opt/homebrew/bin:*) ;; *) export PATH="/opt/homebrew/bin:$PATH" ;; esac')
+    sections.push('case ":$PATH:" in *:/opt/homebrew/sbin:*) ;; *) export PATH="/opt/homebrew/sbin:$PATH" ;; esac')
+    sections.push('')
+  }
+
   // Common setup — set BEFORE recipe env so recipes can override (e.g. certbot's SRCROOT)
   sections.push('# Common setup')
   sections.push('export FORCE_UNSAFE_CONFIGURE=1')
@@ -1002,6 +1010,22 @@ export function generateBuildScript(
     sections.push('# Force system AR/RANLIB on macOS (brewkit: avoids link failures with gcc)')
     sections.push('if [ -x /usr/bin/ar ]; then export AR=/usr/bin/ar; fi')
     sections.push('if [ -x /usr/bin/ranlib ]; then export RANLIB=/usr/bin/ranlib; fi')
+    sections.push('')
+    // macOS: create glibtool/glibtoolize symlinks if not present.
+    // Many Makefiles (libvterm, libtom) call `glibtool` (the Homebrew name for
+    // GNU libtool on macOS). If only `libtool` is available (from S3 dep or
+    // /opt/homebrew), create wrapper symlinks in the cc_wrapper dir.
+    sections.push('# Ensure glibtool is available on macOS (GNU libtool alias)')
+    sections.push('if ! command -v glibtool &>/dev/null && command -v libtool &>/dev/null; then')
+    sections.push('  _lt="$(command -v libtool)"')
+    sections.push('  # Only symlink if it looks like GNU libtool (not Apple libtool)')
+    sections.push('  if "$_lt" --version 2>/dev/null | head -1 | grep -qi "GNU\\|libtool"; then')
+    sections.push('    ln -sf "$_lt" "${TMPDIR:-/tmp}/_cc_wrapper/glibtool" 2>/dev/null || true')
+    sections.push('  fi')
+    sections.push('fi')
+    sections.push('if ! command -v glibtoolize &>/dev/null && command -v libtoolize &>/dev/null; then')
+    sections.push('  ln -sf "$(command -v libtoolize)" "${TMPDIR:-/tmp}/_cc_wrapper/glibtoolize" 2>/dev/null || true')
+    sections.push('fi')
     sections.push('')
   }
 
