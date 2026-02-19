@@ -236,7 +236,10 @@ jobs:
             libpam0g-dev libudev-dev \
             libarchive-dev libusb-1.0-0-dev \
             libjemalloc-dev libvterm-dev \
-            libxslt1-dev
+            libxslt1-dev \
+            libsdl2-dev libplist-dev \
+            libassuan-dev libgpg-error-dev \
+            libfido2-dev
 
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'
@@ -421,7 +424,10 @@ jobs:
             libpam0g-dev libudev-dev \
             libarchive-dev libusb-1.0-0-dev \
             libjemalloc-dev libvterm-dev \
-            libxslt1-dev
+            libxslt1-dev \
+            libsdl2-dev libplist-dev \
+            libassuan-dev libgpg-error-dev \
+            libfido2-dev
 
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'

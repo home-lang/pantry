@@ -742,6 +742,23 @@ Options:
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
     'elixir-lang.org', // Erlang dep has hardcoded build-time paths (erlexec not found)
     'elixir-lang.org/otp-27', // Same erlang relocatability issue
+    'pimalaya.org/himalaya', // Requires Rust edition2024 (Cargo 1.85.0+), runner has 1.82.0
+    'plakar.io', // cockroachdb/swiss requires Go runtime internals not in Go 1.26
+    'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
+    'syncthing.net', // Requires Go 1.26.0 runtime mapping not in compat.yaml
+    'projectdiscovery.io/nuclei', // bytedance/sonic requires newer Go runtime internals
+    'iroh.computer', // Rust dependency API mismatch (digest::crypto_common)
+    'crates.io/mdcat', // dead_code lint denied by #[deny(warnings)] in dependency
+    'dns.lookup.dog', // Needs OpenSSL headers for rust-openssl (not in standard S3 deps)
+    'microsoft.com/code-cli', // Needs specific OpenSSL lib layout for Rust linking
+    'fluentci.io', // Uses deno compile, fragile in CI
+    'fna-xna.github.io', // FAudio needs SDL2 headers from SDL2 dev package
+    'getclipboard.app', // stdlib.h broken via include_next in CI compiler setup
+    'perl.org', // IO.xs poll.h struct pollfd incomplete type on Linux (glibc issue)
+    'priver.dev/geni', // GitHub tag v2023.12.27 removed
+    'schollz.com/croc', // GitHub tag v10.4.0 removed
+    'foundry-rs.github.io/foundry', // All old version tags pruned from repo
+    'volta.sh', // Build failure (needs investigation)
   ])
 
   let platformSkipped = 0

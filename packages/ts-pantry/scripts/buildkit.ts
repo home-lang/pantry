@@ -826,7 +826,13 @@ export function generateBuildScript(
     sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
     sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
     if (osName === 'darwin') {
-      sections.push(`export DYLD_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_LIBRARY_PATH:-}"`)
+      // Use DYLD_FALLBACK_LIBRARY_PATH instead of DYLD_LIBRARY_PATH on macOS.
+      // DYLD_LIBRARY_PATH is searched BEFORE default locations (including @rpath),
+      // which breaks programs like the JVM that load native libraries from their own
+      // directories (causes UnsatisfiedLinkError: Inflater.initIDs()).
+      // DYLD_FALLBACK_LIBRARY_PATH is searched AFTER default locations, so it helps
+      // builds find dependency libraries without interfering with system tools.
+      sections.push(`export DYLD_FALLBACK_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_FALLBACK_LIBRARY_PATH:-}"`)
     }
 
     // CMAKE_PREFIX_PATH: help CMake find deps (ported from brewkit)
