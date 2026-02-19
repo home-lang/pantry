@@ -445,38 +445,11 @@ pub fn build(b: *std.Build) void {
 
 /// Get package version from package.json
 fn getPackageVersion(b: *std.Build) ![]const u8 {
-    _ = b;
-    // Temporarily return fixed version until build.zig API is updated
-    return "0.7.7";
-
-    // TODO: Re-enable when Zig API stabilizes
-    // Try to read from parent directory (monorepo structure)
-    // const package_json = std.fs.cwd().readFileAlloc(
-    //     "../../package.json",
-    //     b.allocator,
-    //     std.Io.Limit.limited(1024 * 1024),
-    // ) catch |err| {
-    //     std.debug.print("Warning: Could not read package.json: {}\n", .{err});
-    //     return error.PackageJsonNotFound;
-    // };
-    // defer b.allocator.free(package_json);
-
-    // const parsed = std.json.parseFromSlice(
-    //     std.json.Value,
-    //     b.allocator,
-    //     package_json,
-    //     .{},
-    // ) catch |err| {
-    //     std.debug.print("Warning: Could not parse package.json: {}\n", .{err});
-    //     return error.InvalidJson;
-    // };
-    // defer parsed.deinit();
-
-    // const version = parsed.value.object.get("version") orelse {
-    //     return error.NoVersionField;
-    // };
-
-    // return b.allocator.dupe(u8, version.string);
+    // Read version from root package.json using shell command
+    const result = b.run(&.{ "node", "-p", "require('../../package.json').version" });
+    const trimmed = std.mem.trim(u8, result, &std.ascii.whitespace);
+    if (trimmed.len > 0) return trimmed;
+    return "0.0.0";
 }
 
 /// Get git commit hash (short)
