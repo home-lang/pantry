@@ -2,7 +2,7 @@
  * **ruff** - An extremely fast Python linter and code formatter, written in Rust.
  *
  * @domain `github.com/charliermarsh/ruff`
- * @version `0.15.1` (182 versions available)
+ * @version `0.15.2` (183 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/charliermarsh/ruff`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcomcharliermarshruff
  * console.log(pkg.name)        // "ruff"
  * console.log(pkg.description) // "An extremely fast Python linter and code format..."
- * console.log(pkg.versions[0]) // "0.15.1" (latest)
+ * console.log(pkg.versions[0]) // "0.15.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/charliermarsh/ruff.md
@@ -60,6 +60,7 @@ export const ruffPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.15.2',
     '0.15.1',
     '0.15.0',
     '0.14.14',
