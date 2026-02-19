@@ -3,7 +3,7 @@
  *
  * @domain `pimalaya.org/himalaya`
  * @programs `himalaya`
- * @version `1.1.0` (4 versions available)
+ * @version `1.2.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pimalaya.org/himalaya`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "himalaya"
  * console.log(pkg.description) // "CLI email client written in Rust"
  * console.log(pkg.programs)    // ["himalaya"]
- * console.log(pkg.versions[0]) // "1.1.0" (latest)
+ * console.log(pkg.versions[0]) // "1.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pimalaya-org/himalaya.md
@@ -61,6 +61,7 @@ export const pimalayaorghimalayaPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2.0',
     '1.1.0',
     '1.0.0',
     '0.9.0',
