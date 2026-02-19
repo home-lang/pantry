@@ -795,6 +795,35 @@ Options:
     'eksctl.io', // Go make generate-always fails
     'gnu.org/bc', // Download 404 — bc-1.7.1.tar.gz not on ftpmirror.gnu.org
     'libimobiledevice.org/libusbmuxd', // libplist pkg-config not found (cascading dep)
+    'freedesktop.org/desktop-file-utils', // Python SyntaxError in meson build tool
+    'harlequin.sh', // pip "must give at least one requirement" — build script issue
+    'libsdl.org/SDL_mixer', // SDL2 dependency not found
+    'lloyd.github.io/yajl', // doxygen not found for doc generation in cmake build
+    'musepack.net', // CMake generate step failed
+    'pagure.io/xmlto', // Build script failure (xsltproc/docbook dependency)
+    'python.org/typing_extensions', // flit build tool path error (Undefined error: 0)
+    'radicle.org', // Rust compilation failure
+    'rclone.org', // Build script failure
+    'snaplet.dev/cli', // npm install failure
+    'tsl0922.github.io/ttyd', // CMake build — server.c compilation error
+    'videolan.org/x265', // CMake configuration incomplete
+    'x.org/ice', // Configure/build failure on darwin
+    'x.org/sm', // Configure/build failure (cascading from ice)
+    'x.org/xkbfile', // Python SyntaxError in build tool
+    'freedesktop.org/slirp', // Build failure on darwin
+    'gnome.org/libxml2', // Build failure on darwin
+    'postgrest.org', // Haskell build — GHC/Stack not available
+    'ceph.com/cephadm', // Build failure on linux
+    'gnupg.org/libgcrypt', // Build failure (gpg-error dep not found)
+    'libimobiledevice.org', // libplist/libusbmuxd cascading deps not found
+    'libimobiledevice.org/libtatsu', // libplist cascading dep not found
+    'matio.sourceforge.io', // Build failure
+    'mozilla.org/nss', // Build failure (complex build system)
+    'nx.dev', // npm install failure
+    'openpmix.github.io', // Build failure
+    'ccache.dev', // Build failure
+    'crates.io/gitui', // Rust compilation failure (OpenSSL deps)
+    'crates.io/zellij', // Rust compilation failure
   ])
 
   let platformSkipped = 0
