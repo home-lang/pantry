@@ -1,3 +1,566 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.0...v0.8.1)
+
+### 🚀 Features
+
+- resolve GitHub tags via API to fix leading-zero version normalization ([4e4a3df](https://github.com/home-lang/pantry/commit/4e4a3df)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add targeted build mode for fast CI testing, fix shell expansion bug ([51b37cb](https://github.com/home-lang/pantry/commit/51b37cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- port high-impact brewkit improvements to buildkit ([29b808a](https://github.com/home-lang/pantry/commit/29b808a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add targeted build-package workflow for quick iteration ([fff7504](https://github.com/home-lang/pantry/commit/fff7504)) _(by Chris <chrisbreuer93@gmail.com>)_
+- topological sort packages by dependency depth ([e7ccca4](https://github.com/home-lang/pantry/commit/e7ccca4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add buildkit to build all 1159 pantry packages from source ([d11cb59](https://github.com/home-lang/pantry/commit/d11cb59)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- add 117 more packages to known-broken list from run 22169381361 ([bf6f725](https://github.com/home-lang/pantry/commit/bf6f725)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve lint errors in build scripts ([bfca3a6](https://github.com/home-lang/pantry/commit/bfca3a6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add 12 more packages to known-broken list from batches 15-19 ([4764087](https://github.com/home-lang/pantry/commit/4764087)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add more packages to known-broken list from batches 13-18 ([78ee16a](https://github.com/home-lang/pantry/commit/78ee16a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add 31 more packages to known-broken list from run 22165206563 ([e441096](https://github.com/home-lang/pantry/commit/e441096)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add more packages to known-broken list ([b46c0cd](https://github.com/home-lang/pantry/commit/b46c0cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add glibtool symlink and ensure /opt/homebrew/bin in PATH on macOS ([be06f76](https://github.com/home-lang/pantry/commit/be06f76)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use DYLD_FALLBACK_LIBRARY_PATH on macOS, add missing Linux dev deps ([1829c60](https://github.com/home-lang/pantry/commit/1829c60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent sync-binaries runs from being cancelled by new triggers ([ed7364f](https://github.com/home-lang/pantry/commit/ed7364f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove Debian-patched setuptools/wheel instead of just upgrading ([ae9db43](https://github.com/home-lang/pantry/commit/ae9db43)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve Python setuptools install_layout and missing Go on macOS ([a068637](https://github.com/home-lang/pantry/commit/a068637)) _(by Chris <chrisbreuer93@gmail.com>)_
+- isolate cargo/rustup per-build and add gfortran support ([2eb35e8](https://github.com/home-lang/pantry/commit/2eb35e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent find ([5a22773](https://github.com/home-lang/pantry/commit/5a22773)) _(by head SIGPIPE crash in cargo fallback with set -eo pipefail <Chris>)_
+- BSD sed compatibility, findYamls traversal bug, and string build detection ([7dd7dde](https://github.com/home-lang/pantry/commit/7dd7dde)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve cargo PATH detection, macOS deployment target, and obsolete linker flags ([5cd9fad](https://github.com/home-lang/pantry/commit/5cd9fad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle trailing .0 in version matching and multiline transform regex ([87e6dfd](https://github.com/home-lang/pantry/commit/87e6dfd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle more build edge cases (permissions, .war files, cargo-c, libxslt) ([8ba5dda](https://github.com/home-lang/pantry/commit/8ba5dda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- clear bash hash table before build script to fix cargo not found ([61edcec](https://github.com/home-lang/pantry/commit/61edcec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- windows cross-compilation errors in io_helper, extractor, installer, package ([5d8f500](https://github.com/home-lang/pantry/commit/5d8f500)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add 8 more packages to known broken list ([49fa72d](https://github.com/home-lang/pantry/commit/49fa72d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- lint errors ([fd65216](https://github.com/home-lang/pantry/commit/fd65216)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- lint errors ([fe47b06](https://github.com/home-lang/pantry/commit/fe47b06)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add docker.com/cli, reshape, frei0r to known broken list ([9a51dd2](https://github.com/home-lang/pantry/commit/9a51dd2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- don't override recipe GOPATH in Go toolchain setup ([a436340](https://github.com/home-lang/pantry/commit/a436340)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add python-venv.py script shim for pkgx YAML recipes ([ab71b50](https://github.com/home-lang/pantry/commit/ab71b50)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reduce per-package timeout to 30 min and add batch time budget ([9d257d6](https://github.com/home-lang/pantry/commit/9d257d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip YAML quotes from array items in parser ([74bbf54](https://github.com/home-lang/pantry/commit/74bbf54)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create cargo symlinks before Rust toolchain search ([90042e8](https://github.com/home-lang/pantry/commit/90042e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source rustup env for reliable cargo discovery + add diagnostics ([722092f](https://github.com/home-lang/pantry/commit/722092f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add pwmt.org/girara and zathura to knownBrokenDomains ([a9d0af7](https://github.com/home-lang/pantry/commit/a9d0af7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move x.org/x11 local-transport override from YAML to buildkit code ([a5afa52](https://github.com/home-lang/pantry/commit/a5afa52)) _(by Chris <chrisbreuer93@gmail.com>)_
+- only activate GCC specs workaround on Linux, not macOS ([a36f6d8](https://github.com/home-lang/pantry/commit/a36f6d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- disable local-transport for x.org/x11 on Linux (sys/stropts.h removed in glibc 2.38+) ([06e31c4](https://github.com/home-lang/pantry/commit/06e31c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- correct YAML multiline scalar continuation indent from +4 to +2 ([4b01ce1](https://github.com/home-lang/pantry/commit/4b01ce1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- show tail of generated build script on failure to see user commands ([0dae0c7](https://github.com/home-lang/pantry/commit/0dae0c7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- don't add default -o for preprocessor invocations in specs workaround ([073fb43](https://github.com/home-lang/pantry/commit/073fb43)) _(by Chris <chrisbreuer93@gmail.com>)_
+- also wrap cpp in cc_wrapper to handle ./specs directory ([75a4c0e](https://github.com/home-lang/pantry/commit/75a4c0e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle default output paths in GCC specs workaround ([89a91e7](https://github.com/home-lang/pantry/commit/89a91e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve diagnostics for GCC specs workaround debugging ([c7795e0](https://github.com/home-lang/pantry/commit/c7795e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- work around GCC ./specs directory issue via cc_wrapper CWD change ([4bc10e3](https://github.com/home-lang/pantry/commit/4bc10e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use GCC_EXEC_PREFIX to prevent ./specs directory confusion on Linux ([e273abf](https://github.com/home-lang/pantry/commit/e273abf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- work around GCC ./specs directory issue on Linux ([d5d3fb5](https://github.com/home-lang/pantry/commit/d5d3fb5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve compiler diagnostic to test with CFLAGS+LDFLAGS ([6ef920f](https://github.com/home-lang/pantry/commit/6ef920f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add compiler diagnostics + config.log dump for build failures ([59b2079](https://github.com/home-lang/pantry/commit/59b2079)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase per-package timeout to 60 min (codex needs ~50 min) ([093f1e7](https://github.com/home-lang/pantry/commit/093f1e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add libcap-dev for codex, add broken Rust packages to skip list ([fdbb487](https://github.com/home-lang/pantry/commit/fdbb487)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase per-package build timeout to 45 min for large Rust builds ([91a9136](https://github.com/home-lang/pantry/commit/91a9136)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add broken packages to skip lists based on run analysis ([e11c955](https://github.com/home-lang/pantry/commit/e11c955)) _(by Chris <chrisbreuer93@gmail.com>)_
+- persist cargo PATH via GITHUB_PATH, add broken packages to skip list ([45104bd](https://github.com/home-lang/pantry/commit/45104bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use GCC-compatible CFLAGS on Linux (-Wno-error=incompatible-pointer-types) ([247f5ae](https://github.com/home-lang/pantry/commit/247f5ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove Linux LDFLAGS that breaks configure compiler tests ([01c9eb8](https://github.com/home-lang/pantry/commit/01c9eb8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- upgrade to macOS 15 runners, add Swift 6.2 support, fix pip/Rust/multiarch issues ([7f290b0](https://github.com/home-lang/pantry/commit/7f290b0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add Linux LDFLAGS and relax warnings-as-errors ([040f365](https://github.com/home-lang/pantry/commit/040f365)) _(by Chris <chrisbreuer93@gmail.com>)_
+- comprehensive CI system packages, GNU mirror, and broken domain fixes ([b81a75c](https://github.com/home-lang/pantry/commit/b81a75c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve cargo discovery and CMake compatibility in buildkit ([2a85661](https://github.com/home-lang/pantry/commit/2a85661)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add --without-icu to postgresql/libpq recipe ([bad1bba](https://github.com/home-lang/pantry/commit/bad1bba)) _(by Chris <chrisbreuer93@gmail.com>)_
+- hardcoded version URLs, broken recipes, update Rust toolchain ([59dd742](https://github.com/home-lang/pantry/commit/59dd742)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent update-pantry from overwriting local recipe fixes ([69d377c](https://github.com/home-lang/pantry/commit/69d377c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use {{version}} in distributable URLs instead of hardcoded versions ([637bceb](https://github.com/home-lang/pantry/commit/637bceb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser array-at-same-indent bug, install -D shim, darwin CFLAGS ([f407f44](https://github.com/home-lang/pantry/commit/f407f44)) _(by Chris <chrisbreuer93@gmail.com>)_
+- compiler wrapper heredoc parsing error (Unexpected @) ([07ef845](https://github.com/home-lang/pantry/commit/07ef845)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reduce knownBrokenDomains, fix berkeley-db recipe ([f47b966](https://github.com/home-lang/pantry/commit/f47b966)) _(by Chris <chrisbreuer93@gmail.com>)_
+- PYTHONPATH for system Python modules, add missing macOS deps, fix pkgm strip-components ([d12177f](https://github.com/home-lang/pantry/commit/d12177f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pass packages as comma-separated to -p (parseArgs only keeps last) ([e15e6fd](https://github.com/home-lang/pantry/commit/e15e6fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bypass all filters for targeted builds + add python3-libxml2 to CI ([7799162](https://github.com/home-lang/pantry/commit/7799162)) _(by Chris <chrisbreuer93@gmail.com>)_
+- -p flag now bypasses knownBroken/toolchain filters for targeted builds ([e0aa369](https://github.com/home-lang/pantry/commit/e0aa369)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add missing system deps to CI, remove fixable packages from knownBroken ([ffe09cf](https://github.com/home-lang/pantry/commit/ffe09cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ln wrapper, cargo detection, recipe fixes, knownBroken updates ([d8f6cf1](https://github.com/home-lang/pantry/commit/d8f6cf1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- symlink cargo/rustup into overridden HOME + URL safety ([9b5eb4a](https://github.com/home-lang/pantry/commit/9b5eb4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move SRCROOT setup before recipe env for proper overrides ([f1c1d7d](https://github.com/home-lang/pantry/commit/f1c1d7d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- more recipe fixes for zip strip-components conflicts ([6a44024](https://github.com/home-lang/pantry/commit/6a44024)) _(by Chris <chrisbreuer93@gmail.com>)_
+- recipe fixes and non-archive download handling ([48dec17](https://github.com/home-lang/pantry/commit/48dec17)) _(by Chris <chrisbreuer93@gmail.com>)_
+- always cd to buildDir before working-directory subdirectory ([86c249a](https://github.com/home-lang/pantry/commit/86c249a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- auto-detect system dep prefix for toolchain packages ([8b84407](https://github.com/home-lang/pantry/commit/8b84407)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove exported bash functions that pollute child process environments ([20f4ea8](https://github.com/home-lang/pantry/commit/20f4ea8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add missing system build deps to CI workflow ([50c3bb1](https://github.com/home-lang/pantry/commit/50c3bb1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prop heredoc escaping, JAVA_HOME detection, download retries ([1b64a4b](https://github.com/home-lang/pantry/commit/1b64a4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve multiple build failures for pantry package compilation ([920a382](https://github.com/home-lang/pantry/commit/920a382)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser URL detection regression - use looksLikeKeyValue ([2be356e](https://github.com/home-lang/pantry/commit/2be356e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip YAML inline comments from parser values ([8f0a67f](https://github.com/home-lang/pantry/commit/8f0a67f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML dep extraction, platform filtering, meson venv, install -D shim, URL parsing ([723d92b](https://github.com/home-lang/pantry/commit/723d92b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip trailing .0 from versions on download failure ([9168e87](https://github.com/home-lang/pantry/commit/9168e87)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix pkg-config in downloaded deps, add system pkg-config paths ([946b4b6](https://github.com/home-lang/pantry/commit/946b4b6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- version fallback, meson venv, dep path pollution, fix-shebangs shim, direct build arrays ([9651099](https://github.com/home-lang/pantry/commit/9651099)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle multi-line plain scalar continuation in YAML arrays ([520c4db](https://github.com/home-lang/pantry/commit/520c4db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser overhaul for run arrays, working-directory, inline mappings ([82675e3](https://github.com/home-lang/pantry/commit/82675e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- URL-encode source URLs and validate download size ([5bb5519](https://github.com/home-lang/pantry/commit/5bb5519)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve Go GOROOT mismatch, -pie LDFLAGS, and version 404s ([e9cc094](https://github.com/home-lang/pantry/commit/e9cc094)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser for if:/working-directory, skip broken recipes, exit 0 ([42eddc9](https://github.com/home-lang/pantry/commit/42eddc9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve system toolchains, add shims, smart filtering ([fcfcbf0](https://github.com/home-lang/pantry/commit/fcfcbf0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- complex strip patterns, GNU sed on macOS, regex for nested / ([ba6a319](https://github.com/home-lang/pantry/commit/ba6a319)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle git+https sources, smart version.tag, exit non-zero on failures ([e60712a](https://github.com/home-lang/pantry/commit/e60712a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve template interpolation, YAML parsing, S3 binary download issues ([e3f6c53](https://github.com/home-lang/pantry/commit/e3f6c53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent batch crash on cleanup errors, fix compiler flag ordering ([73f16d7](https://github.com/home-lang/pantry/commit/73f16d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- dynamic python version, linux build deps for postgres ([dce1638](https://github.com/home-lang/pantry/commit/dce1638)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add Linux support for postgres/mysql, update python URL ([8e48f3d](https://github.com/home-lang/pantry/commit/8e48f3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use direct symlink instead of bun link for ts-cloud in CI ([5ca7dfe](https://github.com/home-lang/pantry/commit/5ca7dfe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use ts-cloud via bun link for S3 operations ([41c3aa8](https://github.com/home-lang/pantry/commit/41c3aa8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve module resolution and GitHub API rate limits in CI ([43de03f](https://github.com/home-lang/pantry/commit/43de03f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- cache brew packages and increase parallelism for faster CI ([ff9d41f](https://github.com/home-lang/pantry/commit/ff9d41f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.1 ([5de276a](https://github.com/home-lang/pantry/commit/5de276a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update rtx-cli, helmfile, mise, himalaya ([df24740](https://github.com/home-lang/pantry/commit/df24740)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- revert version ([31935b9](https://github.com/home-lang/pantry/commit/31935b9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release new version ([b4f2028](https://github.com/home-lang/pantry/commit/b4f2028)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update freetds, LLaMA.cpp ([c4a76f0](https://github.com/home-lang/pantry/commit/c4a76f0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update virtualenv ([be10292](https://github.com/home-lang/pantry/commit/be10292)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko ([bd992ff](https://github.com/home-lang/pantry/commit/bd992ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update consul, LLaMA.cpp, tox ([b12c174](https://github.com/home-lang/pantry/commit/b12c174)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cargo-tarpaulin, depot, z3, vals ([4e30f88](https://github.com/home-lang/pantry/commit/4e30f88)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, vals, pulumi ([e14f64d](https://github.com/home-lang/pantry/commit/e14f64d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update filelock, vcluster ([cb20fc5](https://github.com/home-lang/pantry/commit/cb20fc5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ia ([dbda8c1](https://github.com/home-lang/pantry/commit/dbda8c1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update azcopy ([0261b94](https://github.com/home-lang/pantry/commit/0261b94)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, spec-kit, moon, vim ([70dce0b](https://github.com/home-lang/pantry/commit/70dce0b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, LLaMA.cpp, glab, vim ([1978471](https://github.com/home-lang/pantry/commit/1978471)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, LLaMA.cpp, terragrunt ([cb03b00](https://github.com/home-lang/pantry/commit/cb03b00)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, tox ([bd2a1e5](https://github.com/home-lang/pantry/commit/bd2a1e5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, gcloud ([9ad196b](https://github.com/home-lang/pantry/commit/9ad196b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, psycopg3, vim ([984b7e9](https://github.com/home-lang/pantry/commit/984b7e9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update syft, gh, flipt, hugo, jenkins-lts and 1 other dep ([45805c7](https://github.com/home-lang/pantry/commit/45805c7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- set max-parallel to 8 ([f4def27](https://github.com/home-lang/pantry/commit/f4def27)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update bind9, soliditylang, vim ([2fecdc7](https://github.com/home-lang/pantry/commit/2fecdc7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- regenerate package catalog ([689e032](https://github.com/home-lang/pantry/commit/689e032)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update squidfunk/mkdocs-material ([677b7a3](https://github.com/home-lang/pantry/commit/677b7a3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([f6e16b2](https://github.com/home-lang/pantry/commit/f6e16b2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([12bf88f](https://github.com/home-lang/pantry/commit/12bf88f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release v0.8.1 ([e095dda](https://github.com/home-lang/pantry/commit/e095dda)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update loki, tailwindcss ([c928bd2](https://github.com/home-lang/pantry/commit/c928bd2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([93d568b](https://github.com/home-lang/pantry/commit/93d568b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update argo-cd, periphery ([4140bec](https://github.com/home-lang/pantry/commit/4140bec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-cd, checkov, rtx-cli, sk and 3 other deps ([61de58a](https://github.com/home-lang/pantry/commit/61de58a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([9e0f4e7](https://github.com/home-lang/pantry/commit/9e0f4e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, LLaMA.cpp ([5a6c0a2](https://github.com/home-lang/pantry/commit/5a6c0a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update libgpg-error ([4a9f15b](https://github.com/home-lang/pantry/commit/4a9f15b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([887d98b](https://github.com/home-lang/pantry/commit/887d98b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update checkov ([87a55c1](https://github.com/home-lang/pantry/commit/87a55c1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, opa ([adb8f11](https://github.com/home-lang/pantry/commit/adb8f11)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, codex ([406e812](https://github.com/home-lang/pantry/commit/406e812)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update taglib-config ([a328803](https://github.com/home-lang/pantry/commit/a328803)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mas, laravel, pulumi ([bbfdfba](https://github.com/home-lang/pantry/commit/bbfdfba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([3630b5b](https://github.com/home-lang/pantry/commit/3630b5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update codex ([22d8a8f](https://github.com/home-lang/pantry/commit/22d8a8f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade ([88b54f4](https://github.com/home-lang/pantry/commit/88b54f4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update uv, LLaMA.cpp ([16a9a71](https://github.com/home-lang/pantry/commit/16a9a71)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp ([fbbc5e1](https://github.com/home-lang/pantry/commit/fbbc5e1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, aws-iam-authenticator, tox ([084c85f](https://github.com/home-lang/pantry/commit/084c85f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pik, odigos, codex ([89acad3](https://github.com/home-lang/pantry/commit/89acad3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, glab ([c627a24](https://github.com/home-lang/pantry/commit/c627a24)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update kargo, spider, stripe, tox, vim ([bc9e0d8](https://github.com/home-lang/pantry/commit/bc9e0d8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rclone ([148208c](https://github.com/home-lang/pantry/commit/148208c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update werf ([8fafbcb](https://github.com/home-lang/pantry/commit/8fafbcb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery, deno, mvfst, golangci-lint and 1 other dep ([e17e707](https://github.com/home-lang/pantry/commit/e17e707)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([40b5332](https://github.com/home-lang/pantry/commit/40b5332)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([dd12f2b](https://github.com/home-lang/pantry/commit/dd12f2b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update uv, rtx-cli, mise, openstack, pnp and 2 other deps ([e3be051](https://github.com/home-lang/pantry/commit/e3be051)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([b89aade](https://github.com/home-lang/pantry/commit/b89aade)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update llrt, golangci-lint, rucio-client ([362b519](https://github.com/home-lang/pantry/commit/362b519)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([9a2f598](https://github.com/home-lang/pantry/commit/9a2f598)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, elementsproject, LLaMA.cpp and 2 other deps ([94866f5](https://github.com/home-lang/pantry/commit/94866f5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update babashka, rtx-cli, apko ([4f810ce](https://github.com/home-lang/pantry/commit/4f810ce)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([7288eca](https://github.com/home-lang/pantry/commit/7288eca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update cnquery, LLaMA.cpp, mise ([16b8e50](https://github.com/home-lang/pantry/commit/16b8e50)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cilium ([a5cc21c](https://github.com/home-lang/pantry/commit/a5cc21c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update freetds ([3697308](https://github.com/home-lang/pantry/commit/3697308)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pocketbase ([eecd4d5](https://github.com/home-lang/pantry/commit/eecd4d5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ghq ([fb43462](https://github.com/home-lang/pantry/commit/fb43462)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([d284c2a](https://github.com/home-lang/pantry/commit/d284c2a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add Go 1.26 incompatible packages to knownBrokenDomains ([479e6ae](https://github.com/home-lang/pantry/commit/479e6ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([4e005d9](https://github.com/home-lang/pantry/commit/4e005d9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add jetporch.com to knownBrokenDomains ([c3241fe](https://github.com/home-lang/pantry/commit/c3241fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add more entries to knownBrokenDomains ([3251b64](https://github.com/home-lang/pantry/commit/3251b64)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([f89108d](https://github.com/home-lang/pantry/commit/f89108d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, LLaMA.cpp, rabbitmq and 3 other deps ([e6e7604](https://github.com/home-lang/pantry/commit/e6e7604)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (12 files) ([89bd31b](https://github.com/home-lang/pantry/commit/89bd31b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, fish, cirrus, ollama ([e934b6a](https://github.com/home-lang/pantry/commit/e934b6a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (2 files) ([0586cdd](https://github.com/home-lang/pantry/commit/0586cdd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([edd155e](https://github.com/home-lang/pantry/commit/edd155e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, kafka.apache, linux-headers, vim ([0f09d5c](https://github.com/home-lang/pantry/commit/0f09d5c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, linux-headers, oh-my-posh ([2384b7b](https://github.com/home-lang/pantry/commit/2384b7b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (7 files) ([20e3a71](https://github.com/home-lang/pantry/commit/20e3a71)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli ([62f2681](https://github.com/home-lang/pantry/commit/62f2681)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([7ed9e3f](https://github.com/home-lang/pantry/commit/7ed9e3f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, LLaMA.cpp ([12d2e17](https://github.com/home-lang/pantry/commit/12d2e17)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update istioctl ([c352540](https://github.com/home-lang/pantry/commit/c352540)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update surreal ([8890ac5](https://github.com/home-lang/pantry/commit/8890ac5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, edencommon, fb303, thrift1 and 4 other deps ([e2738fb](https://github.com/home-lang/pantry/commit/e2738fb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, typos, linux-headers, oh-my-posh ([6b0b146](https://github.com/home-lang/pantry/commit/6b0b146)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-workflows ([4fecfe2](https://github.com/home-lang/pantry/commit/4fecfe2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([5982ba6](https://github.com/home-lang/pantry/commit/5982ba6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update maturin, rucio-client ([4121012](https://github.com/home-lang/pantry/commit/4121012)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update arrow, LLaMA.cpp, kubebuilder ([486de65](https://github.com/home-lang/pantry/commit/486de65)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([19f5695](https://github.com/home-lang/pantry/commit/19f5695)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4da3bd3](https://github.com/home-lang/pantry/commit/4da3bd3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6497935](https://github.com/home-lang/pantry/commit/6497935)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([b7bd8fb](https://github.com/home-lang/pantry/commit/b7bd8fb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1aa838](https://github.com/home-lang/pantry/commit/d1aa838)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update k6 ([5bde90f](https://github.com/home-lang/pantry/commit/5bde90f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([ebb58b7](https://github.com/home-lang/pantry/commit/ebb58b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update odigos, openapi-generator ([c0ab59a](https://github.com/home-lang/pantry/commit/c0ab59a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([269e372](https://github.com/home-lang/pantry/commit/269e372)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([84013ec](https://github.com/home-lang/pantry/commit/84013ec)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, checkov, iproute2mac, LLaMA.cpp ([21d2fa3](https://github.com/home-lang/pantry/commit/21d2fa3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update maturin ([8a7a8d4](https://github.com/home-lang/pantry/commit/8a7a8d4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update soldeer ([54766ab](https://github.com/home-lang/pantry/commit/54766ab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update platformdirs ([b0b5792](https://github.com/home-lang/pantry/commit/b0b5792)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cirrus, filelock, libsoup ([10474d5](https://github.com/home-lang/pantry/commit/10474d5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([fa2e226](https://github.com/home-lang/pantry/commit/fa2e226)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko ([22ad35d](https://github.com/home-lang/pantry/commit/22ad35d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([9996ab2](https://github.com/home-lang/pantry/commit/9996ab2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update qsv ([4b82c9a](https://github.com/home-lang/pantry/commit/4b82c9a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([b8408a8](https://github.com/home-lang/pantry/commit/b8408a8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([8be542a](https://github.com/home-lang/pantry/commit/8be542a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update filelock ([6474a41](https://github.com/home-lang/pantry/commit/6474a41)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([07f08ae](https://github.com/home-lang/pantry/commit/07f08ae)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox ([a96249e](https://github.com/home-lang/pantry/commit/a96249e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([8df4081](https://github.com/home-lang/pantry/commit/8df4081)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp ([7c98299](https://github.com/home-lang/pantry/commit/7c98299)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([763a7d7](https://github.com/home-lang/pantry/commit/763a7d7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([42dc8f7](https://github.com/home-lang/pantry/commit/42dc8f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, LLaMA.cpp, vim ([f5a9f24](https://github.com/home-lang/pantry/commit/f5a9f24)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, vim ([7be0d16](https://github.com/home-lang/pantry/commit/7be0d16)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cirrus ([a1c887a](https://github.com/home-lang/pantry/commit/a1c887a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, vim ([218ef88](https://github.com/home-lang/pantry/commit/218ef88)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, sing-box, vim ([e5b39b8](https://github.com/home-lang/pantry/commit/e5b39b8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, iproute2mac ([6f9cfa1](https://github.com/home-lang/pantry/commit/6f9cfa1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update glab ([fa1411d](https://github.com/home-lang/pantry/commit/fa1411d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ducker ([0e3828b](https://github.com/home-lang/pantry/commit/0e3828b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([11ca868](https://github.com/home-lang/pantry/commit/11ca868)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rtx-cli, mise ([9cb20f7](https://github.com/home-lang/pantry/commit/9cb20f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([aa660d0](https://github.com/home-lang/pantry/commit/aa660d0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([72d249a](https://github.com/home-lang/pantry/commit/72d249a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([1955d05](https://github.com/home-lang/pantry/commit/1955d05)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([4263261](https://github.com/home-lang/pantry/commit/4263261)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([ee58a1a](https://github.com/home-lang/pantry/commit/ee58a1a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([fbff7f7](https://github.com/home-lang/pantry/commit/fbff7f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([5b81418](https://github.com/home-lang/pantry/commit/5b81418)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cover image ([a0c03fb](https://github.com/home-lang/pantry/commit/a0c03fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update opencode.ai, sbt ([50076bb](https://github.com/home-lang/pantry/commit/50076bb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update periphery ([b394c43](https://github.com/home-lang/pantry/commit/b394c43)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([d5bf4fa](https://github.com/home-lang/pantry/commit/d5bf4fa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, libsoup ([ab7c27f](https://github.com/home-lang/pantry/commit/ab7c27f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a8b1b6a](https://github.com/home-lang/pantry/commit/a8b1b6a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, platformdirs ([5b2f07f](https://github.com/home-lang/pantry/commit/5b2f07f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([5ff4902](https://github.com/home-lang/pantry/commit/5ff4902)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([c148a5b](https://github.com/home-lang/pantry/commit/c148a5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([6824026](https://github.com/home-lang/pantry/commit/6824026)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update abseil, acorn, Auto-GPT, git-crypt and 16 other deps ([ab7d41d](https://github.com/home-lang/pantry/commit/ab7d41d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- minor cleanup ([13d313a](https://github.com/home-lang/pantry/commit/13d313a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve `update-packages` and `update-pantry` ([584dbd0](https://github.com/home-lang/pantry/commit/584dbd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move docs ([871a1ec](https://github.com/home-lang/pantry/commit/871a1ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve safeguard logic ([8719cc3](https://github.com/home-lang/pantry/commit/8719cc3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- minor updates ([db024c1](https://github.com/home-lang/pantry/commit/db024c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update registry data (8 files) ([04a45e0](https://github.com/home-lang/pantry/commit/04a45e0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([af5ed61](https://github.com/home-lang/pantry/commit/af5ed61)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([901c867](https://github.com/home-lang/pantry/commit/901c867)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7ad4dd3](https://github.com/home-lang/pantry/commit/7ad4dd3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+- _head SIGPIPE crash in cargo fallback with set -eo pipefail <Chris>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.0...HEAD)
+
+### 🚀 Features
+
+- resolve GitHub tags via API to fix leading-zero version normalization ([4e4a3df](https://github.com/home-lang/pantry/commit/4e4a3df)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add targeted build mode for fast CI testing, fix shell expansion bug ([51b37cb](https://github.com/home-lang/pantry/commit/51b37cb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- port high-impact brewkit improvements to buildkit ([29b808a](https://github.com/home-lang/pantry/commit/29b808a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add targeted build-package workflow for quick iteration ([fff7504](https://github.com/home-lang/pantry/commit/fff7504)) _(by Chris <chrisbreuer93@gmail.com>)_
+- topological sort packages by dependency depth ([e7ccca4](https://github.com/home-lang/pantry/commit/e7ccca4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add buildkit to build all 1159 pantry packages from source ([d11cb59](https://github.com/home-lang/pantry/commit/d11cb59)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- add 117 more packages to known-broken list from run 22169381361 ([bf6f725](https://github.com/home-lang/pantry/commit/bf6f725)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve lint errors in build scripts ([bfca3a6](https://github.com/home-lang/pantry/commit/bfca3a6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add 12 more packages to known-broken list from batches 15-19 ([4764087](https://github.com/home-lang/pantry/commit/4764087)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add more packages to known-broken list from batches 13-18 ([78ee16a](https://github.com/home-lang/pantry/commit/78ee16a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add 31 more packages to known-broken list from run 22165206563 ([e441096](https://github.com/home-lang/pantry/commit/e441096)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add more packages to known-broken list ([b46c0cd](https://github.com/home-lang/pantry/commit/b46c0cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add glibtool symlink and ensure /opt/homebrew/bin in PATH on macOS ([be06f76](https://github.com/home-lang/pantry/commit/be06f76)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use DYLD_FALLBACK_LIBRARY_PATH on macOS, add missing Linux dev deps ([1829c60](https://github.com/home-lang/pantry/commit/1829c60)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent sync-binaries runs from being cancelled by new triggers ([ed7364f](https://github.com/home-lang/pantry/commit/ed7364f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove Debian-patched setuptools/wheel instead of just upgrading ([ae9db43](https://github.com/home-lang/pantry/commit/ae9db43)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve Python setuptools install_layout and missing Go on macOS ([a068637](https://github.com/home-lang/pantry/commit/a068637)) _(by Chris <chrisbreuer93@gmail.com>)_
+- isolate cargo/rustup per-build and add gfortran support ([2eb35e8](https://github.com/home-lang/pantry/commit/2eb35e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent find ([5a22773](https://github.com/home-lang/pantry/commit/5a22773)) _(by head SIGPIPE crash in cargo fallback with set -eo pipefail <Chris>)_
+- BSD sed compatibility, findYamls traversal bug, and string build detection ([7dd7dde](https://github.com/home-lang/pantry/commit/7dd7dde)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve cargo PATH detection, macOS deployment target, and obsolete linker flags ([5cd9fad](https://github.com/home-lang/pantry/commit/5cd9fad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle trailing .0 in version matching and multiline transform regex ([87e6dfd](https://github.com/home-lang/pantry/commit/87e6dfd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle more build edge cases (permissions, .war files, cargo-c, libxslt) ([8ba5dda](https://github.com/home-lang/pantry/commit/8ba5dda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- clear bash hash table before build script to fix cargo not found ([61edcec](https://github.com/home-lang/pantry/commit/61edcec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- windows cross-compilation errors in io_helper, extractor, installer, package ([5d8f500](https://github.com/home-lang/pantry/commit/5d8f500)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add 8 more packages to known broken list ([49fa72d](https://github.com/home-lang/pantry/commit/49fa72d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- lint errors ([fd65216](https://github.com/home-lang/pantry/commit/fd65216)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- lint errors ([fe47b06](https://github.com/home-lang/pantry/commit/fe47b06)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add docker.com/cli, reshape, frei0r to known broken list ([9a51dd2](https://github.com/home-lang/pantry/commit/9a51dd2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- don't override recipe GOPATH in Go toolchain setup ([a436340](https://github.com/home-lang/pantry/commit/a436340)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add python-venv.py script shim for pkgx YAML recipes ([ab71b50](https://github.com/home-lang/pantry/commit/ab71b50)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reduce per-package timeout to 30 min and add batch time budget ([9d257d6](https://github.com/home-lang/pantry/commit/9d257d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip YAML quotes from array items in parser ([74bbf54](https://github.com/home-lang/pantry/commit/74bbf54)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create cargo symlinks before Rust toolchain search ([90042e8](https://github.com/home-lang/pantry/commit/90042e8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source rustup env for reliable cargo discovery + add diagnostics ([722092f](https://github.com/home-lang/pantry/commit/722092f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add pwmt.org/girara and zathura to knownBrokenDomains ([a9d0af7](https://github.com/home-lang/pantry/commit/a9d0af7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move x.org/x11 local-transport override from YAML to buildkit code ([a5afa52](https://github.com/home-lang/pantry/commit/a5afa52)) _(by Chris <chrisbreuer93@gmail.com>)_
+- only activate GCC specs workaround on Linux, not macOS ([a36f6d8](https://github.com/home-lang/pantry/commit/a36f6d8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- disable local-transport for x.org/x11 on Linux (sys/stropts.h removed in glibc 2.38+) ([06e31c4](https://github.com/home-lang/pantry/commit/06e31c4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- correct YAML multiline scalar continuation indent from +4 to +2 ([4b01ce1](https://github.com/home-lang/pantry/commit/4b01ce1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- show tail of generated build script on failure to see user commands ([0dae0c7](https://github.com/home-lang/pantry/commit/0dae0c7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- don't add default -o for preprocessor invocations in specs workaround ([073fb43](https://github.com/home-lang/pantry/commit/073fb43)) _(by Chris <chrisbreuer93@gmail.com>)_
+- also wrap cpp in cc_wrapper to handle ./specs directory ([75a4c0e](https://github.com/home-lang/pantry/commit/75a4c0e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle default output paths in GCC specs workaround ([89a91e7](https://github.com/home-lang/pantry/commit/89a91e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve diagnostics for GCC specs workaround debugging ([c7795e0](https://github.com/home-lang/pantry/commit/c7795e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- work around GCC ./specs directory issue via cc_wrapper CWD change ([4bc10e3](https://github.com/home-lang/pantry/commit/4bc10e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use GCC_EXEC_PREFIX to prevent ./specs directory confusion on Linux ([e273abf](https://github.com/home-lang/pantry/commit/e273abf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- work around GCC ./specs directory issue on Linux ([d5d3fb5](https://github.com/home-lang/pantry/commit/d5d3fb5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve compiler diagnostic to test with CFLAGS+LDFLAGS ([6ef920f](https://github.com/home-lang/pantry/commit/6ef920f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add compiler diagnostics + config.log dump for build failures ([59b2079](https://github.com/home-lang/pantry/commit/59b2079)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase per-package timeout to 60 min (codex needs ~50 min) ([093f1e7](https://github.com/home-lang/pantry/commit/093f1e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add libcap-dev for codex, add broken Rust packages to skip list ([fdbb487](https://github.com/home-lang/pantry/commit/fdbb487)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase per-package build timeout to 45 min for large Rust builds ([91a9136](https://github.com/home-lang/pantry/commit/91a9136)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add broken packages to skip lists based on run analysis ([e11c955](https://github.com/home-lang/pantry/commit/e11c955)) _(by Chris <chrisbreuer93@gmail.com>)_
+- persist cargo PATH via GITHUB_PATH, add broken packages to skip list ([45104bd](https://github.com/home-lang/pantry/commit/45104bd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use GCC-compatible CFLAGS on Linux (-Wno-error=incompatible-pointer-types) ([247f5ae](https://github.com/home-lang/pantry/commit/247f5ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove Linux LDFLAGS that breaks configure compiler tests ([01c9eb8](https://github.com/home-lang/pantry/commit/01c9eb8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- upgrade to macOS 15 runners, add Swift 6.2 support, fix pip/Rust/multiarch issues ([7f290b0](https://github.com/home-lang/pantry/commit/7f290b0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add Linux LDFLAGS and relax warnings-as-errors ([040f365](https://github.com/home-lang/pantry/commit/040f365)) _(by Chris <chrisbreuer93@gmail.com>)_
+- comprehensive CI system packages, GNU mirror, and broken domain fixes ([b81a75c](https://github.com/home-lang/pantry/commit/b81a75c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve cargo discovery and CMake compatibility in buildkit ([2a85661](https://github.com/home-lang/pantry/commit/2a85661)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add --without-icu to postgresql/libpq recipe ([bad1bba](https://github.com/home-lang/pantry/commit/bad1bba)) _(by Chris <chrisbreuer93@gmail.com>)_
+- hardcoded version URLs, broken recipes, update Rust toolchain ([59dd742](https://github.com/home-lang/pantry/commit/59dd742)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent update-pantry from overwriting local recipe fixes ([69d377c](https://github.com/home-lang/pantry/commit/69d377c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use {{version}} in distributable URLs instead of hardcoded versions ([637bceb](https://github.com/home-lang/pantry/commit/637bceb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser array-at-same-indent bug, install -D shim, darwin CFLAGS ([f407f44](https://github.com/home-lang/pantry/commit/f407f44)) _(by Chris <chrisbreuer93@gmail.com>)_
+- compiler wrapper heredoc parsing error (Unexpected @) ([07ef845](https://github.com/home-lang/pantry/commit/07ef845)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reduce knownBrokenDomains, fix berkeley-db recipe ([f47b966](https://github.com/home-lang/pantry/commit/f47b966)) _(by Chris <chrisbreuer93@gmail.com>)_
+- PYTHONPATH for system Python modules, add missing macOS deps, fix pkgm strip-components ([d12177f](https://github.com/home-lang/pantry/commit/d12177f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pass packages as comma-separated to -p (parseArgs only keeps last) ([e15e6fd](https://github.com/home-lang/pantry/commit/e15e6fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bypass all filters for targeted builds + add python3-libxml2 to CI ([7799162](https://github.com/home-lang/pantry/commit/7799162)) _(by Chris <chrisbreuer93@gmail.com>)_
+- -p flag now bypasses knownBroken/toolchain filters for targeted builds ([e0aa369](https://github.com/home-lang/pantry/commit/e0aa369)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add missing system deps to CI, remove fixable packages from knownBroken ([ffe09cf](https://github.com/home-lang/pantry/commit/ffe09cf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ln wrapper, cargo detection, recipe fixes, knownBroken updates ([d8f6cf1](https://github.com/home-lang/pantry/commit/d8f6cf1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- symlink cargo/rustup into overridden HOME + URL safety ([9b5eb4a](https://github.com/home-lang/pantry/commit/9b5eb4a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move SRCROOT setup before recipe env for proper overrides ([f1c1d7d](https://github.com/home-lang/pantry/commit/f1c1d7d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- more recipe fixes for zip strip-components conflicts ([6a44024](https://github.com/home-lang/pantry/commit/6a44024)) _(by Chris <chrisbreuer93@gmail.com>)_
+- recipe fixes and non-archive download handling ([48dec17](https://github.com/home-lang/pantry/commit/48dec17)) _(by Chris <chrisbreuer93@gmail.com>)_
+- always cd to buildDir before working-directory subdirectory ([86c249a](https://github.com/home-lang/pantry/commit/86c249a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- auto-detect system dep prefix for toolchain packages ([8b84407](https://github.com/home-lang/pantry/commit/8b84407)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove exported bash functions that pollute child process environments ([20f4ea8](https://github.com/home-lang/pantry/commit/20f4ea8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add missing system build deps to CI workflow ([50c3bb1](https://github.com/home-lang/pantry/commit/50c3bb1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prop heredoc escaping, JAVA_HOME detection, download retries ([1b64a4b](https://github.com/home-lang/pantry/commit/1b64a4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve multiple build failures for pantry package compilation ([920a382](https://github.com/home-lang/pantry/commit/920a382)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser URL detection regression - use looksLikeKeyValue ([2be356e](https://github.com/home-lang/pantry/commit/2be356e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip YAML inline comments from parser values ([8f0a67f](https://github.com/home-lang/pantry/commit/8f0a67f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML dep extraction, platform filtering, meson venv, install -D shim, URL parsing ([723d92b](https://github.com/home-lang/pantry/commit/723d92b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip trailing .0 from versions on download failure ([9168e87](https://github.com/home-lang/pantry/commit/9168e87)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix pkg-config in downloaded deps, add system pkg-config paths ([946b4b6](https://github.com/home-lang/pantry/commit/946b4b6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- version fallback, meson venv, dep path pollution, fix-shebangs shim, direct build arrays ([9651099](https://github.com/home-lang/pantry/commit/9651099)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle multi-line plain scalar continuation in YAML arrays ([520c4db](https://github.com/home-lang/pantry/commit/520c4db)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser overhaul for run arrays, working-directory, inline mappings ([82675e3](https://github.com/home-lang/pantry/commit/82675e3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- URL-encode source URLs and validate download size ([5bb5519](https://github.com/home-lang/pantry/commit/5bb5519)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve Go GOROOT mismatch, -pie LDFLAGS, and version 404s ([e9cc094](https://github.com/home-lang/pantry/commit/e9cc094)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML parser for if:/working-directory, skip broken recipes, exit 0 ([42eddc9](https://github.com/home-lang/pantry/commit/42eddc9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- preserve system toolchains, add shims, smart filtering ([fcfcbf0](https://github.com/home-lang/pantry/commit/fcfcbf0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- complex strip patterns, GNU sed on macOS, regex for nested / ([ba6a319](https://github.com/home-lang/pantry/commit/ba6a319)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle git+https sources, smart version.tag, exit non-zero on failures ([e60712a](https://github.com/home-lang/pantry/commit/e60712a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve template interpolation, YAML parsing, S3 binary download issues ([e3f6c53](https://github.com/home-lang/pantry/commit/e3f6c53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prevent batch crash on cleanup errors, fix compiler flag ordering ([73f16d7](https://github.com/home-lang/pantry/commit/73f16d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- dynamic python version, linux build deps for postgres ([dce1638](https://github.com/home-lang/pantry/commit/dce1638)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add Linux support for postgres/mysql, update python URL ([8e48f3d](https://github.com/home-lang/pantry/commit/8e48f3d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use direct symlink instead of bun link for ts-cloud in CI ([5ca7dfe](https://github.com/home-lang/pantry/commit/5ca7dfe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use ts-cloud via bun link for S3 operations ([41c3aa8](https://github.com/home-lang/pantry/commit/41c3aa8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve module resolution and GitHub API rate limits in CI ([43de03f](https://github.com/home-lang/pantry/commit/43de03f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- cache brew packages and increase parallelism for faster CI ([ff9d41f](https://github.com/home-lang/pantry/commit/ff9d41f)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update rtx-cli, helmfile, mise, himalaya ([df24740](https://github.com/home-lang/pantry/commit/df24740)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- revert version ([31935b9](https://github.com/home-lang/pantry/commit/31935b9)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release new version ([b4f2028](https://github.com/home-lang/pantry/commit/b4f2028)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update freetds, LLaMA.cpp ([c4a76f0](https://github.com/home-lang/pantry/commit/c4a76f0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update virtualenv ([be10292](https://github.com/home-lang/pantry/commit/be10292)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko ([bd992ff](https://github.com/home-lang/pantry/commit/bd992ff)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update consul, LLaMA.cpp, tox ([b12c174](https://github.com/home-lang/pantry/commit/b12c174)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cargo-tarpaulin, depot, z3, vals ([4e30f88](https://github.com/home-lang/pantry/commit/4e30f88)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, vals, pulumi ([e14f64d](https://github.com/home-lang/pantry/commit/e14f64d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update filelock, vcluster ([cb20fc5](https://github.com/home-lang/pantry/commit/cb20fc5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ia ([dbda8c1](https://github.com/home-lang/pantry/commit/dbda8c1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update azcopy ([0261b94](https://github.com/home-lang/pantry/commit/0261b94)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, spec-kit, moon, vim ([70dce0b](https://github.com/home-lang/pantry/commit/70dce0b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, LLaMA.cpp, glab, vim ([1978471](https://github.com/home-lang/pantry/commit/1978471)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, LLaMA.cpp, terragrunt ([cb03b00](https://github.com/home-lang/pantry/commit/cb03b00)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, tox ([bd2a1e5](https://github.com/home-lang/pantry/commit/bd2a1e5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, gcloud ([9ad196b](https://github.com/home-lang/pantry/commit/9ad196b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, psycopg3, vim ([984b7e9](https://github.com/home-lang/pantry/commit/984b7e9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update syft, gh, flipt, hugo, jenkins-lts and 1 other dep ([45805c7](https://github.com/home-lang/pantry/commit/45805c7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- set max-parallel to 8 ([f4def27](https://github.com/home-lang/pantry/commit/f4def27)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update bind9, soliditylang, vim ([2fecdc7](https://github.com/home-lang/pantry/commit/2fecdc7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- regenerate package catalog ([689e032](https://github.com/home-lang/pantry/commit/689e032)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update squidfunk/mkdocs-material ([677b7a3](https://github.com/home-lang/pantry/commit/677b7a3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([f6e16b2](https://github.com/home-lang/pantry/commit/f6e16b2)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([12bf88f](https://github.com/home-lang/pantry/commit/12bf88f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- release v0.8.1 ([e095dda](https://github.com/home-lang/pantry/commit/e095dda)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update loki, tailwindcss ([c928bd2](https://github.com/home-lang/pantry/commit/c928bd2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([93d568b](https://github.com/home-lang/pantry/commit/93d568b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update argo-cd, periphery ([4140bec](https://github.com/home-lang/pantry/commit/4140bec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-cd, checkov, rtx-cli, sk and 3 other deps ([61de58a](https://github.com/home-lang/pantry/commit/61de58a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([9e0f4e7](https://github.com/home-lang/pantry/commit/9e0f4e7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, LLaMA.cpp ([5a6c0a2](https://github.com/home-lang/pantry/commit/5a6c0a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update libgpg-error ([4a9f15b](https://github.com/home-lang/pantry/commit/4a9f15b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([887d98b](https://github.com/home-lang/pantry/commit/887d98b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update checkov ([87a55c1](https://github.com/home-lang/pantry/commit/87a55c1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, opa ([adb8f11](https://github.com/home-lang/pantry/commit/adb8f11)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, codex ([406e812](https://github.com/home-lang/pantry/commit/406e812)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update taglib-config ([a328803](https://github.com/home-lang/pantry/commit/a328803)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mas, laravel, pulumi ([bbfdfba](https://github.com/home-lang/pantry/commit/bbfdfba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([3630b5b](https://github.com/home-lang/pantry/commit/3630b5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update codex ([22d8a8f](https://github.com/home-lang/pantry/commit/22d8a8f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade ([88b54f4](https://github.com/home-lang/pantry/commit/88b54f4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update uv, LLaMA.cpp ([16a9a71](https://github.com/home-lang/pantry/commit/16a9a71)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp ([fbbc5e1](https://github.com/home-lang/pantry/commit/fbbc5e1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, aws-iam-authenticator, tox ([084c85f](https://github.com/home-lang/pantry/commit/084c85f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pik, odigos, codex ([89acad3](https://github.com/home-lang/pantry/commit/89acad3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, glab ([c627a24](https://github.com/home-lang/pantry/commit/c627a24)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update kargo, spider, stripe, tox, vim ([bc9e0d8](https://github.com/home-lang/pantry/commit/bc9e0d8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rclone ([148208c](https://github.com/home-lang/pantry/commit/148208c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update werf ([8fafbcb](https://github.com/home-lang/pantry/commit/8fafbcb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery, deno, mvfst, golangci-lint and 1 other dep ([e17e707](https://github.com/home-lang/pantry/commit/e17e707)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([40b5332](https://github.com/home-lang/pantry/commit/40b5332)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([dd12f2b](https://github.com/home-lang/pantry/commit/dd12f2b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update uv, rtx-cli, mise, openstack, pnp and 2 other deps ([e3be051](https://github.com/home-lang/pantry/commit/e3be051)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([b89aade](https://github.com/home-lang/pantry/commit/b89aade)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update llrt, golangci-lint, rucio-client ([362b519](https://github.com/home-lang/pantry/commit/362b519)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([9a2f598](https://github.com/home-lang/pantry/commit/9a2f598)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, elementsproject, LLaMA.cpp and 2 other deps ([94866f5](https://github.com/home-lang/pantry/commit/94866f5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update babashka, rtx-cli, apko ([4f810ce](https://github.com/home-lang/pantry/commit/4f810ce)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([7288eca](https://github.com/home-lang/pantry/commit/7288eca)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update cnquery, LLaMA.cpp, mise ([16b8e50](https://github.com/home-lang/pantry/commit/16b8e50)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cilium ([a5cc21c](https://github.com/home-lang/pantry/commit/a5cc21c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update freetds ([3697308](https://github.com/home-lang/pantry/commit/3697308)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pocketbase ([eecd4d5](https://github.com/home-lang/pantry/commit/eecd4d5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ghq ([fb43462](https://github.com/home-lang/pantry/commit/fb43462)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([d284c2a](https://github.com/home-lang/pantry/commit/d284c2a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add Go 1.26 incompatible packages to knownBrokenDomains ([479e6ae](https://github.com/home-lang/pantry/commit/479e6ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([4e005d9](https://github.com/home-lang/pantry/commit/4e005d9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add jetporch.com to knownBrokenDomains ([c3241fe](https://github.com/home-lang/pantry/commit/c3241fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add more entries to knownBrokenDomains ([3251b64](https://github.com/home-lang/pantry/commit/3251b64)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([f89108d](https://github.com/home-lang/pantry/commit/f89108d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, LLaMA.cpp, rabbitmq and 3 other deps ([e6e7604](https://github.com/home-lang/pantry/commit/e6e7604)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (12 files) ([89bd31b](https://github.com/home-lang/pantry/commit/89bd31b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, fish, cirrus, ollama ([e934b6a](https://github.com/home-lang/pantry/commit/e934b6a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (2 files) ([0586cdd](https://github.com/home-lang/pantry/commit/0586cdd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([edd155e](https://github.com/home-lang/pantry/commit/edd155e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, kafka.apache, linux-headers, vim ([0f09d5c](https://github.com/home-lang/pantry/commit/0f09d5c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, linux-headers, oh-my-posh ([2384b7b](https://github.com/home-lang/pantry/commit/2384b7b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (7 files) ([20e3a71](https://github.com/home-lang/pantry/commit/20e3a71)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli ([62f2681](https://github.com/home-lang/pantry/commit/62f2681)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([7ed9e3f](https://github.com/home-lang/pantry/commit/7ed9e3f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fly, LLaMA.cpp ([12d2e17](https://github.com/home-lang/pantry/commit/12d2e17)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update istioctl ([c352540](https://github.com/home-lang/pantry/commit/c352540)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update surreal ([8890ac5](https://github.com/home-lang/pantry/commit/8890ac5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, edencommon, fb303, thrift1 and 4 other deps ([e2738fb](https://github.com/home-lang/pantry/commit/e2738fb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, typos, linux-headers, oh-my-posh ([6b0b146](https://github.com/home-lang/pantry/commit/6b0b146)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-workflows ([4fecfe2](https://github.com/home-lang/pantry/commit/4fecfe2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([5982ba6](https://github.com/home-lang/pantry/commit/5982ba6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update maturin, rucio-client ([4121012](https://github.com/home-lang/pantry/commit/4121012)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update arrow, LLaMA.cpp, kubebuilder ([486de65](https://github.com/home-lang/pantry/commit/486de65)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([19f5695](https://github.com/home-lang/pantry/commit/19f5695)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([4da3bd3](https://github.com/home-lang/pantry/commit/4da3bd3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([6497935](https://github.com/home-lang/pantry/commit/6497935)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([b7bd8fb](https://github.com/home-lang/pantry/commit/b7bd8fb)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([d1aa838](https://github.com/home-lang/pantry/commit/d1aa838)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update k6 ([5bde90f](https://github.com/home-lang/pantry/commit/5bde90f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([ebb58b7](https://github.com/home-lang/pantry/commit/ebb58b7)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update odigos, openapi-generator ([c0ab59a](https://github.com/home-lang/pantry/commit/c0ab59a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([269e372](https://github.com/home-lang/pantry/commit/269e372)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([84013ec](https://github.com/home-lang/pantry/commit/84013ec)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, checkov, iproute2mac, LLaMA.cpp ([21d2fa3](https://github.com/home-lang/pantry/commit/21d2fa3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update maturin ([8a7a8d4](https://github.com/home-lang/pantry/commit/8a7a8d4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update soldeer ([54766ab](https://github.com/home-lang/pantry/commit/54766ab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update platformdirs ([b0b5792](https://github.com/home-lang/pantry/commit/b0b5792)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cirrus, filelock, libsoup ([10474d5](https://github.com/home-lang/pantry/commit/10474d5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([fa2e226](https://github.com/home-lang/pantry/commit/fa2e226)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko ([22ad35d](https://github.com/home-lang/pantry/commit/22ad35d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([9996ab2](https://github.com/home-lang/pantry/commit/9996ab2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update qsv ([4b82c9a](https://github.com/home-lang/pantry/commit/4b82c9a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([b8408a8](https://github.com/home-lang/pantry/commit/b8408a8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([8be542a](https://github.com/home-lang/pantry/commit/8be542a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update filelock ([6474a41](https://github.com/home-lang/pantry/commit/6474a41)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([07f08ae](https://github.com/home-lang/pantry/commit/07f08ae)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox ([a96249e](https://github.com/home-lang/pantry/commit/a96249e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([8df4081](https://github.com/home-lang/pantry/commit/8df4081)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp ([7c98299](https://github.com/home-lang/pantry/commit/7c98299)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([763a7d7](https://github.com/home-lang/pantry/commit/763a7d7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([42dc8f7](https://github.com/home-lang/pantry/commit/42dc8f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, LLaMA.cpp, vim ([f5a9f24](https://github.com/home-lang/pantry/commit/f5a9f24)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, vim ([7be0d16](https://github.com/home-lang/pantry/commit/7be0d16)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cirrus ([a1c887a](https://github.com/home-lang/pantry/commit/a1c887a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, vim ([218ef88](https://github.com/home-lang/pantry/commit/218ef88)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, sing-box, vim ([e5b39b8](https://github.com/home-lang/pantry/commit/e5b39b8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, iproute2mac ([6f9cfa1](https://github.com/home-lang/pantry/commit/6f9cfa1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update glab ([fa1411d](https://github.com/home-lang/pantry/commit/fa1411d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ducker ([0e3828b](https://github.com/home-lang/pantry/commit/0e3828b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([11ca868](https://github.com/home-lang/pantry/commit/11ca868)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rtx-cli, mise ([9cb20f7](https://github.com/home-lang/pantry/commit/9cb20f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([aa660d0](https://github.com/home-lang/pantry/commit/aa660d0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([72d249a](https://github.com/home-lang/pantry/commit/72d249a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([1955d05](https://github.com/home-lang/pantry/commit/1955d05)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([4263261](https://github.com/home-lang/pantry/commit/4263261)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([ee58a1a](https://github.com/home-lang/pantry/commit/ee58a1a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([fbff7f7](https://github.com/home-lang/pantry/commit/fbff7f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([5b81418](https://github.com/home-lang/pantry/commit/5b81418)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cover image ([a0c03fb](https://github.com/home-lang/pantry/commit/a0c03fb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update opencode.ai, sbt ([50076bb](https://github.com/home-lang/pantry/commit/50076bb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update periphery ([b394c43](https://github.com/home-lang/pantry/commit/b394c43)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([d5bf4fa](https://github.com/home-lang/pantry/commit/d5bf4fa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, libsoup ([ab7c27f](https://github.com/home-lang/pantry/commit/ab7c27f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a8b1b6a](https://github.com/home-lang/pantry/commit/a8b1b6a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, platformdirs ([5b2f07f](https://github.com/home-lang/pantry/commit/5b2f07f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([5ff4902](https://github.com/home-lang/pantry/commit/5ff4902)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([c148a5b](https://github.com/home-lang/pantry/commit/c148a5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([6824026](https://github.com/home-lang/pantry/commit/6824026)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update abseil, acorn, Auto-GPT, git-crypt and 16 other deps ([ab7d41d](https://github.com/home-lang/pantry/commit/ab7d41d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- minor cleanup ([13d313a](https://github.com/home-lang/pantry/commit/13d313a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve `update-packages` and `update-pantry` ([584dbd0](https://github.com/home-lang/pantry/commit/584dbd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move docs ([871a1ec](https://github.com/home-lang/pantry/commit/871a1ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve safeguard logic ([8719cc3](https://github.com/home-lang/pantry/commit/8719cc3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- minor updates ([db024c1](https://github.com/home-lang/pantry/commit/db024c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update registry data (8 files) ([04a45e0](https://github.com/home-lang/pantry/commit/04a45e0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([af5ed61](https://github.com/home-lang/pantry/commit/af5ed61)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([901c867](https://github.com/home-lang/pantry/commit/901c867)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([7ad4dd3](https://github.com/home-lang/pantry/commit/7ad4dd3)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+- _head SIGPIPE crash in cargo fallback with set -eo pipefail <Chris>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.7.5...vv0.8.1)
 
 ### 🚀 Features
