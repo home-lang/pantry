@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 43 versions</summary>
+<summary>Show all 44 versions</summary>
 
-- `2.4.2`, `2.4.1`, `2.4.0`
+- `2.4.3`, `2.4.2`, `2.4.1`, `2.4.0`
 - `2.3.15`, `2.3.14`, `2.3.13`, `2.3.12`, `2.3.11`, `2.3.10`, `2.3.9`, `2.3.8`, `2.3.7`, `2.3.6`, `2.3.5`, `2.3.4`
 - `1.9.4`, `1.9.3`, `1.9.2`, `1.9.1`, `1.9.0`
 - `1.8.3`, `1.8.2`, `1.8.1`, `1.8.0`
@@ -40,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.4.2`
+**Latest Version**: `2.4.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +biomejs.dev@2.4.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +biomejs.dev@2.4.3 -- $SHELL -i
 ```
 
 ## Usage Examples
