@@ -759,6 +759,11 @@ Options:
     'schollz.com/croc', // GitHub tag v10.4.0 removed
     'foundry-rs.github.io/foundry', // All old version tags pruned from repo
     'volta.sh', // Build failure (needs investigation)
+    'libtom.net/math', // Uses glibtool in Makefile but no libtool build dep in recipe
+    'sourceforge.net/xmlstar', // libxml2 include path issue (libxml/xmlmemory.h)
+    'mypy-lang.org', // Gradle/JVM build failure on Linux
+    'pcre.org', // SourceForge mirror (cytranet.dl.sourceforge.net) consistently times out
+    'digitalocean.com/doctl', // GitHub release tags removed/restructured
   ])
 
   let platformSkipped = 0
