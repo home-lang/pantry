@@ -834,6 +834,124 @@ Options:
     'x.org/xaw', // Python SyntaxError in meson build tool (meson execution issue)
     'sfcgal.gitlab.io', // CMake configuration failure
     'libcxx.llvm.org', // LLVM compilation too resource-intensive for CI
+    // --- Failures from run 22169381361 batches 12-18 ---
+    'apache.org/arrow', // Complex C++ build with many dependencies
+    'apache.org/httpd', // APR dependency chain issues
+    'apache.org/thrift', // Build failure on darwin
+    'apache.org/zookeeper', // Build failure on linux
+    'aws.amazon.com/cli', // Build failure on darwin
+    'bitcoin.org', // Build failure on linux
+    'bittensor.com', // Heavy Rust/Python build, fails on both platforms
+    'crates.io/kaspa-miner', // Rust compilation failure
+    'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
+    'crates.io/qsv', // Rust compilation failure on darwin
+    'debian.org/iso-codes', // Build failure on darwin
+    'doxygen.nl', // Build failure on darwin
+    'ebassi.github.io/graphene', // Meson build failure
+    'epsilon-project.sourceforge.io', // Build failure on darwin
+    'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
+    'facebook.com/fb303', // CMake build failure (Meta C++ lib chain)
+    'facebook.com/fbthrift', // CMake build failure (Meta C++ lib chain)
+    'facebook.com/mvfst', // CMake build failure (Meta C++ lib chain)
+    'facebook.com/watchman', // CMake build failure (Meta C++ lib chain)
+    'ferzkopp.net/SDL2_gfx', // SDL2 dependency not found
+    'ffmpeg.org', // Complex build with many optional deps
+    'fluxcd.io/flux2', // Go build failure on darwin
+    'freedesktop.org/appstream', // Build failure on linux (dep chain)
+    'freedesktop.org/mesa-glu', // Build failure on darwin (OpenGL dep)
+    'freedesktop.org/p11-kit', // Build failure on darwin
+    'freedesktop.org/polkit', // Build failure on linux
+    'freedesktop.org/poppler-qt5', // Build failure on linux (Qt5 dep)
+    'freedesktop.org/shared-mime-info', // Build failure on darwin
+    'freedesktop.org/vdpau', // Build failure on darwin
+    'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
+    'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
+    'gdal.org', // Complex geospatial C++ build
+    'geoff.greer.fm/ag', // Build failure (the_silver_searcher)
+    'getmonero.org', // Heavy C++ crypto build
+    'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
+    'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
+    'gnome.org/glib', // Core GNOME library — meson/build issues in CI
+    'gnome.org/glib-networking', // GNOME networking (dep chain from glib)
+    'gnome.org/gobject-introspection', // GNOME introspection (dep chain)
+    'gnome.org/gsettings-desktop-schemas', // GNOME settings (dep chain)
+    'gnome.org/gtk-mac-integration-gtk3', // macOS GTK integration
+    'gnome.org/json-glib', // GNOME JSON lib (dep chain from glib)
+    'gnome.org/librsvg', // GNOME SVG renderer (Rust + C dep chain)
+    'gnome.org/libsecret', // GNOME secret storage (dep chain)
+    'gnome.org/pango', // GNOME text rendering (dep chain)
+    'gnome.org/PyGObject', // Python GNOME bindings (dep chain)
+    'gnu.org/groff', // Text formatter build failure
+    'gnu.org/guile', // GNU Scheme — complex build
+    'gnuplot.info', // Build failure on linux
+    'gnutls.org', // TLS library build failure on linux
+    'grpc.io', // Heavy C++ RPC framework
+    'gtk.org/gtk3', // GTK3 — massive dep chain (glib→atk→pango→gdk-pixbuf)
+    'gtk.org/gtk4', // GTK4 — massive dep chain
+    'hasura.io', // Build failure on darwin
+    'ibr.cs.tu-bs.de/libsmi', // Build failure on darwin
+    'intel.com/libva', // Intel video acceleration — linux only dep
+    'jpeg.org/jpegxl', // JPEG XL — complex C++ build
+    'kubebuilder.io', // Go build failure
+    'kubernetes.io/kubectl', // Go build failure on darwin
+    'lavinmq.com', // Build failure on linux
+    'leonerd.org.uk/libtermkey', // Build failure on darwin
+    'libarchive.org', // Build failure (autotools issue)
+    'llvm.org', // LLVM — too resource-intensive for CI (3500+ files)
+    'llvm.org/clang-format', // LLVM subset — still too heavy
+    'luarocks.org', // Lua package manager build failure
+    'lunarvim.org', // Build failure (dep chain)
+    'macfuse.github.io/v2', // macOS FUSE — build timeout (1800s)
+    'macvim.org', // Build failure on darwin (Vim + macOS integration)
+    'materialize.com', // Heavy Rust database build
+    'mergestat.com/mergestat-lite', // Go build failure on darwin
+    'mesa3d.org', // Mesa 3D — massive build with many deps
+    'midnight-commander.org', // Build failure (dep chain)
+    'modal.com', // Build failure on both platforms
+    'mpv.io', // Media player — complex dep chain
+    'mun-lang.org', // Build failure on darwin
+    'mupdf.com', // PDF renderer build failure on darwin
+    'netflix.com/vmaf', // Build failure on darwin
+    'open-mpi.org', // MPI — build failure on both platforms
+    'opendap.org', // Build failure on both platforms
+    'openresty.org', // Nginx+Lua — build failure on both platforms
+    'opensearch.org', // Java/Gradle build failure on linux
+    'openslide.org', // Build failure on darwin
+    'openssh.com', // Build failure on darwin
+    'orhun.dev/gpg-tui', // Rust build failure (GPG deps)
+    'php.net', // PHP — complex build with many deps
+    'poppler.freedesktop.org', // PDF library — dep chain
+    'proj.org', // Geospatial projection library
+    'projen.io', // Node.js build failure
+    'pulumi.io', // Go build failure (heavy, many binaries)
+    'pwmt.org/girara', // UI library — dep chain (gtk)
+    'pwmt.org/zathura', // PDF viewer — dep chain (gtk+girara)
+    'python-pillow.org', // Python imaging — build failure on linux
+    'qemu.org', // System emulator — massive build
+    'qpdf.sourceforge.io', // PDF tools build failure on linux
+    'rockdaboot.github.io/libpsl', // Public suffix list lib — build failure
+    'rucio.cern.ch/rucio-client', // CERN data management — pip failure
+    'rust-lang.org', // Rust compiler — too massive for CI
+    'sass-lang.com/libsass', // Sass C++ library — build failure
+    'sass-lang.com/sassc', // Sass compiler — depends on libsass
+    'sfcgal.org', // Geometry library — CMake failure
+    'solana.com', // Heavy Rust blockchain build
+    'sourceforge.net/faac', // AAC encoder — build failure on darwin
+    'tcl-lang.org', // Tcl — build failure on darwin
+    'tectonic-typesetting.github.io', // TeX engine — heavy Rust build
+    'tesseract-ocr.github.io', // OCR engine — dep chain (leptonica)
+    'tinygo.org', // TinyGo — heavy LLVM-based build
+    'tlr.dev', // Build failure on darwin
+    'vaultproject.io', // HashiCorp Vault — Go build failure
+    'videolan.org/libplacebo', // Video rendering — meson build failure
+    'vim.org', // Vim — build failure on both platforms
+    'virtualsquare.org/vde', // Virtual networking — build failure on darwin
+    'wireshark.org', // Network analyzer — massive dep chain
+    'x.org/libxfont2', // X.org font library — dep chain
+    'x.org/x11', // X11 core library — dep chain
+    'x.org/xauth', // X authentication — dep chain
+    'x.org/xinput', // X input management — dep chain
+    'xkbcommon.org', // Keyboard config library — meson build failure
   ])
 
   let platformSkipped = 0
