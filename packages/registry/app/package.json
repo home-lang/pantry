@@ -1,6 +1,6 @@
 {
   "name": "@pantry/registry-app",
-  "version": "v0.8.1",
+  "version": "0.8.0",
   "type": "module",
   "description": "Pantry registry test application using ts-cloud",
   "scripts": {
