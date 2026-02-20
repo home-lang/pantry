@@ -8,7 +8,7 @@
  *
  * @install `launchpad install videolan.org/x265`
  * @homepage https://bitbucket.org/multicoreware/x265_git
- * @buildDependencies `cmake.org`, `nasm.us` - required only when building from source
+ * @buildDependencies `cmake.org`, `linux:nasm.us` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -59,10 +59,11 @@ export const videolanorgx265Package = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
     'cmake.org',
-    'nasm.us',
+    'linux:nasm.us',
   ] as const,
   /**
   * Available versions from newest to oldest.
