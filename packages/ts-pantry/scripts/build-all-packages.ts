@@ -625,6 +625,9 @@ Options:
     'freedesktop.org/slirp', // Linux-only networking library (needs Linux headers)
     'freedesktop.org/desktop-file-utils', // Linux desktop integration (glib dep chain fails on darwin)
     'freedesktop.org/icon-theme', // freedesktop icon theme, meson build fails on darwin
+    'freedesktop.org/vdpau', // Video decode API, Linux-only (no VA-API on macOS)
+    'gstreamer.freedesktop.org/orc', // Oil Runtime Compiler, meson build fails on darwin
+    'gnome.org/glib-networking', // GNOME networking, glib dep chain fails on darwin
   ])
   const darwinOnlyDomains = new Set([
     'apple.com/container', 'tuist.io/xcbeautify', 'veracode.com/gen-ir',
@@ -775,7 +778,7 @@ Options:
     'x.org/xmu', // Cascading X11 dep failure — needs xt which itself fails (missing sm/ice)
     'x.org/xt', // Cascading X11 dep failure — needs sm (libSM) and ice (libICE)
     // swagger.io/swagger-codegen removed — built successfully on linux
-    // angular.dev removed — built successfully on linux
+    'angular.dev', // npm build failure on both platforms (native module compilation)
     // capnproto.org removed — built successfully on darwin
     'cmake.org', // make failure on Linux — resource exhaustion or parallel build race condition
     'sourceforge.net/libtirpc', // libtool install fails — .libs/libtirpc.so not built
@@ -849,7 +852,7 @@ Options:
     // crates.io/qsv removed — built successfully on linux
     'debian.org/iso-codes', // Build failure on darwin
     'doxygen.nl', // Build failure on darwin
-    // ebassi.github.io/graphene removed — built successfully on linux
+    'ebassi.github.io/graphene', // glib dep chain fails on both platforms
     'epsilon-project.sourceforge.io', // Build failure on darwin
     'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
     'facebook.com/fb303', // CMake build failure (Meta C++ lib chain)
@@ -873,8 +876,8 @@ Options:
     'getmonero.org', // Heavy C++ crypto build
     'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
     'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
-    // gnome.org/glib removed — built successfully on darwin
-    'gnome.org/glib-networking', // GNOME networking (dep chain from glib)
+    'gnome.org/glib', // pcre2/meson build failure on both platforms
+    // gnome.org/glib-networking moved to linuxOnlyDomains — builds on linux
     'gnome.org/gobject-introspection', // GNOME introspection (dep chain)
     'gnome.org/gsettings-desktop-schemas', // GNOME settings (dep chain)
     'gnome.org/gtk-mac-integration-gtk3', // macOS GTK integration
