@@ -8,7 +8,7 @@
  *
  * @install `launchpad install sourceforge.net/xmlstar`
  * @homepage https://xmlstar.sourceforge.net/
- * @dependencies `gnome.org/libxslt^1`
+ * @dependencies `gnome.org/libxslt^1`, `gnome.org/libxml2^2`
  * @buildDependencies `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
@@ -63,6 +63,7 @@ export const sourceforgenetxmlstarPackage = {
   */
   dependencies: [
     'gnome.org/libxslt^1',
+    'gnome.org/libxml2^2',
   ] as const,
   /**
   * Build dependencies for this package.

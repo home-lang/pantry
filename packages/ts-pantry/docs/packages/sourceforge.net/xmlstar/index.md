@@ -46,6 +46,7 @@ sh <(curl https://pkgx.sh) +sourceforge.net/xmlstar@1.6.1 -- $SHELL -i
 This package depends on:
 
 - `gnome.org/libxslt^1`
+- `gnome.org/libxml2^2`
 
 ## Usage Examples
 

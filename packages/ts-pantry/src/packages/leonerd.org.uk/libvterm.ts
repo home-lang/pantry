@@ -8,7 +8,7 @@
  *
  * @install `launchpad install leonerd.org.uk/libvterm`
  * @homepage https://www.leonerd.org.uk/code/libvterm/
- * @buildDependencies `gnu.org/libtool` - required only when building from source
+ * @buildDependencies `linux:gnu.org/libtool` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -61,9 +61,10 @@ export const leonerdorguklibvtermPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
-    'gnu.org/libtool',
+    'linux:gnu.org/libtool',
   ] as const,
   /**
   * Available versions from newest to oldest.

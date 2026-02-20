@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 100 versions</summary>
+<summary>Show all 101 versions</summary>
 
+- `18.9.0`
 - `18.8.0`
 - `18.7.2`, `18.7.1`, `18.7.0`
 - `18.6.6`, `18.6.5`, `18.6.4`, `18.6.3`, `18.6.2`, `18.6.1`, `18.6.0`
@@ -61,13 +62,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `18.8.0`
+**Latest Version**: `18.9.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gitlab.com/gitlab-org/gitlab-runner@18.8.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gitlab.com/gitlab-org/gitlab-runner@18.9.0 -- $SHELL -i
 ```
 
 ## Usage Examples
