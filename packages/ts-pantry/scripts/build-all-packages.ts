@@ -628,6 +628,9 @@ Options:
     'freedesktop.org/vdpau', // Video decode API, Linux-only (no VA-API on macOS)
     'gstreamer.freedesktop.org/orc', // Oil Runtime Compiler, meson build fails on darwin
     'gnome.org/glib-networking', // GNOME networking, glib dep chain fails on darwin
+    'gnu.org/texinfo', // GNU texinfo, perl dep chain fails on darwin CI
+    'gnu.org/bc', // GNU bc, ed/flex dep chain fails on darwin CI
+    'laravel.com', // Laravel, php dep chain fails on darwin CI
   ])
   const darwinOnlyDomains = new Set([
     'apple.com/container', 'tuist.io/xcbeautify', 'veracode.com/gen-ir',
