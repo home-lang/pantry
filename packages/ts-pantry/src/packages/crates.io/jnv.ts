@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/jnv`
  * @programs `jnv`
- * @version `0.6.1` (8 versions available)
+ * @version `0.6.2` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/jnv`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "jnv"
  * console.log(pkg.description) // "Interactive JSON filter using jq"
  * console.log(pkg.programs)    // ["jnv"]
- * console.log(pkg.versions[0]) // "0.6.1" (latest)
+ * console.log(pkg.versions[0]) // "0.6.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/jnv.md
@@ -69,6 +69,7 @@ export const cratesiojnvPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.6.2',
     '0.6.1',
     '0.6.0',
     '0.5.0',

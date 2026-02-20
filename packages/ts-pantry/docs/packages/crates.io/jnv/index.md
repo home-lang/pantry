@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 8 versions</summary>
+<summary>Show all 9 versions</summary>
 
-- `0.6.1`, `0.6.0`
+- `0.6.2`, `0.6.1`, `0.6.0`
 - `0.5.0`
 - `0.4.2`, `0.4.1`, `0.4.0`
 - `0.3.0`
@@ -35,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.6.1`
+**Latest Version**: `0.6.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/jnv@0.6.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/jnv@0.6.2 -- $SHELL -i
 ```
 
 ## Usage Examples
