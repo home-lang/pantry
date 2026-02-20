@@ -976,6 +976,7 @@ Options:
     'wpewebkit.org/wpebackend-fdo', // wpe-1.0 (libwpe) and mesa3d deps not in S3
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
     'crates.io/qsv', // ring crate compile failure on darwin ARM64
+    'luarocks.org', // Lua 5.5 path issues + info-zip.org/unzip dep is broken
   ])
 
   let platformSkipped = 0
