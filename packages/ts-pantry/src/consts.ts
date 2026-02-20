@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-17T02:47:54.224Z
+ * Generated on 2026-02-20T17:57:59.312Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1643 total)
+ * List of all known packages (1644 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -789,6 +789,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/python-cffi/cffi',
   'github.com/python-lsp/python-lsp-server',
   'github.com/quodlibet/mutagen',
+  'github.com/ramonvermeulen/whosthere',
   'github.com/raskell-io/hx',
   'github.com/rbenv/rbenv',
   'github.com/realm/SwiftLint',
