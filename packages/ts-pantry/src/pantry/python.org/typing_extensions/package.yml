@@ -8,11 +8,9 @@ runtime:
     PYTHONPATH: "{{prefix}}/lib/python/site-packages:$PYTHONPATH"
 build:
   dependencies:
-    flit.pypa.io: '*'
     python.org: ~3.11
   script:
-    - flit build --format wheel
-    - python -m pip install --prefix={{prefix}} dist/typing_extensions-*.whl
+    - python -m pip install --prefix={{prefix}} .
     - run: |
         ln -s python{{deps.python.org.version.marketing}} python{{deps.python.org.version.major}}
         ln -s python{{deps.python.org.version.major}} python

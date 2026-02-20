@@ -14,7 +14,7 @@ build:
     python.org: ~3.11
   script:
     - bkpyvenv stage {{prefix}} {{version}}
-    - ${{prefix}}/venv/bin/pip install .[postgres,mysql,odbc,sqlite]
+    - "{{prefix}}/venv/bin/pip install '.[postgres,mysql,odbc,sqlite]'"
     - bkpyvenv seal {{prefix}} harlequin
     # Library not loaded: /opt/homebrew/opt/unixodbc/lib/libodbc.2.dylib
     - run: install_name_tool -change ${HOMEBREW_PREFIX}/opt/unixodbc/lib/libodbc.2.dylib {{deps.unixodbc.org.prefix}}/lib/libodbc.2.dylib pyodbc.cpython-311-darwin.so

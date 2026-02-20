@@ -771,49 +771,49 @@ Options:
     'x.org/libSM', // Cascading X11 dependency chain — pkg-config can't find ice (libICE)
     'x.org/xmu', // Cascading X11 dep failure — needs xt which itself fails (missing sm/ice)
     'x.org/xt', // Cascading X11 dep failure — needs sm (libSM) and ice (libICE)
-    'swagger.io/swagger-codegen', // Maven build not executing (maven.apache.org dep not in S3)
-    'angular.dev', // npm install fails with exit code -2 (signal/OOM)
-    'capnproto.org', // Internal compiler error in GCC (gimplify_var_or_parm_decl)
+    // swagger.io/swagger-codegen removed — built successfully on linux
+    // angular.dev removed — built successfully on linux
+    // capnproto.org removed — built successfully on darwin
     'cmake.org', // make failure on Linux — resource exhaustion or parallel build race condition
     'sourceforge.net/libtirpc', // libtool install fails — .libs/libtirpc.so not built
     'werf.io', // Go compilation failure (complex build with CGO)
     // agwa.name/git-crypt removed — xsltproc now in CI
-    'gnu.org/texinfo', // sed error on makeinfo binary during install
-    'gstreamer.freedesktop.org/orc', // Python SyntaxError in meson build — version incompatibility
-    'laravel.com', // libicudata.78.dylib not found — ICU dependency missing from PHP dep
+    // gnu.org/texinfo removed — built successfully on linux
+    // gstreamer.freedesktop.org/orc removed — built successfully on linux
+    // laravel.com removed — built successfully on linux
     'libimobiledevice.org/libimobiledevice-glue', // libplist pkg-config not found
     // libsdl.org/SDL_ttf removed — sdl2 now in macOS brew
-    'freedesktop.org/icon-theme', // Python SyntaxError in meson build tool
+    // freedesktop.org/icon-theme removed — built successfully on linux
     'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
     'amp.rs', // Build script prop handling failure (6s crash)
     'apache.org/apr-util', // --with-apr parameter incorrect (apr not found as dependency)
-    'crates.io/gitweb', // Rust compilation failure
-    'deepwisdom.ai', // pip faiss_cpu==1.7.4 not found (only 1.8.0+ available)
+    'crates.io/gitweb', // Crate permanently deleted from crates.io (404)
+    // deepwisdom.ai removed — built successfully on darwin
     'developers.yubico.com/libfido2', // CMake configuration incomplete
-    'docbook.org/xsl', // cp: cannot stat 'docbook-xsl-1.79.2' (extraction layout mismatch)
-    'eksctl.io', // Go make generate-always fails
-    'gnu.org/bc', // Download 404 — bc-1.7.1.tar.gz not on ftpmirror.gnu.org
+    // docbook.org/xsl removed — fixed strip-components to 0
+    // eksctl.io removed — simplified build to direct go build
+    // gnu.org/bc removed — fixed URL to zero-pad minor version
     'libimobiledevice.org/libusbmuxd', // libplist pkg-config not found (cascading dep)
-    'freedesktop.org/desktop-file-utils', // Python SyntaxError in meson build tool
-    'harlequin.sh', // pip 'must give at least one requirement' — build script issue
+    // freedesktop.org/desktop-file-utils removed — built successfully on darwin
+    // harlequin.sh removed — fixed pip install command syntax
     // libsdl.org/SDL_mixer removed — sdl2 now in macOS brew
     // lloyd.github.io/yajl removed — doxygen now in CI
-    'musepack.net', // CMake generate step failed
+    // musepack.net removed — subpackages build successfully, main package needs investigation
     // pagure.io/xmlto removed — xsltproc/docbook now in CI
-    'python.org/typing_extensions', // flit build tool path error (Undefined error: 0)
+    // python.org/typing_extensions removed — switched from flit to pip install
     'radicle.org', // Rust compilation failure
-    'rclone.org', // Build script failure
+    // rclone.org removed — removed stale darwin patch and cmount tag
     'snaplet.dev/cli', // npm install failure
     'tsl0922.github.io/ttyd', // CMake build — server.c compilation error
-    'videolan.org/x265', // CMake configuration incomplete
+    // videolan.org/x265 removed — built successfully on linux
     'x.org/ice', // Configure/build failure on darwin
     'x.org/sm', // Configure/build failure (cascading from ice)
     'x.org/xkbfile', // Python SyntaxError in build tool
-    'freedesktop.org/slirp', // Build failure on darwin
+    // freedesktop.org/slirp removed — built successfully on linux
     'gnome.org/libxml2', // Build failure on darwin
     'postgrest.org', // Haskell build — GHC/Stack not available
     'ceph.com/cephadm', // Build failure on linux
-    'gnupg.org/libgcrypt', // Build failure (gpg-error dep not found)
+    // gnupg.org/libgcrypt removed — built successfully on darwin
     'libimobiledevice.org', // libplist/libusbmuxd cascading deps not found
     'libimobiledevice.org/libtatsu', // libplist cascading dep not found
     'matio.sourceforge.io', // Build failure
@@ -821,7 +821,7 @@ Options:
     'nx.dev', // npm install failure
     'openpmix.github.io', // Build failure
     // ccache.dev removed — CMake build, all deps available
-    'crates.io/gitui', // Rust compilation failure (OpenSSL deps)
+    // crates.io/gitui removed — built successfully on darwin
     'crates.io/zellij', // Rust compilation failure
     'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
     // zlib.net/minizip removed — small cmake build, deps available
@@ -843,10 +843,10 @@ Options:
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
     'crates.io/kaspa-miner', // Rust compilation failure
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
-    'crates.io/qsv', // Rust compilation failure on darwin
+    // crates.io/qsv removed — built successfully on linux
     'debian.org/iso-codes', // Build failure on darwin
     'doxygen.nl', // Build failure on darwin
-    'ebassi.github.io/graphene', // Meson build failure
+    // ebassi.github.io/graphene removed — built successfully on linux
     'epsilon-project.sourceforge.io', // Build failure on darwin
     'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
     'facebook.com/fb303', // CMake build failure (Meta C++ lib chain)
@@ -862,7 +862,7 @@ Options:
     'freedesktop.org/polkit', // Build failure on linux
     'freedesktop.org/poppler-qt5', // Build failure on linux (Qt5 dep)
     'freedesktop.org/shared-mime-info', // Build failure on darwin
-    'freedesktop.org/vdpau', // Build failure on darwin
+    // freedesktop.org/vdpau removed — built successfully on linux
     'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
     'gdal.org', // Complex geospatial C++ build
@@ -870,7 +870,7 @@ Options:
     'getmonero.org', // Heavy C++ crypto build
     'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
     'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
-    'gnome.org/glib', // Core GNOME library — meson/build issues in CI
+    // gnome.org/glib removed — built successfully on darwin
     'gnome.org/glib-networking', // GNOME networking (dep chain from glib)
     'gnome.org/gobject-introspection', // GNOME introspection (dep chain)
     'gnome.org/gsettings-desktop-schemas', // GNOME settings (dep chain)
@@ -931,7 +931,7 @@ Options:
     'rockdaboot.github.io/libpsl', // Public suffix list lib — build failure
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
-    'sass-lang.com/libsass', // Sass C++ library — build failure
+    // sass-lang.com/libsass removed — built successfully on darwin
     'sass-lang.com/sassc', // Sass compiler — depends on libsass
     'sfcgal.org', // Geometry library — CMake failure
     'solana.com', // Heavy Rust blockchain build

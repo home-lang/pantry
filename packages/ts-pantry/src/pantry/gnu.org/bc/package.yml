@@ -1,5 +1,7 @@
 distributable:
-  url: https://ftpmirror.gnu.org/gnu/bc/bc-{{version.raw}}.tar.gz
+  # GNU bc uses zero-padded minor versions (1.07.1, 1.08.2) but semver normalizes
+  # them (1.7.1, 1.8.2). Reconstruct the padded format for the download URL.
+  url: https://ftpmirror.gnu.org/gnu/bc/bc-{{version.major}}.0{{version.minor}}.{{version.patch}}.tar.gz
   strip-components: 1
 
 versions:
