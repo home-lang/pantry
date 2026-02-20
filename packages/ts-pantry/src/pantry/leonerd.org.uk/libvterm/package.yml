@@ -11,11 +11,16 @@ versions:
 
 build:
   dependencies:
-    linux:
-      gnu.org/libtool: '*'
-    # darwin: brew libtool provides glibtool in /opt/homebrew/bin (already in PATH)
-  script: |
-    make --jobs {{ hw.concurrency }} install PREFIX="{{prefix}}"
+    gnu.org/libtool: '*'
+  script:
+    # GNU libtool from pantry provides 'libtool' but macOS Makefiles expect 'glibtool'
+    - run: |
+        if ! command -v glibtool &>/dev/null; then
+          ln -sf "$(command -v libtool)" "$(dirname "$(command -v libtool)")/glibtool"
+          ln -sf "$(command -v libtoolize)" "$(dirname "$(command -v libtoolize)")/glibtoolize"
+        fi
+      if: darwin
+    - make --jobs {{ hw.concurrency }} install PREFIX="{{prefix}}"
 provides:
   - bin/unterm
   - bin/vterm-ctrl

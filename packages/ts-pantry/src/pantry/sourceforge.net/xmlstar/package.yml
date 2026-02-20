@@ -28,6 +28,8 @@ build:
       - --disable-dependency-tracking
       - --prefix={{prefix}}
       - --mandir={{prefix}}/share/man
+    CFLAGS: $CFLAGS -I{{deps.gnome.org/libxml2.prefix}}/include/libxml2
+    CPPFLAGS: -I{{deps.gnome.org/libxml2.prefix}}/include/libxml2
 
 provides:
   - bin/xml
