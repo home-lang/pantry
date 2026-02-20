@@ -1106,11 +1106,18 @@ Options:
   const attempted = uploaded.length + failed.length
   console.log(`\nTotal: ${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed`)
 
-  // Report failure rate but don't fail CI — individual package build issues
-  // are logged above; CI success means the batch ran to completion
   if (failed.length > 0) {
     const failRate = attempted > 0 ? (failed.length / attempted * 100).toFixed(0) : 0
     console.log(`\nFailure rate: ${failRate}% (${failed.length}/${attempted} attempted)`)
+
+    // For targeted builds (-p flag), exit non-zero so CI reports the failure
+    // For batch builds, exit 0 — individual failures are expected and the
+    // batch ran to completion; successfully built packages are in S3
+    if (isTargetedBuild) {
+      console.log(`\nTargeted build had failures — exiting with error`)
+      process.exit(1)
+    }
+
     console.log(`Note: Individual build failures are expected for packages with complex`)
     console.log(`dependencies or platform-specific requirements. Successfully built`)
     console.log(`packages have been uploaded to S3.`)
