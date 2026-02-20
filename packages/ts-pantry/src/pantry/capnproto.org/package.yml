@@ -31,6 +31,7 @@ build:
       - -DCMAKE_INSTALL_PREFIX={{ prefix }}
       - -DCMAKE_INSTALL_LIBDIR={{ prefix }}/lib
       - -DCMAKE_BUILD_TYPE=Release
+      - -DBUILD_TESTING=OFF
       - -Wno-dev
       - -DCMAKE_CXX_FLAGS=-fPIC
       - -DCMAKE_POSITION_INDEPENDENT_CODE=ON

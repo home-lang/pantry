@@ -13,11 +13,13 @@ build:
     - run: |
         go build $ARGS -ldflags="$LD_FLAGS -X \"github.com/docker/cli/cli/version.PlatformName=Docker Engine - Community\"" github.com/docker/cli/cmd/docker
     - run: |
-        for md in man/*.[1-8].md; do
-          section=$(basename "$md" | sed 's/.*\.\([1-8]\)\.md/\1/')
-          mkdir -p "{{prefix}}/man/man${section}"
-          go-md2man -in="$md" -out="{{prefix}}/man/man${section}/$(basename "$md" .md)"
-        done
+        if command -v go-md2man &>/dev/null; then
+          for md in man/*.[1-8].md; do
+            section=$(basename "$md" | sed 's/.*\.\([1-8]\)\.md/\1/')
+            mkdir -p "{{prefix}}/man/man${section}"
+            go-md2man -in="$md" -out="{{prefix}}/man/man${section}/$(basename "$md" .md)"
+          done
+        fi
   env:
     GOPATH: $PWD
     GO111MODULE: auto

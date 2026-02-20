@@ -11,7 +11,9 @@ versions:
 
 build:
   dependencies:
-    gnu.org/libtool: '*'
+    linux:
+      gnu.org/libtool: '*'
+    # darwin: brew libtool provides glibtool in /opt/homebrew/bin (already in PATH)
   script: |
     make --jobs {{ hw.concurrency }} install PREFIX="{{prefix}}"
 provides:

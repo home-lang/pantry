@@ -9,7 +9,9 @@ versions:
 
 build:
   dependencies:
-    gnu.org/libtool: ^2.4.7
+    linux:
+      gnu.org/libtool: ^2.4.7
+    # darwin: brew libtool provides glibtool in /opt/homebrew/bin (already in PATH)
   env:
     PREFIX: ${{prefix}}
   script:

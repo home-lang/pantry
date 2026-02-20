@@ -19,9 +19,9 @@ build:
     gnome.org/libxslt: '*'
   script:
     - sed -i "s|http://docbook.sourceforge.net/release/xsl/current|{{deps.docbook.org/xsl.prefix}}/libexec/docbook-xsl|g" Makefile
-    - make ENABLE_MAN=yes PREFIX={{prefix}} install
+    - run: make ENABLE_MAN=yes PREFIX={{prefix}} install
   env:
-    XML_CATALOG_FILES: ${{prefix}}/etc/xml/catalog
+    XML_CATALOG_FILES: ${{deps.docbook.org.prefix}}/etc/xml/catalog
     CFLAGS: $CFLAGS -DOPENSSL_API_COMPAT=0x30000000L
 
 provides:

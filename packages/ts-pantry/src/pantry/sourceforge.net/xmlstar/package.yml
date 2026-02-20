@@ -11,6 +11,7 @@ versions:
 
 dependencies:
   gnome.org/libxslt: ^1
+  gnome.org/libxml2: ^2
 
 build:
   dependencies:
