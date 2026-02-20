@@ -32,9 +32,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 54 versions</summary>
+<summary>Show all 55 versions</summary>
 
-- `1.78.0`
+- `1.78.1`, `1.78.0`
 - `1.76.0`
 - `1.75.1`, `1.75.0`
 - `1.74.1`, `1.74.0`
@@ -60,13 +60,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.78.0`
+**Latest Version**: `1.78.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +grpc.io@1.78.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +grpc.io@1.78.1 -- $SHELL -i
 ```
 
 ## Dependencies

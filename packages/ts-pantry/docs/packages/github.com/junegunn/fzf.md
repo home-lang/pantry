@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 53 versions</summary>
+<summary>Show all 54 versions</summary>
 
+- `0.68.0`
 - `0.67.0`
 - `0.66.1`, `0.66.0`
 - `0.65.2`, `0.65.1`, `0.65.0`
@@ -63,13 +64,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.67.0`
+**Latest Version**: `0.68.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/junegunn/fzf@0.67.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/junegunn/fzf@0.68.0 -- $SHELL -i
 ```
 
 ## Usage Examples

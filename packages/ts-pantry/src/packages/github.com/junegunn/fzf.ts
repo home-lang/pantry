@@ -3,7 +3,7 @@
  *
  * @domain `github.com/junegunn/fzf`
  * @programs `fzf`
- * @version `0.67.0` (53 versions available)
+ * @version `0.68.0` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/junegunn/fzf`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fzf"
  * console.log(pkg.description) // ":cherry_blossom: A command-line fuzzy finder"
  * console.log(pkg.programs)    // ["fzf"]
- * console.log(pkg.versions[0]) // "0.67.0" (latest)
+ * console.log(pkg.versions[0]) // "0.68.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/junegunn/fzf.md
@@ -68,6 +68,7 @@ export const fzfPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.68.0',
     '0.67.0',
     '0.66.1',
     '0.66.0',
