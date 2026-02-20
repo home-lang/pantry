@@ -20,17 +20,17 @@ build:
     rust-lang.org/cargo: '*'
   script:
     # no features that don't run the TUI; add a --version flag for testing
-    - run: sed -i -f $PROP main.rs
+    - run: sed -f $PROP main.rs > main.rs.new && mv main.rs.new main.rs
       prop: |
-        /fn main() {/a\\
-            let first_arg = std::env::args().nth(1);\\
-            if first_arg == Some("--version".to_string()) {\\
-                println!("amp {{ version }}");\\
-                return;\\
-            } else if first_arg == Some("--help".to_string()) {\\
-                println!("See https://amp.rs for complete documentation.");\\
-                return;\\
-            }\\
+        /fn main() {/a\
+            let first_arg = std::env::args().nth(1);\
+            if first_arg == Some("--version".to_string()) {\
+                println!("amp {{ version }}");\
+                return;\
+            } else if first_arg == Some("--help".to_string()) {\
+                println!("See https://amp.rs for complete documentation.");\
+                return;\
+            }
       working-directory: src
     - cargo install --locked --path . --root {{prefix}}
 

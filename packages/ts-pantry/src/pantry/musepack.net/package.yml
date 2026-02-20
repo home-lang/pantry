@@ -25,7 +25,7 @@ build:
       # ld.lld: error: duplicate symbol: __Dc
       LDFLAGS: "-Wl,--allow-multiple-definition"
     CMAKE_ARGS:
-      - -DCMAKE_INSTALL_PREFIX="{{prefix}}
+      - -DCMAKE_INSTALL_PREFIX={{prefix}}
       - -DCMAKE_INSTALL_LIBDIR=lib
       - -DCMAKE_BUILD_TYPE=Release
       - -DCMAKE_FIND_FRAMEWORK=LAST

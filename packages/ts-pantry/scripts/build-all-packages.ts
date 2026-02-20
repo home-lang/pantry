@@ -622,6 +622,9 @@ Options:
     'spawn.link', 'postgrest.org', 'gitlab.com/procps-ng/procps',
     'apptainer.org', // Linux container runtime
     'apple.com/remote_cmds', // ironically Linux-buildable only in certain configs
+    'freedesktop.org/slirp', // Linux-only networking library (needs Linux headers)
+    'freedesktop.org/desktop-file-utils', // Linux desktop integration (glib dep chain fails on darwin)
+    'freedesktop.org/icon-theme', // freedesktop icon theme, meson build fails on darwin
   ])
   const darwinOnlyDomains = new Set([
     'apple.com/container', 'tuist.io/xcbeautify', 'veracode.com/gen-ir',

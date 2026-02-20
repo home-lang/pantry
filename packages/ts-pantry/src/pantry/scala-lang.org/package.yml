@@ -6,7 +6,7 @@
 warnings:
   - vendored
 
-interpretes:
+interpreters:
   extensions: scala
   args: scala
 
@@ -16,7 +16,7 @@ provides:
   - bin/scala-cli
   - bin/sbtn
   - bin/amm
-  - scalafmt
+  - bin/scalafmt
 
 versions:
   github: scala/scala3
