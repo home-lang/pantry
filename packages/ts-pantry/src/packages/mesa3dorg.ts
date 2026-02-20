@@ -2,7 +2,7 @@
  * **mesa3d** - pkgx package
  *
  * @domain `mesa3d.org`
- * @version `26.0.0` (76 versions available)
+ * @version `26.0.0` (77 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mesa3d.org`
@@ -99,6 +99,7 @@ export const mesa3dorgPackage = {
   */
   versions: [
     '26.0.0',
+    '25.3.6',
     '25.3.5',
     '25.3.4',
     '25.3.3',
