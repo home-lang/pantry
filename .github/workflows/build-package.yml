@@ -36,7 +36,7 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: read
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
       - name: Checkout repository
@@ -134,4 +134,4 @@ jobs:
 
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
-        timeout-minutes: 55
+        timeout-minutes: 110
