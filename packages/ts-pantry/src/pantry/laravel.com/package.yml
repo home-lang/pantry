@@ -16,7 +16,7 @@ companions:
 
 build:
   # 5.11.1 shipped as 5.11.0
-  - run: sed -i "s/'Laravel Installer', '[0-9\.]*'/'Laravel Installer', '{{version}}'/" laravel
+  - run: perl -pi -e "s/'Laravel Installer', '[0-9\.]+'/'Laravel Installer', '{{version}}'/" laravel
     working-directory: bin
   - composer install --no-dev
   - mkdir -p {{prefix}}/libexec

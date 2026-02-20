@@ -18,7 +18,8 @@ build:
   dependencies:
     gnu.org/bison: '*'
     gnu.org/ed: '*'
-    gnu.org/texinfo: '*'
+    linux:
+      gnu.org/texinfo: '*'
   script:
     - ./configure $ARGS
     # this tries to add `-ledit` to the list of targets on darwin
