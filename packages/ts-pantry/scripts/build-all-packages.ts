@@ -626,8 +626,10 @@ Options:
     'freedesktop.org/desktop-file-utils', // Linux desktop integration (glib dep chain fails on darwin)
     'freedesktop.org/icon-theme', // freedesktop icon theme, meson build fails on darwin
     'freedesktop.org/vdpau', // Video decode API, Linux-only (no VA-API on macOS)
-    'gstreamer.freedesktop.org/orc', // Oil Runtime Compiler, meson build fails on darwin
+    // gstreamer.freedesktop.org/orc — fixed: fallback to python3 -m mesonbuild on darwin
     'gnome.org/glib-networking', // GNOME networking, glib dep chain fails on darwin
+    'pagure.io/xmlto', // xmlto uses BSD getopt on macOS which lacks long options support
+    'swagger.io/swagger-codegen', // Maven/Java build, install -D flag incompatible with macOS
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
     // laravel.com — fixed: symlink ICU libs from unicode.org into PHP lib dir on darwin
@@ -966,6 +968,14 @@ Options:
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
     'libsoup.org', // Build failure on darwin (dep chain)
     'systemd.io', // Complex linux init system — build failure
+    'getfoundry.sh', // GitHub tags deleted from foundry-rs/foundry repo (old versions pruned)
+    'deepwisdom.ai', // faiss_cpu==1.7.4 not available via pip on linux
+    'expo.dev/eas-cli', // Requires yarn 4.x via corepack, classic yarn too old
+    'geoff.greer.fm/ag', // pcre.org (PCRE v1) dep is broken (SourceForge mirror timeout)
+    'musepack.net', // CMake configure failure — missing required cmake variables from sub-deps
+    'wpewebkit.org/wpebackend-fdo', // wpe-1.0 (libwpe) and mesa3d deps not in S3
+    'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
+    'crates.io/qsv', // ring crate compile failure on darwin ARM64
   ])
 
   let platformSkipped = 0

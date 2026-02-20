@@ -11,7 +11,8 @@ versions:
 build:
   dependencies:
     cmake.org: '*'
-    nasm.us: '*'
+    linux:
+      nasm.us: '*'
   working-directory: 8bit
   script:
     - run: |
@@ -49,6 +50,18 @@ build:
       - -DENABLE_PIC=ON
       - -DCMAKE_INSTALL_PREFIX={{prefix}}
       - -DCMAKE_VERBOSE_MAKEFILE=ON
+    darwin:
+      # nasm (x86 assembler) not available on ARM64 darwin
+      ARGS_DEFAULT:
+        - -Wno-dev
+        - -DBUILD_TESTING=OFF
+        - -DCMAKE_FIND_FRAMEWORK="LAST"
+        - -DCMAKE_BUILD_TYPE=Release
+        - -DCMAKE_INSTALL_LIBDIR="lib"
+        - -DENABLE_PIC=ON
+        - -DCMAKE_INSTALL_PREFIX={{prefix}}
+        - -DCMAKE_VERBOSE_MAKEFILE=ON
+        - -DENABLE_ASSEMBLY=OFF
     ARGS:
       - -DLINKED_10BIT=ON
       - -DLINKED_12BIT=ON
