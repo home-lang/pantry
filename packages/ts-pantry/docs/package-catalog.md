@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-02-19T23:51:02.566Z
+- **Last Updated**: 2026-02-20T01:04:32.296Z
 
 ## Table of Contents
 
@@ -242,7 +242,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[alacritty.org](./packages/alacritty.org/index.md)** () | A cross-platform, OpenGL terminal emulator. | alacritty | 0.16.1 (+5) | `pkgx alacritty` |
 | **[gnu.org/emacs](./packages/gnu.org/emacs/index.md)** () | GNU Emacs text editor | emacs | 30.2.0 (+6) | `pkgx emacs` |
 | **[micro-editor.github.io](./packages/micro-editor.github.io/index.md)** () | A modern and intuitive terminal-based text editor | micro | 2.0.15 (+4) | `pkgx micro` |
-| **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.109.2 (+39) | `pkgx vscode cli` |
+| **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.109.5 (+40) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
 | **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.33 (+2719) | `pkgx vi` |
@@ -385,7 +385,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 |---------|-------------|----------|----------|----------|
 | **[appium.io](./packages/appium.io/index.md)** () | Cross-platform automation framework for all kinds of apps, built on top of the W3C WebDriver prot... | appium | 3.0.2 (+38) | `pkgx appium` |
 | **[fastlane.tools](./packages/fastlane.tools/index.md)** () | 🚀 The easiest way to automate building and releasing your iOS and Android apps | fastlane | 2.232.1 (+29) | `pkgx fastlane` |
-| **[flutter.dev](./packages/flutter.dev/index.md)** () | Flutter makes it easy and fast to build beautiful apps for mobile and beyond | flutter, dart | 3.41.1 (+72) | `pkgx flutter` |
+| **[flutter.dev](./packages/flutter.dev/index.md)** () | Flutter makes it easy and fast to build beautiful apps for mobile and beyond | flutter, dart | 3.41.2 (+73) | `pkgx flutter` |
 | **[gradle.org](./packages/gradle.org/index.md)** () | Open-source build automation tool based on the Groovy and Kotlin DSL | gradle | 9.3.1 (+26) | `pkgx gradle` |
 
 ## Testing
