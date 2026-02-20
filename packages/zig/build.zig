@@ -445,11 +445,21 @@ pub fn build(b: *std.Build) void {
 
 /// Get package version from package.json
 fn getPackageVersion(b: *std.Build) ![]const u8 {
-    // Read version from root package.json using shell command
-    const result = b.run(&.{ "node", "-p", "require('../../package.json').version" });
-    const trimmed = std.mem.trim(u8, result, &std.ascii.whitespace);
-    if (trimmed.len > 0) return trimmed;
-    return "0.0.0";
+    // Read version directly from root package.json (../../ from packages/zig/)
+    const io = b.graph.io;
+    const content = b.build_root.handle.readFileAlloc(io, "../../package.json", b.allocator, .limited(1024 * 1024)) catch return "0.0.0";
+    // Find "version": "x.y.z" (first occurrence)
+    const needle = "\"version\"";
+    const idx = std.mem.indexOf(u8, content, needle) orelse return "0.0.0";
+    const after = content[idx + needle.len..];
+    // Skip colon and whitespace, then extract the quoted value
+    var i: usize = 0;
+    while (i < after.len and (after[i] == ' ' or after[i] == ':' or after[i] == '\t' or after[i] == '\n' or after[i] == '\r')) : (i += 1) {}
+    if (i >= after.len or after[i] != '"') return "0.0.0";
+    i += 1;
+    const start = i;
+    while (i < after.len and after[i] != '"') : (i += 1) {}
+    return after[start..i];
 }
 
 /// Get git commit hash (short)
