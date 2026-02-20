@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       packages:
-        description: 'Comma-separated package domains to build (e.g., "redis.io,curl.se")'
+        description: 'Package domains to build, space or comma separated (e.g., "redis.io curl.se")'
         required: true
         type: string
       platform:
@@ -209,8 +209,10 @@ jobs:
             ARGS="$ARGS --force"
           fi
 
-          # Pass all packages as comma-separated to -p
-          ARGS="$ARGS -p ${{ github.event.inputs.packages }}"
+          # Pass all packages as comma-separated to -p (input may use spaces)
+          PACKAGES="${{ github.event.inputs.packages }}"
+          PACKAGES="${PACKAGES// /,}"
+          ARGS="$ARGS -p $PACKAGES"
 
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
