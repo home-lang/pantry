@@ -3,7 +3,7 @@
  *
  * @domain `steampipe.io`
  * @programs `steampipe`
- * @version `2.3.5` (44 versions available)
+ * @version `2.3.6` (45 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install steampipe.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "steampipe"
  * console.log(pkg.description) // "Zero-ETL, infinite possibilities. Live query AP..."
  * console.log(pkg.programs)    // ["steampipe"]
- * console.log(pkg.versions[0]) // "2.3.5" (latest)
+ * console.log(pkg.versions[0]) // "2.3.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/steampipe-io.md
@@ -69,6 +69,7 @@ export const steampipeioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.3.6',
     '2.3.5',
     '2.3.4',
     '2.3.3',
