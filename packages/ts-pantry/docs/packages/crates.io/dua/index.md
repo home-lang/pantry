@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 31 versions</summary>
+<summary>Show all 32 versions</summary>
 
+- `2.34.0`
 - `2.33.0`
 - `2.32.2`, `2.32.1`, `2.32.0`
 - `2.31.0`
@@ -45,13 +46,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.33.0`
+**Latest Version**: `2.34.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/dua@2.33.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/dua@2.34.0 -- $SHELL -i
 ```
 
 ## Dependencies
