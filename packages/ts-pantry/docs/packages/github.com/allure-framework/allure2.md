@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
+- `2.37.0`
 - `2.36.0`
 - `2.35.1`, `2.35.0`
 - `2.34.1`, `2.34.0`
@@ -41,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.36.0`
+**Latest Version**: `2.37.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/allure-framework/allure2@2.36.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/allure-framework/allure2@2.37.0 -- $SHELL -i
 ```
 
 ## Dependencies

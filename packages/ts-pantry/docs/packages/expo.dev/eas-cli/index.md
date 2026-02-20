@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 174 versions</summary>
+<summary>Show all 175 versions</summary>
 
-- `18.0.1`
+- `18.0.3`, `18.0.1`
 - `16.32.0`
 - `16.28.0`
 - `16.27.0`
@@ -102,13 +102,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `18.0.1`
+**Latest Version**: `18.0.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +expo.dev/eas-cli@18.0.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +expo.dev/eas-cli@18.0.3 -- $SHELL -i
 ```
 
 ## Dependencies
