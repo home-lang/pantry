@@ -743,6 +743,7 @@ import { pyparsingPackage } from './github.com/pyparsing/pyparsing'
 import { cffiPackage } from './github.com/python-cffi/cffi'
 import { pythonlspserverPackage } from './github.com/python-lsp/python-lsp-server'
 import { mutagenPackage } from './github.com/quodlibet/mutagen'
+import { whostherePackage } from './github.com/ramonvermeulen/whosthere'
 import { hxPackage } from './github.com/raskell-io/hx'
 import { rbenvPackage } from './github.com/rbenv/rbenv'
 import { swiftlintPackage } from './github.com/realm/SwiftLint'
@@ -2989,6 +2990,8 @@ export interface Pantry {
   githubcompythonlsp: typeof pythonlspserverPackage
 
   githubcomquodlibet: typeof mutagenPackage
+
+  githubcomramonvermeulen: typeof whostherePackage
   hx: typeof hxPackage
   githubcomraskellio: typeof hxPackage
 
@@ -5812,6 +5815,7 @@ export interface Pantry {
   bazel: typeof bazeliskPackage
   mmdblookup: typeof libmaxminddbPackage
   witr: typeof witrPackage
+  whosthere: typeof whostherePackage
   jira: typeof jiracliPackage
   'cfn-lint': typeof cfnlintPackage
   hadolint: typeof hadolintPackage
@@ -7329,6 +7333,8 @@ export const pantry: Pantry = {
   githubcompythonlsp: pythonlspserverPackage,
 
   githubcomquodlibet: mutagenPackage,
+
+  githubcomramonvermeulen: whostherePackage,
   hx: hxPackage,
   githubcomraskellio: hxPackage,
 
@@ -10152,6 +10158,7 @@ export const pantry: Pantry = {
   bazel: bazeliskPackage,
   mmdblookup: libmaxminddbPackage,
   witr: witrPackage,
+  whosthere: whostherePackage,
   jira: jiracliPackage,
   'cfn-lint': cfnlintPackage,
   hadolint: hadolintPackage,

@@ -9,7 +9,7 @@
  * @install `launchpad install eksctl.io`
  * @homepage https://eksctl.io
  * @dependencies `github.com/kubernetes-sigs/aws-iam-authenticator`
- * @buildDependencies `github.com/maxbrunsfeld/counterfeiter`, `go.dev@~1.25`, `github.com/vburenin/ifacemaker`, ... (+1 more) - required only when building from source
+ * @buildDependencies `go.dev@~1.25` - required only when building from source
  *
  * @example
  * ```typescript
@@ -68,10 +68,7 @@ export const eksctlioPackage = {
   * These are only required when building the package from source.
   */
   buildDependencies: [
-    'github.com/maxbrunsfeld/counterfeiter',
     'go.dev@~1.25',
-    'github.com/vburenin/ifacemaker',
-    'vektra.github.io/mockery@^2',
   ] as const,
   /**
   * Available versions from newest to oldest.

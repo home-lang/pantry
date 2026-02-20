@@ -8,7 +8,7 @@
  *
  * @install `launchpad install rclone.org`
  * @homepage https://rclone.org/
- * @buildDependencies `go.dev`, `darwin:curl.se`, `darwin:gnu.org/patch` (includes OS-specific dependencies with `os:package` format) - required only when building from source
+ * @buildDependencies `go.dev` - required only when building from source
  *
  * @example
  * ```typescript
@@ -59,12 +59,9 @@ export const rcloneorgPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
     'go.dev',
-    'darwin:curl.se',
-    'darwin:gnu.org/patch',
   ] as const,
   /**
   * Available versions from newest to oldest.

@@ -1478,6 +1478,7 @@ export const aliases: Record<string, string> = {
   'when': 'github.com/mitsuhiko/when',
   'which': 'gnu.org/which',
   'whisper': 'openai.com/whisper',
+  'whosthere': 'github.com/ramonvermeulen/whosthere',
   'wimlib': 'wimlib.net',
   'wireshark': 'wireshark.org',
   'witr': 'github.com/pranshuparmar/witr',
