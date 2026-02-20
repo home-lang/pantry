@@ -3,7 +3,7 @@
  *
  * @domain `gnupg.org/libgcrypt`
  * @programs `dumpsexp`, `hmac256`, `libgcrypt-config`, `mpicalc`
- * @version `1.12.0` (7 versions available)
+ * @version `1.12.1` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnupg.org/libgcrypt`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "libgcrypt"
  * console.log(pkg.description) // "Cryptographic library based on the code from GnuPG"
  * console.log(pkg.programs)    // ["dumpsexp", "hmac256", ...]
- * console.log(pkg.versions[0]) // "1.12.0" (latest)
+ * console.log(pkg.versions[0]) // "1.12.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnupg-org/libgcrypt.md
@@ -74,6 +74,7 @@ export const gnupgorglibgcryptPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.12.1',
     '1.12.0',
     '1.11.2',
     '1.11.1',
