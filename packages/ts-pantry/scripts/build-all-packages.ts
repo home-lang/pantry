@@ -23,7 +23,7 @@
  *   -h, --help               Show help
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
@@ -1105,6 +1105,49 @@ Options:
 
   const attempted = uploaded.length + failed.length
   console.log(`\nTotal: ${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed`)
+
+  // Write GitHub Actions Job Summary so failures are visible on the run page
+  const summaryPath = process.env.GITHUB_STEP_SUMMARY
+  if (summaryPath) {
+    const lines: string[] = []
+    lines.push(`## Build Summary`)
+    lines.push('')
+    lines.push(`| Metric | Count |`)
+    lines.push(`|--------|-------|`)
+    lines.push(`| Uploaded | ${uploaded.length} |`)
+    lines.push(`| Skipped (already in S3) | ${skipped.length} |`)
+    lines.push(`| Failed | ${failed.length} |`)
+    lines.push('')
+
+    if (failed.length > 0) {
+      lines.push(`### Failed Packages`)
+      lines.push('')
+      lines.push(`| Package | Version | Error |`)
+      lines.push(`|---------|---------|-------|`)
+      for (const [domain, r] of failed) {
+        const error = (r.error || 'unknown').replace(/\|/g, '\\|').replace(/\n/g, ' ').slice(0, 200)
+        lines.push(`| ${domain} | ${r.version || '?'} | ${error} |`)
+      }
+      lines.push('')
+    }
+
+    if (uploaded.length > 0) {
+      lines.push(`<details><summary>Uploaded Packages (${uploaded.length})</summary>`)
+      lines.push('')
+      for (const [domain, r] of uploaded) {
+        lines.push(`- ${domain}@${r.version}`)
+      }
+      lines.push('')
+      lines.push(`</details>`)
+    }
+
+    try {
+      appendFileSync(summaryPath, lines.join('\n'))
+    }
+    catch (e) {
+      console.warn('Could not write job summary:', e)
+    }
+  }
 
   if (failed.length > 0) {
     const failRate = attempted > 0 ? (failed.length / attempted * 100).toFixed(0) : 0
