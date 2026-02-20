@@ -17,12 +17,18 @@ build:
   script:
     - run: export ARGS="$(echo $ARGS | sed s'/gtk_doc/hotdoc/')"
       if: ">=0.4.42"
-    # On darwin, pantry's meson wrapper may have SyntaxError — use python3 -m mesonbuild
+    # On darwin, pantry's meson wrapper may have SyntaxError — find system meson
     - run: |
-        if meson --version &>/dev/null; then
-          meson $ARGS ..
+        SYSMESON=""
+        for p in /opt/homebrew/bin/meson /usr/local/bin/meson; do
+          if [ -x "$p" ] && "$p" --version &>/dev/null; then
+            SYSMESON="$p"; break
+          fi
+        done
+        if [ -n "$SYSMESON" ]; then
+          "$SYSMESON" $ARGS ..
         else
-          python3 -m mesonbuild.mesonmain $ARGS ..
+          meson $ARGS ..
         fi
       if: darwin
     - run: meson $ARGS ..

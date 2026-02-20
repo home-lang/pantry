@@ -64,7 +64,6 @@ build:
       - -Dvendordir={{prefix}}/share/pam
       - -Dexamples=false
       - -Ddocs=disabled
-      - -Dman=disabled
 
 provides:
   - sbin/faillock

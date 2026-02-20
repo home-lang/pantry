@@ -643,6 +643,7 @@ Options:
     'github.com/mxcl/swift-sh', 'github.com/kiliankoe/swift-outdated',
     'github.com/a7ex/xcresultparser', 'github.com/create-dmg/create-dmg',
     'portaudio.com',
+    'gnupg.org/libgcrypt', // Linux system libgpg-error too old (needs >= 1.56), builds fine on darwin
   ])
 
   // Packages needing specialized toolchains not available in CI

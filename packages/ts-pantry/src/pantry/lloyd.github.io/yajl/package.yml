@@ -10,6 +10,11 @@ build:
       gnu.org/gcc: '*'
       gnu.org/make: '*'
   script:
+    # Fix CMP0026 policy error with newer cmake (LOCATION property deprecated)
+    - run: |
+        if [ -f CMakeLists.txt ]; then
+          perl -pi -e 'print "cmake_policy(SET CMP0026 OLD)\n" if $. == 1 && !$done++' CMakeLists.txt
+        fi
     - cmake . $CMAKE_ARGS
     - make install
     - mkdir -p {{prefix}}/include/yajl
