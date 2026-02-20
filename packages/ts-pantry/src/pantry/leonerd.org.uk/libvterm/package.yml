@@ -13,11 +13,13 @@ build:
   dependencies:
     gnu.org/libtool: '*'
   script:
-    # GNU libtool from pantry provides 'libtool' but macOS Makefiles expect 'glibtool'
+    # macOS Makefiles expect 'glibtool' — use Homebrew's keg-only path
     - run: |
         if ! command -v glibtool &>/dev/null; then
-          ln -sf "$(command -v libtool)" "$(dirname "$(command -v libtool)")/glibtool"
-          ln -sf "$(command -v libtoolize)" "$(dirname "$(command -v libtoolize)")/glibtoolize"
+          BREW_LIBTOOL="$(brew --prefix libtool 2>/dev/null)/bin"
+          if [ -f "$BREW_LIBTOOL/glibtool" ]; then
+            export PATH="$BREW_LIBTOOL:$PATH"
+          fi
         fi
       if: darwin
     - make --jobs {{ hw.concurrency }} install PREFIX="{{prefix}}"

@@ -157,6 +157,8 @@ jobs:
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
             libsecret libfido2 \
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
+          # Link keg-only libtool so glibtool/glibtoolize are in PATH
+          brew link --force libtool 2>/dev/null || true
 
       - name: Fix Python setuptools (Linux)
         if: runner.os == 'Linux'
