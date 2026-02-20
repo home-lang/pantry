@@ -26,7 +26,11 @@ build:
     - run: "sed 's/^\\(\\$(PROGRAMS): \\$(LDADD)\\)$/# \\1/' Makefile > Makefile.tmp && mv Makefile.tmp Makefile"
       working-directory: dc
       if: '>=1.8'
-    - make --jobs {{hw.concurrency}} install
+    # MAKEINFO=true skips info page generation on darwin (avoids texinfo dependency)
+    - run: make --jobs {{hw.concurrency}} MAKEINFO=true install
+      if: darwin
+    - run: make --jobs {{hw.concurrency}} install
+      if: linux
   env:
     ARGS:
       - --disable-debug

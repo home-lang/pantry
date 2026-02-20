@@ -8,6 +8,8 @@ versions:
 dependencies:
   php.net: ^8.2
   getcomposer.org: ^2.7
+  darwin:
+    unicode.org: ^78 # PHP's ICU libs need libicudata in the same dir
 
 companions:
   linux:
@@ -18,6 +20,12 @@ build:
   # 5.11.1 shipped as 5.11.0
   - run: perl -pi -e "s/'Laravel Installer', '[0-9\.]+'/'Laravel Installer', '{{version}}'/" laravel
     working-directory: bin
+  # PHP's ICU libs use @loader_path but libicudata isn't in the PHP tarball
+  - run: |
+      for lib in {{deps.unicode.org.prefix}}/lib/libicu*.dylib; do
+        [ -f "$lib" ] && ln -sf "$lib" {{deps.php.net.prefix}}/lib/ 2>/dev/null || true
+      done
+    if: darwin
   - composer install --no-dev
   - mkdir -p {{prefix}}/libexec
   - cp -r ./* {{prefix}}/libexec
