@@ -32,7 +32,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ${{ github.event.inputs.platform == 'darwin-arm64' && fromJson('[{"os":"macos-14","name":"darwin-arm64"}]') || github.event.inputs.platform == 'linux-x86-64' && fromJson('[{"os":"ubuntu-latest","name":"linux-x86-64"}]') || fromJson('[{"os":"macos-14","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"}]') }}
+        platform: ${{ github.event.inputs.platform == 'darwin-arm64' && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]') || github.event.inputs.platform == 'linux-x86-64' && fromJson('[{"os":"ubuntu-latest","name":"linux-x86-64"}]') || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"}]') }}
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: read
@@ -50,13 +50,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Link ts-cloud from source
-        run: |
-          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
-          cd /tmp/ts-cloud && bun install
-          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
-          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
 
       - name: Install build tools (Linux)
         if: runner.os == 'Linux'
@@ -91,14 +84,16 @@ jobs:
             tcl-dev tk-dev \
             libunwind-dev libdw-dev \
             libzip-dev liblapack-dev gfortran \
-            python3-lxml python3-libxml2
+            python3-lxml python3-libxml2 \
+            doxygen xsltproc docbook-xsl xmlto
 
       - name: Install build tools (macOS)
         if: runner.os == 'macOS'
         run: |
           brew install cmake meson ninja pkg-config autoconf automake libtool gettext gnu-sed scons \
             boost libsndfile jpeg-turbo libpng libtiff webp freetype harfbuzz \
-            libyaml jansson libedit libzip lapack
+            libyaml jansson libedit libzip lapack \
+            doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx
 
       - name: Setup Rust toolchain
         run: |

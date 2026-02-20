@@ -386,7 +386,7 @@ function tryBuildVersion(
     cwd: join(process.cwd()),
     env: { ...process.env },
     stdio: 'inherit',
-    timeout: 30 * 60 * 1000, // 30 min per package
+    timeout: 45 * 60 * 1000, // 45 min per package
   })
 }
 
@@ -666,8 +666,7 @@ Options:
     'argoproj.github.io/cd', // yarn + Go mixed build, yarn fails in CI sandbox
     'argoproj.github.io/workflows', // Massive Go compilation (>60 min), exceeds per-package timeout
     'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
-    'docker.com/cli', // Needs go-md2man (not available) as build dependency
-    'docker.com/machine', // Same missing go-md2man dependency
+    // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
     'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
@@ -726,7 +725,7 @@ Options:
     'surrealdb.com', // Old release tags removed from GitHub
     'nasm.us', // Version resolution generates phantom versions (3.1.0, 3.0.0) that 404
     'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
-    'crates.io/tabiew', // Rust compilation exceeds 30 min timeout on darwin
+    // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
     'strace.io', // btrfs static assertions incompatible with newer kernel headers
     'gnu.org/source-highlight', // C++17 removed dynamic exception specs (throw()), unmaintained
@@ -752,15 +751,15 @@ Options:
     'dns.lookup.dog', // Needs OpenSSL headers for rust-openssl (not in standard S3 deps)
     'microsoft.com/code-cli', // Needs specific OpenSSL lib layout for Rust linking
     'fluentci.io', // Uses deno compile, fragile in CI
-    'fna-xna.github.io', // FAudio needs SDL2 headers from SDL2 dev package
+    // fna-xna.github.io removed — SDL2 dev packages now in CI
     'getclipboard.app', // stdlib.h broken via include_next in CI compiler setup
     'perl.org', // IO.xs poll.h struct pollfd incomplete type on Linux (glibc issue)
     'priver.dev/geni', // GitHub tag v2023.12.27 removed
     'schollz.com/croc', // GitHub tag v10.4.0 removed
     'foundry-rs.github.io/foundry', // All old version tags pruned from repo
     'volta.sh', // Build failure (needs investigation)
-    'libtom.net/math', // Uses glibtool in Makefile but no libtool build dep in recipe
-    'sourceforge.net/xmlstar', // libxml2 include path issue (libxml/xmlmemory.h)
+    // libtom.net/math removed — libtool already in CI
+    // sourceforge.net/xmlstar removed — libxml2 headers available via system
     'mypy-lang.org', // Gradle/JVM build failure on Linux
     'pcre.org', // SourceForge mirror (cytranet.dl.sourceforge.net) consistently times out
     'digitalocean.com/doctl', // GitHub release tags removed/restructured
@@ -778,12 +777,12 @@ Options:
     'cmake.org', // make failure on Linux — resource exhaustion or parallel build race condition
     'sourceforge.net/libtirpc', // libtool install fails — .libs/libtirpc.so not built
     'werf.io', // Go compilation failure (complex build with CGO)
-    'agwa.name/git-crypt', // Man page build requires xsltproc (not installed)
+    // agwa.name/git-crypt removed — xsltproc now in CI
     'gnu.org/texinfo', // sed error on makeinfo binary during install
     'gstreamer.freedesktop.org/orc', // Python SyntaxError in meson build — version incompatibility
     'laravel.com', // libicudata.78.dylib not found — ICU dependency missing from PHP dep
     'libimobiledevice.org/libimobiledevice-glue', // libplist pkg-config not found
-    'libsdl.org/SDL_ttf', // SDL2 not found via sdl2-config/pkg-config
+    // libsdl.org/SDL_ttf removed — sdl2 now in macOS brew
     'freedesktop.org/icon-theme', // Python SyntaxError in meson build tool
     'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
     'amp.rs', // Build script prop handling failure (6s crash)
@@ -797,10 +796,10 @@ Options:
     'libimobiledevice.org/libusbmuxd', // libplist pkg-config not found (cascading dep)
     'freedesktop.org/desktop-file-utils', // Python SyntaxError in meson build tool
     'harlequin.sh', // pip 'must give at least one requirement' — build script issue
-    'libsdl.org/SDL_mixer', // SDL2 dependency not found
-    'lloyd.github.io/yajl', // doxygen not found for doc generation in cmake build
+    // libsdl.org/SDL_mixer removed — sdl2 now in macOS brew
+    // lloyd.github.io/yajl removed — doxygen now in CI
     'musepack.net', // CMake generate step failed
-    'pagure.io/xmlto', // Build script failure (xsltproc/docbook dependency)
+    // pagure.io/xmlto removed — xsltproc/docbook now in CI
     'python.org/typing_extensions', // flit build tool path error (Undefined error: 0)
     'radicle.org', // Rust compilation failure
     'rclone.org', // Build script failure
@@ -821,12 +820,12 @@ Options:
     'mozilla.org/nss', // Build failure (complex build system)
     'nx.dev', // npm install failure
     'openpmix.github.io', // Build failure
-    'ccache.dev', // Build failure
+    // ccache.dev removed — CMake build, all deps available
     'crates.io/gitui', // Rust compilation failure (OpenSSL deps)
     'crates.io/zellij', // Rust compilation failure
     'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
-    'zlib.net/minizip', // make failure — build system issue
-    'code.videolan.org/aribb24', // autotools make failure
+    // zlib.net/minizip removed — small cmake build, deps available
+    // code.videolan.org/aribb24 removed — small autotools library
     'vapoursynth.com', // Build failure (autoreconf/automake issue)
     'facebook.com/wangle', // CMake build failure (complex Facebook library)
     'unidata.ucar.edu/netcdf', // cmake fix-up sed failure (HDF5 path issues)
@@ -854,7 +853,7 @@ Options:
     'facebook.com/fbthrift', // CMake build failure (Meta C++ lib chain)
     'facebook.com/mvfst', // CMake build failure (Meta C++ lib chain)
     'facebook.com/watchman', // CMake build failure (Meta C++ lib chain)
-    'ferzkopp.net/SDL2_gfx', // SDL2 dependency not found
+    // ferzkopp.net/SDL2_gfx removed — sdl2 now in macOS brew
     'ffmpeg.org', // Complex build with many optional deps
     'fluxcd.io/flux2', // Go build failure on darwin
     'freedesktop.org/appstream', // Build failure on linux (dep chain)
@@ -867,7 +866,7 @@ Options:
     'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
     'gdal.org', // Complex geospatial C++ build
-    'geoff.greer.fm/ag', // Build failure (the_silver_searcher)
+    // geoff.greer.fm/ag removed — simple autotools build, system deps available
     'getmonero.org', // Heavy C++ crypto build
     'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
     'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
@@ -881,7 +880,7 @@ Options:
     'gnome.org/libsecret', // GNOME secret storage (dep chain)
     'gnome.org/pango', // GNOME text rendering (dep chain)
     'gnome.org/PyGObject', // Python GNOME bindings (dep chain)
-    'gnu.org/groff', // Text formatter build failure
+    // gnu.org/groff removed — standard GNU build, should work with CI tools
     'gnu.org/guile', // GNU Scheme — complex build
     'gnuplot.info', // Build failure on linux
     'gnutls.org', // TLS library build failure on linux
@@ -895,18 +894,18 @@ Options:
     'kubebuilder.io', // Go build failure
     'kubernetes.io/kubectl', // Go build failure on darwin
     'lavinmq.com', // Build failure on linux
-    'leonerd.org.uk/libtermkey', // Build failure on darwin
-    'libarchive.org', // Build failure (autotools issue)
+    // leonerd.org.uk/libtermkey removed — small C library, try on darwin
+    // libarchive.org removed — autotools issue may be fixed with newer CI runner
     'llvm.org', // LLVM — too resource-intensive for CI (3500+ files)
     'llvm.org/clang-format', // LLVM subset — still too heavy
-    'luarocks.org', // Lua package manager build failure
+    // luarocks.org removed — lua already in CI brew list
     'lunarvim.org', // Build failure (dep chain)
     'macfuse.github.io/v2', // macOS FUSE — build timeout (1800s)
     'macvim.org', // Build failure on darwin (Vim + macOS integration)
     'materialize.com', // Heavy Rust database build
     'mergestat.com/mergestat-lite', // Go build failure on darwin
     'mesa3d.org', // Mesa 3D — massive build with many deps
-    'midnight-commander.org', // Build failure (dep chain)
+    // midnight-commander.org removed — ncurses/glib available via system
     'modal.com', // Build failure on both platforms
     'mpv.io', // Media player — complex dep chain
     'mun-lang.org', // Build failure on darwin
@@ -917,7 +916,7 @@ Options:
     'openresty.org', // Nginx+Lua — build failure on both platforms
     'opensearch.org', // Java/Gradle build failure on linux
     'openslide.org', // Build failure on darwin
-    'openssh.com', // Build failure on darwin
+    // openssh.com removed — standard autotools, OpenSSL available
     'orhun.dev/gpg-tui', // Rust build failure (GPG deps)
     'php.net', // PHP — complex build with many deps
     'poppler.freedesktop.org', // PDF library — dep chain
@@ -952,11 +951,10 @@ Options:
     'x.org/xauth', // X authentication — dep chain
     'x.org/xinput', // X input management — dep chain
     'xkbcommon.org', // Keyboard config library — meson build failure
-    'bytebase.com', // Go compilation exceeds 30 min per-package timeout on darwin
-    'dozzle.dev', // Go compilation exceeds 30 min per-package timeout on darwin
+    // bytebase.com and dozzle.dev removed — 45min timeout should be sufficient
     'freedesktop.org/dbus', // Build failure on darwin (meson dep chain)
     'gnu.org/gmp', // gmplib.org server unreachable (download timeout)
-    'leonerd.org.uk/libvterm', // Build script crash on darwin (2s failure)
+    // leonerd.org.uk/libvterm removed — small C library, try build script fix
     'libsoup.org', // Build failure on darwin (dep chain)
     'systemd.io', // Complex linux init system — build failure
   ])

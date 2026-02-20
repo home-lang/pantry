@@ -36,7 +36,8 @@
     "dev:docs": "bun bunpress dev docs",
     "build:docs": "bun bunpress build docs",
     "preview:docs": "bun bunpress preview docs",
-    "typecheck": "bun --bun tsc --noEmit"
+    "typecheck": "bun --bun tsc --noEmit",
+    "postinstall": "bun scripts/patch-ts-cloud.ts"
   },
   "devDependencies": {
     "better-dx": "^0.2.3"
@@ -52,5 +53,8 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "@stacksjs/ts-cloud": "^0.1.11"
+  }
 }

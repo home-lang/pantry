@@ -52,18 +52,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Link ts-cloud from source
-        run: |
-          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
-          cd /tmp/ts-cloud && bun install
-          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
-          # Revert to ./src/ since bun handles .ts imports natively
-          cd /tmp/ts-cloud/packages/ts-cloud
-          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
-          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
-          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-
       - name: Install build dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -120,18 +108,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Link ts-cloud from source
-        run: |
-          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
-          cd /tmp/ts-cloud && bun install
-          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
-          # Revert to ./src/ since bun handles .ts imports natively
-          cd /tmp/ts-cloud/packages/ts-cloud
-          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
-          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
-          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-
       - name: Discover packages
         id: discover
         run: |
@@ -176,17 +152,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Link ts-cloud from source
-        run: |
-          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
-          cd /tmp/ts-cloud && bun install
-          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
-          # Revert to ./src/ since bun handles .ts imports natively
-          cd /tmp/ts-cloud/packages/ts-cloud
-          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
-          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
-          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
 
       - name: Install build tools (Linux)
         if: runner.os == 'Linux'
@@ -251,7 +216,8 @@ jobs:
             libxslt1-dev \
             libsdl2-dev libplist-dev \
             libassuan-dev libgpg-error-dev \
-            libfido2-dev
+            libfido2-dev \
+            doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'
@@ -292,7 +258,8 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2 || true
+            libsecret libfido2 \
+            doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
 
       - name: Fix Python setuptools (Linux)
         if: runner.os == 'Linux'
@@ -368,17 +335,6 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Link ts-cloud from source
-        run: |
-          git clone --depth 1 https://github.com/stacksjs/ts-cloud.git /tmp/ts-cloud
-          cd /tmp/ts-cloud && bun install
-          # Fix: upstream exports changed from ./src/ to ./dist/ but dist/ isn't properly generated
-          # Revert to ./src/ since bun handles .ts imports natively
-          cd /tmp/ts-cloud/packages/ts-cloud
-          sed 's|"./dist/|"./src/|g; s|\.d\.ts"|.ts"|g; s|\.js"|.ts"|g' package.json > package.json.tmp && mv package.json.tmp package.json
-          rm -rf ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
-          mkdir -p ${{ github.workspace }}/node_modules/@stacksjs
-          ln -s /tmp/ts-cloud/packages/ts-cloud ${{ github.workspace }}/node_modules/@stacksjs/ts-cloud
 
       - name: Install build tools (Linux)
         if: runner.os == 'Linux'
@@ -443,7 +399,8 @@ jobs:
             libxslt1-dev \
             libsdl2-dev libplist-dev \
             libassuan-dev libgpg-error-dev \
-            libfido2-dev
+            libfido2-dev \
+            doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
         if: runner.os == 'macOS'
@@ -484,7 +441,8 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2 || true
+            libsecret libfido2 \
+            doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
 
       - name: Fix Python setuptools (Linux)
         if: runner.os == 'Linux'
