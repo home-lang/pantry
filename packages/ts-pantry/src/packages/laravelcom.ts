@@ -8,7 +8,7 @@
  *
  * @install `launchpad install laravel.com`
  * @homepage https://laravel.com/docs
- * @dependencies `php.net^8.2`, `getcomposer.org^2.7`, `darwin:unicode.org^78 # PHP` (includes OS-specific dependencies with `os:package` format)
+ * @dependencies `php.net^8.2`, `getcomposer.org^2.7`
  * @buildDependencies `curl.se`, `pkgx.sh@>=1` - required only when building from source
  *
  * @example
@@ -59,12 +59,10 @@ export const laravelcomPackage = {
   /**
   * Runtime dependencies for this package.
   * These are required when running the package.
-  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:freetype.org`).
   */
   dependencies: [
     'php.net^8.2',
     'getcomposer.org^2.7',
-    'darwin:unicode.org^78 # PHP',
   ] as const,
   /**
   * Build dependencies for this package.

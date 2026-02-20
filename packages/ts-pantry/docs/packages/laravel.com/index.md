@@ -62,7 +62,6 @@ This package depends on:
 
 - `php.net^8.2`
 - `getcomposer.org^2.7`
-- `darwin:unicode.org^78 # PHP`
 
 ## Usage Examples
 
