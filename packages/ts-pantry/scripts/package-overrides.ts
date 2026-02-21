@@ -1540,26 +1540,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // geoff.greer.fm/ag — depends on pcre.org which uses sourceforge URL
   // ag v2.2.0 only supports PCRE1 (not PCRE2), so we keep the pcre.org dep as-is
 
-  // ─── sass-lang.com/sassc — ensure libsass dep is found ──────────────
-
-  'sass-lang.com/sassc': {
-    env: {
-      SASS_LIBSASS_PATH: '{{deps.sass-lang.com/libsass.prefix}}',
-    },
-  },
-
-  // ─── vapoursynth.com — fix autoreconf/automake ──────────────────────
-
-  'vapoursynth.com': {
-    prependScript: [{
-      run: [
-        'if [ ! -f configure ]; then',
-        '  autoreconf -fvi',
-        'fi',
-      ].join('\n'),
-    }],
-  },
-
   // ─── doxygen.nl — fix build on darwin ───────────────────────────────
 
   'doxygen.nl': {
@@ -1567,6 +1547,280 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove llvm.org dep on linux (use system compiler)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
+      }
+    },
+  },
+
+  // ─── apache.org/apr-util — fix --with-apr path quoting ──────────────
+
+  'apache.org/apr-util': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --with-apr arg: remove extra quotes around path (causes "not found" error)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) => {
+          if (a.includes('--with-apr=')) {
+            return a.replace(/--with-apr="([^"]+)"/, '--with-apr=$1')
+          }
+          if (a.includes('--prefix=')) {
+            return a.replace(/--prefix="([^"]+)"/, '--prefix=$1')
+          }
+          return a
+        })
+      }
+    },
+  },
+
+  // ─── apache.org/httpd — fix sed -i BSD compat ────────────────────────
+
+  'apache.org/httpd': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat (macOS requires suffix)
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── apache.org/thrift — fix darwin build ────────────────────────────
+
+  'apache.org/thrift': {
+    modifyRecipe: (recipe: any) => {
+      // Remove duplicate --prefix arg
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        const seen = new Set<string>()
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => {
+          const key = a.startsWith('--prefix') ? '--prefix' : a
+          if (seen.has(key)) return false
+          seen.add(key)
+          return true
+        })
+      }
+    },
+  },
+
+  // ─── vim.org — simplify deps to avoid complex dep chain ──────────────
+
+  'vim.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove perl/ruby interpreters (complex deps) — keep python/lua/ncurses
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
+          a !== '--enable-perlinterp' && a !== '--enable-rubyinterp',
+        )
+      }
+      // Remove perl.org and ruby-lang.org runtime deps
+      if (recipe.dependencies?.['perl.org']) delete recipe.dependencies['perl.org']
+      if (recipe.dependencies?.['ruby-lang.org']) delete recipe.dependencies['ruby-lang.org']
+    },
+  },
+
+  // ─── gnome.org/gobject-introspection — fix sed -i BSD + CC ──────────
+
+  'gnome.org/gobject-introspection': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in g-ir-scanner shebang fix
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('g-ir-scanner')
+            && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove hardcoded CC: clang (let build system choose)
+      if (recipe.build?.env?.CC === 'clang') {
+        delete recipe.build.env.CC
+      }
+    },
+  },
+
+  // ─── gnome.org/atk — disable gobject-introspection build dep ─────────
+
+  'gnome.org/atk': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep (not in S3 yet)
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Add -Dintrospection=disabled to meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.ARGS.push('-Dintrospection=disabled')
+        }
+      }
+    },
+  },
+
+  // ─── gnome.org/json-glib — fix sed -i BSD + disable introspection ────
+
+  'gnome.org/json-glib': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in json-scanner.c patch
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('json-scanner')
+            && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Disable introspection in meson args
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.filter(
+          (a: string) => a !== '-Dintrospection=enabled',
+        )
+        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled')
+        }
+      }
+    },
+  },
+
+  // ─── gnome.org/gdk-pixbuf — remove shared-mime-info dep ─────────────
+
+  'gnome.org/gdk-pixbuf': {
+    modifyRecipe: (recipe: any) => {
+      // Remove freedesktop.org/shared-mime-info dep (not in S3)
+      if (recipe.dependencies?.['freedesktop.org/shared-mime-info']) {
+        delete recipe.dependencies['freedesktop.org/shared-mime-info']
+      }
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Disable introspection in meson args
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled')
+        }
+      }
+    },
+  },
+
+  // ─── gnome.org/pango — disable introspection ─────────────────────────
+
+  'gnome.org/pango': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Add -Dintrospection=disabled to meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.ARGS.push('-Dintrospection=disabled')
+        }
+      }
+    },
+  },
+
+  // ─── gnome.org/gsettings-desktop-schemas — disable introspection ─────
+
+  'gnome.org/gsettings-desktop-schemas': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Add -Dintrospection=disabled to meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.ARGS.push('-Dintrospection=disabled')
+        }
+      }
+    },
+  },
+
+  // ─── gnome.org/libsecret — remove heavy build deps ───────────────────
+
+  'gnome.org/libsecret': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection, vala, libxslt, docbook build deps
+      const heavyDeps = [
+        'gnome.org/gobject-introspection',
+        'gnome.org/vala',
+        'gnome.org/libxslt',
+        'docbook.org/xsl',
+      ]
+      for (const dep of heavyDeps) {
+        if (recipe.build?.dependencies?.[dep]) {
+          delete recipe.build.dependencies[dep]
+        }
+      }
+      // Remove llvm.org linux build dep
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+      // Disable introspection and vapi in meson args
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS.push(
+          '-Dintrospection=false',
+          '-Dvapi=false',
+          '-Dgtk_doc=false',
+        )
+      }
+      // Remove XML_CATALOG_FILES (docbook no longer needed)
+      if (recipe.build?.env?.XML_CATALOG_FILES) {
+        delete recipe.build.env.XML_CATALOG_FILES
+      }
+    },
+  },
+
+  // ─── ffmpeg.org — fix build on darwin (disable SDL for headless CI) ──
+
+  'ffmpeg.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove libsdl.org dep (not needed for headless CI builds)
+      if (recipe.dependencies?.['libsdl.org']) {
+        delete recipe.dependencies['libsdl.org']
+      }
+      // Add --disable-sdl2 to ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('--disable-sdl2')) {
+          recipe.build.env.ARGS.push('--disable-sdl2')
+        }
+      }
+    },
+  },
+
+  // ─── gnutls.org — remove p11-kit dep (not in S3) ────────────────────
+
+  'gnutls.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove freedesktop.org/p11-kit dep (not in S3)
+      if (recipe.dependencies?.['freedesktop.org/p11-kit']) {
+        delete recipe.dependencies['freedesktop.org/p11-kit']
+      }
+      // Add --without-p11-kit to ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('--without-p11-kit')) {
+          recipe.build.env.ARGS.push('--without-p11-kit')
+        }
+      }
+      // Fix sed -i BSD compat in aarch64 step
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('-march=all')
+            && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
       }
     },
   },

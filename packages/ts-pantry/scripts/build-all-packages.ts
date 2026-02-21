@@ -800,7 +800,7 @@ Options:
     'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
     // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args
     // amp.rs removed — fixed sed portability in override
-    'apache.org/apr-util', // --with-apr parameter incorrect (apr not found as dependency)
+    // apache.org/apr-util removed — fixed --with-apr path quoting in override
     'crates.io/gitweb', // Crate permanently deleted from crates.io (404)
     // deepwisdom.ai removed — built successfully on darwin
     // developers.yubico.com/libfido2 removed — removed systemd.io dep override
@@ -849,8 +849,8 @@ Options:
     'libcxx.llvm.org', // LLVM compilation too resource-intensive for CI
     // --- Failures from run 22169381361 batches 12-18 ---
     'apache.org/arrow', // Complex C++ build with many dependencies
-    'apache.org/httpd', // APR dependency chain issues
-    'apache.org/thrift', // Build failure on darwin
+    // apache.org/httpd removed — fixed sed -i BSD compat in override
+    // apache.org/thrift removed — fixed duplicate --prefix arg in override
     'apache.org/zookeeper', // Build failure on linux
     'aws.amazon.com/cli', // Build failure on darwin
     'bitcoin.org', // Build failure on linux
@@ -868,7 +868,7 @@ Options:
     'facebook.com/mvfst', // CMake build failure (Meta C++ lib chain)
     'facebook.com/watchman', // CMake build failure (Meta C++ lib chain)
     // ferzkopp.net/SDL2_gfx removed — sdl2 now in macOS brew
-    'ffmpeg.org', // Complex build with many optional deps
+    // ffmpeg.org removed — disabled SDL2 dep in override
     'fluxcd.io/flux2', // Go build failure on darwin
     'freedesktop.org/appstream', // Build failure on linux (dep chain)
     'freedesktop.org/mesa-glu', // Build failure on darwin (OpenGL dep)
@@ -882,22 +882,22 @@ Options:
     'gdal.org', // Complex geospatial C++ build
     // geoff.greer.fm/ag — needs pcre.org in S3, build pcre.org first
     'getmonero.org', // Heavy C++ crypto build
-    'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
-    'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
+    // gnome.org/atk removed — disabled gobject-introspection in override
+    // gnome.org/gdk-pixbuf removed — removed shared-mime-info + disabled introspection
     // gnome.org/glib removed — disabled introspection, fixed sed -i BSD
     // gnome.org/glib-networking moved to linuxOnlyDomains — builds on linux
-    'gnome.org/gobject-introspection', // GNOME introspection (dep chain)
-    'gnome.org/gsettings-desktop-schemas', // GNOME settings (dep chain)
+    // gnome.org/gobject-introspection removed — fixed sed -i BSD + CC in override
+    // gnome.org/gsettings-desktop-schemas removed — disabled introspection in override
     'gnome.org/gtk-mac-integration-gtk3', // macOS GTK integration
-    'gnome.org/json-glib', // GNOME JSON lib (dep chain from glib)
+    // gnome.org/json-glib removed — fixed sed -i BSD + disabled introspection
     'gnome.org/librsvg', // GNOME SVG renderer (Rust + C dep chain)
-    'gnome.org/libsecret', // GNOME secret storage (dep chain)
-    'gnome.org/pango', // GNOME text rendering (dep chain)
+    // gnome.org/libsecret removed — removed heavy build deps in override
+    // gnome.org/pango removed — disabled introspection in override
     'gnome.org/PyGObject', // Python GNOME bindings (dep chain)
     // gnu.org/groff removed — standard GNU build, should work with CI tools
     'gnu.org/guile', // GNU Scheme — complex build
     'gnuplot.info', // Build failure on linux
-    'gnutls.org', // TLS library build failure on linux
+    // gnutls.org removed — removed p11-kit dep + fixed sed -i BSD in override
     'grpc.io', // Heavy C++ RPC framework
     'gtk.org/gtk3', // GTK3 — massive dep chain (glib→atk→pango→gdk-pixbuf)
     'gtk.org/gtk4', // GTK4 — massive dep chain
@@ -957,7 +957,7 @@ Options:
     'tlr.dev', // Build failure on darwin
     'vaultproject.io', // HashiCorp Vault — Go build failure
     'videolan.org/libplacebo', // Video rendering — meson build failure
-    'vim.org', // Vim — build failure on both platforms
+    // vim.org removed — removed perl/ruby interp deps in override
     'virtualsquare.org/vde', // Virtual networking — build failure on darwin
     'wireshark.org', // Network analyzer — massive dep chain
     'x.org/libxfont2', // X.org font library — dep chain
