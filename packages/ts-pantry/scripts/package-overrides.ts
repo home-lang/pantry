@@ -592,7 +592,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'musepack.net': {
-    // CMAKE prefix quote is handled by generic fix — no individual override needed
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
   },
 
   'oracle.com/berkeley-db': {
@@ -3309,6 +3316,66 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'x.org/libxfont2': {
     // Simple autotools build with clean --prefix={{prefix}} inline
     // No fixes needed beyond what's in CI
+  },
+
+  // ─── wpewebkit.org/wpebackend-fdo — fix prefix quoting + sed -i BSD + remove gcc ─
+
+  'wpewebkit.org/wpebackend-fdo': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and --libdir args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+              .replace(/sed -i -f /g, 'sed -i.bak -f ')
+          }
+        }
+      }
+      // Remove gnu.org/gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies['gnu.org/gcc']
+      }
+      // Remove mesa3d.org dep (not in S3)
+      if (recipe.dependencies?.['mesa3d.org']) {
+        delete recipe.dependencies['mesa3d.org']
+      }
+    },
+  },
+
+  // ─── luarocks.org — fix prefix quoting + sed -i BSD + remove info-zip dep ─
+
+  'luarocks.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and other args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2')
+           .replace(/^(--sysconfdir=)"([^"]+)"$/, '$1$2')
+           .replace(/^(--rocks-tree=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i\n/g, 'sed -i.bak\n')
+              .replace(/^(\s*)sed -i$/m, '$1sed -i.bak')
+          }
+        }
+      }
+      // Remove info-zip.org/unzip dep (not in S3)
+      if (recipe.dependencies?.['info-zip.org/unzip']) {
+        delete recipe.dependencies['info-zip.org/unzip']
+      }
+    },
   },
 
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────

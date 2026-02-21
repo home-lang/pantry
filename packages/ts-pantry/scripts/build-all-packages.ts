@@ -975,11 +975,11 @@ Options:
     // deepwisdom.ai removed — patched out faiss_cpu on linux
     // expo.dev/eas-cli removed — added corepack yarn 4 activation
     // geoff.greer.fm/ag — added earlier in this list
-    'musepack.net', // CMake configure failure — missing required cmake variables from sub-deps
-    'wpewebkit.org/wpebackend-fdo', // wpe-1.0 (libwpe) and mesa3d deps not in S3
+    // musepack.net removed — fixed stray cmake prefix quote in override
+    // wpewebkit.org/wpebackend-fdo removed — fixed prefix quoting + sed -i BSD + removed gcc/mesa deps in override
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
     'crates.io/qsv', // ring crate compile failure on darwin ARM64
-    'luarocks.org', // Lua 5.5 path issues + info-zip.org/unzip dep is broken
+    // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
   ])
 
   let platformSkipped = 0
