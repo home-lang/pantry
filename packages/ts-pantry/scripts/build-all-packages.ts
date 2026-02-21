@@ -683,11 +683,11 @@ Options:
     'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
-    // crates.io/bpb removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
     // crates.io/didyoumean removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/mask removed — added --cap-lints warn RUSTFLAGS override
-    // crates.io/pqrs removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/pqrs', // arrow-arith/chrono trait ambiguity (quarter() method conflict)
     // crates.io/rust-kanban removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override
     // fabianlindfors.se/reshape removed — added --cap-lints warn RUSTFLAGS override
@@ -742,7 +742,7 @@ Options:
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
     // strace.io removed — added compiler flags override
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
-    // microbrew.org/md5sha1sum removed — fixed OpenSSL path override
+    'microbrew.org/md5sha1sum', // needs openssl.org dep built in S3 (configure can't find ssl libs)
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
@@ -786,9 +786,9 @@ Options:
     'x.org/xt', // Cascading X11 dep failure — needs sm (libSM) and ice (libICE)
     // swagger.io/swagger-codegen removed — built successfully on linux
     'angular.dev', // npm build failure on both platforms (native module compilation)
-    // capnproto.org removed — built successfully on darwin
+    'capnproto.org', // internal compiler error in GCC on linux (gimplify_var_or_parm_decl)
     // cmake.org removed — reduced parallel jobs to prevent race condition
-    // sourceforge.net/libtirpc removed — fixed libtool and removed LLD linker
+    'sourceforge.net/libtirpc', // shared library linking fails (libtirpc.so.3.0.0 not created, kerberos dep issue)
     'werf.io', // Go compilation failure (complex build with CGO)
     // agwa.name/git-crypt removed — xsltproc now in CI
     // gnu.org/texinfo removed — built successfully on linux
@@ -839,7 +839,7 @@ Options:
     'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
     // zlib.net/minizip removed — small cmake build, deps available
     // code.videolan.org/aribb24 removed — small autotools library
-    // vapoursynth.com removed — added autoreconf fix override
+    'vapoursynth.com', // needs zimg >= 3.0.5 dep which is not available in S3
     'facebook.com/wangle', // CMake build failure (complex Facebook library)
     'unidata.ucar.edu/netcdf', // cmake fix-up sed failure (HDF5 path issues)
     'x.org/libcvt', // Python SyntaxError in meson build tool
@@ -879,7 +879,7 @@ Options:
     'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
     'gdal.org', // Complex geospatial C++ build
-    // geoff.greer.fm/ag removed — simple autotools build, system deps available
+    'geoff.greer.fm/ag', // needs pcre.org (PCRE1) which relies on SourceForge download
     'getmonero.org', // Heavy C++ crypto build
     'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
     'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
@@ -945,7 +945,7 @@ Options:
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
     // sass-lang.com/libsass removed — built successfully on darwin
-    // sass-lang.com/sassc removed — libsass now building, added SASS_LIBSASS_PATH
+    'sass-lang.com/sassc', // needs libsass built in S3 first (build order dependency)
     'sfcgal.org', // Geometry library — CMake failure
     'solana.com', // Heavy Rust blockchain build
     'sourceforge.net/faac', // AAC encoder — build failure on darwin
@@ -973,7 +973,7 @@ Options:
     'getfoundry.sh', // GitHub tags deleted from foundry-rs/foundry repo (old versions pruned)
     'deepwisdom.ai', // faiss_cpu==1.7.4 not available via pip on linux
     'expo.dev/eas-cli', // Requires yarn 4.x via corepack, classic yarn too old
-    // geoff.greer.fm/ag removed — switched pcre.org dep to pcre2, fixed SourceForge issue
+    // geoff.greer.fm/ag — added earlier in this list
     'musepack.net', // CMake configure failure — missing required cmake variables from sub-deps
     'wpewebkit.org/wpebackend-fdo', // wpe-1.0 (libwpe) and mesa3d deps not in S3
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)

@@ -760,6 +760,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'jemalloc.net': {
+    // Rename 'version' file to avoid C++ #include <version> collision on modern Xcode
+    prependScript: ['if [ -f version ]; then mv version VERSION.jemalloc; fi'],
     modifyRecipe: (recipe: any) => {
       // Fix working-directory for the sed command
       if (Array.isArray(recipe.build?.script)) {
@@ -775,13 +777,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'invisible-island.net/ncurses': {
     modifyRecipe: (recipe: any) => {
-      // Add tinfo.pc → tinfow.pc symlink on linux
+      // Fix all ln -s to ln -sf to avoid failure when symlinks already exist
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script.push({
-          run: 'ln -s tinfow.pc tinfo.pc',
-          if: 'linux',
-          'working-directory': '${{prefix}}/lib/pkgconfig',
-        })
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('ln -s ')) {
+            recipe.build.script[i] = step.replace(/\bln -s /g, 'ln -sf ')
+          } else if (typeof step === 'object' && step.run) {
+            if (typeof step.run === 'string') {
+              step.run = step.run.replace(/\bln -s /g, 'ln -sf ')
+            } else if (Array.isArray(step.run)) {
+              step.run = step.run.map((s: string) => s.replace(/\bln -s /g, 'ln -sf '))
+            }
+          }
+        }
       }
     },
   },
@@ -861,7 +870,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'crates.io/mask': {
-    env: { RUSTFLAGS: '--cap-lints warn' },
+    env: { RUSTFLAGS: '--cap-lints warn -C linker=gcc' },
     prependScript: ['rm -f rust-toolchain.toml'],
   },
 
@@ -932,6 +941,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── cmake.org — reduce parallel jobs to prevent race condition ───────
 
   'cmake.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Fix bzip2 multiarch path on Ubuntu (libbz2.so is in /usr/lib/x86_64-linux-gnu, not /usr/lib)
+          'BZ2_REAL=$(find /usr/lib -name "libbz2.so" -print -quit 2>/dev/null); if [ -n "$BZ2_REAL" ] && [ ! -f /usr/lib/libbz2.so ]; then ln -sf "$BZ2_REAL" /usr/lib/libbz2.so 2>/dev/null || true; fi',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Replace hw.concurrency with a fixed job count to prevent race condition
       if (Array.isArray(recipe.build?.script)) {
@@ -973,10 +990,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     distributableUrl: 'https://ftpmirror.gnu.org/gnu/gmp/gmp-{{version}}.tar.xz',
   },
 
-  // ─── pcre.org — URL override (SourceForge mirror timeout) ─────────────
+  // pcre.org — original sourceforge URL is correct for PCRE1 (v8.x)
+  // (PCRE2 is a separate project with versions starting at 10.x)
 
-  'pcre.org': {
-    distributableUrl: 'https://github.com/PCRE2Project/pcre2/releases/download/pcre2-{{version}}/pcre2-{{version}}.tar.bz2',
+  // ─── gnu.org/gcc — clean LIBRARY_PATH of current directory entries ──────
+
+  'gnu.org/gcc': {
+    prependScript: [
+      // GCC configure rejects LIBRARY_PATH containing current directory
+      'export LIBRARY_PATH=$(echo "$LIBRARY_PATH" | tr ":" "\\n" | grep -v "^\\.$" | grep -v "^$" | tr "\\n" ":" | sed "s/:$//")',
+      'export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ":" "\\n" | grep -v "^\\.$" | grep -v "^$" | tr "\\n" ":" | sed "s/:$//")',
+    ],
   },
 
   // ─── getclipboard.app — fix include path for stdlib.h ────────────────
@@ -998,13 +1022,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: {
       CFLAGS: '-Wno-error=implicit-function-declaration',
     },
+    modifyRecipe: (recipe: any) => {
+      // Add json-c as a build dependency (needed for json.h)
+      if (!recipe.build) recipe.build = {}
+      if (!recipe.build.dependencies) recipe.build.dependencies = {}
+      recipe.build.dependencies['github.com/json-c/json-c'] = '*'
+    },
   },
 
   // ─── strace.io — fix btrfs static assertions ────────────────────────
 
   'strace.io': {
     env: {
-      CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256',
+      CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=0 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
   },
 
@@ -1020,22 +1050,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── geoff.greer.fm/ag — switch from pcre.org to pcre2 ──────────────
-
-  'geoff.greer.fm/ag': {
-    modifyRecipe: (recipe: any) => {
-      // Switch dependency from pcre.org (SourceForge, broken) to pcre2
-      if (recipe.dependencies?.['pcre.org']) {
-        delete recipe.dependencies['pcre.org']
-        // ag works with PCRE via pkg-config, pcre2 provides pcre2-8
-      }
-      // Add PCRE2 flags
-      if (!recipe.build) recipe.build = {}
-      if (!recipe.build.env) recipe.build.env = {}
-      recipe.build.env.CFLAGS = '$(pkg-config --cflags libpcre2-8) -DUSE_PCRE2 -DPCRE2_CODE_UNIT_WIDTH=8'
-      recipe.build.env.LDFLAGS = '$(pkg-config --libs libpcre2-8)'
-    },
-  },
+  // geoff.greer.fm/ag — depends on pcre.org which uses sourceforge URL
+  // ag v2.2.0 only supports PCRE1 (not PCRE2), so we keep the pcre.org dep as-is
 
   // ─── sass-lang.com/sassc — ensure libsass dep is found ──────────────
 
