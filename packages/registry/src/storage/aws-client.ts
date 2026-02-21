@@ -147,7 +147,7 @@ export class S3Client {
     const response = await fetch(`https://${host}${path}`, {
       method: 'PUT',
       headers,
-      body: payload,
+      body: new Uint8Array(payload),
     })
 
     if (!response.ok) {
