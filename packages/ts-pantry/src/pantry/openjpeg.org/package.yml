@@ -1,5 +1,5 @@
 distributable:
-  url: https://github.com/uclouvain/openjpeg/archive/v{{version}}.tar.gz
+  url: https://github.com/uclouvain/openjpeg/archive/v2.5.0.tar.gz
   strip-components: 1
 
 versions:

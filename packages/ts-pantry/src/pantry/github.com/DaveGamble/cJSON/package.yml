@@ -1,5 +1,5 @@
 distributable:
-  url: https://github.com/DaveGamble/cJSON/archive/v{{version}}.tar.gz
+  url: https://github.com/DaveGamble/cJSON/archive/v1.7.15.tar.gz
   strip-components: 1
 
 versions:

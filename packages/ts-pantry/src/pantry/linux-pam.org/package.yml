@@ -57,14 +57,13 @@ build:
     MESON_ARGS:
       - --prefix={{prefix}}
       - --libdir={{prefix}}/lib
-      - --localstatedir={{prefix}}/var
       - --buildtype=release
       - --wrap-mode=nofallback
       - -Dsecuredir={{prefix}}/lib/security
       - -Dsysconfdir={{prefix}}/etc
+      - -Dxml-catalog={{prefix}}/etc/xml/catalog
       - -Dvendordir={{prefix}}/share/pam
       - -Dexamples=false
-      - -Ddocs=disabled
 
 provides:
   - sbin/faillock

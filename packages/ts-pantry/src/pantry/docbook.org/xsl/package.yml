@@ -1,6 +1,6 @@
 distributable:
   url: https://github.com/docbook/xslt10-stylesheets/releases/download/release/{{version}}/docbook-xsl-{{version}}.zip
-  strip-components: 0
+  strip-components: 1
 display-name: docbook-xsl
 versions:
   url: https://cdn.docbook.org/release/xsl/

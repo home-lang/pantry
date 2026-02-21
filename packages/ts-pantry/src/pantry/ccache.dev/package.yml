@@ -10,11 +10,9 @@ build:
   dependencies:
     asciidoctor.org: '*'
     cmake.org: '*'
+    linux:
+      llvm.org: '*'
   script:
-    # Remove system xxhash on linux — its /usr/include path causes -isystem /usr/include
-    # which breaks #include_next <stdlib.h> in GCC headers; ccache will use bundled xxhash
-    - run: sudo rm -f /usr/include/xxhash.h /usr/lib/x86_64-linux-gnu/libxxhash.* /usr/lib/x86_64-linux-gnu/pkgconfig/libxxhash.pc 2>/dev/null || true
-      if: linux
     - cmake -S . -B build $CMAKE_ARGS
     - cmake --build build
     - cmake --install build
@@ -37,27 +35,17 @@ build:
       working-directory: '{{prefix}}/libexec'
   env:
     CMAKE_ARGS:
-      - -DCMAKE_INSTALL_PREFIX={{prefix}}
+      - -DCMAKE_INSTALL_PREFIX="{{prefix}}
       - -DCMAKE_INSTALL_LIBDIR=lib
       - -DCMAKE_BUILD_TYPE=Release
       - -DCMAKE_FIND_FRAMEWORK=LAST
       - -DCMAKE_VERBOSE_MAKEFILE=ON
       - -Wno-dev
       - -DBUILD_TESTING=OFF
+      - -DENABLE_IPO=TRUE
     linux:
-      # Use system compiler and prevent -isystem /usr/include from imported targets
-      # (system zstd's INTERFACE_INCLUDE_DIRECTORIES adds -isystem /usr/include which
-      # breaks GCC's #include_next <stdlib.h> in cstdlib)
       CMAKE_ARGS:
-        - -DCMAKE_INSTALL_PREFIX={{prefix}}
-        - -DCMAKE_INSTALL_LIBDIR=lib
-        - -DCMAKE_BUILD_TYPE=Release
-        - -DCMAKE_VERBOSE_MAKEFILE=ON
-        - -Wno-dev
-        - -DBUILD_TESTING=OFF
-        - -DCMAKE_C_COMPILER=/usr/bin/gcc
-        - -DCMAKE_CXX_COMPILER=/usr/bin/g++
-        - -DCMAKE_NO_SYSTEM_FROM_IMPORTED=ON
+        - -DCMAKE_C_COMPILER_AR={{deps.llvm.org.prefix}}/bin/llvm-ar
 provides:
   - bin/ccache
 test:

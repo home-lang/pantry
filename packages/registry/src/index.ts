@@ -32,6 +32,8 @@ export {
   InMemoryAnalytics,
 } from './analytics'
 export type {
+  AnalyticsCategory,
+  AnalyticsEvent,
   DownloadEvent,
   PackageStats,
   AnalyticsStorage,

@@ -10,13 +10,9 @@ versions:
 
 build:
   dependencies:
-    rust-lang.org: '>=1.85'
+    rust-lang.org: '>=1.65'
     rust-lang.org/cargo: '*'
-  script: |
-    # Source pins rust-toolchain.toml to 1.82, but deps (imap-types) need 1.85+
-    rm -f rust-toolchain.toml
-    rustup default stable
-    cargo install --path . --root {{prefix}}
+  script: cargo install --path . --root {{prefix}}
 
 test:
   - run: test "$(himalaya --version)" = "himalaya {{version}}"

@@ -17,7 +17,7 @@ provides:
 
 build:
   dependencies:
-    gnupg.org/libgpg-error: ^1.51
+    gnupg.org/libgpg-error: ^1.49
     darwinsys.com/file: '*' # needed for configure to build dylibs
     darwin:
       llvm.org: '*'

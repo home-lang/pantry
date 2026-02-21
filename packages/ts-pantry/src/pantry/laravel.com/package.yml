@@ -16,29 +16,8 @@ companions:
 
 build:
   # 5.11.1 shipped as 5.11.0
-  - run: perl -pi -e "s/'Laravel Installer', '[0-9\.]+'/'Laravel Installer', '{{version}}'/" laravel
+  - run: sed -i "s/'Laravel Installer', '[0-9\.]*'/'Laravel Installer', '{{version}}'/" laravel
     working-directory: bin
-  # PHP's ICU libs use @loader_path but libicudata isn't in the PHP tarball.
-  # Rewrite PHP's ICU references to use Homebrew's ICU and symlink libs.
-  - run: |
-      brew install icu4c 2>/dev/null || true
-      ICU_LIB="$(brew --prefix icu4c)/lib"
-      PHP_LIB="{{deps.php.net.prefix}}/lib"
-      if [ -d "$ICU_LIB" ] && [ -d "$PHP_LIB" ]; then
-        for lib in "$ICU_LIB"/libicu*.dylib; do
-          [ -f "$lib" ] && ln -sf "$lib" "$PHP_LIB/" 2>/dev/null || true
-        done
-        # Rewrite @loader_path refs in PHP's ICU libs to use Homebrew's paths
-        for phplib in "$PHP_LIB"/libicu*.dylib; do
-          [ -L "$phplib" ] && continue
-          [ -f "$phplib" ] || continue
-          for iculib in "$ICU_LIB"/libicu*.dylib; do
-            base="$(basename "$iculib")"
-            install_name_tool -change "@loader_path/$base" "$iculib" "$phplib" 2>/dev/null || true
-          done
-        done
-      fi
-    if: darwin
   - composer install --no-dev
   - mkdir -p {{prefix}}/libexec
   - cp -r ./* {{prefix}}/libexec

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'bun:test'
-import { InMemoryAnalytics, type InstallAnalyticsResult } from './analytics'
+import { InMemoryAnalytics, type InstallAnalyticsResult, type AnalyticsCategory, type AnalyticsEvent } from './analytics'
 import { createServer } from './server'
 import { createLocalRegistry } from './registry'
 
@@ -9,6 +9,16 @@ function downloadEvent(packageName: string, date: string, version = '1.0.0') {
     packageName,
     version,
     timestamp: `${date}T12:00:00Z`,
+  }
+}
+
+// Helper to create an analytics event on a specific date
+function analyticsEvent(packageName: string, category: AnalyticsCategory, date: string, version?: string): AnalyticsEvent {
+  return {
+    packageName,
+    category,
+    timestamp: `${date}T12:00:00Z`,
+    version,
   }
 }
 
@@ -349,5 +359,160 @@ describe('install analytics server endpoints', () => {
 
     const timeline = await analytics.getDownloadTimeline('test-pkg', 7)
     expect(timeline).toHaveLength(7)
+  })
+})
+
+describe('trackEvent + getCategoryAnalytics', () => {
+  let analytics: InMemoryAnalytics
+
+  beforeEach(() => {
+    analytics = new InMemoryAnalytics()
+  })
+
+  it('tracks install_on_request events and queries them back', async () => {
+    await analytics.trackEvent(analyticsEvent('curl', 'install_on_request', today()))
+    await analytics.trackEvent(analyticsEvent('curl', 'install_on_request', today()))
+    await analytics.trackEvent(analyticsEvent('wget', 'install_on_request', today()))
+
+    const result = await analytics.getCategoryAnalytics('install_on_request', 30)
+
+    expect(result.category).toBe('install_on_request')
+    expect(result.total_items).toBe(2)
+    expect(result.total_count).toBe(3)
+    expect(result.items[0].formula).toBe('curl')
+    expect(result.items[0].count).toBe('2')
+    expect(result.items[1].formula).toBe('wget')
+    expect(result.items[1].count).toBe('1')
+  })
+
+  it('tracks build_error events and queries them back', async () => {
+    await analytics.trackEvent(analyticsEvent('openssl', 'build_error', today()))
+    await analytics.trackEvent(analyticsEvent('zlib', 'build_error', today()))
+    await analytics.trackEvent(analyticsEvent('zlib', 'build_error', today()))
+
+    const result = await analytics.getCategoryAnalytics('build_error', 30)
+
+    expect(result.category).toBe('build_error')
+    expect(result.total_items).toBe(2)
+    expect(result.total_count).toBe(3)
+    expect(result.items[0].formula).toBe('zlib')
+    expect(result.items[1].formula).toBe('openssl')
+  })
+
+  it('categories are isolated — install data does not appear in build_error', async () => {
+    await analytics.trackEvent(analyticsEvent('curl', 'install_on_request', today()))
+    await analytics.trackEvent(analyticsEvent('openssl', 'build_error', today()))
+    await analytics.trackDownload(downloadEvent('zstd', today()))
+
+    const installResult = await analytics.getCategoryAnalytics('install', 30)
+    const installOnRequestResult = await analytics.getCategoryAnalytics('install_on_request', 30)
+    const buildErrorResult = await analytics.getCategoryAnalytics('build_error', 30)
+
+    expect(installResult.total_items).toBe(1)
+    expect(installResult.items[0].formula).toBe('zstd')
+
+    expect(installOnRequestResult.total_items).toBe(1)
+    expect(installOnRequestResult.items[0].formula).toBe('curl')
+
+    expect(buildErrorResult.total_items).toBe(1)
+    expect(buildErrorResult.items[0].formula).toBe('openssl')
+  })
+
+  it('package name variants with --HEAD suffix tracked independently', async () => {
+    await analytics.trackEvent(analyticsEvent('zstd', 'install_on_request', today()))
+    await analytics.trackEvent(analyticsEvent('zstd --HEAD', 'install_on_request', today()))
+    await analytics.trackEvent(analyticsEvent('zstd --HEAD', 'install_on_request', today()))
+
+    const result = await analytics.getCategoryAnalytics('install_on_request', 30)
+
+    expect(result.total_items).toBe(2)
+    expect(result.items[0].formula).toBe('zstd --HEAD')
+    expect(result.items[0].count).toBe('2')
+    expect(result.items[1].formula).toBe('zstd')
+    expect(result.items[1].count).toBe('1')
+  })
+})
+
+describe('multi-category period filtering', () => {
+  let analytics: InMemoryAnalytics
+
+  beforeEach(() => {
+    analytics = new InMemoryAnalytics()
+  })
+
+  it('install_on_request respects 30d/90d/365d boundaries', async () => {
+    await analytics.trackEvent(analyticsEvent('recent', 'install_on_request', today()))
+    await analytics.trackEvent(analyticsEvent('medium', 'install_on_request', daysAgo(60)))
+    await analytics.trackEvent(analyticsEvent('old', 'install_on_request', daysAgo(200)))
+
+    const r30 = await analytics.getCategoryAnalytics('install_on_request', 30)
+    const r90 = await analytics.getCategoryAnalytics('install_on_request', 90)
+    const r365 = await analytics.getCategoryAnalytics('install_on_request', 365)
+
+    expect(r30.total_items).toBe(1)
+    expect(r30.items[0].formula).toBe('recent')
+
+    expect(r90.total_items).toBe(2)
+
+    expect(r365.total_items).toBe(3)
+  })
+
+  it('build_error respects period boundaries', async () => {
+    await analytics.trackEvent(analyticsEvent('err-recent', 'build_error', today()))
+    await analytics.trackEvent(analyticsEvent('err-old', 'build_error', daysAgo(31)))
+
+    const r30 = await analytics.getCategoryAnalytics('build_error', 30)
+    const r90 = await analytics.getCategoryAnalytics('build_error', 90)
+
+    expect(r30.total_items).toBe(1)
+    expect(r30.items[0].formula).toBe('err-recent')
+
+    expect(r90.total_items).toBe(2)
+  })
+})
+
+describe('trackDownload → getCategoryAnalytics bridge', () => {
+  it('data from trackDownload appears in getCategoryAnalytics install', async () => {
+    const analytics = new InMemoryAnalytics()
+    await analytics.trackDownload(downloadEvent('foo', today()))
+    await analytics.trackDownload(downloadEvent('bar', today()))
+    await analytics.trackDownload(downloadEvent('foo', today()))
+
+    const result = await analytics.getCategoryAnalytics('install', 30)
+
+    expect(result.category).toBe('install')
+    expect(result.total_items).toBe(2)
+    expect(result.total_count).toBe(3)
+    expect(result.items[0].formula).toBe('foo')
+    expect(result.items[0].count).toBe('2')
+    expect(result.items[1].formula).toBe('bar')
+  })
+})
+
+describe('category field in response', () => {
+  let analytics: InMemoryAnalytics
+
+  beforeEach(() => {
+    analytics = new InMemoryAnalytics()
+  })
+
+  it('getCategoryAnalytics install_on_request returns correct category', async () => {
+    const result = await analytics.getCategoryAnalytics('install_on_request', 30)
+    expect(result.category).toBe('install_on_request')
+  })
+
+  it('getCategoryAnalytics build_error returns correct category', async () => {
+    const result = await analytics.getCategoryAnalytics('build_error', 30)
+    expect(result.category).toBe('build_error')
+  })
+
+  it('getCategoryAnalytics install returns correct category', async () => {
+    const result = await analytics.getCategoryAnalytics('install', 30)
+    expect(result.category).toBe('install')
+  })
+
+  it('getInstallAnalytics still returns install category', async () => {
+    const result = await analytics.getInstallAnalytics(30)
+    expect(result.category).toBe('install')
   })
 })

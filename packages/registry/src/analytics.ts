@@ -5,10 +5,22 @@
 
 import { DynamoDBClient } from './storage/dynamodb-client'
 
+export type AnalyticsCategory = 'install' | 'install_on_request' | 'build_error'
+
 export interface DownloadEvent {
   packageName: string
   version: string
   timestamp: string
+  userAgent?: string
+  ip?: string
+  region?: string
+}
+
+export interface AnalyticsEvent {
+  packageName: string
+  category: AnalyticsCategory
+  timestamp: string
+  version?: string
   userAgent?: string
   ip?: string
   region?: string
@@ -39,10 +51,12 @@ export interface InstallAnalyticsResult {
 
 export interface AnalyticsStorage {
   trackDownload(event: DownloadEvent): Promise<void>
+  trackEvent(event: AnalyticsEvent): Promise<void>
   getPackageStats(packageName: string): Promise<PackageStats | null>
   getTopPackages(limit?: number): Promise<Array<{ name: string, downloads: number }>>
   getDownloadTimeline(packageName: string, days?: number): Promise<Array<{ date: string, count: number }>>
   getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult>
+  getCategoryAnalytics(category: AnalyticsCategory, days: 30 | 90 | 365): Promise<InstallAnalyticsResult>
 }
 
 function formatCount(n: number): string {
@@ -63,10 +77,19 @@ function getDateRange(days: number): { startDate: string, endDate: string, dates
   return { startDate: dates[0], endDate, dates }
 }
 
+function categorySKPrefix(category: AnalyticsCategory): string {
+  switch (category) {
+    case 'install': return 'PACKAGE#'
+    case 'install_on_request': return 'INSTALL_ON_REQUEST#'
+    case 'build_error': return 'BUILD_ERROR#'
+  }
+}
+
 function buildInstallAnalyticsResult(
   aggregated: Map<string, number>,
   startDate: string,
   endDate: string,
+  category: AnalyticsCategory = 'install',
 ): InstallAnalyticsResult {
   const sorted = Array.from(aggregated.entries())
     .sort((a, b) => b[1] - a[1])
@@ -74,7 +97,7 @@ function buildInstallAnalyticsResult(
   const totalCount = sorted.reduce((sum, [, count]) => sum + count, 0)
 
   return {
-    category: 'install',
+    category,
     total_items: sorted.length,
     start_date: startDate,
     end_date: endDate,
@@ -108,6 +131,26 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
   constructor(tableName: string, region = 'us-east-1') {
     this.tableName = tableName
     this.db = new DynamoDBClient(region)
+  }
+
+  async trackEvent(event: AnalyticsEvent): Promise<void> {
+    const { packageName, category, timestamp } = event
+    const date = timestamp.split('T')[0]
+    const prefix = categorySKPrefix(category)
+
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `DAILY#${date}` },
+        SK: { S: `${prefix}${packageName}` },
+      },
+      UpdateExpression: 'SET downloads = if_not_exists(downloads, :zero) + :one, packageName = :name',
+      ExpressionAttributeValues: {
+        ':zero': { N: '0' },
+        ':one': { N: '1' },
+        ':name': { S: packageName },
+      },
+    })
   }
 
   async trackDownload(event: DownloadEvent): Promise<void> {
@@ -296,9 +339,10 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
     return timeline
   }
 
-  async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
+  async getCategoryAnalytics(category: AnalyticsCategory, days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
     const { startDate, endDate, dates } = getDateRange(days)
     const aggregated = new Map<string, number>()
+    const prefix = categorySKPrefix(category)
 
     // Query in batches of 25 parallel requests
     const batchSize = 25
@@ -308,9 +352,10 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
         batch.map(date =>
           this.db.query({
             TableName: this.tableName,
-            KeyConditionExpression: 'PK = :pk',
+            KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
             ExpressionAttributeValues: {
               ':pk': { S: `DAILY#${date}` },
+              ':prefix': { S: prefix },
             },
           }).catch(() => ({ Items: [] as Array<Record<string, any>>, Count: 0 })),
         ),
@@ -329,7 +374,11 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
       }
     }
 
-    return buildInstallAnalyticsResult(aggregated, startDate, endDate)
+    return buildInstallAnalyticsResult(aggregated, startDate, endDate, category)
+  }
+
+  async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
+    return this.getCategoryAnalytics('install', days)
   }
 }
 
@@ -340,6 +389,17 @@ export class InMemoryAnalytics implements AnalyticsStorage {
   private downloads: DownloadEvent[] = []
   private packageStats: Map<string, { total: number, versions: Record<string, number>, lastDownload?: string }> = new Map()
   private dailyStats: Map<string, Map<string, number>> = new Map() // date -> package -> count
+  private categoryDailyStats: Map<string, Map<string, number>> = new Map() // "{category}:{date}" -> package -> count
+
+  async trackEvent(event: AnalyticsEvent): Promise<void> {
+    const date = event.timestamp.split('T')[0]
+    const key = `${event.category}:${date}`
+    if (!this.categoryDailyStats.has(key)) {
+      this.categoryDailyStats.set(key, new Map())
+    }
+    const packages = this.categoryDailyStats.get(key)!
+    packages.set(event.packageName, (packages.get(event.packageName) || 0) + 1)
+  }
 
   async trackDownload(event: DownloadEvent): Promise<void> {
     this.downloads.push(event)
@@ -358,6 +418,14 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     }
     const dailyPackages = this.dailyStats.get(date)!
     dailyPackages.set(event.packageName, (dailyPackages.get(event.packageName) || 0) + 1)
+
+    // Also write to categoryDailyStats under 'install' for consistency
+    const installKey = `install:${date}`
+    if (!this.categoryDailyStats.has(installKey)) {
+      this.categoryDailyStats.set(installKey, new Map())
+    }
+    const installPackages = this.categoryDailyStats.get(installKey)!
+    installPackages.set(event.packageName, (installPackages.get(event.packageName) || 0) + 1)
   }
 
   async getPackageStats(packageName: string): Promise<PackageStats | null> {
@@ -415,20 +483,25 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     return timeline
   }
 
-  async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
+  async getCategoryAnalytics(category: AnalyticsCategory, days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
     const { startDate, endDate, dates } = getDateRange(days)
     const aggregated = new Map<string, number>()
 
     for (const date of dates) {
-      const dailyPackages = this.dailyStats.get(date)
-      if (dailyPackages) {
-        for (const [name, count] of dailyPackages) {
+      const key = `${category}:${date}`
+      const packages = this.categoryDailyStats.get(key)
+      if (packages) {
+        for (const [name, count] of packages) {
           aggregated.set(name, (aggregated.get(name) || 0) + count)
         }
       }
     }
 
-    return buildInstallAnalyticsResult(aggregated, startDate, endDate)
+    return buildInstallAnalyticsResult(aggregated, startDate, endDate, category)
+  }
+
+  async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
+    return this.getCategoryAnalytics('install', days)
   }
 }
 

@@ -17,15 +17,7 @@ build:
   script:
     - run: export ARGS="$(echo $ARGS | sed s'/gtk_doc/hotdoc/')"
       if: ">=0.4.42"
-    # On darwin, S3 meson wrapper is broken — install via pip3 and fix it
-    - run: |
-        pip3 install --break-system-packages meson 2>/dev/null || pip3 install meson
-        printf '#!/usr/bin/env python3\nfrom mesonbuild.mesonmain import main\nmain()\n' > "$(which meson)"
-        chmod +x "$(which meson)"
-        meson setup $ARGS ..
-      if: darwin
-    - run: meson $ARGS ..
-      if: linux
+    - meson $ARGS ..
     - ninja -v
     - ninja install -v
   env:

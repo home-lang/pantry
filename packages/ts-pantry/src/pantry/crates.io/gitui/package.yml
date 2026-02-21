@@ -22,11 +22,10 @@ build:
   script: cargo install --path . --locked --root {{prefix}}
   env:
     linux:
+      AR: llvm-ar
       RUSTFLAGS: '-C linker=cc'
       # See: https://docs.rs/openssl/latest/openssl/#manual
-      OPENSSL_NO_VENDOR: true
-      OPENSSL_DIR: /usr
-      OPENSSL_LIB_DIR: /usr/lib/x86_64-linux-gnu
-      OPENSSL_INCLUDE_DIR: /usr/include
+      OPENSSL_NO_VENDOR: true # Always find OpenSSL in the system, even if the vendored feature is enabled.
+      OPENSSL_DIR: '{{ deps.openssl.org.prefix }}' # Use pkgx's openssl installation directory
 
 test: gitui --version

@@ -13,15 +13,6 @@ build:
   env:
     PREFIX: ${{prefix}}
   script:
-    # macOS Makefiles expect 'glibtool' — use Homebrew's keg-only path
-    - run: |
-        if ! command -v glibtool &>/dev/null; then
-          BREW_LIBTOOL="$(brew --prefix libtool 2>/dev/null)/bin"
-          if [ -f "$BREW_LIBTOOL/glibtool" ]; then
-            export PATH="$BREW_LIBTOOL:$PATH"
-          fi
-        fi
-      if: darwin
     - make
         --file makefile.shared
         --jobs {{ hw.concurrency }}

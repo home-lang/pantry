@@ -11,30 +11,23 @@ versions:
 build:
   dependencies:
     cmake.org: '*'
-    linux:
-      nasm.us: '*'
+    nasm.us: '*'
   working-directory: 8bit
   script:
     - run: |
-        DARWIN_ARGS=""
-        [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"
-        cmake ../source -DENABLE_HDR10_PLUS=ON $ARGS_DEFAULT $DARWIN_ARGS $HIGHBITARGS
+        cmake ../source -DENABLE_HDR10_PLUS=ON $ARGS_DEFAULT $HIGHBITARGS
         make
         mv libx265.a ../8bit/libx265_main10.a
       working-directory: ../10bit
 
     - run: |
-        DARWIN_ARGS=""
-        [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"
-        cmake ../source -DMAIN12=ON $ARGS_DEFAULT $DARWIN_ARGS $HIGHBITARGS
+        cmake ../source -DMAIN12=ON $ARGS_DEFAULT $HIGHBITARGS
         make
         mv libx265.a ../8bit/libx265_main12.a
       working-directory: ../12bit
 
     - run: |
-        DARWIN_ARGS=""
-        [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"
-        cmake ../source $ARGS_DEFAULT $DARWIN_ARGS $ARGS
+        cmake ../source $ARGS_DEFAULT $ARGS
         make
         mv libx265.a libx265_main.a
 

@@ -1,8 +1,14 @@
 import type { RegistryConfig } from './types'
 import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
-import { createAnalytics, type AnalyticsStorage } from './analytics'
+import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from './analytics'
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
+
+const categorySlugMap: Record<string, AnalyticsCategory> = {
+  'install': 'install',
+  'install-on-request': 'install_on_request',
+  'build-error': 'build_error',
+}
 
 /**
  * Create the registry HTTP server
@@ -20,6 +26,9 @@ import type { ZigPackageStorage } from './zig'
  * GET  /analytics/{name}          - Get package download stats
  * GET  /analytics/{name}/timeline - Get download timeline (last 30 days)
  * GET  /analytics/top             - Get top downloaded packages
+ * GET  /analytics/{category}/{period} - Category analytics (install, install-on-request, build-error)
+ * GET  /api/analytics/{category}/{period}.json - Category analytics (JSON API)
+ * POST /analytics/events          - Report analytics event
  *
  * Zig package endpoints:
  * GET  /zig/packages/{name}                  - Get Zig package metadata
@@ -79,14 +88,20 @@ export function createServer(
             return handlePublish(req, registry, corsHeaders)
           }
 
-          // Install analytics API (JSON endpoints)
-          const installApiMatch = path.match(/^\/api\/analytics\/install\/(30|90|365)d\.json$/)
-          if (installApiMatch && req.method === 'GET') {
-            const days = Number.parseInt(installApiMatch[1], 10) as 30 | 90 | 365
-            const result = await analyticsStorage.getInstallAnalytics(days)
+          // Category analytics API (JSON endpoints)
+          const categoryApiMatch = path.match(/^\/api\/analytics\/(install|install-on-request|build-error)\/(30|90|365)d\.json$/)
+          if (categoryApiMatch && req.method === 'GET') {
+            const category = categorySlugMap[categoryApiMatch[1]]
+            const days = Number.parseInt(categoryApiMatch[2], 10) as 30 | 90 | 365
+            const result = await analyticsStorage.getCategoryAnalytics(category, days)
             return Response.json(result, {
               headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=3600' },
             })
+          }
+
+          // POST /analytics/events
+          if (path === '/analytics/events' && req.method === 'POST') {
+            return handleAnalyticsEvent(req, analyticsStorage, corsHeaders)
           }
 
           // Analytics routes
@@ -195,8 +210,10 @@ export function createServer(
     console.log('  GET  /analytics/{name}          - Package download stats')
     console.log('  GET  /analytics/{name}/timeline - Download timeline')
     console.log('  GET  /analytics/top             - Top downloaded packages')
-    console.log('  GET  /analytics/install/{30d,90d,365d} - Install analytics')
-    console.log('  GET  /api/analytics/install/{period}.json - Install analytics (JSON API)')
+    console.log('  GET  /analytics/{category}/{30d,90d,365d} - Category analytics')
+    console.log('  GET  /api/analytics/{category}/{period}.json - Category analytics (JSON API)')
+    console.log('  POST /analytics/events          - Report analytics event')
+    console.log('  Categories: install, install-on-request, build-error')
     console.log('Zig packages:')
     console.log('  GET  /zig/packages/{name}       - Get Zig package metadata')
     console.log('  GET  /zig/packages/{name}/{version}/tarball - Download')
@@ -225,11 +242,12 @@ async function handleAnalytics(
   analytics: AnalyticsStorage,
   corsHeaders: Record<string, string>,
 ): Promise<Response> {
-  // GET /analytics/install/{30d,90d,365d}
-  const installMatch = path?.match(/^install\/(30|90|365)d$/)
-  if (installMatch) {
-    const days = Number.parseInt(installMatch[1], 10) as 30 | 90 | 365
-    const result = await analytics.getInstallAnalytics(days)
+  // GET /analytics/{category}/{30d,90d,365d}
+  const categoryMatch = path?.match(/^(install|install-on-request|build-error)\/(30|90|365)d$/)
+  if (categoryMatch) {
+    const category = categorySlugMap[categoryMatch[1]]
+    const days = Number.parseInt(categoryMatch[2], 10) as 30 | 90 | 365
+    const result = await analytics.getCategoryAnalytics(category, days)
     return Response.json(result, {
       headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=3600' },
     })
@@ -262,6 +280,49 @@ async function handleAnalytics(
   }
 
   return Response.json(stats, { headers: corsHeaders })
+}
+
+/**
+ * Handle POST /analytics/events
+ */
+async function handleAnalyticsEvent(
+  req: Request,
+  analytics: AnalyticsStorage,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  try {
+    const body = await req.json() as { packageName?: string, category?: string, version?: string }
+    const { packageName, category, version } = body
+
+    if (!packageName || typeof packageName !== 'string') {
+      return Response.json(
+        { error: 'Missing or invalid packageName' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    if (!category || !['install', 'install_on_request', 'build_error'].includes(category)) {
+      return Response.json(
+        { error: 'Missing or invalid category. Must be one of: install, install_on_request, build_error' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    await analytics.trackEvent({
+      packageName,
+      category: category as AnalyticsCategory,
+      timestamp: new Date().toISOString(),
+      version: version || undefined,
+    })
+
+    return Response.json({ success: true }, { headers: corsHeaders })
+  }
+  catch {
+    return Response.json(
+      { error: 'Invalid JSON body' },
+      { status: 400, headers: corsHeaders },
+    )
+  }
 }
 
 // Simple token for authentication (replace with proper auth in production)

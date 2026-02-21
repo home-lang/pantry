@@ -10,6 +10,7 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
+import { packageOverrides, type ScriptStep } from './package-overrides.ts'
 
 /**
  * Find the system prefix for a dependency by detecting where its binary lives.
@@ -716,25 +717,123 @@ function getBuildOverrides(pkgName: string): BuildOverrides | null {
 /**
  * Apply buildkit-level recipe overrides that fix platform-specific issues.
  * These live in code (not YAML) so they survive pantry YAML regeneration from upstream.
+ *
+ * Override definitions are centralized in package-overrides.ts.
+ * Applied AFTER YAML parsing but BEFORE build script generation and dependency resolution.
  */
 function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: string): void {
   const [os] = platform.split('-')
+
+  // ── Generic fixes (apply to all packages) ──────────────────────────
+
+  // GNU mirror: ftpmirror.gnu.org is more reliable than ftp.gnu.org
+  if (recipe.distributable?.url?.includes('ftp.gnu.org')) {
+    recipe.distributable.url = recipe.distributable.url.replace('ftp.gnu.org', 'ftpmirror.gnu.org')
+  }
+
+  // Fix stray quote in CMAKE_INSTALL_PREFIX (upstream YAML typo in several packages)
+  if (recipe.build?.env) {
+    const fixCmakePrefix = (envObj: Record<string, any>) => {
+      if (Array.isArray(envObj.CMAKE_ARGS)) {
+        envObj.CMAKE_ARGS = envObj.CMAKE_ARGS.map((arg: string) =>
+          typeof arg === 'string' && arg.includes('-DCMAKE_INSTALL_PREFIX="{{prefix}}')
+            ? arg.replace('-DCMAKE_INSTALL_PREFIX="{{prefix}}', '-DCMAKE_INSTALL_PREFIX={{prefix}}')
+            : arg
+        )
+      }
+    }
+    fixCmakePrefix(recipe.build.env)
+    if (recipe.build.env.linux) fixCmakePrefix(recipe.build.env.linux)
+    if (recipe.build.env.darwin) fixCmakePrefix(recipe.build.env.darwin)
+  }
+
+  // ── Inline legacy override ─────────────────────────────────────────
 
   // x.org/x11: disable local-transport on Linux (sys/stropts.h removed in glibc 2.38+)
   if (domain === 'x.org/x11' && os === 'linux') {
     if (recipe.build?.env) {
       const env = recipe.build.env
-      // Check for ARGS array (may be at top level or nested)
       if (Array.isArray(env.ARGS)) {
         env.ARGS.push('--disable-local-transport')
       } else {
-        // Ensure linux override section exists
         if (!env.linux) env.linux = {}
         if (!env.linux.ARGS) env.linux.ARGS = []
         if (!Array.isArray(env.linux.ARGS)) env.linux.ARGS = [env.linux.ARGS]
         env.linux.ARGS.push('--disable-local-transport')
       }
     }
+  }
+
+  // ── Centralized package overrides from package-overrides.ts ────────
+
+  const override = packageOverrides[domain]
+  if (!override) return
+
+  console.log(`  Applying durable override for ${domain}`)
+
+  // 1. Override distributable URL
+  if (override.distributableUrl) {
+    if (!recipe.distributable) recipe.distributable = { url: '' }
+    recipe.distributable.url = override.distributableUrl
+  }
+  if (override.stripComponents !== undefined && recipe.distributable) {
+    recipe.distributable['strip-components'] = override.stripComponents
+  }
+
+  // 2. Merge top-level env overrides into recipe.build.env
+  if (override.env) {
+    if (!recipe.build) recipe.build = {}
+    if (!recipe.build.env) recipe.build.env = {}
+    for (const [key, value] of Object.entries(override.env)) {
+      recipe.build.env[key] = value
+    }
+  }
+
+  // 3. Prepend script steps (run before existing build script)
+  if (override.prependScript && override.prependScript.length > 0) {
+    if (!recipe.build) recipe.build = {}
+    const existing = recipe.build.script
+    const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
+    recipe.build.script = [...override.prependScript as any[], ...existingArray]
+  }
+
+  // 4. Apply platform-specific overrides
+  const platformOverride = os === 'linux' ? override.platforms?.linux
+    : os === 'darwin' ? override.platforms?.darwin
+    : null
+
+  if (platformOverride) {
+    // Platform distributable URL
+    if (platformOverride.distributableUrl) {
+      if (!recipe.distributable) recipe.distributable = { url: '' }
+      recipe.distributable.url = platformOverride.distributableUrl
+    }
+    if (platformOverride.stripComponents !== undefined && recipe.distributable) {
+      recipe.distributable['strip-components'] = platformOverride.stripComponents
+    }
+
+    // Platform env → merged into recipe.build.env.<os> section
+    if (platformOverride.env) {
+      if (!recipe.build) recipe.build = {}
+      if (!recipe.build.env) recipe.build.env = {}
+      if (!recipe.build.env[os]) recipe.build.env[os] = {}
+      for (const [key, value] of Object.entries(platformOverride.env)) {
+        recipe.build.env[os][key] = value
+      }
+    }
+
+    // Platform prependScript
+    if (platformOverride.prependScript && platformOverride.prependScript.length > 0) {
+      if (!recipe.build) recipe.build = {}
+      const existing = recipe.build.script
+      const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
+      recipe.build.script = [...platformOverride.prependScript as any[], ...existingArray]
+    }
+  }
+
+  // 5. Apply modifyRecipe callback for complex mutations
+  if (override.modifyRecipe) {
+    override.modifyRecipe(recipe)
   }
 }
 

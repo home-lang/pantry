@@ -22,7 +22,7 @@ build:
     - make install
 
     # https://github.com/libarchive/libarchive/issues/1819
-    - run: perl -ni -e 'print unless /Requires\.private:.*iconv/' libarchive.pc
+    - run: 'sed -i ''/Requires\.private: iconv/d'' libarchive.pc'
       working-directory: "{{prefix}}/lib/pkgconfig"
   env:
     ARGS:

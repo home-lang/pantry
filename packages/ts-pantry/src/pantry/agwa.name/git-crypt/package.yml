@@ -13,9 +13,15 @@ dependencies:
   openssl.org: '^1.1'
 
 build:
+  dependencies:
+    docbook.org: '*'
+    docbook.org/xsl: '*'
+    gnome.org/libxslt: '*'
   script:
-    - make ENABLE_MAN=no PREFIX={{prefix}} install
+    - sed -i "s|http://docbook.sourceforge.net/release/xsl/current|{{deps.docbook.org/xsl.prefix}}/libexec/docbook-xsl|g" Makefile
+    - make ENABLE_MAN=yes PREFIX={{prefix}} install
   env:
+    XML_CATALOG_FILES: ${{prefix}}/etc/xml/catalog
     CFLAGS: $CFLAGS -DOPENSSL_API_COMPAT=0x30000000L
 
 provides:

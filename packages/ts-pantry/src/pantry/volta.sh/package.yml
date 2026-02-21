@@ -14,14 +14,6 @@ build:
     rust-lang.org: ^1.75
     rust-lang.org/cargo: '*'
   script:
-    # Source pins rust-toolchain.toml to 1.75, but deps need newer Cargo
-    # Also unpin yanked zip crate (=2.1.6 was yanked from crates.io)
-    - run: |
-        rm -f rust-toolchain.toml
-        sed -i.bak 's/version = "=2.1.6"/version = "2.1"/' crates/archive/Cargo.toml
-        rm -f crates/archive/Cargo.toml.bak
-        rm -f Cargo.lock
-    - rustup default stable
     - cargo install $ARGS
   env:
     ARGS:
