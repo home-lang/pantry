@@ -3378,6 +3378,34 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── mypy-lang.org — widen python version constraint ─────────────────
+
+  'mypy-lang.org': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version constraint to include 3.12
+      if (recipe.build?.dependencies?.['python.org'] === '>=3<3.12') {
+        recipe.build.dependencies['python.org'] = '>=3<3.13'
+      }
+    },
+  },
+
+  // ─── crates.io/qsv — remove linux wayland dep ────────────────────────
+
+  'crates.io/qsv': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux wayland dep (not in S3)
+      if (recipe.dependencies?.linux?.['wayland.freedesktop.org']) {
+        delete recipe.dependencies.linux['wayland.freedesktop.org']
+      }
+      // Remove wayland feature from cargo args
+      if (Array.isArray(recipe.build?.env?.CARGO_ARGS)) {
+        recipe.build.env.CARGO_ARGS = recipe.build.env.CARGO_ARGS.map((a: string) =>
+          a.includes('clipboard') ? a.replace(',clipboard', '') : a,
+        )
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

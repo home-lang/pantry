@@ -773,7 +773,7 @@ Options:
     // volta.sh removed — removed pinned rust-toolchain.toml, unpinned yanked zip crate
     // libtom.net/math removed — libtool already in CI
     // sourceforge.net/xmlstar removed — libxml2 headers available via system
-    'mypy-lang.org', // Gradle/JVM build failure on Linux
+    // mypy-lang.org removed — widened python version constraint in override
     // pcre.org removed — URL override to use GitHub releases instead of SourceForge
     // digitalocean.com/doctl removed — built successfully on both platforms
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
@@ -978,7 +978,7 @@ Options:
     // musepack.net removed — fixed stray cmake prefix quote in override
     // wpewebkit.org/wpebackend-fdo removed — fixed prefix quoting + sed -i BSD + removed gcc/mesa deps in override
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
-    'crates.io/qsv', // ring crate compile failure on darwin ARM64
+    // crates.io/qsv removed — removed linux wayland dep in override
     // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
   ])
 
