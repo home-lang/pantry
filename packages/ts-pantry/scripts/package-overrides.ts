@@ -1332,12 +1332,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.darwin?.['llvm.org']) {
         delete recipe.build.dependencies.darwin['llvm.org']
       }
-      // Disable HDF5 and MAT73 in cmake args
+      // Disable HDF5 and MAT73 in cmake args + fix prefix quote
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) => {
           if (a === '-DMATIO_WITH_HDF5=ON') return '-DMATIO_WITH_HDF5=OFF'
           if (a === '-DMATIO_MAT73=ON') return '-DMATIO_MAT73=OFF'
-          return a
+          return a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2')
         })
       }
       // Also fix configure ARGS
