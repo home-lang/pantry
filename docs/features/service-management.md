@@ -6,10 +6,13 @@ pantry provides comprehensive service management capabilities for common develop
 
 Service management in pantry includes:
 
-- **19+ Pre-configured Services**: PostgreSQL, Redis, MySQL, Nginx, Kafka, Vault, Prometheus, Grafana, and more
+- **68 Pre-configured Services**: Databases, web servers, message queues, monitoring, infrastructure, and more
 - **Cross-Platform Support**: Works on macOS (launchd) and Linux (systemd)
 - **Automatic Configuration**: Default configuration files for each service
-- **Health Monitoring**: Built-in health checks with automatic status detection
+- **Per-Service Health Checks**: Every service has a built-in health check command used for readiness detection
+- **Service Groups**: Start/stop multiple related services at once with built-in or custom groups
+- **Custom Services**: Define your own services in `deps.yaml`
+- **Log Viewing**: View service logs with `pantry service logs`
 - **Environment Isolation**: Service-specific data directories and configurations
 - **Template Variables**: Dynamic configuration with path substitution
 
@@ -19,11 +22,14 @@ Service management in pantry includes:
 # Start a database service
 pantry service start postgres
 
-# Start multiple services
-pantry service start redis nginx
+# Start a service group (all databases)
+pantry service start db
 
 # Check service status
 pantry service status postgres
+
+# View service logs
+pantry service logs postgres
 
 # Stop a service
 pantry service stop postgres
@@ -58,6 +64,94 @@ services:
 
 ```
 
+### Custom Services
+
+You can define custom services directly in `deps.yaml`. Custom services are project-specific processes that pantry manages alongside built-in services:
+
+```yaml
+# deps.yaml
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+    - my-worker
+
+  custom:
+    my-worker:
+      command: "node worker.js"
+      port: 3001
+      healthCheck: "curl -sf http://localhost:3001/health"
+      workingDirectory: "."
+
+    my-api:
+      command: "python -m uvicorn main:app --port 4000"
+      port: 4000
+      healthCheck: "curl -sf http://localhost:4000/health"
+      workingDirectory: "./api"
+```
+
+Custom service fields:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `command` | Yes | The command to run the service |
+| `port` | No | Port the service listens on |
+| `healthCheck` | No | Command to verify the service is ready |
+| `workingDirectory` | No | Working directory for the process (`.` = project root) |
+
+Custom services referenced in `autoStart` are started automatically on environment activation, just like built-in services. They are managed using the same launchd/systemd infrastructure.
+
+### Service Groups
+
+Start, stop, or restart multiple related services at once using group names:
+
+```bash
+# Start all database services
+pantry service start db
+
+# Stop all monitoring services
+pantry service stop monitoring
+
+# Restart the web server group
+pantry service restart web
+```
+
+#### Built-in Groups
+
+| Group | Services |
+|-------|----------|
+| `db` | postgres, redis, mysql, mariadb, mongodb |
+| `monitoring` | prometheus, grafana, jaeger, loki |
+| `queue` | kafka, rabbitmq, nats |
+| `web` | nginx, caddy, httpd |
+
+#### User-Defined Groups
+
+Define custom groups in `deps.yaml`:
+
+```yaml
+services:
+  enabled: true
+
+  groups:
+    backend:
+      - postgres
+      - redis
+      - my-worker
+    frontend:
+      - nginx
+      - caddy
+```
+
+Then use them with any service command:
+
+```bash
+pantry service start backend
+pantry service stop backend
+pantry service restart frontend
+```
+
 ### Shorthand: services.infer: true
 
 For Stacks & Laravel projects, you can enable a shorthand that auto-detects DB & cache from your `.env` and auto-starts the right services:
@@ -77,7 +171,7 @@ services:
 Behavior:
 
 - Reads `DB_CONNECTION` and `CACHE_DRIVER` or `CACHE_STORE` from `.env` when a Stacks or Laravel app is detected (`buddy` or `artisan` present).
-- Maps to services: `pgsql` → `postgres`, `mysql`/`mariadb` → `mysql`, `redis` → `redis`, `memcached` → `memcached`.
+- Maps to services: `pgsql` -> `postgres`, `mysql`/`mariadb` -> `mysql`, `redis` -> `redis`, `memcached` -> `memcached`.
 - Equivalent to specifying `services.enabled: true` with an `autoStart` list of detected services.
 - Can be disabled via env: set `pantry_AUTO_START_FROM_FRAMEWORK=false`.
 
@@ -88,61 +182,116 @@ Notes:
 
 ## Available Services
 
-pantry includes pre-configured definitions for these services:
+pantry includes 68 pre-configured service definitions:
 
-### Databases
+### Databases (22)
 
 - **PostgreSQL** (`postgres`) - Advanced relational database (port 5432)
 - **MySQL** (`mysql`) - Popular relational database (port 3306)
+- **MariaDB** (`mariadb`) - MySQL-compatible database (port 3306)
 - **MongoDB** (`mongodb`) - Document database (port 27017)
 - **Redis** (`redis`) - In-memory data store (port 6379)
+- **Valkey** (`valkey`) - Redis-compatible data store (port 6379)
+- **KeyDB** (`keydb`) - Multi-threaded Redis fork (port 6379)
+- **DragonflyDB** (`dragonflydb`) - Modern Redis alternative (port 6379)
+- **Elasticsearch** (`elasticsearch`) - Search and analytics engine (port 9200)
+- **OpenSearch** (`opensearch`) - Open-source search engine (port 9200)
 - **InfluxDB** (`influxdb`) - Time series database (port 8086)
 - **CockroachDB** (`cockroachdb`) - Distributed SQL database (port 26257)
 - **Neo4j** (`neo4j`) - Graph database (port 7474)
 - **ClickHouse** (`clickhouse`) - Columnar analytics database (port 8123)
+- **Memcached** (`memcached`) - Memory caching system (port 11211)
+- **CouchDB** (`couchdb`) - Document database with REST API (port 5984)
+- **Cassandra** (`cassandra`) - Wide-column NoSQL database (port 9042)
+- **SurrealDB** (`surrealdb`) - Multi-model database (port 8000)
+- **Typesense** (`typesense`) - Search engine (port 8108)
+- **FerretDB** (`ferretdb`) - MongoDB alternative on PostgreSQL (port 27018)
+- **TiDB** (`tidb`) - Distributed SQL database (port 4000)
+- **ScyllaDB** (`scylladb`) - High-performance Cassandra alternative (port 9042)
 
-### Web Servers
+### Web Servers (3)
 
 - **Nginx** (`nginx`) - High-performance web server (port 8080)
 - **Caddy** (`caddy`) - Web server with automatic HTTPS (port 2015)
+- **Apache httpd** (`httpd`) - Apache HTTP server (port 8084)
 
-### Message Queues & Streaming
+### Search (2)
+
+- **Apache Solr** (`solr`) - Enterprise search platform (port 8983)
+- **Apache Zookeeper** (`zookeeper`) - Coordination service (port 2181)
+
+### Message Queues & Streaming (6)
 
 - **Apache Kafka** (`kafka`) - Distributed event streaming (port 9092)
 - **RabbitMQ** (`rabbitmq`) - Message broker (port 5672)
 - **Apache Pulsar** (`pulsar`) - Cloud-native messaging platform (port 6650)
 - **NATS** (`nats`) - High-performance messaging system (port 4222)
+- **Mosquitto** (`mosquitto`) - MQTT message broker (port 1883)
+- **Redpanda** (`redpanda`) - Kafka-compatible streaming platform (port 9092)
 
-### Monitoring & Observability
+### Monitoring & Observability (6)
 
 - **Prometheus** (`prometheus`) - Metrics collection (port 9090)
 - **Grafana** (`grafana`) - Visualization dashboard (port 3000)
 - **Jaeger** (`jaeger`) - Distributed tracing (port 16686)
+- **Loki** (`loki`) - Log aggregation system (port 3100)
+- **Alertmanager** (`alertmanager`) - Alert routing for Prometheus (port 9093)
+- **VictoriaMetrics** (`victoriametrics`) - Time series database & monitoring (port 8428)
 
-### Infrastructure & Tools
+### Proxy & Load Balancers (4)
+
+- **Traefik** (`traefik`) - Cloud-native reverse proxy (port 8082)
+- **HAProxy** (`haproxy`) - Reliable load balancer (port 8081)
+- **Varnish** (`varnish`) - HTTP accelerator (port 6081)
+- **Envoy** (`envoy`) - Cloud-native proxy (port 10000)
+
+### Infrastructure & Tools (7)
 
 - **HashiCorp Vault** (`vault`) - Secrets management (port 8200)
 - **HashiCorp Consul** (`consul`) - Service discovery (port 8500)
+- **HashiCorp Nomad** (`nomad`) - Workload orchestration (port 4646)
 - **etcd** (`etcd`) - Distributed key-value store (port 2379)
 - **MinIO** (`minio`) - S3-compatible object storage (port 9000)
 - **SonarQube** (`sonarqube`) - Code quality analysis (port 9001)
 - **Temporal** (`temporal`) - Workflow orchestration (port 7233)
 
-### Development & CI/CD
+### Development & CI/CD (6)
 
 - **Jenkins** (`jenkins`) - CI/CD automation server (port 8090)
 - **LocalStack** (`localstack`) - Local AWS cloud stack (port 4566)
 - **Verdaccio** (`verdaccio`) - Private npm registry (port 4873)
+- **Gitea** (`gitea`) - Self-hosted Git service (port 3001)
+- **Mailpit** (`mailpit`) - Email testing tool (port 8025)
+- **Ollama** (`ollama`) - Local LLM inference server (port 11434)
 
-### API & Backend Services
+### API & Backend Services (2)
 
 - **Hasura** (`hasura`) - GraphQL API with real-time subscriptions (port 8085)
 - **Keycloak** (`keycloak`) - Identity and access management (port 8088)
 
-### Caching & Storage
+### Application Servers (2)
 
-- **Memcached** (`memcached`) - Memory caching system (port 11211)
-- **Elasticsearch** (`elasticsearch`) - Search engine (port 9200)
+- **PHP-FPM** (`php-fpm`) - PHP FastCGI process manager (port 9074)
+- **PocketBase** (`pocketbase`) - Backend-as-a-service (port 8095)
+
+### DNS & Network (3)
+
+- **dnsmasq** (`dnsmasq`) - Lightweight DNS/DHCP server (port 5353)
+- **CoreDNS** (`coredns`) - DNS and service discovery (port 1053)
+- **Unbound** (`unbound`) - Validating DNS resolver (port 5335)
+
+### Sync & Storage (1)
+
+- **Syncthing** (`syncthing`) - Continuous file synchronization (port 8384)
+
+### Network & Security (1)
+
+- **Tor** (`tor`) - Anonymity network proxy (port 9050)
+
+### Tunnels & Secrets (2)
+
+- **Cloudflared** (`cloudflared`) - Cloudflare Tunnel client (no port)
+- **Doppler** (`doppler`) - Secret management CLI (no port)
 
 ## Service Operations
 
@@ -154,8 +303,8 @@ Start one or more services:
 # Start a single service
 pantry service start postgres
 
-# Start multiple services
-pantry service start redis postgres nginx
+# Start a service group
+pantry service start db
 
 # Services are initialized automatically on first start
 # PostgreSQL: Creates database cluster with initdb
@@ -170,8 +319,8 @@ Stop running services:
 # Stop a single service
 pantry service stop postgres
 
-# Stop multiple services
-pantry service stop redis postgres nginx
+# Stop a service group
+pantry service stop monitoring
 
 # All services support graceful shutdown
 ```
@@ -183,6 +332,9 @@ Restart services (stop then start):
 ```bash
 # Restart a service
 pantry service restart postgres
+
+# Restart a group
+pantry service restart web
 
 # Includes automatic health checks after restart
 ```
@@ -199,6 +351,21 @@ pantry service status postgres
 # List all services and their status
 pantry service list
 ```
+
+### Viewing Logs
+
+View service output and error logs:
+
+```bash
+# View recent logs for a service
+pantry service logs postgres
+
+# Follow logs in real-time
+pantry service logs postgres --follow
+pantry service logs postgres -f
+```
+
+On macOS, logs are stored at `~/.local/share/pantry/logs/{service}.log` and `~/.local/share/pantry/logs/{service}.err`. On Linux, logs are retrieved via `journalctl --user -u pantry-{service}.service`.
 
 ### Enabling/Disabling Auto-Start
 
@@ -456,45 +623,44 @@ export pantry_DB_AUTH_METHOD="scram-sha-256"
 pantry service start postgres
 ```
 
-## Health Monitoring
+## Health Checks
 
-### Automatic Health Checks
+Every service includes a per-service health check command that pantry uses to verify readiness after startup. When services are auto-started via `deps.yaml`, pantry polls each service's health check (up to 10 retries with 500ms delay) before continuing environment activation.
 
-All services include built-in health checks:
+### Health Check Commands by Service
 
-```bash
-# Health checks run automatically every 30 seconds
-# Check results are cached and displayed in status commands
+Each service type uses the most appropriate health check method:
 
-pantry service status postgres
-# Includes health check results and last check time
-```
+| Service | Health Check Command |
+|---------|---------------------|
+| PostgreSQL | `pg_isready -q -p {port}` |
+| Redis / Valkey / KeyDB / DragonflyDB | `redis-cli -p {port} ping` |
+| MySQL / MariaDB | `mysqladmin ping --port={port}` |
+| MongoDB | `mongosh --port {port} --eval 'db.runCommand({ping:1})' --quiet` |
+| Meilisearch | `curl -sf http://127.0.0.1:{port}/health` |
+| Elasticsearch / OpenSearch | `curl -sf http://127.0.0.1:{port}/_cluster/health` |
+| InfluxDB / SurrealDB / Typesense | `curl -sf http://127.0.0.1:{port}/health` |
+| ClickHouse | `curl -sf http://127.0.0.1:{port}/ping` |
+| Prometheus | `curl -sf http://127.0.0.1:{port}/-/healthy` |
+| Grafana | `curl -sf http://127.0.0.1:{port}/api/health` |
+| Vault | `curl -sf http://127.0.0.1:{port}/v1/sys/health` |
+| Consul | `curl -sf http://127.0.0.1:{port}/v1/status/leader` |
+| MinIO | `curl -sf http://127.0.0.1:{port}/minio/health/live` |
+| PocketBase | `curl -sf http://127.0.0.1:{port}/api/health` |
+| Solr | `curl -sf http://127.0.0.1:{port}/solr/admin/info/system` |
+| Zookeeper | `echo ruok \| nc 127.0.0.1 {port}` |
+| Nginx / Caddy / httpd | `curl -sf http://127.0.0.1:{port}/` |
+| Cloudflared / Doppler | No health check (port-less services) |
 
-### Health Check Examples
+Services without a port (like `cloudflared` and `doppler`) do not have health checks since they don't expose a network endpoint.
 
-Different services use appropriate health check methods:
+### How Health Checks Work
 
-- **PostgreSQL**: `pg_isready -p 5432`
-- **Redis**: `redis-cli ping`
-- **MySQL**: `mysqladmin ping`
-- **Nginx**: `curl -f <http://localhost:8080/health>`
-- **Prometheus**: `curl -f <http://localhost:9090/-/healthy>`
-- **Vault**: `vault status` (exit code 2 when sealed but running)
-
-### Health Check Configuration
-
-Health checks are pre-configured with sensible defaults:
-
-```typescript
-// Example health check configuration
-healthCheck: {
-  command: ['redis-cli', 'ping'],
-  expectedExitCode: 0,
-  timeout: 5,        // 5 second timeout
-  interval: 30,      // Check every 30 seconds
-  retries: 3         // 3 consecutive failures = unhealthy
-}
-```
+1. When `autoStart` services are started during environment activation, pantry collects all service names from the `autoStart` list
+2. For each service, pantry looks up the `ServiceConfig` to get the `health_check` command
+3. Each health check is executed via `sh -c <command>` with up to 10 retries and 500ms delay between retries
+4. If the health check passes (exit code 0), the service is considered ready
+5. Custom services with a `healthCheck` field in `deps.yaml` use the same mechanism
 
 ## Platform Support
 
@@ -505,6 +671,10 @@ Services are managed using launchd plists:
 ```bash
 # Service files created at
 ~/Library/LaunchAgents/com.pantry.{service}.plist
+
+# Log files
+~/.local/share/pantry/logs/{service}.log
+~/.local/share/pantry/logs/{service}.err
 
 # Manual launchd operations
 launchctl load ~/Library/LaunchAgents/com.pantry.postgres.plist
@@ -518,6 +688,10 @@ Services are managed using systemd user services:
 ```bash
 # Service files created at
 ~/.config/systemd/user/pantry-{service}.service
+
+# Log files
+~/.local/share/pantry/logs/{service}.log
+~/.local/share/pantry/logs/{service}.err
 
 # Manual systemd operations
 systemctl --user start pantry-postgres
@@ -553,10 +727,14 @@ Service logs are centrally managed:
 ~/.local/share/pantry/logs/
 
 # Examples
-~/.local/share/pantry/logs/postgres.log
+~/.local/share/pantry/logs/postgres.log     # stdout
+~/.local/share/pantry/logs/postgres.err     # stderr
 ~/.local/share/pantry/logs/redis.log
-~/.local/share/pantry/logs/nginx-error.log
-~/.local/share/pantry/logs/nginx-access.log
+~/.local/share/pantry/logs/nginx.log
+
+# View logs via CLI
+pantry service logs postgres
+pantry service logs redis --follow
 ```
 
 ### Backup and Migration
@@ -596,19 +774,9 @@ GF_PATHS_LOGS=~/.local/share/pantry/logs
 # Kafka
 KAFKA_HEAP_OPTS=-Xmx1G -Xms1G
 LOG_DIR=~/.local/share/pantry/logs
-```
 
-### Custom Environment Variables
-
-You can set custom environment variables in service configurations:
-
-```typescript
-// Service definition with custom environment
-env: {
-  CUSTOM_VAR: 'value',
-  API_KEY: 'your-api-key',
-  DEBUG_LEVEL: 'info'
-}
+# Ollama
+OLLAMA_HOST=127.0.0.1:11434
 ```
 
 ## Advanced Features
@@ -670,6 +838,8 @@ Services are automatically initialized on first start:
 2. Check service logs:
 
    ```bash
+   pantry service logs postgres
+   # or directly:
    tail -f ~/.local/share/pantry/logs/postgres.log
    ```
 
@@ -718,6 +888,7 @@ Services are automatically initialized on first start:
    ```bash
    which pg_isready
    which redis-cli
+   which curl
    ```
 
 2. Test health check manually:
@@ -725,6 +896,7 @@ Services are automatically initialized on first start:
    ```bash
    pg_isready -p 5432
    redis-cli ping
+   curl -sf http://127.0.0.1:7700/health
    ```
 
 3. Verify service is actually running:
@@ -738,10 +910,10 @@ Services are automatically initialized on first start:
 
 ### Development Workflow
 
-1. **Start services you need**:
+1. **Use service groups for quick setup**:
 
    ```bash
-   pantry service start postgres redis
+   pantry service start db
    ```
 
 2. **Enable auto-start for essential services**:
@@ -750,16 +922,17 @@ Services are automatically initialized on first start:
    pantry service enable postgres
    ```
 
-3. **Monitor service health**:
+3. **Monitor service health and logs**:
 
    ```bash
    pantry service list
+   pantry service logs postgres -f
    ```
 
 4. **Stop unused services to save resources**:
 
    ```bash
-   pantry service stop mongodb
+   pantry service stop monitoring
    ```
 
 ### Production Considerations
@@ -792,20 +965,47 @@ Service management integrates well with project environments:
 ```yaml
 # deps.yaml
 dependencies:
-
-  - node@22
-  - postgresql@15
+  node: ^22
+  postgres: ^17
 
 services:
   enabled: true
   autoStart:
-
     - postgres
     - redis
 
 env:
   DATABASE_URL: postgresql://localhost:5432/myapp
   REDIS_URL: redis://localhost:6379
+```
+
+### Full-Stack Project with Custom Services
+
+```yaml
+# deps.yaml
+dependencies:
+  node: ^22
+  postgres: ^17
+  redis: ^8
+
+services:
+  enabled: true
+  autoStart:
+    - db          # starts postgres, redis, mysql, mariadb, mongodb
+    - my-worker
+
+  custom:
+    my-worker:
+      command: "node worker.js"
+      port: 3001
+      healthCheck: "curl -sf http://localhost:3001/health"
+      workingDirectory: "."
+
+  groups:
+    backend:
+      - postgres
+      - redis
+      - my-worker
 ```
 
 ### Database Development
@@ -825,7 +1025,7 @@ redis-cli -h localhost -p 6379
 
 ```bash
 # Start web development stack
-pantry service start postgres redis nginx
+pantry service start web db
 
 # Services are now available at
 # PostgreSQL: localhost:5432
@@ -837,6 +1037,9 @@ pantry service start postgres redis nginx
 
 ```bash
 # Start infrastructure services
+pantry service start monitoring
+
+# Or start individually
 pantry service start consul vault prometheus grafana
 
 # Service discovery: http://localhost:8500

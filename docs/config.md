@@ -367,17 +367,66 @@ dependencies:
 services:
   enabled: true
   autoStart:
-
     - postgres
     - redis
-
 ```
 
 Behavior:
 
 - **enabled**: toggles service management for the project.
-- **autoStart**: array of service names to start automatically on environment activation.
-- Service names must match those in the Supported Services list (e.g. `postgres`, `redis`, `nginx`).
+- **autoStart**: array of service names (or group names) to start automatically on environment activation. Each service's health check is polled after startup to ensure readiness.
+- Service names must match those in the [Supported Services list](./features/service-management.md#available-services) (e.g. `postgres`, `redis`, `nginx`). Group names (`db`, `monitoring`, `queue`, `web`) are also accepted.
+
+#### Custom Services
+
+Define project-specific services in the `custom:` section:
+
+```yaml
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - my-worker
+
+  custom:
+    my-worker:
+      command: "node worker.js"
+      port: 3001
+      healthCheck: "curl -sf http://localhost:3001/health"
+      workingDirectory: "."
+```
+
+Custom service fields:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `command` | Yes | The command to run the service |
+| `port` | No | Port the service listens on |
+| `healthCheck` | No | Shell command to verify readiness (exit 0 = ready) |
+| `workingDirectory` | No | Working directory (`.` = project root, or absolute path) |
+
+Custom services in `autoStart` are started and health-checked just like built-in services.
+
+#### Service Groups
+
+Define named groups of services to start/stop together:
+
+```yaml
+services:
+  enabled: true
+  autoStart:
+    - backend
+
+  groups:
+    backend:
+      - postgres
+      - redis
+      - my-worker
+    frontend:
+      - nginx
+```
+
+Four built-in groups are available without configuration: `db`, `monitoring`, `queue`, `web`. See [Service Groups](./features/service-management.md#service-groups) for details.
 
 #### Inference shorthand
 

@@ -15,11 +15,12 @@ Here are the main commands available in pantry:
 | `dev:on` | Activate dev environment in directory |
 | `dev:dump` | Generate environment setup script for a project |
 | `dev:shellcode` | Generate shell integration code |
-| `service:start` | Start one or more services |
-| `service:stop` | Stop one or more services |
-| `service:restart` | Restart one or more services |
+| `service:start` | Start one or more services (or a group) |
+| `service:stop` | Stop one or more services (or a group) |
+| `service:restart` | Restart one or more services (or a group) |
 | `service:status` | Check status of a service |
 | `service:list` | List all available services and their status |
+| `service:logs` | View service logs (`--follow` / `-f` for live tail) |
 | `service:enable` | Enable service for auto-start |
 | `service:disable` | Disable service auto-start |
 | `bun` | Install Bun runtime directly |
@@ -366,11 +367,14 @@ pantry provides comprehensive service management for development services like d
 # Start a database
 pantry service start postgres
 
-# Start multiple services
-pantry service start redis nginx prometheus
+# Start a service group (all databases)
+pantry service start db
 
 # Check service status
 pantry service status postgres
+
+# View service logs
+pantry service logs postgres --follow
 
 # List all services
 pantry service list
@@ -381,24 +385,29 @@ pantry service stop postgres redis
 
 ### Available Services
 
-pantry includes 31+ pre-configured services:
+pantry includes 68 pre-configured services:
 
-**Databases**: PostgreSQL, MySQL, MongoDB, Redis, InfluxDB, CockroachDB, Neo4j, ClickHouse
-**Web Servers**: Nginx, Caddy
-**Message Queues**: Kafka, RabbitMQ, Apache Pulsar, NATS
-**Monitoring**: Prometheus, Grafana, Jaeger
-**Infrastructure**: Vault, Consul, etcd, MinIO, SonarQube, Temporal
-**Development & CI/CD**: Jenkins, LocalStack, Verdaccio
-**API & Backend**: Hasura, Keycloak
-**Caching**: Memcached, Elasticsearch
+**Databases (22)**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, Valkey, KeyDB, DragonflyDB, Elasticsearch, OpenSearch, InfluxDB, CockroachDB, Neo4j, ClickHouse, Memcached, CouchDB, Cassandra, SurrealDB, Typesense, FerretDB, TiDB, ScyllaDB
+**Web Servers (3)**: Nginx, Caddy, Apache httpd
+**Search (2)**: Apache Solr, Apache Zookeeper
+**Message Queues (6)**: Kafka, RabbitMQ, Apache Pulsar, NATS, Mosquitto, Redpanda
+**Monitoring (6)**: Prometheus, Grafana, Jaeger, Loki, Alertmanager, VictoriaMetrics
+**Proxy & Load Balancers (4)**: Traefik, HAProxy, Varnish, Envoy
+**Infrastructure (7)**: Vault, Consul, Nomad, etcd, MinIO, SonarQube, Temporal
+**Dev & CI/CD (6)**: Jenkins, LocalStack, Verdaccio, Gitea, Mailpit, Ollama
+**API & Backend (2)**: Hasura, Keycloak
+**Application Servers (2)**: PHP-FPM, PocketBase
+**DNS & Network (3)**: dnsmasq, CoreDNS, Unbound
+**Tunnels & Secrets (2)**: Cloudflared, Doppler
+**Other**: Syncthing, Tor
 
 Each service includes:
 
-- Automatic configuration generation
-- Health monitoring
+- Per-service health checks for readiness detection
+- Log viewing (`pantry service logs <service>`)
 - Cross-platform support (macOS/Linux)
-- Service-specific data directories
-- Template variables for customization
+- Service groups for batch operations (`db`, `monitoring`, `queue`, `web`)
+- Custom service definitions in `deps.yaml`
 
 ## Environment Management
 
