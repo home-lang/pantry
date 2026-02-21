@@ -226,6 +226,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'openslide.org': {
     distributableUrl: 'https://github.com/openslide/openslide/releases/download/v{{version}}/openslide-{{version}}.tar.xz',
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--\w+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
   },
 
   'pagure.io/libaio': {
@@ -2188,6 +2196,164 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
         )
         recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled', '-Ddocumentation=false')
+      }
+    },
+  },
+
+  // ─── freedesktop.org/p11-kit — fix trust-paths template ─────────────
+
+  'freedesktop.org/p11-kit': {
+    modifyRecipe: (recipe: any) => {
+      // Fix trust_paths: add .prefix suffix to ca-certs dep reference
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.includes('trust_paths') && !a.includes('.prefix')
+            ? a.replace('{{deps.curl.se/ca-certs}}', '{{deps.curl.se/ca-certs.prefix}}')
+            : a,
+        )
+      }
+    },
+  },
+
+  // ─── freedesktop.org/polkit — disable introspection + fix prefix ─────
+
+  'freedesktop.org/polkit': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection dep (now in S3 but complex)
+      if (recipe.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.dependencies['gnome.org/gobject-introspection']
+      }
+      // Fix --prefix quoting
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+        // Disable introspection
+        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=false')) {
+          recipe.build.env.MESON_ARGS.push('-Dintrospection=false')
+        }
+      }
+    },
+  },
+
+  // ─── netflix.com/vmaf — fix meson prefix quoting ─────────────────────
+
+  'netflix.com/vmaf': {
+    modifyRecipe: (recipe: any) => {
+      // Fix inline meson --prefix (in script string, not env)
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('meson') && step.includes('--prefix=')) {
+            recipe.build.script[i] = step.replace(/--prefix={{prefix}}/, '--prefix="{{prefix}}"')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── mupdf.com — fix sed -i BSD + remove linux X11/mesa deps ─────────
+
+  'mupdf.com': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove linux X11/mesa/freeglut deps (not in S3)
+      const linuxOnlyDeps = [
+        'mesa3d.org',
+        'freeglut.sourceforge.io',
+        'freedesktop.org/mesa-glu',
+        'x.org/protocol',
+        'x.org/x11',
+        'x.org/xcursor',
+        'x.org/xinerama',
+        'x.org/xrandr',
+        'x.org/xtrans',
+      ]
+      if (recipe.dependencies?.linux) {
+        for (const dep of linuxOnlyDeps) {
+          if (recipe.dependencies.linux[dep]) delete recipe.dependencies.linux[dep]
+        }
+      }
+    },
+  },
+
+  // ─── lavinmq.com — fix sed -i BSD compat ─────────────────────────────
+
+  'lavinmq.com': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in darwin Makefile patch
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── freedesktop.org/appstream — fix sed -i BSD + disable heavy deps ─
+
+  'freedesktop.org/appstream': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in docbook xsl path fix
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove gobject-introspection, vala, libxslt, docbook build deps
+      const heavyDeps = [
+        'gnome.org/gobject-introspection',
+        'gnome.org/vala',
+        'gnome.org/libxslt',
+        'docbook.org/xsl',
+        'itstool.org',
+        'debian.org/bash-completion',
+      ]
+      for (const dep of heavyDeps) {
+        if (recipe.build?.dependencies?.[dep]) delete recipe.build.dependencies[dep]
+      }
+      // Remove systemd.io linux dep
+      if (recipe.dependencies?.linux?.['systemd.io']) {
+        delete recipe.dependencies.linux['systemd.io']
+      }
+      // Disable introspection/vapi in meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) => {
+          if (a === '-Dgir=true') return '-Dgir=false'
+          if (a === '-Dvapi=true') return '-Dvapi=false'
+          return a
+        })
+      }
+      // Remove linux CC/CXX/LD override
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+    },
+  },
+
+  // ─── fluxcd.io/flux2 — fix Go build ──────────────────────────────────
+
+  'fluxcd.io/flux2': {
+    modifyRecipe: (recipe: any) => {
+      // Remove kubernetes.io/kustomize build dep (not in S3)
+      if (recipe.build?.dependencies?.['kubernetes.io/kustomize']) {
+        delete recipe.build.dependencies['kubernetes.io/kustomize']
       }
     },
   },

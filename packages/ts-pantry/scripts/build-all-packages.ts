@@ -869,11 +869,11 @@ Options:
     'facebook.com/watchman', // CMake build failure (Meta C++ lib chain)
     // ferzkopp.net/SDL2_gfx removed — sdl2 now in macOS brew
     // ffmpeg.org removed — disabled SDL2 dep in override
-    'fluxcd.io/flux2', // Go build failure on darwin
-    'freedesktop.org/appstream', // Build failure on linux (dep chain)
+    // fluxcd.io/flux2 removed — removed kustomize dep in override
+    // freedesktop.org/appstream removed — disabled heavy deps + fixed sed -i BSD in override
     'freedesktop.org/mesa-glu', // Build failure on darwin (OpenGL dep)
-    'freedesktop.org/p11-kit', // Build failure on darwin
-    'freedesktop.org/polkit', // Build failure on linux
+    // freedesktop.org/p11-kit removed — fixed trust-paths template in override
+    // freedesktop.org/polkit removed — disabled introspection + fixed prefix in override
     'freedesktop.org/poppler-qt5', // Build failure on linux (Qt5 dep)
     'freedesktop.org/shared-mime-info', // Build failure on darwin
     // freedesktop.org/vdpau removed — built successfully on linux
@@ -907,7 +907,7 @@ Options:
     // jpeg.org/jpegxl removed — disabled openexr in override
     'kubebuilder.io', // Go build failure
     'kubernetes.io/kubectl', // Go build failure on darwin
-    'lavinmq.com', // Build failure on linux
+    // lavinmq.com removed — fixed sed -i BSD compat in override
     // leonerd.org.uk/libtermkey removed — small C library, try on darwin
     // libarchive.org removed — autotools issue may be fixed with newer CI runner
     'llvm.org', // LLVM — too resource-intensive for CI (3500+ files)
@@ -923,13 +923,13 @@ Options:
     'modal.com', // Build failure on both platforms
     // mpv.io removed — removed vapoursynth dep in override
     'mun-lang.org', // Build failure on darwin
-    'mupdf.com', // PDF renderer build failure on darwin
-    'netflix.com/vmaf', // Build failure on darwin
+    // mupdf.com removed — fixed sed -i BSD + removed linux X11/mesa deps in override
+    // netflix.com/vmaf removed — fixed meson prefix quoting in override
     'open-mpi.org', // MPI — build failure on both platforms
     'opendap.org', // Build failure on both platforms
     'openresty.org', // Nginx+Lua — build failure on both platforms
     'opensearch.org', // Java/Gradle build failure on linux
-    'openslide.org', // Build failure on darwin
+    // openslide.org removed — fixed prefix quoting in override
     // openssh.com removed — standard autotools, OpenSSL available
     // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
     'php.net', // PHP — complex build with many deps
