@@ -77,6 +77,24 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
 }
 
 pub fn startCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    // Try to detect project root from CWD for binary path resolution
+    const io_helper = @import("../../io_helper.zig");
+    const detector = @import("../../deps/detector.zig");
+    const cwd = io_helper.getCwdAlloc(allocator) catch return startCommandWithContext(allocator, args, null);
+    defer allocator.free(cwd);
+
+    const lookup = detector.findDepsAndWorkspaceFile(allocator, cwd) catch return startCommandWithContext(allocator, args, null);
+    if (lookup.workspace_file) |ws| {
+        defer allocator.free(ws.path);
+        defer allocator.free(ws.root_dir);
+        if (lookup.deps_file) |df| allocator.free(df.path);
+        return startCommandWithContext(allocator, args, ws.root_dir);
+    }
+    if (lookup.deps_file) |df| {
+        const project_root = std.fs.path.dirname(df.path) orelse cwd;
+        defer allocator.free(df.path);
+        return startCommandWithContext(allocator, args, project_root);
+    }
     return startCommandWithContext(allocator, args, null);
 }
 

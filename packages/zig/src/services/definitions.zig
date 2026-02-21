@@ -110,6 +110,7 @@ pub const Services = struct {
             try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/postgres", .{h})
         else
             try allocator.dupe(u8, "/usr/local/var/postgres");
+        defer allocator.free(pgdata);
 
         var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("PGPORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));

@@ -325,6 +325,9 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_oidc_tests.step);
     test_step.dependOn(&run_resolution_tests.step);
 
+    const services_step = b.step("test:services", "Run services tests");
+    services_step.dependOn(&run_services_tests.step);
+
     const integration_step = b.step("test:integration", "Run integration tests");
     integration_step.dependOn(&run_integration_tests.step);
 

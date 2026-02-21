@@ -16,6 +16,7 @@ const common = @import("common.zig");
 const install = @import("install/mod.zig");
 
 pub const InstallOptions = install.InstallOptions;
+pub const helpers = install.helpers;
 
 // Wrap install module functions to return common.CommandResult type
 pub fn installCommand(allocator: std.mem.Allocator, args: []const []const u8) !common.CommandResult {
