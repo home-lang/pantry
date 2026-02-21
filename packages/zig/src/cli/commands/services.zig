@@ -77,6 +77,10 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
 }
 
 pub fn startCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    return startCommandWithContext(allocator, args, null);
+}
+
+pub fn startCommandWithContext(allocator: std.mem.Allocator, args: []const []const u8, project_root: ?[]const u8) !CommandResult {
     if (args.len == 0) {
         return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry service start <service>");
     }
@@ -87,13 +91,16 @@ pub fn startCommand(allocator: std.mem.Allocator, args: []const []const u8) !Com
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    // Register the service based on its name
-    const service_config = try getServiceConfig(allocator, service_name);
+    // Register the service based on its name (with project context for path resolution)
+    const service_config = try getServiceConfig(allocator, service_name, project_root);
+    const canonical_name = try allocator.dupe(u8, service_config.name);
+    defer allocator.free(canonical_name);
     try manager.register(service_config);
 
     style.print("Starting {s}...\n", .{service_name});
 
-    manager.start(service_name) catch |err| {
+    // Use canonical name (registered name) for manager operations
+    manager.start(canonical_name) catch |err| {
         const msg = try std.fmt.allocPrint(
             allocator,
             "Failed to start {s}: {}\nMake sure the service binary is installed.",
@@ -116,12 +123,14 @@ pub fn stopCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name);
+    const service_config = try getServiceConfig(allocator, service_name, null);
+    const canonical_name = try allocator.dupe(u8, service_config.name);
+    defer allocator.free(canonical_name);
     try manager.register(service_config);
 
     style.print("Stopping {s}...\n", .{service_name});
 
-    manager.stop(service_name) catch |err| {
+    manager.stop(canonical_name) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Failed to stop {s}: {}", .{ service_name, err });
         return .{ .exit_code = 1, .message = msg };
     };
@@ -150,15 +159,15 @@ pub fn statusCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
 
     const service_name = args[0];
 
-    // Initialize service manager
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    // Register the service
-    const service_config = try getServiceConfig(allocator, service_name);
+    const service_config = try getServiceConfig(allocator, service_name, null);
+    const canonical_name = try allocator.dupe(u8, service_config.name);
+    defer allocator.free(canonical_name);
     try manager.register(service_config);
 
-    const status = manager.status(service_name) catch |err| {
+    const status = manager.status(canonical_name) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Failed to get status for {s}: {}", .{ service_name, err });
         return .{ .exit_code = 1, .message = msg };
     };
@@ -179,12 +188,14 @@ pub fn enableCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name);
+    const service_config = try getServiceConfig(allocator, service_name, null);
+    const canonical_name = try allocator.dupe(u8, service_config.name);
+    defer allocator.free(canonical_name);
     try manager.register(service_config);
 
     style.print("Enabling {s} (auto-start on boot)...\n", .{service_name});
 
-    manager.controller.enable(service_name) catch |err| {
+    manager.controller.enable(canonical_name) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Failed to enable {s}: {}", .{ service_name, err });
         return .{ .exit_code = 1, .message = msg };
     };
@@ -203,12 +214,14 @@ pub fn disableCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name);
+    const service_config = try getServiceConfig(allocator, service_name, null);
+    const canonical_name = try allocator.dupe(u8, service_config.name);
+    defer allocator.free(canonical_name);
     try manager.register(service_config);
 
     style.print("Disabling {s} (won't auto-start on boot)...\n", .{service_name});
 
-    manager.controller.disable(service_name) catch |err| {
+    manager.controller.disable(canonical_name) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Failed to disable {s}: {}", .{ service_name, err });
         return .{ .exit_code = 1, .message = msg };
     };
@@ -217,8 +230,8 @@ pub fn disableCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     return .{ .exit_code = 0 };
 }
 
-/// Get service configuration by name
-fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8) !ServiceConfig {
+/// Get service configuration by name, optionally with project context for path resolution
+fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root: ?[]const u8) !ServiceConfig {
     // Get default port for the service
     const port = Services.getDefaultPort(name) orelse {
         const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{name});
@@ -229,9 +242,9 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8) !ServiceConf
     // Map service names to their configuration functions
     // Databases
     if (std.mem.eql(u8, name, "postgres") or std.mem.eql(u8, name, "postgresql")) {
-        return try Services.postgresql(allocator, port);
+        return try Services.postgresqlWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "redis")) {
-        return try Services.redis(allocator, port);
+        return try Services.redisWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mysql")) {
         return try Services.mysql(allocator, port);
     } else if (std.mem.eql(u8, name, "mongodb")) {
@@ -248,6 +261,8 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8) !ServiceConf
         return try Services.memcached(allocator, port);
     } else if (std.mem.eql(u8, name, "elasticsearch")) {
         return try Services.elasticsearch(allocator, port);
+    } else if (std.mem.eql(u8, name, "meilisearch")) {
+        return try Services.meilisearchWithContext(allocator, port, project_root);
     }
     // Message Queues
     else if (std.mem.eql(u8, name, "kafka")) {

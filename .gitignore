@@ -27,3 +27,4 @@ packages/pantry/test/clean-integration-*
 /packages/zig/*.o
 /pantry
 **/pantry_modules
+packages/zig/dump.rdb

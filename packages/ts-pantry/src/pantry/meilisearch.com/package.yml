@@ -15,13 +15,13 @@ build:
     - mv meilisearch "{{prefix}}/bin/"
   env:
     darwin/aarch64:
-      DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-macos-aarch64
+      DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-macos-apple-silicon
     darwin/x86-64:
-      DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-macos-x86_64
+      DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-macos-amd64
     linux/aarch64:
       DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-linux-aarch64
     linux/x86-64:
-      DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-linux-x86_64
+      DIST: https://github.com/meilisearch/meilisearch/releases/download/v{{version}}/meilisearch-linux-amd64
 
 provides:
   - bin/meilisearch

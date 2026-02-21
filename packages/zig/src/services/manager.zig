@@ -139,9 +139,10 @@ pub const ServiceManager = struct {
         );
         defer self.allocator.free(plist_path);
 
-        // Check if file already exists
-        io_helper.access(plist_path, .{}) catch {
-            // File doesn't exist, create it
+        // Always regenerate the plist to pick up config changes
+        {
+            // Delete existing plist if present (ignore errors if it doesn't exist)
+            io_helper.deleteFile(plist_path) catch {};
             const file = try io_helper.createFile(plist_path, .{});
             defer file.close(io_helper.io);
 
@@ -154,9 +155,16 @@ pub const ServiceManager = struct {
             defer self.allocator.free(label_line);
             try io_helper.writeAllToFile(file, label_line);
 
-            const prog_args_line = try std.fmt.allocPrint(self.allocator, "    <key>ProgramArguments</key>\n    <array>\n        <string>{s}</string>\n    </array>\n", .{service.start_command});
-            defer self.allocator.free(prog_args_line);
-            try io_helper.writeAllToFile(file, prog_args_line);
+            // Split start_command into individual ProgramArguments
+            try io_helper.writeAllToFile(file, "    <key>ProgramArguments</key>\n    <array>\n");
+            var arg_iter = std.mem.splitScalar(u8, service.start_command, ' ');
+            while (arg_iter.next()) |arg| {
+                if (arg.len == 0) continue;
+                const arg_line = try std.fmt.allocPrint(self.allocator, "        <string>{s}</string>\n", .{arg});
+                defer self.allocator.free(arg_line);
+                try io_helper.writeAllToFile(file, arg_line);
+            }
+            try io_helper.writeAllToFile(file, "    </array>\n");
 
             if (service.working_directory) |wd| {
                 const wd_line = try std.fmt.allocPrint(self.allocator, "    <key>WorkingDirectory</key>\n    <string>{s}</string>\n", .{wd});
@@ -191,7 +199,7 @@ pub const ServiceManager = struct {
 
             try io_helper.writeAllToFile(file, "</dict>\n");
             try io_helper.writeAllToFile(file, "</plist>\n");
-        };
+        }
     }
 
     /// Generate systemd unit file for Linux

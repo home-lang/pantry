@@ -11,6 +11,23 @@ const install = lib.install;
 const style = @import("../../style.zig");
 
 // ============================================================================
+// Package Alias Resolution
+// ============================================================================
+
+/// Resolve well-known package name aliases to their canonical domain names.
+/// For example, "meilisearch" -> "meilisearch.com" (the npm package "meilisearch"
+/// is the JS client, while "meilisearch.com" is the server binary).
+fn resolvePackageAlias(name: []const u8) []const u8 {
+    const aliases = .{
+        .{ "meilisearch", "meilisearch.com" },
+    };
+    inline for (aliases) |entry| {
+        if (std.mem.eql(u8, name, entry[0])) return entry[1];
+    }
+    return name;
+}
+
+// ============================================================================
 // Pantry Registry Lookup (S3/DynamoDB)
 // ============================================================================
 
@@ -309,7 +326,9 @@ pub fn installSinglePackage(
 
     // Validate package exists in registry (strip "auto:" prefix for lookups)
     const pkg_registry = @import("../../../packages/generated.zig");
-    const lookup_name = stripDisplayPrefix(dep.name);
+    const stripped_name = stripDisplayPrefix(dep.name);
+    // Resolve well-known package aliases (e.g. "meilisearch" -> "meilisearch.com")
+    const lookup_name = resolvePackageAlias(stripped_name);
     const pkg_info = pkg_registry.getPackageByName(lookup_name);
 
     // Check if this is a zig dev version (should use ziglang.org instead of pkgx)
@@ -394,7 +413,17 @@ pub fn installSinglePackage(
                 };
             }
 
-            // Fall back to npm registry via shared installer (handles semver, caching, dedup)
+            // For domain-style packages (containing '.'), use pkgx source
+            // which triggers S3 registry lookup in installer.zig.
+            // Domain-style names like 'meilisearch.com' are pantry packages, not npm.
+            if (std.mem.indexOfScalar(u8, lookup_name, '.') != null) {
+                break :blk lib.packages.PackageSpec{
+                    .name = lookup_name,
+                    .version = dep.version,
+                };
+            }
+
+            // Fall back to npm registry for non-domain packages (handles semver, caching, dedup)
             const npm_info = shared_installer.resolveNpmPackage(lookup_name, dep.version) catch |err| {
                 return .{
                     .name = lookup_name,

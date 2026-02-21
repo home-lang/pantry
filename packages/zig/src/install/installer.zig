@@ -1595,8 +1595,9 @@ pub const Installer = struct {
 
         // Not in global cache - download directly to project's pantry (transfers ownership of URL)
         used_cache.* = false;
-        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir, options, owned_url);
-        owned_url = null; // Ownership transferred to downloadAndInstallToProject
+        const url_to_transfer = owned_url;
+        owned_url = null; // Transfer ownership BEFORE call to prevent double-free on error
+        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir, options, url_to_transfer);
         try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
 
         return project_pkg_dir;
@@ -1709,6 +1710,13 @@ pub const Installer = struct {
 
         // Fix library paths for macOS
         try libfixer.fixDirectoryLibraryPaths(self.allocator, project_pkg_dir);
+
+        // Remove macOS quarantine/provenance xattrs so launchd can run service binaries
+        if (comptime @import("builtin").os.tag == .macos) {
+            _ = io_helper.childRun(self.allocator, &[_][]const u8{
+                "/usr/bin/xattr", "-cr", project_pkg_dir,
+            }) catch {};
+        }
     }
 
     /// Install from cached package (global cache location)

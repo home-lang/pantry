@@ -55,19 +55,77 @@ pub const ServiceStatus = enum {
     }
 };
 
+/// Resolve a service binary path by searching pantry install locations
+/// Tries: project-local pantry/.bin, global ~/.pantry/global/bin, then falls back to bare name
+fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
+    const io_helper = @import("../io_helper.zig");
+
+    // 1. Project-local pantry/.bin
+    if (project_root) |pr| {
+        const local_bin = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin/{s}", .{ pr, binary_name });
+        io_helper.accessAbsolute(local_bin, .{}) catch {
+            allocator.free(local_bin);
+            // fall through
+            return resolveServiceBinaryGlobal(allocator, binary_name, home);
+        };
+        return local_bin;
+    }
+
+    return resolveServiceBinaryGlobal(allocator, binary_name, home);
+}
+
+fn resolveServiceBinaryGlobal(allocator: std.mem.Allocator, binary_name: []const u8, home: ?[]const u8) ![]const u8 {
+    const io_helper = @import("../io_helper.zig");
+
+    // 2. Global ~/.pantry/global/bin
+    if (home) |h| {
+        const global_bin = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/bin/{s}", .{ h, binary_name });
+        io_helper.accessAbsolute(global_bin, .{}) catch {
+            allocator.free(global_bin);
+            return allocator.dupe(u8, binary_name);
+        };
+        return global_bin;
+    }
+
+    // 3. Fallback: bare binary name (rely on PATH)
+    return allocator.dupe(u8, binary_name);
+}
+
 /// Pre-defined service configurations
 pub const Services = struct {
     /// PostgreSQL service
     pub fn postgresql(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return postgresqlWithContext(allocator, port, null);
+    }
+
+    /// PostgreSQL service with project context for resolving binary/data paths
+    pub fn postgresqlWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
+
+        // Resolve PGDATA: use ~/.local/share/pantry/data/postgres
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
+        const pgdata = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/postgres", .{h})
+        else
+            try allocator.dupe(u8, "/usr/local/var/postgres");
+
         var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("PGPORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
-        try env_vars.put("PGDATA", try allocator.dupe(u8, "/usr/local/var/postgres"));
+        try env_vars.put("PGDATA", try allocator.dupe(u8, pgdata));
+
+        // Resolve postgres binary path
+        const postgres_bin = try resolveServiceBinary(allocator, "postgres", project_root, home);
+
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} -D {s} -p {d}", .{ postgres_bin, pgdata, port });
+        allocator.free(postgres_bin);
 
         return ServiceConfig{
-            .name = try allocator.dupe(u8, "postgresql"),
+            .name = try allocator.dupe(u8, "postgres"),
             .display_name = try allocator.dupe(u8, "PostgreSQL"),
             .description = try allocator.dupe(u8, "PostgreSQL database server"),
-            .start_command = try allocator.dupe(u8, "postgres -D /usr/local/var/postgres"),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
@@ -77,17 +135,26 @@ pub const Services = struct {
 
     /// Redis service
     pub fn redis(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return redisWithContext(allocator, port, null);
+    }
+
+    /// Redis service with project context
+    pub fn redisWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
         const env_vars = std.StringHashMap([]const u8).init(allocator);
+
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
+        const redis_bin = try resolveServiceBinary(allocator, "redis-server", project_root, home);
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} --port {d}", .{ redis_bin, port });
+        allocator.free(redis_bin);
 
         return ServiceConfig{
             .name = try allocator.dupe(u8, "redis"),
             .display_name = try allocator.dupe(u8, "Redis"),
             .description = try allocator.dupe(u8, "Redis in-memory data store"),
-            .start_command = try std.fmt.allocPrint(
-                allocator,
-                "redis-server --port {d}",
-                .{port},
-            ),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
@@ -228,6 +295,52 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+        };
+    }
+
+    /// Meilisearch service
+    pub fn meilisearch(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return meilisearchWithContext(allocator, port, null);
+    }
+
+    /// Meilisearch service with project context
+    pub fn meilisearchWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
+        // Meilisearch data directory
+        const data_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/meilisearch", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/meilisearch-data");
+        defer allocator.free(data_dir);
+
+        // Ensure data directory exists
+        io_helper.makePath(data_dir) catch {};
+
+        const meili_bin = try resolveServiceBinary(allocator, "meilisearch", project_root, home);
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} --http-addr 127.0.0.1:{d} --db-path {s} --no-analytics", .{ meili_bin, port, data_dir });
+        allocator.free(meili_bin);
+
+        // Set working directory to data dir so launchd doesn't use / (read-only on macOS)
+        const working_dir = if (home) |h|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/meilisearch", .{h})
+        else
+            try allocator.dupe(u8, "/tmp/meilisearch-data");
+
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "meilisearch"),
+            .display_name = try allocator.dupe(u8, "Meilisearch"),
+            .description = try allocator.dupe(u8, "Search engine"),
+            .start_command = start_cmd,
+            .env_vars = env_vars,
+            .port = port,
+            .auto_start = false,
+            .keep_alive = true,
+            .working_directory = working_dir,
         };
     }
 
@@ -580,6 +693,7 @@ pub const Services = struct {
         if (std.mem.eql(u8, service_name, "clickhouse")) return 8123;
         if (std.mem.eql(u8, service_name, "memcached")) return 11211;
         if (std.mem.eql(u8, service_name, "elasticsearch")) return 9200;
+        if (std.mem.eql(u8, service_name, "meilisearch")) return 7700;
 
         // Message Queues
         if (std.mem.eql(u8, service_name, "kafka")) return 9092;

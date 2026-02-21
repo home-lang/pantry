@@ -267,6 +267,9 @@ pub const ShellCommands = struct {
             // Auto-start services if configured
             try self.autoStartServices(project_root);
 
+            // Wait for services to be ready before proceeding
+            self.waitForServices(project_root) catch {};
+
             // Auto-create database if postgres is a dependency and .env has DB_DATABASE
             self.autoCreateDatabase(project_root) catch {};
 
@@ -633,7 +636,7 @@ pub const ShellCommands = struct {
 
             for (services_list) |svc| {
                 if (!svc.auto_start) continue;
-                try self.startService(svc.name);
+                try self.startServiceWithContext(svc.name, project_root);
             }
             return;
         }
@@ -723,18 +726,27 @@ pub const ShellCommands = struct {
                     const service_name = std.mem.trim(u8, trimmed[2..], " \t\r");
                     if (service_name.len == 0) continue;
 
-                    try self.startService(service_name);
+                    try self.startServiceWithContext(service_name, project_root);
                 }
             }
         }
     }
 
-    /// Start a single service by name
+    /// Start a single service by name (with project context for binary resolution)
     fn startService(self: *ShellCommands, service_name: []const u8) !void {
+        return self.startServiceWithContext(service_name, null);
+    }
+
+    fn startServiceWithContext(self: *ShellCommands, service_name: []const u8, project_root: ?[]const u8) !void {
         style.print("🚀 Starting service: {s}...\n", .{service_name});
 
+        // For postgres, ensure PGDATA is initialized
+        if (std.mem.eql(u8, service_name, "postgres") or std.mem.eql(u8, service_name, "postgresql")) {
+            self.ensurePostgresDataDir(project_root) catch {};
+        }
+
         const service_cmd = @import("../cli/commands/services.zig");
-        var result = service_cmd.startCommand(self.allocator, &[_][]const u8{service_name}) catch |err| {
+        var result = service_cmd.startCommandWithContext(self.allocator, &[_][]const u8{service_name}, project_root) catch |err| {
             style.print("⚠️  Failed to start {s}: {s}\n", .{ service_name, @errorName(err) });
             return;
         };
@@ -747,6 +759,139 @@ pub const ShellCommands = struct {
                 style.print("⚠️  {s}\n", .{msg});
             }
         }
+    }
+
+    /// Wait for started services to be ready (health checks)
+    fn waitForServices(self: *ShellCommands, project_root: []const u8) !void {
+        const content = blk: {
+            const yaml_files = [_][]const u8{ "deps.yaml", "deps.yml", "dependencies.yaml" };
+            for (yaml_files) |yaml_name| {
+                const candidate = std.fs.path.join(self.allocator, &[_][]const u8{ project_root, yaml_name }) catch continue;
+                defer self.allocator.free(candidate);
+                break :blk io_helper.readFileAlloc(self.allocator, candidate, 1 * 1024 * 1024) catch continue;
+            }
+            return;
+        };
+        defer self.allocator.free(content);
+
+        // Check if meilisearch is in autoStart
+        if (std.mem.indexOf(u8, content, "meilisearch") != null) {
+            // Wait up to 5 seconds for meilisearch to be ready
+            var attempts: u32 = 0;
+            while (attempts < 10) : (attempts += 1) {
+                const result = io_helper.childRun(self.allocator, &[_][]const u8{
+                    "/usr/bin/curl", "-sf", "--connect-timeout", "1", "http://127.0.0.1:7700/health",
+                }) catch {
+                    io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+                    continue;
+                };
+                defer self.allocator.free(result.stdout);
+                defer self.allocator.free(result.stderr);
+                if (result.term == .exited and result.term.exited == 0) break;
+                io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+            }
+        }
+
+        // Check if postgres is in autoStart
+        if (std.mem.indexOf(u8, content, "postgres") != null) {
+            var attempts: u32 = 0;
+            while (attempts < 10) : (attempts += 1) {
+                const result = io_helper.childRun(self.allocator, &[_][]const u8{
+                    "pg_isready", "-q",
+                }) catch {
+                    io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+                    continue;
+                };
+                defer self.allocator.free(result.stdout);
+                defer self.allocator.free(result.stderr);
+                if (result.term == .exited and result.term.exited == 0) break;
+                io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+            }
+        }
+    }
+
+    /// Ensure PostgreSQL data directory exists and is initialized
+    fn ensurePostgresDataDir(self: *ShellCommands, project_root: ?[]const u8) !void {
+        const home_dir = try lib.core.Paths.home(self.allocator);
+        defer self.allocator.free(home_dir);
+
+        const pgdata = try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/data/postgres", .{home_dir});
+        defer self.allocator.free(pgdata);
+
+        // Check if PGDATA already exists and has content
+        io_helper.accessAbsolute(pgdata, .{}) catch {
+            // PGDATA doesn't exist - create it and run initdb
+            io_helper.makePath(pgdata) catch return;
+
+            style.print("  📀 Initializing PostgreSQL data directory...\n", .{});
+
+            // Find initdb binary
+            var initdb_path: []const u8 = "initdb";
+            var initdb_allocated = false;
+            defer if (initdb_allocated) self.allocator.free(initdb_path);
+
+            if (project_root) |pr| {
+                const local = try std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/initdb", .{pr});
+                io_helper.accessAbsolute(local, .{}) catch {
+                    self.allocator.free(local);
+                    return;
+                };
+                initdb_path = local;
+                initdb_allocated = true;
+            }
+
+            const result = io_helper.childRun(self.allocator, &[_][]const u8{
+                initdb_path, "-D", pgdata, "--no-locale", "--encoding=UTF8",
+            }) catch |err| {
+                style.print("  ⚠️  initdb failed: {s}\n", .{@errorName(err)});
+                return;
+            };
+            defer self.allocator.free(result.stdout);
+            defer self.allocator.free(result.stderr);
+
+            if (result.term == .exited and result.term.exited == 0) {
+                style.print("  ✓ PostgreSQL data directory initialized\n", .{});
+            } else {
+                style.print("  ⚠️  initdb failed (exit {d})\n", .{if (result.term == .exited) result.term.exited else 0});
+                if (result.stderr.len > 0) {
+                    style.print("    {s}\n", .{result.stderr[0..@min(result.stderr.len, 200)]});
+                }
+            }
+            return;
+        };
+
+        // Check if it has PG_VERSION (initialized)
+        const pg_version_path = try std.fmt.allocPrint(self.allocator, "{s}/PG_VERSION", .{pgdata});
+        defer self.allocator.free(pg_version_path);
+
+        io_helper.accessAbsolute(pg_version_path, .{}) catch {
+            // Directory exists but not initialized
+            style.print("  📀 Initializing PostgreSQL data directory...\n", .{});
+
+            var initdb_path: []const u8 = "initdb";
+            var initdb_allocated = false;
+            defer if (initdb_allocated) self.allocator.free(initdb_path);
+
+            if (project_root) |pr| {
+                const local = try std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/initdb", .{pr});
+                io_helper.accessAbsolute(local, .{}) catch {
+                    self.allocator.free(local);
+                    return;
+                };
+                initdb_path = local;
+                initdb_allocated = true;
+            }
+
+            const result = io_helper.childRun(self.allocator, &[_][]const u8{
+                initdb_path, "-D", pgdata, "--no-locale", "--encoding=UTF8",
+            }) catch return;
+            defer self.allocator.free(result.stdout);
+            defer self.allocator.free(result.stderr);
+
+            if (result.term == .exited and result.term.exited == 0) {
+                style.print("  ✓ PostgreSQL data directory initialized\n", .{});
+            }
+        };
     }
 
     /// Auto-create database based on .env file if postgres is a dependency
@@ -1063,15 +1208,24 @@ pub const ShellCommands = struct {
             if (cmd_failed) {
                 const exit_code: u32 = if (result.term == .exited) result.term.exited else 0;
                 style.print("  ✗ {s} failed (exit {d})\n", .{ cmd_name, exit_code });
-                // Print output for debugging
+                // Print last 20 lines of output for debugging (errors are usually at the bottom)
                 const output = if (result.stderr.len > 0) result.stderr else result.stdout;
                 if (output.len > 0) {
+                    // Count total non-empty lines first
+                    var total_lines: u32 = 0;
+                    var count_iter = std.mem.splitScalar(u8, output, '\n');
+                    while (count_iter.next()) |out_line| {
+                        if (out_line.len > 0) total_lines += 1;
+                    }
+                    // Print the last 20 lines
+                    const skip_lines = if (total_lines > 20) total_lines - 20 else 0;
                     var lines = std.mem.splitScalar(u8, output, '\n');
                     var line_count: u32 = 0;
                     while (lines.next()) |out_line| {
-                        if (line_count >= 10) break;
                         if (out_line.len > 0) {
-                            style.print("    {s}\n", .{out_line[0..@min(out_line.len, 200)]});
+                            if (line_count >= skip_lines) {
+                                style.print("    {s}\n", .{out_line[0..@min(out_line.len, 200)]});
+                            }
                             line_count += 1;
                         }
                     }
