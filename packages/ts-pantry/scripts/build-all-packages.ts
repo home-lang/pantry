@@ -691,7 +691,7 @@ Options:
     'crates.io/rust-kanban', // Rust compilation errors with modern rustc
     'crates.io/spider_cli', // Rust compilation errors with modern rustc
     'fabianlindfors.se/reshape', // Rust compile error with modern rustc
-    'frei0r.dyne.org', // Source tarball corrupt/invalid from upstream server
+    // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
     'openinterpreter.com', // tiktoken wheel build failure (Python C extension)
@@ -736,12 +736,12 @@ Options:
     'riverbankcomputing.com/pyqt-builder', // Server returns empty reply
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
     'surrealdb.com', // Old release tags removed from GitHub
-    'nasm.us', // Version resolution generates phantom versions (3.1.0, 3.0.0) that 404
+    // nasm.us removed — switched version discovery to GitHub releases
     'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
     'strace.io', // btrfs static assertions incompatible with newer kernel headers
-    'gnu.org/source-highlight', // C++17 removed dynamic exception specs (throw()), unmaintained
+    // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // OpenSSL lib path in multiarch dirs (/usr/lib/x86_64-linux-gnu)
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
@@ -750,17 +750,17 @@ Options:
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
     'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup
-    'khanacademy.org/genqlient', // Pinned golang.org/x/tools@v0.24.0 incompatible with Go 1.26
+    // khanacademy.org/genqlient removed — added go get x/tools@latest before build
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
     'elixir-lang.org', // Erlang dep has hardcoded build-time paths (erlexec not found)
     'elixir-lang.org/otp-27', // Same erlang relocatability issue
     'pimalaya.org/himalaya', // Requires Rust edition2024 (Cargo 1.85.0+), runner has 1.82.0
     'plakar.io', // cockroachdb/swiss requires Go runtime internals not in Go 1.26
     'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
-    'syncthing.net', // Requires Go 1.26.0 runtime mapping not in compat.yaml
+    // syncthing.net removed — patched compat.yaml to add Go 1.26 runtime entry
     'projectdiscovery.io/nuclei', // bytedance/sonic requires newer Go runtime internals
     'iroh.computer', // Rust dependency API mismatch (digest::crypto_common)
-    'crates.io/mdcat', // dead_code lint denied by #[deny(warnings)] in dependency
+    // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
     'dns.lookup.dog', // Needs OpenSSL headers for rust-openssl (not in standard S3 deps)
     // microsoft.com/code-cli removed — built successfully on darwin
     'fluentci.io', // Uses deno compile, fragile in CI
@@ -777,7 +777,7 @@ Options:
     'pcre.org', // SourceForge mirror (cytranet.dl.sourceforge.net) consistently times out
     // digitalocean.com/doctl removed — built successfully on both platforms
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
-    'quickwit.io', // Sed command quoting broken in generated shell script (parentheses in .to_string())
+    'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
     'raccoin.org', // Linker OOM — huge Slint UI generated code exceeds CI runner memory
     'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
     'wezfurlong.org/wezterm', // OS error 35 (EAGAIN) — OOM during parallel Rust compilation
