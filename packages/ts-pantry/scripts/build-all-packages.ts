@@ -644,6 +644,7 @@ Options:
     'github.com/a7ex/xcresultparser', 'github.com/create-dmg/create-dmg',
     'portaudio.com',
     'gnupg.org/libgcrypt', // Linux system libgpg-error too old (needs >= 1.56), builds fine on darwin
+    'microsoft.com/code-cli', // OpenSSL linking issues on Linux, builds fine on darwin
   ])
 
   // Packages needing specialized toolchains not available in CI
@@ -744,7 +745,7 @@ Options:
     'microbrew.org/md5sha1sum', // OpenSSL lib path in multiarch dirs (/usr/lib/x86_64-linux-gnu)
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
-    'heasarc.gsfc.nasa.gov/cfitsio', // NASA HEASARC server frequently unreachable (timeout)
+    // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
     'brxken128.github.io/dexios', // Rust 'unnecessary qualification' lint errors with modern rustc (unmaintained)
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
@@ -761,20 +762,20 @@ Options:
     'iroh.computer', // Rust dependency API mismatch (digest::crypto_common)
     'crates.io/mdcat', // dead_code lint denied by #[deny(warnings)] in dependency
     'dns.lookup.dog', // Needs OpenSSL headers for rust-openssl (not in standard S3 deps)
-    'microsoft.com/code-cli', // Needs specific OpenSSL lib layout for Rust linking
+    // microsoft.com/code-cli removed — built successfully on darwin
     'fluentci.io', // Uses deno compile, fragile in CI
     // fna-xna.github.io removed — SDL2 dev packages now in CI
     'getclipboard.app', // stdlib.h broken via include_next in CI compiler setup
     'perl.org', // IO.xs poll.h struct pollfd incomplete type on Linux (glibc issue)
-    'priver.dev/geni', // GitHub tag v2023.12.27 removed
-    'schollz.com/croc', // GitHub tag v10.4.0 removed
+    // priver.dev/geni removed — built successfully on both platforms
+    // schollz.com/croc removed — built successfully on both platforms
     'foundry-rs.github.io/foundry', // All old version tags pruned from repo
     'volta.sh', // Build failure (needs investigation)
     // libtom.net/math removed — libtool already in CI
     // sourceforge.net/xmlstar removed — libxml2 headers available via system
     'mypy-lang.org', // Gradle/JVM build failure on Linux
     'pcre.org', // SourceForge mirror (cytranet.dl.sourceforge.net) consistently times out
-    'digitalocean.com/doctl', // GitHub release tags removed/restructured
+    // digitalocean.com/doctl removed — built successfully on both platforms
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
     'quickwit.io', // Sed command quoting broken in generated shell script (parentheses in .to_string())
     'raccoin.org', // Linker OOM — huge Slint UI generated code exceeds CI runner memory
