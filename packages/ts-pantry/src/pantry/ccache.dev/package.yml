@@ -52,7 +52,7 @@ build:
         - -DBUILD_TESTING=OFF
         - -DCMAKE_C_COMPILER=/usr/bin/gcc
         - -DCMAKE_CXX_COMPILER=/usr/bin/g++
-        - -DCMAKE_DISABLE_FIND_PACKAGE_xxhash=TRUE
+        - -DCMAKE_DISABLE_FIND_PACKAGE_Xxhash=TRUE
 provides:
   - bin/ccache
 test:
