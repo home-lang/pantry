@@ -977,6 +977,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.env?.linux) {
         delete recipe.build.env.linux.LD
       }
+      // Add --enable-shared to ARGS to force shared library creation
+      if (recipe.build?.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
+        recipe.build.env.ARGS.push('--enable-shared')
+      }
       // Ensure standard make is used
       if (recipe.build?.dependencies?.linux?.['gnu.org/make']) {
         // keep it
@@ -1009,9 +1013,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         env: {
-          CFLAGS: '-I/usr/include',
-          CXXFLAGS: '-I/usr/include',
+          CFLAGS: '-isystem /usr/include',
+          CXXFLAGS: '-isystem /usr/include',
         },
+        // Clear buildkit wrapper include paths that shadow system headers
+        prependScript: ['unset C_INCLUDE_PATH CPLUS_INCLUDE_PATH 2>/dev/null || true'],
       },
     },
   },

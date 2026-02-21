@@ -742,7 +742,7 @@ Options:
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
     // strace.io removed — added compiler flags override
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
-    'microbrew.org/md5sha1sum', // needs openssl.org dep built in S3 (configure can't find ssl libs)
+    // microbrew.org/md5sha1sum — needs openssl.org in S3, build openssl first
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
@@ -788,7 +788,7 @@ Options:
     'angular.dev', // npm build failure on both platforms (native module compilation)
     'capnproto.org', // internal compiler error in GCC on linux (gimplify_var_or_parm_decl)
     // cmake.org removed — reduced parallel jobs to prevent race condition
-    'sourceforge.net/libtirpc', // shared library linking fails (libtirpc.so.3.0.0 not created, kerberos dep issue)
+    // sourceforge.net/libtirpc — shared lib linking, needs kerberos.org in S3
     'werf.io', // Go compilation failure (complex build with CGO)
     // agwa.name/git-crypt removed — xsltproc now in CI
     // gnu.org/texinfo removed — built successfully on linux
@@ -839,7 +839,7 @@ Options:
     'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
     // zlib.net/minizip removed — small cmake build, deps available
     // code.videolan.org/aribb24 removed — small autotools library
-    'vapoursynth.com', // needs zimg >= 3.0.5 dep which is not available in S3
+    // vapoursynth.com — needs zimg in S3, build zimg first then vapoursynth
     'facebook.com/wangle', // CMake build failure (complex Facebook library)
     'unidata.ucar.edu/netcdf', // cmake fix-up sed failure (HDF5 path issues)
     'x.org/libcvt', // Python SyntaxError in meson build tool
@@ -879,7 +879,7 @@ Options:
     'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
     'gdal.org', // Complex geospatial C++ build
-    'geoff.greer.fm/ag', // needs pcre.org (PCRE1) which relies on SourceForge download
+    // geoff.greer.fm/ag — needs pcre.org in S3, build pcre.org first
     'getmonero.org', // Heavy C++ crypto build
     'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
     'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
@@ -945,7 +945,7 @@ Options:
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
     // sass-lang.com/libsass removed — built successfully on darwin
-    'sass-lang.com/sassc', // needs libsass built in S3 first (build order dependency)
+    // sass-lang.com/sassc — needs libsass in S3, build libsass first then sassc
     'sfcgal.org', // Geometry library — CMake failure
     'solana.com', // Heavy Rust blockchain build
     'sourceforge.net/faac', // AAC encoder — build failure on darwin
