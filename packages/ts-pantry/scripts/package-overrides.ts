@@ -2732,6 +2732,103 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── qemu.org — fix prefix quoting + sed -i BSD + remove vde dep ────
+
+  'qemu.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Fix sed -i BSD compat in meson.build patch
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove virtualsquare.org/vde dep (not in S3)
+      if (recipe.dependencies?.['virtualsquare.org/vde']) {
+        delete recipe.dependencies['virtualsquare.org/vde']
+      }
+      // Remove --enable-vde from ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--enable-vde',
+        )
+      }
+    },
+  },
+
+  // ─── sfcgal.org — fix stray cmake prefix quote ───────────────────────
+
+  'sfcgal.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove linux gcc/make build deps (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/make']) {
+        delete recipe.build.dependencies.linux['gnu.org/make']
+      }
+    },
+  },
+
+  // ─── sourceforge.net/faac — fix prefix quoting + remove gcc dep ──────
+
+  'sourceforge.net/faac': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and --libdir args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
+          a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Remove linux gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── tcl-lang.org — remove x.org/x11 dep + fix sed -i BSD ───────────
+
+  'tcl-lang.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove x.org/x11 and x.org/exts deps (not in S3)
+      if (recipe.dependencies?.['x.org/x11']) delete recipe.dependencies['x.org/x11']
+      if (recipe.dependencies?.['x.org/exts']) delete recipe.dependencies['x.org/exts']
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+              .replace(/sed -i -f /g, 'sed -i.bak -f ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

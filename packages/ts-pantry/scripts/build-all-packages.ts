@@ -940,17 +940,17 @@ Options:
     // pwmt.org/girara removed — gtk3/json-glib now fixed in override
     // pwmt.org/zathura removed — fixed sed -i BSD + removed adwaita dep in override
     // python-pillow.org removed — removed x.org/xcb dep in override
-    'qemu.org', // System emulator — massive build
+    // qemu.org removed — fixed prefix quoting + sed -i BSD + removed vde dep in override
     // qpdf.sourceforge.io removed — removed gnutls dep in override
     // rockdaboot.github.io/libpsl removed — switched to libidn2 runtime
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
     // sass-lang.com/libsass removed — built successfully on darwin
     // sass-lang.com/sassc — needs libsass in S3, build libsass first then sassc
-    'sfcgal.org', // Geometry library — CMake failure
+    // sfcgal.org removed — fixed stray cmake prefix quote in override
     'solana.com', // Heavy Rust blockchain build
-    'sourceforge.net/faac', // AAC encoder — build failure on darwin
-    'tcl-lang.org', // Tcl — build failure on darwin
+    // sourceforge.net/faac removed — fixed prefix quoting + removed gcc dep in override
+    // tcl-lang.org removed — removed x.org/x11 dep + fixed sed -i BSD in override
     'tectonic-typesetting.github.io', // TeX engine — heavy Rust build
     // tesseract-ocr.github.io removed — fixed prefix quoting in override
     'tinygo.org', // TinyGo — heavy LLVM-based build
