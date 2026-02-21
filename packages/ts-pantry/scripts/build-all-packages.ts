@@ -754,7 +754,7 @@ Options:
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
     'elixir-lang.org', // Erlang dep has hardcoded build-time paths (erlexec not found)
     'elixir-lang.org/otp-27', // Same erlang relocatability issue
-    'pimalaya.org/himalaya', // Requires Rust edition2024 (Cargo 1.85.0+), runner has 1.82.0
+    // pimalaya.org/himalaya removed — removed pinned rust-toolchain.toml, using stable Rust
     'plakar.io', // cockroachdb/swiss requires Go runtime internals not in Go 1.26
     'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
     // syncthing.net removed — patched compat.yaml to add Go 1.26 runtime entry
@@ -770,7 +770,7 @@ Options:
     // priver.dev/geni removed — built successfully on both platforms
     // schollz.com/croc removed — built successfully on both platforms
     'foundry-rs.github.io/foundry', // All old version tags pruned from repo
-    'volta.sh', // Build failure (needs investigation)
+    // volta.sh removed — removed pinned rust-toolchain.toml, unpinned yanked zip crate
     // libtom.net/math removed — libtool already in CI
     // sourceforge.net/xmlstar removed — libxml2 headers available via system
     'mypy-lang.org', // Gradle/JVM build failure on Linux
