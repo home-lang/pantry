@@ -266,6 +266,12 @@ pub const ShellCommands = struct {
 
             // Auto-start services if configured
             try self.autoStartServices(project_root);
+
+            // Auto-create database if postgres is a dependency and .env has DB_DATABASE
+            self.autoCreateDatabase(project_root) catch {};
+
+            // Execute postSetup commands from pantry.config.ts
+            self.executePostSetupCommands(project_root) catch {};
         } else if (env_exists and dep_file != null) {
             // Environment exists but dep file may have changed
             // Check if we need to update (only when cache was invalidated)
@@ -611,59 +617,492 @@ pub const ShellCommands = struct {
         style.print("✅ Global packages available in ~/.pantry/global/bin\n", .{});
     }
 
-    /// Auto-start services configured in pantry.json
+    /// Auto-start services configured in pantry.json or deps.yaml
     fn autoStartServices(self: *ShellCommands, project_root: []const u8) !void {
-        // Load services configuration
-        const services = lib.config.findProjectServices(self.allocator, project_root) catch {
-            // Silently ignore errors - services config is optional
-            return;
-        };
+        // First try pantry.json format
+        const services = lib.config.findProjectServices(self.allocator, project_root) catch null;
 
-        if (services == null) return;
-
-        const services_list = services.?;
-        defer {
-            for (services_list) |*svc| {
-                var s = svc.*;
-                s.deinit(self.allocator);
+        if (services) |services_list| {
+            defer {
+                for (services_list) |*svc| {
+                    var s = svc.*;
+                    s.deinit(self.allocator);
+                }
+                self.allocator.free(services_list);
             }
-            self.allocator.free(services_list);
+
+            for (services_list) |svc| {
+                if (!svc.auto_start) continue;
+                try self.startService(svc.name);
+            }
+            return;
         }
 
-        // Start services that have autoStart: true
-        for (services_list) |svc| {
-            if (!svc.auto_start) continue;
+        // Fallback: try deps.yaml format (services.autoStart array)
+        try self.autoStartServicesFromYaml(project_root);
+    }
 
-            style.print("🚀 Starting service: {s}...\n", .{svc.name});
+    /// Parse deps.yaml services.autoStart section and start services
+    fn autoStartServicesFromYaml(self: *ShellCommands, project_root: []const u8) !void {
+        const yaml_files = [_][]const u8{
+            "deps.yaml",
+            "deps.yml",
+            "dependencies.yaml",
+        };
 
-            // Use the service commands module to start the service
-            const service_cmd = @import("../cli/commands/services.zig");
-            var result = service_cmd.startCommand(self.allocator, &[_][]const u8{svc.name}) catch |err| {
-                style.print("⚠️  Failed to start {s}: {s}\n", .{ svc.name, @errorName(err) });
+        var yaml_path: ?[]const u8 = null;
+        defer if (yaml_path) |p| self.allocator.free(p);
+
+        for (yaml_files) |yaml_name| {
+            const candidate = std.fs.path.join(self.allocator, &[_][]const u8{
+                project_root,
+                yaml_name,
+            }) catch continue;
+
+            io_helper.accessAbsolute(candidate, .{}) catch {
+                self.allocator.free(candidate);
                 continue;
             };
-            defer result.deinit(self.allocator);
 
-            if (result.exit_code == 0) {
-                style.print("✅ {s} started\n", .{svc.name});
-            } else {
-                if (result.message) |msg| {
-                    style.print("⚠️  {s}\n", .{msg});
+            yaml_path = candidate;
+            break;
+        }
+
+        const file_path = yaml_path orelse return;
+
+        // Read and parse the YAML file for services section
+        const content = io_helper.readFileAlloc(self.allocator, file_path, 1 * 1024 * 1024) catch return;
+        defer self.allocator.free(content);
+
+        // Simple YAML parser for services.autoStart
+        var in_services = false;
+        var in_auto_start = false;
+        var services_enabled = false;
+
+        var line_iter = std.mem.splitScalar(u8, content, '\n');
+        while (line_iter.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+
+            if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+            // Check for "services:" top-level section
+            if (std.mem.eql(u8, trimmed, "services:")) {
+                in_services = true;
+                in_auto_start = false;
+                continue;
+            }
+
+            // If we hit another top-level key, exit services section
+            if (in_services and trimmed.len > 0 and trimmed[0] != ' ' and trimmed[0] != '-' and !std.mem.startsWith(u8, line, " ") and !std.mem.startsWith(u8, line, "\t")) {
+                if (!std.mem.eql(u8, trimmed, "services:")) {
+                    in_services = false;
+                    in_auto_start = false;
+                    continue;
+                }
+            }
+
+            if (in_services) {
+                // Check for "enabled: true"
+                if (std.mem.indexOf(u8, trimmed, "enabled:")) |_| {
+                    if (std.mem.indexOf(u8, trimmed, "true") != null) {
+                        services_enabled = true;
+                    }
+                    continue;
+                }
+
+                // Check for "autoStart:"
+                if (std.mem.indexOf(u8, trimmed, "autoStart:")) |_| {
+                    in_auto_start = true;
+                    continue;
+                }
+
+                // Parse autoStart list items ("- postgres", "- redis")
+                if (in_auto_start and std.mem.startsWith(u8, trimmed, "- ")) {
+                    if (!services_enabled) continue;
+
+                    const service_name = std.mem.trim(u8, trimmed[2..], " \t\r");
+                    if (service_name.len == 0) continue;
+
+                    try self.startService(service_name);
                 }
             }
         }
     }
 
+    /// Start a single service by name
+    fn startService(self: *ShellCommands, service_name: []const u8) !void {
+        style.print("🚀 Starting service: {s}...\n", .{service_name});
+
+        const service_cmd = @import("../cli/commands/services.zig");
+        var result = service_cmd.startCommand(self.allocator, &[_][]const u8{service_name}) catch |err| {
+            style.print("⚠️  Failed to start {s}: {s}\n", .{ service_name, @errorName(err) });
+            return;
+        };
+        defer result.deinit(self.allocator);
+
+        if (result.exit_code == 0) {
+            style.print("✅ {s} started\n", .{service_name});
+        } else {
+            if (result.message) |msg| {
+                style.print("⚠️  {s}\n", .{msg});
+            }
+        }
+    }
+
+    /// Auto-create database based on .env file if postgres is a dependency
+    fn autoCreateDatabase(self: *ShellCommands, project_root: []const u8) !void {
+        // Check if .env exists in project root
+        const env_path = try std.fs.path.join(self.allocator, &[_][]const u8{
+            project_root, ".env",
+        });
+        defer self.allocator.free(env_path);
+
+        const env_content = io_helper.readFileAlloc(self.allocator, env_path, 1 * 1024 * 1024) catch return;
+        defer self.allocator.free(env_content);
+
+        // Parse DB_CONNECTION, DB_DATABASE, DB_HOST, DB_PORT, DB_USERNAME from .env
+        var db_connection: ?[]const u8 = null;
+        var db_database: ?[]const u8 = null;
+        var db_host: []const u8 = "127.0.0.1";
+        var db_port: []const u8 = "5432";
+        var db_username: ?[]const u8 = null;
+
+        var line_iter = std.mem.splitScalar(u8, env_content, '\n');
+        while (line_iter.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+            if (std.mem.startsWith(u8, trimmed, "DB_CONNECTION=")) {
+                db_connection = std.mem.trim(u8, trimmed["DB_CONNECTION=".len..], " \t\r\"'");
+            } else if (std.mem.startsWith(u8, trimmed, "DB_DATABASE=")) {
+                db_database = std.mem.trim(u8, trimmed["DB_DATABASE=".len..], " \t\r\"'");
+            } else if (std.mem.startsWith(u8, trimmed, "DB_HOST=")) {
+                db_host = std.mem.trim(u8, trimmed["DB_HOST=".len..], " \t\r\"'");
+            } else if (std.mem.startsWith(u8, trimmed, "DB_PORT=")) {
+                db_port = std.mem.trim(u8, trimmed["DB_PORT=".len..], " \t\r\"'");
+            } else if (std.mem.startsWith(u8, trimmed, "DB_USERNAME=")) {
+                db_username = std.mem.trim(u8, trimmed["DB_USERNAME=".len..], " \t\r\"'");
+            }
+        }
+
+        // Only handle PostgreSQL for now
+        const connection = db_connection orelse return;
+        if (!std.mem.eql(u8, connection, "pgsql") and !std.mem.eql(u8, connection, "postgres")) return;
+
+        const database = db_database orelse return;
+        if (database.len == 0) return;
+
+        const username = db_username orelse return;
+        if (username.len == 0) return;
+
+        // Build PATH with pantry/.bin so pantry-installed psql/createdb are found
+        const check_cmd = try std.fmt.allocPrint(
+            self.allocator,
+            "export PATH=\"{s}/pantry/.bin:$PATH\"; psql -h {s} -p {s} -U {s} -d {s} -c 'SELECT 1' > /dev/null 2>&1",
+            .{ project_root, db_host, db_port, username, database },
+        );
+        defer self.allocator.free(check_cmd);
+
+        const check = io_helper.childRun(self.allocator, &[_][]const u8{
+            "sh", "-c", check_cmd,
+        }) catch return;
+        self.allocator.free(check.stdout);
+        self.allocator.free(check.stderr);
+
+        if (check.term == .exited and check.term.exited == 0) return; // DB exists
+
+        // Database doesn't exist - create it
+        style.print("📀 Creating database '{s}'...\n", .{database});
+
+        const create_cmd = try std.fmt.allocPrint(
+            self.allocator,
+            "export PATH=\"{s}/pantry/.bin:$PATH\"; createdb -h {s} -p {s} -U {s} {s}",
+            .{ project_root, db_host, db_port, username, database },
+        );
+        defer self.allocator.free(create_cmd);
+
+        const create = io_helper.childRun(self.allocator, &[_][]const u8{
+            "sh", "-c", create_cmd,
+        }) catch return;
+        defer self.allocator.free(create.stdout);
+        defer self.allocator.free(create.stderr);
+
+        if (create.term == .exited and create.term.exited == 0) {
+            style.print("  ✓ Database '{s}' created\n", .{database});
+        } else {
+            style.print("  ✗ Failed to create database '{s}'\n", .{database});
+            if (create.stderr.len > 0) {
+                style.print("    {s}\n", .{create.stderr[0..@min(create.stderr.len, 200)]});
+            }
+        }
+    }
+
+    /// Execute postSetup commands from pantry.config.ts / pantry.config.js
+    fn executePostSetupCommands(self: *ShellCommands, project_root: []const u8) !void {
+        // Look for pantry.config.ts or pantry.config.js
+        const config_names = [_][]const u8{
+            "pantry.config.ts",
+            "pantry.config.js",
+            ".pantry.config.ts",
+            ".pantry.config.js",
+        };
+
+        var config_path: ?[]const u8 = null;
+        defer if (config_path) |p| self.allocator.free(p);
+
+        for (config_names) |name| {
+            const candidate = std.fs.path.join(self.allocator, &[_][]const u8{
+                project_root,
+                name,
+            }) catch continue;
+
+            io_helper.accessAbsolute(candidate, .{}) catch {
+                self.allocator.free(candidate);
+                continue;
+            };
+
+            config_path = candidate;
+            break;
+        }
+
+        const cfg_path = config_path orelse {
+            return; // No config file found
+        };
+
+        // Execute config file using bun or node to get JSON output
+        // Build list of runtime paths to try (project-local, global, system)
+        const home_dir = lib.core.Paths.home(self.allocator) catch null;
+        defer if (home_dir) |h| self.allocator.free(h);
+
+        // Collect runtime paths to try
+        var runtime_paths: [8][]const u8 = undefined;
+        var runtime_count: usize = 0;
+        var runtime_allocs: [8]bool = .{ false, false, false, false, false, false, false, false };
+
+        // 1. Project-local pantry/.bin/bun and pantry/.bin/node
+        for ([_][]const u8{ "bun", "node" }) |name| {
+            const local = std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/{s}", .{ project_root, name }) catch continue;
+            if (blk: {
+                io_helper.accessAbsolute(local, .{}) catch break :blk false;
+                break :blk true;
+            }) {
+                runtime_paths[runtime_count] = local;
+                runtime_allocs[runtime_count] = true;
+                runtime_count += 1;
+            } else {
+                self.allocator.free(local);
+            }
+        }
+
+        // 2. Global pantry bun/node
+        if (home_dir) |h| {
+            for ([_][]const u8{ "bun", "node" }) |name| {
+                const global = std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/global/bin/{s}", .{ h, name }) catch continue;
+                if (blk: {
+                    io_helper.accessAbsolute(global, .{}) catch break :blk false;
+                    break :blk true;
+                }) {
+                    runtime_paths[runtime_count] = global;
+                    runtime_allocs[runtime_count] = true;
+                    runtime_count += 1;
+                } else {
+                    self.allocator.free(global);
+                }
+            }
+        }
+
+        // 3. System paths
+        for ([_][]const u8{ "/opt/homebrew/bin/bun", "/opt/homebrew/bin/node", "/usr/local/bin/bun", "/usr/local/bin/node" }) |path| {
+            if (blk: {
+                io_helper.accessAbsolute(path, .{}) catch break :blk false;
+                break :blk true;
+            }) {
+                runtime_paths[runtime_count] = path;
+                runtime_count += 1;
+            }
+        }
+
+        defer for (0..runtime_count) |i| {
+            if (runtime_allocs[i]) self.allocator.free(runtime_paths[i]);
+        };
+
+        var json_output: ?[]const u8 = null;
+        defer if (json_output) |j| self.allocator.free(j);
+
+        for (runtime_paths[0..runtime_count]) |runtime| {
+            const wrapper = std.fmt.allocPrint(
+                self.allocator,
+                "import c from '{s}'; console.log(JSON.stringify(c.default || c));",
+                .{cfg_path},
+            ) catch continue;
+            defer self.allocator.free(wrapper);
+
+            const result = io_helper.childRun(
+                self.allocator,
+                &[_][]const u8{ runtime, "-e", wrapper },
+            ) catch continue;
+            defer self.allocator.free(result.stderr);
+
+            if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
+                json_output = result.stdout;
+                break;
+            }
+            self.allocator.free(result.stdout);
+        }
+
+        const json_str = json_output orelse return;
+
+        // Parse JSON to extract postSetup commands
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, json_str, .{}) catch return;
+        defer parsed.deinit();
+
+        const root = parsed.value;
+        if (root != .object) return;
+
+        const post_setup = root.object.get("postSetup") orelse return;
+        if (post_setup != .object) return;
+
+        // Check if enabled (default: true if postSetup exists)
+        if (post_setup.object.get("enabled")) |enabled_val| {
+            if (enabled_val == .bool and !enabled_val.bool) return;
+        }
+
+        const commands = post_setup.object.get("commands") orelse return;
+        if (commands != .array) return;
+
+        if (commands.array.items.len == 0) return;
+
+        style.print("🔧 Running post-setup commands...\n", .{});
+
+        for (commands.array.items) |cmd_val| {
+            if (cmd_val != .object) continue;
+            const cmd_obj = cmd_val.object;
+
+            const command_str = blk: {
+                const cmd = cmd_obj.get("command") orelse continue;
+                if (cmd != .string) continue;
+                break :blk cmd.string;
+            };
+
+            const cmd_name = blk: {
+                if (cmd_obj.get("name")) |n| {
+                    if (n == .string) break :blk n.string;
+                }
+                break :blk command_str;
+            };
+
+            const description = blk: {
+                if (cmd_obj.get("description")) |d| {
+                    if (d == .string) break :blk d.string;
+                }
+                break :blk cmd_name;
+            };
+
+            style.print("  → {s}...\n", .{description});
+
+            // Build full command string with args if provided
+            var base_cmd: []const u8 = command_str;
+            var base_cmd_alloc = false;
+            defer if (base_cmd_alloc) self.allocator.free(base_cmd);
+
+            if (cmd_obj.get("args")) |args_val| {
+                if (args_val == .array and args_val.array.items.len > 0) {
+                    var parts: std.ArrayList(u8) = .{};
+                    defer parts.deinit(self.allocator);
+                    parts.appendSlice(self.allocator, command_str) catch continue;
+                    for (args_val.array.items) |arg| {
+                        if (arg == .string) {
+                            parts.append(self.allocator, ' ') catch continue;
+                            parts.appendSlice(self.allocator, arg.string) catch continue;
+                        }
+                    }
+                    base_cmd = parts.toOwnedSlice(self.allocator) catch continue;
+                    base_cmd_alloc = true;
+                }
+            }
+
+            // Wrap command with PATH that includes pantry/.bin so installed tools are available
+            const wrapped_cmd = std.fmt.allocPrint(
+                self.allocator,
+                "export PATH=\"{s}/pantry/.bin:$PATH\"; {s}",
+                .{ project_root, base_cmd },
+            ) catch continue;
+            defer self.allocator.free(wrapped_cmd);
+
+            // Change to project directory for command execution
+            var pr_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+            @memcpy(pr_buf[0..project_root.len], project_root);
+            pr_buf[project_root.len] = 0;
+
+            const original_cwd = io_helper.getCwdAlloc(self.allocator) catch continue;
+            defer self.allocator.free(original_cwd);
+
+            if (std.c.chdir(&pr_buf) != 0) continue;
+            defer {
+                var oc_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+                @memcpy(oc_buf[0..original_cwd.len], original_cwd);
+                oc_buf[original_cwd.len] = 0;
+                _ = std.c.chdir(&oc_buf);
+            }
+
+            const result = io_helper.childRun(
+                self.allocator,
+                &[_][]const u8{ "sh", "-c", wrapped_cmd },
+            ) catch |err| {
+                style.print("  ✗ {s} failed: {s}\n", .{ cmd_name, @errorName(err) });
+                // Check if required (default: true)
+                if (cmd_obj.get("required")) |req| {
+                    if (req == .bool and !req.bool) continue;
+                }
+                return err;
+            };
+            defer self.allocator.free(result.stdout);
+            defer self.allocator.free(result.stderr);
+
+            const cmd_failed = result.term != .exited or result.term.exited != 0;
+            if (cmd_failed) {
+                const exit_code: u32 = if (result.term == .exited) result.term.exited else 0;
+                style.print("  ✗ {s} failed (exit {d})\n", .{ cmd_name, exit_code });
+                // Print output for debugging
+                const output = if (result.stderr.len > 0) result.stderr else result.stdout;
+                if (output.len > 0) {
+                    var lines = std.mem.splitScalar(u8, output, '\n');
+                    var line_count: u32 = 0;
+                    while (lines.next()) |out_line| {
+                        if (line_count >= 10) break;
+                        if (out_line.len > 0) {
+                            style.print("    {s}\n", .{out_line[0..@min(out_line.len, 200)]});
+                            line_count += 1;
+                        }
+                    }
+                }
+                // Check if required (default: true)
+                if (cmd_obj.get("required")) |req| {
+                    if (req == .bool and !req.bool) continue;
+                }
+                return error.PostSetupCommandFailed;
+            }
+
+            style.print("  ✓ {s}\n", .{cmd_name});
+        }
+    }
+
     fn detectProjectRoot(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
-        // Known dependency files to look for
+        // Known dependency files to look for (ordered by priority)
         const dep_files = [_][]const u8{
             "pantry.json",
             "pantry.jsonc",
+            "deps.yaml",
+            "deps.yml",
+            "dependencies.yaml",
+            "pkgx.yaml",
             "package.json",
             "Cargo.toml",
             "go.mod",
+            "pyproject.toml",
             "requirements.txt",
             "Gemfile",
+            "composer.json",
         };
 
         var current_dir = try self.allocator.dupe(u8, pwd);
@@ -701,11 +1140,17 @@ pub const ShellCommands = struct {
         const dep_files = [_][]const u8{
             "pantry.json",
             "pantry.jsonc",
+            "deps.yaml",
+            "deps.yml",
+            "dependencies.yaml",
+            "pkgx.yaml",
             "package.json",
             "Cargo.toml",
             "go.mod",
+            "pyproject.toml",
             "requirements.txt",
             "Gemfile",
+            "composer.json",
         };
 
         for (dep_files) |dep_file| {

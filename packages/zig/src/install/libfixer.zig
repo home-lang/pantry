@@ -33,41 +33,77 @@ pub fn fixMacOSLibraryPaths(
         return;
     }
 
-    // Parse otool output to find @rpath dependencies
-    var rpath_deps = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    // Collect dependencies that need fixing: both @rpath/ and hardcoded absolute paths
+    const DepToFix = struct {
+        original_ref: []const u8, // The original path as shown in otool output
+        lib_name: []const u8, // Just the library filename
+    };
+
+    var deps_to_fix = try std.ArrayList(DepToFix).initCapacity(allocator, 8);
     defer {
-        for (rpath_deps.items) |dep| {
-            allocator.free(dep);
+        for (deps_to_fix.items) |dep| {
+            allocator.free(dep.original_ref);
+            allocator.free(dep.lib_name);
         }
-        rpath_deps.deinit(allocator);
+        deps_to_fix.deinit(allocator);
     }
+
+    // Standard system library directories that should NOT be rewritten
+    const system_prefixes = [_][]const u8{
+        "/usr/lib/",
+        "/System/Library/",
+        "/Library/Apple/",
+    };
 
     var lines = std.mem.tokenizeScalar(u8, otool_result.stdout, '\n');
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (!std.mem.endsWith(u8, trimmed, ")")) continue; // otool lines end with "(compatibility ...)"
+        if (std.mem.indexOf(u8, trimmed, ".dylib") == null) continue;
 
-        // Look for lines containing "@rpath/" and ".dylib"
-        if (std.mem.indexOf(u8, trimmed, "@rpath/") != null and std.mem.indexOf(u8, trimmed, ".dylib") != null) {
-            // Extract the library name: @rpath/libfoo.dylib
-            if (std.mem.indexOf(u8, trimmed, "@rpath/")) |rpath_start| {
-                const after_rpath = trimmed[rpath_start + 7 ..]; // Skip "@rpath/"
-                if (std.mem.indexOf(u8, after_rpath, " ")) |space_pos| {
-                    const lib_name = after_rpath[0..space_pos];
-                    // Store the library name (without @rpath/ prefix)
-                    try rpath_deps.append(allocator, try allocator.dupe(u8, lib_name));
-                } else if (std.mem.indexOf(u8, after_rpath, ".dylib")) |dylib_pos| {
-                    const lib_name = after_rpath[0 .. dylib_pos + 6]; // Include ".dylib"
-                    try rpath_deps.append(allocator, try allocator.dupe(u8, lib_name));
+        // Extract the path (everything before the first " (")
+        const path_end = std.mem.indexOf(u8, trimmed, " (") orelse continue;
+        const dep_path = std.mem.trim(u8, trimmed[0..path_end], " \t");
+        if (dep_path.len == 0) continue;
+
+        // Extract just the library filename
+        const lib_name = if (std.mem.lastIndexOfScalar(u8, dep_path, '/')) |last_slash|
+            dep_path[last_slash + 1 ..]
+        else
+            dep_path;
+
+        // Case 1: @rpath/ references
+        if (std.mem.startsWith(u8, dep_path, "@rpath/")) {
+            try deps_to_fix.append(allocator, .{
+                .original_ref = try allocator.dupe(u8, dep_path),
+                .lib_name = try allocator.dupe(u8, lib_name),
+            });
+            continue;
+        }
+
+        // Case 2: Hardcoded absolute paths to non-system locations
+        if (dep_path[0] == '/') {
+            var is_system = false;
+            for (system_prefixes) |prefix| {
+                if (std.mem.startsWith(u8, dep_path, prefix)) {
+                    is_system = true;
+                    break;
                 }
+            }
+            if (!is_system) {
+                try deps_to_fix.append(allocator, .{
+                    .original_ref = try allocator.dupe(u8, dep_path),
+                    .lib_name = try allocator.dupe(u8, lib_name),
+                });
             }
         }
     }
 
-    // Fix each @rpath dependency
-    for (rpath_deps.items) |dep_library| {
+    // Fix each dependency
+    for (deps_to_fix.items) |dep| {
         // Build absolute path using stack buffer: lib_dir/libfoo.dylib
         var abs_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const absolute_lib_path = std.fmt.bufPrint(&abs_buf, "{s}/{s}", .{ lib_dir, dep_library }) catch continue;
+        const absolute_lib_path = std.fmt.bufPrint(&abs_buf, "{s}/{s}", .{ lib_dir, dep.lib_name }) catch continue;
 
         // Check if the library exists in our lib directory
         io_helper.accessAbsolute(absolute_lib_path, .{}) catch {
@@ -75,27 +111,18 @@ pub fn fixMacOSLibraryPaths(
             continue;
         };
 
-        // Build @rpath reference using stack buffer: @rpath/libfoo.dylib
-        var rpath_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const rpath_ref = std.fmt.bufPrint(&rpath_buf, "@rpath/{s}", .{dep_library}) catch continue;
-
         // Fix the library path using install_name_tool
         const fix_result = io_helper.childRun(allocator, &[_][]const u8{
             "install_name_tool",
             "-change",
-            rpath_ref,
+            dep.original_ref,
             absolute_lib_path,
             binary_path,
         }) catch {
-            style.print("  Warning: install_name_tool failed for {s}\n", .{binary_path});
             continue;
         };
         defer allocator.free(fix_result.stdout);
         defer allocator.free(fix_result.stderr);
-
-        if (fix_result.term.exited != 0) {
-            style.print("  Warning: install_name_tool returned exit code {d} for {s}\n", .{ fix_result.term.exited, binary_path });
-        }
     }
 }
 
@@ -121,8 +148,7 @@ fn addRpathEntries(
     const rp2 = std.fmt.bufPrint(&rp_buf2, "{s}/.pantry/global", .{home}) catch return;
     const rpath_entries = [_][]const u8{ rp1, rp2 };
 
-    // Add each rpath entry
-    var needs_codesign = false;
+    // Add each rpath entry (codesigning is done later by codesignDirectory)
     for (rpath_entries) |rpath| {
         const result = io_helper.childRun(allocator, &[_][]const u8{
             "install_name_tool",
@@ -133,33 +159,59 @@ fn addRpathEntries(
 
         allocator.free(result.stdout);
         allocator.free(result.stderr);
+    }
+}
 
-        // If install_name_tool succeeded, we modified the binary
-        if (result.term.exited == 0) {
-            needs_codesign = true;
-        }
+/// Fix a dylib's install name (-id) if it has a hardcoded build path
+fn fixDylibInstallName(
+    allocator: std.mem.Allocator,
+    dylib_path: []const u8,
+    lib_dir: []const u8,
+    entry_name: []const u8,
+) void {
+    const builtin = @import("builtin");
+    if (builtin.os.tag != .macos) return;
+
+    // Use otool -D to get the install name
+    const otool_result = io_helper.childRun(allocator, &[_][]const u8{
+        "otool", "-D", dylib_path,
+    }) catch return;
+    defer allocator.free(otool_result.stdout);
+    defer allocator.free(otool_result.stderr);
+
+    if (otool_result.term.exited != 0) return;
+
+    // otool -D output: first line is the file path, second line is the install name
+    var lines_iter = std.mem.tokenizeScalar(u8, otool_result.stdout, '\n');
+    _ = lines_iter.next(); // Skip first line (file path)
+    const install_name = std.mem.trim(u8, lines_iter.next() orelse return, " \t\r");
+
+    // Check if install name points to a non-standard location
+    const system_prefixes = [_][]const u8{
+        "/usr/lib/",
+        "/System/Library/",
+        "/Library/Apple/",
+    };
+
+    if (install_name.len == 0 or install_name[0] != '/') return;
+
+    for (system_prefixes) |prefix| {
+        if (std.mem.startsWith(u8, install_name, prefix)) return;
     }
 
-    // Re-sign the binary if we modified it
-    if (needs_codesign) {
-        const codesign_result = io_helper.childRun(allocator, &[_][]const u8{
-            "codesign",
-            "-s",
-            "-",
-            "-f",
-            binary_path,
-        }) catch {
-            style.print("  Warning: codesign failed for {s} - binary may not run correctly\n", .{binary_path});
-            return;
-        };
+    // Build the correct absolute path for this dylib
+    var new_id_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const new_id = std.fmt.bufPrint(&new_id_buf, "{s}/{s}", .{ lib_dir, entry_name }) catch return;
 
-        allocator.free(codesign_result.stdout);
-        defer allocator.free(codesign_result.stderr);
+    // Skip if already correct
+    if (std.mem.eql(u8, install_name, new_id)) return;
 
-        if (codesign_result.term.exited != 0) {
-            style.print("  Warning: codesign returned exit code {d} for {s}\n", .{ codesign_result.term.exited, binary_path });
-        }
-    }
+    // Fix the install name
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "install_name_tool", "-id", new_id, dylib_path,
+    }) catch return;
+    allocator.free(result.stdout);
+    allocator.free(result.stderr);
 }
 
 /// Fix library paths for all executables and dylibs in a package directory
@@ -184,37 +236,9 @@ pub fn fixDirectoryLibraryPaths(
         return;
     };
 
-    // Fix binaries in bin/ directory
+    // First fix dylib install names, then fix references in binaries/dylibs
     {
-        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-        var dir = io_helper.openDirAbsoluteForIteration(bin_dir) catch {
-            // No bin directory or can't open it - that's ok
-            return;
-        };
-        defer dir.close();
-
-        var it = dir.iterate();
-        while (it.next() catch null) |entry| {
-            if (entry.kind != .file) continue;
-
-            var bp_buf: [std.fs.max_path_bytes]u8 = undefined;
-            const binary_path = std.fmt.bufPrint(&bp_buf, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
-
-            // Add rpath entries for finding dependencies
-            addRpathEntries(allocator, binary_path, package_dir) catch {}; // Expected for non-Mach-O binaries
-
-            // Try to fix library paths (will fail silently if not a Mach-O binary)
-            fixMacOSLibraryPaths(allocator, binary_path, lib_dir) catch {}; // Expected for non-Mach-O binaries
-        }
-    }
-
-    // Also fix dylibs in lib/ directory (they can depend on each other)
-    {
-        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-        var dir = io_helper.openDirAbsoluteForIteration(lib_dir) catch {
-            // Can't open lib directory - that's ok
-            return;
-        };
+        var dir = io_helper.openDirAbsoluteForIteration(lib_dir) catch return;
         defer dir.close();
 
         var it = dir.iterate();
@@ -225,11 +249,58 @@ pub fn fixDirectoryLibraryPaths(
             var dl_buf: [std.fs.max_path_bytes]u8 = undefined;
             const dylib_path = std.fmt.bufPrint(&dl_buf, "{s}/{s}", .{ lib_dir, entry.name }) catch continue;
 
-            // Add rpath entries for dylibs too
-            addRpathEntries(allocator, dylib_path, package_dir) catch {}; // Expected for some dylib formats
+            // Fix the dylib's own install name first
+            fixDylibInstallName(allocator, dylib_path, lib_dir, entry.name);
 
-            // Fix library paths for this dylib
-            fixMacOSLibraryPaths(allocator, dylib_path, lib_dir) catch {}; // Expected for some dylib formats
+            // Add rpath entries for dylibs
+            addRpathEntries(allocator, dylib_path, package_dir) catch {};
+
+            // Fix library paths for this dylib (inter-dylib deps)
+            fixMacOSLibraryPaths(allocator, dylib_path, lib_dir) catch {};
         }
+    }
+
+    // Fix binaries in bin/ directory
+    {
+        var dir = io_helper.openDirAbsoluteForIteration(bin_dir) catch return;
+        defer dir.close();
+
+        var it = dir.iterate();
+        while (it.next() catch null) |entry| {
+            if (entry.kind != .file) continue;
+
+            var bp_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const binary_path = std.fmt.bufPrint(&bp_buf, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
+
+            // Add rpath entries for finding dependencies
+            addRpathEntries(allocator, binary_path, package_dir) catch {};
+
+            // Fix library paths (both @rpath/ and hardcoded absolute paths)
+            fixMacOSLibraryPaths(allocator, binary_path, lib_dir) catch {};
+        }
+    }
+
+    // Re-sign all modified binaries and dylibs
+    codesignDirectory(allocator, bin_dir);
+    codesignDirectory(allocator, lib_dir);
+}
+
+/// Re-sign all Mach-O files in a directory after modifications
+fn codesignDirectory(allocator: std.mem.Allocator, dir_path: []const u8) void {
+    var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch return;
+    defer dir.close();
+
+    var it = dir.iterate();
+    while (it.next() catch null) |entry| {
+        if (entry.kind != .file) continue;
+
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const file_path = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ dir_path, entry.name }) catch continue;
+
+        const result = io_helper.childRun(allocator, &[_][]const u8{
+            "codesign", "-s", "-", "-f", file_path,
+        }) catch continue;
+        allocator.free(result.stdout);
+        allocator.free(result.stderr);
     }
 }

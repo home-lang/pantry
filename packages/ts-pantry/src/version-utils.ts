@@ -413,3 +413,58 @@ export async function validatePackageSpec(packageSpec: string): Promise<{
     }
   }
 }
+
+/**
+ * Resolve a version constraint against available versions in S3 metadata
+ */
+export function resolveVersionFromMetadata(constraint: string, availableVersions: string[]): string | null {
+  if (!availableVersions || availableVersions.length === 0) {
+    return null
+  }
+
+  // Sort versions descending (latest first)
+  const sortedVersions = [...availableVersions].sort((a, b) => {
+    const aParts = a.split('.').map(Number)
+    const bParts = b.split('.').map(Number)
+    for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+      const aVal = aParts[i] || 0
+      const bVal = bParts[i] || 0
+      if (aVal !== bVal) return bVal - aVal
+    }
+    return 0
+  })
+
+  const cleanConstraint = constraint.replace(/^[\^~]/, '')
+  const constraintParts = cleanConstraint.split('.')
+  const majorConstraint = Number.parseInt(constraintParts[0], 10)
+  const minorConstraint = Number.parseInt(constraintParts[1] || '0', 10)
+
+  // Caret: compatible with major version (returns latest within major)
+  if (constraint.startsWith('^')) {
+    const matching = sortedVersions.filter((v) => {
+      const major = Number.parseInt(v.split('.')[0], 10)
+      return major === majorConstraint
+    })
+    return matching[0] || null
+  }
+
+  // Tilde: compatible with minor version (returns latest within minor)
+  if (constraint.startsWith('~')) {
+    const matching = sortedVersions.filter((v) => {
+      const parts = v.split('.')
+      const major = Number.parseInt(parts[0], 10)
+      const minor = Number.parseInt(parts[1] || '0', 10)
+      return major === majorConstraint && minor === minorConstraint
+    })
+    return matching[0] || null
+  }
+
+  // Exact match
+  if (sortedVersions.includes(cleanConstraint)) {
+    return cleanConstraint
+  }
+
+  // Default: prefix match then fallback to latest
+  const matching = sortedVersions.filter(v => v.startsWith(cleanConstraint))
+  return matching[0] || sortedVersions[0] || null
+}

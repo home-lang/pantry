@@ -1242,12 +1242,12 @@ pub fn clockGettimeMonotonic() c.timespec {
     return ts;
 }
 
-/// Simple spinlock mutex (replacement for std.Thread.Mutex removed in 0.16-dev)
+/// Mutex wrapper using std.Thread.Mutex
 pub const Mutex = struct {
-    inner: std.atomic.Mutex = .unlocked,
+    inner: std.Thread.Mutex = .{},
 
     pub fn lock(self: *Mutex) void {
-        while (!self.inner.tryLock()) {}
+        self.inner.lock();
     }
 
     pub fn unlock(self: *Mutex) void {

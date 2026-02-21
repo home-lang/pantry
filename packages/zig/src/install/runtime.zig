@@ -248,19 +248,9 @@ pub const RuntimeInstaller = struct {
     }
 
     /// Get download URL for runtime version.
-    /// Tries pkgx distribution first (pre-built bottles), falls back to official sources.
+    /// Tries S3 registry first (pantry pre-built packages), falls back to official sources.
     fn getDownloadUrl(self: *RuntimeInstaller, runtime: RuntimeType, version: []const u8) ![]const u8 {
-        // Try pkgx distribution first (pre-built bottles for consistent packaging)
-        if (self.tryPkgxUrl(runtime, version)) |url| {
-            return url;
-        } else |_| {}
-
-        // Fallback: direct download URLs from official sources
-        return self.getOfficialUrl(runtime, version);
-    }
-
-    /// Try to get download URL from pkgx distribution
-    fn tryPkgxUrl(self: *RuntimeInstaller, runtime: RuntimeType, version: []const u8) ![]const u8 {
+        const downloader_mod = @import("downloader.zig");
         const domain = switch (runtime) {
             .bun => "bun.sh",
             .node => "nodejs.org",
@@ -268,39 +258,14 @@ pub const RuntimeInstaller = struct {
             .python => "python.org",
         };
 
-        const platform = core.Platform.current();
-        const arch = try core.Platform.arch();
-
-        // Query pkgx API for package info
-        const api_url = try std.fmt.allocPrint(
-            self.allocator,
-            "https://dist.pkgx.dev/{s}/v{s}/{s}/{s}.tar.xz",
-            .{ domain, version, platform.toString(), arch },
-        );
-        defer self.allocator.free(api_url);
-
-        // Verify the URL is accessible with a HEAD-like check via httpGet
-        // If the pkgx dist has this version, use it
-        const check_url = try std.fmt.allocPrint(
-            self.allocator,
-            "https://dist.pkgx.dev/{s}/",
-            .{domain},
-        );
-        defer self.allocator.free(check_url);
-
-        const response = try io_helper.httpGet(self.allocator, check_url);
-        defer self.allocator.free(response);
-
-        // If we got a response, the package exists in pkgx - return the dist URL
-        if (response.len > 0 and std.mem.indexOf(u8, response, "404") == null) {
-            return try std.fmt.allocPrint(
-                self.allocator,
-                "https://dist.pkgx.dev/{s}/v{s}/{s}/{s}.tar.xz",
-                .{ domain, version, platform.toString(), arch },
-            );
+        // Try S3 registry first
+        if (downloader_mod.lookupS3Registry(self.allocator, domain, version)) |s3_result| {
+            self.allocator.free(s3_result.version);
+            return s3_result.tarball_url;
         }
 
-        return error.NotFound;
+        // Fallback: direct download URLs from official sources
+        return self.getOfficialUrl(runtime, version);
     }
 
     /// Get direct download URL from official sources

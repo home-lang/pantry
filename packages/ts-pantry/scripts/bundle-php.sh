@@ -52,6 +52,31 @@ HOMEBREW_LIBS=$(otool -L "$PHP_BIN" | grep '/opt/homebrew' | awk '{print $1}' | 
 
 echo "Found $(echo "$HOMEBREW_LIBS" | wc -l | tr -d ' ') Homebrew libraries"
 
+# Function to resolve a dylib reference to its Homebrew path
+resolve_lib() {
+  local ref="$1"
+  local context_dir="$2"
+
+  # Direct Homebrew path
+  if [[ "$ref" =~ ^/opt/homebrew ]]; then
+    echo "$ref"
+    return
+  fi
+
+  # @loader_path reference - resolve relative to context dir
+  if [[ "$ref" =~ ^@loader_path/ ]]; then
+    local lib_name="${ref#@loader_path/}"
+    # Strip any ../ prefix
+    lib_name="${lib_name#../lib/}"
+    # Try to find in Homebrew
+    local found=$(find /opt/homebrew/lib /opt/homebrew/Cellar -name "$lib_name" \( -type f -o -type l \) 2>/dev/null | head -1)
+    if [[ -n "$found" ]]; then
+      echo "$found"
+    fi
+    return
+  fi
+}
+
 # Function to copy a dylib and its dependencies recursively
 copy_lib() {
   local lib="$1"
@@ -67,10 +92,13 @@ copy_lib() {
   echo "  Copying: $lib_name"
   cp "$lib" "$dest"
 
-  # Get dependencies of this lib
-  local sub_libs=$(otool -L "$lib" | grep '/opt/homebrew' | awk '{print $1}' | tr -d ':')
-  for sub_lib in $sub_libs; do
-    copy_lib "$sub_lib"
+  # Get all non-system dependencies (both Homebrew paths and @loader_path refs)
+  local all_refs=$(otool -L "$lib" | tail -n +2 | awk '{print $1}' | tr -d ':' | grep -v '^/usr/lib' | grep -v '^/System')
+  for ref in $all_refs; do
+    local resolved=$(resolve_lib "$ref" "$(dirname "$lib")")
+    if [[ -n "$resolved" ]]; then
+      copy_lib "$resolved"
+    fi
   done
 }
 
@@ -86,6 +114,32 @@ for bin in "$BIN_DIR"/*; do
   BIN_LIBS=$(otool -L "$bin" 2>/dev/null | grep '/opt/homebrew' | awk '{print $1}' | tr -d ':' || true)
   for lib in $BIN_LIBS; do
     copy_lib "$lib"
+  done
+done
+
+# Second pass: scan all bundled libs for @loader_path references to libs not yet in bundle
+echo "Scanning for missing transitive dependencies..."
+CHANGED=1
+while [[ $CHANGED -eq 1 ]]; do
+  CHANGED=0
+  for lib in "$LIB_DIR"/*.dylib; do
+    [[ -f "$lib" ]] || continue
+    # Find @loader_path references
+    local_refs=$(otool -L "$lib" 2>/dev/null | tail -n +2 | awk '{print $1}' | grep '^@loader_path/' || true)
+    for ref in $local_refs; do
+      lib_name="${ref#@loader_path/}"
+      lib_name="${lib_name#../lib/}"
+      dest="$LIB_DIR/$lib_name"
+      # If not already in bundle, find in Homebrew
+      if [[ ! -f "$dest" ]]; then
+        found=$(find /opt/homebrew/lib /opt/homebrew/Cellar -name "$lib_name" \( -type f -o -type l \) 2>/dev/null | head -1)
+        if [[ -n "$found" ]]; then
+          echo "  Copying missing transitive dep: $lib_name"
+          cp "$found" "$dest"
+          CHANGED=1
+        fi
+      fi
+    done
   done
 done
 
@@ -194,8 +248,12 @@ echo -e "${BLUE}Updating metadata...${NC}"
 METADATA_KEY="binaries/php.net/metadata.json"
 METADATA=$(aws s3 cp "s3://${BUCKET}/${METADATA_KEY}" - 2>/dev/null || echo '{"name":"php.net","versions":{}}')
 
-# Get file size in bytes
-SIZE_BYTES=$(stat -f%z "$ARTIFACT_DIR/$TARBALL")
+# Get file size in bytes (macOS and Linux compatible)
+if [[ "$(uname)" == "Darwin" ]]; then
+  SIZE_BYTES=$(stat -f%z "$ARTIFACT_DIR/$TARBALL")
+else
+  SIZE_BYTES=$(stat --format=%s "$ARTIFACT_DIR/$TARBALL")
+fi
 SHA256=$(cat "$ARTIFACT_DIR/$TARBALL.sha256" | awk '{print $1}')
 
 # Update metadata with jq or simple sed

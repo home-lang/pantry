@@ -30,21 +30,11 @@ pub fn build(b: *std.Build) void {
     version_options.addOption([]const u8, "version", version);
     version_options.addOption([]const u8, "commit_hash", commit_hash);
 
-    // Resolve zig-config path
-    // Tries pantry first, then falls back to local dev path
-    const zig_config_path = resolveDependencyPath(
-        b,
-        "zig-config",
-        "src/zig-config.zig",
-        "../../../zig-config/src/zig-config.zig",
-    );
-
-    // Add zig-config module
-    const zig_config_mod = b.addModule("zig-config", .{
-        .root_source_file = b.path(zig_config_path),
+    // zig-config from build.zig.zon dependency (GitHub: zig-utils/zig-config)
+    const zig_config_dep = b.dependency("zig_config", .{
         .target = target,
-        .link_libc = true,
     });
+    const zig_config_mod = zig_config_dep.module("zig-config");
 
     // Resolve zig-cli path
     const cli_path = resolveDependencyPath(
@@ -394,12 +384,11 @@ pub fn build(b: *std.Build) void {
     for (targets) |t| {
         const resolved_target = b.resolveTargetQuery(t);
 
-        // Create zig-config module for this target
-        const cross_zig_config_mod = b.addModule("zig-config", .{
-            .root_source_file = b.path(zig_config_path),
+        // Use zig-config from build.zig.zon dependency for cross target
+        const cross_zig_config_dep = b.dependency("zig_config", .{
             .target = resolved_target,
-            .link_libc = true,
         });
+        const cross_zig_config_mod = cross_zig_config_dep.module("zig-config");
 
         const cross_lib_mod = b.addModule("pantry", .{
             .root_source_file = b.path("src/lib.zig"),

@@ -39,25 +39,44 @@ pub fn extractArchiveQuiet(
     var dest = try io_helper.cwd().openDir(io_helper.io, dest_dir, .{});
     defer dest.close(io_helper.io);
 
-    if (std.mem.eql(u8, format, "tar.gz")) {
-        var input_reader: std.Io.Reader = .fixed(data);
-        var window_buf: [65536]u8 = undefined;
-        var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
-        std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch {
-            return error.ExtractionFailed;
-        };
-    } else if (std.mem.eql(u8, format, "tar.xz")) {
-        var input_reader: std.Io.Reader = .fixed(data);
-        const xz_buf = try allocator.alloc(u8, 1 << 16);
-        var decompressor = std.compress.xz.Decompress.init(&input_reader, allocator, xz_buf) catch {
-            return error.ExtractionFailed;
-        };
-        defer decompressor.deinit();
-        std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch {
-            return error.ExtractionFailed;
-        };
-    } else {
-        return error.UnsupportedFormat;
+    // Try Zig's native tar extraction first, fall back to system tar on failure
+    const zig_ok = blk: {
+        if (std.mem.eql(u8, format, "tar.gz")) {
+            var input_reader: std.Io.Reader = .fixed(data);
+            var window_buf: [65536]u8 = undefined;
+            var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+            std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch break :blk false;
+        } else if (std.mem.eql(u8, format, "tar.xz")) {
+            var input_reader: std.Io.Reader = .fixed(data);
+            const xz_buf = try allocator.alloc(u8, 1 << 16);
+            var decompressor = std.compress.xz.Decompress.init(&input_reader, allocator, xz_buf) catch {
+                allocator.free(xz_buf);
+                break :blk false;
+            };
+            defer decompressor.deinit();
+            std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{}) catch break :blk false;
+        } else {
+            return error.UnsupportedFormat;
+        }
+        break :blk true;
+    };
+
+    if (!zig_ok) {
+        // Fall back to system tar command
+        try extractWithSystemTar(allocator, archive_path, dest_dir);
+    }
+}
+
+/// Fall back to system tar command for extraction
+fn extractWithSystemTar(allocator: std.mem.Allocator, archive_path: []const u8, dest_dir: []const u8) !void {
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "/usr/bin/tar", "xf", archive_path, "-C", dest_dir,
+    }) catch return error.ExtractionFailed;
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term != .exited or result.term.exited != 0) {
+        return error.ExtractionFailed;
     }
 }
 

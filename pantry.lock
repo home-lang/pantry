@@ -1,8 +1,13 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1771218217",
+  "generatedAt": "1771634738",
   "packages": {
+    "bunfig@^0.15.6": {
+      "name": "bunfig",
+      "version": "^0.15.6",
+      "source": "pkgx"
+    },
     "ts-web-scraper@^0.1.1": {
       "name": "ts-web-scraper",
       "version": "^0.1.1",

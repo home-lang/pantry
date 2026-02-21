@@ -427,7 +427,8 @@ async function syncPackage(
   config: PackageConfig,
   bucket: string,
   region: string,
-  force: boolean
+  force: boolean,
+  explicitVersion?: string,
 ): Promise<SyncResult> {
   const { platform } = detectPlatform()
 
@@ -436,10 +437,16 @@ async function syncPackage(
   console.log(`${'─'.repeat(50)}`)
 
   try {
-    // Get latest version
-    console.log(`   Fetching latest version...`)
-    const version = await config.getLatestVersion()
-    console.log(`   Latest: ${version}`)
+    // Get version (explicit or latest)
+    let version: string
+    if (explicitVersion) {
+      version = explicitVersion
+      console.log(`   Using explicit version: ${version}`)
+    } else {
+      console.log(`   Fetching latest version...`)
+      version = await config.getLatestVersion()
+      console.log(`   Latest: ${version}`)
+    }
 
     // Check if already in S3
     if (!force) {
@@ -488,6 +495,7 @@ async function main() {
       bucket: { type: 'string', short: 'b' },
       region: { type: 'string', short: 'r', default: 'us-east-1' },
       package: { type: 'string', short: 'p', multiple: true },
+      version: { type: 'string', short: 'v' },
       force: { type: 'boolean', short: 'f', default: false },
       'dry-run': { type: 'boolean', default: false },
       'list': { type: 'boolean', short: 'l', default: false },
@@ -511,6 +519,7 @@ Options:
   -b, --bucket <name>     S3 bucket (required)
   -r, --region <region>   AWS region (default: us-east-1)
   -p, --package <name>    Sync specific package only
+  -v, --version <ver>     Sync a specific version (instead of latest)
   -f, --force             Re-upload even if exists
   --dry-run               Show what would be done
   -l, --list              List available packages
@@ -523,11 +532,14 @@ Available packages:
   Note: php.net should be built separately (use bundle-php.sh)
 
 Examples:
-  # Sync all packages
+  # Sync all packages (latest versions)
   bun scripts/sync-packages.ts -b my-bucket
 
   # Sync only bun and node
   bun scripts/sync-packages.ts -b my-bucket -p bun.sh -p nodejs.org
+
+  # Sync a specific version
+  bun scripts/sync-packages.ts -b my-bucket -p nodejs.org -v 22.17.0
 
   # Force re-upload
   bun scripts/sync-packages.ts -b my-bucket -p redis.io --force
@@ -580,7 +592,7 @@ Examples:
   if (values['dry-run']) {
     console.log('\n[DRY RUN] Would sync:')
     for (const [key, config] of packagesToSync) {
-      const version = await config.getLatestVersion()
+      const version = values.version || await config.getLatestVersion()
       const exists = await checkExistsInS3(config.domain, version, platform, bucket, region)
       console.log(`  - ${config.domain}@${version} ${exists ? '(already exists)' : '(would upload)'}`)
     }
@@ -591,7 +603,7 @@ Examples:
   const results: Record<string, SyncResult> = {}
 
   for (const [key, config] of packagesToSync) {
-    results[config.domain] = await syncPackage(key, config, bucket, region, values.force || false)
+    results[config.domain] = await syncPackage(key, config, bucket, region, values.force || false, values.version)
   }
 
   // Summary

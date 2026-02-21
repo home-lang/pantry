@@ -14174,7 +14174,7 @@ pub const packages = [_]PackageInfo{
         .programs = &[_][]const u8{ "clusterdb", "createdb", "dropdb", "dropuser", "ecpg", "initdb", "pg_archivecleanup", "pg_basebackup", "pg_config", "pg_controldata", "pg_ctl", "pg_dump", "pg_dumpall", "pg_isready", "pg_receivewal", "pg_recvlogical", "pg_resetwal", "pg_restore", "pg_rewind", "pg_test_fsync", "pg_test_timing", "pg_upgrade", "pg_waldump", "pgbench", "postgres", "psql", "reindexdb", "vacuumdb" },
         .dependencies = &[_][]const u8{ "openssl.org^1.0.1", "gnu.org/readline", "zlib.net", "lz4.org", "gnome.org/libxml2~2.13 # abi changed in 2.14", "gnome.org/libxslt", "unicode.org^73" },
         .build_dependencies = &[_][]const u8{ "gnu.org/bison", "github.com/westes/flex@^2.5.31", "perl.org" },
-        .aliases = &[_][]const u8{},
+        .aliases = &[_][]const u8{"postgres"},
         .versions = &[_][]const u8{ "18.0.0", "17.2.0", "17.0.0", "16.1.0", "16.0.0", "15.2.0", "14.7.0", "13.12.0", "13.11.0", "13.9.0", "13.1.0", "12.14.0", "11.19.0" },
     },
     .{

@@ -284,6 +284,135 @@ pub fn buildPackageUrl(
     );
 }
 
+/// S3 registry lookup result
+pub const S3PackageResult = struct {
+    tarball_url: []const u8,
+    version: []const u8,
+};
+
+/// Try to find a package tarball in the pantry S3 registry.
+/// Fetches metadata.json, resolves version constraint, returns download URL.
+/// Returns null if not found or on any error.
+pub fn lookupS3Registry(
+    allocator: std.mem.Allocator,
+    domain: []const u8,
+    version_constraint: []const u8,
+) ?S3PackageResult {
+    const semver = @import("../packages/semver.zig");
+
+    // Build metadata URL
+    var metadata_url_buf: [256]u8 = undefined;
+    const metadata_url = std.fmt.bufPrint(
+        &metadata_url_buf,
+        "https://pantry-registry.s3.us-east-1.amazonaws.com/binaries/{s}/metadata.json",
+        .{domain},
+    ) catch return null;
+
+    // Fetch metadata using curl subprocess (more reliable than Zig HTTP client)
+    const curl_result = io_helper.childRun(allocator, &[_][]const u8{
+        "/usr/bin/curl", "-sfL", "--connect-timeout", "5", metadata_url,
+    }) catch return null;
+    defer allocator.free(curl_result.stdout);
+    defer allocator.free(curl_result.stderr);
+
+    if (curl_result.term != .exited or curl_result.term.exited != 0) return null;
+    if (curl_result.stdout.len == 0) return null;
+
+    const metadata_response = curl_result.stdout;
+
+    // Parse metadata JSON
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch return null;
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) return null;
+
+    const versions_obj = root.object.get("versions") orelse return null;
+    if (versions_obj != .object) return null;
+
+    // Handle "latest" and "*" by picking the newest version available
+    const is_any = std.mem.eql(u8, version_constraint, "latest") or
+        std.mem.eql(u8, version_constraint, "*") or
+        version_constraint.len == 0;
+
+    // Parse the version constraint (skip if matching any)
+    const constraint = if (!is_any)
+        semver.parseConstraint(version_constraint) catch return null
+    else
+        undefined;
+
+    // Detect current platform
+    const platform = comptime blk: {
+        const os_str = switch (@import("builtin").os.tag) {
+            .macos => "darwin",
+            .linux => "linux",
+            else => "linux",
+        };
+        const arch_str = switch (@import("builtin").cpu.arch) {
+            .aarch64 => "arm64",
+            .x86_64 => "x86-64",
+            else => "x86-64",
+        };
+        break :blk os_str ++ "-" ++ arch_str;
+    };
+
+    // Find the best matching version (newest that satisfies constraint)
+    var best_version: ?[]const u8 = null;
+    var best_parsed: ?semver.Version = null;
+    var it = versions_obj.object.iterator();
+    while (it.next()) |entry| {
+        const ver = entry.key_ptr.*;
+        if (is_any or semver.satisfiesConstraint(ver, constraint)) {
+            const parsed_ver = semver.parseVersion(ver) catch continue;
+            if (best_parsed) |best| {
+                // Compare: pick the newer version
+                if (parsed_ver.major > best.major or
+                    (parsed_ver.major == best.major and parsed_ver.minor > best.minor) or
+                    (parsed_ver.major == best.major and parsed_ver.minor == best.minor and parsed_ver.patch > best.patch))
+                {
+                    best_version = ver;
+                    best_parsed = parsed_ver;
+                }
+            } else {
+                best_version = ver;
+                best_parsed = parsed_ver;
+            }
+        }
+    }
+
+    const matched_version = best_version orelse return null;
+
+    // Get platform-specific tarball for matched version
+    const version_info = versions_obj.object.get(matched_version) orelse return null;
+    if (version_info != .object) return null;
+
+    const platforms_obj = version_info.object.get("platforms") orelse return null;
+    if (platforms_obj != .object) return null;
+
+    const platform_info = platforms_obj.object.get(platform) orelse return null;
+    if (platform_info != .object) return null;
+
+    const tarball_path_val = platform_info.object.get("tarball") orelse return null;
+    const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
+
+    // Build full S3 URL
+    const tarball_url = std.fmt.allocPrint(
+        allocator,
+        "https://pantry-registry.s3.us-east-1.amazonaws.com/{s}",
+        .{tarball_path},
+    ) catch return null;
+
+    const version_dupe = allocator.dupe(u8, matched_version) catch {
+        allocator.free(tarball_url);
+        return null;
+    };
+
+    return S3PackageResult{
+        .tarball_url = tarball_url,
+        .version = version_dupe,
+    };
+}
+
 /// Verify file checksum (SHA256)
 pub fn verifyChecksum(
     allocator: std.mem.Allocator,

@@ -14,6 +14,22 @@ export interface Dependency {
 }
 
 /**
+ * Services configuration from deps.yaml
+ */
+export interface ServicesConfig {
+  enabled: boolean
+  autoStart: string[]
+}
+
+/**
+ * Full parsed deps.yaml configuration including dependencies and services
+ */
+export interface DepsYamlConfig {
+  dependencies: Dependency[]
+  services?: ServicesConfig
+}
+
+/**
  * Result of dependency resolution
  */
 export interface DependencyResolutionResult {
@@ -24,6 +40,7 @@ export interface DependencyResolutionResult {
     versions: string[]
   }>
   osSpecificDeps: Record<string, Dependency[]>
+  services?: ServicesConfig
 }
 
 /**
@@ -146,6 +163,105 @@ export function parseDependencyFile(filePath: string): Dependency[] {
   }
 
   return dependencies
+}
+
+/**
+ * Parse a deps.yaml file and return both dependencies and services configuration.
+ * Uses Bun.YAML for robust YAML parsing.
+ */
+export function parseDepsYamlConfig(filePath: string): DepsYamlConfig {
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Dependency file not found: ${filePath}`)
+  }
+
+  const content = fs.readFileSync(filePath, 'utf-8')
+  const dependencies = parseDependencyFile(filePath)
+
+  // Use Bun's built-in YAML parser for the services section
+  let services: ServicesConfig | undefined
+
+  try {
+    // eslint-disable-next-line ts/no-unsafe-assignment
+    const parsed: any = typeof Bun !== 'undefined' && Bun.YAML
+      ? Bun.YAML.parse(content)
+      : parseYamlFallback(content)
+
+    if (parsed?.services) {
+      const autoStart: string[] = Array.isArray(parsed.services.autoStart)
+        ? parsed.services.autoStart.map((s: any) => String(s))
+        : []
+
+      if (autoStart.length > 0) {
+        services = {
+          enabled: parsed.services.enabled === true,
+          autoStart,
+        }
+      }
+    }
+  }
+  catch {
+    // If YAML parsing fails, services will be undefined
+  }
+
+  return { dependencies, services }
+}
+
+/**
+ * Minimal YAML parser fallback for services section when Bun.YAML is unavailable
+ */
+function parseYamlFallback(content: string): Record<string, any> {
+  const result: Record<string, any> = {}
+  const lines = content.split('\n')
+  let inServicesSection = false
+  let inAutoStartSection = false
+  const autoStartList: string[] = []
+  let servicesEnabled = false
+
+  for (const line of lines) {
+    const trimmedLine = line.trim()
+
+    if (!trimmedLine || trimmedLine.startsWith('#')) continue
+
+    if (line.match(/^services:\s*$/)) {
+      inServicesSection = true
+      inAutoStartSection = false
+      continue
+    }
+
+    if (inServicesSection && !line.startsWith(' ') && !line.startsWith('\t') && !trimmedLine.startsWith('-')) {
+      if (trimmedLine !== 'services:') {
+        inServicesSection = false
+        inAutoStartSection = false
+        continue
+      }
+    }
+
+    if (inServicesSection) {
+      if (trimmedLine.startsWith('enabled:')) {
+        servicesEnabled = trimmedLine.includes('true')
+        continue
+      }
+
+      if (trimmedLine.match(/^autoStart:\s*$/)) {
+        inAutoStartSection = true
+        continue
+      }
+
+      if (inAutoStartSection && trimmedLine.startsWith('- ')) {
+        const serviceName = trimmedLine.slice(2).trim()
+        if (serviceName) autoStartList.push(serviceName)
+      }
+    }
+  }
+
+  if (autoStartList.length > 0) {
+    result.services = {
+      enabled: servicesEnabled,
+      autoStart: autoStartList,
+    }
+  }
+
+  return result
 }
 
 /**
@@ -714,6 +830,15 @@ export async function resolveDependencyFile(
     console.log(`Unique packages after deduplication: ${result.uniquePackages.length}`)
     if (result.conflicts.length > 0) {
       console.log(`Version conflicts found: ${result.conflicts.length}`)
+    }
+  }
+
+  // Also parse services config if it's a YAML deps file
+  const ext = path.extname(filePath)
+  if (ext === '.yaml' || ext === '.yml') {
+    const config = parseDepsYamlConfig(filePath)
+    if (config.services) {
+      result.services = config.services
     }
   }
 

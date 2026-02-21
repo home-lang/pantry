@@ -8,6 +8,7 @@ import {
 
   findDependencyFiles,
   parseDependencyFile,
+  parseDepsYamlConfig,
   resolveDependencyFile,
   resolveTransitiveDependencies,
   resolveVersionConstraint,
@@ -662,6 +663,122 @@ dependencies:
 
       expect(result).toBeDefined()
       expect(result.allDependencies).toEqual(expect.any(Array))
+    })
+  })
+
+  describe('parseDepsYamlConfig', () => {
+    test('should parse dependencies and services from easy-otc-api format', () => {
+      const testFile = path.join(fixturesDir, 'easy-otc-deps.yaml')
+      fs.writeFileSync(testFile, `dependencies:
+  bun: ^1.3.9
+  node: ^22.17.0
+  php: ^8.4.11
+  composer: ^2.8.10
+  postgres: ^17.2.0
+  redis: ^8.0.4
+
+# Launchpad service management configuration
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+`)
+
+      const config = parseDepsYamlConfig(testFile)
+
+      // Dependencies
+      expect(config.dependencies).toHaveLength(6)
+
+      const depNames = config.dependencies.map(d => d.name)
+      expect(depNames).toContain('bun')
+      expect(depNames).toContain('node')
+      expect(depNames).toContain('php')
+      expect(depNames).toContain('composer')
+      expect(depNames).toContain('postgres')
+      expect(depNames).toContain('redis')
+
+      // Check version constraints
+      const bunDep = config.dependencies.find(d => d.name === 'bun')
+      expect(bunDep?.constraint).toBe('^1.3.9')
+
+      const postgresDep = config.dependencies.find(d => d.name === 'postgres')
+      expect(postgresDep?.constraint).toBe('^17.2.0')
+
+      // Services
+      expect(config.services).toBeDefined()
+      expect(config.services!.enabled).toBe(true)
+      expect(config.services!.autoStart).toEqual(['postgres', 'redis'])
+    })
+
+    test('should handle deps without services', () => {
+      const testFile = path.join(fixturesDir, 'no-services.yaml')
+      fs.writeFileSync(testFile, `dependencies:
+  bun: ^1.0.0
+`)
+
+      const config = parseDepsYamlConfig(testFile)
+      expect(config.dependencies).toHaveLength(1)
+      expect(config.services).toBeUndefined()
+    })
+
+    test('should handle services without autoStart items', () => {
+      const testFile = path.join(fixturesDir, 'no-autostart.yaml')
+      fs.writeFileSync(testFile, `dependencies:
+  bun: ^1.0.0
+
+services:
+  enabled: true
+`)
+
+      const config = parseDepsYamlConfig(testFile)
+      expect(config.dependencies).toHaveLength(1)
+      // No autoStart items means no services config
+      expect(config.services).toBeUndefined()
+    })
+
+    test('should handle services with enabled: false', () => {
+      const testFile = path.join(fixturesDir, 'disabled-services.yaml')
+      fs.writeFileSync(testFile, `dependencies:
+  postgres: ^17.0.0
+
+services:
+  enabled: false
+  autoStart:
+    - postgres
+`)
+
+      const config = parseDepsYamlConfig(testFile)
+      expect(config.services).toBeDefined()
+      expect(config.services!.enabled).toBe(false)
+      expect(config.services!.autoStart).toContain('postgres')
+    })
+
+    test('should throw for non-existent file', () => {
+      expect(() => {
+        parseDepsYamlConfig('/non/existent/file.yaml')
+      }).toThrow('Dependency file not found')
+    })
+  })
+
+  describe('resolveDependencyFile with services', () => {
+    test('should include services in resolution result for YAML files', async () => {
+      const testFile = path.join(fixturesDir, 'with-services.yaml')
+      fs.writeFileSync(testFile, `dependencies:
+  bun.sh: ^1.2.16
+
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+`)
+
+      const result = await resolveDependencyFile(testFile, { verbose: false })
+
+      expect(result.services).toBeDefined()
+      expect(result.services!.enabled).toBe(true)
+      expect(result.services!.autoStart).toEqual(['postgres', 'redis'])
     })
   })
 })

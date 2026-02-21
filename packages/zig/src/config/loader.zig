@@ -121,7 +121,7 @@ pub const pantryConfigLoader = struct {
             // Try to execute with this runtime
             const result = io_helper.childRun(
                 self.allocator,
-                &[_][]const u8{ runtime, "eval", wrapper_script },
+                &[_][]const u8{ runtime, "-e", wrapper_script },
             ) catch continue; // Try next runtime if this one fails
 
             defer self.allocator.free(result.stdout);

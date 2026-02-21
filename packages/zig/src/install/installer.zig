@@ -296,28 +296,44 @@ pub const Installer = struct {
             return try self.installFromNpm(spec, options);
         }
 
-        // Check if package exists in registry
+        // Check if package exists in registry (used for domain resolution and fallback)
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
 
-        // If package is not in registry, return error immediately
-        // (npm packages and other non-pkgx packages are not yet supported)
-        if (pkg_info == null) {
-            return error.PackageNotFound;
-        }
-
-        const domain = pkg_info.?.domain;
+        // Use registry domain if available, otherwise use the package name as domain
+        // This allows S3-only packages that aren't in generated.zig to still be installed
+        const domain = if (pkg_info) |info| info.domain else spec.name;
 
         // Resolve version constraint to actual version
+        // Try S3 registry first (has the most up-to-date versions), then generated.zig
         var resolved_spec = spec;
-        if (pkg_info) |_| {
-            // Try to resolve version constraint (e.g., ^1.2.16 -> 1.3.1)
-            if (semver.resolveVersion(domain, spec.version)) |resolved_version| {
-                // Create a new spec with the resolved version
-                resolved_spec = PackageSpec{
-                    .name = spec.name,
-                    .version = resolved_version,
-                };
+        var s3_version_alloc: ?[]const u8 = null;
+        var s3_tarball_url: ?[]const u8 = null;
+        var from_s3 = false;
+        defer if (s3_version_alloc) |v| self.allocator.free(v);
+        // If tarball URL wasn't consumed by download functions, free it here
+        defer if (s3_tarball_url) |u| self.allocator.free(@constCast(u));
+
+        if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
+            s3_version_alloc = s3_result.version;
+            s3_tarball_url = s3_result.tarball_url;
+            resolved_spec = PackageSpec{
+                .name = spec.name,
+                .version = s3_result.version,
+            };
+            from_s3 = true;
+        } else {
+            if (pkg_info) |_| {
+                // Fall back to generated.zig version list
+                if (semver.resolveVersion(domain, spec.version)) |resolved_version| {
+                    resolved_spec = PackageSpec{
+                        .name = spec.name,
+                        .version = resolved_version,
+                    };
+                }
+            } else {
+                // Package not in generated.zig AND not in S3 registry
+                return error.PackageNotFound;
             }
         }
 
@@ -350,14 +366,20 @@ pub const Installer = struct {
         var used_cache = false;
 
         // Determine install location based on whether we have a project root
+        // Transfer ownership of s3_tarball_url to the download function (it will free it)
+        const transfer_url = s3_tarball_url;
+        s3_tarball_url = null; // Prevent defer from double-freeing
         const install_path = if (options.project_root) |project_root|
-            try self.installToProject(resolved_spec, domain, project_root, options, &used_cache)
+            try self.installToProject(resolved_spec, domain, project_root, options, &used_cache, transfer_url)
         else
-            try self.installGlobal(resolved_spec, domain, options, &used_cache);
+            try self.installGlobal(resolved_spec, domain, options, &used_cache, transfer_url);
 
         // Install dependencies after the main package is installed
-        if (pkg_info) |info| {
-            try self.installDependencies(info.dependencies, options);
+        // Skip for S3-sourced packages since they are self-contained with all libs bundled
+        if (!from_s3) {
+            if (pkg_info) |info| {
+                try self.installDependencies(info.dependencies, options);
+            }
         }
 
         const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
@@ -1479,6 +1501,7 @@ pub const Installer = struct {
         domain: []const u8,
         options: InstallOptions,
         used_cache: *bool,
+        s3_url: ?[]const u8,
     ) ![]const u8 {
         const global_pkg_dir = try self.getGlobalPackageDir(domain, spec.version);
         defer self.allocator.free(global_pkg_dir);
@@ -1491,11 +1514,12 @@ pub const Installer = struct {
         used_cache.* = from_cache;
 
         const install_path = if (from_cache) blk: {
-            // Use cached package (from global location)
+            // Use cached package - free the unused S3 URL
+            if (s3_url) |url| self.allocator.free(@constCast(url));
             break :blk try self.installFromCache(spec, "");
         } else blk: {
-            // Download and install to global cache
-            break :blk try self.installFromNetwork(spec, options);
+            // Download and install to global cache (transfers ownership of s3_url)
+            break :blk try self.installFromNetwork(spec, options, s3_url);
         };
 
         // Create symlinks in data_dir/bin (e.g., ~/.pantry/global/bin or /usr/local/bin)
@@ -1521,7 +1545,12 @@ pub const Installer = struct {
         project_root: []const u8,
         options: InstallOptions,
         used_cache: *bool,
+        s3_url_param: ?[]const u8,
     ) ![]const u8 {
+        // Track URL ownership locally so we can free on any error path
+        var owned_url = s3_url_param;
+        errdefer if (owned_url) |url| self.allocator.free(@constCast(url));
+
         const project_pkg_dir = try self.getProjectPackageDir(project_root, domain, spec.version);
         errdefer self.allocator.free(project_pkg_dir);
 
@@ -1532,7 +1561,11 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            // Already in pantry - create symlinks and return
+            // Already in pantry - free unused S3 URL, create symlinks and return
+            if (owned_url) |url| {
+                self.allocator.free(@constCast(url));
+                owned_url = null;
+            }
             used_cache.* = true;
             try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
             return project_pkg_dir;
@@ -1548,7 +1581,11 @@ pub const Installer = struct {
         };
 
         if (has_global) {
-            // Copy from global cache to project's pantry
+            // Copy from global cache - free unused S3 URL
+            if (owned_url) |url| {
+                self.allocator.free(@constCast(url));
+                owned_url = null;
+            }
             used_cache.* = true;
             try io_helper.makePath(project_pkg_dir);
             try self.copyDirectoryStructure(global_pkg_dir, project_pkg_dir);
@@ -1556,16 +1593,17 @@ pub const Installer = struct {
             return project_pkg_dir;
         }
 
-        // Not in global cache - download directly to project's pantry
+        // Not in global cache - download directly to project's pantry (transfers ownership of URL)
         used_cache.* = false;
-        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir, options);
+        try self.downloadAndInstallToProject(spec, domain, project_pkg_dir, options, owned_url);
+        owned_url = null; // Ownership transferred to downloadAndInstallToProject
         try self.createProjectSymlinks(project_root, domain, spec.version, project_pkg_dir);
 
         return project_pkg_dir;
     }
 
     /// Download and install package directly to project directory (bypassing global cache)
-    fn downloadAndInstallToProject(self: *Installer, spec: PackageSpec, domain: []const u8, project_pkg_dir: []const u8, options: InstallOptions) !void {
+    fn downloadAndInstallToProject(self: *Installer, spec: PackageSpec, domain: []const u8, project_pkg_dir: []const u8, options: InstallOptions, transferred_url: ?[]const u8) !void {
         const home = try Paths.home(self.allocator);
         defer self.allocator.free(home);
 
@@ -1579,59 +1617,56 @@ pub const Installer = struct {
         try io_helper.makePath(temp_dir);
         defer io_helper.deleteTree(temp_dir) catch {};
 
-        // Try different archive formats
-        const formats = [_][]const u8{ "tar.xz", "tar.gz" };
         var downloaded = false;
         var archive_path: []const u8 = undefined;
         var used_format: []const u8 = undefined;
         var used_url: []const u8 = undefined;
 
-        for (formats) |format| {
-            // Build download URL
-            const url = try downloader.buildPackageUrl(
-                self.allocator,
-                domain,
-                spec.version,
-                format,
-            );
+        // Use transferred URL if available, otherwise do a fresh S3 lookup
+        const s3_url: ?[]const u8 = if (transferred_url) |url|
+            url
+        else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
+            self.allocator.free(s3_result.version);
+            break :blk s3_result.tarball_url;
+        } else null;
 
-            // Create archive path
+        if (s3_url) |url| {
             const temp_archive_path = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/package.{s}",
-                .{ temp_dir, format },
+                "{s}/package.tar.gz",
+                .{temp_dir},
             );
 
-            // Try to download (use inline progress if available, otherwise use quiet mode)
-            if (options.inline_progress) |progress_opts| {
-                downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
-                    self.allocator.free(temp_archive_path);
-                    self.allocator.free(url);
-                    style.print("Failed to download {s}: {}\n", .{ url, err });
-                    continue;
-                };
-            } else {
-                downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
-                    self.allocator.free(temp_archive_path);
-                    self.allocator.free(url);
-                    style.print("Failed to download {s}: {}\n", .{ url, err });
-                    continue;
-                };
-            }
+            const s3_ok = blk: {
+                if (options.inline_progress) |progress_opts| {
+                    downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch {
+                        break :blk false;
+                    };
+                } else {
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
+                        break :blk false;
+                    };
+                }
+                break :blk true;
+            };
 
-            // Success!
-            downloaded = true;
-            archive_path = temp_archive_path;
-            used_format = format;
-            used_url = url;
-            break;
+            if (s3_ok) {
+                downloaded = true;
+                archive_path = temp_archive_path;
+                used_format = "tar.gz";
+                used_url = url;
+            } else {
+                self.allocator.free(temp_archive_path);
+                self.allocator.free(@constCast(url));
+            }
         }
 
         if (!downloaded) {
+            style.print("  Error: package {s}@{s} not found in registry\n", .{ spec.name, spec.version });
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
-        defer self.allocator.free(used_url);
+        defer self.allocator.free(@constCast(used_url));
 
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {
@@ -1997,7 +2032,7 @@ pub const Installer = struct {
     }
 
     /// Install from network (download)
-    fn installFromNetwork(self: *Installer, spec: PackageSpec, options: InstallOptions) ![]const u8 {
+    fn installFromNetwork(self: *Installer, spec: PackageSpec, options: InstallOptions, transferred_url: ?[]const u8) ![]const u8 {
         // Resolve package name to domain
         const pkg_registry = @import("../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(spec.name);
@@ -2013,7 +2048,8 @@ pub const Installer = struct {
         };
         if (check_dir) |*dir| {
             dir.close(io_helper.io);
-            // Already downloaded to global cache - just create env symlinks
+            // Already downloaded to global cache - free unused URL, create env symlinks
+            if (transferred_url) |url| self.allocator.free(@constCast(url));
             try self.createEnvSymlinks(domain, spec.version, global_pkg_dir);
             return global_pkg_dir;
         }
@@ -2032,59 +2068,56 @@ pub const Installer = struct {
         try io_helper.makePath(temp_dir);
         defer io_helper.deleteTree(temp_dir) catch {};
 
-        // Try different archive formats
-        const formats = [_][]const u8{ "tar.xz", "tar.gz" };
         var downloaded = false;
         var archive_path: []const u8 = undefined;
         var used_format: []const u8 = undefined;
         var used_url: []const u8 = undefined;
 
-        for (formats) |format| {
-            // Build download URL
-            const url = try downloader.buildPackageUrl(
-                self.allocator,
-                domain,
-                spec.version,
-                format,
-            );
+        // Use transferred URL if available, otherwise do a fresh S3 lookup
+        const s3_url: ?[]const u8 = if (transferred_url) |url|
+            url
+        else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
+            self.allocator.free(s3_result.version);
+            break :blk s3_result.tarball_url;
+        } else null;
 
-            // Create archive path
+        if (s3_url) |url| {
             const temp_archive_path = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/package.{s}",
-                .{ temp_dir, format },
+                "{s}/package.tar.gz",
+                .{temp_dir},
             );
 
-            // Try to download (use inline progress if available, otherwise use quiet mode)
-            if (options.inline_progress) |progress_opts| {
-                downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch |err| {
-                    self.allocator.free(temp_archive_path);
-                    self.allocator.free(url);
-                    style.print("Failed to download {s}: {}\n", .{ url, err });
-                    continue;
-                };
-            } else {
-                downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
-                    self.allocator.free(temp_archive_path);
-                    self.allocator.free(url);
-                    style.print("Failed to download {s}: {}\n", .{ url, err });
-                    continue;
-                };
-            }
+            const s3_ok = blk: {
+                if (options.inline_progress) |progress_opts| {
+                    downloader.downloadFileInline(self.allocator, url, temp_archive_path, progress_opts) catch {
+                        break :blk false;
+                    };
+                } else {
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
+                        break :blk false;
+                    };
+                }
+                break :blk true;
+            };
 
-            // Success!
-            downloaded = true;
-            archive_path = temp_archive_path;
-            used_format = format;
-            used_url = url;
-            break;
+            if (s3_ok) {
+                downloaded = true;
+                archive_path = temp_archive_path;
+                used_format = "tar.gz";
+                used_url = url;
+            } else {
+                self.allocator.free(temp_archive_path);
+                self.allocator.free(@constCast(url));
+            }
         }
 
         if (!downloaded) {
+            style.print("  Error: package {s}@{s} not found in registry\n", .{ spec.name, spec.version });
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
-        defer self.allocator.free(used_url);
+        defer self.allocator.free(@constCast(used_url));
 
         // Show "extracting..." status if inline progress is enabled
         if (options.inline_progress) |progress_opts| {

@@ -364,6 +364,11 @@ export interface SystemdService {
 }
 
 /**
+ * LaunchpadConfig is the legacy alias for PantryConfig
+ */
+export type LaunchpadConfig = PantryConfig
+
+/**
  * Helper function to define Pantry configuration with full type safety
  */
 export function definePantryConfig(

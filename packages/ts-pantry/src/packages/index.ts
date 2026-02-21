@@ -1166,6 +1166,7 @@ import { minioPackage } from './minio'
 import { miniupnpfreefrPackage } from './miniupnpfreefr'
 import { misejdxdevPackage } from './misejdxdev'
 import { mitmproxyorgPackage } from './mitmproxyorg'
+import { meilisearchcomPackage } from './meilisearchcom'
 import { mkcertdevPackage } from './mkcertdev'
 import { mkdocsorgPackage } from './mkdocsorg'
 import { modalcomPackage } from './modalcom'
@@ -3695,6 +3696,7 @@ export interface Pantry {
   miniupnpfreefr: typeof miniupnpfreefrPackage
   misejdxdev: typeof misejdxdevPackage
   mitmproxyorg: typeof mitmproxyorgPackage
+  meilisearchcom: typeof meilisearchcomPackage
   mkcertdev: typeof mkcertdevPackage
   mkdocsorg: typeof mkdocsorgPackage
   modalcom: typeof modalcomPackage
@@ -4638,6 +4640,7 @@ export interface Pantry {
   libva: typeof intelcomlibvaPackage
   agg: typeof asciinemaorgaggPackage
   mongosh: typeof mongodbcomshellPackage
+  meilisearch: typeof meilisearchcomPackage
   asciidoctor: typeof asciidoctororgPackage
   nvim: typeof neovimioPackage
   rubberband: typeof breakfastquaycomrubberbandPackage
@@ -8038,6 +8041,7 @@ export const pantry: Pantry = {
   miniupnpfreefr: miniupnpfreefrPackage,
   misejdxdev: misejdxdevPackage,
   mitmproxyorg: mitmproxyorgPackage,
+  meilisearchcom: meilisearchcomPackage,
   mkcertdev: mkcertdevPackage,
   mkdocsorg: mkdocsorgPackage,
   modalcom: modalcomPackage,
@@ -8981,6 +8985,7 @@ export const pantry: Pantry = {
   libva: intelcomlibvaPackage,
   agg: asciinemaorgaggPackage,
   mongosh: mongodbcomshellPackage,
+  meilisearch: meilisearchcomPackage,
   asciidoctor: asciidoctororgPackage,
   nvim: neovimioPackage,
   rubberband: breakfastquaycomrubberbandPackage,

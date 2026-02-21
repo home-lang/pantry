@@ -106,14 +106,14 @@ pub const RegistryConfig = struct {
         };
     }
 
-    /// Default pkgx registry
+    /// Default pantry S3 registry
     pub fn pkgx(allocator: std.mem.Allocator) !RegistryConfig {
         return RegistryConfig{
             .type = .pkgx,
-            .url = try allocator.dupe(u8, "https://dist.pkgx.dev"),
+            .url = try allocator.dupe(u8, "https://pantry-registry.s3.us-east-1.amazonaws.com"),
             .auth = .none,
             .priority = 10,
-            .name = try allocator.dupe(u8, "pkgx"),
+            .name = try allocator.dupe(u8, "pantry"),
         };
     }
 

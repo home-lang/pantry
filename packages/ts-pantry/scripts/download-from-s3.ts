@@ -80,6 +80,37 @@ function parsePantryYaml(filePath: string): PantryYamlConfig | null {
   }
 
   const content = readFileSync(filePath, 'utf-8')
+
+  // Try Bun.YAML first for robust parsing
+  try {
+    if (typeof Bun !== 'undefined' && Bun.YAML) {
+      const parsed: any = Bun.YAML.parse(content)
+      if (!parsed) return null
+
+      const config: PantryYamlConfig = { dependencies: {} }
+
+      if (parsed.dependencies && typeof parsed.dependencies === 'object') {
+        for (const [pkg, version] of Object.entries(parsed.dependencies)) {
+          config.dependencies[pkg] = String(version)
+        }
+      }
+
+      if (parsed.services) {
+        config.services = {
+          enabled: parsed.services.enabled === true,
+          autoStart: Array.isArray(parsed.services.autoStart)
+            ? parsed.services.autoStart.map((s: any) => String(s))
+            : [],
+        }
+      }
+
+      return config
+    }
+  } catch {
+    // Fall through to manual parsing
+  }
+
+  // Fallback: manual line-by-line parsing
   const config: PantryYamlConfig = {
     dependencies: {},
   }
@@ -103,6 +134,12 @@ function parsePantryYaml(filePath: string): PantryYamlConfig | null {
       inDependencies = false
       inServices = true
       inAutoStart = false
+      continue
+    }
+
+    if (inServices && trimmed.startsWith('enabled:')) {
+      if (!config.services) config.services = {}
+      config.services.enabled = trimmed.includes('true')
       continue
     }
 
@@ -322,6 +359,48 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
 }
 
 /**
+ * List all available versions for a package in the S3 registry
+ */
+async function listAvailableVersions(
+  pkgName: string,
+  options: { bucket: string; region: string }
+): Promise<string[]> {
+  const s3 = new S3Client(options.region)
+  const metadataKey = `binaries/${pkgName}/metadata.json`
+
+  try {
+    const metadataContent = await s3.getObject(options.bucket, metadataKey)
+    const metadata: PackageMetadata = JSON.parse(metadataContent)
+    return Object.keys(metadata.versions).sort((a, b) => {
+      const aParts = a.split('.').map(Number)
+      const bParts = b.split('.').map(Number)
+      for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
+        const aVal = aParts[i] || 0
+        const bVal = bParts[i] || 0
+        if (aVal !== bVal) return bVal - aVal
+      }
+      return 0
+    })
+  } catch {
+    return []
+  }
+}
+
+/**
+ * List locally installed versions of a package
+ */
+function listInstalledVersions(pkgName: string, installDir: string): string[] {
+  const pkgDir = join(installDir, pkgName)
+  if (!existsSync(pkgDir)) return []
+
+  const { readdirSync, statSync } = require('node:fs')
+  return readdirSync(pkgDir).filter((name: string) => {
+    if (name === 'current') return false
+    return /^\d+\.\d+/.test(name) && statSync(join(pkgDir, name)).isDirectory()
+  })
+}
+
+/**
  * Install all packages from pantry.yaml
  */
 async function installFromConfig(
@@ -335,6 +414,7 @@ async function installFromConfig(
 ): Promise<{
   success: string[]
   failed: string[]
+  config: PantryYamlConfig
 }> {
   const config = parsePantryYaml(configPath)
 
@@ -366,7 +446,59 @@ async function installFromConfig(
     }
   }
 
-  return { success, failed }
+  return { success, failed, config }
+}
+
+/**
+ * Auto-start services from config
+ */
+function autoStartServices(services: PantryYamlConfig['services']): { started: string[]; failed: string[] } {
+  const started: string[] = []
+  const failed: string[] = []
+
+  if (!services?.enabled || !services.autoStart || services.autoStart.length === 0) {
+    return { started, failed }
+  }
+
+  console.log(`\n🚀 Auto-starting ${services.autoStart.length} services...`)
+
+  for (const serviceName of services.autoStart) {
+    try {
+      execSync(`pantry service start ${serviceName}`, { stdio: 'pipe', timeout: 30000 })
+      console.log(`   ✅ ${serviceName} started`)
+      started.push(serviceName)
+    } catch {
+      console.log(`   ⚠️  ${serviceName} - trying fallback...`)
+
+      try {
+        if (serviceName === 'postgres' || serviceName === 'postgresql') {
+          if (platform() === 'darwin') {
+            execSync('brew services start postgresql@17 2>/dev/null || pg_ctl start 2>/dev/null || true', { stdio: 'pipe' })
+          } else {
+            execSync('sudo systemctl start postgresql 2>/dev/null || true', { stdio: 'pipe' })
+          }
+          started.push(serviceName)
+          console.log(`   ✅ ${serviceName} started (fallback)`)
+        } else if (serviceName === 'redis') {
+          if (platform() === 'darwin') {
+            execSync('brew services start redis 2>/dev/null || redis-server --daemonize yes 2>/dev/null || true', { stdio: 'pipe' })
+          } else {
+            execSync('sudo systemctl start redis-server 2>/dev/null || redis-server --daemonize yes 2>/dev/null || true', { stdio: 'pipe' })
+          }
+          started.push(serviceName)
+          console.log(`   ✅ ${serviceName} started (fallback)`)
+        } else {
+          failed.push(serviceName)
+          console.log(`   ❌ ${serviceName} failed to start`)
+        }
+      } catch {
+        failed.push(serviceName)
+        console.log(`   ❌ ${serviceName} failed to start`)
+      }
+    }
+  }
+
+  return { started, failed }
 }
 
 /**
@@ -501,7 +633,7 @@ Examples:
       process.exit(1)
     }
 
-    const { success, failed } = await installFromConfig(actualConfigPath, {
+    const { success, failed, config } = await installFromConfig(actualConfigPath, {
       bucket,
       region,
       installDir,
@@ -518,6 +650,25 @@ Examples:
 
     if (failed.length > 0) {
       console.log(`   Failed packages: ${failed.join(', ')}`)
+    }
+
+    // Show installed versions for each package
+    for (const pkg of success) {
+      const versions = listInstalledVersions(pkg, installDir)
+      if (versions.length > 1) {
+        console.log(`   📦 ${pkg}: ${versions.join(', ')} installed`)
+      }
+    }
+
+    // Auto-start services if configured
+    if (config.services) {
+      const { started, failed: failedSvcs } = autoStartServices(config.services)
+      if (started.length > 0) {
+        console.log(`\n   🟢 Services running: ${started.join(', ')}`)
+      }
+      if (failedSvcs.length > 0) {
+        console.log(`   🔴 Services failed: ${failedSvcs.join(', ')}`)
+      }
     }
   }
 

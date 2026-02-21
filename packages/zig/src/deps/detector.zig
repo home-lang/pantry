@@ -9,12 +9,12 @@ pub const DepsFile = struct {
     pub const FileFormat = enum {
         pantry_json, // pantry.json (highest priority)
         pantry_jsonc, // pantry.jsonc
-        config_deps_ts, // config/deps.ts (typed TS config)
-        pantry_config_ts, // pantry.config.ts
-        deps_yaml,
+        deps_yaml, // deps.yaml (before TS configs - no runtime needed)
         deps_yml,
         dependencies_yaml,
         pkgx_yaml,
+        config_deps_ts, // config/deps.ts (typed TS config - needs runtime)
+        pantry_config_ts, // pantry.config.ts (needs runtime)
         package_json, // package.json (npm/bun/yarn compatible)
         package_jsonc, // Zig package.jsonc
         zig_json, // zig.json
@@ -43,12 +43,12 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
     const file_names = [_][]const u8{
         "pantry.json", // pantry.json (highest priority)
         "pantry.jsonc", // pantry.jsonc
-        "config/deps.ts", // config/deps.ts (typed TS config)
-        "pantry.config.ts", // pantry.config.ts
-        "deps.yaml",
+        "deps.yaml", // deps.yaml (before TS configs - pure YAML, no runtime needed)
         "deps.yml",
         "dependencies.yaml",
         "pkgx.yaml",
+        "config/deps.ts", // config/deps.ts (typed TS config - needs runtime)
+        "pantry.config.ts", // pantry.config.ts (needs runtime)
         // Other package manager formats (lower priority, fallback only)
         "package.json", // package.json (npm/bun/yarn compatible)
         "package.jsonc", // Zig package.jsonc
@@ -212,8 +212,8 @@ pub const DepsAndWorkspaceResult = struct {
 /// This avoids the overhead of two separate realpath + directory traversals.
 pub fn findDepsAndWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !DepsAndWorkspaceResult {
     const dep_file_names = [_][]const u8{
-        "pantry.json",    "pantry.jsonc",     "config/deps.ts",    "pantry.config.ts",
-        "deps.yaml",      "deps.yml",         "dependencies.yaml", "pkgx.yaml",
+        "pantry.json",    "pantry.jsonc",     "deps.yaml",         "deps.yml",
+        "dependencies.yaml", "pkgx.yaml",     "config/deps.ts",    "pantry.config.ts",
         "package.json",   "package.jsonc",    "zig.json",          "Cargo.toml",
         "pyproject.toml", "requirements.txt", "Gemfile",           "go.mod",
         "composer.json",
