@@ -786,7 +786,7 @@ Options:
     // x.org/xt removed — fixed $SHELF variable references in script
     // swagger.io/swagger-codegen removed — built successfully on linux
     'angular.dev', // npm build failure on both platforms (native module compilation)
-    'capnproto.org', // internal compiler error in GCC on linux (gimplify_var_or_parm_decl)
+    // capnproto.org removed — already has clean cmake prefix, existing override entry covers it
     // cmake.org removed — reduced parallel jobs to prevent race condition
     // sourceforge.net/libtirpc — shared lib linking, needs kerberos.org in S3
     // werf.io removed — removed btrfs-progs/gcc/binutils deps + fixed static tags in override
@@ -866,7 +866,7 @@ Options:
     // facebook.com/fb303 removed — fixed stray cmake prefix + removed gcc dep in override
     // facebook.com/fbthrift removed — fixed cmake prefix + sed -i BSD + removed gcc dep in override
     // facebook.com/mvfst removed — fixed cmake prefix + sed -i BSD + removed gcc/binutils deps in override
-    'facebook.com/watchman', // CMake build failure (Meta C++ lib chain — needs edencommon/fbthrift)
+    // facebook.com/watchman removed — fixed cmake prefix + sed -i BSD + removed gcc dep in override
     // ferzkopp.net/SDL2_gfx removed — sdl2 now in macOS brew
     // ffmpeg.org removed — disabled SDL2 dep in override
     // fluxcd.io/flux2 removed — removed kustomize dep in override
