@@ -932,10 +932,28 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'orhun.dev/gpg-tui': {
     env: { RUSTFLAGS: '--cap-lints warn' },
+    modifyRecipe: (recipe: any) => {
+      // Add gnupg.org/gpgme as dependency (needed for gpgme-sys crate)
+      if (!recipe.dependencies) recipe.dependencies = {}
+      recipe.dependencies['gnupg.org/gpgme'] = '*'
+    },
   },
 
   'crates.io/skim': {
     env: { RUSTFLAGS: '--cap-lints warn' },
+    modifyRecipe: (recipe: any) => {
+      // Remove --features nightly-frizbee (feature removed in newer versions)
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('nightly-frizbee')) {
+            recipe.build.script[i] = step.replace(' --features nightly-frizbee', '')
+          } else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
+            step.run = step.run.replace(' --features nightly-frizbee', '')
+          }
+        }
+      }
+    },
   },
 
   // ─── cmake.org — reduce parallel jobs to prevent race condition ───────
@@ -1095,15 +1113,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'perl.org': {
     platforms: {
       linux: {
-        env: {
-          CFLAGS: '-D_GNU_SOURCE -include /usr/include/poll.h',
-        },
         prependScript: [{
           run: [
-            '# Ensure poll.h is available for IO.xs',
+            '# Ensure poll.h is available for IO.xs — Perl ignores $CFLAGS,',
+            '# so we create a symlink or patch Configure to add -include flag',
             'if [ ! -f /usr/include/poll.h ] && [ -f /usr/include/sys/poll.h ]; then',
-            '  export CFLAGS="$CFLAGS -include /usr/include/sys/poll.h"',
+            '  ln -sf /usr/include/sys/poll.h /usr/include/poll.h 2>/dev/null || true',
             'fi',
+            '# Also inject into Perl Configure flags',
+            'export CFLAGS="$CFLAGS -D_GNU_SOURCE -include /usr/include/poll.h"',
           ].join('\n'),
         }],
       },
@@ -1112,6 +1130,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove llvm.org dep on linux (use system compiler)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
+      }
+      // Add -Accflags to pass poll.h include through Perl's Configure on Linux
+      if (recipe.build?.env?.linux?.ARGS && Array.isArray(recipe.build.env.linux.ARGS)) {
+        recipe.build.env.linux.ARGS.push('-Accflags=-D_GNU_SOURCE -Accflags=-include -Accflags=/usr/include/poll.h')
+      } else if (recipe.build?.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
+        // If no linux-specific ARGS, add to the general list
+        if (!recipe.build.env.linux) recipe.build.env.linux = {}
+        recipe.build.env.linux.ARGS = ['-Accflags=-D_GNU_SOURCE -Accflags=-include -Accflags=/usr/include/poll.h']
       }
     },
   },

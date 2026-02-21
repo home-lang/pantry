@@ -759,9 +759,9 @@ Options:
     'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
     // syncthing.net removed — patched compat.yaml to add Go 1.26 runtime entry
     'projectdiscovery.io/nuclei', // bytedance/sonic requires newer Go runtime internals
-    // iroh.computer removed — added --cap-lints warn RUSTFLAGS and stable toolchain override
+    'iroh.computer', // curve25519-dalek pre-release incompatible with digest crate
     // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
-    // dns.lookup.dog removed — added --cap-lints warn RUSTFLAGS override
+    'dns.lookup.dog', // old openssl-sys v0.9.58 macro bug, project abandoned
     // microsoft.com/code-cli removed — built successfully on darwin
     'fluentci.io', // Uses deno compile, fragile in CI
     // fna-xna.github.io removed — SDL2 dev packages now in CI
@@ -814,7 +814,7 @@ Options:
     // musepack.net removed — subpackages build successfully, main package needs investigation
     // pagure.io/xmlto removed — xsltproc/docbook now in CI
     // python.org/typing_extensions removed — switched from flit to pip install
-    // radicle.org removed — added --cap-lints warn RUSTFLAGS override
+    'radicle.org', // old wasm-bindgen incompatible with current Rust (needs >= 0.2.88)
     // rclone.org removed — removed stale darwin patch and cmount tag
     'snaplet.dev/cli', // npm install failure
     // tsl0922.github.io/ttyd removed — added compiler flags override
