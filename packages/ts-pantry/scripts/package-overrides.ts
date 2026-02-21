@@ -3919,6 +3919,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── github.com/json-c/json-c — fix inline cmake prefix quote in script ─
+
+  'github.com/json-c/json-c': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('INSTALL_PREFIX="{{prefix}}"')) {
+            recipe.build.script[i] = step.replace(/(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"/, '$1$2')
+          }
+        }
+      }
+    },
+  },
+
   // ─── c-ares.org — fix inline cmake prefix quote in script string ─────
 
   'c-ares.org': {
