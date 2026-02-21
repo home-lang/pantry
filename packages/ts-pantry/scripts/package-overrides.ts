@@ -2649,6 +2649,89 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── php.net — fix sed -i BSD compat + remove kerberos dep ──────────
+
+  'php.net': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in php-config/phpize fixup steps
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i\n/g, 'sed -i.bak\n')
+              .replace(/^(\s+)sed -i$/m, '$1sed -i.bak')
+          }
+        }
+      }
+      // Remove kerberos.org dep (not in S3)
+      if (recipe.dependencies?.['kerberos.org']) {
+        delete recipe.dependencies['kerberos.org']
+      }
+      // Remove --with-kerberos from ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--with-kerberos',
+        )
+      }
+      // Remove gnu.org/gcc/libstdcxx dep (use system libstdc++)
+      if (recipe.dependencies?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies['gnu.org/gcc/libstdcxx']
+      }
+    },
+  },
+
+  // ─── opendap.org — remove linux libtirpc dep ─────────────────────────
+
+  'opendap.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux sourceforge.net/libtirpc dep (not in S3)
+      if (recipe.dependencies?.linux?.['sourceforge.net/libtirpc']) {
+        delete recipe.dependencies.linux['sourceforge.net/libtirpc']
+      }
+      // Remove linux util-linux dep
+      if (recipe.dependencies?.linux?.['github.com/util-linux/util-linux']) {
+        delete recipe.dependencies.linux['github.com/util-linux/util-linux']
+      }
+    },
+  },
+
+  // ─── open-mpi.org — fix prefix quoting + sed -i BSD ──────────────────
+
+  'open-mpi.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and other args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
+          a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Fix sed -i BSD compat in wrapper-data.txt fixup
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── modal.com — remove cython dep on linux/aarch64 ──────────────────
+
+  'modal.com': {
+    modifyRecipe: (recipe: any) => {
+      // Remove cython.org dep on linux/aarch64 (not in S3)
+      if (recipe.build?.dependencies?.['linux/aarch64']?.['cython.org']) {
+        delete recipe.build.dependencies['linux/aarch64']['cython.org']
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

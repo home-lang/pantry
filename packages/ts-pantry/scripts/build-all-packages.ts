@@ -920,19 +920,19 @@ Options:
     // mergestat.com/mergestat-lite removed — removed python build dep in override
     'mesa3d.org', // Mesa 3D — massive build with many deps
     // midnight-commander.org removed — ncurses/glib available via system
-    'modal.com', // Build failure on both platforms
+    // modal.com removed — removed cython dep in override
     // mpv.io removed — removed vapoursynth dep in override
     'mun-lang.org', // Build failure on darwin
     // mupdf.com removed — fixed sed -i BSD + removed linux X11/mesa deps in override
     // netflix.com/vmaf removed — fixed meson prefix quoting in override
-    'open-mpi.org', // MPI — build failure on both platforms
-    'opendap.org', // Build failure on both platforms
+    // open-mpi.org removed — fixed prefix quoting + sed -i BSD in override
+    // opendap.org removed — removed linux libtirpc/util-linux deps in override
     // openresty.org removed — fixed sed -i BSD compat in override
     // opensearch.org removed — fixed sed -i BSD compat in override
     // openslide.org removed — fixed prefix quoting in override
     // openssh.com removed — standard autotools, OpenSSL available
     // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
-    'php.net', // PHP — complex build with many deps
+    // php.net removed — fixed sed -i BSD + removed kerberos dep in override
     // poppler.freedesktop.org removed — disabled gobject-introspection in override
     // proj.org removed — fixed sha256sum darwin compat in override
     // projen.io removed — removed maven dep in override
