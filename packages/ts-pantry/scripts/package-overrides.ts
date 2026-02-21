@@ -852,6 +852,469 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ════════════════════════════════════════════════════════════════════════
+  //  FIXES FOR PREVIOUSLY-BROKEN PACKAGES
+  // ════════════════════════════════════════════════════════════════════════
+
+  // ─── gnome.org/libxml2 — sed -i BSD fix + remove --with-python on darwin ──
+
+  'gnome.org/libxml2': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i (BSD requires suffix) in the xml2-config rewrite step
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('xml2-config')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove --with-python (fragile on macOS, not needed for lib)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => a !== '--with-python')
+      }
+      // Remove doxygen.nl build dep (not needed without docs)
+      if (recipe.build?.dependencies?.['doxygen.nl']) {
+        delete recipe.build.dependencies['doxygen.nl']
+      }
+    },
+  },
+
+  // ─── gnome.org/glib — disable introspection, fix sed -i BSD ─────────────
+
+  'gnome.org/glib': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep (circular dep chain)
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Remove gnome.org/libxml2 build dep (not strictly needed)
+      if (recipe.build?.dependencies?.['gnome.org/libxml2']) {
+        delete recipe.build.dependencies['gnome.org/libxml2']
+      }
+      // Disable introspection in meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('introspection'))
+        recipe.build.env.ARGS.push('-Dintrospection=disabled')
+      }
+      // Fix sed -i calls in build script (BSD requires suffix)
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i -e')) {
+            step.run = step.run.replace(/sed -i -e /g, 'sed -i.bak -e ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── freedesktop.org/dbus — remove xmlto dep, disable docs ──────────────
+
+  'freedesktop.org/dbus': {
+    modifyRecipe: (recipe: any) => {
+      // pagure.io/xmlto is linux-only (BSD getopt incompatibility on macOS)
+      if (recipe.build?.dependencies?.['pagure.io/xmlto']) {
+        delete recipe.build.dependencies['pagure.io/xmlto']
+      }
+      // Add meson args to skip xmlto-dependent doc generation
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        for (const flag of ['-Ddoc_xml_dtd=no', '-Ddoxygen_docs=disabled', '-Dxml_docs=disabled']) {
+          if (!recipe.build.env.MESON_ARGS.includes(flag)) {
+            recipe.build.env.MESON_ARGS.push(flag)
+          }
+        }
+      }
+    },
+  },
+
+  // ─── x.org/ice — fix $SHELF variable references ──────────────────────────
+
+  'x.org/ice': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/"\$SHELF"\/etc/, '"{{prefix}}/etc"')
+           .replace(/"\$SHELF"\/var/, '"{{prefix}}/var"'),
+        )
+      }
+    },
+  },
+
+  // ─── x.org/sm — fix $SHELF variable references ───────────────────────────
+
+  'x.org/sm': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string') {
+            recipe.build.script[i] = step
+              .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+              .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+          } else if (typeof step === 'object' && typeof step.run === 'string') {
+            step.run = step.run
+              .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+              .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── x.org/xt — fix $SHELF variable references ───────────────────────────
+
+  'x.org/xt': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string') {
+            recipe.build.script[i] = step
+              .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+              .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+              .replace(/"\$SHELF"\/etc\/X11\/app-defaults/g, '"{{prefix}}/etc/X11/app-defaults"')
+          } else if (typeof step === 'object' && typeof step.run === 'string') {
+            step.run = step.run
+              .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+              .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+              .replace(/"\$SHELF"\/etc\/X11\/app-defaults/g, '"{{prefix}}/etc/X11/app-defaults"')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── x.org/xmu — fix $SHELF variable references ──────────────────────────
+
+  'x.org/xmu': {
+    modifyRecipe: (recipe: any) => {
+      if (typeof recipe.build?.script === 'string') {
+        recipe.build.script = recipe.build.script
+          .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+          .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+      } else if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string') {
+            recipe.build.script[i] = step
+              .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+              .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── x.org/xaw — fix $SHELF variable references ──────────────────────────
+
+  'x.org/xaw': {
+    modifyRecipe: (recipe: any) => {
+      if (typeof recipe.build?.script === 'string') {
+        recipe.build.script = recipe.build.script
+          .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
+          .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
+      }
+    },
+  },
+
+  // ─── xkbcommon.org — remove XKeyboardConfig dep, fix meson args ──────────
+
+  'xkbcommon.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove freedesktop.org/XKeyboardConfig dep (not in S3)
+      if (recipe.dependencies?.['freedesktop.org/XKeyboardConfig']) {
+        delete recipe.dependencies['freedesktop.org/XKeyboardConfig']
+      }
+      if (recipe.dependencies?.['gnome.org/libxml2']) {
+        delete recipe.dependencies['gnome.org/libxml2']
+      }
+      // Remove XKeyboardConfig path refs from meson args
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.filter(
+          (a: string) => !a.includes('xkb-config-root') && !a.includes('x-locale-root'),
+        )
+      }
+    },
+  },
+
+  // ─── libimobiledevice.org/libplist — fix sed -i BSD ─────────────────────
+
+  'libimobiledevice.org/libplist': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('+brewing')) {
+            step.run = step.run.replace(/sed -i '/g, "sed -i.bak '")
+          }
+        }
+      }
+    },
+  },
+
+  // ─── libimobiledevice.org/libusbmuxd — fix sed -i BSD ───────────────────
+
+  'libimobiledevice.org/libusbmuxd': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('+brewing')) {
+            step.run = step.run.replace(/sed -i '/g, "sed -i.bak '")
+          }
+        }
+      }
+    },
+  },
+
+  // ─── libimobiledevice.org/libimobiledevice-glue — add glibtool fix ──────
+
+  'libimobiledevice.org/libimobiledevice-glue': {
+    prependScript: [GLIBTOOL_FIX],
+  },
+
+  // ─── libimobiledevice.org/libtatsu — remove libpsl dep ──────────────────
+
+  'libimobiledevice.org/libtatsu': {
+    prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: any) => {
+      // Remove rockdaboot.github.io/libpsl dep (not in S3)
+      if (recipe.dependencies?.['rockdaboot.github.io/libpsl']) {
+        delete recipe.dependencies['rockdaboot.github.io/libpsl']
+      }
+    },
+  },
+
+  // ─── libimobiledevice.org — fix sed -i BSD ───────────────────────────────
+
+  'libimobiledevice.org': {
+    prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('PLIST_FORMAT')) {
+            step.run = step.run.replace(/sed -i '/g, "sed -i.bak '")
+          }
+        }
+      }
+    },
+  },
+
+  // ─── mozilla.org/nss — fix sed -i BSD + use system clang on darwin ───────
+
+  'mozilla.org/nss': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i (BSD requires suffix)
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove llvm.org dep on darwin/aarch64 — use system clang
+      if (recipe.build?.dependencies?.['darwin/aarch64']) {
+        delete recipe.build.dependencies['darwin/aarch64']['llvm.org']
+      }
+      if (recipe.build?.env?.['darwin/aarch64']?.CC) {
+        recipe.build.env['darwin/aarch64'].CC = 'clang'
+      }
+    },
+  },
+
+  // ─── openpmix.github.io — remove --with-sge (SGE not in CI) ─────────────
+
+  'openpmix.github.io': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => a !== '--with-sge')
+      }
+    },
+  },
+
+  // ─── developers.yubico.com/libfido2 — remove systemd.io dep ─────────────
+
+  'developers.yubico.com/libfido2': {
+    modifyRecipe: (recipe: any) => {
+      // systemd.io is broken — use system libudev instead
+      if (recipe.dependencies?.linux?.['systemd.io']) {
+        delete recipe.dependencies.linux['systemd.io']
+      }
+      if (recipe.dependencies?.['systemd.io']) {
+        delete recipe.dependencies['systemd.io']
+      }
+    },
+  },
+
+  // ─── chiark.greenend.org.uk/puzzles — remove halibut dep ─────────────────
+
+  'chiark.greenend.org.uk/puzzles': {
+    modifyRecipe: (recipe: any) => {
+      // Remove chiark.greenend.org.uk/halibut dep (not available in CI)
+      if (recipe.build?.dependencies?.['chiark.greenend.org.uk/halibut']) {
+        delete recipe.build.dependencies['chiark.greenend.org.uk/halibut']
+      }
+      // Remove llvm.org linux dep (use system clang)
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+      // Remove imagemagick.org linux dep
+      if (recipe.build?.dependencies?.linux?.['imagemagick.org']) {
+        delete recipe.build.dependencies.linux['imagemagick.org']
+      }
+    },
+  },
+
+  // ─── deepwisdom.ai — linux: patch out faiss_cpu requirement ──────────────
+
+  'deepwisdom.ai': {
+    platforms: {
+      linux: {
+        prependScript: [{
+          run: [
+            'if [ -f requirements.txt ]; then sed -i.bak "/faiss.cpu/d" requirements.txt && rm -f requirements.txt.bak; fi',
+            'if [ -f pyproject.toml ]; then sed -i.bak "/faiss.cpu/d" pyproject.toml && rm -f pyproject.toml.bak; fi',
+          ].join('\n'),
+          if: 'linux',
+        }],
+      },
+    },
+  },
+
+  // ─── expo.dev/eas-cli — use corepack to enable yarn 4 ───────────────────
+
+  'expo.dev/eas-cli': {
+    prependScript: [{
+      run: [
+        'corepack enable 2>/dev/null || npm install -g corepack 2>/dev/null || true',
+        'corepack prepare yarn@stable --activate 2>/dev/null || true',
+      ].join('\n'),
+    }],
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in the version bump step
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('package.json')) {
+            step.run = step.run.replace(/sed -i '/, "sed -i.bak '")
+          }
+        }
+      }
+    },
+  },
+
+  // ─── nx.dev — npm install with legacy peer deps ──────────────────────────
+
+  'nx.dev': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('--legacy-peer-deps')) {
+          recipe.build.env.ARGS.push('--legacy-peer-deps')
+        }
+      }
+    },
+  },
+
+  // ─── snaplet.dev/cli — npm install with legacy peer deps ─────────────────
+
+  'snaplet.dev/cli': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'string' && step.includes('npm install')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step + '\n      --legacy-peer-deps'
+          }
+        }
+      }
+    },
+  },
+
+  // ─── ceph.com/cephadm — fix sed -i BSD ───────────────────────────────────
+
+  'ceph.com/cephadm': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && step.run.includes('shebang')) {
+            step.run = step.run.replace(/sed -i "/g, 'sed -i.bak "')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── rockdaboot.github.io/libpsl — switch to libidn2 runtime ─────────────
+
+  'rockdaboot.github.io/libpsl': {
+    modifyRecipe: (recipe: any) => {
+      // Remove unicode.org dep (not in S3) — use libidn2 instead
+      if (recipe.dependencies?.['unicode.org']) {
+        delete recipe.dependencies['unicode.org']
+      }
+      // Switch from libicu runtime to libidn2 (available via system)
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a === '-Druntime=libicu' ? '-Druntime=libidn2' : a,
+        )
+      }
+    },
+  },
+
+  // ─── matio.sourceforge.io — build without HDF5 (broken dep) ─────────────
+
+  'matio.sourceforge.io': {
+    modifyRecipe: (recipe: any) => {
+      // Remove hdfgroup.org/HDF5 dep (broken/not in S3)
+      if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
+        delete recipe.dependencies['hdfgroup.org/HDF5']
+      }
+      // Remove darwin llvm.org build dep
+      if (recipe.build?.dependencies?.darwin?.['llvm.org']) {
+        delete recipe.build.dependencies.darwin['llvm.org']
+      }
+      // Disable HDF5 and MAT73 in cmake args
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) => {
+          if (a === '-DMATIO_WITH_HDF5=ON') return '-DMATIO_WITH_HDF5=OFF'
+          if (a === '-DMATIO_MAT73=ON') return '-DMATIO_MAT73=OFF'
+          return a
+        })
+      }
+      // Also fix configure ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => !a.includes('hdf5') && !a.includes('mat73'),
+        )
+        recipe.build.env.ARGS.push('--with-hdf5=no', '--enable-mat73=no')
+      }
+    },
+  },
+
+  // ─── unidata.ucar.edu/netcdf — fix sed -i BSD ────────────────────────────
+
+  'unidata.ucar.edu/netcdf': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i (BSD requires suffix) in cmake fixup steps
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ════════════════════════════════════════════════════════════════════════
   //  ADDITIONAL FIXES FOR knownBrokenDomains PACKAGES
   // ════════════════════════════════════════════════════════════════════════
 

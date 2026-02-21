@@ -781,9 +781,9 @@ Options:
     'raccoin.org', // Linker OOM — huge Slint UI generated code exceeds CI runner memory
     'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
     'wezfurlong.org/wezterm', // OS error 35 (EAGAIN) — OOM during parallel Rust compilation
-    'x.org/libSM', // Cascading X11 dependency chain — pkg-config can't find ice (libICE)
-    'x.org/xmu', // Cascading X11 dep failure — needs xt which itself fails (missing sm/ice)
-    'x.org/xt', // Cascading X11 dep failure — needs sm (libSM) and ice (libICE)
+    // x.org/libSM removed — already has clean ARGS (no $SHELF), ice/sm fixed
+    // x.org/xmu removed — fixed $SHELF variable references in script
+    // x.org/xt removed — fixed $SHELF variable references in script
     // swagger.io/swagger-codegen removed — built successfully on linux
     'angular.dev', // npm build failure on both platforms (native module compilation)
     'capnproto.org', // internal compiler error in GCC on linux (gimplify_var_or_parm_decl)
@@ -794,19 +794,20 @@ Options:
     // gnu.org/texinfo removed — built successfully on linux
     // gstreamer.freedesktop.org/orc removed — built successfully on linux
     // laravel.com removed — built successfully on linux
-    'libimobiledevice.org/libimobiledevice-glue', // libplist pkg-config not found
+    // libimobiledevice.org/libimobiledevice-glue removed — added glibtool fix
     // libsdl.org/SDL_ttf removed — sdl2 now in macOS brew
     // freedesktop.org/icon-theme removed — built successfully on linux
     'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
+    // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args
     // amp.rs removed — fixed sed portability in override
     'apache.org/apr-util', // --with-apr parameter incorrect (apr not found as dependency)
     'crates.io/gitweb', // Crate permanently deleted from crates.io (404)
     // deepwisdom.ai removed — built successfully on darwin
-    'developers.yubico.com/libfido2', // CMake configuration incomplete
+    // developers.yubico.com/libfido2 removed — removed systemd.io dep override
     // docbook.org/xsl removed — fixed strip-components to 0
     // eksctl.io removed — simplified build to direct go build
     // gnu.org/bc removed — fixed URL to zero-pad minor version
-    'libimobiledevice.org/libusbmuxd', // libplist pkg-config not found (cascading dep)
+    // libimobiledevice.org/libusbmuxd removed — fixed sed -i BSD
     // freedesktop.org/desktop-file-utils removed — built successfully on darwin
     // harlequin.sh removed — fixed pip install command syntax
     // libsdl.org/SDL_mixer removed — sdl2 now in macOS brew
@@ -816,34 +817,34 @@ Options:
     // python.org/typing_extensions removed — switched from flit to pip install
     'radicle.org', // old wasm-bindgen incompatible with current Rust (needs >= 0.2.88)
     // rclone.org removed — removed stale darwin patch and cmount tag
-    'snaplet.dev/cli', // npm install failure
+    // snaplet.dev/cli removed — added --legacy-peer-deps override
     // tsl0922.github.io/ttyd removed — added compiler flags override
     // videolan.org/x265 removed — built successfully on linux
-    'x.org/ice', // Configure/build failure on darwin
-    'x.org/sm', // Configure/build failure (cascading from ice)
-    'x.org/xkbfile', // Python SyntaxError in build tool
+    // x.org/ice removed — fixed $SHELF variable references in ARGS
+    // x.org/sm removed — fixed $SHELF variable references in script
+    // x.org/xkbfile removed — fixed meson invocation
     // freedesktop.org/slirp removed — built successfully on linux
-    'gnome.org/libxml2', // Build failure on darwin
+    // gnome.org/libxml2 removed — fixed sed -i BSD + removed --with-python
     'postgrest.org', // Haskell build — GHC/Stack not available
-    'ceph.com/cephadm', // Build failure on linux
+    // ceph.com/cephadm removed — fixed sed -i BSD in shebang step
     // gnupg.org/libgcrypt removed — built successfully on darwin
-    'libimobiledevice.org', // libplist/libusbmuxd cascading deps not found
-    'libimobiledevice.org/libtatsu', // libplist cascading dep not found
-    'matio.sourceforge.io', // Build failure
-    'mozilla.org/nss', // Build failure (complex build system)
-    'nx.dev', // npm install failure
-    'openpmix.github.io', // Build failure
+    // libimobiledevice.org removed — fixed sed -i BSD + glibtool fix
+    // libimobiledevice.org/libtatsu removed — removed libpsl dep + glibtool fix
+    // matio.sourceforge.io removed — disabled HDF5 dep, build without HDF5
+    // mozilla.org/nss removed — fixed sed -i BSD + removed llvm.org dep
+    // nx.dev removed — added --legacy-peer-deps override
+    // openpmix.github.io removed — removed --with-sge arg
     // ccache.dev removed — CMake build, all deps available
     // crates.io/gitui removed — built successfully on darwin
     // crates.io/zellij removed — added --cap-lints warn RUSTFLAGS override
-    'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
+    // chiark.greenend.org.uk/puzzles removed — removed halibut/llvm/imagemagick deps
     // zlib.net/minizip removed — small cmake build, deps available
     // code.videolan.org/aribb24 removed — small autotools library
     // vapoursynth.com — needs zimg in S3, build zimg first then vapoursynth
     'facebook.com/wangle', // CMake build failure (complex Facebook library)
-    'unidata.ucar.edu/netcdf', // cmake fix-up sed failure (HDF5 path issues)
-    'x.org/libcvt', // Python SyntaxError in meson build tool
-    'x.org/xaw', // Python SyntaxError in meson build tool (meson execution issue)
+    // unidata.ucar.edu/netcdf removed — fixed sed -i BSD in cmake fixup steps
+    // x.org/libcvt removed — fixed meson invocation
+    // x.org/xaw removed — fixed $SHELF variable references in script
     'sfcgal.gitlab.io', // CMake configuration failure
     'libcxx.llvm.org', // LLVM compilation too resource-intensive for CI
     // --- Failures from run 22169381361 batches 12-18 ---
@@ -883,7 +884,7 @@ Options:
     'getmonero.org', // Heavy C++ crypto build
     'gnome.org/atk', // GNOME accessibility toolkit (dep chain)
     'gnome.org/gdk-pixbuf', // GNOME image loader (dep chain)
-    'gnome.org/glib', // pcre2/meson build failure on both platforms
+    // gnome.org/glib removed — disabled introspection, fixed sed -i BSD
     // gnome.org/glib-networking moved to linuxOnlyDomains — builds on linux
     'gnome.org/gobject-introspection', // GNOME introspection (dep chain)
     'gnome.org/gsettings-desktop-schemas', // GNOME settings (dep chain)
@@ -941,7 +942,7 @@ Options:
     'python-pillow.org', // Python imaging — build failure on linux
     'qemu.org', // System emulator — massive build
     'qpdf.sourceforge.io', // PDF tools build failure on linux
-    'rockdaboot.github.io/libpsl', // Public suffix list lib — build failure
+    // rockdaboot.github.io/libpsl removed — switched to libidn2 runtime
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
     // sass-lang.com/libsass removed — built successfully on darwin
@@ -963,16 +964,16 @@ Options:
     'x.org/x11', // X11 core library — dep chain
     'x.org/xauth', // X authentication — dep chain
     'x.org/xinput', // X input management — dep chain
-    'xkbcommon.org', // Keyboard config library — meson build failure
+    // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args (see above)
     // bytebase.com and dozzle.dev removed — 45min timeout should be sufficient
-    'freedesktop.org/dbus', // Build failure on darwin (meson dep chain)
+    // freedesktop.org/dbus removed — removed xmlto dep, disabled docs
     // gnu.org/gmp removed — URL override to use ftpmirror.gnu.org
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
     'libsoup.org', // Build failure on darwin (dep chain)
     'systemd.io', // Complex linux init system — build failure
     'getfoundry.sh', // GitHub tags deleted from foundry-rs/foundry repo (old versions pruned)
-    'deepwisdom.ai', // faiss_cpu==1.7.4 not available via pip on linux
-    'expo.dev/eas-cli', // Requires yarn 4.x via corepack, classic yarn too old
+    // deepwisdom.ai removed — patched out faiss_cpu on linux
+    // expo.dev/eas-cli removed — added corepack yarn 4 activation
     // geoff.greer.fm/ag — added earlier in this list
     'musepack.net', // CMake configure failure — missing required cmake variables from sub-deps
     'wpewebkit.org/wpebackend-fdo', // wpe-1.0 (libwpe) and mesa3d deps not in S3
