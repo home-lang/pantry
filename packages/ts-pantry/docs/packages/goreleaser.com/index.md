@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 56 versions</summary>
+<summary>Show all 57 versions</summary>
 
+- `2.14.0`
 - `2.13.3`, `2.13.2`, `2.13.1`, `2.13.0`
 - `2.12.7`, `2.12.6`, `2.12.5`, `2.12.4`, `2.12.3`, `2.12.2`, `2.12.1`, `2.12.0`
 - `2.11.2`, `2.11.1`, `2.11.0`
@@ -51,13 +52,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.13.3`
+**Latest Version**: `2.14.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +goreleaser.com@2.13.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +goreleaser.com@2.14.0 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 94 versions</summary>
+<summary>Show all 95 versions</summary>
 
-- `10.0.3`, `10.0.2`, `10.0.1`, `10.0.0`
+- `10.0.4`, `10.0.3`, `10.0.2`, `10.0.1`, `10.0.0`
 - `9.0.3`, `9.0.2`, `9.0.1`, `9.0.0`
 - `8.14.12`, `8.14.11`, `8.14.10`, `8.14.9`, `8.14.8`, `8.14.7`, `8.14.6`, `8.14.5`, `8.14.4`, `8.14.3`, `8.14.2`, `8.14.1`, `8.14.0`
 - `8.13.14`, `8.13.13`, `8.13.12`, `8.13.11`, `8.13.10`, `8.13.9`, `8.13.8`, `8.13.7`, `8.13.6`, `8.13.5`, `8.13.4`, `8.13.3`, `8.13.2`, `8.13.1`, `8.13.0`
@@ -42,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.0.3`
+**Latest Version**: `10.0.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dozzle.dev@10.0.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dozzle.dev@10.0.4 -- $SHELL -i
 ```
 
 ## Usage Examples

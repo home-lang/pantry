@@ -6,7 +6,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install python.org/typing_extensions`
- * @buildDependencies `python.org@~3.11` - required only when building from source
+ * @buildDependencies `flit.pypa.io`, `python.org@~3.11` - required only when building from source
  *
  * @example
  * ```typescript
@@ -52,6 +52,7 @@ export const pythonorgtyping_extensionsPackage = {
   * These are only required when building the package from source.
   */
   buildDependencies: [
+    'flit.pypa.io',
     'python.org@~3.11',
   ] as const,
   /**

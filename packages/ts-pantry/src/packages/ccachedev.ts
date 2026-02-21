@@ -9,7 +9,7 @@
  * @install `launchpad install ccache.dev`
  * @homepage https://ccache.dev/
  * @dependencies `github.com/redis/hiredis`, `facebook.com/zstd`
- * @buildDependencies `asciidoctor.org`, `cmake.org` - required only when building from source
+ * @buildDependencies `asciidoctor.org`, `cmake.org`, `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
  * ```typescript
@@ -67,10 +67,12 @@ export const ccachedevPackage = {
   /**
   * Build dependencies for this package.
   * These are only required when building the package from source.
+  * OS-specific dependencies are prefixed with `os:` (e.g., `linux:gnu.org/gcc`).
   */
   buildDependencies: [
     'asciidoctor.org',
     'cmake.org',
+    'linux:llvm.org',
   ] as const,
   /**
   * Available versions from newest to oldest.
