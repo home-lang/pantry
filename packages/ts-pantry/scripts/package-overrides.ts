@@ -2455,6 +2455,83 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── werf.io — remove linux btrfs-progs dep ──────────────────────────
+
+  'werf.io': {
+    modifyRecipe: (recipe: any) => {
+      // Remove btrfs-progs dep (not in S3, optional for linux build)
+      if (recipe.build?.dependencies?.linux?.['github.com/kdave/btrfs-progs']) {
+        delete recipe.build.dependencies.linux['github.com/kdave/btrfs-progs']
+      }
+      // Remove linux gcc dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux binutils dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/binutils']) {
+        delete recipe.build.dependencies.linux['gnu.org/binutils']
+      }
+      // Remove linux static build tags (can't static link without musl)
+      if (Array.isArray(recipe.build?.env?.linux?.TAGS)) {
+        recipe.build.env.linux.TAGS = recipe.build.env.linux.TAGS.filter(
+          (t: string) => t !== 'static_build' && t !== 'netgo' && t !== 'osusergo',
+        )
+      }
+      // Remove -extldflags=-static from linux LD_FLAGS
+      if (Array.isArray(recipe.build?.env?.linux?.LD_FLAGS)) {
+        recipe.build.env.linux.LD_FLAGS = recipe.build.env.linux.LD_FLAGS.filter(
+          (f: string) => f !== '-extldflags=-static',
+        )
+      }
+    },
+  },
+
+  // ─── pulumi.io — fix sed -i BSD compat ───────────────────────────────
+
+  'pulumi.io': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in sdk/*/Makefile patch
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── projen.io — remove maven dep ────────────────────────────────────
+
+  'projen.io': {
+    modifyRecipe: (recipe: any) => {
+      // Remove maven.apache.org build dep (not in S3)
+      if (recipe.build?.dependencies?.['maven.apache.org']) {
+        delete recipe.build.dependencies['maven.apache.org']
+      }
+    },
+  },
+
+  // ─── apache.org/zookeeper — remove cppunit dep ───────────────────────
+
+  'apache.org/zookeeper': {
+    modifyRecipe: (recipe: any) => {
+      // Remove freedesktop.org/cppunit build dep (not in S3)
+      if (recipe.build?.dependencies?.['freedesktop.org/cppunit']) {
+        delete recipe.build.dependencies['freedesktop.org/cppunit']
+      }
+      // Remove linux gcc dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

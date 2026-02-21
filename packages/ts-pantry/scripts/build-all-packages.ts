@@ -789,7 +789,7 @@ Options:
     'capnproto.org', // internal compiler error in GCC on linux (gimplify_var_or_parm_decl)
     // cmake.org removed — reduced parallel jobs to prevent race condition
     // sourceforge.net/libtirpc — shared lib linking, needs kerberos.org in S3
-    'werf.io', // Go compilation failure (complex build with CGO)
+    // werf.io removed — removed btrfs-progs/gcc/binutils deps + fixed static tags in override
     // agwa.name/git-crypt removed — xsltproc now in CI
     // gnu.org/texinfo removed — built successfully on linux
     // gstreamer.freedesktop.org/orc removed — built successfully on linux
@@ -851,7 +851,7 @@ Options:
     'apache.org/arrow', // Complex C++ build with many dependencies
     // apache.org/httpd removed — fixed sed -i BSD compat in override
     // apache.org/thrift removed — fixed duplicate --prefix arg in override
-    'apache.org/zookeeper', // Build failure on linux
+    // apache.org/zookeeper removed — removed cppunit/gcc deps in override
     'aws.amazon.com/cli', // Build failure on darwin
     'bitcoin.org', // Build failure on linux
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
@@ -935,8 +935,8 @@ Options:
     'php.net', // PHP — complex build with many deps
     // poppler.freedesktop.org removed — disabled gobject-introspection in override
     // proj.org removed — fixed sha256sum darwin compat in override
-    'projen.io', // Node.js build failure
-    'pulumi.io', // Go build failure (heavy, many binaries)
+    // projen.io removed — removed maven dep in override
+    // pulumi.io removed — fixed sed -i BSD compat in override
     // pwmt.org/girara removed — gtk3/json-glib now fixed in override
     // pwmt.org/zathura removed — fixed sed -i BSD + removed adwaita dep in override
     // python-pillow.org removed — removed x.org/xcb dep in override
