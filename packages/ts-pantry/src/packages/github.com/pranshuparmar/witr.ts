@@ -2,7 +2,7 @@
  * **witr** - pkgx package
  *
  * @domain `github.com/pranshuparmar/witr`
- * @version `0.2.7` (2 versions available)
+ * @version `0.3.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/pranshuparmar/witr`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.githubcompranshuparmarwitr
  * console.log(pkg.name)        // "witr"
- * console.log(pkg.versions[0]) // "0.2.7" (latest)
+ * console.log(pkg.versions[0]) // "0.3.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/pranshuparmar/witr.md
@@ -58,6 +58,7 @@ export const witrPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.0',
     '0.2.7',
     '0.2.6',
   ] as const,
