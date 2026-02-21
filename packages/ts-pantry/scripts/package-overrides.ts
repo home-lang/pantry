@@ -841,4 +841,256 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'pkgx.sh/pkgm': {
     stripComponents: 0,
   },
+
+  // ════════════════════════════════════════════════════════════════════════
+  //  ADDITIONAL FIXES FOR knownBrokenDomains PACKAGES
+  // ════════════════════════════════════════════════════════════════════════
+
+  // ─── Rust crate fixes (cap-lints, toolchain) ──────────────────────────
+
+  'crates.io/bpb': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+  },
+
+  'crates.io/drill': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  'crates.io/mask': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: ['rm -f rust-toolchain.toml'],
+  },
+
+  'crates.io/pqrs': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  'crates.io/rust-kanban': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  'crates.io/spider_cli': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  'fabianlindfors.se/reshape': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+  },
+
+  'crates.io/didyoumean': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  'iroh.computer': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+  },
+
+  'dns.lookup.dog': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+  },
+
+  'crates.io/zellij': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+  },
+
+  'radicle.org': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+  },
+
+  'orhun.dev/gpg-tui': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  'crates.io/skim': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  // ─── cmake.org — reduce parallel jobs to prevent race condition ───────
+
+  'cmake.org': {
+    modifyRecipe: (recipe: any) => {
+      // Replace hw.concurrency with a fixed job count to prevent race condition
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('make') && step.includes('install')) {
+            recipe.build.script[i] = step.replace('{{hw.concurrency}}', '4')
+          } else if (typeof step === 'object' && typeof step.run === 'string'
+            && step.run.includes('make') && step.run.includes('install')) {
+            step.run = step.run.replace('{{hw.concurrency}}', '4')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── sourceforge.net/libtirpc — fix libtool and linker ───────────────
+
+  'sourceforge.net/libtirpc': {
+    prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: any) => {
+      // Remove llvm.org and LD=ld.lld on Linux (causes libtool failures)
+      if (recipe.build?.dependencies?.linux) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.LD
+      }
+      // Ensure standard make is used
+      if (recipe.build?.dependencies?.linux?.['gnu.org/make']) {
+        // keep it
+      }
+    },
+  },
+
+  // ─── gnu.org/gmp — URL override (gmplib.org unreachable) ─────────────
+
+  'gnu.org/gmp': {
+    distributableUrl: 'https://ftpmirror.gnu.org/gnu/gmp/gmp-{{version}}.tar.xz',
+  },
+
+  // ─── pcre.org — URL override (SourceForge mirror timeout) ─────────────
+
+  'pcre.org': {
+    distributableUrl: 'https://github.com/PCRE2Project/pcre2/releases/download/pcre2-{{version}}/pcre2-{{version}}.tar.bz2',
+  },
+
+  // ─── getclipboard.app — fix include path for stdlib.h ────────────────
+
+  'getclipboard.app': {
+    platforms: {
+      linux: {
+        env: {
+          CFLAGS: '-I/usr/include',
+          CXXFLAGS: '-I/usr/include',
+        },
+      },
+    },
+  },
+
+  // ─── tsl0922.github.io/ttyd — fix socket API compilation ─────────────
+
+  'tsl0922.github.io/ttyd': {
+    env: {
+      CFLAGS: '-Wno-error=implicit-function-declaration',
+    },
+  },
+
+  // ─── strace.io — fix btrfs static assertions ────────────────────────
+
+  'strace.io': {
+    env: {
+      CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256',
+    },
+  },
+
+  // ─── microbrew.org/md5sha1sum — fix OpenSSL paths ────────────────────
+
+  'microbrew.org/md5sha1sum': {
+    modifyRecipe: (recipe: any) => {
+      // Fix OpenSSL include/lib paths for multiarch Linux
+      if (recipe.build?.env) {
+        recipe.build.env.SSLINCPATH = '{{deps.openssl.org.prefix}}/include'
+        recipe.build.env.SSLLIBPATH = '{{deps.openssl.org.prefix}}/lib'
+      }
+    },
+  },
+
+  // ─── geoff.greer.fm/ag — switch from pcre.org to pcre2 ──────────────
+
+  'geoff.greer.fm/ag': {
+    modifyRecipe: (recipe: any) => {
+      // Switch dependency from pcre.org (SourceForge, broken) to pcre2
+      if (recipe.dependencies?.['pcre.org']) {
+        delete recipe.dependencies['pcre.org']
+        // ag works with PCRE via pkg-config, pcre2 provides pcre2-8
+      }
+      // Add PCRE2 flags
+      if (!recipe.build) recipe.build = {}
+      if (!recipe.build.env) recipe.build.env = {}
+      recipe.build.env.CFLAGS = '$(pkg-config --cflags libpcre2-8) -DUSE_PCRE2 -DPCRE2_CODE_UNIT_WIDTH=8'
+      recipe.build.env.LDFLAGS = '$(pkg-config --libs libpcre2-8)'
+    },
+  },
+
+  // ─── sass-lang.com/sassc — ensure libsass dep is found ──────────────
+
+  'sass-lang.com/sassc': {
+    env: {
+      SASS_LIBSASS_PATH: '{{deps.sass-lang.com/libsass.prefix}}',
+    },
+  },
+
+  // ─── vapoursynth.com — fix autoreconf/automake ──────────────────────
+
+  'vapoursynth.com': {
+    prependScript: [{
+      run: [
+        'if [ ! -f configure ]; then',
+        '  autoreconf -fvi',
+        'fi',
+      ].join('\n'),
+    }],
+  },
+
+  // ─── doxygen.nl — fix build on darwin ───────────────────────────────
+
+  'doxygen.nl': {
+    modifyRecipe: (recipe: any) => {
+      // Remove llvm.org dep on linux (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+    },
+  },
+
+  // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
+
+  'perl.org': {
+    platforms: {
+      linux: {
+        env: {
+          CFLAGS: '-D_GNU_SOURCE -include /usr/include/poll.h',
+        },
+        prependScript: [{
+          run: [
+            '# Ensure poll.h is available for IO.xs',
+            'if [ ! -f /usr/include/poll.h ] && [ -f /usr/include/sys/poll.h ]; then',
+            '  export CFLAGS="$CFLAGS -include /usr/include/sys/poll.h"',
+            'fi',
+          ].join('\n'),
+        }],
+      },
+    },
+    modifyRecipe: (recipe: any) => {
+      // Remove llvm.org dep on linux (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+    },
+  },
 }

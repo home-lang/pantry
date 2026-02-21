@@ -683,14 +683,14 @@ Options:
     'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
-    'crates.io/bpb', // Uses deprecated Rust features (E0557)
-    'crates.io/didyoumean', // native-tls compilation error (E0004) with modern rustc
-    'crates.io/drill', // Rust compilation errors with modern rustc
-    'crates.io/mask', // rust-lld linker error (raw-dylibs directory issue)
-    'crates.io/pqrs', // Rust compilation errors with modern rustc
-    'crates.io/rust-kanban', // Rust compilation errors with modern rustc
-    'crates.io/spider_cli', // Rust compilation errors with modern rustc
-    'fabianlindfors.se/reshape', // Rust compile error with modern rustc
+    // crates.io/bpb removed — added --cap-lints warn RUSTFLAGS override
+    // crates.io/didyoumean removed — added --cap-lints warn RUSTFLAGS override
+    // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
+    // crates.io/mask removed — added --cap-lints warn RUSTFLAGS override
+    // crates.io/pqrs removed — added --cap-lints warn RUSTFLAGS override
+    // crates.io/rust-kanban removed — added --cap-lints warn RUSTFLAGS override
+    // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override
+    // fabianlindfors.se/reshape removed — added --cap-lints warn RUSTFLAGS override
     // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
@@ -737,12 +737,12 @@ Options:
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
     'surrealdb.com', // Old release tags removed from GitHub
     // nasm.us removed — switched version discovery to GitHub releases
-    'crates.io/skim', // Requires Rust nightly portable_simd APIs that break frequently
+    // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    'strace.io', // btrfs static assertions incompatible with newer kernel headers
+    // strace.io removed — added compiler flags override
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
-    'microbrew.org/md5sha1sum', // OpenSSL lib path in multiarch dirs (/usr/lib/x86_64-linux-gnu)
+    // microbrew.org/md5sha1sum removed — fixed OpenSSL path override
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
@@ -759,14 +759,14 @@ Options:
     'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
     // syncthing.net removed — patched compat.yaml to add Go 1.26 runtime entry
     'projectdiscovery.io/nuclei', // bytedance/sonic requires newer Go runtime internals
-    'iroh.computer', // Rust dependency API mismatch (digest::crypto_common)
+    // iroh.computer removed — added --cap-lints warn RUSTFLAGS and stable toolchain override
     // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
-    'dns.lookup.dog', // Needs OpenSSL headers for rust-openssl (not in standard S3 deps)
+    // dns.lookup.dog removed — added --cap-lints warn RUSTFLAGS override
     // microsoft.com/code-cli removed — built successfully on darwin
     'fluentci.io', // Uses deno compile, fragile in CI
     // fna-xna.github.io removed — SDL2 dev packages now in CI
-    'getclipboard.app', // stdlib.h broken via include_next in CI compiler setup
-    'perl.org', // IO.xs poll.h struct pollfd incomplete type on Linux (glibc issue)
+    // getclipboard.app removed — added include path fix override
+    // perl.org removed — fixed poll.h include and removed llvm.org dep
     // priver.dev/geni removed — built successfully on both platforms
     // schollz.com/croc removed — built successfully on both platforms
     'foundry-rs.github.io/foundry', // All old version tags pruned from repo
@@ -774,7 +774,7 @@ Options:
     // libtom.net/math removed — libtool already in CI
     // sourceforge.net/xmlstar removed — libxml2 headers available via system
     'mypy-lang.org', // Gradle/JVM build failure on Linux
-    'pcre.org', // SourceForge mirror (cytranet.dl.sourceforge.net) consistently times out
+    // pcre.org removed — URL override to use GitHub releases instead of SourceForge
     // digitalocean.com/doctl removed — built successfully on both platforms
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
     'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
@@ -787,8 +787,8 @@ Options:
     // swagger.io/swagger-codegen removed — built successfully on linux
     'angular.dev', // npm build failure on both platforms (native module compilation)
     // capnproto.org removed — built successfully on darwin
-    'cmake.org', // make failure on Linux — resource exhaustion or parallel build race condition
-    'sourceforge.net/libtirpc', // libtool install fails — .libs/libtirpc.so not built
+    // cmake.org removed — reduced parallel jobs to prevent race condition
+    // sourceforge.net/libtirpc removed — fixed libtool and removed LLD linker
     'werf.io', // Go compilation failure (complex build with CGO)
     // agwa.name/git-crypt removed — xsltproc now in CI
     // gnu.org/texinfo removed — built successfully on linux
@@ -798,7 +798,7 @@ Options:
     // libsdl.org/SDL_ttf removed — sdl2 now in macOS brew
     // freedesktop.org/icon-theme removed — built successfully on linux
     'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
-    'amp.rs', // Build script prop handling failure (6s crash)
+    // amp.rs removed — fixed sed portability in override
     'apache.org/apr-util', // --with-apr parameter incorrect (apr not found as dependency)
     'crates.io/gitweb', // Crate permanently deleted from crates.io (404)
     // deepwisdom.ai removed — built successfully on darwin
@@ -814,10 +814,10 @@ Options:
     // musepack.net removed — subpackages build successfully, main package needs investigation
     // pagure.io/xmlto removed — xsltproc/docbook now in CI
     // python.org/typing_extensions removed — switched from flit to pip install
-    'radicle.org', // Rust compilation failure
+    // radicle.org removed — added --cap-lints warn RUSTFLAGS override
     // rclone.org removed — removed stale darwin patch and cmount tag
     'snaplet.dev/cli', // npm install failure
-    'tsl0922.github.io/ttyd', // CMake build — server.c compilation error
+    // tsl0922.github.io/ttyd removed — added compiler flags override
     // videolan.org/x265 removed — built successfully on linux
     'x.org/ice', // Configure/build failure on darwin
     'x.org/sm', // Configure/build failure (cascading from ice)
@@ -835,11 +835,11 @@ Options:
     'openpmix.github.io', // Build failure
     // ccache.dev removed — CMake build, all deps available
     // crates.io/gitui removed — built successfully on darwin
-    'crates.io/zellij', // Rust compilation failure
+    // crates.io/zellij removed — added --cap-lints warn RUSTFLAGS override
     'chiark.greenend.org.uk/puzzles', // CMake needs halibut tool (not available)
     // zlib.net/minizip removed — small cmake build, deps available
     // code.videolan.org/aribb24 removed — small autotools library
-    'vapoursynth.com', // Build failure (autoreconf/automake issue)
+    // vapoursynth.com removed — added autoreconf fix override
     'facebook.com/wangle', // CMake build failure (complex Facebook library)
     'unidata.ucar.edu/netcdf', // cmake fix-up sed failure (HDF5 path issues)
     'x.org/libcvt', // Python SyntaxError in meson build tool
@@ -858,7 +858,7 @@ Options:
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
     // crates.io/qsv removed — built successfully on linux
     'debian.org/iso-codes', // Build failure on darwin
-    'doxygen.nl', // Build failure on darwin
+    // doxygen.nl removed — removed llvm.org dep override
     'ebassi.github.io/graphene', // glib dep chain fails on both platforms
     'epsilon-project.sourceforge.io', // Build failure on darwin
     'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
@@ -930,7 +930,7 @@ Options:
     'opensearch.org', // Java/Gradle build failure on linux
     'openslide.org', // Build failure on darwin
     // openssh.com removed — standard autotools, OpenSSL available
-    'orhun.dev/gpg-tui', // Rust build failure (GPG deps)
+    // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
     'php.net', // PHP — complex build with many deps
     'poppler.freedesktop.org', // PDF library — dep chain
     'proj.org', // Geospatial projection library
@@ -945,7 +945,7 @@ Options:
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
     // sass-lang.com/libsass removed — built successfully on darwin
-    'sass-lang.com/sassc', // Sass compiler — depends on libsass
+    // sass-lang.com/sassc removed — libsass now building, added SASS_LIBSASS_PATH
     'sfcgal.org', // Geometry library — CMake failure
     'solana.com', // Heavy Rust blockchain build
     'sourceforge.net/faac', // AAC encoder — build failure on darwin
@@ -966,14 +966,14 @@ Options:
     'xkbcommon.org', // Keyboard config library — meson build failure
     // bytebase.com and dozzle.dev removed — 45min timeout should be sufficient
     'freedesktop.org/dbus', // Build failure on darwin (meson dep chain)
-    'gnu.org/gmp', // gmplib.org server unreachable (download timeout)
+    // gnu.org/gmp removed — URL override to use ftpmirror.gnu.org
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
     'libsoup.org', // Build failure on darwin (dep chain)
     'systemd.io', // Complex linux init system — build failure
     'getfoundry.sh', // GitHub tags deleted from foundry-rs/foundry repo (old versions pruned)
     'deepwisdom.ai', // faiss_cpu==1.7.4 not available via pip on linux
     'expo.dev/eas-cli', // Requires yarn 4.x via corepack, classic yarn too old
-    'geoff.greer.fm/ag', // pcre.org (PCRE v1) dep is broken (SourceForge mirror timeout)
+    // geoff.greer.fm/ag removed — switched pcre.org dep to pcre2, fixed SourceForge issue
     'musepack.net', // CMake configure failure — missing required cmake variables from sub-deps
     'wpewebkit.org/wpebackend-fdo', // wpe-1.0 (libwpe) and mesa3d deps not in S3
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
