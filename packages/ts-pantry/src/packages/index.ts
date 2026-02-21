@@ -1144,6 +1144,7 @@ import { matiosourceforgeioPackage } from './matiosourceforgeio'
 import { maturinrsPackage } from './maturinrs'
 import { mavenapacheorgPackage } from './mavenapacheorg'
 import { mcmcjagssourceforgeioPackage } from './mcmc-jagssourceforgeio'
+import { meilisearchcomPackage } from './meilisearchcom'
 import { mercurerocksPackage } from './mercurerocks'
 import { mercurialscmorgPackage } from './mercurial-scmorg'
 import { mergestatcommergestatlitePackage } from './mergestat.com/mergestat-lite'
@@ -1166,7 +1167,6 @@ import { minioPackage } from './minio'
 import { miniupnpfreefrPackage } from './miniupnpfreefr'
 import { misejdxdevPackage } from './misejdxdev'
 import { mitmproxyorgPackage } from './mitmproxyorg'
-import { meilisearchcomPackage } from './meilisearchcom'
 import { mkcertdevPackage } from './mkcertdev'
 import { mkdocsorgPackage } from './mkdocsorg'
 import { modalcomPackage } from './modalcom'
@@ -3661,6 +3661,7 @@ export interface Pantry {
   mavenapacheorg: typeof mavenapacheorgPackage
   mcmc_jagssourceforgeio: typeof mcmcjagssourceforgeioPackage
   mcmcjagssourceforgeio: typeof mcmcjagssourceforgeioPackage
+  meilisearchcom: typeof meilisearchcomPackage
   mercurerocks: typeof mercurerocksPackage
   mercurial_scmorg: typeof mercurialscmorgPackage
   mercurialscmorg: typeof mercurialscmorgPackage
@@ -3696,7 +3697,6 @@ export interface Pantry {
   miniupnpfreefr: typeof miniupnpfreefrPackage
   misejdxdev: typeof misejdxdevPackage
   mitmproxyorg: typeof mitmproxyorgPackage
-  meilisearchcom: typeof meilisearchcomPackage
   mkcertdev: typeof mkcertdevPackage
   mkdocsorg: typeof mkdocsorgPackage
   modalcom: typeof modalcomPackage
@@ -4640,7 +4640,6 @@ export interface Pantry {
   libva: typeof intelcomlibvaPackage
   agg: typeof asciinemaorgaggPackage
   mongosh: typeof mongodbcomshellPackage
-  meilisearch: typeof meilisearchcomPackage
   asciidoctor: typeof asciidoctororgPackage
   nvim: typeof neovimioPackage
   rubberband: typeof breakfastquaycomrubberbandPackage
@@ -5012,6 +5011,7 @@ export interface Pantry {
   dblab: typeof dblabdanvergaracomPackage
   'libexif.github': typeof libexifgithubioPackage
   ijg: typeof ijgorgPackage
+  meilisearch: typeof meilisearchcomPackage
   pipx: typeof pypagithubiopipxPackage
   'opus-codec': typeof opuscodecorgPackage
   'git-quick-stats': typeof gitquickstatsshPackage
@@ -8006,6 +8006,7 @@ export const pantry: Pantry = {
   mavenapacheorg: mavenapacheorgPackage,
   mcmc_jagssourceforgeio: mcmcjagssourceforgeioPackage,
   mcmcjagssourceforgeio: mcmcjagssourceforgeioPackage,
+  meilisearchcom: meilisearchcomPackage,
   mercurerocks: mercurerocksPackage,
   mercurial_scmorg: mercurialscmorgPackage,
   mercurialscmorg: mercurialscmorgPackage,
@@ -8041,7 +8042,6 @@ export const pantry: Pantry = {
   miniupnpfreefr: miniupnpfreefrPackage,
   misejdxdev: misejdxdevPackage,
   mitmproxyorg: mitmproxyorgPackage,
-  meilisearchcom: meilisearchcomPackage,
   mkcertdev: mkcertdevPackage,
   mkdocsorg: mkdocsorgPackage,
   modalcom: modalcomPackage,
@@ -8985,7 +8985,6 @@ export const pantry: Pantry = {
   libva: intelcomlibvaPackage,
   agg: asciinemaorgaggPackage,
   mongosh: mongodbcomshellPackage,
-  meilisearch: meilisearchcomPackage,
   asciidoctor: asciidoctororgPackage,
   nvim: neovimioPackage,
   rubberband: breakfastquaycomrubberbandPackage,
@@ -9357,6 +9356,7 @@ export const pantry: Pantry = {
   dblab: dblabdanvergaracomPackage,
   'libexif.github': libexifgithubioPackage,
   ijg: ijgorgPackage,
+  meilisearch: meilisearchcomPackage,
   pipx: pypagithubiopipxPackage,
   'opus-codec': opuscodecorgPackage,
   'git-quick-stats': gitquickstatsshPackage,

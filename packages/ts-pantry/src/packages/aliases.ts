@@ -839,6 +839,7 @@ export const aliases: Record<string, string> = {
   'mdcat': 'crates.io/mdcat',
   'mecab': 'taku910.github.io/mecab',
   'mecab-ipadic': 'taku910.github.io/mecab-ipadic',
+  'meilisearch': 'meilisearch.com',
   'melt': 'charm.sh/melt',
   'mercure': 'mercure.rocks',
   'mercurial-scm': 'mercurial-scm.org',
