@@ -2,7 +2,7 @@
  * **rtx-cli** - dev tools, env vars, task runner
  *
  * @domain `crates.io/rtx-cli`
- * @version `2026.2.17` (534 versions available)
+ * @version `2026.2.18` (535 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/rtx-cli`
@@ -17,7 +17,7 @@
  * const pkg = pantry.cratesiortxcli
  * console.log(pkg.name)        // "rtx-cli"
  * console.log(pkg.description) // "dev tools, env vars, task runner"
- * console.log(pkg.versions[0]) // "2026.2.17" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.18" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/rtx-cli.md
@@ -68,6 +68,7 @@ export const cratesiortxcliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.2.18',
     '2026.2.17',
     '2026.2.16',
     '2026.2.15',

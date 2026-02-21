@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 23 versions</summary>
+<summary>Show all 24 versions</summary>
 
+- `1.94.0`
 - `1.90.0`
 - `1.87.0`
 - `1.85.0`
@@ -49,13 +50,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.90.0`
+**Latest Version**: `1.94.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +f1bonacc1.github.io/process-compose@1.90.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +f1bonacc1.github.io/process-compose@1.94.0 -- $SHELL -i
 ```
 
 ## Usage Examples
