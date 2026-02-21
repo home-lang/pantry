@@ -14,6 +14,8 @@ build:
     rust-lang.org: ^1.75
     rust-lang.org/cargo: '*'
   script:
+    # Remove Cargo.lock to allow resolving non-yanked crate versions
+    - rm -f Cargo.lock
     - cargo install $ARGS
   env:
     ARGS:

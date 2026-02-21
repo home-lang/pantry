@@ -18,5 +18,7 @@ build:
     rust-lang.org: '>=1.56'
     rust-lang.org/cargo: '*'
   script: cargo install --locked --path . --root {{prefix}}
+  env:
+    RUSTFLAGS: "--cap-lints warn"
 
 test: mdcat --version

@@ -1,13 +1,9 @@
 distributable:
-  url: https://files.dyne.org/frei0r/releases/frei0r-plugins-{{version}}.tar.gz
+  url: https://github.com/dyne/frei0r/archive/refs/tags/v{{version}}.tar.gz
   strip-components: 1
 
 versions:
-  url: https://files.dyne.org/frei0r/releases/
-  match: /frei0r-plugins-\d+\.\d+(\.\d+)?\.tar\.gz/
-  strip:
-    - /^frei0r-plugins-/
-    - /\.tar\.gz$/
+  github: dyne/frei0r
 
 build:
   dependencies:

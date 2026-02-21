@@ -20,7 +20,9 @@ build:
     rust-lang.org: ^1.79
     rust-lang.org/cargo: '*'
   script:
-    - run: 'sed -i -e''s/ version,$/version: "{{version}}".to_string(),/'' build_info.rs'
+    - run: |
+        sed -i.bak 's/ version,$/version: "{{version}}".to_string(),/' build_info.rs
+        rm -f build_info.rs.bak
       working-directory: ../quickwit-serve/src
     - cargo install --locked --path . --root {{prefix}}
 
