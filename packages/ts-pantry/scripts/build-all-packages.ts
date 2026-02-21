@@ -943,7 +943,7 @@ Options:
     // qemu.org removed — fixed prefix quoting + sed -i BSD + removed vde dep in override
     // qpdf.sourceforge.io removed — removed gnutls dep in override
     // rockdaboot.github.io/libpsl removed — switched to libidn2 runtime
-    'rucio.cern.ch/rucio-client', // CERN data management — pip failure
+    // rucio.cern.ch/rucio-client removed — removed postgresql dep in override
     'rust-lang.org', // Rust compiler — too massive for CI
     // sass-lang.com/libsass removed — built successfully on darwin
     // sass-lang.com/sassc — needs libsass in S3, build libsass first then sassc
@@ -954,22 +954,22 @@ Options:
     'tectonic-typesetting.github.io', // TeX engine — heavy Rust build
     // tesseract-ocr.github.io removed — fixed prefix quoting in override
     'tinygo.org', // TinyGo — heavy LLVM-based build
-    'tlr.dev', // Build failure on darwin
+    // tlr.dev removed — removed protobuf dep in override
     'vaultproject.io', // HashiCorp Vault — Go build failure
     // videolan.org/libplacebo removed — removed linux gcc dep in override
     // vim.org removed — removed perl/ruby interp deps in override
-    'virtualsquare.org/vde', // Virtual networking — build failure on darwin
+    // virtualsquare.org/vde removed — fixed prefix quoting in override
     // wireshark.org removed — fixed cmake prefix + removed libsmi dep in override
     'x.org/libxfont2', // X.org font library — dep chain
     'x.org/x11', // X11 core library — dep chain
-    'x.org/xauth', // X authentication — dep chain
-    'x.org/xinput', // X input management — dep chain
+    // x.org/xauth removed — fixed prefix quoting + removed gcc dep in override
+    // x.org/xinput removed — fixed prefix quoting in override
     // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args (see above)
     // bytebase.com and dozzle.dev removed — 45min timeout should be sufficient
     // freedesktop.org/dbus removed — removed xmlto dep, disabled docs
     // gnu.org/gmp removed — URL override to use ftpmirror.gnu.org
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
-    'libsoup.org', // Build failure on darwin (dep chain)
+    // libsoup.org removed — fixed prefix quoting + disabled introspection/vala in override
     'systemd.io', // Complex linux init system — build failure
     'getfoundry.sh', // GitHub tags deleted from foundry-rs/foundry repo (old versions pruned)
     // deepwisdom.ai removed — patched out faiss_cpu on linux

@@ -831,12 +831,39 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script.push({
           run: [
-            'SQLITE="$(ldd libsoup-*.so | sed -n \'/libsqlite3.so/s/=>.*//p\')"',
+            'SQLITE="$(ldd libsoup-*.so | sed -n \'/libsqlite3.so/s/=>.*//p\'")',
             'patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so libsoup-*.so',
           ].join('\n'),
           'working-directory': '{{prefix}}/lib',
           if: 'linux',
         })
+      }
+      // Fix --prefix and --libdir args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+        // Disable introspection and vala
+        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled', '-Dvapi=disabled')
+        }
+      }
+      // Remove gobject-introspection and vala build deps
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      if (recipe.build?.dependencies?.['gnome.org/vala']) {
+        delete recipe.build.dependencies['gnome.org/vala']
+      }
+      // Remove kerberos.org dep (not in S3)
+      if (recipe.dependencies?.['kerberos.org']) {
+        delete recipe.dependencies['kerberos.org']
+      }
+      // Remove linux CC/CXX/LD override
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
       }
     },
   },
@@ -2825,6 +2852,74 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
           }
         }
+      }
+    },
+  },
+
+  // ─── virtualsquare.org/vde — fix prefix quoting ──────────────────────
+
+  'virtualsquare.org/vde': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── tlr.dev — remove protobuf dep ───────────────────────────────────
+
+  'tlr.dev': {
+    modifyRecipe: (recipe: any) => {
+      // Remove protobuf.dev build dep (not needed for Rust build)
+      if (recipe.build?.dependencies?.['protobuf.dev']) {
+        delete recipe.build.dependencies['protobuf.dev']
+      }
+    },
+  },
+
+  // ─── rucio.cern.ch/rucio-client — remove postgresql dep ──────────────
+
+  'rucio.cern.ch/rucio-client': {
+    modifyRecipe: (recipe: any) => {
+      // Remove postgresql.org build dep (not in S3)
+      if (recipe.build?.dependencies?.['postgresql.org']) {
+        delete recipe.build.dependencies['postgresql.org']
+      }
+    },
+  },
+
+  // ─── x.org/xauth — fix prefix quoting + remove gcc dep ──────────────
+
+  'x.org/xauth': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and other args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
+          a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Remove linux gcc/make build deps (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/make']) {
+        delete recipe.build.dependencies.linux['gnu.org/make']
+      }
+    },
+  },
+
+  // ─── x.org/xinput — fix prefix quoting ───────────────────────────────
+
+  'x.org/xinput': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
+        )
       }
     },
   },
