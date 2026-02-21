@@ -2958,6 +2958,88 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── freedesktop.org/poppler-qt5 — fix cmake prefix + disable qt5/introspection ─
+
+  'freedesktop.org/poppler-qt5': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+        // Disable Qt5 and introspection (qt.io not in S3)
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) => {
+          if (a === '-DENABLE_QT5=ON') return '-DENABLE_QT5=OFF'
+          if (a === '-DENABLE_GLIB=ON') return '-DENABLE_GLIB=OFF'
+          if (a === '-DWITH_GObjectIntrospection=ON') return '-DWITH_GObjectIntrospection=OFF'
+          return a
+        })
+      }
+      // Remove qt.io dep (not in S3)
+      if (recipe.dependencies?.['qt.io']) delete recipe.dependencies['qt.io']
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Remove linux llvm build dep
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+      // Remove linux binutils build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/binutils']) {
+        delete recipe.build.dependencies.linux['gnu.org/binutils']
+      }
+      // Remove linux gcc/g++ dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux CC/CXX/LD overrides
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+    },
+  },
+
+  // ─── gnome.org/gtk-mac-integration-gtk3 — disable introspection ──────
+
+  'gnome.org/gtk-mac-integration-gtk3': {
+    modifyRecipe: (recipe: any) => {
+      // Disable introspection in configure args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '--enable-introspection=yes' ? '--enable-introspection=no' : a,
+        )
+      }
+      // Remove gobject-introspection and intltool build deps
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      if (recipe.build?.dependencies?.['freedesktop.org/intltool']) {
+        delete recipe.build.dependencies['freedesktop.org/intltool']
+      }
+    },
+  },
+
+  // ─── intel.com/libva — remove x.org/x11 dep chain ────────────────────
+
+  'intel.com/libva': {
+    modifyRecipe: (recipe: any) => {
+      // Remove x.org/x11 and related deps (not in S3)
+      const x11Deps = ['x.org/x11', 'x.org/exts', 'x.org/xfixes']
+      for (const dep of x11Deps) {
+        if (recipe.dependencies?.[dep]) delete recipe.dependencies[dep]
+      }
+      // Disable x11 in meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '-Dwith_x11=yes' ? '-Dwith_x11=no' : a,
+        )
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

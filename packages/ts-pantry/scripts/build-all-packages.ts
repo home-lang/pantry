@@ -874,7 +874,7 @@ Options:
     'freedesktop.org/mesa-glu', // Build failure on darwin (OpenGL dep)
     // freedesktop.org/p11-kit removed — fixed trust-paths template in override
     // freedesktop.org/polkit removed — disabled introspection + fixed prefix in override
-    'freedesktop.org/poppler-qt5', // Build failure on linux (Qt5 dep)
+    // freedesktop.org/poppler-qt5 removed — fixed cmake prefix + disabled qt5/introspection in override
     // freedesktop.org/shared-mime-info removed — fixed meson prefix quoting in override
     // freedesktop.org/vdpau removed — built successfully on linux
     // freedesktop.org/XKeyboardConfig removed — fixed prefix quoting + removed libxslt dep in override
@@ -888,7 +888,7 @@ Options:
     // gnome.org/glib-networking moved to linuxOnlyDomains — builds on linux
     // gnome.org/gobject-introspection removed — fixed sed -i BSD + CC in override
     // gnome.org/gsettings-desktop-schemas removed — disabled introspection in override
-    'gnome.org/gtk-mac-integration-gtk3', // macOS GTK integration
+    // gnome.org/gtk-mac-integration-gtk3 removed — disabled introspection + removed intltool dep in override
     // gnome.org/json-glib removed — fixed sed -i BSD + disabled introspection
     // gnome.org/librsvg removed — disabled introspection + rustup stable in override
     // gnome.org/libsecret removed — removed heavy build deps in override
@@ -903,7 +903,7 @@ Options:
     // gtk.org/gtk4 removed — disabled introspection + removed heavy build deps in override
     'hasura.io', // Build failure on darwin
     // ibr.cs.tu-bs.de/libsmi removed — fixed prefix quoting in override
-    'intel.com/libva', // Intel video acceleration — linux only dep
+    // intel.com/libva removed — removed x.org/x11 dep chain + disabled x11 in override
     // jpeg.org/jpegxl removed — disabled openexr in override
     // kubebuilder.io removed — removed goreleaser dep in override
     // kubernetes.io/kubectl removed — removed rsync dep in override
