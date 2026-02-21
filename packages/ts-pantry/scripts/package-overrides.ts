@@ -3892,36 +3892,27 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── duckdb.org — fix cmake prefix quote ─────────────────────────────
+  // ─── duckdb.org — fix cmake prefix quote (uses ARGS not CMAKE_ARGS) ──
 
   'duckdb.org': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
       }
     },
   },
 
-  // ─── freetype.org — fix cmake prefix quote ───────────────────────────
+  // ─── freetype.org — uses '{{ prefix }}' with spaces, already valid ────
+  // No fix needed for freetype.org cmake prefix
 
-  'freetype.org': {
-    modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
-        )
-      }
-    },
-  },
-
-  // ─── fna-xna.github.io — fix cmake prefix quote ──────────────────────
+  // ─── fna-xna.github.io — fix stray cmake prefix quote (uses ARGS) ────
 
   'fna-xna.github.io': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
