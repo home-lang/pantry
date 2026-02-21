@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 378 versions</summary>
+<summary>Show all 379 versions</summary>
 
+- `29.5.0`
 - `29.4.1`, `29.4.0`
 - `29.3.0`
 - `29.2.2`, `29.2.1`, `29.2.0`
@@ -206,13 +207,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `29.4.1`
+**Latest Version**: `29.5.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +ohmyposh.dev@29.4.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +ohmyposh.dev@29.5.0 -- $SHELL -i
 ```
 
 ## Usage Examples
