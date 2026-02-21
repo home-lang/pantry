@@ -2924,6 +2924,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── freedesktop.org/shared-mime-info — fix meson prefix quoting ─────
+
+  'freedesktop.org/shared-mime-info': {
+    modifyRecipe: (recipe: any) => {
+      // Fix inline meson --prefix (in script string, not env)
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('meson') && step.includes('--prefix=')
+            && !step.includes('"{{prefix}}"')) {
+            recipe.build.script[i] = step.replace(/--prefix={{prefix}}/, '--prefix="{{prefix}}"')
+          }
+        }
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

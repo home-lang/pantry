@@ -845,7 +845,7 @@ Options:
     // unidata.ucar.edu/netcdf removed — fixed sed -i BSD in cmake fixup steps
     // x.org/libcvt removed — fixed meson invocation
     // x.org/xaw removed — fixed $SHELF variable references in script
-    'sfcgal.gitlab.io', // CMake configuration failure
+    // sfcgal.gitlab.io removed — no such package (sfcgal.org already fixed)
     'libcxx.llvm.org', // LLVM compilation too resource-intensive for CI
     // --- Failures from run 22169381361 batches 12-18 ---
     'apache.org/arrow', // Complex C++ build with many dependencies
@@ -875,7 +875,7 @@ Options:
     // freedesktop.org/p11-kit removed — fixed trust-paths template in override
     // freedesktop.org/polkit removed — disabled introspection + fixed prefix in override
     'freedesktop.org/poppler-qt5', // Build failure on linux (Qt5 dep)
-    'freedesktop.org/shared-mime-info', // Build failure on darwin
+    // freedesktop.org/shared-mime-info removed — fixed meson prefix quoting in override
     // freedesktop.org/vdpau removed — built successfully on linux
     'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
