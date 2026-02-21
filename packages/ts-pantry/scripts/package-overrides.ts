@@ -3566,62 +3566,70 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── libgit2.org — fix stray cmake prefix quote ──────────────────────
+  // ─── libgit2.org — fix cmake prefix quote (uses ARGS not CMAKE_ARGS) ──
 
   'libgit2.org': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
       }
     },
   },
 
-  // ─── libwebsockets.org — fix stray cmake prefix quote ────────────────
+  // ─── libwebsockets.org — fix inline cmake prefix quote in script string ──
 
   'libwebsockets.org': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
-        )
+      // cmake prefix is inline in script string, not in env array
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('INSTALL_PREFIX="{{prefix}}"')) {
+            recipe.build.script[i] = step.replace(/(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"/, '$1$2')
+          }
+        }
       }
     },
   },
 
-  // ─── libzip.org — fix stray cmake prefix quote ───────────────────────
+  // ─── libzip.org — fix cmake prefix quote (uses ARGS not CMAKE_ARGS) ───
 
   'libzip.org': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
       }
     },
   },
 
-  // ─── google.com/sentencepiece — fix stray cmake prefix quote ─────────
+  // ─── google.com/sentencepiece — fix cmake prefix quote (full quotes) ────
 
   'google.com/sentencepiece': {
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
       }
     },
   },
 
-  // ─── google.com/double-conversion — fix stray cmake prefix quote ──────
+  // ─── google.com/double-conversion — fix inline cmake prefix quote in script ─
 
   'google.com/double-conversion': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
-        )
+      // cmake prefix is inline in script string, not in env array
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('INSTALL_PREFIX="{{prefix}}"')) {
+            recipe.build.script[i] = step.replace(/(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"/, '$1$2')
+          }
+        }
       }
     },
   },
