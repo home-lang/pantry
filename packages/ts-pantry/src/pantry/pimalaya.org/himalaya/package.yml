@@ -13,8 +13,8 @@ build:
     rust-lang.org: '>=1.85'
     rust-lang.org/cargo: '*'
   script: |
-    # Himalaya 1.x requires Rust edition 2024 (needs rustc 1.85+)
-    rustup install stable
+    # Source pins rust-toolchain.toml to 1.82, but deps (imap-types) need 1.85+
+    rm -f rust-toolchain.toml
     rustup default stable
     cargo install --path . --root {{prefix}}
 
