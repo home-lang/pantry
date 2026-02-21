@@ -797,7 +797,7 @@ Options:
     // libimobiledevice.org/libimobiledevice-glue removed — added glibtool fix
     // libsdl.org/SDL_ttf removed — sdl2 now in macOS brew
     // freedesktop.org/icon-theme removed — built successfully on linux
-    'freedesktop.org/xcb-util-image', // XCB_UTIL pkg-config not found (cascading X11 dep)
+    // freedesktop.org/xcb-util-image removed — fixed prefix quoting in override
     // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args
     // amp.rs removed — fixed sed portability in override
     // apache.org/apr-util removed — fixed --with-apr path quoting in override
@@ -890,15 +890,15 @@ Options:
     // gnome.org/gsettings-desktop-schemas removed — disabled introspection in override
     'gnome.org/gtk-mac-integration-gtk3', // macOS GTK integration
     // gnome.org/json-glib removed — fixed sed -i BSD + disabled introspection
-    'gnome.org/librsvg', // GNOME SVG renderer (Rust + C dep chain)
+    // gnome.org/librsvg removed — disabled introspection + rustup stable in override
     // gnome.org/libsecret removed — removed heavy build deps in override
     // gnome.org/pango removed — disabled introspection in override
     'gnome.org/PyGObject', // Python GNOME bindings (dep chain)
     // gnu.org/groff removed — standard GNU build, should work with CI tools
-    'gnu.org/guile', // GNU Scheme — complex build
-    'gnuplot.info', // Build failure on linux
+    // gnu.org/guile removed — fixed sed -i BSD compat in override
+    // gnuplot.info removed — removed libavif dep in override
     // gnutls.org removed — removed p11-kit dep + fixed sed -i BSD in override
-    'grpc.io', // Heavy C++ RPC framework
+    // grpc.io removed — fixed cmake prefix quoting in override
     'gtk.org/gtk3', // GTK3 — massive dep chain (glib→atk→pango→gdk-pixbuf)
     'gtk.org/gtk4', // GTK4 — massive dep chain
     'hasura.io', // Build failure on darwin
@@ -933,15 +933,15 @@ Options:
     // openssh.com removed — standard autotools, OpenSSL available
     // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
     'php.net', // PHP — complex build with many deps
-    'poppler.freedesktop.org', // PDF library — dep chain
-    'proj.org', // Geospatial projection library
+    // poppler.freedesktop.org removed — disabled gobject-introspection in override
+    // proj.org removed — fixed sha256sum darwin compat in override
     'projen.io', // Node.js build failure
     'pulumi.io', // Go build failure (heavy, many binaries)
     'pwmt.org/girara', // UI library — dep chain (gtk)
     'pwmt.org/zathura', // PDF viewer — dep chain (gtk+girara)
     'python-pillow.org', // Python imaging — build failure on linux
     'qemu.org', // System emulator — massive build
-    'qpdf.sourceforge.io', // PDF tools build failure on linux
+    // qpdf.sourceforge.io removed — removed gnutls dep in override
     // rockdaboot.github.io/libpsl removed — switched to libidn2 runtime
     'rucio.cern.ch/rucio-client', // CERN data management — pip failure
     'rust-lang.org', // Rust compiler — too massive for CI
@@ -952,11 +952,11 @@ Options:
     'sourceforge.net/faac', // AAC encoder — build failure on darwin
     'tcl-lang.org', // Tcl — build failure on darwin
     'tectonic-typesetting.github.io', // TeX engine — heavy Rust build
-    'tesseract-ocr.github.io', // OCR engine — dep chain (leptonica)
+    // tesseract-ocr.github.io removed — fixed prefix quoting in override
     'tinygo.org', // TinyGo — heavy LLVM-based build
     'tlr.dev', // Build failure on darwin
     'vaultproject.io', // HashiCorp Vault — Go build failure
-    'videolan.org/libplacebo', // Video rendering — meson build failure
+    // videolan.org/libplacebo removed — removed linux gcc dep in override
     // vim.org removed — removed perl/ruby interp deps in override
     'virtualsquare.org/vde', // Virtual networking — build failure on darwin
     'wireshark.org', // Network analyzer — massive dep chain

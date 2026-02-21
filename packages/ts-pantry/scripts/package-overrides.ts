@@ -1825,6 +1825,193 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── gnu.org/guile — fix sed -i BSD compat ───────────────────────────
+
+  'gnu.org/guile': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in guile-config and guild fixup steps
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── gnuplot.info — remove libavif dep (not in S3) ───────────────────
+
+  'gnuplot.info': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux-only libavif dep (not in S3)
+      if (recipe.dependencies?.linux?.['github.com/AOMediaCodec/libavif']) {
+        delete recipe.dependencies.linux['github.com/AOMediaCodec/libavif']
+      }
+    },
+  },
+
+  // ─── leptonica.org — fix prefix quoting ──────────────────────────────
+
+  'leptonica.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^--prefix="([^"]+)"$/, '--prefix=$1'),
+        )
+      }
+    },
+  },
+
+  // ─── tesseract-ocr.github.io — fix prefix quoting ────────────────────
+
+  'tesseract-ocr.github.io': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and --datarootdir args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--\w+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── proj.org — fix sha256sum on darwin (use shasum -a 256) ──────────
+
+  'proj.org': {
+    modifyRecipe: (recipe: any) => {
+      // Replace sha256sum with shasum -a 256 for darwin compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('sha256sum')) {
+            recipe.build.script[i] = step.replace(/sha256sum/g, 'shasum -a 256')
+          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sha256sum')) {
+            step.run = step.run.replace(/sha256sum/g, 'shasum -a 256')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── qpdf.sourceforge.io — remove gnutls dep (use openssl) ──────────
+
+  'qpdf.sourceforge.io': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gnutls.org dep — qpdf can use openssl instead
+      if (recipe.dependencies?.['gnutls.org']) {
+        delete recipe.dependencies['gnutls.org']
+      }
+      // Remove linux gcc 14 build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── poppler.freedesktop.org — disable gobject-introspection ─────────
+
+  'poppler.freedesktop.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Remove linux gcc 14 build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Fix stray quote in CMAKE_INSTALL_PREFIX
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}"' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Disable glib/gobject in cmake args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('-DENABLE_GLIB=OFF')) {
+          recipe.build.env.ARGS.push('-DENABLE_GLIB=OFF')
+        }
+      }
+    },
+  },
+
+  // ─── gnome.org/librsvg — disable introspection ───────────────────────
+
+  'gnome.org/librsvg': {
+    prependScript: [
+      'rm -f rust-toolchain.toml',
+      'rustup default stable',
+    ],
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Disable introspection in configure ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '--enable-introspection=yes' ? '--enable-introspection=no' : a,
+        )
+      }
+      // Disable introspection in meson MESON_ARGS
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a === '-Dintrospection=enabled' ? '-Dintrospection=disabled' : a,
+        )
+      }
+    },
+  },
+
+  // ─── grpc.io — fix cmake prefix quoting ──────────────────────────────
+
+  'grpc.io': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX
+      if (Array.isArray(recipe.build?.env?.COMMON_ARGS)) {
+        recipe.build.env.COMMON_ARGS = recipe.build.env.COMMON_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}"' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove linux clang/lld override (use system compiler)
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+    },
+  },
+
+  // ─── videolan.org/libplacebo — remove linux gcc dep ──────────────────
+
+  'videolan.org/libplacebo': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── freedesktop.org/xcb-util-image — fix prefix quoting ────────────
+
+  'freedesktop.org/xcb-util-image': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
+          a.replace(/^(--\w+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
