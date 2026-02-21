@@ -836,3 +836,724 @@ pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_
         return error.UnknownService;
     }
 }
+
+/// Get service configuration with a custom port override
+pub fn getServiceConfigWithPort(allocator: std.mem.Allocator, name: []const u8, port: u16, project_root: ?[]const u8) !ServiceConfig {
+    // Handle port-less services (ignore port override)
+    if (std.mem.eql(u8, name, "cloudflared")) {
+        return try Services.cloudflared(allocator);
+    } else if (std.mem.eql(u8, name, "doppler")) {
+        return try Services.doppler(allocator);
+    }
+
+    // Map service names to their configuration functions with custom port
+    if (std.mem.eql(u8, name, "postgres") or std.mem.eql(u8, name, "postgresql")) {
+        return try Services.postgresqlWithContext(allocator, port, project_root);
+    } else if (std.mem.eql(u8, name, "redis")) {
+        return try Services.redisWithContext(allocator, port, project_root);
+    } else if (std.mem.eql(u8, name, "mysql")) {
+        return try Services.mysql(allocator, port);
+    } else if (std.mem.eql(u8, name, "mariadb")) {
+        return try Services.mariadb(allocator, port);
+    } else if (std.mem.eql(u8, name, "mongodb")) {
+        return try Services.mongodb(allocator, port);
+    } else if (std.mem.eql(u8, name, "meilisearch")) {
+        return try Services.meilisearchWithContext(allocator, port, project_root);
+    } else if (std.mem.eql(u8, name, "elasticsearch")) {
+        return try Services.elasticsearch(allocator, port);
+    } else if (std.mem.eql(u8, name, "influxdb")) {
+        return try Services.influxdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "cockroachdb")) {
+        return try Services.cockroachdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "neo4j")) {
+        return try Services.neo4j(allocator, port);
+    } else if (std.mem.eql(u8, name, "clickhouse")) {
+        return try Services.clickhouse(allocator, port);
+    } else if (std.mem.eql(u8, name, "memcached")) {
+        return try Services.memcached(allocator, port);
+    } else if (std.mem.eql(u8, name, "opensearch")) {
+        return try Services.opensearch(allocator, port);
+    } else if (std.mem.eql(u8, name, "couchdb")) {
+        return try Services.couchdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "cassandra")) {
+        return try Services.cassandra(allocator, port);
+    } else if (std.mem.eql(u8, name, "surrealdb")) {
+        return try Services.surrealdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "dragonflydb")) {
+        return try Services.dragonflydb(allocator, port);
+    } else if (std.mem.eql(u8, name, "typesense")) {
+        return try Services.typesense(allocator, port);
+    } else if (std.mem.eql(u8, name, "ferretdb")) {
+        return try Services.ferretdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "tidb")) {
+        return try Services.tidb(allocator, port);
+    } else if (std.mem.eql(u8, name, "scylladb")) {
+        return try Services.scylladb(allocator, port);
+    } else if (std.mem.eql(u8, name, "keydb")) {
+        return try Services.keydb(allocator, port);
+    } else if (std.mem.eql(u8, name, "valkey")) {
+        return try Services.valkey(allocator, port);
+    } else if (std.mem.eql(u8, name, "kafka")) {
+        return try Services.kafka(allocator, port);
+    } else if (std.mem.eql(u8, name, "rabbitmq")) {
+        return try Services.rabbitmq(allocator, port);
+    } else if (std.mem.eql(u8, name, "pulsar")) {
+        return try Services.pulsar(allocator, port);
+    } else if (std.mem.eql(u8, name, "nats")) {
+        return try Services.nats(allocator, port);
+    } else if (std.mem.eql(u8, name, "mosquitto")) {
+        return try Services.mosquitto(allocator, port);
+    } else if (std.mem.eql(u8, name, "redpanda")) {
+        return try Services.redpanda(allocator, port);
+    } else if (std.mem.eql(u8, name, "prometheus")) {
+        return try Services.prometheus(allocator, port);
+    } else if (std.mem.eql(u8, name, "grafana")) {
+        return try Services.grafana(allocator, port);
+    } else if (std.mem.eql(u8, name, "jaeger")) {
+        return try Services.jaeger(allocator, port);
+    } else if (std.mem.eql(u8, name, "loki")) {
+        return try Services.loki(allocator, port);
+    } else if (std.mem.eql(u8, name, "alertmanager")) {
+        return try Services.alertmanager(allocator, port);
+    } else if (std.mem.eql(u8, name, "victoriametrics")) {
+        return try Services.victoriametrics(allocator, port);
+    } else if (std.mem.eql(u8, name, "traefik")) {
+        return try Services.traefik(allocator, port);
+    } else if (std.mem.eql(u8, name, "haproxy")) {
+        return try Services.haproxy(allocator, port);
+    } else if (std.mem.eql(u8, name, "varnish")) {
+        return try Services.varnish(allocator, port);
+    } else if (std.mem.eql(u8, name, "envoy")) {
+        return try Services.envoy(allocator, port);
+    } else if (std.mem.eql(u8, name, "vault")) {
+        return try Services.vault(allocator, port);
+    } else if (std.mem.eql(u8, name, "consul")) {
+        return try Services.consul(allocator, port);
+    } else if (std.mem.eql(u8, name, "etcd")) {
+        return try Services.etcd(allocator, port);
+    } else if (std.mem.eql(u8, name, "minio")) {
+        return try Services.minio(allocator, port);
+    } else if (std.mem.eql(u8, name, "sonarqube")) {
+        return try Services.sonarqube(allocator, port);
+    } else if (std.mem.eql(u8, name, "temporal")) {
+        return try Services.temporal(allocator, port);
+    } else if (std.mem.eql(u8, name, "nomad")) {
+        return try Services.nomad(allocator, port);
+    } else if (std.mem.eql(u8, name, "jenkins")) {
+        return try Services.jenkins(allocator, port);
+    } else if (std.mem.eql(u8, name, "localstack")) {
+        return try Services.localstack(allocator, port);
+    } else if (std.mem.eql(u8, name, "verdaccio")) {
+        return try Services.verdaccio(allocator, port);
+    } else if (std.mem.eql(u8, name, "gitea")) {
+        return try Services.gitea(allocator, port);
+    } else if (std.mem.eql(u8, name, "mailpit")) {
+        return try Services.mailpit(allocator, port);
+    } else if (std.mem.eql(u8, name, "ollama")) {
+        return try Services.ollama(allocator, port);
+    } else if (std.mem.eql(u8, name, "hasura")) {
+        return try Services.hasura(allocator, port);
+    } else if (std.mem.eql(u8, name, "keycloak")) {
+        return try Services.keycloak(allocator, port);
+    } else if (std.mem.eql(u8, name, "nginx")) {
+        return try Services.nginx(allocator, port);
+    } else if (std.mem.eql(u8, name, "caddy")) {
+        return try Services.caddy(allocator, port);
+    } else if (std.mem.eql(u8, name, "httpd")) {
+        return try Services.httpd(allocator, port);
+    } else if (std.mem.eql(u8, name, "php-fpm")) {
+        return try Services.phpfpm(allocator, port);
+    } else if (std.mem.eql(u8, name, "pocketbase")) {
+        return try Services.pocketbase(allocator, port);
+    } else if (std.mem.eql(u8, name, "dnsmasq")) {
+        return try Services.dnsmasq(allocator, port);
+    } else if (std.mem.eql(u8, name, "coredns")) {
+        return try Services.coredns(allocator, port);
+    } else if (std.mem.eql(u8, name, "unbound")) {
+        return try Services.unbound(allocator, port);
+    } else if (std.mem.eql(u8, name, "syncthing")) {
+        return try Services.syncthing(allocator, port);
+    } else if (std.mem.eql(u8, name, "tor")) {
+        return try Services.tor(allocator, port);
+    } else if (std.mem.eql(u8, name, "zookeeper")) {
+        return try Services.zookeeper(allocator, port);
+    } else if (std.mem.eql(u8, name, "solr")) {
+        return try Services.solr(allocator, port);
+    } else {
+        return error.UnknownService;
+    }
+}
+
+// ============================================================================
+// Inspect Command
+// ============================================================================
+
+pub fn inspectCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry inspect <service>");
+    }
+
+    const service_name = args[0];
+    const io_helper = @import("../../io_helper.zig");
+    const platform_mod = services.platform;
+    const plat = platform_mod.Platform.detect();
+
+    // Detect project context (check for deps.yaml in cwd)
+    const cwd = io_helper.getCwdAlloc(allocator) catch null;
+    defer if (cwd) |c| allocator.free(c);
+
+    var project_hash: ?[]const u8 = null;
+    defer if (project_hash) |ph| allocator.free(ph);
+
+    if (cwd) |c| {
+        const yaml_files = [_][]const u8{ "deps.yaml", "deps.yml", "dependencies.yaml" };
+        for (yaml_files) |yaml_name| {
+            const candidate = std.fs.path.join(allocator, &[_][]const u8{ c, yaml_name }) catch continue;
+            defer allocator.free(candidate);
+            io_helper.accessAbsolute(candidate, .{}) catch continue;
+            project_hash = computeProjectHash(allocator, c) catch null;
+            break;
+        }
+    }
+
+    // Get service configuration
+    var config = getServiceConfig(allocator, service_name, cwd) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer config.deinit(allocator);
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+    defer if (home) |h| allocator.free(h);
+
+    // Config path (project-scoped if in a project)
+    const config_path = switch (plat) {
+        .macos => if (home) |h| blk: {
+            break :blk if (project_hash) |ph|
+                try std.fmt.allocPrint(allocator, "{s}/Library/LaunchAgents/com.pantry.{s}.{s}.plist", .{ h, ph, config.name })
+            else
+                try std.fmt.allocPrint(allocator, "{s}/Library/LaunchAgents/com.pantry.{s}.plist", .{ h, config.name });
+        } else try allocator.dupe(u8, "(unknown)"),
+        .linux => if (home) |h| blk: {
+            break :blk if (project_hash) |ph|
+                try std.fmt.allocPrint(allocator, "{s}/.config/systemd/user/pantry-{s}-{s}.service", .{ h, ph, config.name })
+            else
+                try std.fmt.allocPrint(allocator, "{s}/.config/systemd/user/pantry-{s}.service", .{ h, config.name });
+        } else try allocator.dupe(u8, "(unknown)"),
+        else => try allocator.dupe(u8, "(unsupported platform)"),
+    };
+    defer allocator.free(config_path);
+
+    // Data dir (project-scoped if in a project)
+    const data_dir = if (home) |h| blk: {
+        break :blk if (project_hash) |ph|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}/{s}/", .{ h, ph, config.name })
+        else
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}/", .{ h, config.name });
+    } else try allocator.dupe(u8, "(unknown)");
+    defer allocator.free(data_dir);
+
+    // Log paths (project-scoped if in a project)
+    const log_path = if (home) |h| blk: {
+        break :blk if (project_hash) |ph|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}/{s}.log", .{ h, ph, config.name })
+        else
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}.log", .{ h, config.name });
+    } else try allocator.dupe(u8, "(unknown)");
+    defer allocator.free(log_path);
+
+    const err_path = if (home) |h| blk: {
+        break :blk if (project_hash) |ph|
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}/{s}.err", .{ h, ph, config.name })
+        else
+            try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}.err", .{ h, config.name });
+    } else try allocator.dupe(u8, "(unknown)");
+    defer allocator.free(err_path);
+
+    // Port
+    const port_str = if (config.port) |p|
+        try std.fmt.allocPrint(allocator, "{d}", .{p})
+    else
+        try allocator.dupe(u8, "(none)");
+    defer allocator.free(port_str);
+
+    // Health check
+    const health_str = config.health_check orelse "(none)";
+
+    // Status
+    var manager = ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    const svc_config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    const canonical_name = try allocator.dupe(u8, svc_config.name);
+    defer allocator.free(canonical_name);
+    try manager.register(svc_config);
+
+    const status = manager.status(canonical_name) catch services.definitions.ServiceStatus.unknown;
+    const status_str = status.toString();
+
+    // PID
+    var pid_str: []const u8 = try allocator.dupe(u8, "(not running)");
+    defer allocator.free(pid_str);
+
+    if (status == .running) {
+        switch (plat) {
+            .macos => {
+                const label = if (project_hash) |ph|
+                    try std.fmt.allocPrint(allocator, "com.pantry.{s}.{s}", .{ ph, config.name })
+                else
+                    try std.fmt.allocPrint(allocator, "com.pantry.{s}", .{config.name});
+                defer allocator.free(label);
+
+                const result = io_helper.childRun(allocator, &[_][]const u8{
+                    "launchctl", "list", label,
+                }) catch null;
+
+                if (result) |r| {
+                    defer allocator.free(r.stdout);
+                    defer allocator.free(r.stderr);
+                    if (r.stdout.len > 0) {
+                        // Parse PID from launchctl list output (first line usually has PID)
+                        var line_iter = std.mem.splitScalar(u8, r.stdout, '\n');
+                        while (line_iter.next()) |line| {
+                            const trimmed = std.mem.trim(u8, line, " \t\r");
+                            if (std.mem.startsWith(u8, trimmed, "\"PID\"")) {
+                                if (std.mem.indexOf(u8, trimmed, "=")) |eq_pos| {
+                                    const pid_val = std.mem.trim(u8, trimmed[eq_pos + 1 ..], " \t\r;");
+                                    allocator.free(pid_str);
+                                    pid_str = try allocator.dupe(u8, pid_val);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            .linux => {
+                const unit = if (project_hash) |ph|
+                    try std.fmt.allocPrint(allocator, "pantry-{s}-{s}.service", .{ ph, config.name })
+                else
+                    try std.fmt.allocPrint(allocator, "pantry-{s}.service", .{config.name});
+                defer allocator.free(unit);
+
+                const result = io_helper.childRun(allocator, &[_][]const u8{
+                    "systemctl", "--user", "show", unit, "-p", "MainPID", "--value",
+                }) catch null;
+
+                if (result) |r| {
+                    defer allocator.free(r.stdout);
+                    defer allocator.free(r.stderr);
+                    const trimmed_pid = std.mem.trim(u8, r.stdout, " \t\r\n");
+                    if (trimmed_pid.len > 0 and !std.mem.eql(u8, trimmed_pid, "0")) {
+                        allocator.free(pid_str);
+                        pid_str = try allocator.dupe(u8, trimmed_pid);
+                    }
+                }
+            },
+            else => {},
+        }
+    }
+
+    // Print formatted output
+    style.print("\nService: {s}\n", .{config.display_name});
+    style.print("  Name:         {s}\n", .{config.name});
+    style.print("  Status:       {s}\n", .{status_str});
+    style.print("  PID:          {s}\n", .{pid_str});
+    style.print("  Port:         {s}\n", .{port_str});
+    if (project_hash) |ph| {
+        style.print("  Project:      {s}\n", .{ph});
+    }
+    style.print("  Config:       {s}\n", .{config_path});
+    style.print("  Data Dir:     {s}\n", .{data_dir});
+    style.print("  Log (stdout): {s}\n", .{log_path});
+    style.print("  Log (stderr): {s}\n", .{err_path});
+    style.print("  Health Check: {s}\n", .{health_str});
+    style.print("  Command:      {s}\n", .{config.start_command});
+    style.print("\n", .{});
+
+    return .{ .exit_code = 0 };
+}
+
+// ============================================================================
+// Exec Command
+// ============================================================================
+
+pub fn execCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len < 2) {
+        return CommandResult.err(allocator, "Error: Usage: pantry exec <service> <command> [args...]");
+    }
+
+    const service_name = args[0];
+    const io_helper = @import("../../io_helper.zig");
+
+    // Get service configuration
+    var config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer config.deinit(allocator);
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+    defer if (home) |h| allocator.free(h);
+
+    // Build the user command from remaining args
+    var user_cmd_parts: std.ArrayList(u8) = .{};
+    defer user_cmd_parts.deinit(allocator);
+
+    for (args[1..], 0..) |arg, i| {
+        if (i > 0) try user_cmd_parts.append(allocator, ' ');
+        try user_cmd_parts.appendSlice(allocator, arg);
+    }
+
+    // Build export string for environment variables
+    var env_exports: std.ArrayList(u8) = .{};
+    defer env_exports.deinit(allocator);
+
+    // PORT
+    if (config.port) |p| {
+        const port_export = try std.fmt.allocPrint(allocator, "export PORT={d} && ", .{p});
+        defer allocator.free(port_export);
+        try env_exports.appendSlice(allocator, port_export);
+    }
+
+    // SERVICE_NAME
+    {
+        const name_export = try std.fmt.allocPrint(allocator, "export SERVICE_NAME={s} && ", .{config.name});
+        defer allocator.free(name_export);
+        try env_exports.appendSlice(allocator, name_export);
+    }
+
+    // DATA_DIR
+    if (home) |h| {
+        const data_dir_export = try std.fmt.allocPrint(allocator, "export DATA_DIR={s}/.local/share/pantry/data/{s} && ", .{ h, config.name });
+        defer allocator.free(data_dir_export);
+        try env_exports.appendSlice(allocator, data_dir_export);
+    }
+
+    // Service env vars
+    var it = config.env_vars.iterator();
+    while (it.next()) |entry| {
+        const env_export = try std.fmt.allocPrint(allocator, "export {s}={s} && ", .{ entry.key_ptr.*, entry.value_ptr.* });
+        defer allocator.free(env_export);
+        try env_exports.appendSlice(allocator, env_export);
+    }
+
+    // Build combined command
+    var combined: std.ArrayList(u8) = .{};
+    defer combined.deinit(allocator);
+
+    try combined.appendSlice(allocator, env_exports.items);
+
+    // cd to working directory if specified
+    if (config.working_directory) |wd| {
+        const cd_part = try std.fmt.allocPrint(allocator, "cd {s} && ", .{wd});
+        defer allocator.free(cd_part);
+        try combined.appendSlice(allocator, cd_part);
+    }
+
+    try combined.appendSlice(allocator, user_cmd_parts.items);
+
+    // Execute the command
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "sh", "-c", combined.items,
+    }) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Failed to execute command: {s}", .{@errorName(err)});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.stdout.len > 0) {
+        style.print("{s}", .{result.stdout});
+    }
+    if (result.stderr.len > 0) {
+        style.print("{s}", .{result.stderr});
+    }
+
+    const exit_code: u8 = if (result.term == .exited) result.term.exited else 1;
+    return .{ .exit_code = exit_code };
+}
+
+// ============================================================================
+// Snapshot Commands
+// ============================================================================
+
+pub fn snapshotCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry snapshot <service>");
+    }
+
+    const service_name = args[0];
+    const io_helper = @import("../../io_helper.zig");
+
+    // Verify service exists
+    var config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer config.deinit(allocator);
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
+        return CommandResult.err(allocator, "Error: Could not determine HOME directory");
+    };
+    defer allocator.free(home);
+
+    const data_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}", .{ home, config.name });
+    defer allocator.free(data_dir);
+
+    // Check if data directory exists
+    io_helper.accessAbsolute(data_dir, .{}) catch {
+        const msg = try std.fmt.allocPrint(allocator, "No data directory found for {s}: {s}", .{ service_name, data_dir });
+        return .{ .exit_code = 1, .message = msg };
+    };
+
+    // Create snapshots directory
+    const snapshot_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/snapshots/{s}", .{ home, config.name });
+    defer allocator.free(snapshot_dir);
+    io_helper.makePath(snapshot_dir) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Failed to create snapshot directory: {s}", .{@errorName(err)});
+        return .{ .exit_code = 1, .message = msg };
+    };
+
+    // Generate timestamp for snapshot name
+    const timestamp_result = io_helper.childRun(allocator, &[_][]const u8{
+        "date", "+%Y%m%d-%H%M%S",
+    }) catch {
+        return CommandResult.err(allocator, "Failed to generate timestamp");
+    };
+    defer allocator.free(timestamp_result.stdout);
+    defer allocator.free(timestamp_result.stderr);
+
+    const timestamp = std.mem.trim(u8, timestamp_result.stdout, " \t\r\n");
+
+    const snapshot_file = try std.fmt.allocPrint(allocator, "{s}/{s}-{s}.tar.gz", .{ snapshot_dir, config.name, timestamp });
+    defer allocator.free(snapshot_file);
+
+    // Check if service is running
+    var manager = ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    const svc_config = getServiceConfig(allocator, service_name, null) catch {
+        return CommandResult.err(allocator, "Failed to get service config");
+    };
+    const canonical_name = try allocator.dupe(u8, svc_config.name);
+    defer allocator.free(canonical_name);
+    try manager.register(svc_config);
+
+    const was_running = blk: {
+        const s = manager.status(canonical_name) catch break :blk false;
+        break :blk s == .running;
+    };
+
+    // Stop service if running
+    if (was_running) {
+        style.print("Stopping {s} for snapshot...\n", .{service_name});
+        manager.stop(canonical_name) catch {};
+        // Brief pause to let service stop
+        io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+    }
+
+    // Create snapshot
+    style.print("Creating snapshot...\n", .{});
+    const tar_result = io_helper.childRun(allocator, &[_][]const u8{
+        "tar", "czf", snapshot_file, "-C", data_dir, ".",
+    }) catch |err| {
+        // Restart service if it was running
+        if (was_running) {
+            manager.start(canonical_name) catch {};
+        }
+        const msg = try std.fmt.allocPrint(allocator, "Failed to create snapshot: {s}", .{@errorName(err)});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer allocator.free(tar_result.stdout);
+    defer allocator.free(tar_result.stderr);
+
+    // Restart service if it was running
+    if (was_running) {
+        style.print("Restarting {s}...\n", .{service_name});
+        manager.start(canonical_name) catch {};
+    }
+
+    const msg = try std.fmt.allocPrint(allocator, "Snapshot created: {s}", .{snapshot_file});
+    return .{ .exit_code = 0, .message = msg };
+}
+
+pub fn restoreCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry restore <service> [snapshot-name]");
+    }
+
+    const service_name = args[0];
+    const snapshot_name = if (args.len > 1) args[1] else null;
+    const io_helper = @import("../../io_helper.zig");
+
+    // Verify service exists
+    var config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer config.deinit(allocator);
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
+        return CommandResult.err(allocator, "Error: Could not determine HOME directory");
+    };
+    defer allocator.free(home);
+
+    const snapshot_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/snapshots/{s}", .{ home, config.name });
+    defer allocator.free(snapshot_dir);
+
+    const data_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}", .{ home, config.name });
+    defer allocator.free(data_dir);
+
+    // Find snapshot file
+    var snapshot_path: []const u8 = undefined;
+    var snapshot_path_owned = false;
+
+    if (snapshot_name) |name| {
+        // User specified a snapshot name
+        if (std.mem.endsWith(u8, name, ".tar.gz")) {
+            snapshot_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ snapshot_dir, name });
+        } else {
+            snapshot_path = try std.fmt.allocPrint(allocator, "{s}/{s}.tar.gz", .{ snapshot_dir, name });
+        }
+        snapshot_path_owned = true;
+    } else {
+        // Find latest snapshot (ls sorted by name descending since names encode timestamps)
+        const ls_result = io_helper.childRun(allocator, &[_][]const u8{
+            "ls", "-1", snapshot_dir,
+        }) catch {
+            return CommandResult.err(allocator, "No snapshots found. Create one first with: pantry snapshot <service>");
+        };
+        defer allocator.free(ls_result.stdout);
+        defer allocator.free(ls_result.stderr);
+
+        if (ls_result.stdout.len == 0) {
+            return CommandResult.err(allocator, "No snapshots found. Create one first with: pantry snapshot <service>");
+        }
+
+        // Get the last line (latest by filename sort)
+        var last_file: []const u8 = "";
+        var line_iter = std.mem.splitScalar(u8, ls_result.stdout, '\n');
+        while (line_iter.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len > 0 and std.mem.endsWith(u8, trimmed, ".tar.gz")) {
+                last_file = trimmed;
+            }
+        }
+
+        if (last_file.len == 0) {
+            return CommandResult.err(allocator, "No snapshots found. Create one first with: pantry snapshot <service>");
+        }
+
+        snapshot_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ snapshot_dir, last_file });
+        snapshot_path_owned = true;
+    }
+    defer if (snapshot_path_owned) allocator.free(snapshot_path);
+
+    // Verify snapshot exists
+    io_helper.accessAbsolute(snapshot_path, .{}) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Snapshot not found: {s}", .{snapshot_path});
+        return .{ .exit_code = 1, .message = msg };
+    };
+
+    // Stop service
+    var manager = ServiceManager.init(allocator);
+    defer manager.deinit();
+
+    const svc_config = getServiceConfig(allocator, service_name, null) catch {
+        return CommandResult.err(allocator, "Failed to get service config");
+    };
+    const canonical_name = try allocator.dupe(u8, svc_config.name);
+    defer allocator.free(canonical_name);
+    try manager.register(svc_config);
+
+    style.print("Stopping {s}...\n", .{service_name});
+    manager.stop(canonical_name) catch {};
+    io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+
+    // Clear data directory
+    style.print("Clearing data directory...\n", .{});
+    _ = io_helper.childRun(allocator, &[_][]const u8{
+        "rm", "-rf", data_dir,
+    }) catch {};
+    io_helper.makePath(data_dir) catch {};
+
+    // Extract snapshot
+    style.print("Restoring from snapshot...\n", .{});
+    const tar_result = io_helper.childRun(allocator, &[_][]const u8{
+        "tar", "xzf", snapshot_path, "-C", data_dir,
+    }) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Failed to restore snapshot: {s}", .{@errorName(err)});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer allocator.free(tar_result.stdout);
+    defer allocator.free(tar_result.stderr);
+
+    // Restart service
+    style.print("Starting {s}...\n", .{service_name});
+    manager.start(canonical_name) catch {};
+
+    const msg = try std.fmt.allocPrint(allocator, "Restored {s} from: {s}", .{ service_name, std.fs.path.basename(snapshot_path) });
+    return .{ .exit_code = 0, .message = msg };
+}
+
+pub fn snapshotListCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry snapshots <service>");
+    }
+
+    const service_name = args[0];
+    const io_helper = @import("../../io_helper.zig");
+
+    // Verify service exists
+    var config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
+    defer config.deinit(allocator);
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
+        return CommandResult.err(allocator, "Error: Could not determine HOME directory");
+    };
+    defer allocator.free(home);
+
+    const snapshot_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/snapshots/{s}", .{ home, config.name });
+    defer allocator.free(snapshot_dir);
+
+    // List snapshots with sizes
+    const ls_result = io_helper.childRun(allocator, &[_][]const u8{
+        "ls", "-lh", snapshot_dir,
+    }) catch {
+        style.print("No snapshots found for {s}\n", .{service_name});
+        return .{ .exit_code = 0 };
+    };
+    defer allocator.free(ls_result.stdout);
+    defer allocator.free(ls_result.stderr);
+
+    if (ls_result.stdout.len == 0) {
+        style.print("No snapshots found for {s}\n", .{service_name});
+        return .{ .exit_code = 0 };
+    }
+
+    style.print("Snapshots for {s}:\n\n", .{service_name});
+    style.print("{s}", .{ls_result.stdout});
+
+    return .{ .exit_code = 0 };
+}
+
+// ============================================================================
+// Project Hash Utility
+// ============================================================================
+
+/// Compute a simple FNV-1a hash of a path and return first 8 hex chars
+pub fn computeProjectHash(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
+    var hash: u64 = 0xcbf29ce484222325; // FNV offset basis
+    for (path) |byte| {
+        hash ^= byte;
+        hash *%= 0x100000001b3; // FNV prime
+    }
+
+    return try std.fmt.allocPrint(allocator, "{x:0>8}", .{@as(u32, @truncate(hash))});
+}

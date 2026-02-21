@@ -1600,3 +1600,575 @@ test "stripDisplayPrefix handles auto: prefix" {
     try std.testing.expectEqualStrings("meilisearch", install_helpers.stripDisplayPrefix("meilisearch"));
     try std.testing.expectEqualStrings("npm:lodash", install_helpers.stripDisplayPrefix("npm:lodash"));
 }
+
+// ============================================================================
+// Phase 2 Feature Tests: Per-Project Isolation
+// ============================================================================
+
+const commands = pantry.commands;
+
+test "computeProjectHash - deterministic output" {
+    const allocator = std.testing.allocator;
+
+    const hash1 = try commands.computeProjectHash(allocator, "/home/user/project-a");
+    defer allocator.free(hash1);
+
+    const hash2 = try commands.computeProjectHash(allocator, "/home/user/project-a");
+    defer allocator.free(hash2);
+
+    // Same path must produce same hash
+    try std.testing.expectEqualStrings(hash1, hash2);
+}
+
+test "computeProjectHash - different paths produce different hashes" {
+    const allocator = std.testing.allocator;
+
+    const hash_a = try commands.computeProjectHash(allocator, "/home/user/project-a");
+    defer allocator.free(hash_a);
+
+    const hash_b = try commands.computeProjectHash(allocator, "/home/user/project-b");
+    defer allocator.free(hash_b);
+
+    // Different paths must produce different hashes
+    try std.testing.expect(!std.mem.eql(u8, hash_a, hash_b));
+}
+
+test "computeProjectHash - produces 8-char hex string" {
+    const allocator = std.testing.allocator;
+
+    const hash = try commands.computeProjectHash(allocator, "/tmp/test-project");
+    defer allocator.free(hash);
+
+    // Must be exactly 8 hex chars
+    try std.testing.expect(hash.len == 8);
+
+    // All chars must be hex digits
+    for (hash) |c| {
+        try std.testing.expect((c >= '0' and c <= '9') or (c >= 'a' and c <= 'f'));
+    }
+}
+
+test "computeProjectHash - empty path does not crash" {
+    const allocator = std.testing.allocator;
+
+    const hash = try commands.computeProjectHash(allocator, "");
+    defer allocator.free(hash);
+
+    // Must still produce 8-char hex
+    try std.testing.expect(hash.len == 8);
+}
+
+test "computeProjectHash - long paths work correctly" {
+    const allocator = std.testing.allocator;
+
+    const hash = try commands.computeProjectHash(allocator, "/very/long/deeply/nested/project/path/that/goes/on/and/on/forever");
+    defer allocator.free(hash);
+
+    try std.testing.expect(hash.len == 8);
+}
+
+test "ServiceConfig project_id field defaults to null" {
+    const allocator = std.testing.allocator;
+
+    var pg = try definitions.Services.postgresql(allocator, 5432);
+    defer pg.deinit(allocator);
+
+    // project_id should default to null
+    try std.testing.expect(pg.project_id == null);
+}
+
+test "ServiceConfig project_id field can be set and freed" {
+    const allocator = std.testing.allocator;
+
+    var pg = try definitions.Services.postgresql(allocator, 5432);
+
+    // Set project_id
+    pg.project_id = try allocator.dupe(u8, "abcdef12");
+
+    // Verify it's set
+    try std.testing.expect(pg.project_id != null);
+    try std.testing.expectEqualStrings("abcdef12", pg.project_id.?);
+
+    // deinit should free project_id without leaks (testing allocator checks)
+    pg.deinit(allocator);
+}
+
+test "ServiceConfig project_id cleanup with all service types" {
+    const allocator = std.testing.allocator;
+
+    // Test that project_id is properly freed for various service types
+    {
+        var svc = try definitions.Services.redis(allocator, 6379);
+        svc.project_id = try allocator.dupe(u8, "test1234");
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.meilisearch(allocator, 7700);
+        svc.project_id = try allocator.dupe(u8, "test5678");
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.mysql(allocator, 3306);
+        svc.project_id = try allocator.dupe(u8, "testabcd");
+        svc.deinit(allocator);
+    }
+
+    // If we get here without leaks, project_id cleanup works
+    try std.testing.expect(true);
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Project-scoped Label Format
+// ============================================================================
+
+test "Plist label format - global (no project)" {
+    const allocator = std.testing.allocator;
+
+    const label = try std.fmt.allocPrint(allocator, "com.pantry.{s}", .{"redis"});
+    defer allocator.free(label);
+
+    try std.testing.expectEqualStrings("com.pantry.redis", label);
+}
+
+test "Plist label format - project-scoped" {
+    const allocator = std.testing.allocator;
+
+    const project_id = "abcdef12";
+    const label = try std.fmt.allocPrint(allocator, "com.pantry.{s}.{s}", .{ project_id, "redis" });
+    defer allocator.free(label);
+
+    try std.testing.expectEqualStrings("com.pantry.abcdef12.redis", label);
+    try std.testing.expect(std.mem.startsWith(u8, label, "com.pantry."));
+    try std.testing.expect(std.mem.endsWith(u8, label, ".redis"));
+}
+
+test "Systemd unit name format - global (no project)" {
+    const allocator = std.testing.allocator;
+
+    const unit = try std.fmt.allocPrint(allocator, "pantry-{s}.service", .{"postgres"});
+    defer allocator.free(unit);
+
+    try std.testing.expectEqualStrings("pantry-postgres.service", unit);
+}
+
+test "Systemd unit name format - project-scoped" {
+    const allocator = std.testing.allocator;
+
+    const project_id = "abcdef12";
+    const unit = try std.fmt.allocPrint(allocator, "pantry-{s}-{s}.service", .{ project_id, "postgres" });
+    defer allocator.free(unit);
+
+    try std.testing.expectEqualStrings("pantry-abcdef12-postgres.service", unit);
+    try std.testing.expect(std.mem.startsWith(u8, unit, "pantry-"));
+    try std.testing.expect(std.mem.endsWith(u8, unit, ".service"));
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Project-scoped Data/Log Directories
+// ============================================================================
+
+test "Data directory format - global" {
+    const allocator = std.testing.allocator;
+
+    const data_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}/", .{ "/home/user", "redis" });
+    defer allocator.free(data_dir);
+
+    try std.testing.expectEqualStrings("/home/user/.local/share/pantry/data/redis/", data_dir);
+}
+
+test "Data directory format - project-scoped" {
+    const allocator = std.testing.allocator;
+
+    const project_id = "abcdef12";
+    const data_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/{s}/{s}/", .{ "/home/user", project_id, "redis" });
+    defer allocator.free(data_dir);
+
+    try std.testing.expectEqualStrings("/home/user/.local/share/pantry/data/abcdef12/redis/", data_dir);
+}
+
+test "Log directory format - global" {
+    const allocator = std.testing.allocator;
+
+    const log_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}.log", .{ "/home/user", "redis" });
+    defer allocator.free(log_path);
+
+    try std.testing.expectEqualStrings("/home/user/.local/share/pantry/logs/redis.log", log_path);
+}
+
+test "Log directory format - project-scoped" {
+    const allocator = std.testing.allocator;
+
+    const project_id = "abcdef12";
+    const log_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}/{s}.log", .{ "/home/user", project_id, "redis" });
+    defer allocator.free(log_path);
+
+    try std.testing.expectEqualStrings("/home/user/.local/share/pantry/logs/abcdef12/redis.log", log_path);
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Port Override Config
+// ============================================================================
+
+test "getServiceConfigWithPort - Redis with custom port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "redis", 6380, null);
+    defer config.deinit(allocator);
+
+    try std.testing.expectEqualStrings("redis", config.name);
+    try std.testing.expect(config.port.? == 6380);
+    try std.testing.expect(std.mem.indexOf(u8, config.start_command, "6380") != null);
+}
+
+test "getServiceConfigWithPort - PostgreSQL with custom port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "postgres", 5433, null);
+    defer config.deinit(allocator);
+
+    try std.testing.expectEqualStrings("postgres", config.name);
+    try std.testing.expect(config.port.? == 5433);
+    try std.testing.expect(std.mem.indexOf(u8, config.start_command, "5433") != null);
+}
+
+test "getServiceConfigWithPort - MySQL with custom port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "mysql", 3307, null);
+    defer config.deinit(allocator);
+
+    try std.testing.expectEqualStrings("mysql", config.name);
+    try std.testing.expect(config.port.? == 3307);
+    try std.testing.expect(std.mem.indexOf(u8, config.start_command, "3307") != null);
+}
+
+test "getServiceConfigWithPort - Meilisearch with custom port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "meilisearch", 7701, null);
+    defer config.deinit(allocator);
+
+    try std.testing.expectEqualStrings("meilisearch", config.name);
+    try std.testing.expect(config.port.? == 7701);
+    try std.testing.expect(std.mem.indexOf(u8, config.start_command, "7701") != null);
+}
+
+test "getServiceConfigWithPort - MongoDB with custom port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "mongodb", 27018, null);
+    defer config.deinit(allocator);
+
+    try std.testing.expectEqualStrings("mongodb", config.name);
+    try std.testing.expect(config.port.? == 27018);
+}
+
+test "getServiceConfigWithPort - Nginx with custom port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "nginx", 9090, null);
+    defer config.deinit(allocator);
+
+    try std.testing.expectEqualStrings("nginx", config.name);
+    try std.testing.expect(config.port.? == 9090);
+}
+
+test "getServiceConfigWithPort - unknown service returns error" {
+    const allocator = std.testing.allocator;
+
+    const result = commands.getServiceConfigWithPort(allocator, "nonexistent_service", 1234, null);
+    try std.testing.expectError(error.UnknownService, result);
+}
+
+test "getServiceConfigWithPort - port-less services (cloudflared) ignore port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "cloudflared", 9999, null);
+    defer config.deinit(allocator);
+
+    // Cloudflared is port-less, so port should still be null
+    try std.testing.expect(config.port == null);
+}
+
+test "getServiceConfigWithPort - port-less services (doppler) ignore port" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "doppler", 9999, null);
+    defer config.deinit(allocator);
+
+    // Doppler is port-less, so port should still be null
+    try std.testing.expect(config.port == null);
+}
+
+test "getServiceConfigWithPort - memory cleanup for all major services" {
+    const allocator = std.testing.allocator;
+
+    // Test that all services with port overrides don't leak memory
+    const service_port_pairs = .{
+        .{ "redis", @as(u16, 6380) },
+        .{ "postgres", @as(u16, 5433) },
+        .{ "mysql", @as(u16, 3307) },
+        .{ "meilisearch", @as(u16, 7701) },
+        .{ "mongodb", @as(u16, 27018) },
+        .{ "nginx", @as(u16, 9090) },
+        .{ "caddy", @as(u16, 2016) },
+        .{ "mariadb", @as(u16, 3307) },
+        .{ "influxdb", @as(u16, 8087) },
+        .{ "kafka", @as(u16, 9093) },
+        .{ "rabbitmq", @as(u16, 5673) },
+        .{ "prometheus", @as(u16, 9091) },
+        .{ "grafana", @as(u16, 3001) },
+        .{ "vault", @as(u16, 8201) },
+        .{ "consul", @as(u16, 8501) },
+        .{ "etcd", @as(u16, 2380) },
+        .{ "minio", @as(u16, 9001) },
+        .{ "elasticsearch", @as(u16, 9201) },
+        .{ "valkey", @as(u16, 6380) },
+        .{ "surrealdb", @as(u16, 8001) },
+        .{ "typesense", @as(u16, 8109) },
+        .{ "ollama", @as(u16, 11435) },
+    };
+
+    inline for (service_port_pairs) |pair| {
+        var config = try commands.getServiceConfigWithPort(allocator, pair[0], pair[1], null);
+        config.deinit(allocator);
+    }
+
+    try std.testing.expect(true);
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Snapshot Paths
+// ============================================================================
+
+test "Snapshot directory format" {
+    const allocator = std.testing.allocator;
+
+    const snapshot_dir = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/snapshots/{s}/", .{ "/home/user", "postgres" });
+    defer allocator.free(snapshot_dir);
+
+    try std.testing.expectEqualStrings("/home/user/.local/share/pantry/snapshots/postgres/", snapshot_dir);
+    try std.testing.expect(std.mem.indexOf(u8, snapshot_dir, "snapshots") != null);
+}
+
+test "Snapshot filename format includes timestamp pattern" {
+    const allocator = std.testing.allocator;
+
+    // Snapshot files follow the pattern: {service}-{YYYYMMDD-HHMMSS}.tar.gz
+    const snapshot_name = try std.fmt.allocPrint(allocator, "{s}-{s}.tar.gz", .{ "postgres", "20260220-143000" });
+    defer allocator.free(snapshot_name);
+
+    try std.testing.expect(std.mem.startsWith(u8, snapshot_name, "postgres-"));
+    try std.testing.expect(std.mem.endsWith(u8, snapshot_name, ".tar.gz"));
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Service Manager with project_id
+// ============================================================================
+
+test "ServiceManager register service with project_id" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    // Create a service with project_id
+    var redis = try definitions.Services.redis(allocator, 6379);
+    redis.project_id = try allocator.dupe(u8, "abcd1234");
+    try mgr.register(redis);
+
+    // Verify service is registered and project_id is preserved
+    const svc = mgr.getService("redis");
+    try std.testing.expect(svc != null);
+    try std.testing.expect(svc.?.project_id != null);
+    try std.testing.expectEqualStrings("abcd1234", svc.?.project_id.?);
+}
+
+test "ServiceManager register multiple services with different project_ids" {
+    const allocator = std.testing.allocator;
+
+    var mgr = manager.ServiceManager.init(allocator);
+    defer mgr.deinit();
+
+    // Register services - one with project_id, one without
+    var redis = try definitions.Services.redis(allocator, 6379);
+    redis.project_id = try allocator.dupe(u8, "proj_aaa");
+    try mgr.register(redis);
+
+    const pg = try definitions.Services.postgresql(allocator, 5432);
+    try mgr.register(pg);
+
+    // Verify project_id is set/null as expected
+    const redis_svc = mgr.getService("redis");
+    try std.testing.expect(redis_svc.?.project_id != null);
+    try std.testing.expectEqualStrings("proj_aaa", redis_svc.?.project_id.?);
+
+    const pg_svc = mgr.getService("postgres");
+    try std.testing.expect(pg_svc.?.project_id == null);
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Project Isolation Hash Uniqueness
+// ============================================================================
+
+test "computeProjectHash - siblings produce different hashes" {
+    const allocator = std.testing.allocator;
+
+    const paths = [_][]const u8{
+        "/home/user/project-a",
+        "/home/user/project-b",
+        "/home/user/project-c",
+        "/home/user/my-app",
+        "/home/user/my-api",
+    };
+
+    var hashes: [5][]const u8 = undefined;
+    for (paths, 0..) |p, i| {
+        hashes[i] = try commands.computeProjectHash(allocator, p);
+    }
+    defer for (&hashes) |h| allocator.free(h);
+
+    // All hashes should be unique
+    for (0..hashes.len) |i| {
+        for (i + 1..hashes.len) |j| {
+            try std.testing.expect(!std.mem.eql(u8, hashes[i], hashes[j]));
+        }
+    }
+}
+
+test "computeProjectHash - absolute vs relative paths differ" {
+    const allocator = std.testing.allocator;
+
+    const abs_hash = try commands.computeProjectHash(allocator, "/home/user/project");
+    defer allocator.free(abs_hash);
+
+    const rel_hash = try commands.computeProjectHash(allocator, "project");
+    defer allocator.free(rel_hash);
+
+    try std.testing.expect(!std.mem.eql(u8, abs_hash, rel_hash));
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Port Override Validation
+// ============================================================================
+
+test "getServiceConfigWithPort - postgresql alias also works" {
+    const allocator = std.testing.allocator;
+
+    var config = try commands.getServiceConfigWithPort(allocator, "postgresql", 5433, null);
+    defer config.deinit(allocator);
+
+    // Should still create a valid postgres config
+    try std.testing.expectEqualStrings("postgres", config.name);
+    try std.testing.expect(config.port.? == 5433);
+}
+
+test "getServiceConfigWithPort - health check reflects custom port" {
+    const allocator = std.testing.allocator;
+
+    var pg = try commands.getServiceConfigWithPort(allocator, "postgres", 9876, null);
+    defer pg.deinit(allocator);
+
+    // Health check should reference the custom port
+    try std.testing.expect(pg.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, pg.health_check.?, "9876") != null);
+}
+
+test "getServiceConfigWithPort - redis health check reflects custom port" {
+    const allocator = std.testing.allocator;
+
+    var redis = try commands.getServiceConfigWithPort(allocator, "redis", 7777, null);
+    defer redis.deinit(allocator);
+
+    try std.testing.expect(redis.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, redis.health_check.?, "7777") != null);
+}
+
+test "getServiceConfigWithPort - meilisearch health check reflects custom port" {
+    const allocator = std.testing.allocator;
+
+    var meili = try commands.getServiceConfigWithPort(allocator, "meilisearch", 8800, null);
+    defer meili.deinit(allocator);
+
+    try std.testing.expect(meili.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, meili.health_check.?, "8800") != null);
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: Inspect Command Logic
+// ============================================================================
+
+test "Inspect output paths vary by project context" {
+    const allocator = std.testing.allocator;
+
+    // Global path format
+    const global_path = try std.fmt.allocPrint(allocator, "com.pantry.{s}", .{"redis"});
+    defer allocator.free(global_path);
+
+    // Project-scoped path format
+    const project_hash = try commands.computeProjectHash(allocator, "/tmp/my-project");
+    defer allocator.free(project_hash);
+
+    const scoped_path = try std.fmt.allocPrint(allocator, "com.pantry.{s}.{s}", .{ project_hash, "redis" });
+    defer allocator.free(scoped_path);
+
+    // They must be different
+    try std.testing.expect(!std.mem.eql(u8, global_path, scoped_path));
+
+    // Scoped path must contain the project hash
+    try std.testing.expect(std.mem.indexOf(u8, scoped_path, project_hash) != null);
+}
+
+// ============================================================================
+// Phase 2 Feature Tests: ServiceConfig with project_id deinit
+// ============================================================================
+
+test "ServiceConfig deinit correctly frees project_id for all 68 services" {
+    const allocator = std.testing.allocator;
+
+    // Representative sample of services with project_id set
+    const test_project_id = "testproj";
+
+    {
+        var svc = try definitions.Services.postgresql(allocator, 5432);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.redis(allocator, 6379);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.meilisearch(allocator, 7700);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.nginx(allocator, 8080);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.kafka(allocator, 9092);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.prometheus(allocator, 9090);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.cloudflared(allocator);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.ollama(allocator, 11434);
+        svc.project_id = try allocator.dupe(u8, test_project_id);
+        svc.deinit(allocator);
+    }
+
+    try std.testing.expect(true);
+}

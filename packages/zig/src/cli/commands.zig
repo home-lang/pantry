@@ -234,6 +234,13 @@ pub const shimRemoveCommand = shim_commands.shimRemoveCommand;
 pub const serviceEnableCommand = services_commands.enableCommand;
 pub const serviceDisableCommand = services_commands.disableCommand;
 pub const serviceLogsCommand = services_commands.logsCommand;
+pub const serviceInspectCommand = services_commands.inspectCommand;
+pub const serviceExecCommand = services_commands.execCommand;
+pub const serviceSnapshotCommand = services_commands.snapshotCommand;
+pub const serviceRestoreCommand = services_commands.restoreCommand;
+pub const serviceSnapshotListCommand = services_commands.snapshotListCommand;
+pub const getServiceConfigWithPort = services_commands.getServiceConfigWithPort;
+pub const computeProjectHash = services_commands.computeProjectHash;
 
 // ============================================================================
 // Re-export Verify Commands

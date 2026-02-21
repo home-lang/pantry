@@ -1310,6 +1310,116 @@ fn logsAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn inspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const service_name = ctx.getArgument(0) orelse {
+        style.print("Error: inspect requires a service name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{service_name};
+    const result = try lib.commands.serviceInspectCommand(allocator, &args);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn execAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Collect all arguments: first is service name, rest is the command
+    var args_list = std.ArrayList([]const u8){};
+    defer args_list.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args_list.append(allocator, arg);
+    }
+
+    if (args_list.items.len < 2) {
+        style.print("Error: exec requires a service name and a command\nUsage: pantry exec <service> <command> [args...]\n", .{});
+        std.process.exit(1);
+    }
+
+    const result = try lib.commands.serviceExecCommand(allocator, args_list.items);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn snapshotAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const service_name = ctx.getArgument(0) orelse {
+        style.print("Error: snapshot requires a service name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{service_name};
+    const result = try lib.commands.serviceSnapshotCommand(allocator, &args);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn restoreAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var args_list = std.ArrayList([]const u8){};
+    defer args_list.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args_list.append(allocator, arg);
+    }
+
+    if (args_list.items.len == 0) {
+        style.print("Error: restore requires a service name argument\n", .{});
+        std.process.exit(1);
+    }
+
+    const result = try lib.commands.serviceRestoreCommand(allocator, args_list.items);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
+fn snapshotsAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const service_name = ctx.getArgument(0) orelse {
+        style.print("Error: snapshots requires a service name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const args = [_][]const u8{service_name};
+    const result = try lib.commands.serviceSnapshotListCommand(allocator, &args);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn bootstrapAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1514,15 +1624,33 @@ fn initAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const verbose = ctx.hasOption("verbose");
+    const preset = ctx.getOption("preset");
 
-    var args = std.ArrayList([]const u8){};
-    defer args.deinit(allocator);
+    // Build args with optional preset
+    const preset_arg = if (preset) |p|
+        try std.fmt.allocPrint(allocator, "--preset={s}", .{p})
+    else
+        null;
+    defer if (preset_arg) |pa| allocator.free(pa);
 
-    if (verbose) {
-        try args.append(allocator, "--verbose");
+    if (preset_arg) |pa| {
+        if (verbose) {
+            const args = [_][]const u8{ "--verbose", pa };
+            return runInitCommand(allocator, &args);
+        } else {
+            const args = [_][]const u8{pa};
+            return runInitCommand(allocator, &args);
+        }
+    } else if (verbose) {
+        const args = [_][]const u8{"--verbose"};
+        return runInitCommand(allocator, &args);
+    } else {
+        return runInitCommand(allocator, &[_][]const u8{});
     }
+}
 
-    const result = try lib.commands.initCommand(allocator, args.items);
+fn runInitCommand(allocator: std.mem.Allocator, args: []const []const u8) !void {
+    const result = try lib.commands.initCommand(allocator, args);
     defer {
         var r = result;
         r.deinit(allocator);
@@ -1799,7 +1927,12 @@ fn printHelp() void {
     style.print("      " ++ style.cyan ++ "status" ++ style.reset ++ "              Show service status\n", .{});
     style.print("      " ++ style.cyan ++ "logs" ++ style.reset ++ "                View service logs\n", .{});
     style.print("      " ++ style.cyan ++ "enable" ++ style.reset ++ "              Enable a service\n", .{});
-    style.print("      " ++ style.cyan ++ "disable" ++ style.reset ++ "             Disable a service\n\n", .{});
+    style.print("      " ++ style.cyan ++ "disable" ++ style.reset ++ "             Disable a service\n", .{});
+    style.print("      " ++ style.cyan ++ "inspect" ++ style.reset ++ "             Inspect service config & status\n", .{});
+    style.print("      " ++ style.cyan ++ "exec" ++ style.reset ++ "                Run command in service env\n", .{});
+    style.print("      " ++ style.cyan ++ "snapshot" ++ style.reset ++ "            Snapshot service data\n", .{});
+    style.print("      " ++ style.cyan ++ "restore" ++ style.reset ++ "             Restore service from snapshot\n", .{});
+    style.print("      " ++ style.cyan ++ "snapshots" ++ style.reset ++ "           List service snapshots\n\n", .{});
 
     // Cache
     style.print("    " ++ bold_cyan ++ "Cache:" ++ style.reset ++ "\n", .{});
@@ -2508,6 +2641,68 @@ pub fn main() !void {
     _ = try root.addCommand(logs_cmd);
 
     // ========================================================================
+    // Inspect Command (Service Inspection)
+    // ========================================================================
+    var inspect_cmd = try cli.BaseCommand.init(allocator, "inspect", "Inspect service configuration and status");
+
+    const inspect_service_arg = cli.Argument.init("service", "Service name", .string)
+        .withRequired(true);
+    _ = try inspect_cmd.addArgument(inspect_service_arg);
+
+    _ = inspect_cmd.setAction(inspectAction);
+    _ = try root.addCommand(inspect_cmd);
+
+    // ========================================================================
+    // Exec Command (Run command in service context)
+    // ========================================================================
+    var exec_cmd = try cli.BaseCommand.init(allocator, "exec", "Run a command in a service's environment");
+
+    const exec_args = cli.Argument.init("args", "Service name followed by command", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try exec_cmd.addArgument(exec_args);
+
+    _ = exec_cmd.setAction(execAction);
+    _ = try root.addCommand(exec_cmd);
+
+    // ========================================================================
+    // Snapshot Command (Service Data Backup)
+    // ========================================================================
+    var snapshot_cmd = try cli.BaseCommand.init(allocator, "snapshot", "Create a snapshot of service data");
+
+    const snapshot_service_arg = cli.Argument.init("service", "Service name", .string)
+        .withRequired(true);
+    _ = try snapshot_cmd.addArgument(snapshot_service_arg);
+
+    _ = snapshot_cmd.setAction(snapshotAction);
+    _ = try root.addCommand(snapshot_cmd);
+
+    // ========================================================================
+    // Restore Command (Service Data Restore)
+    // ========================================================================
+    var restore_cmd = try cli.BaseCommand.init(allocator, "restore", "Restore service data from a snapshot");
+
+    const restore_args = cli.Argument.init("args", "Service name and optional snapshot name", .string)
+        .withRequired(true)
+        .withVariadic(true);
+    _ = try restore_cmd.addArgument(restore_args);
+
+    _ = restore_cmd.setAction(restoreAction);
+    _ = try root.addCommand(restore_cmd);
+
+    // ========================================================================
+    // Snapshots Command (List snapshots)
+    // ========================================================================
+    var snapshots_cmd = try cli.BaseCommand.init(allocator, "snapshots", "List snapshots for a service");
+
+    const snapshots_service_arg = cli.Argument.init("service", "Service name", .string)
+        .withRequired(true);
+    _ = try snapshots_cmd.addArgument(snapshots_service_arg);
+
+    _ = snapshots_cmd.setAction(snapshotsAction);
+    _ = try root.addCommand(snapshots_cmd);
+
+    // ========================================================================
     // Bootstrap Command (System Setup)
     // ========================================================================
     var bootstrap_cmd = try cli.BaseCommand.init(allocator, "bootstrap", "Set up development environment");
@@ -2635,6 +2830,10 @@ pub fn main() !void {
     const init_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
         .withShort('v');
     _ = try init_cmd.addOption(init_verbose_opt);
+
+    const init_preset_opt = cli.Option.init("preset", "preset", "Project preset (typescript, laravel, next, monorepo-typescript)", .string)
+        .withShort('p');
+    _ = try init_cmd.addOption(init_preset_opt);
 
     _ = init_cmd.setAction(initAction);
     _ = try root.addCommand(init_cmd);

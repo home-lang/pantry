@@ -689,10 +689,19 @@ pub const ShellCommands = struct {
         }
         self.parseCustomServices(content, &custom_configs) catch {};
 
-        // Simple YAML parser for services.autoStart
+        // Simple YAML parser for services.autoStart with port override support
         var in_services = false;
         var in_auto_start = false;
         var services_enabled = false;
+        var in_map_entry = false;
+        var current_entry_name: ?[]const u8 = null;
+        var current_entry_port: ?u16 = null;
+
+        var auto_start_entries: std.ArrayList(AutoStartEntry) = .{};
+        defer {
+            for (auto_start_entries.items) |*entry| entry.deinit(self.allocator);
+            auto_start_entries.deinit(self.allocator);
+        }
 
         var line_iter = std.mem.splitScalar(u8, content, '\n');
         while (line_iter.next()) |line| {
@@ -728,26 +737,215 @@ pub const ShellCommands = struct {
                 // Check for "autoStart:"
                 if (std.mem.indexOf(u8, trimmed, "autoStart:")) |_| {
                     in_auto_start = true;
+                    in_map_entry = false;
                     continue;
                 }
 
-                // Parse autoStart list items ("- postgres", "- redis", "- my-worker")
+                // Parse autoStart list items
                 if (in_auto_start and std.mem.startsWith(u8, trimmed, "- ")) {
-                    if (!services_enabled) continue;
-
-                    const service_name = std.mem.trim(u8, trimmed[2..], " \t\r");
-                    if (service_name.len == 0) continue;
-
-                    // Check if this is a custom service
-                    if (custom_configs.get(service_name)) |custom_def| {
-                        self.startCustomService(service_name, custom_def, project_root) catch |err| {
-                            style.print("⚠️  Failed to start custom service {s}: {s}\n", .{ service_name, @errorName(err) });
-                        };
-                    } else {
-                        try self.startServiceWithContext(service_name, project_root);
+                    // Flush previous map entry if any
+                    if (current_entry_name) |name| {
+                        auto_start_entries.append(self.allocator, .{
+                            .name = name,
+                            .port = current_entry_port,
+                        }) catch {};
+                        current_entry_name = null;
+                        current_entry_port = null;
                     }
+
+                    const value = std.mem.trim(u8, trimmed[2..], " \t\r");
+                    if (value.len == 0) continue;
+
+                    // Check if this is a map-style entry: "- name: redis"
+                    if (std.mem.startsWith(u8, value, "name:")) {
+                        const name_val = parseYamlValue(value["name:".len..]);
+                        if (name_val.len > 0) {
+                            current_entry_name = self.allocator.dupe(u8, name_val) catch continue;
+                            current_entry_port = null;
+                            in_map_entry = true;
+                        }
+                    } else {
+                        // Simple string entry: "- postgres"
+                        const duped = self.allocator.dupe(u8, value) catch continue;
+                        auto_start_entries.append(self.allocator, .{
+                            .name = duped,
+                            .port = null,
+                        }) catch {
+                            self.allocator.free(duped);
+                        };
+                        in_map_entry = false;
+                    }
+                } else if (in_auto_start and in_map_entry and current_entry_name != null) {
+                    // Parse properties of map-style entry
+                    if (std.mem.startsWith(u8, trimmed, "port:")) {
+                        const port_val = parseYamlValue(trimmed["port:".len..]);
+                        current_entry_port = std.fmt.parseInt(u16, port_val, 10) catch null;
+                    } else if (!std.mem.startsWith(u8, trimmed, "- ") and
+                        !std.mem.startsWith(u8, trimmed, "name:") and
+                        countLeadingSpaces(line) <= 4)
+                    {
+                        // End of map entry, flush
+                        if (current_entry_name) |name| {
+                            auto_start_entries.append(self.allocator, .{
+                                .name = name,
+                                .port = current_entry_port,
+                            }) catch {};
+                            current_entry_name = null;
+                            current_entry_port = null;
+                        }
+                        in_map_entry = false;
+                        in_auto_start = false;
+                    }
+                } else if (in_auto_start and !std.mem.startsWith(u8, trimmed, "- ")) {
+                    // Flush final map entry
+                    if (current_entry_name) |name| {
+                        auto_start_entries.append(self.allocator, .{
+                            .name = name,
+                            .port = current_entry_port,
+                        }) catch {};
+                        current_entry_name = null;
+                        current_entry_port = null;
+                    }
+                    in_auto_start = false;
                 }
             }
+        }
+
+        // Flush any remaining map entry
+        if (current_entry_name) |name| {
+            auto_start_entries.append(self.allocator, .{
+                .name = name,
+                .port = current_entry_port,
+            }) catch {};
+        }
+
+        if (!services_enabled) return;
+
+        // Compute project hash for per-project isolation
+        const service_cmd = @import("../cli/commands/services.zig");
+        const project_hash = service_cmd.computeProjectHash(self.allocator, project_root) catch null;
+        defer if (project_hash) |ph| self.allocator.free(ph);
+
+        // Topological sort: start services respecting dependsOn ordering
+        // 1. Collect all services with their dependencies
+        var started = std.StringHashMap(bool).init(self.allocator);
+        defer started.deinit();
+
+        // First pass: start services without dependencies
+        for (auto_start_entries.items) |entry| {
+            const has_deps = if (custom_configs.get(entry.name)) |custom_def|
+                (custom_def.depends_on != null and custom_def.depends_on.?.len > 0)
+            else
+                false;
+
+            if (!has_deps) {
+                self.startAutoStartEntry(entry, &custom_configs, project_root, project_hash) catch |err| {
+                    style.print("Failed to start {s}: {s}\n", .{ entry.name, @errorName(err) });
+                };
+                try started.put(entry.name, true);
+            }
+        }
+
+        // Wait for health checks on first batch
+        self.waitForServices(project_root) catch {};
+
+        // Second pass: start services whose dependencies are satisfied
+        var remaining: usize = auto_start_entries.items.len - started.count();
+        var max_iterations: usize = 10;
+        while (remaining > 0 and max_iterations > 0) : (max_iterations -= 1) {
+            var made_progress = false;
+
+            for (auto_start_entries.items) |entry| {
+                if (started.get(entry.name) != null) continue;
+
+                const custom_def = custom_configs.get(entry.name);
+                const deps = if (custom_def) |cd| cd.depends_on else null;
+
+                if (deps) |dep_list| {
+                    // Check all dependencies are started
+                    var all_started = true;
+                    for (dep_list) |dep| {
+                        if (started.get(dep) == null) {
+                            all_started = false;
+                            break;
+                        }
+                    }
+
+                    if (all_started) {
+                        self.startAutoStartEntry(entry, &custom_configs, project_root, project_hash) catch |err| {
+                            style.print("Failed to start {s}: {s}\n", .{ entry.name, @errorName(err) });
+                        };
+                        try started.put(entry.name, true);
+                        made_progress = true;
+                    }
+                } else {
+                    // No deps but wasn't started? Start now
+                    self.startAutoStartEntry(entry, &custom_configs, project_root, project_hash) catch |err| {
+                        style.print("Failed to start {s}: {s}\n", .{ entry.name, @errorName(err) });
+                    };
+                    try started.put(entry.name, true);
+                    made_progress = true;
+                }
+            }
+
+            remaining = auto_start_entries.items.len - started.count();
+            if (!made_progress) {
+                style.print("Warning: Circular dependency detected, {d} service(s) could not be started\n", .{remaining});
+                break;
+            }
+        }
+    }
+
+    /// Start a single autoStart entry (handling port overrides, custom services, and project isolation)
+    fn startAutoStartEntry(
+        self: *ShellCommands,
+        entry: AutoStartEntry,
+        custom_configs: *std.StringHashMap(CustomServiceDef),
+        project_root: []const u8,
+        project_hash: ?[]const u8,
+    ) !void {
+        // Check if this is a custom service
+        if (custom_configs.get(entry.name)) |custom_def| {
+            self.startCustomService(entry.name, custom_def, project_root) catch |err| {
+                style.print("Failed to start custom service {s}: {s}\n", .{ entry.name, @errorName(err) });
+            };
+        } else if (entry.port) |port| {
+            // Port override: use getServiceConfigWithPort
+            const service_cmd = @import("../cli/commands/services.zig");
+            var config = service_cmd.getServiceConfigWithPort(self.allocator, entry.name, port, project_root) catch |err| {
+                style.print("Failed to configure {s} with port {d}: {s}\n", .{ entry.name, port, @errorName(err) });
+                return;
+            };
+
+            // Apply project isolation if available
+            if (project_hash) |ph| {
+                config.project_id = self.allocator.dupe(u8, ph) catch null;
+            }
+
+            var mgr = lib.services.manager.ServiceManager.init(self.allocator);
+            defer mgr.deinit();
+
+            const canonical_name = self.allocator.dupe(u8, config.name) catch return;
+            defer self.allocator.free(canonical_name);
+
+            // Ensure postgres data dir if needed
+            if (std.mem.eql(u8, entry.name, "postgres") or std.mem.eql(u8, entry.name, "postgresql")) {
+                self.ensurePostgresDataDir(project_root) catch {};
+            }
+
+            style.print("Starting service: {s} (port {d})...\n", .{ entry.name, port });
+            mgr.register(config) catch {
+                config.deinit(self.allocator);
+                return;
+            };
+            mgr.start(canonical_name) catch |err| {
+                style.print("Failed to start {s}: {s}\n", .{ entry.name, @errorName(err) });
+                return;
+            };
+            style.print("{s} started on port {d}\n", .{ entry.name, port });
+        } else {
+            // Standard service start with project isolation
+            try self.startServiceWithContextAndIsolation(entry.name, project_root, project_hash);
         }
     }
 
@@ -757,11 +955,26 @@ pub const ShellCommands = struct {
         port: ?u16 = null,
         health_check: ?[]const u8 = null,
         working_directory: ?[]const u8 = null,
+        depends_on: ?[]const []const u8 = null,
 
         fn deinit(self: *CustomServiceDef, allocator: std.mem.Allocator) void {
             if (self.command) |c| allocator.free(c);
             if (self.health_check) |h| allocator.free(h);
             if (self.working_directory) |w| allocator.free(w);
+            if (self.depends_on) |deps| {
+                for (deps) |d| allocator.free(d);
+                allocator.free(deps);
+            }
+        }
+    };
+
+    /// AutoStart entry supporting both simple string and map-style with port overrides
+    const AutoStartEntry = struct {
+        name: []const u8,
+        port: ?u16 = null,
+
+        fn deinit(self: *AutoStartEntry, allocator: std.mem.Allocator) void {
+            allocator.free(self.name);
         }
     };
 
@@ -888,6 +1101,30 @@ pub const ShellCommands = struct {
                     if (val.len > 0) {
                         current_def.working_directory = try self.allocator.dupe(u8, val);
                     }
+                } else if (std.mem.startsWith(u8, trimmed, "dependsOn:")) {
+                    // Parse dependsOn list - collect items from following lines
+                    var deps_list: std.ArrayList([]const u8) = .{};
+                    while (line_iter.next()) |dep_line| {
+                        const dep_trimmed = std.mem.trim(u8, dep_line, " \t\r");
+                        const dep_indent = countLeadingSpaces(dep_line);
+                        if (dep_trimmed.len == 0 or dep_trimmed[0] == '#') continue;
+                        if (dep_indent <= indent or !std.mem.startsWith(u8, dep_trimmed, "- ")) break;
+                        const dep_name = std.mem.trim(u8, dep_trimmed[2..], " \t\r");
+                        if (dep_name.len > 0) {
+                            const duped_dep = self.allocator.dupe(u8, dep_name) catch continue;
+                            deps_list.append(self.allocator, duped_dep) catch {
+                                self.allocator.free(duped_dep);
+                                continue;
+                            };
+                        }
+                    }
+                    if (deps_list.items.len > 0) {
+                        current_def.depends_on = deps_list.toOwnedSlice(self.allocator) catch null;
+                    } else {
+                        deps_list.deinit(self.allocator);
+                    }
+                } else if (std.mem.startsWith(u8, trimmed, "- ") and indent > custom_indent + 4) {
+                    // This could be a dependsOn list item at deeper indent; skip
                 }
             }
         }
@@ -981,6 +1218,11 @@ pub const ShellCommands = struct {
     }
 
     fn startServiceWithContext(self: *ShellCommands, service_name: []const u8, project_root: ?[]const u8) !void {
+        return self.startServiceWithContextAndIsolation(service_name, project_root, null);
+    }
+
+    /// Start a service with project context and optional per-project isolation
+    fn startServiceWithContextAndIsolation(self: *ShellCommands, service_name: []const u8, project_root: ?[]const u8, project_hash: ?[]const u8) !void {
         style.print("🚀 Starting service: {s}...\n", .{service_name});
 
         // For postgres, ensure PGDATA is initialized
@@ -989,19 +1231,35 @@ pub const ShellCommands = struct {
         }
 
         const service_cmd = @import("../cli/commands/services.zig");
-        var result = service_cmd.startCommandWithContext(self.allocator, &[_][]const u8{service_name}, project_root) catch |err| {
+
+        // Get config and apply project isolation
+        var config = service_cmd.getServiceConfig(self.allocator, service_name, project_root) catch |err| {
             style.print("⚠️  Failed to start {s}: {s}\n", .{ service_name, @errorName(err) });
             return;
         };
-        defer result.deinit(self.allocator);
 
-        if (result.exit_code == 0) {
-            style.print("✅ {s} started\n", .{service_name});
-        } else {
-            if (result.message) |msg| {
-                style.print("⚠️  {s}\n", .{msg});
-            }
+        // Apply project isolation if available
+        if (project_hash) |ph| {
+            config.project_id = self.allocator.dupe(u8, ph) catch null;
         }
+
+        var mgr = lib.services.manager.ServiceManager.init(self.allocator);
+        defer mgr.deinit();
+
+        const canonical_name = self.allocator.dupe(u8, config.name) catch return;
+        defer self.allocator.free(canonical_name);
+
+        mgr.register(config) catch {
+            config.deinit(self.allocator);
+            return;
+        };
+
+        mgr.start(canonical_name) catch |err| {
+            style.print("⚠️  Failed to start {s}: {s}\n", .{ service_name, @errorName(err) });
+            return;
+        };
+
+        style.print("✅ {s} started\n", .{service_name});
     }
 
     /// Wait for started services to be ready (health checks)

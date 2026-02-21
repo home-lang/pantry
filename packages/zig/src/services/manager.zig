@@ -117,11 +117,10 @@ pub const ServiceManager = struct {
 
     /// Generate launchd plist file for macOS
     fn generateLaunchdPlist(self: *ServiceManager, service: *definitions.ServiceConfig) !void {
-        const label = try std.fmt.allocPrint(
-            self.allocator,
-            "com.pantry.{s}",
-            .{service.name},
-        );
+        const label = if (service.project_id) |pid|
+            try std.fmt.allocPrint(self.allocator, "com.pantry.{s}.{s}", .{ pid, service.name })
+        else
+            try std.fmt.allocPrint(self.allocator, "com.pantry.{s}", .{service.name});
         defer self.allocator.free(label);
 
         // Use user LaunchAgents directory instead of system LaunchDaemons
@@ -186,7 +185,10 @@ pub const ServiceManager = struct {
                 defer if (home_env) |h| self.allocator.free(h);
 
                 if (home_env) |h| {
-                    const logs_dir = try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs", .{h});
+                    const logs_dir = if (service.project_id) |pid|
+                        try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs/{s}", .{ h, pid })
+                    else
+                        try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs", .{h});
                     defer self.allocator.free(logs_dir);
                     io_helper.makePath(logs_dir) catch {};
 
@@ -224,11 +226,10 @@ pub const ServiceManager = struct {
 
     /// Generate systemd unit file for Linux
     fn generateSystemdUnit(self: *ServiceManager, service: *definitions.ServiceConfig) !void {
-        const unit_name = try std.fmt.allocPrint(
-            self.allocator,
-            "pantry-{s}.service",
-            .{service.name},
-        );
+        const unit_name = if (service.project_id) |pid|
+            try std.fmt.allocPrint(self.allocator, "pantry-{s}-{s}.service", .{ pid, service.name })
+        else
+            try std.fmt.allocPrint(self.allocator, "pantry-{s}.service", .{service.name});
         defer self.allocator.free(unit_name);
 
         // Use user systemd directory instead of system
@@ -283,7 +284,10 @@ pub const ServiceManager = struct {
                 defer if (home_env) |h| self.allocator.free(h);
 
                 if (home_env) |h| {
-                    const logs_dir = try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs", .{h});
+                    const logs_dir = if (service.project_id) |pid|
+                        try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs/{s}", .{ h, pid })
+                    else
+                        try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs", .{h});
                     defer self.allocator.free(logs_dir);
                     io_helper.makePath(logs_dir) catch {};
 

@@ -22,6 +22,8 @@ pub const ServiceConfig = struct {
     keep_alive: bool = true,
     /// Health check command (optional, used to verify service is ready)
     health_check: ?[]const u8 = null,
+    /// Project identifier for per-project isolation (first 8 hex chars of FNV-1a hash of project path)
+    project_id: ?[]const u8 = null,
 
     pub fn deinit(self: *ServiceConfig, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -30,6 +32,7 @@ pub const ServiceConfig = struct {
         allocator.free(self.start_command);
         if (self.working_directory) |wd| allocator.free(wd);
         if (self.health_check) |hc| allocator.free(hc);
+        if (self.project_id) |pid| allocator.free(pid);
 
         var it = self.env_vars.iterator();
         while (it.next()) |entry| {
