@@ -3040,6 +3040,75 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── apache.org/arrow — fix stray cmake prefix + sed -i BSD + remove llvm ─
+
+  'apache.org/arrow': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Fix sed -i BSD compat in pkgconfig fixup
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove llvm.org build dep (too heavy)
+      if (recipe.build?.dependencies?.['llvm.org']) {
+        delete recipe.build.dependencies['llvm.org']
+      }
+      // Remove linux gnu.org/gcc build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+      // Remove darwin libcxx.llvm.org dep
+      if (recipe.dependencies?.darwin?.['libcxx.llvm.org']) {
+        delete recipe.dependencies.darwin['libcxx.llvm.org']
+      }
+      // Remove linux CC/CXX/LD overrides
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+      // Remove darwin CC/CXX/LD overrides
+      if (recipe.build?.env?.darwin) {
+        delete recipe.build.env.darwin.CC
+        delete recipe.build.env.darwin.CXX
+        delete recipe.build.env.darwin.LD
+      }
+    },
+  },
+
+  // ─── facebook.com/wangle — remove linux gcc dep ───────────────────────
+
+  'facebook.com/wangle': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux gnu.org/gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

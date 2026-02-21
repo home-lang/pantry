@@ -841,14 +841,14 @@ Options:
     // zlib.net/minizip removed — small cmake build, deps available
     // code.videolan.org/aribb24 removed — small autotools library
     // vapoursynth.com — needs zimg in S3, build zimg first then vapoursynth
-    'facebook.com/wangle', // CMake build failure (complex Facebook library)
+    // facebook.com/wangle removed — removed linux gcc/libstdcxx deps in override
     // unidata.ucar.edu/netcdf removed — fixed sed -i BSD in cmake fixup steps
     // x.org/libcvt removed — fixed meson invocation
     // x.org/xaw removed — fixed $SHELF variable references in script
     // sfcgal.gitlab.io removed — no such package (sfcgal.org already fixed)
     'libcxx.llvm.org', // LLVM compilation too resource-intensive for CI
     // --- Failures from run 22169381361 batches 12-18 ---
-    'apache.org/arrow', // Complex C++ build with many dependencies
+    // apache.org/arrow removed — fixed cmake prefix + sed -i BSD + removed llvm dep in override
     // apache.org/httpd removed — fixed sed -i BSD compat in override
     // apache.org/thrift removed — fixed duplicate --prefix arg in override
     // apache.org/zookeeper removed — removed cppunit/gcc deps in override
