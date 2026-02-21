@@ -12,58 +12,102 @@ const ServiceConfig = services.ServiceConfig;
 const Services = services.Services;
 
 pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
-    style.print("Available Services ({d} total):\n\n", .{31});
+    style.print("Available Services ({d} total):\n\n", .{62});
 
-    // Databases (11)
+    // Databases (22)
     style.print("[Databases]\n", .{});
-    style.print("  {s: <14} PostgreSQL                   (port 5432)\n", .{"postgres"});
-    style.print("  {s: <14} Redis                        (port 6379)\n", .{"redis"});
-    style.print("  {s: <14} MySQL                        (port 3306)\n", .{"mysql"});
-    style.print("  {s: <14} MongoDB                      (port 27017)\n", .{"mongodb"});
-    style.print("  {s: <14} InfluxDB                     (port 8086)\n", .{"influxdb"});
-    style.print("  {s: <14} CockroachDB                  (port 26257)\n", .{"cockroachdb"});
-    style.print("  {s: <14} Neo4j                        (port 7474)\n", .{"neo4j"});
-    style.print("  {s: <14} ClickHouse                   (port 8123)\n", .{"clickhouse"});
-    style.print("  {s: <14} Memcached                    (port 11211)\n", .{"memcached"});
-    style.print("  {s: <14} Elasticsearch                (port 9200)\n", .{"elasticsearch"});
+    style.print("  {s: <16} PostgreSQL                   (port 5432)\n", .{"postgres"});
+    style.print("  {s: <16} Redis                        (port 6379)\n", .{"redis"});
+    style.print("  {s: <16} MySQL                        (port 3306)\n", .{"mysql"});
+    style.print("  {s: <16} MariaDB                      (port 3306)\n", .{"mariadb"});
+    style.print("  {s: <16} MongoDB                      (port 27017)\n", .{"mongodb"});
+    style.print("  {s: <16} Meilisearch                  (port 7700)\n", .{"meilisearch"});
+    style.print("  {s: <16} Elasticsearch                (port 9200)\n", .{"elasticsearch"});
+    style.print("  {s: <16} OpenSearch                   (port 9200)\n", .{"opensearch"});
+    style.print("  {s: <16} InfluxDB                     (port 8086)\n", .{"influxdb"});
+    style.print("  {s: <16} CockroachDB                  (port 26257)\n", .{"cockroachdb"});
+    style.print("  {s: <16} Neo4j                        (port 7474)\n", .{"neo4j"});
+    style.print("  {s: <16} ClickHouse                   (port 8123)\n", .{"clickhouse"});
+    style.print("  {s: <16} Memcached                    (port 11211)\n", .{"memcached"});
+    style.print("  {s: <16} CouchDB                      (port 5984)\n", .{"couchdb"});
+    style.print("  {s: <16} Cassandra                    (port 9042)\n", .{"cassandra"});
+    style.print("  {s: <16} SurrealDB                    (port 8000)\n", .{"surrealdb"});
+    style.print("  {s: <16} Typesense                    (port 8108)\n", .{"typesense"});
+    style.print("  {s: <16} TiDB                         (port 4000)\n", .{"tidb"});
+    style.print("  {s: <16} Valkey                       (port 6379)\n", .{"valkey"});
+    style.print("  {s: <16} DragonflyDB                  (port 6379)\n", .{"dragonflydb"});
+    style.print("  {s: <16} KeyDB                        (port 6379)\n", .{"keydb"});
+    style.print("  {s: <16} ScyllaDB                     (port 9042)\n", .{"scylladb"});
+    style.print("  {s: <16} FerretDB                     (port 27018)\n", .{"ferretdb"});
 
-    // Message Queues (4)
+    // Message Queues (6)
     style.print("\n[Message Queues & Streaming]\n", .{});
-    style.print("  {s: <14} Apache Kafka                 (port 9092)\n", .{"kafka"});
-    style.print("  {s: <14} RabbitMQ                     (port 5672)\n", .{"rabbitmq"});
-    style.print("  {s: <14} Apache Pulsar                (port 6650)\n", .{"pulsar"});
-    style.print("  {s: <14} NATS                         (port 4222)\n", .{"nats"});
+    style.print("  {s: <16} Apache Kafka                 (port 9092)\n", .{"kafka"});
+    style.print("  {s: <16} RabbitMQ                     (port 5672)\n", .{"rabbitmq"});
+    style.print("  {s: <16} Apache Pulsar                (port 6650)\n", .{"pulsar"});
+    style.print("  {s: <16} NATS                         (port 4222)\n", .{"nats"});
+    style.print("  {s: <16} Mosquitto MQTT               (port 1883)\n", .{"mosquitto"});
+    style.print("  {s: <16} Redpanda                     (port 9092)\n", .{"redpanda"});
 
-    // Monitoring (3)
+    // Monitoring (6)
     style.print("\n[Monitoring & Observability]\n", .{});
-    style.print("  {s: <14} Prometheus                   (port 9090)\n", .{"prometheus"});
-    style.print("  {s: <14} Grafana                      (port 3000)\n", .{"grafana"});
-    style.print("  {s: <14} Jaeger                       (port 16686)\n", .{"jaeger"});
+    style.print("  {s: <16} Prometheus                   (port 9090)\n", .{"prometheus"});
+    style.print("  {s: <16} Grafana                      (port 3000)\n", .{"grafana"});
+    style.print("  {s: <16} Jaeger                       (port 16686)\n", .{"jaeger"});
+    style.print("  {s: <16} Loki                         (port 3100)\n", .{"loki"});
+    style.print("  {s: <16} Alertmanager                 (port 9093)\n", .{"alertmanager"});
+    style.print("  {s: <16} VictoriaMetrics              (port 8428)\n", .{"victoriametrics"});
 
-    // Infrastructure (6)
+    // Proxy & Load Balancers (4)
+    style.print("\n[Proxy & Load Balancers]\n", .{});
+    style.print("  {s: <16} Traefik                      (port 8082)\n", .{"traefik"});
+    style.print("  {s: <16} HAProxy                      (port 8081)\n", .{"haproxy"});
+    style.print("  {s: <16} Varnish                      (port 6081)\n", .{"varnish"});
+    style.print("  {s: <16} Envoy                        (port 10000)\n", .{"envoy"});
+
+    // Infrastructure (7)
     style.print("\n[Infrastructure & Tools]\n", .{});
-    style.print("  {s: <14} HashiCorp Vault              (port 8200)\n", .{"vault"});
-    style.print("  {s: <14} HashiCorp Consul             (port 8500)\n", .{"consul"});
-    style.print("  {s: <14} etcd                         (port 2379)\n", .{"etcd"});
-    style.print("  {s: <14} MinIO                        (port 9000)\n", .{"minio"});
-    style.print("  {s: <14} SonarQube                    (port 9001)\n", .{"sonarqube"});
-    style.print("  {s: <14} Temporal                     (port 7233)\n", .{"temporal"});
+    style.print("  {s: <16} HashiCorp Vault              (port 8200)\n", .{"vault"});
+    style.print("  {s: <16} HashiCorp Consul             (port 8500)\n", .{"consul"});
+    style.print("  {s: <16} HashiCorp Nomad              (port 4646)\n", .{"nomad"});
+    style.print("  {s: <16} etcd                         (port 2379)\n", .{"etcd"});
+    style.print("  {s: <16} MinIO                        (port 9000)\n", .{"minio"});
+    style.print("  {s: <16} SonarQube                    (port 9001)\n", .{"sonarqube"});
+    style.print("  {s: <16} Temporal                     (port 7233)\n", .{"temporal"});
 
-    // Dev/CI (3)
+    // Dev/CI (6)
     style.print("\n[Development & CI/CD]\n", .{});
-    style.print("  {s: <14} Jenkins                      (port 8090)\n", .{"jenkins"});
-    style.print("  {s: <14} LocalStack                   (port 4566)\n", .{"localstack"});
-    style.print("  {s: <14} Verdaccio                    (port 4873)\n", .{"verdaccio"});
+    style.print("  {s: <16} Jenkins                      (port 8090)\n", .{"jenkins"});
+    style.print("  {s: <16} LocalStack                   (port 4566)\n", .{"localstack"});
+    style.print("  {s: <16} Verdaccio                    (port 4873)\n", .{"verdaccio"});
+    style.print("  {s: <16} Gitea                        (port 3001)\n", .{"gitea"});
+    style.print("  {s: <16} Mailpit                      (port 8025)\n", .{"mailpit"});
+    style.print("  {s: <16} Ollama                       (port 11434)\n", .{"ollama"});
 
     // API/Backend (2)
     style.print("\n[API & Backend]\n", .{});
-    style.print("  {s: <14} Hasura GraphQL               (port 8085)\n", .{"hasura"});
-    style.print("  {s: <14} Keycloak                     (port 8088)\n", .{"keycloak"});
+    style.print("  {s: <16} Hasura GraphQL               (port 8085)\n", .{"hasura"});
+    style.print("  {s: <16} Keycloak                     (port 8088)\n", .{"keycloak"});
 
-    // Web Servers (2)
+    // Web Servers (3)
     style.print("\n[Web Servers]\n", .{});
-    style.print("  {s: <14} Nginx                        (port 8080)\n", .{"nginx"});
-    style.print("  {s: <14} Caddy                        (port 2015)\n", .{"caddy"});
+    style.print("  {s: <16} Nginx                        (port 8080)\n", .{"nginx"});
+    style.print("  {s: <16} Caddy                        (port 2015)\n", .{"caddy"});
+    style.print("  {s: <16} Apache httpd                 (port 8084)\n", .{"httpd"});
+
+    // DNS & Network (3)
+    style.print("\n[DNS & Network]\n", .{});
+    style.print("  {s: <16} dnsmasq                      (port 5353)\n", .{"dnsmasq"});
+    style.print("  {s: <16} CoreDNS                      (port 1053)\n", .{"coredns"});
+    style.print("  {s: <16} Unbound                      (port 5335)\n", .{"unbound"});
+
+    // Sync & Storage (1)
+    style.print("\n[Sync & Storage]\n", .{});
+    style.print("  {s: <16} Syncthing                    (port 8384)\n", .{"syncthing"});
+
+    // Network & Security (1)
+    style.print("\n[Network & Security]\n", .{});
+    style.print("  {s: <16} Tor                          (port 9050)\n", .{"tor"});
 
     style.print("\n[Usage]\n", .{});
     style.print("  pantry service start <service>      Start a service\n", .{});
@@ -265,6 +309,8 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.redisWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "mysql")) {
         return try Services.mysql(allocator, port);
+    } else if (std.mem.eql(u8, name, "mariadb")) {
+        return try Services.mariadb(allocator, port);
     } else if (std.mem.eql(u8, name, "mongodb")) {
         return try Services.mongodb(allocator, port);
     } else if (std.mem.eql(u8, name, "influxdb")) {
@@ -281,6 +327,28 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.elasticsearch(allocator, port);
     } else if (std.mem.eql(u8, name, "meilisearch")) {
         return try Services.meilisearchWithContext(allocator, port, project_root);
+    } else if (std.mem.eql(u8, name, "opensearch")) {
+        return try Services.opensearch(allocator, port);
+    } else if (std.mem.eql(u8, name, "couchdb")) {
+        return try Services.couchdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "cassandra")) {
+        return try Services.cassandra(allocator, port);
+    } else if (std.mem.eql(u8, name, "surrealdb")) {
+        return try Services.surrealdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "dragonflydb")) {
+        return try Services.dragonflydb(allocator, port);
+    } else if (std.mem.eql(u8, name, "typesense")) {
+        return try Services.typesense(allocator, port);
+    } else if (std.mem.eql(u8, name, "ferretdb")) {
+        return try Services.ferretdb(allocator, port);
+    } else if (std.mem.eql(u8, name, "tidb")) {
+        return try Services.tidb(allocator, port);
+    } else if (std.mem.eql(u8, name, "scylladb")) {
+        return try Services.scylladb(allocator, port);
+    } else if (std.mem.eql(u8, name, "keydb")) {
+        return try Services.keydb(allocator, port);
+    } else if (std.mem.eql(u8, name, "valkey")) {
+        return try Services.valkey(allocator, port);
     }
     // Message Queues
     else if (std.mem.eql(u8, name, "kafka")) {
@@ -291,6 +359,10 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.pulsar(allocator, port);
     } else if (std.mem.eql(u8, name, "nats")) {
         return try Services.nats(allocator, port);
+    } else if (std.mem.eql(u8, name, "mosquitto")) {
+        return try Services.mosquitto(allocator, port);
+    } else if (std.mem.eql(u8, name, "redpanda")) {
+        return try Services.redpanda(allocator, port);
     }
     // Monitoring
     else if (std.mem.eql(u8, name, "prometheus")) {
@@ -299,6 +371,22 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.grafana(allocator, port);
     } else if (std.mem.eql(u8, name, "jaeger")) {
         return try Services.jaeger(allocator, port);
+    } else if (std.mem.eql(u8, name, "loki")) {
+        return try Services.loki(allocator, port);
+    } else if (std.mem.eql(u8, name, "alertmanager")) {
+        return try Services.alertmanager(allocator, port);
+    } else if (std.mem.eql(u8, name, "victoriametrics")) {
+        return try Services.victoriametrics(allocator, port);
+    }
+    // Proxy & Load Balancers
+    else if (std.mem.eql(u8, name, "traefik")) {
+        return try Services.traefik(allocator, port);
+    } else if (std.mem.eql(u8, name, "haproxy")) {
+        return try Services.haproxy(allocator, port);
+    } else if (std.mem.eql(u8, name, "varnish")) {
+        return try Services.varnish(allocator, port);
+    } else if (std.mem.eql(u8, name, "envoy")) {
+        return try Services.envoy(allocator, port);
     }
     // Infrastructure
     else if (std.mem.eql(u8, name, "vault")) {
@@ -313,6 +401,8 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.sonarqube(allocator, port);
     } else if (std.mem.eql(u8, name, "temporal")) {
         return try Services.temporal(allocator, port);
+    } else if (std.mem.eql(u8, name, "nomad")) {
+        return try Services.nomad(allocator, port);
     }
     // Dev/CI
     else if (std.mem.eql(u8, name, "jenkins")) {
@@ -321,6 +411,12 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.localstack(allocator, port);
     } else if (std.mem.eql(u8, name, "verdaccio")) {
         return try Services.verdaccio(allocator, port);
+    } else if (std.mem.eql(u8, name, "gitea")) {
+        return try Services.gitea(allocator, port);
+    } else if (std.mem.eql(u8, name, "mailpit")) {
+        return try Services.mailpit(allocator, port);
+    } else if (std.mem.eql(u8, name, "ollama")) {
+        return try Services.ollama(allocator, port);
     }
     // API/Backend
     else if (std.mem.eql(u8, name, "hasura")) {
@@ -333,6 +429,24 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.nginx(allocator, port);
     } else if (std.mem.eql(u8, name, "caddy")) {
         return try Services.caddy(allocator, port);
+    } else if (std.mem.eql(u8, name, "httpd")) {
+        return try Services.httpd(allocator, port);
+    }
+    // DNS & Network
+    else if (std.mem.eql(u8, name, "dnsmasq")) {
+        return try Services.dnsmasq(allocator, port);
+    } else if (std.mem.eql(u8, name, "coredns")) {
+        return try Services.coredns(allocator, port);
+    } else if (std.mem.eql(u8, name, "unbound")) {
+        return try Services.unbound(allocator, port);
+    }
+    // Sync & Storage
+    else if (std.mem.eql(u8, name, "syncthing")) {
+        return try Services.syncthing(allocator, port);
+    }
+    // Network & Security
+    else if (std.mem.eql(u8, name, "tor")) {
+        return try Services.tor(allocator, port);
     } else {
         return error.UnknownService;
     }

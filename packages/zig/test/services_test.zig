@@ -231,6 +231,151 @@ test "ServiceConfig creation - MongoDB" {
 }
 
 // ============================================================================
+// Service Configuration Tests — New databases
+// ============================================================================
+
+test "ServiceConfig creation - MariaDB" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.mariadb(allocator, 3306);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("mariadb", svc.name);
+    try std.testing.expectEqualStrings("MariaDB", svc.display_name);
+    try std.testing.expect(svc.port.? == 3306);
+    try std.testing.expect(std.mem.indexOf(u8, svc.start_command, "3306") != null);
+}
+
+test "ServiceConfig creation - SurrealDB" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.surrealdb(allocator, 8000);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("surrealdb", svc.name);
+    try std.testing.expect(svc.port.? == 8000);
+    try std.testing.expect(std.mem.indexOf(u8, svc.start_command, "8000") != null);
+}
+
+test "ServiceConfig creation - Typesense" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.typesense(allocator, 8108);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("typesense", svc.name);
+    try std.testing.expect(svc.port.? == 8108);
+    try std.testing.expect(std.mem.indexOf(u8, svc.start_command, "8108") != null);
+}
+
+test "ServiceConfig creation - Valkey" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.valkey(allocator, 6379);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("valkey", svc.name);
+    try std.testing.expect(svc.port.? == 6379);
+}
+
+test "ServiceConfig creation - CouchDB" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.couchdb(allocator, 5984);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("couchdb", svc.name);
+    try std.testing.expect(svc.port.? == 5984);
+}
+
+test "ServiceConfig creation - Cassandra" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.cassandra(allocator, 9042);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("cassandra", svc.name);
+    try std.testing.expect(svc.port.? == 9042);
+}
+
+// ============================================================================
+// Service Configuration Tests — New message queues & monitoring
+// ============================================================================
+
+test "ServiceConfig creation - Mosquitto" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.mosquitto(allocator, 1883);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("mosquitto", svc.name);
+    try std.testing.expect(svc.port.? == 1883);
+}
+
+test "ServiceConfig creation - Redpanda" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.redpanda(allocator, 9092);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("redpanda", svc.name);
+    try std.testing.expect(svc.port.? == 9092);
+}
+
+test "ServiceConfig creation - Loki" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.loki(allocator, 3100);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("loki", svc.name);
+    try std.testing.expect(svc.port.? == 3100);
+}
+
+test "ServiceConfig creation - Ollama" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.ollama(allocator, 11434);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("ollama", svc.name);
+    try std.testing.expect(svc.port.? == 11434);
+    try std.testing.expect(svc.env_vars.get("OLLAMA_HOST") != null);
+}
+
+// ============================================================================
+// Service Configuration Tests — Proxies, DNS, misc
+// ============================================================================
+
+test "ServiceConfig creation - Traefik" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.traefik(allocator, 8082);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("traefik", svc.name);
+    try std.testing.expect(svc.port.? == 8082);
+}
+
+test "ServiceConfig creation - HAProxy" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.haproxy(allocator, 8081);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("haproxy", svc.name);
+    try std.testing.expect(svc.port.? == 8081);
+}
+
+test "ServiceConfig creation - dnsmasq" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.dnsmasq(allocator, 5353);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("dnsmasq", svc.name);
+    try std.testing.expect(svc.port.? == 5353);
+}
+
+test "ServiceConfig creation - Syncthing" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.syncthing(allocator, 8384);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("syncthing", svc.name);
+    try std.testing.expect(svc.port.? == 8384);
+}
+
+test "ServiceConfig creation - Tor" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.tor(allocator, 9050);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("tor", svc.name);
+    try std.testing.expect(svc.port.? == 9050);
+}
+
+test "ServiceConfig creation - Apache httpd" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.httpd(allocator, 8084);
+    defer svc.deinit(allocator);
+    try std.testing.expectEqualStrings("httpd", svc.name);
+    try std.testing.expect(svc.port.? == 8084);
+}
+
+// ============================================================================
 // Default Port Tests
 // ============================================================================
 
@@ -241,7 +386,7 @@ test "Default ports for all services" {
     try std.testing.expect(definitions.Services.getDefaultPort("redis").? == 6379);
     try std.testing.expect(definitions.Services.getDefaultPort("meilisearch").? == 7700);
 
-    // Other databases
+    // Other databases (original)
     try std.testing.expect(definitions.Services.getDefaultPort("mysql").? == 3306);
     try std.testing.expect(definitions.Services.getDefaultPort("mongodb").? == 27017);
     try std.testing.expect(definitions.Services.getDefaultPort("influxdb").? == 8086);
@@ -251,18 +396,47 @@ test "Default ports for all services" {
     try std.testing.expect(definitions.Services.getDefaultPort("memcached").? == 11211);
     try std.testing.expect(definitions.Services.getDefaultPort("elasticsearch").? == 9200);
 
-    // Message Queues
+    // Databases (new)
+    try std.testing.expect(definitions.Services.getDefaultPort("mariadb").? == 3306);
+    try std.testing.expect(definitions.Services.getDefaultPort("valkey").? == 6379);
+    try std.testing.expect(definitions.Services.getDefaultPort("opensearch").? == 9200);
+    try std.testing.expect(definitions.Services.getDefaultPort("couchdb").? == 5984);
+    try std.testing.expect(definitions.Services.getDefaultPort("cassandra").? == 9042);
+    try std.testing.expect(definitions.Services.getDefaultPort("surrealdb").? == 8000);
+    try std.testing.expect(definitions.Services.getDefaultPort("dragonflydb").? == 6379);
+    try std.testing.expect(definitions.Services.getDefaultPort("typesense").? == 8108);
+    try std.testing.expect(definitions.Services.getDefaultPort("ferretdb").? == 27018);
+    try std.testing.expect(definitions.Services.getDefaultPort("tidb").? == 4000);
+    try std.testing.expect(definitions.Services.getDefaultPort("scylladb").? == 9042);
+    try std.testing.expect(definitions.Services.getDefaultPort("keydb").? == 6379);
+
+    // Message Queues (original)
     try std.testing.expect(definitions.Services.getDefaultPort("kafka").? == 9092);
     try std.testing.expect(definitions.Services.getDefaultPort("rabbitmq").? == 5672);
     try std.testing.expect(definitions.Services.getDefaultPort("pulsar").? == 6650);
     try std.testing.expect(definitions.Services.getDefaultPort("nats").? == 4222);
 
-    // Monitoring
+    // Message Queues (new)
+    try std.testing.expect(definitions.Services.getDefaultPort("mosquitto").? == 1883);
+    try std.testing.expect(definitions.Services.getDefaultPort("redpanda").? == 9092);
+
+    // Monitoring (original)
     try std.testing.expect(definitions.Services.getDefaultPort("prometheus").? == 9090);
     try std.testing.expect(definitions.Services.getDefaultPort("grafana").? == 3000);
     try std.testing.expect(definitions.Services.getDefaultPort("jaeger").? == 16686);
 
-    // Infrastructure
+    // Monitoring (new)
+    try std.testing.expect(definitions.Services.getDefaultPort("loki").? == 3100);
+    try std.testing.expect(definitions.Services.getDefaultPort("alertmanager").? == 9093);
+    try std.testing.expect(definitions.Services.getDefaultPort("victoriametrics").? == 8428);
+
+    // Proxy & Load Balancers
+    try std.testing.expect(definitions.Services.getDefaultPort("traefik").? == 8082);
+    try std.testing.expect(definitions.Services.getDefaultPort("haproxy").? == 8081);
+    try std.testing.expect(definitions.Services.getDefaultPort("varnish").? == 6081);
+    try std.testing.expect(definitions.Services.getDefaultPort("envoy").? == 10000);
+
+    // Infrastructure (original)
     try std.testing.expect(definitions.Services.getDefaultPort("vault").? == 8200);
     try std.testing.expect(definitions.Services.getDefaultPort("consul").? == 8500);
     try std.testing.expect(definitions.Services.getDefaultPort("etcd").? == 2379);
@@ -270,18 +444,40 @@ test "Default ports for all services" {
     try std.testing.expect(definitions.Services.getDefaultPort("sonarqube").? == 9001);
     try std.testing.expect(definitions.Services.getDefaultPort("temporal").? == 7233);
 
-    // Dev/CI
+    // Infrastructure (new)
+    try std.testing.expect(definitions.Services.getDefaultPort("nomad").? == 4646);
+
+    // Dev/CI (original)
     try std.testing.expect(definitions.Services.getDefaultPort("jenkins").? == 8090);
     try std.testing.expect(definitions.Services.getDefaultPort("localstack").? == 4566);
     try std.testing.expect(definitions.Services.getDefaultPort("verdaccio").? == 4873);
+
+    // Dev/CI (new)
+    try std.testing.expect(definitions.Services.getDefaultPort("gitea").? == 3001);
+    try std.testing.expect(definitions.Services.getDefaultPort("mailpit").? == 8025);
+    try std.testing.expect(definitions.Services.getDefaultPort("ollama").? == 11434);
 
     // API/Backend
     try std.testing.expect(definitions.Services.getDefaultPort("hasura").? == 8085);
     try std.testing.expect(definitions.Services.getDefaultPort("keycloak").? == 8088);
 
-    // Web Servers
+    // Web Servers (original)
     try std.testing.expect(definitions.Services.getDefaultPort("nginx").? == 8080);
     try std.testing.expect(definitions.Services.getDefaultPort("caddy").? == 2015);
+
+    // Web Servers (new)
+    try std.testing.expect(definitions.Services.getDefaultPort("httpd").? == 8084);
+
+    // DNS & Network
+    try std.testing.expect(definitions.Services.getDefaultPort("dnsmasq").? == 5353);
+    try std.testing.expect(definitions.Services.getDefaultPort("coredns").? == 1053);
+    try std.testing.expect(definitions.Services.getDefaultPort("unbound").? == 5335);
+
+    // Sync & Storage
+    try std.testing.expect(definitions.Services.getDefaultPort("syncthing").? == 8384);
+
+    // Network & Security
+    try std.testing.expect(definitions.Services.getDefaultPort("tor").? == 9050);
 }
 
 test "Default port for invalid service" {
@@ -720,38 +916,260 @@ test "Service display names contain proper capitalization" {
 // Memory and Resource Tests
 // ============================================================================
 
-test "ServiceConfig memory cleanup - all three services" {
+test "ServiceConfig memory cleanup - all services" {
     const allocator = std.testing.allocator;
 
-    // Create and destroy each service to verify no memory leaks
+    // Create and destroy every service to verify no memory leaks
+    // Original services
     {
-        var pg = try definitions.Services.postgresql(allocator, 5432);
-        defer pg.deinit(allocator);
+        var svc = try definitions.Services.postgresql(allocator, 5432);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.redis(allocator, 6379);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.meilisearch(allocator, 7700);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.mysql(allocator, 3306);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.nginx(allocator, 8080);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.mongodb(allocator, 27017);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.influxdb(allocator, 8086);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.cockroachdb(allocator, 26257);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.neo4j(allocator, 7474);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.clickhouse(allocator, 8123);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.memcached(allocator, 11211);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.elasticsearch(allocator, 9200);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.kafka(allocator, 9092);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.rabbitmq(allocator, 5672);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.pulsar(allocator, 6650);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.nats(allocator, 4222);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.prometheus(allocator, 9090);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.grafana(allocator, 3000);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.jaeger(allocator, 16686);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.vault(allocator, 8200);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.consul(allocator, 8500);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.etcd(allocator, 2379);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.minio(allocator, 9000);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.sonarqube(allocator, 9001);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.temporal(allocator, 7233);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.jenkins(allocator, 8090);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.localstack(allocator, 4566);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.verdaccio(allocator, 4873);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.hasura(allocator, 8085);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.keycloak(allocator, 8088);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.caddy(allocator, 2015);
+        defer svc.deinit(allocator);
     }
 
+    // New services
     {
-        var redis = try definitions.Services.redis(allocator, 6379);
-        defer redis.deinit(allocator);
+        var svc = try definitions.Services.mariadb(allocator, 3306);
+        defer svc.deinit(allocator);
     }
-
     {
-        var meili = try definitions.Services.meilisearch(allocator, 7700);
-        defer meili.deinit(allocator);
+        var svc = try definitions.Services.valkey(allocator, 6379);
+        defer svc.deinit(allocator);
     }
-
     {
-        var mysql = try definitions.Services.mysql(allocator, 3306);
-        defer mysql.deinit(allocator);
+        var svc = try definitions.Services.opensearch(allocator, 9200);
+        defer svc.deinit(allocator);
     }
-
     {
-        var nginx = try definitions.Services.nginx(allocator, 80);
-        defer nginx.deinit(allocator);
+        var svc = try definitions.Services.couchdb(allocator, 5984);
+        defer svc.deinit(allocator);
     }
-
     {
-        var mongo = try definitions.Services.mongodb(allocator, 27017);
-        defer mongo.deinit(allocator);
+        var svc = try definitions.Services.cassandra(allocator, 9042);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.surrealdb(allocator, 8000);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.dragonflydb(allocator, 6379);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.typesense(allocator, 8108);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.ferretdb(allocator, 27018);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.tidb(allocator, 4000);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.scylladb(allocator, 9042);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.keydb(allocator, 6379);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.mosquitto(allocator, 1883);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.redpanda(allocator, 9092);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.loki(allocator, 3100);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.alertmanager(allocator, 9093);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.victoriametrics(allocator, 8428);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.traefik(allocator, 8082);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.haproxy(allocator, 8081);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.varnish(allocator, 6081);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.envoy(allocator, 10000);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.nomad(allocator, 4646);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.gitea(allocator, 3001);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.mailpit(allocator, 8025);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.ollama(allocator, 11434);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.dnsmasq(allocator, 5353);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.coredns(allocator, 1053);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.unbound(allocator, 5335);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.httpd(allocator, 8084);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.syncthing(allocator, 8384);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.tor(allocator, 9050);
+        defer svc.deinit(allocator);
     }
 
     // If we get here without leaks (testing allocator checks), memory cleanup works

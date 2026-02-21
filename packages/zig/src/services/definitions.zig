@@ -678,6 +678,454 @@ pub const Services = struct {
     }
 
     // ========================================================================
+    // Additional Database Services (Tier 2)
+    // ========================================================================
+
+    /// MariaDB service (MySQL-compatible fork)
+    pub fn mariadb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        try env_vars.put("MYSQL_TCP_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "mariadb"),
+            .display_name = try allocator.dupe(u8, "MariaDB"),
+            .description = try allocator.dupe(u8, "MySQL-compatible relational database"),
+            .start_command = try std.fmt.allocPrint(allocator, "mariadbd --port={d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Valkey service (Redis-compatible fork)
+    pub fn valkey(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "valkey"),
+            .display_name = try allocator.dupe(u8, "Valkey"),
+            .description = try allocator.dupe(u8, "Redis-compatible in-memory data store"),
+            .start_command = try std.fmt.allocPrint(allocator, "valkey-server --port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// OpenSearch service (Elasticsearch fork)
+    pub fn opensearch(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        try env_vars.put("OPENSEARCH_JAVA_OPTS", try allocator.dupe(u8, "-Xms512m -Xmx512m"));
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "opensearch"),
+            .display_name = try allocator.dupe(u8, "OpenSearch"),
+            .description = try allocator.dupe(u8, "Search and analytics suite"),
+            .start_command = try std.fmt.allocPrint(allocator, "opensearch -Ehttp.port={d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// CouchDB service
+    pub fn couchdb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "couchdb"),
+            .display_name = try allocator.dupe(u8, "CouchDB"),
+            .description = try allocator.dupe(u8, "Document-oriented NoSQL database"),
+            .start_command = try std.fmt.allocPrint(allocator, "couchdb -b -o /dev/null -p {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Apache Cassandra service
+    pub fn cassandra(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        try env_vars.put("MAX_HEAP_SIZE", try allocator.dupe(u8, "1G"));
+        try env_vars.put("HEAP_NEWSIZE", try allocator.dupe(u8, "256M"));
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "cassandra"),
+            .display_name = try allocator.dupe(u8, "Cassandra"),
+            .description = try allocator.dupe(u8, "Wide-column distributed database"),
+            .start_command = try std.fmt.allocPrint(allocator, "cassandra -f -p {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// SurrealDB service
+    pub fn surrealdb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "surrealdb"),
+            .display_name = try allocator.dupe(u8, "SurrealDB"),
+            .description = try allocator.dupe(u8, "Multi-model cloud database"),
+            .start_command = try std.fmt.allocPrint(allocator, "surreal start --bind 0.0.0.0:{d} memory", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// DragonflyDB service (Redis-compatible)
+    pub fn dragonflydb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "dragonflydb"),
+            .display_name = try allocator.dupe(u8, "DragonflyDB"),
+            .description = try allocator.dupe(u8, "Redis-compatible in-memory store"),
+            .start_command = try std.fmt.allocPrint(allocator, "dragonfly --port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Typesense service
+    pub fn typesense(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "typesense"),
+            .display_name = try allocator.dupe(u8, "Typesense"),
+            .description = try allocator.dupe(u8, "Typo-tolerant search engine"),
+            .start_command = try std.fmt.allocPrint(allocator, "typesense-server --data-dir /usr/local/var/typesense --api-port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// FerretDB service (MongoDB-compatible on PostgreSQL)
+    pub fn ferretdb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "ferretdb"),
+            .display_name = try allocator.dupe(u8, "FerretDB"),
+            .description = try allocator.dupe(u8, "MongoDB-compatible database on PostgreSQL"),
+            .start_command = try std.fmt.allocPrint(allocator, "ferretdb --listen-addr=:{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// TiDB service
+    pub fn tidb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "tidb"),
+            .display_name = try allocator.dupe(u8, "TiDB"),
+            .description = try allocator.dupe(u8, "MySQL-compatible distributed database"),
+            .start_command = try std.fmt.allocPrint(allocator, "tidb-server -P {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// ScyllaDB service (Cassandra-compatible)
+    pub fn scylladb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "scylladb"),
+            .display_name = try allocator.dupe(u8, "ScyllaDB"),
+            .description = try allocator.dupe(u8, "Cassandra-compatible NoSQL database"),
+            .start_command = try std.fmt.allocPrint(allocator, "scylla --native-transport-port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// KeyDB service (Redis-compatible)
+    pub fn keydb(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "keydb"),
+            .display_name = try allocator.dupe(u8, "KeyDB"),
+            .description = try allocator.dupe(u8, "Multi-threaded Redis-compatible store"),
+            .start_command = try std.fmt.allocPrint(allocator, "keydb-server --port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Message Queue & Streaming Services (Tier 2)
+    // ========================================================================
+
+    /// Mosquitto MQTT broker
+    pub fn mosquitto(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "mosquitto"),
+            .display_name = try allocator.dupe(u8, "Mosquitto"),
+            .description = try allocator.dupe(u8, "MQTT message broker"),
+            .start_command = try std.fmt.allocPrint(allocator, "mosquitto -p {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Redpanda service (Kafka-compatible)
+    pub fn redpanda(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "redpanda"),
+            .display_name = try allocator.dupe(u8, "Redpanda"),
+            .description = try allocator.dupe(u8, "Kafka-compatible streaming platform"),
+            .start_command = try std.fmt.allocPrint(allocator, "redpanda start --kafka-addr 0.0.0.0:{d} --overprovisioned --smp 1 --memory 1G", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Monitoring & Observability (Tier 2)
+    // ========================================================================
+
+    /// Grafana Loki service
+    pub fn loki(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "loki"),
+            .display_name = try allocator.dupe(u8, "Loki"),
+            .description = try allocator.dupe(u8, "Log aggregation system"),
+            .start_command = try std.fmt.allocPrint(allocator, "loki --server.http-listen-port={d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Alertmanager service
+    pub fn alertmanager(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "alertmanager"),
+            .display_name = try allocator.dupe(u8, "Alertmanager"),
+            .description = try allocator.dupe(u8, "Alert handling for Prometheus"),
+            .start_command = try std.fmt.allocPrint(allocator, "alertmanager --web.listen-address=:{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// VictoriaMetrics service
+    pub fn victoriametrics(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "victoriametrics"),
+            .display_name = try allocator.dupe(u8, "VictoriaMetrics"),
+            .description = try allocator.dupe(u8, "Time series database and monitoring"),
+            .start_command = try std.fmt.allocPrint(allocator, "victoria-metrics -httpListenAddr=:{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Proxy & Load Balancer Services
+    // ========================================================================
+
+    /// Traefik service
+    pub fn traefik(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "traefik"),
+            .display_name = try allocator.dupe(u8, "Traefik"),
+            .description = try allocator.dupe(u8, "Cloud-native reverse proxy"),
+            .start_command = try std.fmt.allocPrint(allocator, "traefik --api.dashboard=true --entrypoints.web.address=:{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// HAProxy service
+    pub fn haproxy(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "haproxy"),
+            .display_name = try allocator.dupe(u8, "HAProxy"),
+            .description = try allocator.dupe(u8, "TCP/HTTP load balancer"),
+            .start_command = try std.fmt.allocPrint(allocator, "haproxy -f /usr/local/etc/haproxy/haproxy.cfg -p {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Varnish service
+    pub fn varnish(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "varnish"),
+            .display_name = try allocator.dupe(u8, "Varnish"),
+            .description = try allocator.dupe(u8, "HTTP accelerator and cache"),
+            .start_command = try std.fmt.allocPrint(allocator, "varnishd -F -a :{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Envoy proxy service
+    pub fn envoy(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "envoy"),
+            .display_name = try allocator.dupe(u8, "Envoy"),
+            .description = try allocator.dupe(u8, "Cloud-native edge/service proxy"),
+            .start_command = try std.fmt.allocPrint(allocator, "envoy -c /usr/local/etc/envoy/envoy.yaml --base-id 0 -l info --admin-address-path :{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Infrastructure (Tier 2)
+    // ========================================================================
+
+    /// HashiCorp Nomad service
+    pub fn nomad(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "nomad"),
+            .display_name = try allocator.dupe(u8, "HashiCorp Nomad"),
+            .description = try allocator.dupe(u8, "Workload orchestrator"),
+            .start_command = try std.fmt.allocPrint(allocator, "nomad agent -dev -http-port={d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Development & CI/CD (Tier 2)
+    // ========================================================================
+
+    /// Gitea service
+    pub fn gitea(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "gitea"),
+            .display_name = try allocator.dupe(u8, "Gitea"),
+            .description = try allocator.dupe(u8, "Self-hosted Git service"),
+            .start_command = try std.fmt.allocPrint(allocator, "gitea web --port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Mailpit service (email testing)
+    pub fn mailpit(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "mailpit"),
+            .display_name = try allocator.dupe(u8, "Mailpit"),
+            .description = try allocator.dupe(u8, "Email and SMTP testing tool"),
+            .start_command = try std.fmt.allocPrint(allocator, "mailpit --listen 0.0.0.0:{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Ollama service (AI model server)
+    pub fn ollama(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        var env_vars = std.StringHashMap([]const u8).init(allocator);
+        try env_vars.put("OLLAMA_HOST", try std.fmt.allocPrint(allocator, "0.0.0.0:{d}", .{port}));
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "ollama"),
+            .display_name = try allocator.dupe(u8, "Ollama"),
+            .description = try allocator.dupe(u8, "Local AI model server"),
+            .start_command = try allocator.dupe(u8, "ollama serve"),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // DNS & Network Services
+    // ========================================================================
+
+    /// dnsmasq service
+    pub fn dnsmasq(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "dnsmasq"),
+            .display_name = try allocator.dupe(u8, "dnsmasq"),
+            .description = try allocator.dupe(u8, "Lightweight DNS/DHCP server"),
+            .start_command = try std.fmt.allocPrint(allocator, "dnsmasq --keep-in-foreground --port={d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// CoreDNS service
+    pub fn coredns(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "coredns"),
+            .display_name = try allocator.dupe(u8, "CoreDNS"),
+            .description = try allocator.dupe(u8, "Cloud-native DNS server"),
+            .start_command = try std.fmt.allocPrint(allocator, "coredns -dns.port={d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    /// Unbound DNS resolver
+    pub fn unbound(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "unbound"),
+            .display_name = try allocator.dupe(u8, "Unbound"),
+            .description = try allocator.dupe(u8, "Validating DNS resolver"),
+            .start_command = try std.fmt.allocPrint(allocator, "unbound -d -p {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Web Servers (Tier 2)
+    // ========================================================================
+
+    /// Apache HTTP Server
+    pub fn httpd(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "httpd"),
+            .display_name = try allocator.dupe(u8, "Apache HTTP Server"),
+            .description = try allocator.dupe(u8, "Apache web server"),
+            .start_command = try std.fmt.allocPrint(allocator, "httpd -DFOREGROUND -f /usr/local/etc/httpd/httpd.conf -c 'Listen {d}'", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Sync & Storage Services
+    // ========================================================================
+
+    /// Syncthing service
+    pub fn syncthing(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "syncthing"),
+            .display_name = try allocator.dupe(u8, "Syncthing"),
+            .description = try allocator.dupe(u8, "Continuous file synchronization"),
+            .start_command = try std.fmt.allocPrint(allocator, "syncthing serve --gui-address=0.0.0.0:{d} --no-browser", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Network & Security Services
+    // ========================================================================
+
+    /// Tor service
+    pub fn tor(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "tor"),
+            .display_name = try allocator.dupe(u8, "Tor"),
+            .description = try allocator.dupe(u8, "Anonymity network proxy"),
+            .start_command = try std.fmt.allocPrint(allocator, "tor --SocksPort {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+        };
+    }
+
+    // ========================================================================
     // Helper Functions
     // ========================================================================
 
@@ -724,9 +1172,58 @@ pub const Services = struct {
         if (std.mem.eql(u8, service_name, "hasura")) return 8085;
         if (std.mem.eql(u8, service_name, "keycloak")) return 8088;
 
+        // Additional Databases
+        if (std.mem.eql(u8, service_name, "mariadb")) return 3306;
+        if (std.mem.eql(u8, service_name, "valkey")) return 6379;
+        if (std.mem.eql(u8, service_name, "opensearch")) return 9200;
+        if (std.mem.eql(u8, service_name, "couchdb")) return 5984;
+        if (std.mem.eql(u8, service_name, "cassandra")) return 9042;
+        if (std.mem.eql(u8, service_name, "surrealdb")) return 8000;
+        if (std.mem.eql(u8, service_name, "dragonflydb")) return 6379;
+        if (std.mem.eql(u8, service_name, "typesense")) return 8108;
+        if (std.mem.eql(u8, service_name, "ferretdb")) return 27018;
+        if (std.mem.eql(u8, service_name, "tidb")) return 4000;
+        if (std.mem.eql(u8, service_name, "scylladb")) return 9042;
+        if (std.mem.eql(u8, service_name, "keydb")) return 6379;
+
+        // Additional Message Queues
+        if (std.mem.eql(u8, service_name, "mosquitto")) return 1883;
+        if (std.mem.eql(u8, service_name, "redpanda")) return 9092;
+
+        // Additional Monitoring
+        if (std.mem.eql(u8, service_name, "loki")) return 3100;
+        if (std.mem.eql(u8, service_name, "alertmanager")) return 9093;
+        if (std.mem.eql(u8, service_name, "victoriametrics")) return 8428;
+
+        // Proxy & Load Balancers
+        if (std.mem.eql(u8, service_name, "traefik")) return 8082;
+        if (std.mem.eql(u8, service_name, "haproxy")) return 8081;
+        if (std.mem.eql(u8, service_name, "varnish")) return 6081;
+        if (std.mem.eql(u8, service_name, "envoy")) return 10000;
+
+        // Additional Infrastructure
+        if (std.mem.eql(u8, service_name, "nomad")) return 4646;
+
+        // Additional Dev/CI
+        if (std.mem.eql(u8, service_name, "gitea")) return 3001;
+        if (std.mem.eql(u8, service_name, "mailpit")) return 8025;
+        if (std.mem.eql(u8, service_name, "ollama")) return 11434;
+
+        // DNS & Network
+        if (std.mem.eql(u8, service_name, "dnsmasq")) return 5353;
+        if (std.mem.eql(u8, service_name, "coredns")) return 1053;
+        if (std.mem.eql(u8, service_name, "unbound")) return 5335;
+
         // Web Servers
         if (std.mem.eql(u8, service_name, "nginx")) return 8080;
         if (std.mem.eql(u8, service_name, "caddy")) return 2015;
+        if (std.mem.eql(u8, service_name, "httpd")) return 8084;
+
+        // Sync & Storage
+        if (std.mem.eql(u8, service_name, "syncthing")) return 8384;
+
+        // Network & Security
+        if (std.mem.eql(u8, service_name, "tor")) return 9050;
 
         return null;
     }
@@ -738,7 +1235,7 @@ test "Service definitions" {
     // Test PostgreSQL
     var pg = try Services.postgresql(allocator, 5432);
     defer pg.deinit(allocator);
-    try std.testing.expectEqualStrings("postgresql", pg.name);
+    try std.testing.expectEqualStrings("postgres", pg.name);
     try std.testing.expect(pg.port.? == 5432);
 
     // Test Redis
