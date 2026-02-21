@@ -23,11 +23,69 @@ export interface PackageStats {
   lastDownload?: string
 }
 
+export interface InstallAnalyticsResult {
+  category: string
+  total_items: number
+  start_date: string
+  end_date: string
+  total_count: number
+  items: Array<{
+    number: number
+    formula: string
+    count: string
+    percent: string
+  }>
+}
+
 export interface AnalyticsStorage {
   trackDownload(event: DownloadEvent): Promise<void>
   getPackageStats(packageName: string): Promise<PackageStats | null>
   getTopPackages(limit?: number): Promise<Array<{ name: string, downloads: number }>>
   getDownloadTimeline(packageName: string, days?: number): Promise<Array<{ date: string, count: number }>>
+  getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult>
+}
+
+function formatCount(n: number): string {
+  return n.toLocaleString('en-US')
+}
+
+function getDateRange(days: number): { startDate: string, endDate: string, dates: string[] } {
+  const now = new Date()
+  const endDate = now.toISOString().split('T')[0]
+  const dates: string[] = []
+
+  // days=30 means today + 29 days back (30 total days)
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+    dates.push(date.toISOString().split('T')[0])
+  }
+
+  return { startDate: dates[0], endDate, dates }
+}
+
+function buildInstallAnalyticsResult(
+  aggregated: Map<string, number>,
+  startDate: string,
+  endDate: string,
+): InstallAnalyticsResult {
+  const sorted = Array.from(aggregated.entries())
+    .sort((a, b) => b[1] - a[1])
+
+  const totalCount = sorted.reduce((sum, [, count]) => sum + count, 0)
+
+  return {
+    category: 'install',
+    total_items: sorted.length,
+    start_date: startDate,
+    end_date: endDate,
+    total_count: totalCount,
+    items: sorted.map(([name, count], index) => ({
+      number: index + 1,
+      formula: name,
+      count: formatCount(count),
+      percent: totalCount > 0 ? ((count / totalCount) * 100).toFixed(2) : '0.00',
+    })),
+  }
 }
 
 /**
@@ -237,6 +295,42 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
 
     return timeline
   }
+
+  async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
+    const { startDate, endDate, dates } = getDateRange(days)
+    const aggregated = new Map<string, number>()
+
+    // Query in batches of 25 parallel requests
+    const batchSize = 25
+    for (let i = 0; i < dates.length; i += batchSize) {
+      const batch = dates.slice(i, i + batchSize)
+      const results = await Promise.all(
+        batch.map(date =>
+          this.db.query({
+            TableName: this.tableName,
+            KeyConditionExpression: 'PK = :pk',
+            ExpressionAttributeValues: {
+              ':pk': { S: `DAILY#${date}` },
+            },
+          }).catch(() => ({ Items: [] as Array<Record<string, any>>, Count: 0 })),
+        ),
+      )
+
+      for (const result of results) {
+        for (const item of result.Items) {
+          const data = DynamoDBClient.unmarshal(item)
+          if (data.packageName) {
+            aggregated.set(
+              data.packageName,
+              (aggregated.get(data.packageName) || 0) + (data.downloads || 0),
+            )
+          }
+        }
+      }
+    }
+
+    return buildInstallAnalyticsResult(aggregated, startDate, endDate)
+  }
 }
 
 /**
@@ -319,6 +413,22 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     }
 
     return timeline
+  }
+
+  async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
+    const { startDate, endDate, dates } = getDateRange(days)
+    const aggregated = new Map<string, number>()
+
+    for (const date of dates) {
+      const dailyPackages = this.dailyStats.get(date)
+      if (dailyPackages) {
+        for (const [name, count] of dailyPackages) {
+          aggregated.set(name, (aggregated.get(name) || 0) + count)
+        }
+      }
+    }
+
+    return buildInstallAnalyticsResult(aggregated, startDate, endDate)
   }
 }
 

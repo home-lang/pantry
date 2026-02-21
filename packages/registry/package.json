@@ -20,6 +20,8 @@
     "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "dev": "bun run --watch src/server.ts",
     "start": "bun run src/server.ts",
+    "test": "bun test",
+    "test:analytics": "bun test src/analytics.test.ts",
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {},

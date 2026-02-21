@@ -79,6 +79,16 @@ export function createServer(
             return handlePublish(req, registry, corsHeaders)
           }
 
+          // Install analytics API (JSON endpoints)
+          const installApiMatch = path.match(/^\/api\/analytics\/install\/(30|90|365)d\.json$/)
+          if (installApiMatch && req.method === 'GET') {
+            const days = Number.parseInt(installApiMatch[1], 10) as 30 | 90 | 365
+            const result = await analyticsStorage.getInstallAnalytics(days)
+            return Response.json(result, {
+              headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=3600' },
+            })
+          }
+
           // Analytics routes
           const analyticsMatch = path.match(/^\/analytics(?:\/(.+))?$/)
           if (analyticsMatch && req.method === 'GET') {
@@ -185,6 +195,8 @@ export function createServer(
     console.log('  GET  /analytics/{name}          - Package download stats')
     console.log('  GET  /analytics/{name}/timeline - Download timeline')
     console.log('  GET  /analytics/top             - Top downloaded packages')
+    console.log('  GET  /analytics/install/{30d,90d,365d} - Install analytics')
+    console.log('  GET  /api/analytics/install/{period}.json - Install analytics (JSON API)')
     console.log('Zig packages:')
     console.log('  GET  /zig/packages/{name}       - Get Zig package metadata')
     console.log('  GET  /zig/packages/{name}/{version}/tarball - Download')
@@ -213,6 +225,16 @@ async function handleAnalytics(
   analytics: AnalyticsStorage,
   corsHeaders: Record<string, string>,
 ): Promise<Response> {
+  // GET /analytics/install/{30d,90d,365d}
+  const installMatch = path?.match(/^install\/(30|90|365)d$/)
+  if (installMatch) {
+    const days = Number.parseInt(installMatch[1], 10) as 30 | 90 | 365
+    const result = await analytics.getInstallAnalytics(days)
+    return Response.json(result, {
+      headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=3600' },
+    })
+  }
+
   // GET /analytics/top
   if (path === 'top' || !path) {
     const limit = Number.parseInt(url.searchParams.get('limit') || '10', 10)

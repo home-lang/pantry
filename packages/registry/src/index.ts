@@ -35,6 +35,7 @@ export type {
   DownloadEvent,
   PackageStats,
   AnalyticsStorage,
+  InstallAnalyticsResult,
 } from './analytics'
 
 // Zig package support
