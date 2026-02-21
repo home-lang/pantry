@@ -2012,6 +2012,186 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── gnome.org/PyGObject — fix prefix quoting ────────────────────────
+
+  'gnome.org/PyGObject': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── ebassi.github.io/graphene — disable gobject-introspection ───────
+
+  'ebassi.github.io/graphene': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+        // Add -Dintrospection=false
+        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=false')) {
+          recipe.build.env.MESON_ARGS.push('-Dintrospection=false')
+        }
+      }
+    },
+  },
+
+  // ─── debian.org/iso-codes — fix prefix quoting ───────────────────────
+
+  'debian.org/iso-codes': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes in CONFIGURE_ARGS
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
+          a.replace(/^(--\w+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── ibr.cs.tu-bs.de/libsmi — fix prefix quoting ─────────────────────
+
+  'ibr.cs.tu-bs.de/libsmi': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix arg: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--\w+=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── wireshark.org — fix stray cmake prefix quote + remove ibr dep ───
+
+  'wireshark.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove ibr.cs.tu-bs.de/libsmi dep (not in S3, optional)
+      if (recipe.dependencies?.['ibr.cs.tu-bs.de/libsmi']) {
+        delete recipe.dependencies['ibr.cs.tu-bs.de/libsmi']
+      }
+      // Disable SMI in cmake args
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DENABLE_SMI=ON' ? '-DENABLE_SMI=OFF' : a,
+        )
+        // Also remove the SMI include dir arg
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.filter(
+          (a: string) => !a.includes('libsmi'),
+        )
+      }
+    },
+  },
+
+  // ─── jpeg.org/jpegxl — fix build on darwin ───────────────────────────
+
+  'jpeg.org/jpegxl': {
+    modifyRecipe: (recipe: any) => {
+      // Add -DJPEGXL_ENABLE_OPENEXR=OFF to avoid openexr dep issues
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('-DJPEGXL_ENABLE_OPENEXR=OFF')) {
+          recipe.build.env.ARGS.push('-DJPEGXL_ENABLE_OPENEXR=OFF')
+        }
+      }
+    },
+  },
+
+  // ─── mpv.io — remove vapoursynth dep (not in S3 yet) ─────────────────
+
+  'mpv.io': {
+    modifyRecipe: (recipe: any) => {
+      // Remove vapoursynth.com dep (not in S3 yet)
+      if (recipe.dependencies?.['vapoursynth.com']) {
+        delete recipe.dependencies['vapoursynth.com']
+      }
+      // Disable vapoursynth in meson args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '-Dvapoursynth=enabled' ? '-Dvapoursynth=disabled' : a,
+        )
+      }
+      // Remove linux clang/lld override (use system compiler)
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.LD
+      }
+    },
+  },
+
+  // ─── gtk.org/gtk3 — disable introspection + remove heavy deps ────────
+
+  'gtk.org/gtk3': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Remove docbook build deps
+      if (recipe.build?.dependencies?.['docbook.org']) delete recipe.build.dependencies['docbook.org']
+      if (recipe.build?.dependencies?.['docbook.org/xsl']) delete recipe.build.dependencies['docbook.org/xsl']
+      // Remove x.org/x11 dep (not in S3)
+      if (recipe.dependencies?.['x.org/x11']) delete recipe.dependencies['x.org/x11']
+      if (recipe.dependencies?.['x.org/exts']) delete recipe.dependencies['x.org/exts']
+      if (recipe.dependencies?.['x.org/xrender']) delete recipe.dependencies['x.org/xrender']
+      if (recipe.dependencies?.['x.org/xrandr']) delete recipe.dependencies['x.org/xrandr']
+      if (recipe.dependencies?.['x.org/xi']) delete recipe.dependencies['x.org/xi']
+      // Remove ebassi.github.io/graphene dep (complex)
+      if (recipe.dependencies?.['ebassi.github.io/graphene']) delete recipe.dependencies['ebassi.github.io/graphene']
+      // Remove debian.org/iso-codes dep
+      if (recipe.dependencies?.['debian.org/iso-codes']) delete recipe.dependencies['debian.org/iso-codes']
+      // Disable introspection in meson args
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a === '-Dintrospection=true' ? '-Dintrospection=false' : a,
+        )
+        // Fix --prefix quoting
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── gtk.org/gtk4 — disable introspection + remove heavy deps ────────
+
+  'gtk.org/gtk4': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gobject-introspection build dep
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Remove docbook/xslt build deps
+      if (recipe.build?.dependencies?.['docbook.org']) delete recipe.build.dependencies['docbook.org']
+      if (recipe.build?.dependencies?.['docbook.org/xsl']) delete recipe.build.dependencies['docbook.org/xsl']
+      if (recipe.build?.dependencies?.['gnome.org/libxslt']) delete recipe.build.dependencies['gnome.org/libxslt']
+      // Remove sass-lang.com/sassc build dep
+      if (recipe.build?.dependencies?.['sass-lang.com/sassc']) delete recipe.build.dependencies['sass-lang.com/sassc']
+      // Disable introspection in meson args
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+        recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled', '-Ddocumentation=false')
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

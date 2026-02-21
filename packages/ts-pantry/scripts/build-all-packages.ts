@@ -858,9 +858,9 @@ Options:
     'crates.io/kaspa-miner', // Rust compilation failure
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
     // crates.io/qsv removed — built successfully on linux
-    'debian.org/iso-codes', // Build failure on darwin
+    // debian.org/iso-codes removed — fixed prefix quoting in override
     // doxygen.nl removed — removed llvm.org dep override
-    'ebassi.github.io/graphene', // glib dep chain fails on both platforms
+    // ebassi.github.io/graphene removed — disabled gobject-introspection in override
     'epsilon-project.sourceforge.io', // Build failure on darwin
     'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
     'facebook.com/fb303', // CMake build failure (Meta C++ lib chain)
@@ -893,18 +893,18 @@ Options:
     // gnome.org/librsvg removed — disabled introspection + rustup stable in override
     // gnome.org/libsecret removed — removed heavy build deps in override
     // gnome.org/pango removed — disabled introspection in override
-    'gnome.org/PyGObject', // Python GNOME bindings (dep chain)
+    // gnome.org/PyGObject removed — fixed prefix quoting in override
     // gnu.org/groff removed — standard GNU build, should work with CI tools
     // gnu.org/guile removed — fixed sed -i BSD compat in override
     // gnuplot.info removed — removed libavif dep in override
     // gnutls.org removed — removed p11-kit dep + fixed sed -i BSD in override
     // grpc.io removed — fixed cmake prefix quoting in override
-    'gtk.org/gtk3', // GTK3 — massive dep chain (glib→atk→pango→gdk-pixbuf)
-    'gtk.org/gtk4', // GTK4 — massive dep chain
+    // gtk.org/gtk3 removed — disabled introspection + removed x11/heavy deps in override
+    // gtk.org/gtk4 removed — disabled introspection + removed heavy build deps in override
     'hasura.io', // Build failure on darwin
-    'ibr.cs.tu-bs.de/libsmi', // Build failure on darwin
+    // ibr.cs.tu-bs.de/libsmi removed — fixed prefix quoting in override
     'intel.com/libva', // Intel video acceleration — linux only dep
-    'jpeg.org/jpegxl', // JPEG XL — complex C++ build
+    // jpeg.org/jpegxl removed — disabled openexr in override
     'kubebuilder.io', // Go build failure
     'kubernetes.io/kubectl', // Go build failure on darwin
     'lavinmq.com', // Build failure on linux
@@ -921,7 +921,7 @@ Options:
     'mesa3d.org', // Mesa 3D — massive build with many deps
     // midnight-commander.org removed — ncurses/glib available via system
     'modal.com', // Build failure on both platforms
-    'mpv.io', // Media player — complex dep chain
+    // mpv.io removed — removed vapoursynth dep in override
     'mun-lang.org', // Build failure on darwin
     'mupdf.com', // PDF renderer build failure on darwin
     'netflix.com/vmaf', // Build failure on darwin
@@ -959,7 +959,7 @@ Options:
     // videolan.org/libplacebo removed — removed linux gcc dep in override
     // vim.org removed — removed perl/ruby interp deps in override
     'virtualsquare.org/vde', // Virtual networking — build failure on darwin
-    'wireshark.org', // Network analyzer — massive dep chain
+    // wireshark.org removed — fixed cmake prefix + removed libsmi dep in override
     'x.org/libxfont2', // X.org font library — dep chain
     'x.org/x11', // X11 core library — dep chain
     'x.org/xauth', // X authentication — dep chain
