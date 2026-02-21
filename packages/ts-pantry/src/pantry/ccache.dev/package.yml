@@ -11,6 +11,10 @@ build:
     asciidoctor.org: '*'
     cmake.org: '*'
   script:
+    # Remove system xxhash on linux — its /usr/include path causes -isystem /usr/include
+    # which breaks #include_next <stdlib.h> in GCC headers; ccache will use bundled xxhash
+    - run: sudo rm -f /usr/include/xxhash.h /usr/lib/x86_64-linux-gnu/libxxhash.* /usr/lib/x86_64-linux-gnu/pkgconfig/libxxhash.pc 2>/dev/null || true
+      if: linux
     - cmake -S . -B build $CMAKE_ARGS
     - cmake --build build
     - cmake --install build
@@ -41,8 +45,7 @@ build:
       - -Wno-dev
       - -DBUILD_TESTING=OFF
     linux:
-      # Use system compiler; force FetchContent for all deps to prevent
-      # -isystem /usr/include (which breaks #include_next <stdlib.h> in GCC headers)
+      # Use system compiler to avoid buildkit wrapper include path issues
       CMAKE_ARGS:
         - -DCMAKE_INSTALL_PREFIX={{prefix}}
         - -DCMAKE_INSTALL_LIBDIR=lib
@@ -52,7 +55,6 @@ build:
         - -DBUILD_TESTING=OFF
         - -DCMAKE_C_COMPILER=/usr/bin/gcc
         - -DCMAKE_CXX_COMPILER=/usr/bin/g++
-        - -DFETCHCONTENT_TRY_FIND_PACKAGE_MODE=NEVER
 provides:
   - bin/ccache
 test:
