@@ -2532,6 +2532,123 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── epsilon-project.sourceforge.io — simple autotools ──────────────
+
+  'epsilon-project.sourceforge.io': {
+    // Simple autotools build — no changes needed beyond what's already in CI
+  },
+
+  // ─── gdal.org — fix stray cmake quote + sed -i BSD + remove llvm dep ─
+
+  'gdal.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Fix sed -i BSD compat in gdal-config fixup
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove linux llvm.org build dep
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+      // Remove linux apache.org/thrift dep (not in S3 yet)
+      if (recipe.dependencies?.linux?.['apache.org/thrift']) {
+        delete recipe.dependencies.linux['apache.org/thrift']
+      }
+      // Remove CC/CXX/LD overrides (use system compiler)
+      if (recipe.build?.env?.CC === 'clang') delete recipe.build.env.CC
+      if (recipe.build?.env?.CXX === 'clang++') delete recipe.build.env.CXX
+      if (recipe.build?.env?.LD === 'clang') delete recipe.build.env.LD
+    },
+  },
+
+  // ─── getmonero.org — remove linux llvm dep ───────────────────────────
+
+  'getmonero.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux llvm.org build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
+      }
+    },
+  },
+
+  // ─── openresty.org — fix sed -i BSD compat ───────────────────────────
+
+  'openresty.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in resty script patching
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i\n/, 'sed -i.bak\n')
+              .replace(/^(\s*)sed -i\s*$/m, '$1sed -i.bak')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── opensearch.org — fix sed -i BSD compat ──────────────────────────
+
+  'opensearch.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in multiple steps
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+              .replace(/sed -i -e /g, 'sed -i.bak -e ')
+              .replace(/sed -i -f /g, 'sed -i.bak -f ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+              .replace(/sed -i -e /g, 'sed -i.bak -e ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── bitcoin.org — remove linux llvm/gcc dep ─────────────────────────
+
+  'bitcoin.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove capnproto.org dep (not in S3)
+      if (recipe.dependencies?.['capnproto.org']) {
+        delete recipe.dependencies['capnproto.org']
+      }
+    },
+  },
+
+  // ─── aws.amazon.com/cli — fix python version constraint ──────────────
+
+  'aws.amazon.com/cli': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version constraint to include 3.12
+      if (recipe.build?.dependencies?.['python.org'] === '>=3.7<3.12') {
+        recipe.build.dependencies['python.org'] = '>=3.7<3.13'
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

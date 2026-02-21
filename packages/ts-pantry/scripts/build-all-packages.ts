@@ -852,8 +852,8 @@ Options:
     // apache.org/httpd removed — fixed sed -i BSD compat in override
     // apache.org/thrift removed — fixed duplicate --prefix arg in override
     // apache.org/zookeeper removed — removed cppunit/gcc deps in override
-    'aws.amazon.com/cli', // Build failure on darwin
-    'bitcoin.org', // Build failure on linux
+    // aws.amazon.com/cli removed — widened python version constraint in override
+    // bitcoin.org removed — removed capnproto/gcc deps in override
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
     'crates.io/kaspa-miner', // Rust compilation failure
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
@@ -861,7 +861,7 @@ Options:
     // debian.org/iso-codes removed — fixed prefix quoting in override
     // doxygen.nl removed — removed llvm.org dep override
     // ebassi.github.io/graphene removed — disabled gobject-introspection in override
-    'epsilon-project.sourceforge.io', // Build failure on darwin
+    // epsilon-project.sourceforge.io removed — simple autotools, added override entry
     'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
     'facebook.com/fb303', // CMake build failure (Meta C++ lib chain)
     'facebook.com/fbthrift', // CMake build failure (Meta C++ lib chain)
@@ -879,9 +879,9 @@ Options:
     // freedesktop.org/vdpau removed — built successfully on linux
     'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
-    'gdal.org', // Complex geospatial C++ build
+    // gdal.org removed — fixed cmake prefix quote + sed -i BSD + removed llvm dep in override
     // geoff.greer.fm/ag — needs pcre.org in S3, build pcre.org first
-    'getmonero.org', // Heavy C++ crypto build
+    // getmonero.org removed — removed linux llvm dep in override
     // gnome.org/atk removed — disabled gobject-introspection in override
     // gnome.org/gdk-pixbuf removed — removed shared-mime-info + disabled introspection
     // gnome.org/glib removed — disabled introspection, fixed sed -i BSD
@@ -927,8 +927,8 @@ Options:
     // netflix.com/vmaf removed — fixed meson prefix quoting in override
     'open-mpi.org', // MPI — build failure on both platforms
     'opendap.org', // Build failure on both platforms
-    'openresty.org', // Nginx+Lua — build failure on both platforms
-    'opensearch.org', // Java/Gradle build failure on linux
+    // openresty.org removed — fixed sed -i BSD compat in override
+    // opensearch.org removed — fixed sed -i BSD compat in override
     // openslide.org removed — fixed prefix quoting in override
     // openssh.com removed — standard autotools, OpenSSL available
     // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
