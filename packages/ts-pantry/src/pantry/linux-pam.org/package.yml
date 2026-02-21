@@ -57,6 +57,7 @@ build:
     MESON_ARGS:
       - --prefix={{prefix}}
       - --libdir={{prefix}}/lib
+      - --localstatedir={{prefix}}/var
       - --buildtype=release
       - --wrap-mode=nofallback
       - -Dsecuredir={{prefix}}/lib/security

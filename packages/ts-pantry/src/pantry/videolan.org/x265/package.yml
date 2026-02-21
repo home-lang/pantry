@@ -15,23 +15,32 @@ build:
       nasm.us: '*'
   working-directory: 8bit
   script:
-    # On ARM64 darwin, disable assembly (nasm is x86-only)
-    - run: export ARGS_DEFAULT="$ARGS_DEFAULT -DENABLE_ASSEMBLY=OFF"
+    # Fix cmake 4.x compatibility (darwin Homebrew has cmake 4.x)
+    - run: |
+        for f in source/CMakeLists.txt source/*/CMakeLists.txt; do
+          [ -f "$f" ] && perl -pi -e 's/cmake_minimum_required\s*\(\s*VERSION\s+2\.\d+(\.\d+)?\)/cmake_minimum_required(VERSION 3.16)/gi' "$f"
+        done
       if: darwin
     - run: |
-        cmake ../source -DENABLE_HDR10_PLUS=ON $ARGS_DEFAULT $HIGHBITARGS
+        DARWIN_ARGS=""
+        [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"
+        cmake ../source -DENABLE_HDR10_PLUS=ON $ARGS_DEFAULT $DARWIN_ARGS $HIGHBITARGS
         make
         mv libx265.a ../8bit/libx265_main10.a
       working-directory: ../10bit
 
     - run: |
-        cmake ../source -DMAIN12=ON $ARGS_DEFAULT $HIGHBITARGS
+        DARWIN_ARGS=""
+        [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"
+        cmake ../source -DMAIN12=ON $ARGS_DEFAULT $DARWIN_ARGS $HIGHBITARGS
         make
         mv libx265.a ../8bit/libx265_main12.a
       working-directory: ../12bit
 
     - run: |
-        cmake ../source $ARGS_DEFAULT $ARGS
+        DARWIN_ARGS=""
+        [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"
+        cmake ../source $ARGS_DEFAULT $DARWIN_ARGS $ARGS
         make
         mv libx265.a libx265_main.a
 
