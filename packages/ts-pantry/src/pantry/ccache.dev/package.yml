@@ -45,7 +45,9 @@ build:
       - -Wno-dev
       - -DBUILD_TESTING=OFF
     linux:
-      # Use system compiler to avoid buildkit wrapper include path issues
+      # Use system compiler and prevent -isystem /usr/include from imported targets
+      # (system zstd's INTERFACE_INCLUDE_DIRECTORIES adds -isystem /usr/include which
+      # breaks GCC's #include_next <stdlib.h> in cstdlib)
       CMAKE_ARGS:
         - -DCMAKE_INSTALL_PREFIX={{prefix}}
         - -DCMAKE_INSTALL_LIBDIR=lib
@@ -55,6 +57,7 @@ build:
         - -DBUILD_TESTING=OFF
         - -DCMAKE_C_COMPILER=/usr/bin/gcc
         - -DCMAKE_CXX_COMPILER=/usr/bin/g++
+        - -DCMAKE_NO_SYSTEM_FROM_IMPORTED=ON
 provides:
   - bin/ccache
 test:
