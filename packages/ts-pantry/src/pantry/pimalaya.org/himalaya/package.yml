@@ -12,7 +12,11 @@ build:
   dependencies:
     rust-lang.org: '>=1.85'
     rust-lang.org/cargo: '*'
-  script: cargo install --path . --root {{prefix}}
+  script: |
+    # Himalaya 1.x requires Rust edition 2024 (needs rustc 1.85+)
+    rustup install stable
+    rustup default stable
+    cargo install --path . --root {{prefix}}
 
 test:
   - run: test "$(himalaya --version)" = "himalaya {{version}}"

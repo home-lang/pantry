@@ -12,8 +12,6 @@ build:
     ./configure $ARGS
     make --jobs {{hw.concurrency}} install
   env:
-    # Define BTRFS_EXTENT_REF_V0_KEY removed in newer kernel headers (6.x+)
-    CFLAGS: "-DBTRFS_EXTENT_REF_V0_KEY=176"
     ARGS:
       - --disable-dependency-tracking
       - --disable-silent-rules

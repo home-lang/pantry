@@ -11,8 +11,8 @@ build:
   script:
     # Patch compat.yaml to support newer Go versions not yet listed upstream
     - run: |
-        if [ -f meta/compat.yaml ] && ! grep -q 'go1.26' meta/compat.yaml; then
-          echo '  go1.26.0: go1.22.0' >> meta/compat.yaml
+        if [ -f compat.yaml ] && ! grep -q 'go1.26' compat.yaml; then
+          printf '\n- runtime: go1.26\n  requirements:\n    darwin: "21"\n    linux: "3.2"\n    windows: "10.0"\n' >> compat.yaml
         fi
     - go run build.go --version {{version.tag}} --no-upgrade tar
     - install -D syncthing {{prefix}}/bin/syncthing

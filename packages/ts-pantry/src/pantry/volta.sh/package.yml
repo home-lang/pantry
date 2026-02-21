@@ -14,8 +14,11 @@ build:
     rust-lang.org: ^1.75
     rust-lang.org/cargo: '*'
   script:
-    # Remove Cargo.lock to allow resolving non-yanked crate versions
-    - rm -f Cargo.lock
+    # Unpin yanked zip crate (=2.1.6 was yanked from crates.io)
+    - run: |
+        sed -i.bak 's/version = "=2.1.6"/version = "2.1"/' crates/archive/Cargo.toml
+        rm -f crates/archive/Cargo.toml.bak
+        rm -f Cargo.lock
     - cargo install $ARGS
   env:
     ARGS:
