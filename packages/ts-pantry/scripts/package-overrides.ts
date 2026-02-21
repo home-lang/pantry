@@ -3773,6 +3773,144 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── cgal.org — fix stray cmake prefix quote + remove qt5/gcc deps ──
+
+  'cgal.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+        // Remove Qt5 cmake args (qt.io not in S3)
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.filter((a: string) =>
+          !a.includes('Qt5') && !a.includes('QT_DIRS'),
+        )
+      }
+      // Remove qt.io build dep
+      if (recipe.build?.dependencies?.['qt.io']) {
+        delete recipe.build.dependencies['qt.io']
+      }
+      // Remove linux gcc build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── fishshell.com — fix cmake prefix quote + sed -i BSD ─────────────
+
+  'fishshell.com': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── fmt.dev — fix cmake prefix quote ────────────────────────────────
+
+  'fmt.dev': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── facebook.com/zstd — fix cmake prefix quote ───────────────────────
+
+  'facebook.com/zstd': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── glew.sourceforge.io — fix cmake prefix quote ────────────────────
+
+  'glew.sourceforge.io': {
+    modifyRecipe: (recipe: any) => {
+      // cmake prefix is inline in script string, not in env array
+      // Fix via script step patching
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('INSTALL_PREFIX="{{prefix}}"')) {
+            recipe.build.script[i] = step.replace(/(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"/, '$1$2')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── qhull.org — fix cmake prefix quote ──────────────────────────────
+
+  'qhull.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── duckdb.org — fix cmake prefix quote ─────────────────────────────
+
+  'duckdb.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── freetype.org — fix cmake prefix quote ───────────────────────────
+
+  'freetype.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── fna-xna.github.io — fix cmake prefix quote ──────────────────────
+
+  'fna-xna.github.io': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
