@@ -159,6 +159,9 @@ jobs:
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
           # Link keg-only libtool so glibtool/glibtoolize are in PATH
           brew link --force libtool 2>/dev/null || true
+          # Homebrew cmake 4.x breaks old packages — unlink it and install cmake 3.x via pip
+          brew unlink cmake 2>/dev/null || true
+          pip3 install --break-system-packages 'cmake>=3.16,<4' 2>/dev/null || true
 
       - name: Fix Python setuptools (Linux)
         if: runner.os == 'Linux'

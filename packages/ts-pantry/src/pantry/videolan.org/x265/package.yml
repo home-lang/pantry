@@ -15,12 +15,6 @@ build:
       nasm.us: '*'
   working-directory: 8bit
   script:
-    # Fix cmake 4.x compatibility (darwin Homebrew has cmake 4.x)
-    - run: |
-        for f in source/CMakeLists.txt source/*/CMakeLists.txt; do
-          [ -f "$f" ] && perl -pi -e 's/cmake_minimum_required\s*\(\s*VERSION\s+2\.\d+(\.\d+)?\)/cmake_minimum_required(VERSION 3.16)/gi' "$f"
-        done
-      if: darwin
     - run: |
         DARWIN_ARGS=""
         [ "$(uname)" = "Darwin" ] && DARWIN_ARGS="-DENABLE_ASSEMBLY=OFF"

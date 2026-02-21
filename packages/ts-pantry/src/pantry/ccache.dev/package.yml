@@ -41,7 +41,7 @@ build:
       - -Wno-dev
       - -DBUILD_TESTING=OFF
     linux:
-      # Use system compiler and mark /usr/include as implicit to avoid #include_next stdlib.h issues
+      # Use clang to avoid GCC #include_next stdlib.h issue with -isystem /usr/include
       CMAKE_ARGS:
         - -DCMAKE_INSTALL_PREFIX={{prefix}}
         - -DCMAKE_INSTALL_LIBDIR=lib
@@ -49,10 +49,8 @@ build:
         - -DCMAKE_VERBOSE_MAKEFILE=ON
         - -Wno-dev
         - -DBUILD_TESTING=OFF
-        - -DCMAKE_C_COMPILER=/usr/bin/gcc
-        - -DCMAKE_CXX_COMPILER=/usr/bin/g++
-        - -DCMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES=/usr/include
-        - -DCMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES=/usr/include
+        - -DCMAKE_C_COMPILER=clang
+        - -DCMAKE_CXX_COMPILER=clang++
 provides:
   - bin/ccache
 test:

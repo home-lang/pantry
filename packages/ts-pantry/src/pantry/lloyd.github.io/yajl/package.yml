@@ -10,12 +10,11 @@ build:
       gnu.org/gcc: '*'
       gnu.org/make: '*'
   script:
-    # Fix cmake 4.x compatibility: update minimum version and replace deprecated LOCATION property
+    # Fix CMP0026 policy error with cmake 3.x (LOCATION property deprecated)
     - run: |
-        perl -pi -e 's/cmake_minimum_required\s*\(\s*VERSION\s+2\.\d+(\.\d+)?\)/cmake_minimum_required(VERSION 3.16)/gi' CMakeLists.txt
-        for f in CMakeLists.txt src/CMakeLists.txt; do
-          [ -f "$f" ] && perl -pi -e 's/GET_TARGET_PROPERTY\s*\(\s*(\w+)\s+(\w+)\s+LOCATION\s*\)/set($1 \$<TARGET_FILE:$2>)/gi' "$f"
-        done
+        if [ -f CMakeLists.txt ]; then
+          perl -pi -e 'print "cmake_policy(SET CMP0026 OLD)\n" if $. == 1 && !$done++' CMakeLists.txt
+        fi
     - cmake . $CMAKE_ARGS
     - make install
     - mkdir -p {{prefix}}/include/yajl
