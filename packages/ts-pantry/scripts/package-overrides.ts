@@ -3406,6 +3406,219 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── musepack.net/libcuefile — fix stray cmake prefix quote + remove gcc dep ─
+
+  'musepack.net/libcuefile': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── musepack.net/libreplaygain — fix stray cmake prefix quote ────────
+
+  'musepack.net/libreplaygain': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── github.com/sctplab/usrsctp — fix stray cmake prefix quote + remove gcc ─
+
+  'github.com/sctplab/usrsctp': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── github.com/luvit/luv — fix stray cmake prefix quote ─────────────
+
+  'github.com/luvit/luv': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── github.com/oneapi-src/oneTBB — fix stray cmake prefix quote ─────
+
+  'github.com/oneapi-src/oneTBB': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── github.com/KhronosGroup/Vulkan-Loader — fix stray cmake prefix + remove wayland ─
+
+  'github.com/KhronosGroup/Vulkan-Loader': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove linux wayland dep (not in S3)
+      if (recipe.dependencies?.linux?.['wayland.freedesktop.org']) {
+        delete recipe.dependencies.linux['wayland.freedesktop.org']
+      }
+    },
+  },
+
+  // ─── ceres-solver.org — fix stray cmake prefix quote + remove gcc dep ─
+
+  'ceres-solver.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── geuz.org/gl2ps — fix stray cmake prefix quote + remove freeglut dep ─
+
+  'geuz.org/gl2ps': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove linux freeglut dep (depends on mesa3d.org not in S3)
+      if (recipe.dependencies?.linux?.['freeglut.sourceforge.io']) {
+        delete recipe.dependencies.linux['freeglut.sourceforge.io']
+      }
+    },
+  },
+
+  // ─── upx.github.io — fix stray cmake prefix quote + remove ucl dep ───
+
+  'upx.github.io': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove oberhumer.com/ucl dep (dead upstream domain)
+      if (recipe.build?.dependencies?.['oberhumer.com/ucl']) {
+        delete recipe.build.dependencies['oberhumer.com/ucl']
+      }
+    },
+  },
+
+  // ─── github.com/fastfloat/fast_float — fix stray cmake prefix quote ──
+
+  'github.com/fastfloat/fast_float': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── assimp.org — fix stray cmake prefix quote ───────────────────────
+
+  'assimp.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── libgit2.org — fix stray cmake prefix quote ──────────────────────
+
+  'libgit2.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── libwebsockets.org — fix stray cmake prefix quote ────────────────
+
+  'libwebsockets.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── libzip.org — fix stray cmake prefix quote ───────────────────────
+
+  'libzip.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── google.com/sentencepiece — fix stray cmake prefix quote ─────────
+
+  'google.com/sentencepiece': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── google.com/double-conversion — fix stray cmake prefix quote ──────
+
+  'google.com/double-conversion': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
