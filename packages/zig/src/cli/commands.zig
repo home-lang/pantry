@@ -233,6 +233,7 @@ pub const shimRemoveCommand = shim_commands.shimRemoveCommand;
 
 pub const serviceEnableCommand = services_commands.enableCommand;
 pub const serviceDisableCommand = services_commands.disableCommand;
+pub const serviceLogsCommand = services_commands.logsCommand;
 
 // ============================================================================
 // Re-export Verify Commands

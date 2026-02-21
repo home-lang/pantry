@@ -180,6 +180,26 @@ pub const ServiceManager = struct {
                 try io_helper.writeAllToFile(file, "    <key>RunAtLoad</key>\n    <true/>\n");
             }
 
+            // Log file paths
+            {
+                const home_env = io_helper.getEnvVarOwned(self.allocator, "HOME") catch null;
+                defer if (home_env) |h| self.allocator.free(h);
+
+                if (home_env) |h| {
+                    const logs_dir = try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs", .{h});
+                    defer self.allocator.free(logs_dir);
+                    io_helper.makePath(logs_dir) catch {};
+
+                    const stdout_path = try std.fmt.allocPrint(self.allocator, "    <key>StandardOutPath</key>\n    <string>{s}/{s}.log</string>\n", .{ logs_dir, service.name });
+                    defer self.allocator.free(stdout_path);
+                    try io_helper.writeAllToFile(file, stdout_path);
+
+                    const stderr_path = try std.fmt.allocPrint(self.allocator, "    <key>StandardErrorPath</key>\n    <string>{s}/{s}.err</string>\n", .{ logs_dir, service.name });
+                    defer self.allocator.free(stderr_path);
+                    try io_helper.writeAllToFile(file, stderr_path);
+                }
+            }
+
             // Environment variables
             if (service.env_vars.count() > 0) {
                 try io_helper.writeAllToFile(file, "    <key>EnvironmentVariables</key>\n    <dict>\n");
@@ -255,6 +275,26 @@ pub const ServiceManager = struct {
             if (service.keep_alive) {
                 try io_helper.writeAllToFile(file, "Restart=always\n");
                 try io_helper.writeAllToFile(file, "RestartSec=3\n");
+            }
+
+            // Log file paths
+            {
+                const home_env = io_helper.getEnvVarOwned(self.allocator, "HOME") catch null;
+                defer if (home_env) |h| self.allocator.free(h);
+
+                if (home_env) |h| {
+                    const logs_dir = try std.fmt.allocPrint(self.allocator, "{s}/.local/share/pantry/logs", .{h});
+                    defer self.allocator.free(logs_dir);
+                    io_helper.makePath(logs_dir) catch {};
+
+                    const stdout_line = try std.fmt.allocPrint(self.allocator, "StandardOutput=append:{s}/{s}.log\n", .{ logs_dir, service.name });
+                    defer self.allocator.free(stdout_line);
+                    try io_helper.writeAllToFile(file, stdout_line);
+
+                    const stderr_line = try std.fmt.allocPrint(self.allocator, "StandardError=append:{s}/{s}.err\n", .{ logs_dir, service.name });
+                    defer self.allocator.free(stderr_line);
+                    try io_helper.writeAllToFile(file, stderr_line);
+                }
             }
 
             // Environment variables

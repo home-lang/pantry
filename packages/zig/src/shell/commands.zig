@@ -677,6 +677,18 @@ pub const ShellCommands = struct {
         const content = io_helper.readFileAlloc(self.allocator, file_path, 1 * 1024 * 1024) catch return;
         defer self.allocator.free(content);
 
+        // Parse custom services first so they're available when autoStart references them
+        var custom_configs = std.StringHashMap(CustomServiceDef).init(self.allocator);
+        defer {
+            var it = custom_configs.iterator();
+            while (it.next()) |entry| {
+                self.allocator.free(entry.key_ptr.*);
+                entry.value_ptr.deinit(self.allocator);
+            }
+            custom_configs.deinit();
+        }
+        self.parseCustomServices(content, &custom_configs) catch {};
+
         // Simple YAML parser for services.autoStart
         var in_services = false;
         var in_auto_start = false;
@@ -719,17 +731,248 @@ pub const ShellCommands = struct {
                     continue;
                 }
 
-                // Parse autoStart list items ("- postgres", "- redis")
+                // Parse autoStart list items ("- postgres", "- redis", "- my-worker")
                 if (in_auto_start and std.mem.startsWith(u8, trimmed, "- ")) {
                     if (!services_enabled) continue;
 
                     const service_name = std.mem.trim(u8, trimmed[2..], " \t\r");
                     if (service_name.len == 0) continue;
 
-                    try self.startServiceWithContext(service_name, project_root);
+                    // Check if this is a custom service
+                    if (custom_configs.get(service_name)) |custom_def| {
+                        self.startCustomService(service_name, custom_def, project_root) catch |err| {
+                            style.print("⚠️  Failed to start custom service {s}: {s}\n", .{ service_name, @errorName(err) });
+                        };
+                    } else {
+                        try self.startServiceWithContext(service_name, project_root);
+                    }
                 }
             }
         }
+    }
+
+    /// Custom service definition parsed from deps.yaml
+    const CustomServiceDef = struct {
+        command: ?[]const u8 = null,
+        port: ?u16 = null,
+        health_check: ?[]const u8 = null,
+        working_directory: ?[]const u8 = null,
+
+        fn deinit(self: *CustomServiceDef, allocator: std.mem.Allocator) void {
+            if (self.command) |c| allocator.free(c);
+            if (self.health_check) |h| allocator.free(h);
+            if (self.working_directory) |w| allocator.free(w);
+        }
+    };
+
+    /// Parse custom: section under services: in deps.yaml
+    /// Format:
+    ///   services:
+    ///     custom:
+    ///       my-worker:
+    ///         command: "node worker.js"
+    ///         port: 3001
+    ///         healthCheck: "curl -sf http://localhost:3001/health"
+    ///         workingDirectory: "."
+    fn parseCustomServices(self: *ShellCommands, content: []const u8, customs: *std.StringHashMap(CustomServiceDef)) !void {
+        var in_services = false;
+        var in_custom = false;
+        var current_name: ?[]const u8 = null;
+        var current_def = CustomServiceDef{};
+        const custom_indent: usize = 4; // "    custom:" is at indent 4
+
+        var line_iter = std.mem.splitScalar(u8, content, '\n');
+        while (line_iter.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+            const indent = countLeadingSpaces(line);
+
+            // Top-level key
+            if (indent == 0) {
+                if (std.mem.eql(u8, trimmed, "services:")) {
+                    in_services = true;
+                    in_custom = false;
+                } else {
+                    // Flush current custom service if any
+                    if (current_name) |name| {
+                        if (current_def.command != null) {
+                            try customs.put(name, current_def);
+                        } else {
+                            self.allocator.free(name);
+                            current_def.deinit(self.allocator);
+                        }
+                        current_name = null;
+                        current_def = CustomServiceDef{};
+                    }
+                    in_services = false;
+                    in_custom = false;
+                }
+                continue;
+            }
+
+            if (!in_services) continue;
+
+            // "  custom:" at indent 2 or 4
+            if (indent <= custom_indent and std.mem.eql(u8, trimmed, "custom:")) {
+                in_custom = true;
+                continue;
+            }
+
+            // If we're at a sibling key at the same indent as custom:, exit custom section
+            if (in_custom and indent <= custom_indent and !std.mem.eql(u8, trimmed, "custom:") and
+                !std.mem.startsWith(u8, trimmed, "- "))
+            {
+                // Flush current
+                if (current_name) |name| {
+                    if (current_def.command != null) {
+                        try customs.put(name, current_def);
+                    } else {
+                        self.allocator.free(name);
+                        current_def.deinit(self.allocator);
+                    }
+                    current_name = null;
+                    current_def = CustomServiceDef{};
+                }
+
+                // Check if this is another services-level key (autoStart, enabled, groups)
+                if (std.mem.indexOf(u8, trimmed, "autoStart:") != null or
+                    std.mem.indexOf(u8, trimmed, "enabled:") != null or
+                    std.mem.indexOf(u8, trimmed, "groups:") != null)
+                {
+                    in_custom = false;
+                    continue;
+                }
+                in_custom = false;
+                continue;
+            }
+
+            if (!in_custom) continue;
+
+            // Service name line (indent = custom_indent + 2, ends with ":")
+            if (indent == custom_indent + 2 and std.mem.endsWith(u8, trimmed, ":") and
+                !std.mem.startsWith(u8, trimmed, "- "))
+            {
+                // Flush previous custom service
+                if (current_name) |name| {
+                    if (current_def.command != null) {
+                        try customs.put(name, current_def);
+                    } else {
+                        self.allocator.free(name);
+                        current_def.deinit(self.allocator);
+                    }
+                }
+                current_def = CustomServiceDef{};
+                const svc_name = trimmed[0 .. trimmed.len - 1];
+                current_name = try self.allocator.dupe(u8, svc_name);
+                continue;
+            }
+
+            // Property lines (indent = custom_indent + 4)
+            if (current_name != null and indent >= custom_indent + 4) {
+                if (std.mem.startsWith(u8, trimmed, "command:")) {
+                    const val = parseYamlValue(trimmed["command:".len..]);
+                    if (val.len > 0) {
+                        current_def.command = try self.allocator.dupe(u8, val);
+                    }
+                } else if (std.mem.startsWith(u8, trimmed, "port:")) {
+                    const val = parseYamlValue(trimmed["port:".len..]);
+                    current_def.port = std.fmt.parseInt(u16, val, 10) catch null;
+                } else if (std.mem.startsWith(u8, trimmed, "healthCheck:")) {
+                    const val = parseYamlValue(trimmed["healthCheck:".len..]);
+                    if (val.len > 0) {
+                        current_def.health_check = try self.allocator.dupe(u8, val);
+                    }
+                } else if (std.mem.startsWith(u8, trimmed, "workingDirectory:")) {
+                    const val = parseYamlValue(trimmed["workingDirectory:".len..]);
+                    if (val.len > 0) {
+                        current_def.working_directory = try self.allocator.dupe(u8, val);
+                    }
+                }
+            }
+        }
+
+        // Flush final custom service
+        if (current_name) |name| {
+            if (current_def.command != null) {
+                try customs.put(name, current_def);
+            } else {
+                self.allocator.free(name);
+                current_def.deinit(self.allocator);
+            }
+        }
+    }
+
+    /// Count leading spaces in a line
+    fn countLeadingSpaces(line: []const u8) usize {
+        var count: usize = 0;
+        for (line) |c| {
+            if (c == ' ') {
+                count += 1;
+            } else if (c == '\t') {
+                count += 2; // treat tab as 2 spaces
+            } else {
+                break;
+            }
+        }
+        return count;
+    }
+
+    /// Parse a YAML value: strip leading/trailing whitespace and quotes
+    fn parseYamlValue(raw: []const u8) []const u8 {
+        var val = std.mem.trim(u8, raw, " \t\r");
+        // Strip surrounding quotes
+        if (val.len >= 2) {
+            if ((val[0] == '"' and val[val.len - 1] == '"') or
+                (val[0] == '\'' and val[val.len - 1] == '\''))
+            {
+                val = val[1 .. val.len - 1];
+            }
+        }
+        return val;
+    }
+
+    /// Start a custom service defined in deps.yaml
+    fn startCustomService(self: *ShellCommands, name: []const u8, def: CustomServiceDef, project_root: []const u8) !void {
+        style.print("🚀 Starting custom service: {s}...\n", .{name});
+
+        // Build a ServiceConfig from the custom definition
+        const env_vars = std.StringHashMap([]const u8).init(self.allocator);
+
+        // Resolve working directory
+        var wd: ?[]const u8 = null;
+        if (def.working_directory) |w| {
+            if (std.mem.eql(u8, w, ".")) {
+                wd = try self.allocator.dupe(u8, project_root);
+            } else if (w.len > 0 and w[0] == '/') {
+                wd = try self.allocator.dupe(u8, w);
+            } else {
+                wd = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ project_root, w });
+            }
+        }
+
+        const config = lib.services.ServiceConfig{
+            .name = try self.allocator.dupe(u8, name),
+            .display_name = try self.allocator.dupe(u8, name),
+            .description = try std.fmt.allocPrint(self.allocator, "Custom service: {s}", .{name}),
+            .start_command = try self.allocator.dupe(u8, def.command orelse return error.MissingCommand),
+            .working_directory = wd,
+            .env_vars = env_vars,
+            .port = def.port,
+            .health_check = if (def.health_check) |hc| try self.allocator.dupe(u8, hc) else null,
+        };
+
+        // Register and start via ServiceManager
+        var mgr = lib.services.manager.ServiceManager.init(self.allocator);
+        defer mgr.deinit();
+
+        try mgr.register(config);
+        mgr.start(name) catch |err| {
+            style.print("⚠️  Failed to start custom service {s}: {s}\n", .{ name, @errorName(err) });
+            return;
+        };
+
+        style.print("✅ {s} started\n", .{name});
     }
 
     /// Start a single service by name (with project context for binary resolution)
@@ -762,6 +1005,7 @@ pub const ShellCommands = struct {
     }
 
     /// Wait for started services to be ready (health checks)
+    /// Uses data-driven health checks from ServiceConfig rather than hardcoded commands
     fn waitForServices(self: *ShellCommands, project_root: []const u8) !void {
         const content = blk: {
             const yaml_files = [_][]const u8{ "deps.yaml", "deps.yml", "dependencies.yaml" };
@@ -774,30 +1018,62 @@ pub const ShellCommands = struct {
         };
         defer self.allocator.free(content);
 
-        // Check if meilisearch is in autoStart
-        if (std.mem.indexOf(u8, content, "meilisearch") != null) {
-            // Wait up to 5 seconds for meilisearch to be ready
-            var attempts: u32 = 0;
-            while (attempts < 10) : (attempts += 1) {
-                const result = io_helper.childRun(self.allocator, &[_][]const u8{
-                    "/usr/bin/curl", "-sf", "--connect-timeout", "1", "http://127.0.0.1:7700/health",
-                }) catch {
-                    io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+        // Collect service names from autoStart section
+        var service_names: std.ArrayList([]const u8) = .{};
+        defer service_names.deinit(self.allocator);
+
+        var in_services = false;
+        var in_auto_start = false;
+        var line_iter = std.mem.splitScalar(u8, content, '\n');
+        while (line_iter.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+            if (std.mem.eql(u8, trimmed, "services:")) {
+                in_services = true;
+                in_auto_start = false;
+                continue;
+            }
+
+            if (in_services and trimmed.len > 0 and trimmed[0] != ' ' and trimmed[0] != '-' and
+                !std.mem.startsWith(u8, line, " ") and !std.mem.startsWith(u8, line, "\t"))
+            {
+                if (!std.mem.eql(u8, trimmed, "services:")) {
+                    in_services = false;
+                    in_auto_start = false;
                     continue;
-                };
-                defer self.allocator.free(result.stdout);
-                defer self.allocator.free(result.stderr);
-                if (result.term == .exited and result.term.exited == 0) break;
-                io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
+                }
+            }
+
+            if (in_services) {
+                if (std.mem.indexOf(u8, trimmed, "autoStart:") != null) {
+                    in_auto_start = true;
+                    continue;
+                }
+                if (in_auto_start and std.mem.startsWith(u8, trimmed, "- ")) {
+                    const svc_name = std.mem.trim(u8, trimmed[2..], " \t\r");
+                    if (svc_name.len > 0) {
+                        service_names.append(self.allocator, svc_name) catch continue;
+                    }
+                } else if (in_auto_start and !std.mem.startsWith(u8, trimmed, "- ")) {
+                    in_auto_start = false;
+                }
             }
         }
 
-        // Check if postgres is in autoStart
-        if (std.mem.indexOf(u8, content, "postgres") != null) {
+        // Run health checks for each service
+        const service_cmd = @import("../cli/commands/services.zig");
+        for (service_names.items) |svc_name| {
+            var config = service_cmd.getServiceConfig(self.allocator, svc_name, project_root) catch continue;
+            defer config.deinit(self.allocator);
+
+            const health_cmd = config.health_check orelse continue;
+
+            // Run health check with up to 10 retries, 500ms delay
             var attempts: u32 = 0;
             while (attempts < 10) : (attempts += 1) {
                 const result = io_helper.childRun(self.allocator, &[_][]const u8{
-                    "pg_isready", "-q",
+                    "sh", "-c", health_cmd,
                 }) catch {
                     io_helper.nanosleep(0, 500 * std.time.ns_per_ms);
                     continue;

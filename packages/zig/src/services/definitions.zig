@@ -20,6 +20,8 @@ pub const ServiceConfig = struct {
     auto_start: bool = false,
     /// Keep alive (restart if crashed)
     keep_alive: bool = true,
+    /// Health check command (optional, used to verify service is ready)
+    health_check: ?[]const u8 = null,
 
     pub fn deinit(self: *ServiceConfig, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -27,6 +29,7 @@ pub const ServiceConfig = struct {
         allocator.free(self.description);
         allocator.free(self.start_command);
         if (self.working_directory) |wd| allocator.free(wd);
+        if (self.health_check) |hc| allocator.free(hc);
 
         var it = self.env_vars.iterator();
         while (it.next()) |entry| {
@@ -131,6 +134,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "pg_isready -q -p {d}", .{port}),
         };
     }
 
@@ -160,6 +164,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "redis-cli -p {d} ping", .{port}),
         };
     }
 
@@ -181,6 +186,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "mysqladmin ping --port={d}", .{port}),
         };
     }
 
@@ -197,6 +203,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -217,6 +224,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "mongosh --port {d} --eval 'db.runCommand({{ping:1}})' --quiet", .{port}),
         };
     }
 
@@ -236,6 +244,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/health", .{port}),
         };
     }
 
@@ -281,6 +290,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/ping", .{port}),
         };
     }
 
@@ -342,6 +352,7 @@ pub const Services = struct {
             .auto_start = false,
             .keep_alive = true,
             .working_directory = working_dir,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/health", .{port}),
         };
     }
 
@@ -357,6 +368,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/_cluster/health", .{port}),
         };
     }
 
@@ -442,6 +454,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/-/healthy", .{port}),
         };
     }
 
@@ -458,6 +471,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/api/health", .{port}),
         };
     }
 
@@ -473,6 +487,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -492,6 +507,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/v1/sys/health", .{port}),
         };
     }
 
@@ -507,6 +523,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/v1/status/leader", .{port}),
         };
     }
 
@@ -537,6 +554,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/minio/health/live", .{port}),
         };
     }
 
@@ -674,6 +692,7 @@ pub const Services = struct {
             .port = port,
             .auto_start = false,
             .keep_alive = true,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -692,6 +711,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "mariadbd --port={d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "mysqladmin ping --port={d}", .{port}),
         };
     }
 
@@ -719,6 +739,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "opensearch -Ehttp.port={d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/_cluster/health", .{port}),
         };
     }
 
@@ -760,6 +781,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "surreal start --bind 0.0.0.0:{d} memory", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/health", .{port}),
         };
     }
 
@@ -786,6 +808,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "typesense-server --data-dir /usr/local/var/typesense --api-port {d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/health", .{port}),
         };
     }
 
@@ -885,6 +908,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "loki --server.http-listen-port={d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/ready", .{port}),
         };
     }
 
@@ -898,6 +922,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "alertmanager --web.listen-address=:{d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/-/healthy", .{port}),
         };
     }
 
@@ -911,6 +936,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "victoria-metrics -httpListenAddr=:{d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/health", .{port}),
         };
     }
 
@@ -928,6 +954,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "traefik --api.dashboard=true --entrypoints.web.address=:{d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -984,6 +1011,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "nomad agent -dev -http-port={d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/v1/status/leader", .{port}),
         };
     }
 
@@ -1001,6 +1029,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "gitea web --port {d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -1014,6 +1043,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "mailpit --listen 0.0.0.0:{d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -1028,6 +1058,7 @@ pub const Services = struct {
             .start_command = try allocator.dupe(u8, "ollama serve"),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -1088,6 +1119,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "httpd -DFOREGROUND -f /usr/local/etc/httpd/httpd.conf -c 'Listen {d}'", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -1105,6 +1137,7 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "syncthing serve --gui-address=0.0.0.0:{d} --no-browser", .{port}),
             .env_vars = env_vars,
             .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/", .{port}),
         };
     }
 
@@ -1122,6 +1155,100 @@ pub const Services = struct {
             .start_command = try std.fmt.allocPrint(allocator, "tor --SocksPort {d}", .{port}),
             .env_vars = env_vars,
             .port = port,
+        };
+    }
+
+    // ========================================================================
+    // Search Services
+    // ========================================================================
+
+    /// Apache Zookeeper service
+    pub fn zookeeper(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "zookeeper"),
+            .display_name = try allocator.dupe(u8, "Apache Zookeeper"),
+            .description = try allocator.dupe(u8, "Distributed coordination service"),
+            .start_command = try std.fmt.allocPrint(allocator, "zkServer.sh start-foreground", .{}),
+            .env_vars = env_vars,
+            .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "echo ruok | nc 127.0.0.1 {d}", .{port}),
+        };
+    }
+
+    /// Apache Solr service
+    pub fn solr(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "solr"),
+            .display_name = try allocator.dupe(u8, "Apache Solr"),
+            .description = try allocator.dupe(u8, "Enterprise search platform"),
+            .start_command = try std.fmt.allocPrint(allocator, "solr start -f -p {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/solr/admin/info/system", .{port}),
+        };
+    }
+
+    // ========================================================================
+    // Application Servers
+    // ========================================================================
+
+    /// PHP-FPM service
+    pub fn phpfpm(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "php-fpm"),
+            .display_name = try allocator.dupe(u8, "PHP-FPM"),
+            .description = try allocator.dupe(u8, "PHP FastCGI process manager"),
+            .start_command = try std.fmt.allocPrint(allocator, "php-fpm --nodaemonize --fpm-config /usr/local/etc/php-fpm.conf", .{}),
+            .env_vars = env_vars,
+            .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/ping", .{port}),
+        };
+    }
+
+    /// PocketBase service
+    pub fn pocketbase(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "pocketbase"),
+            .display_name = try allocator.dupe(u8, "PocketBase"),
+            .description = try allocator.dupe(u8, "Backend as a service"),
+            .start_command = try std.fmt.allocPrint(allocator, "pocketbase serve --http=127.0.0.1:{d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/api/health", .{port}),
+        };
+    }
+
+    // ========================================================================
+    // Tunnels & Secrets
+    // ========================================================================
+
+    /// Cloudflared tunnel service
+    pub fn cloudflared(allocator: std.mem.Allocator) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "cloudflared"),
+            .display_name = try allocator.dupe(u8, "Cloudflared"),
+            .description = try allocator.dupe(u8, "Cloudflare Tunnel client"),
+            .start_command = try allocator.dupe(u8, "cloudflared tunnel run"),
+            .env_vars = env_vars,
+            .port = null,
+        };
+    }
+
+    /// Doppler secrets manager
+    pub fn doppler(allocator: std.mem.Allocator) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "doppler"),
+            .display_name = try allocator.dupe(u8, "Doppler"),
+            .description = try allocator.dupe(u8, "Secrets management platform"),
+            .start_command = try allocator.dupe(u8, "doppler run"),
+            .env_vars = env_vars,
+            .port = null,
         };
     }
 
@@ -1224,6 +1351,17 @@ pub const Services = struct {
 
         // Network & Security
         if (std.mem.eql(u8, service_name, "tor")) return 9050;
+
+        // Search
+        if (std.mem.eql(u8, service_name, "zookeeper")) return 2181;
+        if (std.mem.eql(u8, service_name, "solr")) return 8983;
+
+        // Application Servers
+        if (std.mem.eql(u8, service_name, "php-fpm")) return 9074;
+        if (std.mem.eql(u8, service_name, "pocketbase")) return 8095;
+
+        // Tunnels & Secrets (no listening port)
+        // cloudflared and doppler return null
 
         return null;
     }

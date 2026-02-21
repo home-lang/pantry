@@ -11,8 +11,127 @@ const ServiceManager = services.ServiceManager;
 const ServiceConfig = services.ServiceConfig;
 const Services = services.Services;
 
+// ============================================================================
+// Built-in Service Groups
+// ============================================================================
+
+const BuiltinGroup = struct {
+    name: []const u8,
+    members: []const []const u8,
+};
+
+const builtin_groups = [_]BuiltinGroup{
+    .{ .name = "db", .members = &.{ "postgres", "redis", "mysql", "mariadb", "mongodb" } },
+    .{ .name = "monitoring", .members = &.{ "prometheus", "grafana", "jaeger", "loki" } },
+    .{ .name = "queue", .members = &.{ "kafka", "rabbitmq", "nats" } },
+    .{ .name = "web", .members = &.{ "nginx", "caddy", "httpd" } },
+};
+
+fn resolveBuiltinGroup(name: []const u8) ?[]const []const u8 {
+    for (builtin_groups) |group| {
+        if (std.mem.eql(u8, name, group.name)) return group.members;
+    }
+    return null;
+}
+
+/// Resolve a user-defined group from deps.yaml
+fn resolveUserGroup(allocator: std.mem.Allocator, name: []const u8) ?[]const []const u8 {
+    const io_helper = @import("../../io_helper.zig");
+    const cwd = io_helper.getCwdAlloc(allocator) catch return null;
+    defer allocator.free(cwd);
+
+    const yaml_files = [_][]const u8{ "deps.yaml", "deps.yml", "dependencies.yaml" };
+    for (yaml_files) |yaml_name| {
+        const candidate = std.fs.path.join(allocator, &[_][]const u8{ cwd, yaml_name }) catch continue;
+        defer allocator.free(candidate);
+
+        const content = io_helper.readFileAlloc(allocator, candidate, 1 * 1024 * 1024) catch continue;
+        defer allocator.free(content);
+
+        return parseUserGroup(allocator, content, name);
+    }
+    return null;
+}
+
+fn parseUserGroup(allocator: std.mem.Allocator, content: []const u8, group_name: []const u8) ?[]const []const u8 {
+    var in_services = false;
+    var in_groups = false;
+    var in_target_group = false;
+    var members: std.ArrayList([]const u8) = .{};
+
+    var line_iter = std.mem.splitScalar(u8, content, '\n');
+    while (line_iter.next()) |line| {
+        const trimmed = std.mem.trim(u8, line, " \t\r");
+        if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+        // Detect top-level sections
+        if (trimmed.len > 0 and trimmed[0] != ' ' and trimmed[0] != '-' and !std.mem.startsWith(u8, line, " ") and !std.mem.startsWith(u8, line, "\t")) {
+            if (std.mem.eql(u8, trimmed, "services:")) {
+                in_services = true;
+                in_groups = false;
+                in_target_group = false;
+            } else {
+                in_services = false;
+                in_groups = false;
+                in_target_group = false;
+            }
+            continue;
+        }
+
+        if (!in_services) continue;
+
+        if (std.mem.eql(u8, trimmed, "groups:")) {
+            in_groups = true;
+            in_target_group = false;
+            continue;
+        }
+
+        if (in_groups and !in_target_group) {
+            // Check for "groupname:" pattern
+            if (std.mem.endsWith(u8, trimmed, ":")) {
+                const gname = trimmed[0 .. trimmed.len - 1];
+                if (std.mem.eql(u8, gname, group_name)) {
+                    in_target_group = true;
+                }
+            }
+            continue;
+        }
+
+        if (in_target_group) {
+            if (std.mem.startsWith(u8, trimmed, "- ")) {
+                const svc_name = std.mem.trim(u8, trimmed[2..], " \t\r");
+                if (svc_name.len > 0) {
+                    const duped = allocator.dupe(u8, svc_name) catch continue;
+                    members.append(allocator, duped) catch {
+                        allocator.free(duped);
+                        continue;
+                    };
+                }
+            } else {
+                // No longer in the list
+                break;
+            }
+        }
+    }
+
+    if (members.items.len == 0) {
+        members.deinit(allocator);
+        return null;
+    }
+
+    return members.toOwnedSlice(allocator) catch {
+        for (members.items) |m| allocator.free(m);
+        members.deinit(allocator);
+        return null;
+    };
+}
+
+// ============================================================================
+// Service Listing
+// ============================================================================
+
 pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
-    style.print("Available Services ({d} total):\n\n", .{62});
+    style.print("Available Services ({d} total):\n\n", .{68});
 
     // Databases (22)
     style.print("[Databases]\n", .{});
@@ -39,6 +158,11 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     style.print("  {s: <16} KeyDB                        (port 6379)\n", .{"keydb"});
     style.print("  {s: <16} ScyllaDB                     (port 9042)\n", .{"scylladb"});
     style.print("  {s: <16} FerretDB                     (port 27018)\n", .{"ferretdb"});
+
+    // Search (2)
+    style.print("\n[Search]\n", .{});
+    style.print("  {s: <16} Apache Zookeeper             (port 2181)\n", .{"zookeeper"});
+    style.print("  {s: <16} Apache Solr                  (port 8983)\n", .{"solr"});
 
     // Message Queues (6)
     style.print("\n[Message Queues & Streaming]\n", .{});
@@ -95,11 +219,21 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     style.print("  {s: <16} Caddy                        (port 2015)\n", .{"caddy"});
     style.print("  {s: <16} Apache httpd                 (port 8084)\n", .{"httpd"});
 
+    // Application Servers (2)
+    style.print("\n[Application Servers]\n", .{});
+    style.print("  {s: <16} PHP-FPM                      (port 9074)\n", .{"php-fpm"});
+    style.print("  {s: <16} PocketBase                   (port 8095)\n", .{"pocketbase"});
+
     // DNS & Network (3)
     style.print("\n[DNS & Network]\n", .{});
     style.print("  {s: <16} dnsmasq                      (port 5353)\n", .{"dnsmasq"});
     style.print("  {s: <16} CoreDNS                      (port 1053)\n", .{"coredns"});
     style.print("  {s: <16} Unbound                      (port 5335)\n", .{"unbound"});
+
+    // Tunnels & Secrets (2)
+    style.print("\n[Tunnels & Secrets]\n", .{});
+    style.print("  {s: <16} Cloudflared                  (no port)\n", .{"cloudflared"});
+    style.print("  {s: <16} Doppler                      (no port)\n", .{"doppler"});
 
     // Sync & Storage (1)
     style.print("\n[Sync & Storage]\n", .{});
@@ -109,16 +243,29 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     style.print("\n[Network & Security]\n", .{});
     style.print("  {s: <16} Tor                          (port 9050)\n", .{"tor"});
 
+    // Groups
+    style.print("\n[Service Groups]\n", .{});
+    style.print("  {s: <16} postgres, redis, mysql, mariadb, mongodb\n", .{"db"});
+    style.print("  {s: <16} prometheus, grafana, jaeger, loki\n", .{"monitoring"});
+    style.print("  {s: <16} kafka, rabbitmq, nats\n", .{"queue"});
+    style.print("  {s: <16} nginx, caddy, httpd\n", .{"web"});
+    style.print("  Custom groups can be defined in deps.yaml under services.groups\n", .{});
+
     style.print("\n[Usage]\n", .{});
-    style.print("  pantry service start <service>      Start a service\n", .{});
-    style.print("  pantry service stop <service>       Stop a service\n", .{});
-    style.print("  pantry service restart <service>    Restart a service\n", .{});
+    style.print("  pantry service start <service>      Start a service (or group)\n", .{});
+    style.print("  pantry service stop <service>       Stop a service (or group)\n", .{});
+    style.print("  pantry service restart <service>    Restart a service (or group)\n", .{});
     style.print("  pantry service status <service>     Show service status\n", .{});
+    style.print("  pantry service logs <service>       View service logs\n", .{});
     style.print("  pantry service enable <service>     Enable auto-start\n", .{});
     style.print("  pantry service disable <service>    Disable auto-start\n", .{});
 
     return .{ .exit_code = 0 };
 }
+
+// ============================================================================
+// Start / Stop / Restart Commands (with group support)
+// ============================================================================
 
 pub fn startCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     // Try to detect project root from CWD for binary path resolution
@@ -149,12 +296,32 @@ pub fn startCommandWithContext(allocator: std.mem.Allocator, args: []const []con
 
     const service_name = args[0];
 
+    // Check if this is a group name
+    if (resolveBuiltinGroup(service_name)) |members| {
+        return startGroup(allocator, members, project_root);
+    }
+    if (resolveUserGroup(allocator, service_name)) |members| {
+        defer {
+            for (members) |m| allocator.free(m);
+            allocator.free(members);
+        }
+        return startGroup(allocator, members, project_root);
+    }
+
+    return startSingleService(allocator, service_name, project_root);
+}
+
+/// Start a single service (no group resolution — avoids recursive error set)
+fn startSingleService(allocator: std.mem.Allocator, service_name: []const u8, project_root: ?[]const u8) !CommandResult {
     // Initialize service manager
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
     // Register the service based on its name (with project context for path resolution)
-    const service_config = try getServiceConfig(allocator, service_name, project_root);
+    const service_config = getServiceConfig(allocator, service_name, project_root) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
     const canonical_name = try allocator.dupe(u8, service_config.name);
     defer allocator.free(canonical_name);
     try manager.register(service_config);
@@ -175,6 +342,20 @@ pub fn startCommandWithContext(allocator: std.mem.Allocator, args: []const []con
     return .{ .exit_code = 0 };
 }
 
+fn startGroup(allocator: std.mem.Allocator, members: []const []const u8, project_root: ?[]const u8) !CommandResult {
+    var failed: u32 = 0;
+    for (members) |member| {
+        const result = try startSingleService(allocator, member, project_root);
+        if (result.exit_code != 0) failed += 1;
+        if (result.message) |msg| allocator.free(msg);
+    }
+    if (failed > 0) {
+        const msg = try std.fmt.allocPrint(allocator, "{d} service(s) failed to start", .{failed});
+        return .{ .exit_code = 1, .message = msg };
+    }
+    return .{ .exit_code = 0 };
+}
+
 pub fn stopCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     if (args.len == 0) {
         return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry service stop <service>");
@@ -182,10 +363,30 @@ pub fn stopCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
 
     const service_name = args[0];
 
+    // Check if this is a group name
+    if (resolveBuiltinGroup(service_name)) |members| {
+        return stopGroup(allocator, members);
+    }
+    if (resolveUserGroup(allocator, service_name)) |members| {
+        defer {
+            for (members) |m| allocator.free(m);
+            allocator.free(members);
+        }
+        return stopGroup(allocator, members);
+    }
+
+    return stopSingleService(allocator, service_name);
+}
+
+/// Stop a single service (no group resolution — avoids recursive error set)
+fn stopSingleService(allocator: std.mem.Allocator, service_name: []const u8) !CommandResult {
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name, null);
+    const service_config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
     const canonical_name = try allocator.dupe(u8, service_config.name);
     defer allocator.free(canonical_name);
     try manager.register(service_config);
@@ -201,16 +402,49 @@ pub fn stopCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     return .{ .exit_code = 0 };
 }
 
+fn stopGroup(allocator: std.mem.Allocator, members: []const []const u8) !CommandResult {
+    var failed: u32 = 0;
+    for (members) |member| {
+        const result = try stopSingleService(allocator, member);
+        if (result.exit_code != 0) failed += 1;
+        if (result.message) |msg| allocator.free(msg);
+    }
+    if (failed > 0) {
+        const msg = try std.fmt.allocPrint(allocator, "{d} service(s) failed to stop", .{failed});
+        return .{ .exit_code = 1, .message = msg };
+    }
+    return .{ .exit_code = 0 };
+}
+
 pub fn restartCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     if (args.len == 0) {
         return CommandResult.err(allocator, "Error: No service specified");
     }
 
     const service_name = args[0];
+
+    // Check if this is a group name
+    if (resolveBuiltinGroup(service_name)) |members| {
+        _ = try stopGroup(allocator, members);
+        return startGroup(allocator, members, null);
+    }
+    if (resolveUserGroup(allocator, service_name)) |members| {
+        defer {
+            for (members) |m| allocator.free(m);
+            allocator.free(members);
+        }
+        _ = try stopGroup(allocator, members);
+        return startGroup(allocator, members, null);
+    }
+
     style.print("Restarting {s}...\n", .{service_name});
-    _ = try stopCommand(allocator, args);
-    return try startCommand(allocator, args);
+    _ = try stopSingleService(allocator, service_name);
+    return try startSingleService(allocator, service_name, null);
 }
+
+// ============================================================================
+// Status / Enable / Disable Commands
+// ============================================================================
 
 pub fn statusCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
     if (args.len == 0) {
@@ -224,7 +458,10 @@ pub fn statusCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name, null);
+    const service_config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
     const canonical_name = try allocator.dupe(u8, service_config.name);
     defer allocator.free(canonical_name);
     try manager.register(service_config);
@@ -250,7 +487,10 @@ pub fn enableCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name, null);
+    const service_config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
     const canonical_name = try allocator.dupe(u8, service_config.name);
     defer allocator.free(canonical_name);
     try manager.register(service_config);
@@ -276,7 +516,10 @@ pub fn disableCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
 
-    const service_config = try getServiceConfig(allocator, service_name, null);
+    const service_config = getServiceConfig(allocator, service_name, null) catch {
+        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{service_name});
+        return .{ .exit_code = 1, .message = msg };
+    };
     const canonical_name = try allocator.dupe(u8, service_config.name);
     defer allocator.free(canonical_name);
     try manager.register(service_config);
@@ -292,12 +535,142 @@ pub fn disableCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     return .{ .exit_code = 0 };
 }
 
+// ============================================================================
+// Logs Command
+// ============================================================================
+
+pub fn logsCommand(allocator: std.mem.Allocator, args: []const []const u8, follow: bool) !CommandResult {
+    if (args.len == 0) {
+        return CommandResult.err(allocator, "Error: No service specified\nUsage: pantry service logs <service> [--follow]");
+    }
+
+    const service_name = args[0];
+    const io_helper = @import("../../io_helper.zig");
+    const platform_mod = services.platform;
+    const plat = platform_mod.Platform.detect();
+
+    switch (plat) {
+        .linux => {
+            // Use journalctl for systemd-based services
+            const unit_name = try std.fmt.allocPrint(allocator, "pantry-{s}.service", .{service_name});
+            defer allocator.free(unit_name);
+
+            if (follow) {
+                const result = io_helper.childRun(allocator, &[_][]const u8{
+                    "journalctl", "--user", "-u", unit_name, "-f",
+                }) catch |err| {
+                    const msg = try std.fmt.allocPrint(allocator, "Failed to follow logs for {s}: {s}", .{ service_name, @errorName(err) });
+                    return .{ .exit_code = 1, .message = msg };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+            } else {
+                const result = io_helper.childRun(allocator, &[_][]const u8{
+                    "journalctl", "--user", "-u", unit_name, "--no-pager", "-n", "100",
+                }) catch |err| {
+                    const msg = try std.fmt.allocPrint(allocator, "Failed to read logs for {s}: {s}", .{ service_name, @errorName(err) });
+                    return .{ .exit_code = 1, .message = msg };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+
+                if (result.stdout.len > 0) {
+                    style.print("{s}", .{result.stdout});
+                }
+                if (result.stderr.len > 0) {
+                    style.print("{s}", .{result.stderr});
+                }
+            }
+        },
+        .macos, .freebsd => {
+            // Read from log files
+            const home = io_helper.getEnvVarOwned(allocator, "HOME") catch {
+                return CommandResult.err(allocator, "Error: Could not determine HOME directory");
+            };
+            defer allocator.free(home);
+
+            const log_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}.log", .{ home, service_name });
+            defer allocator.free(log_path);
+
+            const err_path = try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/logs/{s}.err", .{ home, service_name });
+            defer allocator.free(err_path);
+
+            if (follow) {
+                // Use tail -f on both log files
+                const result = io_helper.childRun(allocator, &[_][]const u8{
+                    "tail", "-f", log_path, err_path,
+                }) catch |err| {
+                    const msg = try std.fmt.allocPrint(allocator, "Failed to follow logs for {s}: {s}", .{ service_name, @errorName(err) });
+                    return .{ .exit_code = 1, .message = msg };
+                };
+                defer allocator.free(result.stdout);
+                defer allocator.free(result.stderr);
+            } else {
+                // Print last 100 lines from stdout log
+                const stdout_content = io_helper.readFileAlloc(allocator, log_path, 10 * 1024 * 1024) catch null;
+                if (stdout_content) |content| {
+                    defer allocator.free(content);
+                    printLastNLines(content, 100);
+                }
+
+                // Print last 100 lines from stderr log
+                const stderr_content = io_helper.readFileAlloc(allocator, err_path, 10 * 1024 * 1024) catch null;
+                if (stderr_content) |content| {
+                    defer allocator.free(content);
+                    if (content.len > 0) {
+                        style.print("\n--- stderr ---\n", .{});
+                        printLastNLines(content, 100);
+                    }
+                }
+
+                if (stdout_content == null and stderr_content == null) {
+                    style.print("No log files found for {s}\n", .{service_name});
+                    style.print("Log path: {s}\n", .{log_path});
+                }
+            }
+        },
+        else => {
+            return CommandResult.err(allocator, "Error: Log viewing not supported on this platform");
+        },
+    }
+
+    return .{ .exit_code = 0 };
+}
+
+fn printLastNLines(content: []const u8, n: usize) void {
+    // Find the last N newlines
+    var count: usize = 0;
+    var pos: usize = content.len;
+    while (pos > 0) {
+        pos -= 1;
+        if (content[pos] == '\n') {
+            count += 1;
+            if (count >= n + 1) {
+                pos += 1;
+                break;
+            }
+        }
+    }
+    if (pos < content.len) {
+        style.print("{s}", .{content[pos..]});
+    }
+}
+
+// ============================================================================
+// Service Config Resolution
+// ============================================================================
+
 /// Get service configuration by name, optionally with project context for path resolution
-fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root: ?[]const u8) !ServiceConfig {
+pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root: ?[]const u8) !ServiceConfig {
+    // Handle port-less services first
+    if (std.mem.eql(u8, name, "cloudflared")) {
+        return try Services.cloudflared(allocator);
+    } else if (std.mem.eql(u8, name, "doppler")) {
+        return try Services.doppler(allocator);
+    }
+
     // Get default port for the service
     const port = Services.getDefaultPort(name) orelse {
-        const msg = try std.fmt.allocPrint(allocator, "Unknown service: {s}", .{name});
-        defer allocator.free(msg);
         return error.UnknownService;
     };
 
@@ -349,6 +722,12 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.keydb(allocator, port);
     } else if (std.mem.eql(u8, name, "valkey")) {
         return try Services.valkey(allocator, port);
+    }
+    // Search
+    else if (std.mem.eql(u8, name, "zookeeper")) {
+        return try Services.zookeeper(allocator, port);
+    } else if (std.mem.eql(u8, name, "solr")) {
+        return try Services.solr(allocator, port);
     }
     // Message Queues
     else if (std.mem.eql(u8, name, "kafka")) {
@@ -431,6 +810,12 @@ fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_root
         return try Services.caddy(allocator, port);
     } else if (std.mem.eql(u8, name, "httpd")) {
         return try Services.httpd(allocator, port);
+    }
+    // Application Servers
+    else if (std.mem.eql(u8, name, "php-fpm")) {
+        return try Services.phpfpm(allocator, port);
+    } else if (std.mem.eql(u8, name, "pocketbase")) {
+        return try Services.pocketbase(allocator, port);
     }
     // DNS & Network
     else if (std.mem.eql(u8, name, "dnsmasq")) {

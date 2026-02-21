@@ -1410,6 +1410,190 @@ test "deps.yaml autoStart services can all be created as ServiceConfig" {
     }
 }
 
+// ============================================================================
+// Health Check Tests
+// ============================================================================
+
+test "Health check - PostgreSQL has pg_isready" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.postgresql(allocator, 5432);
+    defer svc.deinit(allocator);
+
+    try std.testing.expect(svc.health_check != null);
+    const hc = svc.health_check.?;
+    try std.testing.expect(std.mem.indexOf(u8, hc, "pg_isready") != null);
+    try std.testing.expect(std.mem.indexOf(u8, hc, "5432") != null);
+}
+
+test "Health check - Redis has redis-cli ping" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.redis(allocator, 6379);
+    defer svc.deinit(allocator);
+
+    try std.testing.expect(svc.health_check != null);
+    const hc = svc.health_check.?;
+    try std.testing.expect(std.mem.indexOf(u8, hc, "redis-cli") != null);
+    try std.testing.expect(std.mem.indexOf(u8, hc, "ping") != null);
+}
+
+test "Health check - Meilisearch has curl health endpoint" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.meilisearch(allocator, 7700);
+    defer svc.deinit(allocator);
+
+    try std.testing.expect(svc.health_check != null);
+    const hc = svc.health_check.?;
+    try std.testing.expect(std.mem.indexOf(u8, hc, "curl") != null);
+    try std.testing.expect(std.mem.indexOf(u8, hc, "7700") != null);
+    try std.testing.expect(std.mem.indexOf(u8, hc, "health") != null);
+}
+
+test "Health check - custom port is reflected" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.postgresql(allocator, 9999);
+    defer svc.deinit(allocator);
+
+    try std.testing.expect(svc.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, svc.health_check.?, "9999") != null);
+}
+
+test "Health check - Cloudflared has no health check" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.cloudflared(allocator);
+    defer svc.deinit(allocator);
+
+    try std.testing.expect(svc.health_check == null);
+}
+
+test "Health check - Doppler has no health check" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.doppler(allocator);
+    defer svc.deinit(allocator);
+
+    try std.testing.expect(svc.health_check == null);
+}
+
+// ============================================================================
+// New Service Configuration Tests (Zookeeper, Solr, PHP-FPM, PocketBase, Cloudflared, Doppler)
+// ============================================================================
+
+test "ServiceConfig creation - Zookeeper" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.zookeeper(allocator, 2181);
+    defer svc.deinit(allocator);
+
+    try std.testing.expectEqualStrings("zookeeper", svc.name);
+    try std.testing.expectEqualStrings("Apache Zookeeper", svc.display_name);
+    try std.testing.expect(svc.port.? == 2181);
+    try std.testing.expect(svc.keep_alive == true);
+    try std.testing.expect(svc.health_check != null);
+}
+
+test "ServiceConfig creation - Solr" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.solr(allocator, 8983);
+    defer svc.deinit(allocator);
+
+    try std.testing.expectEqualStrings("solr", svc.name);
+    try std.testing.expectEqualStrings("Apache Solr", svc.display_name);
+    try std.testing.expect(svc.port.? == 8983);
+    try std.testing.expect(svc.health_check != null);
+}
+
+test "ServiceConfig creation - PHP-FPM" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.phpfpm(allocator, 9074);
+    defer svc.deinit(allocator);
+
+    try std.testing.expectEqualStrings("php-fpm", svc.name);
+    try std.testing.expect(svc.port.? == 9074);
+}
+
+test "ServiceConfig creation - PocketBase" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.pocketbase(allocator, 8095);
+    defer svc.deinit(allocator);
+
+    try std.testing.expectEqualStrings("pocketbase", svc.name);
+    try std.testing.expectEqualStrings("PocketBase", svc.display_name);
+    try std.testing.expect(svc.port.? == 8095);
+    try std.testing.expect(svc.health_check != null);
+    try std.testing.expect(std.mem.indexOf(u8, svc.health_check.?, "8095") != null);
+}
+
+test "ServiceConfig creation - Cloudflared (port-less)" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.cloudflared(allocator);
+    defer svc.deinit(allocator);
+
+    try std.testing.expectEqualStrings("cloudflared", svc.name);
+    try std.testing.expectEqualStrings("Cloudflared", svc.display_name);
+    try std.testing.expect(svc.port == null);
+    try std.testing.expect(svc.start_command.len > 0);
+}
+
+test "ServiceConfig creation - Doppler (port-less)" {
+    const allocator = std.testing.allocator;
+    var svc = try definitions.Services.doppler(allocator);
+    defer svc.deinit(allocator);
+
+    try std.testing.expectEqualStrings("doppler", svc.name);
+    try std.testing.expectEqualStrings("Doppler", svc.display_name);
+    try std.testing.expect(svc.port == null);
+    try std.testing.expect(svc.start_command.len > 0);
+}
+
+// ============================================================================
+// New Service Default Port Tests
+// ============================================================================
+
+test "Default ports for new services" {
+    try std.testing.expect(definitions.Services.getDefaultPort("zookeeper").? == 2181);
+    try std.testing.expect(definitions.Services.getDefaultPort("solr").? == 8983);
+    try std.testing.expect(definitions.Services.getDefaultPort("php-fpm").? == 9074);
+    try std.testing.expect(definitions.Services.getDefaultPort("pocketbase").? == 8095);
+
+    // Port-less services should not have a default port
+    try std.testing.expect(definitions.Services.getDefaultPort("cloudflared") == null);
+    try std.testing.expect(definitions.Services.getDefaultPort("doppler") == null);
+}
+
+// ============================================================================
+// New Service Memory Cleanup Tests
+// ============================================================================
+
+test "ServiceConfig memory cleanup - new services" {
+    const allocator = std.testing.allocator;
+
+    {
+        var svc = try definitions.Services.zookeeper(allocator, 2181);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.solr(allocator, 8983);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.phpfpm(allocator, 9074);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.pocketbase(allocator, 8095);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.cloudflared(allocator);
+        defer svc.deinit(allocator);
+    }
+    {
+        var svc = try definitions.Services.doppler(allocator);
+        defer svc.deinit(allocator);
+    }
+
+    // If we get here without leaks (testing allocator checks), memory cleanup works
+    try std.testing.expect(true);
+}
+
 test "stripDisplayPrefix handles auto: prefix" {
     try std.testing.expectEqualStrings("redis", install_helpers.stripDisplayPrefix("auto:redis"));
     try std.testing.expectEqualStrings("postgres", install_helpers.stripDisplayPrefix("auto:postgres"));

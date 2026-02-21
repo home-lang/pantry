@@ -1289,6 +1289,27 @@ fn disableAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn logsAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const service_name = ctx.getArgument(0) orelse {
+        style.print("Error: logs requires a service name argument\n", .{});
+        std.process.exit(1);
+    };
+
+    const follow = ctx.hasOption("follow");
+
+    const args = [_][]const u8{service_name};
+    const result = try lib.commands.serviceLogsCommand(allocator, &args, follow);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn bootstrapAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -1776,6 +1797,7 @@ fn printHelp() void {
     style.print("      " ++ style.cyan ++ "stop" ++ style.reset ++ "                Stop a service\n", .{});
     style.print("      " ++ style.cyan ++ "restart" ++ style.reset ++ "             Restart a service\n", .{});
     style.print("      " ++ style.cyan ++ "status" ++ style.reset ++ "              Show service status\n", .{});
+    style.print("      " ++ style.cyan ++ "logs" ++ style.reset ++ "                View service logs\n", .{});
     style.print("      " ++ style.cyan ++ "enable" ++ style.reset ++ "              Enable a service\n", .{});
     style.print("      " ++ style.cyan ++ "disable" ++ style.reset ++ "             Disable a service\n\n", .{});
 
@@ -2471,6 +2493,19 @@ pub fn main() !void {
 
     _ = disable_cmd.setAction(disableAction);
     _ = try root.addCommand(disable_cmd);
+
+    var logs_cmd = try cli.BaseCommand.init(allocator, "logs", "View service logs");
+
+    const logs_service_arg = cli.Argument.init("service", "Service name", .string)
+        .withRequired(true);
+    _ = try logs_cmd.addArgument(logs_service_arg);
+
+    const logs_follow_opt = cli.Option.init("follow", "follow", "Follow log output", .bool)
+        .withShort('f');
+    _ = try logs_cmd.addOption(logs_follow_opt);
+
+    _ = logs_cmd.setAction(logsAction);
+    _ = try root.addCommand(logs_cmd);
 
     // ========================================================================
     // Bootstrap Command (System Setup)
