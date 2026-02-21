@@ -3109,6 +3109,144 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── facebook.com/edencommon — fix sed -i BSD + remove gcc dep ───────
+
+  'facebook.com/edencommon': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove linux gnu.org/gcc build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+    },
+  },
+
+  // ─── facebook.com/fb303 — fix stray cmake prefix + remove gcc dep ────
+
+  'facebook.com/fb303': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove linux gnu.org/gcc build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+    },
+  },
+
+  // ─── facebook.com/fbthrift — fix stray cmake prefix + sed -i BSD + remove gcc ─
+
+  'facebook.com/fbthrift': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+              .replace(/sed -i -E\n/g, 'sed -i.bak -E\n')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+              .replace(/sed -i -E\n/g, 'sed -i.bak -E\n')
+          }
+        }
+      }
+      // Remove linux gnu.org/gcc and binutils build deps
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/binutils']) {
+        delete recipe.build.dependencies.linux['gnu.org/binutils']
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+      // Remove linux CC/CXX/LD overrides
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+    },
+  },
+
+  // ─── facebook.com/mvfst — fix stray cmake prefix + sed -i BSD + remove gcc ─
+
+  'facebook.com/mvfst': {
+    modifyRecipe: (recipe: any) => {
+      // Fix stray quote in -DCMAKE_INSTALL_PREFIX
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i\n/g, 'sed -i.bak\n')
+              .replace(/^(\s*)sed -i$/m, '$1sed -i.bak')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove linux gnu.org/gcc, binutils, make, linux-headers build deps
+      const linuxBuildDeps = ['gnu.org/gcc', 'gnu.org/binutils', 'gnu.org/make', 'kernel.org/linux-headers']
+      for (const dep of linuxBuildDeps) {
+        if (recipe.build?.dependencies?.linux?.[dep]) {
+          delete recipe.build.dependencies.linux[dep]
+        }
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+      // Remove linux CC/CXX/LD overrides
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {

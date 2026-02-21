@@ -862,11 +862,11 @@ Options:
     // doxygen.nl removed — removed llvm.org dep override
     // ebassi.github.io/graphene removed — disabled gobject-introspection in override
     // epsilon-project.sourceforge.io removed — simple autotools, added override entry
-    'facebook.com/edencommon', // CMake build failure (Meta C++ lib)
-    'facebook.com/fb303', // CMake build failure (Meta C++ lib chain)
-    'facebook.com/fbthrift', // CMake build failure (Meta C++ lib chain)
-    'facebook.com/mvfst', // CMake build failure (Meta C++ lib chain)
-    'facebook.com/watchman', // CMake build failure (Meta C++ lib chain)
+    // facebook.com/edencommon removed — fixed sed -i BSD + removed gcc dep in override
+    // facebook.com/fb303 removed — fixed stray cmake prefix + removed gcc dep in override
+    // facebook.com/fbthrift removed — fixed cmake prefix + sed -i BSD + removed gcc dep in override
+    // facebook.com/mvfst removed — fixed cmake prefix + sed -i BSD + removed gcc/binutils deps in override
+    'facebook.com/watchman', // CMake build failure (Meta C++ lib chain — needs edencommon/fbthrift)
     // ferzkopp.net/SDL2_gfx removed — sdl2 now in macOS brew
     // ffmpeg.org removed — disabled SDL2 dep in override
     // fluxcd.io/flux2 removed — removed kustomize dep in override
