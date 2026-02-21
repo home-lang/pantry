@@ -4,7 +4,7 @@ Pantry manages background services (databases, caches, web servers) with simple 
 
 ## Overview
 
-Pantry includes 31 pre-configured services and supports:
+Pantry includes 68 pre-configured services and supports:
 
 - **launchd** on macOS
 - **systemd** on Linux
@@ -15,7 +15,7 @@ Pantry includes 31 pre-configured services and supports:
 
 ## Supported Services
 
-Pantry comes with 31 pre-configured services:
+Pantry comes with 68 pre-configured services:
 
 **Databases**:
 
@@ -62,22 +62,22 @@ Pantry comes with 31 pre-configured services:
 
 ```bash
 # Start a service
-pantry service:start postgres
+pantry start postgres
 
 # Stop a service
-pantry service:stop postgres
+pantry stop postgres
 
 # Restart a service
-pantry service:restart postgres
+pantry restart postgres
 
 # Check service status
-pantry service:status postgres
+pantry status postgres
 
 # Enable auto-start on boot
-pantry service:enable postgres
+pantry enable postgres
 
 # Disable auto-start on boot
-pantry service:disable postgres
+pantry disable postgres
 ```
 
 ### Auto-start from config
@@ -285,7 +285,7 @@ Create a service definition file in `~/.pantry/services/myservice.json`:
 Then use it like any built-in service:
 
 ```bash
-pantry service:start myservice
+pantry start myservice
 ```
 
 ## Service Lifecycle
@@ -306,19 +306,19 @@ When you `cd` into a project with services configured:
 
 ```bash
 # Start service
-pantry service:start postgres
+pantry start postgres
 # Service starts in background
 
 # Stop service
-pantry service:stop postgres
+pantry stop postgres
 # Service stops gracefully
 
 # Restart service
-pantry service:restart postgres
+pantry restart postgres
 # Service stops then starts
 
 # Check status
-pantry service:status postgres
+pantry status postgres
 # Shows: Running/Stopped + PID + uptime
 ```
 
@@ -326,10 +326,10 @@ pantry service:status postgres
 
 ```bash
 # Enable auto-start on system boot
-pantry service:enable postgres
+pantry enable postgres
 
 # Disable auto-start on system boot
-pantry service:disable postgres
+pantry disable postgres
 ```
 
 ## Platform Integration
@@ -462,7 +462,7 @@ Configure services with environment variables:
 
 ```bash
 # Check service status
-pantry service:status postgres
+pantry status postgres
 
 # Check logs (macOS)
 tail -f ~/Library/Logs/pantry/postgres.log
@@ -489,6 +489,126 @@ cat ~/.pantry/services/postgres.json
 # Test service command manually
 /usr/local/bin/postgres
 ```
+
+## Service Inspection
+
+Inspect a service's full configuration, status, and paths:
+
+```bash
+pantry inspect postgres
+```
+
+Output includes:
+
+- Service name and status
+- PID (if running)
+- Port
+- Config file path (plist/systemd unit)
+- Data directory
+- Log paths (stdout/stderr)
+- Health check command
+- Start command
+
+When run from a project directory (with `deps.yaml`), paths are project-scoped.
+
+## Exec Command
+
+Run a command in a service's environment context (PORT, SERVICE_NAME, DATA_DIR, env vars):
+
+```bash
+pantry exec postgres -- psql -c "SELECT 1"
+pantry exec redis -- redis-cli info
+```
+
+## Port Overrides
+
+Override default service ports in `deps.yaml` using map-style entries:
+
+```yaml
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - name: redis
+      port: 6380
+    - name: mysql
+      port: 3307
+```
+
+Both simple (`- postgres`) and map-style (`- name: redis`) entries are supported.
+
+## Dependency Ordering
+
+Custom services can declare dependencies using `dependsOn`. Services are started in topological order:
+
+```yaml
+services:
+  enabled: true
+  autoStart:
+    - postgres
+    - redis
+    - my-api
+  custom:
+    my-api:
+      command: "node api.js"
+      port: 3000
+      dependsOn:
+        - postgres
+        - redis
+```
+
+Postgres and Redis start first. After their health checks pass, `my-api` starts.
+
+## Per-Project Isolation
+
+When services are started from a project directory (via `deps.yaml` autoStart), Pantry automatically scopes them to that project using a hash of the project path. This means:
+
+- **Separate service labels**: `com.pantry.{hash}.redis` (macOS) / `pantry-{hash}-redis.service` (Linux)
+- **Separate data directories**: `~/.local/share/pantry/data/{hash}/redis/`
+- **Separate log files**: `~/.local/share/pantry/logs/{hash}/redis.log`
+
+Multiple projects can run the same service simultaneously on different ports without conflicts.
+
+## Service Snapshots
+
+Backup and restore service data:
+
+```bash
+# Create a snapshot
+pantry snapshot postgres
+# → ~/.local/share/pantry/snapshots/postgres/postgres-20260220-143000.tar.gz
+
+# List all snapshots
+pantry snapshots postgres
+
+# Restore from latest snapshot
+pantry restore postgres
+
+# Restore a specific snapshot
+pantry restore postgres postgres-20260220-143000.tar.gz
+```
+
+The service is automatically stopped before snapshot/restore and restarted afterward.
+
+## Starter Presets
+
+Initialize a new project with a pre-configured scaffold:
+
+```bash
+# TypeScript project
+pantry init --preset typescript
+
+# Monorepo TypeScript project
+pantry init --preset monorepo-typescript
+
+# Laravel project (with postgres, redis, meilisearch services)
+pantry init --preset laravel
+
+# Next.js project
+pantry init --preset next
+```
+
+Available presets: `typescript` (alias: `ts`), `monorepo-typescript` (alias: `monorepo-ts`, `monorepo`), `laravel`, `next` (alias: `nextjs`).
 
 ## Next Steps
 
