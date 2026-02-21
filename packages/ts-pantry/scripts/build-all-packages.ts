@@ -877,7 +877,7 @@ Options:
     'freedesktop.org/poppler-qt5', // Build failure on linux (Qt5 dep)
     // freedesktop.org/shared-mime-info removed — fixed meson prefix quoting in override
     // freedesktop.org/vdpau removed — built successfully on linux
-    'freedesktop.org/XKeyboardConfig', // Build failure (X11 dep chain)
+    // freedesktop.org/XKeyboardConfig removed — fixed prefix quoting + removed libxslt dep in override
     'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
     // gdal.org removed — fixed cmake prefix quote + sed -i BSD + removed llvm dep in override
     // geoff.greer.fm/ag — needs pcre.org in S3, build pcre.org first

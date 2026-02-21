@@ -2941,6 +2941,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── freedesktop.org/XKeyboardConfig — fix prefix quoting ───────────
+
+  'freedesktop.org/XKeyboardConfig': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and --libdir args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      // Remove gnome.org/libxslt build dep (not needed for data-only package)
+      if (recipe.build?.dependencies?.['gnome.org/libxslt']) {
+        delete recipe.build.dependencies['gnome.org/libxslt']
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
