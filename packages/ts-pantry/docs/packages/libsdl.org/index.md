@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 43 versions</summary>
+<summary>Show all 44 versions</summary>
 
-- `3.4.0`
+- `3.4.2`, `3.4.0`
 - `3.2.30`, `3.2.28`, `3.2.26`, `3.2.24`, `3.2.22`, `3.2.20`, `3.2.18`, `3.2.16`, `3.2.14`, `3.2.12`, `3.2.10`, `3.2.8`, `3.2.6`, `3.2.4`, `3.2.2`, `3.2.0`
 - `2.32.10`, `2.32.8`, `2.32.6`, `2.32.4`, `2.32.2`, `2.32.0`
 - `2.30.12`, `2.30.11`, `2.30.10`, `2.30.9`, `2.30.8`, `2.30.7`, `2.30.6`, `2.30.5`, `2.30.4`, `2.30.3`, `2.30.2`, `2.30.1`, `2.30.0`
@@ -36,13 +36,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `3.4.0`
+**Latest Version**: `3.4.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +libsdl.org@3.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +libsdl.org@3.4.2 -- $SHELL -i
 ```
 
 ## Dependencies

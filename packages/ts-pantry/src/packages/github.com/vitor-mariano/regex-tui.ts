@@ -2,7 +2,7 @@
  * **regex-tui** - pkgx package
  *
  * @domain `github.com/vitor-mariano/regex-tui`
- * @version `0.6.0` (3 versions available)
+ * @version `0.7.0` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/vitor-mariano/regex-tui`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.githubcomvitormarianoregextui
  * console.log(pkg.name)        // "regex-tui"
- * console.log(pkg.versions[0]) // "0.6.0" (latest)
+ * console.log(pkg.versions[0]) // "0.7.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/vitor-mariano/regex-tui.md
@@ -58,6 +58,7 @@ export const regextuiPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.7.0',
     '0.6.0',
     '0.5.0',
     '0.4.0',
