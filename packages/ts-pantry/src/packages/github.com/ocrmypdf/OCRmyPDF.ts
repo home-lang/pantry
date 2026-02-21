@@ -3,7 +3,7 @@
  *
  * @domain `github.com/ocrmypdf/OCRmyPDF`
  * @programs `ocrmypdf`
- * @version `17.2.0` (46 versions available)
+ * @version `17.3.0` (47 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/ocrmypdf/OCRmyPDF`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ocrmypdf"
  * console.log(pkg.description) // "OCRmyPDF adds an OCR text layer to scanned PDF ..."
  * console.log(pkg.programs)    // ["ocrmypdf"]
- * console.log(pkg.versions[0]) // "17.2.0" (latest)
+ * console.log(pkg.versions[0]) // "17.3.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/ocrmypdf/OCRmyPDF.md
@@ -76,6 +76,7 @@ export const ocrmypdfPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '17.3.0',
     '17.2.0',
     '17.1.0',
     '17.0.1',
