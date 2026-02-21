@@ -3,7 +3,7 @@
  *
  * @domain `github.com/koekeishiya/yabai`
  * @programs `yabai`
- * @version `7.1.16` (31 versions available)
+ * @version `7.1.17` (32 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/koekeishiya/yabai`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "yabai"
  * console.log(pkg.description) // "A tiling window manager for macOS based on bina..."
  * console.log(pkg.programs)    // ["yabai"]
- * console.log(pkg.versions[0]) // "7.1.16" (latest)
+ * console.log(pkg.versions[0]) // "7.1.17" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/koekeishiya/yabai.md
@@ -60,6 +60,7 @@ export const yabaiPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.1.17',
     '7.1.16',
     '7.1.15',
     '7.1.14',
