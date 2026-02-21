@@ -267,6 +267,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'frei0r.dyne.org': {
     distributableUrl: 'https://github.com/dyne/frei0r/archive/refs/tags/v{{version}}.tar.gz',
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
   },
 
   'nongnu.org/lzip': {
