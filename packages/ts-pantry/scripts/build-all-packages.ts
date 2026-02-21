@@ -960,8 +960,8 @@ Options:
     // vim.org removed — removed perl/ruby interp deps in override
     // virtualsquare.org/vde removed — fixed prefix quoting in override
     // wireshark.org removed — fixed cmake prefix + removed libsmi dep in override
-    'x.org/libxfont2', // X.org font library — dep chain
-    'x.org/x11', // X11 core library — dep chain
+    // x.org/libxfont2 removed — simple autotools, added override entry
+    // x.org/x11 removed — fixed prefix quoting in override
     // x.org/xauth removed — fixed prefix quoting + removed gcc dep in override
     // x.org/xinput removed — fixed prefix quoting in override
     // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args (see above)

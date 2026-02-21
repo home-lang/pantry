@@ -3291,6 +3291,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── x.org/x11 — fix prefix quoting ─────────────────────────────────
+
+  'x.org/x11': {
+    modifyRecipe: (recipe: any) => {
+      // Fix --prefix and other args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── x.org/libxfont2 — simple autotools, no extra fixes needed ───────
+
+  'x.org/libxfont2': {
+    // Simple autotools build with clean --prefix={{prefix}} inline
+    // No fixes needed beyond what's in CI
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
