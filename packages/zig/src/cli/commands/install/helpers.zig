@@ -17,7 +17,7 @@ const style = @import("../../style.zig");
 /// Resolve well-known package name aliases to their canonical domain names.
 /// For example, "meilisearch" -> "meilisearch.com" (the npm package "meilisearch"
 /// is the JS client, while "meilisearch.com" is the server binary).
-fn resolvePackageAlias(name: []const u8) []const u8 {
+pub fn resolvePackageAlias(name: []const u8) []const u8 {
     const aliases = .{
         .{ "meilisearch", "meilisearch.com" },
     };

@@ -908,8 +908,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     for (args) |pkg_spec_str| {
         // Parse package spec (name@version)
         const at_pos = std.mem.indexOf(u8, pkg_spec_str, "@");
-        const name = if (at_pos) |pos| pkg_spec_str[0..pos] else pkg_spec_str;
+        const raw_name = if (at_pos) |pos| pkg_spec_str[0..pos] else pkg_spec_str;
         const version = if (at_pos) |pos| pkg_spec_str[pos + 1 ..] else "latest";
+
+        // Resolve aliases (e.g. "meilisearch" -> "meilisearch.com")
+        const name = helpers.resolvePackageAlias(raw_name);
 
         // Check if package exists in pantry registry first
         const pkg_registry = @import("../../../packages/generated.zig");
@@ -933,6 +936,15 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     .version = try allocator.dupe(u8, pantry_info.version),
                     .source = .npm,
                     .url = try allocator.dupe(u8, pantry_info.tarball_url),
+                };
+            }
+
+            // For domain-style packages (containing '.'), use pkgx source
+            // which triggers S3 registry lookup in installer.zig.
+            if (std.mem.indexOfScalar(u8, name, '.') != null) {
+                break :npm_fallback lib.packages.PackageSpec{
+                    .name = name,
+                    .version = version,
                 };
             }
 
