@@ -41,7 +41,8 @@ build:
       - -Wno-dev
       - -DBUILD_TESTING=OFF
     linux:
-      # Use clang to avoid GCC #include_next stdlib.h issue with -isystem /usr/include
+      # Use system compiler; disable system xxhash to prevent -isystem /usr/include
+      # (which breaks #include_next <stdlib.h> in GCC headers)
       CMAKE_ARGS:
         - -DCMAKE_INSTALL_PREFIX={{prefix}}
         - -DCMAKE_INSTALL_LIBDIR=lib
@@ -49,8 +50,9 @@ build:
         - -DCMAKE_VERBOSE_MAKEFILE=ON
         - -Wno-dev
         - -DBUILD_TESTING=OFF
-        - -DCMAKE_C_COMPILER=clang
-        - -DCMAKE_CXX_COMPILER=clang++
+        - -DCMAKE_C_COMPILER=/usr/bin/gcc
+        - -DCMAKE_CXX_COMPILER=/usr/bin/g++
+        - -DCMAKE_DISABLE_FIND_PACKAGE_xxhash=TRUE
 provides:
   - bin/ccache
 test:
