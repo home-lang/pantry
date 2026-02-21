@@ -3919,6 +3919,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── c-ares.org — fix inline cmake prefix quote in script string ─────
+
+  'c-ares.org': {
+    modifyRecipe: (recipe: any) => {
+      // cmake prefix is inline in a script string, not in env array
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('INSTALL_PREFIX="{{prefix}}"')) {
+            recipe.build.script[i] = step.replace(/(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"/, '$1$2')
+          }
+        }
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
