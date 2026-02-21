@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 106 versions</summary>
+<summary>Show all 107 versions</summary>
 
-- `0.36.4`, `0.36.3`, `0.36.2`, `0.36.1`, `0.36.0`
+- `0.36.5`, `0.36.4`, `0.36.3`, `0.36.2`, `0.36.1`, `0.36.0`
 - `0.35.1`, `0.35.0`
 - `0.34.2`, `0.34.1`, `0.34.0`
 - `0.33.0`
@@ -47,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.36.4`
+**Latest Version**: `0.36.5`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pocketbase.io@0.36.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pocketbase.io@0.36.5 -- $SHELL -i
 ```
 
 ## Usage Examples
