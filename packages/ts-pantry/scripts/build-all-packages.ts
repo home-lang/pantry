@@ -905,8 +905,8 @@ Options:
     // ibr.cs.tu-bs.de/libsmi removed — fixed prefix quoting in override
     'intel.com/libva', // Intel video acceleration — linux only dep
     // jpeg.org/jpegxl removed — disabled openexr in override
-    'kubebuilder.io', // Go build failure
-    'kubernetes.io/kubectl', // Go build failure on darwin
+    // kubebuilder.io removed — removed goreleaser dep in override
+    // kubernetes.io/kubectl removed — removed rsync dep in override
     // lavinmq.com removed — fixed sed -i BSD compat in override
     // leonerd.org.uk/libtermkey removed — small C library, try on darwin
     // libarchive.org removed — autotools issue may be fixed with newer CI runner
@@ -915,9 +915,9 @@ Options:
     // luarocks.org removed — lua already in CI brew list
     'lunarvim.org', // Build failure (dep chain)
     'macfuse.github.io/v2', // macOS FUSE — build timeout (1800s)
-    'macvim.org', // Build failure on darwin (Vim + macOS integration)
+    // macvim.org removed — removed perl/ruby/tcl interp deps in override
     'materialize.com', // Heavy Rust database build
-    'mergestat.com/mergestat-lite', // Go build failure on darwin
+    // mergestat.com/mergestat-lite removed — removed python build dep in override
     'mesa3d.org', // Mesa 3D — massive build with many deps
     // midnight-commander.org removed — ncurses/glib available via system
     'modal.com', // Build failure on both platforms
@@ -937,9 +937,9 @@ Options:
     // proj.org removed — fixed sha256sum darwin compat in override
     'projen.io', // Node.js build failure
     'pulumi.io', // Go build failure (heavy, many binaries)
-    'pwmt.org/girara', // UI library — dep chain (gtk)
-    'pwmt.org/zathura', // PDF viewer — dep chain (gtk+girara)
-    'python-pillow.org', // Python imaging — build failure on linux
+    // pwmt.org/girara removed — gtk3/json-glib now fixed in override
+    // pwmt.org/zathura removed — fixed sed -i BSD + removed adwaita dep in override
+    // python-pillow.org removed — removed x.org/xcb dep in override
     'qemu.org', // System emulator — massive build
     // qpdf.sourceforge.io removed — removed gnutls dep in override
     // rockdaboot.github.io/libpsl removed — switched to libidn2 runtime

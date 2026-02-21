@@ -2358,6 +2358,103 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── pwmt.org/girara — simple meson build (gtk3 now fixed) ──────────
+
+  'pwmt.org/girara': {
+    // gtk3 and json-glib are now fixed — no recipe changes needed
+  },
+
+  // ─── pwmt.org/zathura — fix sed -i BSD compat ────────────────────────
+
+  'pwmt.org/zathura': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in girara_warn rename
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove gnome.org/adwaita-icon-theme dep (not in S3)
+      if (recipe.dependencies?.['gnome.org/adwaita-icon-theme']) {
+        delete recipe.dependencies['gnome.org/adwaita-icon-theme']
+      }
+      // Remove freedesktop.org/intltool dep (not in S3)
+      if (recipe.dependencies?.['freedesktop.org/intltool']) {
+        delete recipe.dependencies['freedesktop.org/intltool']
+      }
+    },
+  },
+
+  // ─── python-pillow.org — remove x.org/xcb dep ────────────────────────
+
+  'python-pillow.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove x.org/xcb dep (not in S3)
+      if (recipe.dependencies?.['x.org/xcb']) {
+        delete recipe.dependencies['x.org/xcb']
+      }
+      // Remove xcb from pip install args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '-C xcb=enable',
+        )
+      }
+    },
+  },
+
+  // ─── mergestat.com/mergestat-lite — fix Go build ─────────────────────
+
+  'mergestat.com/mergestat-lite': {
+    modifyRecipe: (recipe: any) => {
+      // Remove python.org build dep (not needed for Go build)
+      if (recipe.build?.dependencies?.['python.org']) {
+        delete recipe.build.dependencies['python.org']
+      }
+    },
+  },
+
+  // ─── kubebuilder.io — remove goreleaser dep ──────────────────────────
+
+  'kubebuilder.io': {
+    modifyRecipe: (recipe: any) => {
+      // Remove goreleaser.com build dep (not in S3)
+      if (recipe.build?.dependencies?.['goreleaser.com']) {
+        delete recipe.build.dependencies['goreleaser.com']
+      }
+    },
+  },
+
+  // ─── kubernetes.io/kubectl — fix make build ───────────────────────────
+
+  'kubernetes.io/kubectl': {
+    modifyRecipe: (recipe: any) => {
+      // Remove rsync.samba.org build dep (not in S3)
+      if (recipe.build?.dependencies?.['rsync.samba.org']) {
+        delete recipe.build.dependencies['rsync.samba.org']
+      }
+    },
+  },
+
+  // ─── macvim.org — remove perl/ruby interp deps ───────────────────────
+
+  'macvim.org': {
+    modifyRecipe: (recipe: any) => {
+      // Remove perl/ruby interp flags (complex deps)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
+          a !== '--enable-perlinterp' && a !== '--enable-rubyinterp' && a !== '--enable-tclinterp',
+        )
+      }
+      // Remove ruby-lang.org dep
+      if (recipe.dependencies?.['ruby-lang.org']) {
+        delete recipe.dependencies['ruby-lang.org']
+      }
+    },
+  },
+
   // ─── perl.org — fix IO.xs poll.h on Linux ──────────────────────────
 
   'perl.org': {
