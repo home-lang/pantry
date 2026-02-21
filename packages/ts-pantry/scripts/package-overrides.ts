@@ -202,6 +202,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/skystrife/cpptoml': {
     distributableUrl: 'https://github.com/skystrife/cpptoml/archive/v{{version}}.tar.gz',
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
   },
 
   'github.com/westes/flex': {
@@ -3614,6 +3621,153 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── aomedia.googlesource.com/aom — fix cmake prefix quote ──────────
+
+  'aomedia.googlesource.com/aom': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── apache.org/avro — fix stray cmake prefix quote + remove gcc dep ─
+
+  'apache.org/avro': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── dkrz.de/libaec — fix cmake prefix quote (both ARGS and CMAKE_ARGS) ─
+
+  'dkrz.de/libaec': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── github.com/KhronosGroup/Vulkan-Headers — fix cmake prefix quote + remove llvm test dep ─
+
+  'github.com/KhronosGroup/Vulkan-Headers': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── github.com/facebookincubator/fizz — fix cmake prefix quote + remove gcc dep ─
+
+  'github.com/facebookincubator/fizz': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2')
+           .replace(/^(-DCMAKE_INSTALL_RPATH=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+    },
+  },
+
+  // ─── github.com/aws/aws-sdk-cpp — fix cmake prefix quote ─────────────
+
+  'github.com/aws/aws-sdk-cpp': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── github.com/danfis/libccd — fix cmake prefix quote ───────────────
+
+  'github.com/danfis/libccd': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── github.com/PJK/libcbor — fix cmake prefix quote ────────────────
+
+  'github.com/PJK/libcbor': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── github.com/Esri/lerc — fix cmake prefix quote ───────────────────
+
+  'github.com/Esri/lerc': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── github.com/ebiggers/libdeflate — fix cmake prefix quote ─────────
+
+  'github.com/ebiggers/libdeflate': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
+  // ─── openblas.net — fix cmake prefix quote ───────────────────────────
+
+  'openblas.net': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
       }
     },
