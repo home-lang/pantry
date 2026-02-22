@@ -3779,7 +3779,7 @@ export interface GeneratedPackageVersions {
   'github.com/deepmap/oapi-codegen': '2.5.1' | '2.5.0' | '2.4.1' | '2.4.0' | '2.3.0' | '2.2.0' | '2.1.0' | '2.0.0' | '1.16.2' | '1.16.1' | '1.16.0' | '1.15.0'
   'github.com/denisidoro/navi': '2.24.0'
   'github.com/Diniboy1123/usque': '1.4.2' | '1.4.1' | '1.4.0' | '1.3.0' | '1.2.1' | '1.2.0' | '1.1.1' | '1.1.0' | '1.0.4'
-  'github.com/dloebl/cgif': '0.5.1' | '0.5.0' | '0.4.1' | '0.4.0' | '0.3.2' | '0.3.1'
+  'github.com/dloebl/cgif': '0.5.2' | '0.5.1' | '0.5.0' | '0.4.1' | '0.4.0' | '0.3.2' | '0.3.1'
   'github.com/DMTF/redfishtool': '1.1.8'
   'github.com/dundee/gdu': '5.33.0' | '5.32.0' | '5.31.0' | '5.30.1' | '5.30.0' | '5.29.0'
   'github.com/dylanaraps/neofetch': '7.1.0'

@@ -2,7 +2,7 @@
  * **cgif** - GIF encoder written in C
  *
  * @domain `github.com/dloebl/cgif`
- * @version `0.5.1` (6 versions available)
+ * @version `0.5.2` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/dloebl/cgif`
@@ -15,7 +15,7 @@
  * const pkg = pantry.githubcomdloeblcgif
  * console.log(pkg.name)        // "cgif"
  * console.log(pkg.description) // "GIF encoder written in C"
- * console.log(pkg.versions[0]) // "0.5.1" (latest)
+ * console.log(pkg.versions[0]) // "0.5.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/dloebl/cgif.md
@@ -59,6 +59,7 @@ export const cgifPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.5.2',
     '0.5.1',
     '0.5.0',
     '0.4.1',
