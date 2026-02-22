@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 99 versions</summary>
+<summary>Show all 100 versions</summary>
 
+- `0.41.0`
 - `0.40.5`, `0.40.4`, `0.40.3`, `0.40.2`, `0.40.1`, `0.40.0`
 - `0.39.9`, `0.39.7`, `0.39.6`, `0.39.5`, `0.39.4`, `0.39.3`, `0.39.2`, `0.39.1`, `0.39.0`
 - `0.38.7`, `0.38.6`, `0.38.5`, `0.38.4`, `0.38.3`, `0.38.2`, `0.38.1`, `0.38.0`
@@ -58,13 +59,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.40.5`
+**Latest Version**: `0.41.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +ast-grep.github.io@0.40.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +ast-grep.github.io@0.41.0 -- $SHELL -i
 ```
 
 ## Usage Examples
