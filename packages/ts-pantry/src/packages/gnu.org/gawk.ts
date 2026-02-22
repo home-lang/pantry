@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/gawk`
  * @programs `awk`, `gawk`, `gawk-{{version}}`, `gawkbug`
- * @version `5.3.2` (5 versions available)
+ * @version `5.4.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/gawk`
@@ -15,7 +15,7 @@
  * const pkg = pantry.gnuorggawk
  * console.log(pkg.name)        // "gawk"
  * console.log(pkg.programs)    // ["awk", "gawk", ...]
- * console.log(pkg.versions[0]) // "5.3.2" (latest)
+ * console.log(pkg.versions[0]) // "5.4.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/gawk.md
@@ -62,6 +62,7 @@ export const gnuorggawkPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.4.0',
     '5.3.2',
     '5.3.1',
     '5.3.0',
