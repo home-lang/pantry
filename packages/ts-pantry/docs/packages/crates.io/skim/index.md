@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 67 versions</summary>
+<summary>Show all 68 versions</summary>
 
+- `3.5.0`
 - `3.4.0`
 - `3.3.0`
 - `3.2.0`
@@ -59,13 +60,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.4.0`
+**Latest Version**: `3.5.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/skim@3.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/skim@3.5.0 -- $SHELL -i
 ```
 
 ## Usage Examples
