@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 13 versions</summary>
+<summary>Show all 14 versions</summary>
 
+- `3.27.0`
 - `3.26.0`
 - `3.25.0`
 - `3.24.3`, `3.24.2`, `3.24.1`, `3.24.0`
@@ -37,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.26.0`
+**Latest Version**: `3.27.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pressly.github.io/goose@3.26.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pressly.github.io/goose@3.27.0 -- $SHELL -i
 ```
 
 ## Usage Examples
