@@ -32,8 +32,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 25 versions</summary>
+<summary>Show all 26 versions</summary>
 
+- `20260222.0.0`
 - `20260122.0.0`
 - `20251222.0.0`
 - `20251122.0.0`
@@ -62,13 +63,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `20260122.0.0`
+**Latest Version**: `20260222.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnu.org/parallel@20260122.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnu.org/parallel@20260222.0.0 -- $SHELL -i
 ```
 
 ## Dependencies
