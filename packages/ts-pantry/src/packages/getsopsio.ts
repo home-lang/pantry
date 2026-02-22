@@ -3,7 +3,7 @@
  *
  * @domain `getsops.io`
  * @programs `sops`
- * @version `3.11.0` (10 versions available)
+ * @version `3.12.1` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install getsops.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "sops"
  * console.log(pkg.description) // "Simple and flexible tool for managing secrets"
  * console.log(pkg.programs)    // ["sops"]
- * console.log(pkg.versions[0]) // "3.11.0" (latest)
+ * console.log(pkg.versions[0]) // "3.12.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/getsops-io.md
@@ -68,6 +68,7 @@ export const getsopsioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.12.1',
     '3.11.0',
     '3.10.2',
     '3.10.1',
