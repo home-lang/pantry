@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 37 versions</summary>
+<summary>Show all 38 versions</summary>
 
-- `1.3.0`
+- `1.3.1`, `1.3.0`
 - `1.2.3`, `1.2.2`, `1.2.1`, `1.2.0`
 - `1.1.9`, `1.1.8`, `1.1.7`, `1.1.6`, `1.1.5`, `1.1.4`, `1.1.3`, `1.1.2`, `1.1.1`, `1.1.0`
 - `1.0.0`
@@ -49,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.3.0`
+**Latest Version**: `1.3.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/helmfile/helmfile@1.3.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/helmfile/helmfile@1.3.1 -- $SHELL -i
 ```
 
 ## Dependencies
