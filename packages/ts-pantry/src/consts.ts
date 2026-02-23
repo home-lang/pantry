@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-23T19:16:04.052Z
+ * Generated on 2026-02-23T23:04:37.037Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1646 total)
+ * List of all known packages (1647 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -701,6 +701,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/kubecolor/kubecolor',
   'github.com/kubernetes-sigs/aws-iam-authenticator',
   'github.com/kylef/swiftenv',
+  'github.com/lemoony/snipkit',
   'github.com/libass/libass',
   'github.com/libfuse/libfuse',
   'github.com/libkml/libkml',
