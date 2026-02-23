@@ -2,7 +2,7 @@
  * **fb303** - fb303 is a core set of thrift functions that provide a common mechanism for querying stats and other information from a service.
  *
  * @domain `facebook.com/fb303`
- * @version `2026.2.9.0` (106 versions available)
+ * @version `2026.2.9.0` (107 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/fb303`
@@ -83,6 +83,7 @@ export const facebookcomfb303Package = {
   */
   versions: [
     '2026.2.9.0',
+    '2026.2.23.0',
     '2026.2.2.0',
     '2026.2.16.0',
     '2026.1.5.0',
