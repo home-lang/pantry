@@ -43,6 +43,11 @@ const GLIBTOOL_FIX: ScriptStep = {
     '    export PATH="$BREW_LIBTOOL:$PATH"',
     '  fi',
     'fi',
+    '# Ensure aclocal can find libtool M4 macros (needed for autoreconf)',
+    'BREW_LT_SHARE="$(brew --prefix libtool 2>/dev/null)/share/aclocal"',
+    'if [ -d "$BREW_LT_SHARE" ]; then',
+    '  export ACLOCAL_PATH="${BREW_LT_SHARE}${ACLOCAL_PATH:+:$ACLOCAL_PATH}"',
+    'fi',
   ].join('\n'),
   if: 'darwin',
 }
@@ -1719,6 +1724,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── vim.org — simplify deps to avoid complex dep chain ──────────────
 
   'vim.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Ensure ncurses dev libs are available for configure tlib check
+          'sudo apt-get install -y libncursesw5-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove perl/ruby interpreters (complex deps) — keep python/lua/ncurses
       if (Array.isArray(recipe.build?.env?.ARGS)) {
@@ -1726,10 +1739,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a !== '--enable-perlinterp' && a !== '--enable-rubyinterp',
         )
       }
-      // Fix tlib on linux — system ncurses at /usr may not have tinfow, use ncursesw
+      // Fix tlib on linux — system ncurses at /usr may not have tinfow, use ncurses
       if (Array.isArray(recipe.build?.env?.linux?.ARGS)) {
         recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.map(
-          (a: string) => a === '--with-tlib=tinfow' ? '--with-tlib=ncursesw' : a,
+          (a: string) => a === '--with-tlib=tinfow' ? '--with-tlib=ncurses' : a,
         )
       }
       // Remove perl.org and ruby-lang.org runtime deps
@@ -1913,10 +1926,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         if (!recipe.build.env.ARGS.includes('--disable-sdl2')) {
           recipe.build.env.ARGS.push('--disable-sdl2')
         }
-        // Remove --enable-libvpx since we removed the dep
+        // Remove --enable-libvpx and explicitly disable it (configure auto-detects system libvpx)
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => a !== '--enable-libvpx',
         )
+        recipe.build.env.ARGS.push('--disable-libvpx')
       }
     },
   },
@@ -1924,11 +1938,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnutls.org — remove p11-kit dep (not in S3) ────────────────────
 
   'gnutls.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install nettle from apt since S3 binary may not have proper pkg-config paths
+          'sudo apt-get install -y nettle-dev libhogweed-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove freedesktop.org/p11-kit dep (not in S3)
       if (recipe.dependencies?.['freedesktop.org/p11-kit']) {
         delete recipe.dependencies['freedesktop.org/p11-kit']
       }
+      // Remove nettle dep on linux — use system nettle instead
+      if (recipe.dependencies?.['gnu.org/nettle']) delete recipe.dependencies['gnu.org/nettle']
       // Add --without-p11-kit to ARGS
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('--without-p11-kit')) {
@@ -1951,6 +1975,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnu.org/guile — fix sed -i BSD compat ───────────────────────────
 
   'gnu.org/guile': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install bdw-gc from Homebrew since S3 binary may not have proper pkg-config
+          'brew install bdw-gc libunistring 2>/dev/null || true',
+        ],
+      },
+      linux: {
+        prependScript: [
+          // Install libunistring and libgc from apt since S3 binaries may be missing
+          'sudo apt-get install -y libgc-dev libunistring-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in guile-config and guild fixup steps
       if (Array.isArray(recipe.build?.script)) {
@@ -1964,6 +2002,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
+      // Remove deps not reliably in S3 — use system packages instead
+      if (recipe.dependencies?.['hboehm.info/gc']) delete recipe.dependencies['hboehm.info/gc']
+      if (recipe.dependencies?.['gnu.org/libunistring']) delete recipe.dependencies['gnu.org/libunistring']
     },
   },
 
@@ -1992,6 +2033,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnu.org/emacs — remove heavy deps + fix post-install ────────────
 
   'gnu.org/emacs': {
+    platforms: {
+      darwin: {
+        // Set deployment target to avoid using posix_spawn_file_actions_addchdir (macOS 13+)
+        prependScript: ['export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-$(sw_vers -productVersion | cut -d. -f1)}"'],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove gnutls.org dep (optional, emacs can build without TLS)
       if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
@@ -2416,6 +2463,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mupdf.com — fix sed -i BSD + remove linux X11/mesa deps ─────────
 
   'mupdf.com': {
+    // Set SRCROOT so post-install dylib copy step can find build artifacts
+    prependScript: ['export SRCROOT="$PWD"'],
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
@@ -2607,11 +2656,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['nlnetlabs.nl/ldns']) delete recipe.dependencies['nlnetlabs.nl/ldns']
       if (recipe.dependencies?.['developers.yubico.com/libfido2']) delete recipe.dependencies['developers.yubico.com/libfido2']
       if (recipe.dependencies?.['kerberos.org']) delete recipe.dependencies['kerberos.org']
-      // Remove corresponding configure flags for removed deps
+      // Remove corresponding configure flags for removed deps and explicitly disable them
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.filter(
           (a: string) => a !== '--with-ldns' && a !== '--with-kerberos5' && a !== '--with-security-key-builtin',
         )
+        recipe.build.env.CONFIGURE_ARGS.push('--without-ldns')
       }
       // Remove linux gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -2622,11 +2672,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'macvim.org': {
     modifyRecipe: (recipe: any) => {
-      // Remove perl/ruby interp flags (complex deps)
+      // Remove perl/ruby/python3 interp flags (complex deps, Python.h missing on CI)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
-          a !== '--enable-perlinterp' && a !== '--enable-rubyinterp' && a !== '--enable-tclinterp',
+          a !== '--enable-perlinterp' && a !== '--enable-rubyinterp' && a !== '--enable-tclinterp'
+          && a !== '--enable-python3interp',
         )
+        recipe.build.env.ARGS.push('--disable-python3interp')
       }
       // Remove ruby-lang.org dep
       if (recipe.dependencies?.['ruby-lang.org']) {
