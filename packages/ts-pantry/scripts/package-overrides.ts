@@ -1515,6 +1515,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'BZ2_REAL=$(find /usr/lib -name "libbz2.so" -print -quit 2>/dev/null); if [ -n "$BZ2_REAL" ] && [ ! -f /usr/lib/libbz2.so ]; then ln -sf "$BZ2_REAL" /usr/lib/libbz2.so 2>/dev/null || true; fi',
         ],
       },
+      darwin: {
+        prependScript: [
+          // Fix bzip2 path on darwin (libbz2.a may not be at /usr/lib on newer macOS)
+          'BZ2_A=$(find /opt/homebrew/lib /usr/local/lib /usr/lib -name "libbz2.a" -print -quit 2>/dev/null); if [ -n "$BZ2_A" ] && [ ! -f /usr/lib/libbz2.a ]; then sudo ln -sf "$BZ2_A" /usr/lib/libbz2.a 2>/dev/null || true; fi',
+        ],
+      },
     },
     modifyRecipe: (recipe: any) => {
       // Replace hw.concurrency with a fixed job count to prevent race condition
@@ -1528,6 +1534,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
             step.run = step.run.replace('{{hw.concurrency}}', '4')
           }
         }
+      }
+      // On darwin, bzip2 S3 binary may not have correct lib structure.
+      // Fall back to --no-system-bzip2 to use cmake's bundled bzip2
+      if (Array.isArray(recipe.build?.env?.darwin?.ARGS)) {
+        recipe.build.env.darwin.ARGS = recipe.build.env.darwin.ARGS.filter(
+          (a: string) => !a.includes('BZIP2_LIBRARIES') && !a.includes('BZIP2_INCLUDE_DIR'),
+        )
       }
     },
   },
@@ -1640,6 +1653,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
       }
+      // macOS ships bison 2.3 but doxygen requires >=2.7; add gnu.org/bison build dep
+      if (!recipe.build) recipe.build = {}
+      if (!recipe.build.dependencies) recipe.build.dependencies = {}
+      recipe.build.dependencies['gnu.org/bison'] = '>=2.7'
     },
   },
 
@@ -1962,6 +1979,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['github.com/rrthomas/psutils']) delete recipe.dependencies['github.com/rrthomas/psutils']
       // Remove uchardet dep (not in S3 — groff builds fine without it, just disables auto-detection)
       if (recipe.dependencies?.['freedesktop.org/uchardet']) delete recipe.dependencies['freedesktop.org/uchardet']
+      // Disable uchardet in configure args since we removed the dep
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => a !== '--with-uchardet')
+        recipe.build.env.ARGS.push('--without-uchardet')
+      }
       // Remove linux gcc build dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) delete recipe.build.dependencies.linux['gnu.org/gcc']
     },
@@ -1992,6 +2014,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.linux?.['github.com/AOMediaCodec/libavif']) {
         delete recipe.dependencies.linux['github.com/AOMediaCodec/libavif']
       }
+      // Disable Lua support — gnuplot-tikz.lua has Lua 5.4 incompatibility
+      // (attempt to assign to const variable 'w' at line 2546)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--without-lua')
+      }
+      // Remove lua.org dep since we disabled it
+      if (recipe.dependencies?.['lua.org']) delete recipe.dependencies['lua.org']
     },
   },
 
@@ -2856,18 +2885,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
         )
       }
-      // Fix sed -i BSD compat in wrapper-data.txt fixup
+      // Remove gnu.org/gcc dep (gfortran) — not in S3 on darwin
+      if (recipe.dependencies?.['gnu.org/gcc']) delete recipe.dependencies['gnu.org/gcc']
+      // Fix sed -i BSD compat and install *.mod step
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
             step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
           }
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          if (typeof step === 'string') {
+            if (step.includes('sed -i') && !step.includes('sed -i.bak')) {
+              recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+            }
+            // Make install *.mod conditional — fails when no Fortran modules exist
+            if (step.includes('install') && step.includes('*.mod')) {
+              recipe.build.script[i] = 'if ls {{prefix}}/lib/*.mod 1>/dev/null 2>&1; then install {{prefix}}/lib/*.mod {{prefix}}/include/; fi'
+            }
           }
         }
+      }
+      // Disable Fortran since we don't have gfortran
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--enable-mpi-fortran=no')
       }
     },
   },
