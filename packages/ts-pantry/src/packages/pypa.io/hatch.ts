@@ -3,7 +3,7 @@
  *
  * @domain `pypa.io/hatch`
  * @programs `hatch`, `hatchling`
- * @version `1.28.0` (18 versions available)
+ * @version `1.29.0` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pypa.io/hatch`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "hatch"
  * console.log(pkg.description) // "Modern, extensible Python project management"
  * console.log(pkg.programs)    // ["hatch", "hatchling"]
- * console.log(pkg.versions[0]) // "1.28.0" (latest)
+ * console.log(pkg.versions[0]) // "1.29.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pypa-io/hatch.md
@@ -76,6 +76,7 @@ export const pypaiohatchPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.29.0',
     '1.28.0',
     '1.27.0',
     '1.26.3',

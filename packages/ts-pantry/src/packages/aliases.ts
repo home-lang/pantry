@@ -389,6 +389,7 @@ export const aliases: Record<string, string> = {
   'freeze': 'charm.sh/freeze',
   'frei0r.dyne': 'frei0r.dyne.org',
   'fribidi': 'gnu.org/fribidi',
+  'fsdiff': 'github.com/mycreepy/fsdiff',
   'fselect': 'crates.io/fselect',
   'fsrx': 'crates.io/fsrx',
   'fswatch': 'emcrisostomo.github.io/fswatch',

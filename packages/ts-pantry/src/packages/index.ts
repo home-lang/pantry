@@ -696,6 +696,7 @@ import { checkmakePackage } from './github.com/mrtazz/checkmake'
 import { slPackage } from './github.com/mtoyoda/sl'
 import { dufPackage } from './github.com/muesli/duf'
 import { swiftshPackage } from './github.com/mxcl/swift-sh'
+import { fsdiffPackage } from './github.com/mycreepy/fsdiff'
 import { pakkuPackage } from './github.com/mycreepy/pakku'
 import { openplaygroundPackage } from './github.com/nat/openplayground'
 import { actPackage } from './github.com/nektos/act'
@@ -2898,7 +2899,9 @@ export interface Pantry {
   swift_sh: typeof swiftshPackage
   githubcommxcl: typeof swiftshPackage
 
-  githubcommycreepy: typeof pakkuPackage
+  githubcommycreepy: typeof fsdiffPackage
+
+  githubcommycreepy1: typeof pakkuPackage
 
   githubcomnat: typeof openplaygroundPackage
 
@@ -5648,6 +5651,7 @@ export interface Pantry {
   grype: typeof grypePackage
   xcodes: typeof xcodesPackage
   pakku: typeof pakkuPackage
+  fsdiff: typeof fsdiffPackage
   swiftformat: typeof swiftformatPackage
   invoice: typeof invoicePackage
   flex: typeof flexPackage
@@ -7243,7 +7247,9 @@ export const pantry: Pantry = {
   swift_sh: swiftshPackage,
   githubcommxcl: swiftshPackage,
 
-  githubcommycreepy: pakkuPackage,
+  githubcommycreepy: fsdiffPackage,
+
+  githubcommycreepy1: pakkuPackage,
 
   githubcomnat: openplaygroundPackage,
 
@@ -9993,6 +9999,7 @@ export const pantry: Pantry = {
   grype: grypePackage,
   xcodes: xcodesPackage,
   pakku: pakkuPackage,
+  fsdiff: fsdiffPackage,
   swiftformat: swiftformatPackage,
   invoice: invoicePackage,
   flex: flexPackage,
