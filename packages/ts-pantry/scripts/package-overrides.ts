@@ -71,6 +71,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'gnu.org/source-highlight': {
     env: { CXXFLAGS: '-std=c++14' },
+    modifyRecipe: (recipe: any) => {
+      // On darwin, boost.org S3 binary is header-only (no lib/).
+      // Remove boost.org dep so configure finds Homebrew's boost instead.
+      if (recipe.dependencies?.['boost.org']) {
+        delete recipe.dependencies['boost.org']
+      }
+      // Remove --with-boost=... arg since we're using system/brew boost
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => !a.startsWith('--with-boost='),
+        )
+      }
+    },
   },
 
   'gnu.org/bc': {
@@ -983,6 +996,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── x.org/protocol — fix version format in URL ────────────────────────────
+  // The YAML uses version.raw but the tarball uses 2-part version (e.g. 2025.1 not 2025.1.0).
+  // version.marketing gives "2025.1" for version "2025.1.0" which matches the actual filename.
+  'x.org/protocol': {
+    distributableUrl: 'https://xorg.freedesktop.org/archive/individual/proto/xorgproto-{{version.marketing}}.tar.gz',
+  },
+
+  // ─── x.org/libpthread-stubs — use xorg.freedesktop.org mirror ─────────────
+  // The YAML uses www.x.org which has intermittent connectivity issues from CI.
+  // xorg.freedesktop.org is a more reliable mirror for GitHub Actions runners.
+  'x.org/libpthread-stubs': {
+    distributableUrl: 'https://xorg.freedesktop.org/archive/individual/xcb/libpthread-stubs-{{version.marketing}}.tar.gz',
+  },
+
+  // xcb.freedesktop.org → xorg.freedesktop.org mirror is handled generically
+  // in applyRecipeOverrides (build-package.ts), no per-package overrides needed.
+
   // ─── x.org/ice — fix $SHELF variable references ──────────────────────────
 
   'x.org/ice': {
@@ -1531,8 +1561,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
     distributableUrl: 'https://ftpmirror.gnu.org/gnu/gmp/gmp-{{version}}.tar.xz',
   },
 
-  // pcre.org — original sourceforge URL is correct for PCRE1 (v8.x)
-  // (PCRE2 is a separate project with versions starting at 10.x)
+  // ─── pcre.org — switch from unreliable SourceForge mirror to Exim mirror ──
+  // The YAML uses cytranet.dl.sourceforge.net which is a specific SF mirror that
+  // frequently goes offline. The Exim mirror at ftp.exim.org is maintained by the
+  // PCRE author (Philip Hazel) and is the most reliable source for PCRE1.
+  // version.marketing gives "8.45" for version "8.45.0" (tarball uses 2-part version)
+  'pcre.org': {
+    distributableUrl: 'https://ftp.exim.org/pub/pcre/pcre-{{version.marketing}}.tar.bz2',
+  },
 
   // ─── gnu.org/gcc — clean LIBRARY_PATH of current directory entries ──────
 
@@ -1671,6 +1707,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
           a !== '--enable-perlinterp' && a !== '--enable-rubyinterp',
+        )
+      }
+      // Fix tlib on linux — system ncurses at /usr may not have tinfow, use ncursesw
+      if (Array.isArray(recipe.build?.env?.linux?.ARGS)) {
+        recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.map(
+          (a: string) => a === '--with-tlib=tinfow' ? '--with-tlib=ncursesw' : a,
         )
       }
       // Remove perl.org and ruby-lang.org runtime deps
@@ -1845,11 +1887,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['libsdl.org']) {
         delete recipe.dependencies['libsdl.org']
       }
-      // Add --disable-sdl2 to ARGS
+      // Remove libvpx dep — binary not reliably available in S3, ABI breaks between versions
+      if (recipe.dependencies?.['webmproject.org/libvpx']) {
+        delete recipe.dependencies['webmproject.org/libvpx']
+      }
       if (Array.isArray(recipe.build?.env?.ARGS)) {
+        // Add --disable-sdl2 for headless CI builds
         if (!recipe.build.env.ARGS.includes('--disable-sdl2')) {
           recipe.build.env.ARGS.push('--disable-sdl2')
         }
+        // Remove --enable-libvpx since we removed the dep
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--enable-libvpx',
+        )
       }
     },
   },
@@ -1896,6 +1946,40 @@ export const packageOverrides: Record<string, PackageOverride> = {
             step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
           }
         }
+      }
+    },
+  },
+
+  // ─── gnu.org/groff — remove heavy deps not in S3 ──────────────────────
+
+  'gnu.org/groff': {
+    modifyRecipe: (recipe: any) => {
+      // Remove ghostscript.com dep (in knownBrokenDomains — tag format unresolvable)
+      if (recipe.dependencies?.['ghostscript.com']) delete recipe.dependencies['ghostscript.com']
+      // Remove netpbm dep (not essential for groff core functionality)
+      if (recipe.dependencies?.['netpbm.sourceforge.net']) delete recipe.dependencies['netpbm.sourceforge.net']
+      // Remove psutils dep (not essential for groff core functionality)
+      if (recipe.dependencies?.['github.com/rrthomas/psutils']) delete recipe.dependencies['github.com/rrthomas/psutils']
+      // Remove uchardet dep (not in S3 — groff builds fine without it, just disables auto-detection)
+      if (recipe.dependencies?.['freedesktop.org/uchardet']) delete recipe.dependencies['freedesktop.org/uchardet']
+      // Remove linux gcc build dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) delete recipe.build.dependencies.linux['gnu.org/gcc']
+    },
+  },
+
+  // ─── gnu.org/emacs — remove heavy deps + fix post-install ────────────
+
+  'gnu.org/emacs': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gnutls.org dep (optional, emacs can build without TLS)
+      if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
+      // Remove texinfo build dep
+      if (recipe.dependencies?.['gnu.org/texinfo']) delete recipe.dependencies['gnu.org/texinfo']
+      // Add --without-gnutls since we removed the dep
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map(
+          (a: string) => a === '--with-gnutls' ? '--without-gnutls' : a,
+        )
       }
     },
   },
@@ -2483,6 +2567,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['rsync.samba.org']) {
         delete recipe.build.dependencies['rsync.samba.org']
       }
+    },
+  },
+
+  // ─── openssh.com — remove deps not in S3 ──────────────────────────────
+
+  'openssh.com': {
+    modifyRecipe: (recipe: any) => {
+      // Remove deps not available in S3
+      if (recipe.dependencies?.['nlnetlabs.nl/ldns']) delete recipe.dependencies['nlnetlabs.nl/ldns']
+      if (recipe.dependencies?.['developers.yubico.com/libfido2']) delete recipe.dependencies['developers.yubico.com/libfido2']
+      if (recipe.dependencies?.['kerberos.org']) delete recipe.dependencies['kerberos.org']
+      // Remove corresponding configure flags for removed deps
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.filter(
+          (a: string) => a !== '--with-ldns' && a !== '--with-kerberos5' && a !== '--with-security-key-builtin',
+        )
+      }
+      // Remove linux gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) delete recipe.build.dependencies.linux['gnu.org/gcc']
     },
   },
 
@@ -3111,6 +3214,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
         delete recipe.build.env.darwin.CC
         delete recipe.build.env.darwin.CXX
         delete recipe.build.env.darwin.LD
+      }
+    },
+  },
+
+  // ─── facebook.com/folly — fix sed -i BSD + remove gcc dep ──────────────
+
+  'facebook.com/folly': {
+    modifyRecipe: (recipe: any) => {
+      // Remove linux gnu.org/gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Remove linux gnu.org/gcc/libstdcxx dep
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
+        delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      }
+      // Remove libcxx.llvm.org dep (too heavy for CI)
+      if (recipe.dependencies?.linux?.['libcxx.llvm.org']) {
+        delete recipe.dependencies.linux['libcxx.llvm.org']
       }
     },
   },

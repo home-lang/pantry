@@ -684,9 +684,9 @@ Options:
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
-    // crates.io/didyoumean removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/didyoumean', // indicatif v0.16.2 dep has hard Rust errors (E0282/E0432), --cap-lints warn can't suppress errors
     // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
-    // crates.io/mask removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/mask', // Rust linker bug: raw-dylibs dir passed as library file on linux (pulldown-cmark build script)
     'crates.io/pqrs', // arrow-arith/chrono trait ambiguity (quarter() method conflict)
     // crates.io/rust-kanban removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override
@@ -740,10 +740,11 @@ Options:
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    // strace.io removed — added compiler flags override
+    'strace.io', // btrfs xlat static assertion: generated headers bypass CFLAGS, can't fix with -D flags
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     // microbrew.org/md5sha1sum — needs openssl.org in S3, build openssl first
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
+    'ghostscript.com', // Tag format gs10060 for version 10.06.0 — zero-padded minor not reconstructible from semver
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
     'brxken128.github.io/dexios', // Rust 'unnecessary qualification' lint errors with modern rustc (unmaintained)

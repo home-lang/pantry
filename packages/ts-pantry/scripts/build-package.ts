@@ -213,8 +213,8 @@ function parseYamlValue(
             j++
           }
         } else if (bli > blockIndent && !blt.startsWith('- ')) {
-          // Continuation of previous item
-          if (runArr.length > 0) runArr[runArr.length - 1] += '\n' + blt
+          // Continuation of previous item — YAML plain scalar folding (newlines → spaces)
+          if (runArr.length > 0) runArr[runArr.length - 1] += ' ' + blt
           j++
         } else break
       }
@@ -731,6 +731,16 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     recipe.distributable.url = recipe.distributable.url.replace('ftp.gnu.org', 'ftpmirror.gnu.org')
   }
 
+  // X.org mirror: xorg.freedesktop.org is more reliable from CI than www.x.org
+  if (recipe.distributable?.url?.includes('www.x.org')) {
+    recipe.distributable.url = recipe.distributable.url.replace('www.x.org', 'xorg.freedesktop.org')
+  }
+
+  // XCB mirror: xorg.freedesktop.org is more reliable from CI than xcb.freedesktop.org
+  if (recipe.distributable?.url?.includes('xcb.freedesktop.org/dist/')) {
+    recipe.distributable.url = recipe.distributable.url.replace('xcb.freedesktop.org/dist/', 'xorg.freedesktop.org/archive/individual/xcb/')
+  }
+
   // Fix stray quote in CMAKE_INSTALL_PREFIX (upstream YAML typo in several packages)
   if (recipe.build?.env) {
     const fixCmakePrefix = (envObj: Record<string, any>) => {
@@ -745,6 +755,32 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     fixCmakePrefix(recipe.build.env)
     if (recipe.build.env.linux) fixCmakePrefix(recipe.build.env.linux)
     if (recipe.build.env.darwin) fixCmakePrefix(recipe.build.env.darwin)
+  }
+
+  // Fix stray quotes in autotools --prefix/--sysconfdir/--libdir args
+  // YAML uses --prefix="{{prefix}}" but after env expansion the quotes become literal,
+  // causing configure to set prefix to "/tmp/..." (with quotes in the path)
+  if (recipe.build?.env) {
+    const fixAutotoolsQuotes = (envObj: Record<string, any>) => {
+      if (Array.isArray(envObj.ARGS)) {
+        envObj.ARGS = envObj.ARGS.map((arg: string) =>
+          typeof arg === 'string'
+            ? arg.replace(/^(--(?:prefix|sysconfdir|libdir|mandir|infodir|datadir|bindir|libexecdir|localstatedir|includedir|exec-prefix)=)"([^"]+)"$/, '$1$2')
+            : arg
+        )
+      }
+      if (Array.isArray(envObj.MESON_ARGS)) {
+        envObj.MESON_ARGS = envObj.MESON_ARGS.map((arg: string) =>
+          typeof arg === 'string'
+            ? arg.replace(/^(--prefix=)"([^"]+)"$/, '$1$2')
+              .replace(/^(--libdir=)"([^"]+)"$/, '$1$2')
+            : arg
+        )
+      }
+    }
+    fixAutotoolsQuotes(recipe.build.env)
+    if (recipe.build.env.linux) fixAutotoolsQuotes(recipe.build.env.linux)
+    if (recipe.build.env.darwin) fixAutotoolsQuotes(recipe.build.env.darwin)
   }
 
   // ── Inline legacy override ─────────────────────────────────────────
@@ -1178,9 +1214,25 @@ async function downloadDependencies(
               writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
               console.log(`   - Replaced S3 meson with system meson wrapper (${systemMeson})`)
             } else {
-              // No system meson — try to fix the shebang to use system python3
+              // No system meson — fix the S3 binary to use system python3
               const mesonContent = readFileSync(mesonBin, 'utf-8')
-              if (mesonContent.startsWith('#!') && !mesonContent.startsWith('#!/usr/bin/env python3')) {
+              if (mesonContent.includes('SCRIPT_DIR=') || mesonContent.includes('exec ')) {
+                // Shell wrapper from bkpyvenv seal — the venv Python path is stale.
+                // Create a new wrapper that uses system python3 with the venv's site-packages.
+                const venvDir = join(depInstallDir, 'venv')
+                const siteGlob = join(venvDir, 'lib', 'python*', 'site-packages')
+                writeFileSync(mesonBin, [
+                  '#!/bin/sh',
+                  `VENV_DIR="$(cd "$(dirname "$0")/../venv" && pwd)"`,
+                  `for _sp in "$VENV_DIR"/lib/python*/site-packages; do`,
+                  `  [ -d "$_sp" ] && export PYTHONPATH="$_sp\${PYTHONPATH:+:$PYTHONPATH}" && break`,
+                  `done`,
+                  `exec python3 -c "from mesonbuild.mesonmain import main; main()" "$@"`,
+                  '',
+                ].join('\n'), { mode: 0o755 })
+                console.log(`   - Rewrote meson shell wrapper to use system python3 + venv site-packages`)
+              } else if (mesonContent.startsWith('#!') && !mesonContent.startsWith('#!/usr/bin/env python3')) {
+                // Python script with wrong shebang — just fix the shebang
                 const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
                 writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
                 console.log(`   - Fixed meson shebang to use system python3`)
