@@ -2,7 +2,7 @@
  * **XKeyboardConfig** - pkgx package
  *
  * @domain `freedesktop.org/XKeyboardConfig`
- * @version `2.46.0` (8 versions available)
+ * @version `2.47.0` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install freedesktop.org/XKeyboardConfig`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.freedesktoporgxkeyboardconfig
  * console.log(pkg.name)        // "XKeyboardConfig"
- * console.log(pkg.versions[0]) // "2.46.0" (latest)
+ * console.log(pkg.versions[0]) // "2.47.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/XKeyboardConfig.md
@@ -61,6 +61,7 @@ export const freedesktoporgxkeyboardconfigPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.47.0',
     '2.46.0',
     '2.45.0',
     '2.44.0',
