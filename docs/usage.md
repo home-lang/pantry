@@ -35,6 +35,7 @@ Here are the main commands available in pantry:
 | `cache:stats` | Show cache statistics and usage information |
 | `cache:clean` | Clean up old cached packages |
 | `cache:clear` | Clear all cached packages and downloads |
+| `publish:commit` | Publish packages from the current git commit (pkg-pr-new alternative) |
 | `clean` | Remove all pantry-installed packages and environments (use `--keep-global` to preserve global dependencies) |
 | `version` | Show version information |
 | `help` | Display help information |
@@ -787,6 +788,68 @@ After installation, pantry provides instructions for making zsh your default she
 # Make zsh your default shell
 chsh -s /path/to/installed/zsh
 ```
+
+## Commit Publishing
+
+Publish packages directly from git commits without version bumps. This is pantry's built-in alternative to `pkg-pr-new`, enabling continuous releases tied to commits.
+
+### Publishing from a Commit
+
+```bash
+# Publish all packages matching a glob pattern
+pantry publish:commit './packages/*'
+
+# Publish a single package directory
+pantry publish:commit ./my-package
+
+# Preview what would be published
+pantry publish:commit './packages/*' --dry-run
+
+# Use a custom registry
+pantry publish:commit './packages/*' --registry https://registry.example.com
+
+# Compact output (useful in CI)
+pantry publish:commit './packages/*' --compact
+```
+
+### How It Works
+
+1. pantry reads the current git commit SHA
+2. Resolves glob patterns to find package directories
+3. Reads each `package.json`, skipping private packages
+4. Creates tarballs and uploads them to the Pantry registry
+5. Stores metadata in DynamoDB for lookup by commit or package name
+6. Prints install URLs for each published package
+
+### Install URLs
+
+Each published package gets an install URL tied to the commit SHA:
+
+```bash
+# Install a commit package
+npm install https://registry.stacksjs.org/commits/abc1234/@scope/my-package/tarball
+```
+
+### CI/CD Usage
+
+Replace `pkg-pr-new` in your GitHub Actions:
+
+```yaml
+# Before
+- run: bunx pkg-pr-new publish './packages/*'
+
+# After
+- run: pantry publish:commit './packages/*'
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--registry <url>` | Custom registry URL (default: `https://registry.stacksjs.org`) |
+| `--token <token>` | Authentication token (or set `PANTRY_TOKEN` env var) |
+| `--dry-run` | Preview without publishing |
+| `--compact` | Minimal output for CI environments |
 
 ## Checking for Updates
 

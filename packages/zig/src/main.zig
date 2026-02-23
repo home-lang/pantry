@@ -849,6 +849,43 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn publishCommitAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.org";
+    const token = ctx.getOption("token");
+    const dry_run = ctx.hasOption("dry-run");
+    const compact = ctx.hasOption("compact");
+
+    // Collect positional args as glob patterns
+    var paths = std.ArrayList([]const u8){};
+    defer paths.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try paths.append(allocator, arg);
+    }
+
+    const options = lib.commands.PublishCommitOptions{
+        .registry = registry,
+        .token = token,
+        .dry_run = dry_run,
+        .compact = compact,
+    };
+
+    const result = try lib.commands.publishCommitCommand(allocator, paths.items, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -3034,8 +3071,30 @@ pub fn main() !void {
     _ = try root.addCommand(publish_cmd);
 
     // ========================================================================
-    // Help Command
+    // Publish Commit Command (pkg-pr-new equivalent)
     // ========================================================================
+    var publish_commit_cmd = try cli.BaseCommand.init(allocator, "publish:commit", "Publish packages from current git commit (like pkg-pr-new)");
+
+    const pc_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
+        .withDefault("https://registry.stacksjs.org");
+    _ = try publish_commit_cmd.addOption(pc_registry_opt);
+
+    const pc_token_opt = cli.Option.init("token", "token", "Authentication token", .string);
+    _ = try publish_commit_cmd.addOption(pc_token_opt);
+
+    const pc_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Show what would be published without uploading", .bool);
+    _ = try publish_commit_cmd.addOption(pc_dry_run_opt);
+
+    const pc_compact_opt = cli.Option.init("compact", "compact", "Compact output for CI environments", .bool);
+    _ = try publish_commit_cmd.addOption(pc_compact_opt);
+
+    const pc_paths_arg = cli.Argument.init("paths", "Glob patterns for package directories (e.g., './packages/*')", .string)
+        .withRequired(false);
+    _ = try publish_commit_cmd.addArgument(pc_paths_arg);
+
+    _ = publish_commit_cmd.setAction(publishCommitAction);
+    _ = try root.addCommand(publish_commit_cmd);
+
     // ========================================================================
     // Link Command
     // ========================================================================

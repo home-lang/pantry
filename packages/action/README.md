@@ -220,6 +220,35 @@ jobs:
         run: npm test
 ```
 
+### Commit Publishing (pkg-pr-new Replacement)
+
+```yaml
+name: Publish Commit Packages
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+
+      - uses: actions/checkout@v4
+
+      - name: Install Dependencies
+
+        uses: stacksjs/pantry-installer@v1
+
+      - name: Publish Commit Packages
+
+        run: pantry publish:commit './packages/*'
+        env:
+          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+# Replaces: bunx pkg-pr-new publish './packages/*'
+# Each package gets an install URL tied to the commit SHA
+```
+
 ### Custom Config Path
 
 ```yaml

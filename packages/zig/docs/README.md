@@ -13,6 +13,7 @@ Welcome to Pantry - a lightning-fast universal package and environment manager w
 Core functionality and guides:
 
 - **[Package Management](./features/package-management.md)** - Install, add, remove, and update packages
+- **[Commit Publishing](./features/commit-publishing.md)** - Publish packages from git commits (pkg-pr-new alternative)
 - **[Runtime Management](./features/runtime-management.md)** - Manage Bun, Node, Deno, Python versions per project
 - **[Services](./features/services.md)** - Auto-start databases, caches, and web servers
 - **[Scripts](./features/scripts.md)** - Run scripts from package.json with arguments and filtering

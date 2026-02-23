@@ -161,6 +161,12 @@ export class LocalStorage implements TarballStorage {
 
   async upload(key: string, data: ArrayBuffer): Promise<string> {
     const filePath = this.getFilePath(key)
+    // Ensure parent directories exist
+    const dir = filePath.substring(0, filePath.lastIndexOf('/'))
+    if (dir) {
+      const fs = await import('node:fs/promises')
+      await fs.mkdir(dir, { recursive: true }).catch(() => {})
+    }
     await Bun.write(filePath, data)
     return this.getUrl(key)
   }

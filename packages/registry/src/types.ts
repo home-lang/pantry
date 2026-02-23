@@ -87,6 +87,41 @@ export interface RegistryConfig {
 }
 
 /**
+ * Commit publish record — represents a package published from a specific git commit
+ * (equivalent to pkg-pr-new continuous releases)
+ */
+export interface CommitPublish {
+  /** Package name (e.g., "@stacksjs/actions") */
+  name: string
+  /** Git commit SHA (short or full) */
+  sha: string
+  /** URL to download the tarball */
+  tarballUrl: string
+  /** SHA-256 checksum of the tarball */
+  checksum: string
+  /** ISO 8601 timestamp of when this was published */
+  publishedAt: string
+  /** Repository URL (e.g., "https://github.com/stacksjs/stacks") */
+  repository?: string
+  /** Relative path of the package within the repo */
+  packageDir?: string
+  /** Package version from package.json at time of commit */
+  version?: string
+  /** Tarball size in bytes */
+  size?: number
+}
+
+/**
+ * Summary of all packages published for a single commit
+ */
+export interface CommitPublishSummary {
+  sha: string
+  repository?: string
+  publishedAt: string
+  packages: CommitPublish[]
+}
+
+/**
  * Storage interface for tarball storage
  */
 export interface TarballStorage {
@@ -108,4 +143,10 @@ export interface MetadataStorage {
   search(query: string, limit?: number): Promise<SearchResult[]>
   listVersions(name: string): Promise<string[]>
   incrementDownloads(name: string, version: string): Promise<void>
+
+  // Commit publish operations
+  putCommitPublish(publish: CommitPublish): Promise<void>
+  getCommitPublish(sha: string, name: string): Promise<CommitPublish | null>
+  getCommitPackages(sha: string): Promise<CommitPublish[]>
+  getPackageCommits(name: string, limit?: number): Promise<CommitPublish[]>
 }

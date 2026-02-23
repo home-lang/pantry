@@ -722,7 +722,7 @@ fn publishSingleToRegistry(
 }
 
 /// Read PANTRY_TOKEN from ~/.pantry/credentials
-fn readPantryToken(allocator: std.mem.Allocator) ![]u8 {
+pub fn readPantryToken(allocator: std.mem.Allocator) ![]u8 {
     const home = io_helper.getenv("HOME") orelse return error.EnvironmentVariableNotFound;
 
     var path_buf: [std.fs.max_path_bytes]u8 = undefined;
@@ -753,7 +753,7 @@ fn readPantryToken(allocator: std.mem.Allocator) ![]u8 {
 }
 
 /// Create tarball of the current project respecting package.json "files" field
-fn createTarball(
+pub fn createTarball(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
     package_name: []const u8,

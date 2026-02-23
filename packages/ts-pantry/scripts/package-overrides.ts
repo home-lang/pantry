@@ -1520,12 +1520,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'BZ2_REAL=$(find /usr/lib -name "libbz2.so" -print -quit 2>/dev/null); if [ -n "$BZ2_REAL" ] && [ ! -f /usr/lib/libbz2.so ]; then ln -sf "$BZ2_REAL" /usr/lib/libbz2.so 2>/dev/null || true; fi',
         ],
       },
-      darwin: {
-        prependScript: [
-          // Fix bzip2 path on darwin (libbz2.a may not be at /usr/lib on newer macOS)
-          'BZ2_A=$(find /opt/homebrew/lib /usr/local/lib /usr/lib -name "libbz2.a" -print -quit 2>/dev/null); if [ -n "$BZ2_A" ] && [ ! -f /usr/lib/libbz2.a ]; then sudo ln -sf "$BZ2_A" /usr/lib/libbz2.a 2>/dev/null || true; fi',
-        ],
-      },
     },
     modifyRecipe: (recipe: any) => {
       // Replace hw.concurrency with a fixed job count to prevent race condition
@@ -1540,12 +1534,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
-      // On darwin, bzip2 S3 binary may not have correct lib structure.
-      // Fall back to --no-system-bzip2 to use cmake's bundled bzip2
+      // On darwin, bzip2 is not in S3 and macOS SIP prevents /usr/lib symlinks.
+      // Use cmake's bundled bzip2 instead of system one.
       if (Array.isArray(recipe.build?.env?.darwin?.ARGS)) {
         recipe.build.env.darwin.ARGS = recipe.build.env.darwin.ARGS.filter(
           (a: string) => !a.includes('BZIP2_LIBRARIES') && !a.includes('BZIP2_INCLUDE_DIR'),
         )
+      }
+      // Add --no-system-bzip2 to use bundled bzip2 (system bzip2 not reliably available)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('--no-system-bzip2')) {
+          recipe.build.env.ARGS.push('--no-system-bzip2')
+        }
       }
     },
   },

@@ -309,6 +309,80 @@ pantry up bun python --dry-run
 pantry update --verbose --latest node
 ```
 
+## Commit Publishing (pkg-pr-new Alternative)
+
+pantry includes a built-in `publish:commit` command that publishes packages from git commits to the Pantry registry. This is a drop-in replacement for `pkg-pr-new publish`.
+
+### Basic Usage
+
+```bash
+# Publish all packages matching a glob pattern
+pantry publish:commit './packages/*'
+
+# Publish a single package
+pantry publish:commit ./my-package
+
+# Preview without publishing
+pantry publish:commit './packages/*' --dry-run
+```
+
+### Monorepo Support
+
+When given a glob pattern, pantry automatically:
+
+1. Resolves the pattern to find package directories
+2. Reads each `package.json` to get the package name and version
+3. Skips private packages (`"private": true`)
+4. Creates tarballs and uploads them to the registry
+5. Prints install URLs for each published package
+
+### Install URLs
+
+Published packages get install URLs tied to the commit SHA:
+
+```bash
+# Install from a specific commit
+npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+```
+
+### Options
+
+```bash
+# Custom registry
+pantry publish:commit './packages/*' --registry https://registry.example.com
+
+# Authenticate with a token
+pantry publish:commit './packages/*' --token my-secret-token
+
+# Or use the PANTRY_TOKEN environment variable
+export PANTRY_TOKEN=my-secret-token
+pantry publish:commit './packages/*'
+
+# Compact output for CI
+pantry publish:commit './packages/*' --compact
+```
+
+### CI/CD Integration
+
+Replace `pkg-pr-new` in your GitHub Actions workflows:
+
+```yaml
+# Before (using pkg-pr-new)
+- name: Publish Commit
+  run: bunx pkg-pr-new publish './storage/framework/core/*'
+
+# After (using pantry)
+- name: Publish Commit
+  run: pantry publish:commit './storage/framework/core/*'
+```
+
+### How It Works
+
+- **Storage**: Tarballs are stored in S3 under `commits/{sha}/{safeName}/`
+- **Metadata**: DynamoDB stores publish records with both commit-to-packages and package-to-commits lookups
+- **Expiry**: Commit packages automatically expire after 90 days via S3 lifecycle rules
+- **Authentication**: Uses the `PANTRY_TOKEN` environment variable or `--token` flag
+
 ## Complete System Cleanup
 
 ### Full Uninstallation

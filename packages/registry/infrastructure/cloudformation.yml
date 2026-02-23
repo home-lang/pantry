@@ -33,6 +33,11 @@ Resources:
             Status: Enabled
             NoncurrentVersionExpiration:
               NoncurrentDays: 30
+          - Id: ExpireCommitPackages
+            Status: Enabled
+            Prefix: commits/
+            ExpirationInDays: 90
+            TagFilters: []
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders:

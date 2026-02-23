@@ -30,6 +30,12 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * GET  /api/analytics/{category}/{period}.json - Category analytics (JSON API)
  * POST /analytics/events          - Report analytics event
  *
+ * Commit publish endpoints (pkg-pr-new equivalent):
+ * POST /publish/commit                       - Publish packages from a commit
+ * GET  /commits/{sha}                        - List packages for a commit
+ * GET  /commits/{sha}/{name}                 - Get commit package metadata
+ * GET  /commits/{sha}/{name}/tarball         - Download commit tarball
+ *
  * Zig package endpoints:
  * GET  /zig/packages/{name}                  - Get Zig package metadata
  * GET  /zig/packages/{name}/{version}        - Get specific version
@@ -108,6 +114,64 @@ export function createServer(
           const analyticsMatch = path.match(/^\/analytics(?:\/(.+))?$/)
           if (analyticsMatch && req.method === 'GET') {
             return handleAnalytics(analyticsMatch[1], url, analyticsStorage, corsHeaders)
+          }
+
+          // Commit publish routes (pkg-pr-new equivalent)
+          if (path === '/publish/commit' && req.method === 'POST') {
+            return handleCommitPublish(req, registry, baseUrl, corsHeaders)
+          }
+
+          // GET /commits/{sha} - List all packages for a commit
+          // GET /commits/{sha}/{name} - Get commit package metadata
+          // GET /commits/{sha}/{name}/tarball - Download commit tarball
+          const commitMatch = path.match(/^\/commits\/([a-f0-9]+)(?:\/((?:@[^/]+\/[^/]+)|(?:[^@/][^/]*)))?(?:\/(tarball))?$/)
+          if (commitMatch && req.method === 'GET') {
+            const sha = commitMatch[1]
+            const packageName = commitMatch[2] ? decodeURIComponent(commitMatch[2]) : undefined
+            const action = commitMatch[3]
+
+            // GET /commits/{sha}/{name}/tarball
+            if (packageName && action === 'tarball') {
+              const tarball = await registry.downloadCommitTarball(sha, packageName)
+              if (!tarball) {
+                return Response.json(
+                  { error: 'Commit package not found' },
+                  { status: 404, headers: corsHeaders },
+                )
+              }
+              const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
+              return new Response(tarball, {
+                headers: {
+                  ...corsHeaders,
+                  'Content-Type': 'application/gzip',
+                  'Content-Disposition': `attachment; filename="${safeName}-${sha.slice(0, 7)}.tgz"`,
+                },
+              })
+            }
+
+            // GET /commits/{sha}/{name}
+            if (packageName && !action) {
+              const publish = await registry.getCommitPackage(sha, packageName)
+              if (!publish) {
+                return Response.json(
+                  { error: 'Commit package not found' },
+                  { status: 404, headers: corsHeaders },
+                )
+              }
+              return Response.json(publish, { headers: corsHeaders })
+            }
+
+            // GET /commits/{sha}
+            if (!packageName) {
+              const summary = await registry.getCommitPackages(sha)
+              if (!summary) {
+                return Response.json(
+                  { error: 'No packages found for this commit' },
+                  { status: 404, headers: corsHeaders },
+                )
+              }
+              return Response.json(summary, { headers: corsHeaders })
+            }
           }
 
           // Zig package routes
@@ -214,6 +278,11 @@ export function createServer(
     console.log('  GET  /api/analytics/{category}/{period}.json - Category analytics (JSON API)')
     console.log('  POST /analytics/events          - Report analytics event')
     console.log('  Categories: install, install-on-request, build-error')
+    console.log('Commit packages (pkg-pr-new equivalent):')
+    console.log('  POST /publish/commit               - Publish from a commit')
+    console.log('  GET  /commits/{sha}                - List packages for a commit')
+    console.log('  GET  /commits/{sha}/{name}         - Get commit package metadata')
+    console.log('  GET  /commits/{sha}/{name}/tarball  - Download commit tarball')
     console.log('Zig packages:')
     console.log('  GET  /zig/packages/{name}       - Get Zig package metadata')
     console.log('  GET  /zig/packages/{name}/{version}/tarball - Download')
@@ -326,7 +395,7 @@ async function handleAnalyticsEvent(
 }
 
 // Simple token for authentication (replace with proper auth in production)
-const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
+const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
 
 /**
  * Validate authorization token
@@ -434,6 +503,156 @@ async function handlePublish(
 
     return Response.json(
       { success: true, message: `Published ${metadata.name}@${metadata.version}` },
+      { status: 201, headers: corsHeaders },
+    )
+  }
+
+  return Response.json(
+    { error: 'Unsupported content type' },
+    { status: 415, headers: corsHeaders },
+  )
+}
+
+/**
+ * Handle POST /publish/commit — publish packages from a git commit
+ * Accepts multipart/form-data with:
+ *   - packages[]: tarball files
+ *   - metadata: JSON string with { sha, repository, packages: [{ name, packageDir, version }] }
+ * Or JSON body with:
+ *   - sha: commit hash
+ *   - repository: repo URL
+ *   - packages: [{ name, tarball (base64), packageDir?, version? }]
+ */
+const MAX_COMMIT_TARBALL_SIZE = 50 * 1024 * 1024 // 50MB per tarball
+
+async function handleCommitPublish(
+  req: Request,
+  registry: Registry,
+  baseUrl: string,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const contentType = req.headers.get('content-type') || ''
+
+  // Validate token
+  const authHeader = req.headers.get('authorization')
+  const authResult = validateToken(authHeader)
+  if (!authResult.valid) {
+    return Response.json(
+      { error: authResult.error },
+      { status: 401, headers: corsHeaders },
+    )
+  }
+
+  if (contentType.includes('multipart/form-data')) {
+    const formData = await req.formData()
+    const metadataStr = formData.get('metadata')
+
+    if (!metadataStr || typeof metadataStr !== 'string') {
+      return Response.json(
+        { error: 'Missing metadata' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    const metadata = JSON.parse(metadataStr) as {
+      sha: string
+      repository?: string
+      packages: Array<{ name: string, packageDir?: string, version?: string }>
+    }
+
+    if (!metadata.sha || !metadata.packages?.length) {
+      return Response.json(
+        { error: 'Missing sha or packages in metadata' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    const results: Array<{ name: string, url: string, sha: string }> = []
+
+    for (const pkg of metadata.packages) {
+      const tarballFile = formData.get(`package:${pkg.name}`)
+      if (!tarballFile || !(tarballFile instanceof File)) {
+        continue
+      }
+
+      if (tarballFile.size > MAX_COMMIT_TARBALL_SIZE) {
+        return Response.json(
+          { error: `Tarball for ${pkg.name} exceeds maximum size of 50MB` },
+          { status: 413, headers: corsHeaders },
+        )
+      }
+
+      const tarball = await tarballFile.arrayBuffer()
+      await registry.publishCommit(pkg.name, metadata.sha, tarball, {
+        repository: metadata.repository,
+        packageDir: pkg.packageDir,
+        version: pkg.version,
+      })
+
+      results.push({
+        name: pkg.name,
+        url: `${baseUrl}/commits/${metadata.sha}/${encodeURIComponent(pkg.name)}/tarball`,
+        sha: metadata.sha,
+      })
+    }
+
+    return Response.json(
+      {
+        success: true,
+        sha: metadata.sha,
+        packages: results,
+        message: `Published ${results.length} package(s) from commit ${metadata.sha.slice(0, 7)}`,
+      },
+      { status: 201, headers: corsHeaders },
+    )
+  }
+
+  if (contentType.includes('application/json')) {
+    const body = await req.json() as {
+      sha: string
+      repository?: string
+      packages: Array<{ name: string, tarball: string, packageDir?: string, version?: string }>
+    }
+
+    if (!body.sha || !body.packages?.length) {
+      return Response.json(
+        { error: 'Missing sha or packages' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    const results: Array<{ name: string, url: string, sha: string }> = []
+
+    for (const pkg of body.packages) {
+      const tarball = Uint8Array.from(atob(pkg.tarball), c => c.charCodeAt(0)).buffer
+
+      if (tarball.byteLength > MAX_COMMIT_TARBALL_SIZE) {
+        return Response.json(
+          { error: `Tarball for ${pkg.name} exceeds maximum size of 50MB` },
+          { status: 413, headers: corsHeaders },
+        )
+      }
+
+      await registry.publishCommit(pkg.name, body.sha, tarball, {
+        repository: body.repository,
+        packageDir: pkg.packageDir,
+        version: pkg.version,
+      })
+
+      results.push({
+        name: pkg.name,
+        url: `${baseUrl}/commits/${body.sha}/${encodeURIComponent(pkg.name)}/tarball`,
+        sha: body.sha,
+      })
+    }
+
+    return Response.json(
+      {
+        success: true,
+        sha: body.sha,
+        packages: results,
+        message: `Published ${results.length} package(s) from commit ${body.sha.slice(0, 7)}`,
+      },
       { status: 201, headers: corsHeaders },
     )
   }

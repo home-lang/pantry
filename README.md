@@ -60,6 +60,13 @@ pantry transforms how you manage dependencies across your entire development wor
 - 📋 **Version Management** — Install and manage specific versions of tools per project
 - 🗂️ **Environment Management** — List, inspect, clean, and remove project environments with readable identifiers
 
+### Commit Publishing (pkg-pr-new Alternative)
+
+- 🚀 **Publish from Any Commit** — Publish packages directly from git commits without version bumps
+- 📦 **Monorepo Support** — Automatically discovers and publishes all packages in a monorepo
+- 🔗 **Instant Install URLs** — Get shareable install URLs for every published commit
+- 🤖 **CI/CD Ready** — Drop-in replacement for `pkg-pr-new` in GitHub Actions
+
 ### Developer Experience
 
 - ⚡ **Fast Operations** — Leverage pkgx for efficient package management
@@ -352,6 +359,41 @@ pantry service start postgres mysql
 - Config file: `pantry.config.ts` → `services.database`
 - Per-project databases automatically created with your credentials
 
+### Commit Publishing
+
+Publish packages directly from git commits — a built-in replacement for `pkg-pr-new`:
+
+```bash
+# Publish all packages in a monorepo from the current commit
+pantry publish:commit './packages/*'
+
+# Publish a single package
+pantry publish:commit ./my-package
+
+# Dry run to see what would be published
+pantry publish:commit './packages/*' --dry-run
+
+# Use a custom registry
+pantry publish:commit './packages/*' --registry https://registry.example.com
+```
+
+Each published package gets an install URL tied to the commit SHA:
+
+```bash
+# Install a specific commit's package
+npm install https://registry.stacksjs.org/commits/abc1234/@scope/my-package/tarball
+```
+
+**GitHub Actions integration** — replace `pkg-pr-new` in your CI:
+
+```yaml
+# Before (pkg-pr-new)
+- run: bunx pkg-pr-new publish './packages/*'
+
+# After (pantry)
+- run: pantry publish:commit './packages/*'
+```
+
 ### Advanced Operations
 
 ```bash
@@ -445,6 +487,7 @@ See [GitHub Action Documentation](https://github.com/stacksjs/pantry/tree/main/p
 
 Explore advanced dependency management topics:
 
+- [Commit Publishing](https://stacks-pantry.netlify.app/features/commit-publishing) _(pkg-pr-new alternative)_
 - [Service Management](https://stacks-pantry.netlify.app/features/service-management)
 - [Project Environment Configuration](https://stacks-pantry.netlify.app/features/package-management)
 - [Custom Shims and Tool Management](https://stacks-pantry.netlify.app/advanced/custom-shims)

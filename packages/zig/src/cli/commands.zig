@@ -98,6 +98,14 @@ pub const RegistryPublishOptions = registry_commands.RegistryPublishOptions;
 pub const registryPublishCommand = registry_commands.registryPublishCommand;
 
 // ============================================================================
+// Re-export Publish Commit Command (pkg-pr-new equivalent)
+// ============================================================================
+
+pub const publish_commit_commands = @import("commands/publish_commit.zig");
+pub const PublishCommitOptions = publish_commit_commands.PublishCommitOptions;
+pub const publishCommitCommand = publish_commit_commands.publishCommitCommand;
+
+// ============================================================================
 // Re-export Px Command
 // ============================================================================
 

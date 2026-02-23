@@ -1242,14 +1242,12 @@ pub fn clockGettimeMonotonic() c.timespec {
     return ts;
 }
 
-/// Mutex wrapper — spinlock using std.atomic.Mutex (Zig 0.16-dev moved Mutex out of Thread)
+/// Mutex wrapper — using std.Thread.Mutex
 pub const Mutex = struct {
-    inner: std.atomic.Mutex = .unlocked,
+    inner: std.Thread.Mutex = .{},
 
     pub fn lock(self: *Mutex) void {
-        while (!self.inner.tryLock()) {
-            std.atomic.spinLoopHint();
-        }
+        self.inner.lock();
     }
 
     pub fn unlock(self: *Mutex) void {

@@ -11,6 +11,7 @@
  */
 
 import type {
+  CommitPublish,
   MetadataStorage,
   PackageMetadata,
   PackageRecord,
@@ -327,6 +328,124 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
     })
 
     return result.Item !== undefined
+  }
+
+  // ===========================================================================
+  // Commit Publish Operations
+  // ===========================================================================
+
+  async putCommitPublish(publish: CommitPublish): Promise<void> {
+    const now = new Date().toISOString()
+
+    // Primary record: COMMIT#{sha} / PACKAGE#{name}
+    await this.db.putItem({
+      TableName: this.tableName,
+      Item: DynamoDBClient.marshal({
+        PK: `COMMIT#${publish.sha}`,
+        SK: `PACKAGE#${publish.name}`,
+        name: publish.name,
+        sha: publish.sha,
+        tarballUrl: publish.tarballUrl,
+        checksum: publish.checksum,
+        publishedAt: publish.publishedAt || now,
+        repository: publish.repository || '',
+        packageDir: publish.packageDir || '',
+        version: publish.version || '',
+        size: publish.size || 0,
+      }),
+    })
+
+    // Reverse lookup: COMMIT_PACKAGE#{name} / SHA#{sha}
+    await this.db.putItem({
+      TableName: this.tableName,
+      Item: DynamoDBClient.marshal({
+        PK: `COMMIT_PACKAGE#${publish.name}`,
+        SK: `SHA#${publish.sha}`,
+        name: publish.name,
+        sha: publish.sha,
+        tarballUrl: publish.tarballUrl,
+        publishedAt: publish.publishedAt || now,
+        repository: publish.repository || '',
+      }),
+    })
+  }
+
+  async getCommitPublish(sha: string, name: string): Promise<CommitPublish | null> {
+    const result = await this.db.getItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `COMMIT#${sha}` },
+        SK: { S: `PACKAGE#${name}` },
+      },
+    })
+
+    if (!result.Item) {
+      return null
+    }
+
+    const data = DynamoDBClient.unmarshal(result.Item)
+    return {
+      name: data.name,
+      sha: data.sha,
+      tarballUrl: data.tarballUrl,
+      checksum: data.checksum,
+      publishedAt: data.publishedAt,
+      repository: data.repository,
+      packageDir: data.packageDir,
+      version: data.version,
+      size: data.size,
+    }
+  }
+
+  async getCommitPackages(sha: string): Promise<CommitPublish[]> {
+    const result = await this.db.query({
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': { S: `COMMIT#${sha}` },
+        ':prefix': { S: 'PACKAGE#' },
+      },
+    })
+
+    return result.Items.map((item) => {
+      const data = DynamoDBClient.unmarshal(item)
+      return {
+        name: data.name,
+        sha: data.sha,
+        tarballUrl: data.tarballUrl,
+        checksum: data.checksum,
+        publishedAt: data.publishedAt,
+        repository: data.repository,
+        packageDir: data.packageDir,
+        version: data.version,
+        size: data.size,
+      }
+    })
+  }
+
+  async getPackageCommits(name: string, limit = 20): Promise<CommitPublish[]> {
+    const result = await this.db.query({
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': { S: `COMMIT_PACKAGE#${name}` },
+        ':prefix': { S: 'SHA#' },
+      },
+      ScanIndexForward: false, // newest first
+      Limit: limit,
+    })
+
+    return result.Items.map((item) => {
+      const data = DynamoDBClient.unmarshal(item)
+      return {
+        name: data.name,
+        sha: data.sha,
+        tarballUrl: data.tarballUrl,
+        checksum: '',
+        publishedAt: data.publishedAt,
+        repository: data.repository,
+      }
+    })
   }
 
   private isNewerVersion(a: string, b: string): boolean {

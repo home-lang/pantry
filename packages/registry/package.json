@@ -22,6 +22,7 @@
     "start": "bun run src/server.ts",
     "test": "bun test",
     "test:analytics": "bun test src/analytics.test.ts",
+    "test:commit-publish": "bun test src/commit-publish.test.ts",
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {},

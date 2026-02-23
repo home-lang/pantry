@@ -1,4 +1,6 @@
 import type {
+  CommitPublish,
+  CommitPublishSummary,
   MetadataStorage,
   PackageMetadata,
   RegistryConfig,
@@ -182,6 +184,93 @@ export class Registry {
   async exists(name: string, version: string): Promise<boolean> {
     const metadata = await this.metadataStorage.getPackageVersion(name, version)
     return metadata !== null
+  }
+
+  /**
+   * Publish a package from a specific git commit (pkg-pr-new equivalent)
+   */
+  async publishCommit(
+    name: string,
+    sha: string,
+    tarball: ArrayBuffer,
+    options?: { repository?: string, packageDir?: string, version?: string },
+  ): Promise<CommitPublish> {
+    const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+    const key = `commits/${sha}/${safeName}/${safeName}.tgz`
+
+    // Upload tarball
+    const tarballUrl = await this.tarballStorage.upload(key, tarball)
+
+    // Calculate checksum
+    const hashBuffer = await crypto.subtle.digest('SHA-256', tarball)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const checksum = `sha256:${hashArray.map(b => b.toString(16).padStart(2, '0')).join('')}`
+
+    const publish: CommitPublish = {
+      name,
+      sha,
+      tarballUrl,
+      checksum,
+      publishedAt: new Date().toISOString(),
+      repository: options?.repository,
+      packageDir: options?.packageDir,
+      version: options?.version,
+      size: tarball.byteLength,
+    }
+
+    // Store metadata
+    await this.metadataStorage.putCommitPublish(publish)
+
+    return publish
+  }
+
+  /**
+   * Get a commit-published package
+   */
+  async getCommitPackage(sha: string, name: string): Promise<CommitPublish | null> {
+    return this.metadataStorage.getCommitPublish(sha, name)
+  }
+
+  /**
+   * Download a commit-published package tarball
+   */
+  async downloadCommitTarball(sha: string, name: string): Promise<ArrayBuffer | null> {
+    const publish = await this.metadataStorage.getCommitPublish(sha, name)
+    if (!publish)
+      return null
+
+    const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+    const key = `commits/${sha}/${safeName}/${safeName}.tgz`
+
+    try {
+      return await this.tarballStorage.download(key)
+    }
+    catch {
+      return null
+    }
+  }
+
+  /**
+   * Get all packages published for a commit
+   */
+  async getCommitPackages(sha: string): Promise<CommitPublishSummary | null> {
+    const packages = await this.metadataStorage.getCommitPackages(sha)
+    if (packages.length === 0)
+      return null
+
+    return {
+      sha,
+      repository: packages[0]?.repository,
+      publishedAt: packages[0]?.publishedAt || new Date().toISOString(),
+      packages,
+    }
+  }
+
+  /**
+   * Get recent commits for a package
+   */
+  async getPackageCommits(name: string, limit = 20): Promise<CommitPublish[]> {
+    return this.metadataStorage.getPackageCommits(name, limit)
   }
 
   /**

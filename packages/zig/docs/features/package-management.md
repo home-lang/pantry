@@ -150,6 +150,67 @@ pantry publish
 pantry publish --registry https://registry.mycompany.com
 ```
 
+## Commit Publishing
+
+Publish packages directly from git commits without version bumps. This is pantry's built-in alternative to `pkg-pr-new`.
+
+### Publish from a Commit
+
+```bash
+# Publish all packages matching a glob pattern
+pantry publish:commit './packages/*'
+
+# Publish a single package directory
+pantry publish:commit ./my-package
+
+# Preview without actually publishing
+pantry publish:commit './packages/*' --dry-run
+
+# Custom registry
+pantry publish:commit './packages/*' --registry https://registry.example.com
+
+# Compact output for CI
+pantry publish:commit './packages/*' --compact
+```
+
+### How It Works
+
+1. Reads the current git commit SHA via `git rev-parse HEAD`
+2. Resolves glob patterns to discover package directories
+3. Reads `package.json` from each directory, skipping private packages
+4. Creates tarballs and uploads to the Pantry registry under `commits/{sha}/`
+5. Stores metadata in DynamoDB for fast lookup
+6. Prints install URLs for each published package
+
+### Install URLs
+
+Each published commit package gets an install URL:
+
+```bash
+npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+```
+
+### CI/CD Integration
+
+Replace `pkg-pr-new` in your GitHub Actions:
+
+```yaml
+# Before
+- run: bunx pkg-pr-new publish './packages/*'
+
+# After
+- run: pantry publish:commit './packages/*'
+```
+
+### Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--registry` | Registry URL | `https://registry.stacksjs.org` |
+| `--token` | Auth token (or `PANTRY_TOKEN` env) | |
+| `--dry-run` | Preview without publishing | `false` |
+| `--compact` | Minimal CI-friendly output | `false` |
+
 ## Best Practices
 
 ### 1. Use lockfiles for reproducibility

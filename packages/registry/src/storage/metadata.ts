@@ -1,4 +1,5 @@
 import type {
+  CommitPublish,
   MetadataStorage,
   PackageMetadata,
   PackageRecord,
@@ -131,6 +132,42 @@ export class InMemoryMetadataStorage implements MetadataStorage {
       pkg.totalDownloads++
       this.packages.set(name, pkg)
     }
+  }
+
+  // Commit publish operations (in-memory)
+  private commits: Map<string, CommitPublish[]> = new Map()
+  private packageCommits: Map<string, CommitPublish[]> = new Map()
+
+  async putCommitPublish(publish: CommitPublish): Promise<void> {
+    const key = publish.sha
+    const existing = this.commits.get(key) || []
+    // Replace if same name already exists for this sha
+    const filtered = existing.filter(p => p.name !== publish.name)
+    filtered.push(publish)
+    this.commits.set(key, filtered)
+
+    // Reverse lookup
+    const pkgKey = publish.name
+    const pkgExisting = this.packageCommits.get(pkgKey) || []
+    const pkgFiltered = pkgExisting.filter(p => p.sha !== publish.sha)
+    pkgFiltered.push(publish)
+    this.packageCommits.set(pkgKey, pkgFiltered)
+  }
+
+  async getCommitPublish(sha: string, name: string): Promise<CommitPublish | null> {
+    const packages = this.commits.get(sha)
+    if (!packages)
+      return null
+    return packages.find(p => p.name === name) || null
+  }
+
+  async getCommitPackages(sha: string): Promise<CommitPublish[]> {
+    return this.commits.get(sha) || []
+  }
+
+  async getPackageCommits(name: string, limit = 20): Promise<CommitPublish[]> {
+    const commits = this.packageCommits.get(name) || []
+    return commits.slice(-limit).reverse()
   }
 
   /**

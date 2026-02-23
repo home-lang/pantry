@@ -26,6 +26,7 @@ This is a high-performance Zig refactor of the TypeScript/Bun implementation, ac
 - **Automatic Updates** - Detects version changes in config files and auto-installs/updates
 - **Dependency Resolution** - Smart dependency resolution with conflict detection
 - **Package Publishing** - Publish to custom registries with `publish` command
+- **Commit Publishing** - Publish packages from git commits with `publish:commit` (pkg-pr-new alternative)
 - **Package Signing** - Ed25519 signature verification for secure package distribution
 - **Dependency Tree** - Visualize dependencies with colored tree output or JSON
 - **Interactive Init** - `pantry init` command for quick project setup
@@ -186,6 +187,41 @@ pantry sign package.tar.gz <private-key-hex>
 pantry verify package.tar.gz --keyring ~/.pantry/keyring.json
 ```
 
+### Commit Publishing (pkg-pr-new Alternative)
+
+```bash
+# Publish all packages from current commit
+pantry publish:commit './packages/*'
+
+# Publish a single package
+pantry publish:commit ./my-package
+
+# Preview what would be published
+pantry publish:commit './packages/*' --dry-run
+
+# Use a custom registry
+pantry publish:commit './packages/*' --registry https://registry.example.com
+
+# Compact output for CI
+pantry publish:commit './packages/*' --compact
+```
+
+Published packages get install URLs tied to the commit SHA:
+
+```bash
+npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+```
+
+Replace `pkg-pr-new` in CI:
+
+```yaml
+# Before
+- run: bunx pkg-pr-new publish './packages/*'
+
+# After
+- run: pantry publish:commit './packages/*'
+```
+
 ### Offline Mode & Proxy Support
 
 ```bash
@@ -309,6 +345,7 @@ packages/zig/
 - Environment commands: env:list, env:remove, env:clean
 - Shell integration: shell:integrate, shell:activate
 - Package publishing: publish command
+- Commit publishing: publish:commit command (pkg-pr-new alternative)
 - Utility commands: doctor, dev, init
 
 **Phase 8: Service Management** ✅

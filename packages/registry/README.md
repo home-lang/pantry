@@ -45,6 +45,15 @@ The server will start at `<http://localhost:3000>`.
 | GET | `/analytics/{name}` | Package download stats |
 | GET | `/analytics/{name}/timeline` | Download history (30 days) |
 
+### Commit Packages (pkg-pr-new equivalent)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/publish/commit` | Publish packages from a git commit |
+| GET | `/commits/{sha}` | List all packages for a commit |
+| GET | `/commits/{sha}/{name}` | Get commit package metadata |
+| GET | `/commits/{sha}/{name}/tarball` | Download commit package tarball |
+
 ### Zig Packages
 
 | Method | Endpoint | Description |
@@ -146,6 +155,49 @@ curl -X POST http://localhost:3000/zig/publish \
 ```bash
 zig fetch --save https://registry.example.com/zig/packages/my-zig-lib/1.0.0/tarball
 ```
+
+## Publishing Commit Packages
+
+Publish packages from a specific git commit — equivalent to `pkg-pr-new publish`. Packages are stored temporarily (90-day expiry) and can be installed directly by commit SHA.
+
+**Multipart/form-data (multiple packages):**
+
+```bash
+curl -X POST http://localhost:3000/publish/commit \
+  -H "Authorization: Bearer your-token" \
+  -F "sha=abc1234def5678" \
+  -F "repository=https://github.com/org/repo" \
+  -F "package:my-package=@my-package.tgz" \
+  -F "package:@scope/other=@other-package.tgz"
+```
+
+**JSON with base64 tarball:**
+
+```bash
+curl -X POST http://localhost:3000/publish/commit \
+  -H "Authorization: Bearer your-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sha": "abc1234def5678",
+    "name": "my-package",
+    "tarball": "<base64-encoded-tarball>",
+    "repository": "https://github.com/org/repo"
+  }'
+```
+
+**Installing a commit package:**
+
+```bash
+npm install https://registry.example.com/commits/abc1234def5678/my-package/tarball
+```
+
+**Listing packages for a commit:**
+
+```bash
+curl http://localhost:3000/commits/abc1234def5678
+```
+
+**Infrastructure note:** Commit packages are stored under the `commits/` S3 prefix and automatically expire after 90 days via an S3 lifecycle rule.
 
 ## npm Fallback
 

@@ -278,6 +278,22 @@ pub fn build(b: *std.Build) void {
     });
     const run_oidc_tests = b.addRunArtifact(oidc_tests);
 
+    // Publish commit tests (pkg-pr-new equivalent)
+    const publish_commit_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/publish_commit_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+            .{ .name = "zig-test-framework", .module = test_framework_mod },
+        },
+    });
+    const publish_commit_tests = b.addTest(.{
+        .root_module = publish_commit_test_mod,
+    });
+    const run_publish_commit_tests = b.addRunArtifact(publish_commit_tests);
+
     // Resolution tests (conflict resolution, peer deps, optional deps, lockfile)
     const resolution_test_mod = b.createModule(.{
         .root_source_file = b.path("test/resolution_test.zig"),
@@ -324,12 +340,16 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_config_comprehensive_tests.step);
     test_step.dependOn(&run_oidc_tests.step);
     test_step.dependOn(&run_resolution_tests.step);
+    test_step.dependOn(&run_publish_commit_tests.step);
 
     const services_step = b.step("test:services", "Run services tests");
     services_step.dependOn(&run_services_tests.step);
 
     const integration_step = b.step("test:integration", "Run integration tests");
     integration_step.dependOn(&run_integration_tests.step);
+
+    const publish_commit_step = b.step("test:publish-commit", "Run publish commit tests");
+    publish_commit_step.dependOn(&run_publish_commit_tests.step);
 
     const test_all_step = b.step("test:all", "Run all tests");
     test_all_step.dependOn(&run_lib_tests.step);
@@ -343,6 +363,7 @@ pub fn build(b: *std.Build) void {
     test_all_step.dependOn(&run_lockfile_tests.step);
     test_all_step.dependOn(&run_config_comprehensive_tests.step);
     test_all_step.dependOn(&run_resolution_tests.step);
+    test_all_step.dependOn(&run_publish_commit_tests.step);
 
     // Coverage report
     const coverage_cmd = b.addSystemCommand(&[_][]const u8{
