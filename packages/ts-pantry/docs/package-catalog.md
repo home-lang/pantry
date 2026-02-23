@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-02-23T01:07:25.796Z
+- **Last Updated**: 2026-02-23T05:27:25.469Z
 
 ## Table of Contents
 
@@ -298,7 +298,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[apache.org/httpd](./packages/apache.org/httpd/index.md)** () | Apache HTTP server | ab, apachectl, checkgid, ... (+10) | 2.4.66 (+9) | `pkgx httpd` |
-| **[caddyserver.com](./packages/caddyserver.com/index.md)** () | Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS | caddy | 2.10.2 (+11) | `pkgx caddy` |
+| **[caddyserver.com](./packages/caddyserver.com/index.md)** () | Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS | caddy | 2.11.1 (+12) | `pkgx caddy` |
 | **[cloudflare.com/cloudflared](./packages/cloudflare.com/cloudflared/index.md)** () | Cloudflare Tunnel client (formerly Argo Tunnel) | cloudflared | 2026.2.0 (+39) | `pkgx cloudflared` |
 | **[curl.se](./packages/curl.se/index.md)** (curl) | A command line tool and library for transferring data with URL syntax, supporting DICT, FILE, FTP... | curl, curl-config | 8.17.0 (+27) | `pkgx curl` |
 | **[gnu.org/wget](./packages/gnu.org/wget/index.md)** () | Internet file retriever | wget | 1.25.0 (+3) | `pkgx wget` |

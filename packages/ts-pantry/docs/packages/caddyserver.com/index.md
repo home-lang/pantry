@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
+- `2.11.1`
 - `2.10.2`, `2.10.1`, `2.10.0`
 - `2.9.1`, `2.9.0`
 - `2.8.4`, `2.8.2`, `2.8.1`, `2.8.0`
@@ -34,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.10.2`
+**Latest Version**: `2.11.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +caddyserver.com@2.10.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +caddyserver.com@2.11.1 -- $SHELL -i
 ```
 
 ## Usage Examples

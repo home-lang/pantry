@@ -3,7 +3,7 @@
  *
  * @domain `caddyserver.com`
  * @programs `caddy`
- * @version `2.10.2` (12 versions available)
+ * @version `2.11.1` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install caddyserver.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "caddy"
  * console.log(pkg.description) // "Fast and extensible multi-platform HTTP/1-2-3 w..."
  * console.log(pkg.programs)    // ["caddy"]
- * console.log(pkg.versions[0]) // "2.10.2" (latest)
+ * console.log(pkg.versions[0]) // "2.11.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/caddyserver-com.md
@@ -69,6 +69,7 @@ export const caddyservercomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.11.1',
     '2.10.2',
     '2.10.1',
     '2.10.0',
