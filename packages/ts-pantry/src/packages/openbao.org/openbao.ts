@@ -3,7 +3,7 @@
  *
  * @domain `openbao.org/openbao`
  * @programs `bao`, `bao-setup`
- * @version `2.5.0` (16 versions available)
+ * @version `2.5.1` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openbao.org/openbao`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "openbao"
  * console.log(pkg.description) // "OpenBao exists to provide a software solution t..."
  * console.log(pkg.programs)    // ["bao", "bao-setup"]
- * console.log(pkg.versions[0]) // "2.5.0" (latest)
+ * console.log(pkg.versions[0]) // "2.5.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/openbao-org/openbao.md
@@ -70,6 +70,7 @@ export const openbaoorgopenbaoPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.5.1',
     '2.5.0',
     '2.4.4',
     '2.4.3',

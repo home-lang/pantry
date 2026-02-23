@@ -30,9 +30,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 75 versions</summary>
+<summary>Show all 76 versions</summary>
 
-- `2026.2.9.0`, `2026.2.16.0`
+- `2026.2.9.0`, `2026.2.23.0`, `2026.2.16.0`
 - `2026.1.5.0`, `2026.1.26.0`, `2026.1.19.0`, `2026.1.12.0`
 - `2025.4.7.0`, `2025.4.14.0`
 - `2025.3.31.0`, `2025.3.3.0`, `2025.3.24.0`, `2025.3.17.0`, `2025.3.10.0`

@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 89 versions</summary>
+<summary>Show all 90 versions</summary>
 
-- `3.6.8`, `3.6.7`, `3.6.6`, `3.6.5`, `3.6.4`, `3.6.2`, `3.6.1`, `3.6.0`
+- `3.6.9`, `3.6.8`, `3.6.7`, `3.6.6`, `3.6.5`, `3.6.4`, `3.6.2`, `3.6.1`, `3.6.0`
 - `3.5.6`, `3.5.4`, `3.5.3`, `3.5.2`, `3.5.1`, `3.5.0`
 - `3.4.5`, `3.4.4`, `3.4.3`, `3.4.2`, `3.4.1`, `3.4.0`
 - `3.3.7`, `3.3.6`, `3.3.5`, `3.3.4`, `3.3.3`, `3.3.2`, `3.3.1`, `3.3.0`
@@ -39,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.6.8`
+**Latest Version**: `3.6.9`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +traefik.io@3.6.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +traefik.io@3.6.9 -- $SHELL -i
 ```
 
 ## Usage Examples
