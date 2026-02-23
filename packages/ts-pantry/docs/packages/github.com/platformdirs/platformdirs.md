@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 23 versions</summary>
+<summary>Show all 24 versions</summary>
 
-- `4.9.2`, `4.9.1`, `4.9.0`
+- `4.9.3`, `4.9.2`, `4.9.1`, `4.9.0`
 - `4.8.0`
 - `4.7.1`, `4.7.0`
 - `4.6.0`
@@ -39,13 +39,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `4.9.2`
+**Latest Version**: `4.9.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/platformdirs/platformdirs@4.9.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/platformdirs/platformdirs@4.9.3 -- $SHELL -i
 ```
 
 ## Dependencies

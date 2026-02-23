@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 29 versions</summary>
+<summary>Show all 30 versions</summary>
 
-- `3.24.3`, `3.24.2`, `3.24.1`, `3.24.0`
+- `3.24.4`, `3.24.3`, `3.24.2`, `3.24.1`, `3.24.0`
 - `3.23.0`
 - `3.22.0`
 - `3.21.2`, `3.21.1`, `3.21.0`
@@ -42,13 +42,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `3.24.3`
+**Latest Version**: `3.24.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/tox-dev/filelock@3.24.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/tox-dev/filelock@3.24.4 -- $SHELL -i
 ```
 
 ## Dependencies

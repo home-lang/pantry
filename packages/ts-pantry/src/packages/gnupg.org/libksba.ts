@@ -2,7 +2,7 @@
  * **libksba** - pkgx package
  *
  * @domain `gnupg.org/libksba`
- * @version `1.6.7` (6 versions available)
+ * @version `1.6.8` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnupg.org/libksba`
@@ -13,7 +13,7 @@
  *
  * const pkg = pantry.gnupgorglibksba
  * console.log(pkg.name)        // "libksba"
- * console.log(pkg.versions[0]) // "1.6.7" (latest)
+ * console.log(pkg.versions[0]) // "1.6.8" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnupg-org/libksba.md
@@ -51,6 +51,7 @@ export const gnupgorglibksbaPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.6.8',
     '1.6.7',
     '1.6.6',
     '1.6.5',
