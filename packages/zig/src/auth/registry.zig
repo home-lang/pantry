@@ -1211,10 +1211,10 @@ fn parseErrorDetails(allocator: std.mem.Allocator, body: []const u8) ?PublishRes
         }
     }
 
-    // Fallback: if "error" field is a long string (a message, not a code), use it as summary
+    // Fallback: use "error" field as summary if we still don't have one
     if (details.summary == null) {
         if (error_str) |err_s| {
-            if (err_s.len > 20) {
+            if (err_s.len > 0) {
                 details.summary = allocator.dupe(u8, err_s) catch null;
             }
         }

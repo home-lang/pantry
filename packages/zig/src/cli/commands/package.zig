@@ -711,6 +711,8 @@ pub const PublishOptions = struct {
     provenance: bool = true, // Generate provenance metadata
     use_npm: bool = false, // Set to true to publish to npm instead
     skip: ?[]const u8 = null, // Comma-separated list of package directory names to skip
+    github_release: bool = false, // Create a GitHub release after publishing
+    release_files: ?[]const u8 = null, // Comma-separated file paths to attach to release
 };
 
 /// Publish a package to the registry (npm).
@@ -827,6 +829,10 @@ pub fn publishCommand(allocator: std.mem.Allocator, args: []const []const u8, op
             style.print(" ({d} failed)", .{failed});
         }
         style.print("\n", .{});
+
+        if (options.github_release and succeeded > 0) {
+            createGitHubRelease(allocator, options);
+        }
 
         return .{ .exit_code = if (failed > 0) 1 else 0 };
     }
@@ -990,9 +996,12 @@ fn publishSingleToNpm(
             if (scripts_obj) |scripts| {
                 _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
             }
+            if (options.github_release) {
+                createGitHubRelease(allocator, options);
+            }
             return .{ .exit_code = 0 };
         } else {
-            // OIDC failed - only fail on version conflict, otherwise fall back to token
+            // OIDC failed - check if it's a definitive registry rejection or just an auth issue
             if (result.is_version_conflict) {
                 const err_msg = try std.fmt.allocPrint(
                     allocator,
@@ -1001,7 +1010,19 @@ fn publishSingleToNpm(
                 );
                 return CommandResult.err(allocator, err_msg);
             }
-            // Fall through to token authentication (handles first-time publish, no trusted publisher configured, etc.)
+
+            // Registry rejections (403, 404, 409, 422) are definitive — a different auth method won't help.
+            // e.g. 403 "Package name too similar to existing package", 409 version conflict, etc.
+            if (result.status_code == 403 or result.status_code == 404 or result.status_code == 409 or result.status_code == 422) {
+                const err_msg = result.error_message orelse "Publish rejected by registry";
+                style.print("\n{d} {s}\n", .{
+                    result.status_code,
+                    err_msg,
+                });
+                return CommandResult.err(allocator, try allocator.dupe(u8, err_msg));
+            }
+
+            // Auth issues (401, token exchange failures, etc.) — fall through to token authentication
             style.print("OIDC authentication not available, falling back to token...\n", .{});
         }
     }
@@ -1075,6 +1096,9 @@ fn publishSingleToNpm(
         if (scripts_obj) |scripts| {
             _ = lib.lifecycle.runPostPublishScripts(allocator, scripts, package_dir);
         }
+        if (options.github_release) {
+            createGitHubRelease(allocator, options);
+        }
         return .{ .exit_code = 0 };
     } else {
         // Clean error output: "{status} {status_text}: {url}\n - {message}"
@@ -1102,11 +1126,124 @@ fn publishSingleToNpm(
     }
 }
 
+/// Create a GitHub release (non-fatal: warnings only, never fails the command).
+fn createGitHubRelease(allocator: std.mem.Allocator, options: PublishOptions) void {
+    const github = @import("../../auth/github.zig");
+
+    // 1. Detect context (tag, owner/repo)
+    var ctx = github.detectGitHubContext(allocator) orelse {
+        style.printWarn("GitHub release: could not detect tag/repo (not in a tagged CI build?)\n", .{});
+        return;
+    };
+    defer ctx.deinit(allocator);
+
+    // 2. Get GITHUB_TOKEN
+    const token = io_helper.getEnvVarOwned(allocator, "GITHUB_TOKEN") catch {
+        style.printWarn("GitHub release: GITHUB_TOKEN not set, skipping\n", .{});
+        return;
+    };
+    defer allocator.free(token);
+
+    style.print("\nCreating GitHub release for {s}...\n", .{ctx.tag});
+
+    // 3. Init client
+    var client = github.GitHubClient.init(allocator, token) catch {
+        style.printWarn("GitHub release: failed to init HTTP client\n", .{});
+        return;
+    };
+    defer client.deinit();
+
+    // 4. Check if release already exists
+    const existing_id = client.getReleaseByTag(ctx.owner, ctx.repo, ctx.tag) catch null;
+    const release_id: u64 = if (existing_id) |id| blk: {
+        style.print("  Release already exists (id={d}), uploading assets...\n", .{id});
+        break :blk id;
+    } else blk: {
+        // Create release
+        var resp = client.createRelease(
+            ctx.owner,
+            ctx.repo,
+            ctx.tag,
+            ctx.tag,
+            "",
+            false,
+            false,
+        ) catch {
+            style.printWarn("GitHub release: failed to create release\n", .{});
+            return;
+        };
+        defer resp.deinit(allocator);
+
+        if (!resp.success) {
+            if (resp.message) |msg| {
+                style.printWarn("GitHub release: {s}\n", .{msg});
+            } else {
+                style.printWarn("GitHub release: create failed\n", .{});
+            }
+            return;
+        }
+
+        if (resp.html_url) |url| {
+            style.print("  Release created: {s}\n", .{url});
+        }
+
+        break :blk resp.release_id orelse {
+            style.printWarn("GitHub release: no release ID in response\n", .{});
+            return;
+        };
+    };
+
+    // 5. Detect assets
+    const assets = if (options.release_files) |files|
+        github.detectReleaseAssetsFromFiles(allocator, files)
+    else
+        github.detectReleaseAssets(allocator, &[_][]const u8{ "bin", "dist" });
+    defer {
+        for (assets) |*a| {
+            var asset = a.*;
+            asset.deinit(allocator);
+        }
+        allocator.free(assets);
+    }
+
+    if (assets.len == 0) {
+        style.print("  No release assets found\n", .{});
+        return;
+    }
+
+    // 6. Upload each asset
+    style.print("  Uploading {d} asset(s)...\n", .{assets.len});
+    for (assets) |asset| {
+        var upload_resp = client.uploadReleaseAsset(
+            ctx.owner,
+            ctx.repo,
+            release_id,
+            asset.path,
+            asset.name,
+        ) catch {
+            style.printWarn("  Failed to upload {s}\n", .{asset.name});
+            continue;
+        };
+        defer upload_resp.deinit(allocator);
+
+        if (upload_resp.success) {
+            style.print("  Uploaded {s}\n", .{asset.name});
+        } else {
+            if (upload_resp.message) |msg| {
+                style.printWarn("  Failed to upload {s}: {s}\n", .{ asset.name, msg });
+            } else {
+                style.printWarn("  Failed to upload {s}\n", .{asset.name});
+            }
+        }
+    }
+}
+
 /// Result of OIDC publish attempt
 const OIDCPublishResult = struct {
     success: bool,
     error_message: ?[]const u8 = null,
     is_version_conflict: bool = false,
+    status_code: u16 = 0,
 };
 
 /// Attempt to publish using OIDC authentication with Sigstore provenance
@@ -1207,9 +1344,13 @@ fn attemptOIDCPublish(
             }
             if (details.summary) |summary| {
                 error_msg = try allocator.dupe(u8, summary);
+            } else if (response.message) |msg| {
+                error_msg = try allocator.dupe(u8, msg);
             } else {
                 error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
             }
+        } else if (response.message) |msg| {
+            error_msg = try allocator.dupe(u8, msg);
         } else {
             error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
         }
@@ -1218,6 +1359,7 @@ fn attemptOIDCPublish(
             .success = false,
             .error_message = error_msg,
             .is_version_conflict = is_version_conflict,
+            .status_code = @intCast(response.status_code),
         };
     }
 
@@ -1296,9 +1438,13 @@ fn attemptOIDCPublishUnverified(
             }
             if (details.summary) |summary| {
                 error_msg = try allocator.dupe(u8, summary);
+            } else if (response.message) |msg| {
+                error_msg = try allocator.dupe(u8, msg);
             } else {
                 error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
             }
+        } else if (response.message) |msg| {
+            error_msg = try allocator.dupe(u8, msg);
         } else {
             error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
         }
@@ -1307,6 +1453,7 @@ fn attemptOIDCPublishUnverified(
             .success = false,
             .error_message = error_msg,
             .is_version_conflict = is_version_conflict,
+            .status_code = @intCast(response.status_code),
         };
     }
 

@@ -658,12 +658,16 @@ fn publishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const tag = ctx.getOption("tag") orelse "latest";
     const registry_val = ctx.getOption("registry") orelse "https://registry.npmjs.org";
     const skip_val = ctx.getOption("skip");
+    const github_release = ctx.hasOption("github-release");
+    const release_files = ctx.getOption("files");
 
     const options = lib.commands.PublishOptions{
         .access = access_val,
         .tag = tag,
         .registry = registry_val,
         .skip = skip_val,
+        .github_release = github_release,
+        .release_files = release_files,
     };
 
     const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, options);
@@ -797,6 +801,8 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const dry_run = ctx.hasOption("dry-run");
     const use_npm = ctx.hasOption("npm");
     const skip_val = ctx.getOption("skip");
+    const github_release = ctx.hasOption("github-release");
+    const release_files = ctx.getOption("files");
 
     // Route --npm or --registry npm to the npm publish flow
     if (use_npm or std.mem.eql(u8, registry, "npm")) {
@@ -805,6 +811,8 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
             .tag = tag,
             .registry = "https://registry.npmjs.org",
             .skip = skip_val,
+            .github_release = github_release,
+            .release_files = release_files,
         };
 
         const result = try lib.commands.publishCommand(allocator, &[_][]const u8{}, npm_options);
@@ -2278,6 +2286,12 @@ pub fn main() !void {
     const npm_skip_opt = cli.Option.init("skip", "skip", "Comma-separated package names or directory names to skip", .string);
     _ = try npm_publish_cmd.addOption(npm_skip_opt);
 
+    const npm_github_release_opt = cli.Option.init("github-release", "github-release", "Create a GitHub release after publishing", .bool);
+    _ = try npm_publish_cmd.addOption(npm_github_release_opt);
+
+    const npm_files_opt = cli.Option.init("files", "files", "Comma-separated file paths to attach to the GitHub release", .string);
+    _ = try npm_publish_cmd.addOption(npm_files_opt);
+
     _ = npm_publish_cmd.setAction(publishAction);
     _ = try root.addCommand(npm_publish_cmd);
 
@@ -3009,6 +3023,12 @@ pub fn main() !void {
 
     const pub_skip_opt = cli.Option.init("skip", "skip", "Comma-separated package names or directory names to skip", .string);
     _ = try publish_cmd.addOption(pub_skip_opt);
+
+    const pub_github_release_opt = cli.Option.init("github-release", "github-release", "Create a GitHub release after publishing", .bool);
+    _ = try publish_cmd.addOption(pub_github_release_opt);
+
+    const pub_files_opt = cli.Option.init("files", "files", "Comma-separated file paths to attach to the GitHub release", .string);
+    _ = try publish_cmd.addOption(pub_files_opt);
 
     _ = publish_cmd.setAction(registryPublishAction);
     _ = try root.addCommand(publish_cmd);

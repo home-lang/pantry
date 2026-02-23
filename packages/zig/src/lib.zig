@@ -24,6 +24,7 @@ pub const auth = struct {
     pub const signing = @import("auth/signing.zig");
     pub const registry = @import("auth/registry.zig");
     pub const policy = @import("auth/policy.zig");
+    pub const github = @import("auth/github.zig");
 };
 pub const registry = struct {
     pub const core = @import("registry/core.zig");

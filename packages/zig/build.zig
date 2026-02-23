@@ -443,7 +443,7 @@ fn getPackageVersion(b: *std.Build) ![]const u8 {
     // Find "version": "x.y.z" (first occurrence)
     const needle = "\"version\"";
     const idx = std.mem.indexOf(u8, content, needle) orelse return "0.0.0";
-    const after = content[idx + needle.len..];
+    const after = content[idx + needle.len ..];
     // Skip colon and whitespace, then extract the quoted value
     var i: usize = 0;
     while (i < after.len and (after[i] == ' ' or after[i] == ':' or after[i] == '\t' or after[i] == '\n' or after[i] == '\r')) : (i += 1) {}
