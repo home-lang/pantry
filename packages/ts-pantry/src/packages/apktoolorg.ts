@@ -3,7 +3,7 @@
  *
  * @domain `apktool.org`
  * @programs `apktool`
- * @version `2.12.1` (6 versions available)
+ * @version `3.0.1` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install apktool.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "apktool"
  * console.log(pkg.description) // "Tool for reverse engineering 3rd party, closed,..."
  * console.log(pkg.programs)    // ["apktool"]
- * console.log(pkg.versions[0]) // "2.12.1" (latest)
+ * console.log(pkg.versions[0]) // "3.0.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/apktool-org.md
@@ -75,6 +75,7 @@ export const apktoolorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.0.1',
     '2.12.1',
     '2.12.0',
     '2.11.1',

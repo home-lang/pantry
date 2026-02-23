@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
+- `3.0.1`
 - `2.12.1`, `2.12.0`
 - `2.11.1`, `2.11.0`
 - `2.10.0`
@@ -34,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.12.1`
+**Latest Version**: `3.0.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +apktool.org@2.12.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +apktool.org@3.0.1 -- $SHELL -i
 ```
 
 ## Dependencies
