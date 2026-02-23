@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-20T17:57:59.312Z
+ * Generated on 2026-02-23T19:16:04.052Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1644 total)
+ * List of all known packages (1646 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -742,6 +742,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/mtoyoda/sl',
   'github.com/muesli/duf',
   'github.com/mxcl/swift-sh',
+  'github.com/mycreepy/fsdiff',
   'github.com/mycreepy/pakku',
   'github.com/nat/openplayground',
   'github.com/nektos/act',
@@ -1190,6 +1191,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'maturin.rs',
   'maven.apache.org',
   'mcmc-jags.sourceforge.io',
+  'meilisearch.com',
   'mercure.rocks',
   'mercurial-scm.org',
   'mergestat.com/mergestat-lite',
