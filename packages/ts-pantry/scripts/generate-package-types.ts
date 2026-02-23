@@ -108,7 +108,7 @@ function generateTypes(domainToVersions: Map<string, string[]>, aliases: Map<str
   lines.push(' */')
   lines.push('export interface GeneratedPackageVersions {')
   for (const [domain, versions] of Array.from(domainToVersions.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
-    const versionUnion = versions.map(v => `'${v}'`).join(' | ')
+    const versionUnion = versions.length > 0 ? versions.map(v => `'${v}'`).join(' | ') : 'never'
     lines.push(`  '${domain}': ${versionUnion}`)
   }
   lines.push('}')
