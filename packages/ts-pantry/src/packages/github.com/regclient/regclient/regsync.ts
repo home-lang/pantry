@@ -3,7 +3,7 @@
  *
  * @domain `github.com/regclient/regclient/regsync`
  * @programs `regsync`
- * @version `0.11.1` (21 versions available)
+ * @version `0.11.2` (22 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/regclient/regclient/regsync`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "regsync"
  * console.log(pkg.description) // "Docker and OCI Registry Client in Go and toolin..."
  * console.log(pkg.programs)    // ["regsync"]
- * console.log(pkg.versions[0]) // "0.11.1" (latest)
+ * console.log(pkg.versions[0]) // "0.11.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/regclient/regclient/regsync.md
@@ -74,6 +74,7 @@ export const regsyncPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.11.2',
     '0.11.1',
     '0.11.0',
     '0.10.0',
