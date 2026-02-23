@@ -564,7 +564,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Handle local packages separately (they need special symlink handling)
         // Create pantry directory if it doesn't exist
-        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{proj_dir});
+        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules", .{proj_dir});
         defer allocator.free(pantry_dir);
         try io_helper.makePath(pantry_dir);
 
@@ -662,7 +662,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
 
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
-            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{proj_dir});
+            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules/.bin", .{proj_dir});
             defer allocator.free(local_bin_dir);
             try io_helper.makePath(local_bin_dir);
 
@@ -781,7 +781,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 };
 
                 // Record installed files/directories
-                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ proj_dir, clean_name });
+                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules/{s}", .{ proj_dir, clean_name });
                 defer allocator.free(pkg_dir);
                 checkpoint.recordDir(pkg_dir) catch |err| {
                     if (options.verbose) {

@@ -261,7 +261,7 @@ pub fn canSkipFromLockfile(
 
     // Check if destination directory actually exists (use stack buffer + access instead of openDir)
     var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/pantry/{s}", .{ proj_dir, clean_name }) catch return false;
+    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/node_modules/{s}", .{ proj_dir, clean_name }) catch return false;
     io_helper.accessAbsolute(dest_dir, .{}) catch return false;
 
     return true;
@@ -456,7 +456,7 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", lookup_name });
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", lookup_name });
         defer allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
@@ -540,7 +540,7 @@ pub fn installSinglePackage(
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
-    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", lookup_name });
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", lookup_name });
     defer allocator.free(package_path);
 
     if (!options.ignore_scripts) {
@@ -610,7 +610,7 @@ pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []co
 
 fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool) !void {
     // Create pantry/.bin directory
-    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "pantry", ".bin" });
+    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", ".bin" });
     defer allocator.free(bin_link_dir);
     try io_helper.makePath(bin_link_dir);
 

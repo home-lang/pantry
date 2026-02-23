@@ -116,7 +116,7 @@ pub fn runScriptCommandWithOptions(
     style.print("{s}$ {s}{s}\n", .{ style.dim, display_command, style.reset });
 
     // Set up command wrapper with pantry/.bin in PATH
-    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/pantry/.bin", .{cwd});
+    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/node_modules/.bin", .{cwd});
     defer allocator.free(pantry_bin);
 
     // Get current PATH and prepend pantry/.bin

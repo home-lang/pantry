@@ -433,7 +433,7 @@ pub const Installer = struct {
         const symlink_path = if (options.project_root) |project_root| blk: {
             const modules_bin = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/.bin/{s}",
+                "{s}/node_modules/.bin/{s}",
                 .{ project_root, spec.name },
             );
             errdefer self.allocator.free(modules_bin);
@@ -441,7 +441,7 @@ pub const Installer = struct {
             // Create pantry/.bin directory
             const modules_bin_dir = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/.bin",
+                "{s}/node_modules/.bin",
                 .{project_root},
             );
             defer self.allocator.free(modules_bin_dir);
@@ -510,7 +510,7 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/{s}",
+                "{s}/node_modules/{s}",
                 .{ project_root, spec.name },
             );
         } else blk: {
@@ -643,7 +643,7 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/{s}",
+                "{s}/node_modules/{s}",
                 .{ project_root, spec.name },
             );
         } else blk: {
@@ -763,7 +763,7 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/{s}",
+                "{s}/node_modules/{s}",
                 .{ project_root, spec.name },
             );
         } else blk: {
@@ -868,7 +868,7 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/{s}",
+                "{s}/node_modules/{s}",
                 .{ project_root, spec.name },
             );
         } else blk: {
@@ -1040,7 +1040,7 @@ pub const Installer = struct {
                                     if (dep_meta.object.get("optional")) |opt_val| {
                                         if (opt_val == .bool and opt_val.bool) {
                                             // Optional peer — install if possible, don't warn on failure
-                                            self.installOptionalTransitiveDep(dep_name, dep_version, project_root, depth + 1);
+                                            self.installOptionalTransitiveDep(dep_name, dep_version, project_root, package_dir, depth + 1);
                                             continue;
                                         }
                                     }
@@ -1050,7 +1050,7 @@ pub const Installer = struct {
                     }
                 }
 
-                self.installTransitiveDep(dep_name, dep_version, project_root, depth + 1);
+                self.installTransitiveDep(dep_name, dep_version, project_root, package_dir, depth + 1);
             }
         }
     }
@@ -1062,9 +1062,10 @@ pub const Installer = struct {
         name: []const u8,
         version_constraint: []const u8,
         project_root: []const u8,
+        parent_package_dir: []const u8,
         depth: u32,
     ) void {
-        self.installTransitiveDepInner(name, version_constraint, project_root, depth) catch {
+        self.installTransitiveDepInner(name, version_constraint, project_root, parent_package_dir, depth) catch {
             // Optional peer dep — silently skip on failure
         };
     }
@@ -1077,9 +1078,10 @@ pub const Installer = struct {
         name: []const u8,
         version_constraint: []const u8,
         project_root: []const u8,
+        parent_package_dir: []const u8,
         depth: u32,
     ) void {
-        self.installTransitiveDepInner(name, version_constraint, project_root, depth) catch |err| {
+        self.installTransitiveDepInner(name, version_constraint, project_root, parent_package_dir, depth) catch |err| {
             style.print("    ! {s}: {}\n", .{ name, err });
         };
     }
@@ -1089,14 +1091,18 @@ pub const Installer = struct {
         name: []const u8,
         version_constraint: []const u8,
         project_root: []const u8,
+        parent_package_dir: []const u8,
         depth: u32,
     ) !void {
-        // 1. Skip if already installed (use stack buffer for path check)
+        // 1. Check if already installed at hoisted location (use stack buffer for path check)
         var exist_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/pantry/{s}", .{ project_root, name }) catch
-            try std.fmt.allocPrint(self.allocator, "{s}/pantry/{s}", .{ project_root, name });
+        const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/node_modules/{s}", .{ project_root, name }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}/node_modules/{s}", .{ project_root, name });
         const exist_is_heap = existing_dir.ptr != &exist_buf;
         defer if (exist_is_heap) self.allocator.free(@constCast(existing_dir));
+
+        // Determine install root: hoisted (project_root) by default, nested (parent_package_dir) on conflict
+        var install_root = project_root;
 
         const already_installed = blk: {
             var check_dir = io_helper.cwd().openDir(io_helper.io, existing_dir, .{}) catch break :blk false;
@@ -1104,7 +1110,28 @@ pub const Installer = struct {
             break :blk true;
         };
 
-        if (already_installed) return;
+        if (already_installed) {
+            // Read existing package.json version to check if it satisfies the constraint
+            var pj_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const pj_path = std.fmt.bufPrint(&pj_buf, "{s}/package.json", .{existing_dir}) catch return;
+
+            const pj_content = io_helper.readFileAlloc(self.allocator, pj_path, 1024 * 1024) catch return;
+            defer self.allocator.free(pj_content);
+
+            const pj_parsed = std.json.parseFromSlice(std.json.Value, self.allocator, pj_content, .{}) catch return;
+            defer pj_parsed.deinit();
+
+            if (pj_parsed.value != .object) return;
+            const ver_val = pj_parsed.value.object.get("version") orelse return;
+            if (ver_val != .string) return;
+
+            const npm_zig = @import("../registry/npm.zig");
+            const constraint = npm_zig.SemverConstraint.parse(version_constraint) catch return;
+            if (constraint.satisfies(ver_val.string)) return; // Existing version satisfies → skip
+
+            // Version conflict: install nested under the parent package instead
+            install_root = parent_package_dir;
+        }
 
         // 2. Circular dependency check
         const install_key = try std.fmt.allocPrint(self.allocator, "npm:{s}", .{name});
@@ -1131,7 +1158,7 @@ pub const Installer = struct {
             defer self.allocator.free(spec.url.?);
 
             var result = try self.installFromNpm(spec, .{
-                .project_root = project_root,
+                .project_root = install_root,
                 .quiet = true,
             });
 
@@ -1158,7 +1185,7 @@ pub const Installer = struct {
         };
 
         var result = try self.installFromNpm(spec, .{
-            .project_root = project_root,
+            .project_root = install_root,
             .quiet = true,
         });
 
@@ -1455,7 +1482,7 @@ pub const Installer = struct {
             // Create pantry/.bin directory
             const bin_dir = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/pantry/.bin",
+                "{s}/node_modules/.bin",
                 .{project_root},
             );
             defer self.allocator.free(bin_dir);
@@ -1848,7 +1875,7 @@ pub const Installer = struct {
         // Project bin directory (pantry/.bin)
         const project_bin_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry/.bin",
+            "{s}/node_modules/.bin",
             .{project_root},
         );
         defer self.allocator.free(project_bin_dir);
@@ -1984,7 +2011,7 @@ pub const Installer = struct {
         // Project bin directory (pantry/.bin)
         const shim_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry/.bin",
+            "{s}/node_modules/.bin",
             .{project_root},
         );
         defer self.allocator.free(shim_dir);
