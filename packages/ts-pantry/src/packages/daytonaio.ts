@@ -3,7 +3,7 @@
  *
  * @domain `daytona.io`
  * @programs `daytona`
- * @version `0.144.0` (137 versions available)
+ * @version `0.144.1` (138 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install daytona.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "daytona"
  * console.log(pkg.description) // "The Open Source Dev Environment Manager."
  * console.log(pkg.programs)    // ["daytona"]
- * console.log(pkg.versions[0]) // "0.144.0" (latest)
+ * console.log(pkg.versions[0]) // "0.144.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/daytona-io.md
@@ -68,6 +68,7 @@ export const daytonaioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.144.1',
     '0.144.0',
     '0.143.0',
     '0.142.0',
