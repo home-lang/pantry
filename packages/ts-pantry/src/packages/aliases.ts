@@ -1239,6 +1239,7 @@ export const aliases: Record<string, string> = {
   'snappy': 'google.github.io/snappy',
   'sndfile': 'github.com/libsndfile/libsndfile',
   'sniffnet': 'sniffnet.net',
+  'snipkit': 'github.com/lemoony/snipkit',
   'snyk': 'snyk.io',
   'socat': 'dest-unreach.org/socat',
   'solana': 'solana.com',

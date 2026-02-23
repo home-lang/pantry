@@ -655,6 +655,7 @@ import { sourceryPackage } from './github.com/krzysztofzablocki/Sourcery'
 import { kubecolorPackage } from './github.com/kubecolor/kubecolor'
 import { awsiamauthenticatorPackage } from './github.com/kubernetes-sigs/aws-iam-authenticator'
 import { swiftenvPackage } from './github.com/kylef/swiftenv'
+import { snipkitPackage } from './github.com/lemoony/snipkit'
 import { libassPackage } from './github.com/libass/libass'
 import { libfusePackage } from './github.com/libfuse/libfuse'
 import { libkmlPackage } from './github.com/libkml/libkml'
@@ -2816,6 +2817,8 @@ export interface Pantry {
   githubcomkubernetessigs: typeof awsiamauthenticatorPackage
 
   githubcomkylef: typeof swiftenvPackage
+
+  githubcomlemoony: typeof snipkitPackage
 
   githubcomlibass: typeof libassPackage
   libfuse: typeof libfusePackage
@@ -5903,6 +5906,7 @@ export interface Pantry {
   glauth: typeof glauthPackage
   act: typeof actPackage
   k3sup: typeof k3supPackage
+  snipkit: typeof snipkitPackage
   libdeflate: typeof libdeflatePackage
   mint: typeof mintPackage
   xcodegen: typeof xcodegenPackage
@@ -7164,6 +7168,8 @@ export const pantry: Pantry = {
   githubcomkubernetessigs: awsiamauthenticatorPackage,
 
   githubcomkylef: swiftenvPackage,
+
+  githubcomlemoony: snipkitPackage,
 
   githubcomlibass: libassPackage,
   libfuse: libfusePackage,
@@ -10251,6 +10257,7 @@ export const pantry: Pantry = {
   glauth: glauthPackage,
   act: actPackage,
   k3sup: k3supPackage,
+  snipkit: snipkitPackage,
   libdeflate: libdeflatePackage,
   mint: mintPackage,
   xcodegen: xcodegenPackage,

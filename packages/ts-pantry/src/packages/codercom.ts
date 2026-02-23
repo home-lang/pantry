@@ -3,7 +3,7 @@
  *
  * @domain `coder.com`
  * @programs `coder`
- * @version `2.30.1` (118 versions available)
+ * @version `2.30.1` (120 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install coder.com`
@@ -70,6 +70,7 @@ export const codercomPackage = {
   versions: [
     '2.30.1',
     '2.30.0',
+    '2.29.7',
     '2.29.6',
     '2.29.5',
     '2.29.4',
@@ -77,6 +78,7 @@ export const codercomPackage = {
     '2.29.2',
     '2.29.1',
     '2.29.0',
+    '2.28.11',
     '2.28.10',
     '2.28.9',
     '2.28.8',
