@@ -25,10 +25,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 39 versions</summary>
+<summary>Show all 41 versions</summary>
 
-- `3.6.6`, `3.6.5`, `3.6.4`, `3.6.3`, `3.6.2`, `3.6.1`, `3.6.0`
-- `3.5.10`, `3.5.9`, `3.5.8`, `3.5.7`, `3.5.6`, `3.5.5`, `3.5.4`, `3.5.3`, `3.5.2`, `3.5.1`, `3.5.0`
+- `3.6.7`, `3.6.6`, `3.6.5`, `3.6.4`, `3.6.3`, `3.6.2`, `3.6.1`, `3.6.0`
+- `3.5.11`, `3.5.10`, `3.5.9`, `3.5.8`, `3.5.7`, `3.5.6`, `3.5.5`, `3.5.4`, `3.5.3`, `3.5.2`, `3.5.1`, `3.5.0`
 - `3.4.6`, `3.4.5`, `3.4.4`, `3.4.3`, `3.4.2`, `3.4.1`, `3.4.0`
 - `3.3.4`, `3.3.3`, `3.3.2`, `3.3.1`, `3.3.0`
 - `3.2.2`, `3.2.1`, `3.2.0`
@@ -36,13 +36,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.6.6`
+**Latest Version**: `3.6.7`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +grafana.com/loki@3.6.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +grafana.com/loki@3.6.7 -- $SHELL -i
 ```
 
 ## Usage Examples
