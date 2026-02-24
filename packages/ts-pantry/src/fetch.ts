@@ -15,6 +15,30 @@ const browserPool: { browser: Browser, inUse: boolean, createdAt: number }[] = [
 const MAX_BROWSER_POOL_SIZE = 10
 
 /**
+ * Compare version strings numerically (newest first).
+ * Handles non-semver versions like "2026.2.23.0" by comparing each
+ * dot-separated component as a number.
+ */
+function compareVersionsNumeric(a: string, b: string): number {
+  const partsA = a.replace(/^v/, '').split('.')
+  const partsB = b.replace(/^v/, '').split('.')
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = Number.parseInt(partsA[i] || '0', 10)
+    const numB = Number.parseInt(partsB[i] || '0', 10)
+    if (!Number.isNaN(numA) && !Number.isNaN(numB)) {
+      if (numA !== numB)
+        return numB - numA // descending (newest first)
+    }
+    else {
+      const cmp = (partsB[i] || '').localeCompare(partsA[i] || '')
+      if (cmp !== 0)
+        return cmp
+    }
+  }
+  return 0
+}
+
+/**
  * Helper function to get domain as TypeScript variable name
  */
 function getDomainAsTypescriptName(domain: string): string {
@@ -868,7 +892,7 @@ export async function fetchPantryPackage(
             return -1 * Bun.semver.order(a, b)
           }
           catch {
-            return b.localeCompare(a)
+            return compareVersionsNumeric(a, b)
           }
         })
       }
@@ -1513,7 +1537,7 @@ export async function fetchAndSavePackage(
               }
               catch {
                 // Fallback to string comparison if semver fails
-                return b.localeCompare(a)
+                return compareVersionsNumeric(a, b)
               }
             })
           }
@@ -1695,7 +1719,7 @@ export async function fetchAndSavePackage(
               }
               catch {
                 // Fallback to string comparison if semver fails
-                return b.localeCompare(a)
+                return compareVersionsNumeric(a, b)
               }
             })
           }
