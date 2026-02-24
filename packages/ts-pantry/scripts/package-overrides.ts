@@ -93,6 +93,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'echo "void _boost_regex_stub(void){}" > /tmp/_br.c && cc -dynamiclib -o "$BOOST_STUB_DIR/libboost_regex.dylib" /tmp/_br.c && rm -f /tmp/_br.c',
           'export LDFLAGS="-L$BOOST_STUB_DIR -L${BOOST_PREFIX}/lib $LDFLAGS"',
           'export CPPFLAGS="-I${BOOST_PREFIX}/include $CPPFLAGS"',
+          // Tell AX_BOOST_REGEX where to find the stub library file (darwin only)
+          'export ARGS="$ARGS --with-boost-libdir=/tmp/boost-regex-stub"',
         ],
       },
       linux: {
@@ -107,16 +109,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['boost.org']) {
         delete recipe.dependencies['boost.org']
       }
-      // Replace --with-boost=<S3 path> with brew prefix, and add --with-boost-libdir
-      // pointing to our stub dir so AX_BOOST_REGEX finds libboost_regex.dylib there.
+      // Replace --with-boost=<S3 path> — on darwin we use brew, on linux we use apt
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => !a.startsWith('--with-boost='),
         )
         // Boost 1.82+ made regex header-only. Pass cache var to skip link test.
         recipe.build.env.ARGS.push('ax_cv_boost_regex=yes')
-        // Tell AX_BOOST_REGEX where to find the stub library file
-        recipe.build.env.ARGS.push('--with-boost-libdir=/tmp/boost-regex-stub')
       }
     },
   },
