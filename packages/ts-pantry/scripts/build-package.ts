@@ -1166,24 +1166,26 @@ async function downloadDependencies(
 
       // Fix pkg-config files in downloaded deps — replace hardcoded build-time prefixes
       // with the actual dep install path so pkg-config works correctly
-      const pcDir = join(depInstallDir, 'lib', 'pkgconfig')
-      if (existsSync(pcDir)) {
-        try {
-          const pcFiles = readdirSync(pcDir).filter(f => f.endsWith('.pc'))
-          for (const pcFile of pcFiles) {
-            const pcPath = join(pcDir, pcFile)
-            const content = readFileSync(pcPath, 'utf-8')
-            // Replace any hardcoded /tmp/buildkit-install-* prefix with actual dep path
-            const replaced = content.replace(/\/tmp\/buildkit-install-[^\s/]+(\/[^\s]*)?/g, (match) => {
-              // Extract the relative path part after the prefix
-              const afterPrefix = match.replace(/^\/tmp\/buildkit-install-[^\s/]+/, '')
-              return depInstallDir + afterPrefix
-            })
-            if (replaced !== content) {
-              writeFileSync(pcPath, replaced)
+      for (const pcSubdir of ['lib/pkgconfig', 'share/pkgconfig']) {
+        const pcDir = join(depInstallDir, pcSubdir)
+        if (existsSync(pcDir)) {
+          try {
+            const pcFiles = readdirSync(pcDir).filter(f => f.endsWith('.pc'))
+            for (const pcFile of pcFiles) {
+              const pcPath = join(pcDir, pcFile)
+              const content = readFileSync(pcPath, 'utf-8')
+              // Replace any hardcoded /tmp/buildkit-install-* prefix with actual dep path
+              const replaced = content.replace(/\/tmp\/buildkit-install-[^\s/]+(\/[^\s]*)?/g, (match) => {
+                // Extract the relative path part after the prefix
+                const afterPrefix = match.replace(/^\/tmp\/buildkit-install-[^\s/]+/, '')
+                return depInstallDir + afterPrefix
+              })
+              if (replaced !== content) {
+                writeFileSync(pcPath, replaced)
+              }
             }
-          }
-        } catch { /* ignore pkg-config fix errors */ }
+          } catch { /* ignore pkg-config fix errors */ }
+        }
       }
 
       depPaths[domain] = depInstallDir

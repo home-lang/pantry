@@ -808,6 +808,7 @@ export function generateBuildScript(
     depLibPaths.push(`${depPath}/lib`)
     depIncludePaths.push(`${depPath}/include`)
     depPkgConfigPaths.push(`${depPath}/lib/pkgconfig`)
+    depPkgConfigPaths.push(`${depPath}/share/pkgconfig`)
   }
 
   // Also include system pkg-config paths so configure can find system-installed dev packages
@@ -819,7 +820,9 @@ export function generateBuildScript(
     depIncludePaths.push('/usr/include')
   } else if (osName === 'darwin') {
     depPkgConfigPaths.push('/opt/homebrew/lib/pkgconfig')
+    depPkgConfigPaths.push('/opt/homebrew/share/pkgconfig')
     depPkgConfigPaths.push('/usr/local/lib/pkgconfig')
+    depPkgConfigPaths.push('/usr/local/share/pkgconfig')
     depIncludePaths.push('/opt/homebrew/include')
     depLibPaths.push('/opt/homebrew/lib')
   }
