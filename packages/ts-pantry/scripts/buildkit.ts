@@ -835,9 +835,6 @@ export function generateBuildScript(
     sections.push(`export LIBRARY_PATH="${depLibPaths.join(':')}:\${LIBRARY_PATH:-}"`)
     sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)
     sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
-    // Diagnostic: show PKG_CONFIG_PATH and check for key .pc files
-    sections.push('echo "[buildkit] PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >&2')
-    sections.push('for _pcdir in $(echo "$PKG_CONFIG_PATH" | tr ":" "\\n"); do [ -d "$_pcdir" ] && echo "[buildkit]   dir exists: $_pcdir ($(ls "$_pcdir" 2>/dev/null | head -5))" >&2; done')
     sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
     if (osName === 'darwin') {
       // Use DYLD_FALLBACK_LIBRARY_PATH instead of DYLD_LIBRARY_PATH on macOS.

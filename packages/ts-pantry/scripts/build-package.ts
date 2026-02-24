@@ -1639,14 +1639,6 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Generate and execute build script from YAML recipe (buildkit)
   console.log('\n🔨 Generating build script from YAML recipe...')
-  // Diagnostic: show dep paths being passed to buildkit
-  const prefixKeys = Object.entries(depPaths).filter(([k]) => k.endsWith('.prefix'))
-  if (prefixKeys.length > 0) {
-    console.log('   [diag] depPaths (.prefix entries):')
-    for (const [k, v] of prefixKeys) {
-      console.log(`     ${k} → ${v}`)
-    }
-  }
 
   const bashScript = generateBuildScript(
     recipe as PackageRecipe,
