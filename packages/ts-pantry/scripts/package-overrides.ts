@@ -80,17 +80,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         // Install boost from Homebrew. Boost 1.82+ made regex header-only,
         // but source-highlight's configure expects a compiled libboost_regex.
-        // Create stub dylib so AX_BOOST_REGEX file search finds a library.
+        // Create stub dylib in a writable temp dir (brew prefix may not be writable).
         prependScript: [
           'brew install boost 2>/dev/null || true',
           'brew link boost --overwrite 2>/dev/null || true',
           'BOOST_PREFIX=$(brew --prefix boost)',
-          'export LDFLAGS="-L${BOOST_PREFIX}/lib $LDFLAGS"',
+          // Create stub libboost_regex.dylib in a temp dir — AX_BOOST_REGEX searches for
+          // libboost_regex* files. Boost 1.82+ made regex header-only so no library exists.
+          // Create in temp dir and prepend to LDFLAGS since brew prefix may not be writable.
+          'BOOST_STUB_DIR=/tmp/boost-regex-stub',
+          'mkdir -p "$BOOST_STUB_DIR"',
+          'if ! ls "${BOOST_PREFIX}/lib"/libboost_regex* 1>/dev/null 2>&1; then echo "void _boost_regex_stub(void){}" > /tmp/_br.c && cc -dynamiclib -o "$BOOST_STUB_DIR/libboost_regex.dylib" /tmp/_br.c && rm -f /tmp/_br.c && cp "$BOOST_STUB_DIR/libboost_regex.dylib" "${BOOST_PREFIX}/lib/libboost_regex.dylib" 2>/dev/null || true; fi',
+          'export LDFLAGS="-L$BOOST_STUB_DIR -L${BOOST_PREFIX}/lib $LDFLAGS"',
           'export CPPFLAGS="-I${BOOST_PREFIX}/include $CPPFLAGS"',
-          // Create stub libboost_regex.dylib — AX_BOOST_REGEX searches for libboost_regex*
-          // files to determine the library version suffix. Boost 1.82+ made regex header-only
-          // so no library file exists. Create a minimal dylib to satisfy the file search.
-          'if ! ls "${BOOST_PREFIX}/lib"/libboost_regex* 1>/dev/null 2>&1; then echo "void _boost_regex_stub(void){}" > /tmp/_br.c && cc -dynamiclib -o "${BOOST_PREFIX}/lib/libboost_regex.dylib" /tmp/_br.c 2>/dev/null && rm -f /tmp/_br.c; fi',
         ],
       },
       linux: {
@@ -2065,6 +2067,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['gnu.org/nettle']) {
         delete recipe.dependencies['gnu.org/nettle']
       }
+      // Remove S3 libunistring dep — use gnutls's bundled copy instead
+      if (recipe.dependencies?.['gnu.org/libunistring']) {
+        delete recipe.dependencies['gnu.org/libunistring']
+      }
+      // Use bundled libunistring (not in S3, not reliably on system)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--with-included-unistring')
+      }
       // Fix sed -i BSD compat in aarch64 step
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -3204,9 +3214,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
-      // Disable Fortran since we don't have gfortran
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS.push('--enable-mpi-fortran=no')
+      // Disable Fortran since we don't have gfortran in S3
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        recipe.build.env.CONFIGURE_ARGS.push('--enable-mpi-fortran=no')
       }
     },
   },
