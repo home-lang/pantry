@@ -79,16 +79,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         // Install boost with Regex library from Homebrew (S3 boost is header-only)
-        prependScript: ['brew install boost 2>/dev/null || true'],
+        prependScript: [
+          'brew install boost 2>/dev/null || true',
+          'export LDFLAGS="-L$(brew --prefix boost)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix boost)/include $CPPFLAGS"',
+        ],
+      },
+      linux: {
+        // Install boost Regex from apt
+        prependScript: [
+          'sudo apt-get install -y libboost-regex-dev 2>/dev/null || true',
+        ],
       },
     },
     modifyRecipe: (recipe: any) => {
-      // On darwin, boost.org S3 binary is header-only (no lib/).
-      // Remove boost.org dep so configure finds Homebrew's boost instead.
+      // Remove boost.org S3 dep — use system-installed boost instead
       if (recipe.dependencies?.['boost.org']) {
         delete recipe.dependencies['boost.org']
       }
-      // Remove --with-boost=... arg since we're using system/brew boost
+      // Replace --with-boost=<S3 path> with brew prefix on darwin, or auto-detect on linux
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => !a.startsWith('--with-boost='),
@@ -164,13 +173,36 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'gnu.org/wget': {
+    platforms: {
+      darwin: {
+        // Install libpsl from Homebrew for cookie domain security
+        prependScript: [
+          'brew install libpsl 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix libpsl)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+      linux: {
+        // Install libpsl from apt for cookie domain security
+        prependScript: [
+          'sudo apt-get install -y libpsl-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Fix typo --without-libps1 → --without-libpsl, add missing args
+      // Remove S3 libpsl dep — use system-installed libpsl instead
+      if (recipe.dependencies?.['rockdaboot.github.io/libpsl']) {
+        delete recipe.dependencies['rockdaboot.github.io/libpsl']
+      }
+      // Fix configure args
       if (recipe.build?.env) {
         const args = recipe.build.env.ARGS || recipe.build.env.linux?.ARGS || recipe.build.env.darwin?.ARGS
         if (Array.isArray(args)) {
+          // Remove the broken --without-libps1 typo
           const idx = args.indexOf('--without-libps1')
-          if (idx >= 0) args[idx] = '--without-libpsl'
+          if (idx >= 0) args.splice(idx, 1)
+          // Remove --without-libpsl too — we have it now from system packages
+          const idx2 = args.indexOf('--without-libpsl')
+          if (idx2 >= 0) args.splice(idx2, 1)
           if (!args.includes('--without-metalink')) args.push('--without-metalink')
           if (!args.includes('--sysconfdir={{prefix}}/etc')) args.push('--sysconfdir={{prefix}}/etc')
         }
@@ -653,12 +685,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'postgresql.org/libpq': {
+    platforms: {
+      darwin: {
+        // Install ICU from Homebrew for Unicode collation support
+        prependScript: [
+          'brew install icu4c 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix icu4c)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+      linux: {
+        // Install ICU from apt for Unicode collation support
+        prependScript: [
+          'sudo apt-get install -y libicu-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        if (!recipe.build.env.ARGS.includes('--without-icu')) {
-          recipe.build.env.ARGS.push('--without-icu')
-        }
-      }
+      // Remove unicode.org dep from S3 — use system ICU instead
+      if (recipe.dependencies?.['unicode.org']) delete recipe.dependencies['unicode.org']
     },
   },
 
@@ -1369,8 +1413,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── matio.sourceforge.io — build without HDF5 (broken dep) ─────────────
 
   'matio.sourceforge.io': {
+    platforms: {
+      darwin: {
+        // Install HDF5 from Homebrew for MATLAB v7.3 file support
+        prependScript: [
+          'brew install hdf5 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix hdf5)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix hdf5)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix hdf5)/include $CPPFLAGS"',
+        ],
+      },
+      linux: {
+        // Install HDF5 from apt for MATLAB v7.3 file support
+        prependScript: [
+          'sudo apt-get install -y libhdf5-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Remove hdfgroup.org/HDF5 dep (broken/not in S3)
+      // Remove S3 HDF5 dep — use system-installed HDF5 instead
       if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
         delete recipe.dependencies['hdfgroup.org/HDF5']
       }
@@ -1378,20 +1439,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.darwin?.['llvm.org']) {
         delete recipe.build.dependencies.darwin['llvm.org']
       }
-      // Disable HDF5 and MAT73 in cmake args + fix prefix quote
+      // Fix cmake prefix quote issue
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) => {
-          if (a === '-DMATIO_WITH_HDF5=ON') return '-DMATIO_WITH_HDF5=OFF'
-          if (a === '-DMATIO_MAT73=ON') return '-DMATIO_MAT73=OFF'
-          return a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2')
-        })
-      }
-      // Also fix configure ARGS
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
-          (a: string) => !a.includes('hdf5') && !a.includes('mat73'),
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
-        recipe.build.env.ARGS.push('--with-hdf5=no', '--enable-mat73=no')
       }
     },
   },
@@ -1533,17 +1585,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
     modifyRecipe: (recipe: any) => {
-      // Replace hw.concurrency with a fixed job count to prevent OOM during LTO link phase
+      // Replace hw.concurrency with 1 to prevent OOM during LTO link phase
+      // Use regex to handle both {{hw.concurrency}} and {{ hw.concurrency }} (with spaces)
+      const hwConcurrencyRe = /\{\{\s*hw\.concurrency\s*\}\}/g
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
-          if (typeof step === 'string' && step.includes('make') && step.includes('install')) {
-            recipe.build.script[i] = step.replace('{{hw.concurrency}}', '2')
+          if (typeof step === 'string' && step.includes('make')) {
+            recipe.build.script[i] = step.replace(hwConcurrencyRe, '1')
           } else if (typeof step === 'object' && typeof step.run === 'string'
-            && step.run.includes('make') && step.run.includes('install')) {
-            step.run = step.run.replace('{{hw.concurrency}}', '2')
+            && step.run.includes('make')) {
+            step.run = step.run.replace(hwConcurrencyRe, '1')
           }
         }
+      }
+      // Also reduce parallel jobs in bootstrap args
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(hwConcurrencyRe, '1'),
+        )
       }
       // On darwin, bzip2 is not in S3 and macOS SIP prevents /usr/lib symlinks.
       // Use cmake's bundled bzip2 instead of system one.
@@ -1928,37 +1988,37 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── ffmpeg.org — fix build on darwin (disable SDL for headless CI) ──
+  // ─── ffmpeg.org — install codec deps from system packages + headless ──
 
   'ffmpeg.org': {
+    platforms: {
+      darwin: {
+        // Install codec libraries from Homebrew so ffmpeg links against them
+        prependScript: [
+          'brew install x264 x265 libvpx opus webp 2>/dev/null || true',
+        ],
+      },
+      linux: {
+        // Install codec libraries from apt so ffmpeg links against them
+        prependScript: [
+          'sudo apt-get install -y libx264-dev libx265-dev libvpx-dev libopus-dev libwebp-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove libsdl.org dep (not needed for headless CI builds)
       if (recipe.dependencies?.['libsdl.org']) {
         delete recipe.dependencies['libsdl.org']
       }
-      // Remove libvpx dep — binary not reliably available in S3, ABI breaks between versions
-      if (recipe.dependencies?.['webmproject.org/libvpx']) {
-        delete recipe.dependencies['webmproject.org/libvpx']
-      }
-      // Remove x264 dep — not available in S3 on either platform
-      if (recipe.dependencies?.['videolan.org/x264']) {
-        delete recipe.dependencies['videolan.org/x264']
-      }
+      // Remove S3 deps for codecs — use system-installed packages instead
+      if (recipe.dependencies?.['videolan.org/x264']) delete recipe.dependencies['videolan.org/x264']
+      if (recipe.dependencies?.['videolan.org/x265']) delete recipe.dependencies['videolan.org/x265']
+      if (recipe.dependencies?.['webmproject.org/libvpx']) delete recipe.dependencies['webmproject.org/libvpx']
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         // Add --disable-sdl2 for headless CI builds
         if (!recipe.build.env.ARGS.includes('--disable-sdl2')) {
           recipe.build.env.ARGS.push('--disable-sdl2')
         }
-        // Remove --enable-libvpx and explicitly disable it (configure auto-detects system libvpx)
-        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
-          (a: string) => a !== '--enable-libvpx',
-        )
-        recipe.build.env.ARGS.push('--disable-libvpx')
-        // Remove --enable-libx264 and explicitly disable it (x264 not in S3)
-        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
-          (a: string) => a !== '--enable-libx264',
-        )
-        recipe.build.env.ARGS.push('--disable-libx264')
       }
     },
   },
@@ -1966,16 +2026,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnutls.org — remove p11-kit dep (not in S3) ────────────────────
 
   'gnutls.org': {
+    platforms: {
+      darwin: {
+        // Install p11-kit from Homebrew for PKCS#11 trust module support
+        prependScript: [
+          'brew install p11-kit 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix p11-kit)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+      linux: {
+        // Install p11-kit from apt for PKCS#11 trust module support
+        prependScript: [
+          'sudo apt-get install -y libp11-kit-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Remove freedesktop.org/p11-kit dep (not in S3)
+      // Remove S3 p11-kit dep — use system-installed p11-kit instead
       if (recipe.dependencies?.['freedesktop.org/p11-kit']) {
         delete recipe.dependencies['freedesktop.org/p11-kit']
-      }
-      // Add --without-p11-kit to ARGS
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        if (!recipe.build.env.ARGS.includes('--without-p11-kit')) {
-          recipe.build.env.ARGS.push('--without-p11-kit')
-        }
       }
       // Fix sed -i BSD compat in aarch64 step
       if (Array.isArray(recipe.build?.script)) {
@@ -2020,15 +2089,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
-      // Reduce parallel jobs on Linux to prevent scmconfig.h race condition
+      // Fix scmconfig.h circular dependency: split "make install" into "make" + "make install"
+      // The Makefile's gen-scmconfig target needs scmconfig.h which doesn't exist yet when
+      // make install runs both build and install in one pass. Splitting ensures build completes first.
+      const hwConcRe = /\{\{\s*hw\.concurrency\s*\}\}/g
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
-          if (typeof step === 'string' && step.includes('make') && step.includes('{{hw.concurrency}}')) {
-            recipe.build.script[i] = step.replace('{{hw.concurrency}}', '1')
-          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('make') && step.run.includes('{{hw.concurrency}}')) {
-            step.run = step.run.replace('{{hw.concurrency}}', '1')
+          if (typeof step === 'string' && step.includes('make') && step.includes('install')) {
+            // Replace with two steps: build first, then install (both single-threaded)
+            const buildStep = 'make --jobs 1'
+            const installStep = step.replace(hwConcRe, '1')
+            recipe.build.script.splice(i, 1, buildStep, installStep)
+            i++ // skip the newly inserted install step
+          } else if (typeof step === 'string' && step.includes('make')) {
+            recipe.build.script[i] = step.replace(hwConcRe, '1')
           }
         }
       }
@@ -2041,6 +2116,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnu.org/groff — remove heavy deps not in S3 ──────────────────────
 
   'gnu.org/groff': {
+    platforms: {
+      darwin: {
+        // Install uchardet from Homebrew for encoding auto-detection
+        prependScript: [
+          'brew install uchardet 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix uchardet)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+      linux: {
+        // Install uchardet from apt for encoding auto-detection
+        prependScript: [
+          'sudo apt-get install -y libuchardet-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove ghostscript.com dep (in knownBrokenDomains — tag format unresolvable)
       if (recipe.dependencies?.['ghostscript.com']) delete recipe.dependencies['ghostscript.com']
@@ -2048,15 +2138,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['netpbm.sourceforge.net']) delete recipe.dependencies['netpbm.sourceforge.net']
       // Remove psutils dep (not essential for groff core functionality)
       if (recipe.dependencies?.['github.com/rrthomas/psutils']) delete recipe.dependencies['github.com/rrthomas/psutils']
-      // Remove uchardet dep (not in S3 — groff builds fine without it, just disables auto-detection)
+      // Remove S3 uchardet dep — use system-installed uchardet instead
       if (recipe.dependencies?.['freedesktop.org/uchardet']) delete recipe.dependencies['freedesktop.org/uchardet']
-      // Disable uchardet in configure args since we removed the dep
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => a !== '--with-uchardet')
-        recipe.build.env.ARGS.push('--without-uchardet')
-      }
       // Remove linux gcc build dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) delete recipe.build.dependencies.linux['gnu.org/gcc']
+      // Fix post-install sed commands that use $PKGX_DIR — when PKGX_DIR is empty/unset,
+      // sed gets an empty first RE causing "first RE may not be empty" error on macOS
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('$PKGX_DIR')) {
+            // Guard the sed commands: only run if PKGX_DIR is set and non-empty
+            step.run = `if [ -n "\${PKGX_DIR:-}" ]; then\n${step.run}\nfi`
+          }
+        }
+      }
     },
   },
 
@@ -2066,21 +2163,27 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         // Set deployment target to 12 to prevent using posix_spawn_file_actions_addchdir (macOS 13.4+)
-        // The Xcode SDK may declare the symbol but the runtime may not have it
-        prependScript: ['export MACOSX_DEPLOYMENT_TARGET=12.0'],
+        // Install gnutls + texinfo from Homebrew (S3 gnutls may not be available)
+        prependScript: [
+          'export MACOSX_DEPLOYMENT_TARGET=12.0',
+          'brew install gnutls texinfo 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix gnutls)/lib/pkgconfig:$(brew --prefix nettle)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix gnutls)/lib -L$(brew --prefix nettle)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix gnutls)/include -I$(brew --prefix nettle)/include $CPPFLAGS"',
+        ],
+      },
+      linux: {
+        // Install gnutls + texinfo from apt
+        prependScript: [
+          'sudo apt-get install -y libgnutls28-dev texinfo 2>/dev/null || true',
+        ],
       },
     },
     modifyRecipe: (recipe: any) => {
-      // Remove gnutls.org dep (optional, emacs can build without TLS)
+      // Remove S3 gnutls dep — use system-installed gnutls instead
       if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
-      // Remove texinfo build dep
+      // Remove texinfo build dep — use system-installed texinfo
       if (recipe.dependencies?.['gnu.org/texinfo']) delete recipe.dependencies['gnu.org/texinfo']
-      // Add --without-gnutls since we removed the dep
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS = recipe.build.env.ARGS.map(
-          (a: string) => a === '--with-gnutls' ? '--without-gnutls' : a,
-        )
-      }
       // Tell configure that posix_spawn_file_actions_addchdir is not available
       // (avoids runtime symbol lookup failure on some macOS versions)
       if (!recipe.build.env.darwin) recipe.build.env.darwin = {}
@@ -2693,18 +2796,28 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── openssh.com — remove deps not in S3 ──────────────────────────────
 
   'openssh.com': {
+    platforms: {
+      darwin: {
+        // Install kerberos, libfido2, ldns from Homebrew so openssh has full feature set
+        prependScript: [
+          'brew install krb5 libfido2 ldns 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix libfido2)/lib/pkgconfig:$(brew --prefix ldns)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix krb5)/lib -L$(brew --prefix libfido2)/lib -L$(brew --prefix ldns)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix krb5)/include -I$(brew --prefix libfido2)/include -I$(brew --prefix ldns)/include $CPPFLAGS"',
+        ],
+      },
+      linux: {
+        // Install kerberos, libfido2, ldns from apt so openssh has full feature set
+        prependScript: [
+          'sudo apt-get install -y libkrb5-dev libfido2-dev libldns-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Remove deps not available in S3
+      // Remove S3 deps — use system-installed packages instead
       if (recipe.dependencies?.['nlnetlabs.nl/ldns']) delete recipe.dependencies['nlnetlabs.nl/ldns']
       if (recipe.dependencies?.['developers.yubico.com/libfido2']) delete recipe.dependencies['developers.yubico.com/libfido2']
       if (recipe.dependencies?.['kerberos.org']) delete recipe.dependencies['kerberos.org']
-      // Remove corresponding configure flags for removed deps and explicitly disable them
-      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
-        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.filter(
-          (a: string) => a !== '--with-ldns' && a !== '--with-kerberos5' && a !== '--with-security-key-builtin',
-        )
-        recipe.build.env.CONFIGURE_ARGS.push('--without-ldns')
-      }
       // Remove linux gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) delete recipe.build.dependencies.linux['gnu.org/gcc']
     },
@@ -2987,6 +3100,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
           a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
         )
+        // Fix multiarch hwloc path on Linux: /usr/lib/x86_64-linux-gnu vs /usr/lib
+        // When hwloc falls back to /usr, configure can't find libhwloc.so in /usr/lib
+        // because Ubuntu uses multiarch paths. Replace with auto-detection.
+        recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) => {
+          if (a.startsWith('--with-hwloc=/usr')) return '--with-hwloc'
+          if (a.startsWith('--with-pmix=/usr')) return '--with-pmix'
+          return a
+        })
       }
       // Remove gnu.org/gcc dep (gfortran) — not in S3 on darwin
       if (recipe.dependencies?.['gnu.org/gcc']) delete recipe.dependencies['gnu.org/gcc']
@@ -3367,10 +3488,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'facebook.com/folly': {
     platforms: {
       darwin: {
-        prependScript: ['brew install double-conversion 2>/dev/null || true'],
+        prependScript: ['brew install double-conversion fast_float 2>/dev/null || true'],
       },
       linux: {
-        prependScript: ['sudo apt-get install -y libdouble-conversion-dev 2>/dev/null || true'],
+        prependScript: ['sudo apt-get install -y libdouble-conversion-dev libfast-float-dev 2>/dev/null || true'],
       },
     },
     modifyRecipe: (recipe: any) => {
