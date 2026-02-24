@@ -80,17 +80,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         // Install boost from Homebrew. Boost 1.82+ made regex header-only,
         // but source-highlight's configure expects a compiled libboost_regex.
-        // Create stub dylib in a writable temp dir (brew prefix may not be writable).
+        // AX_BOOST_REGEX searches --with-boost-libdir for libboost_regex* files.
+        // Create stub dylib there so the file search succeeds.
         prependScript: [
           'brew install boost 2>/dev/null || true',
           'brew link boost --overwrite 2>/dev/null || true',
           'BOOST_PREFIX=$(brew --prefix boost)',
-          // Create stub libboost_regex.dylib in a temp dir — AX_BOOST_REGEX searches for
-          // libboost_regex* files. Boost 1.82+ made regex header-only so no library exists.
-          // Create in temp dir and prepend to LDFLAGS since brew prefix may not be writable.
+          // Create stub libboost_regex.dylib — Boost 1.82+ made regex header-only
+          // so no compiled library exists. AX_BOOST_REGEX needs a file to find.
           'BOOST_STUB_DIR=/tmp/boost-regex-stub',
           'mkdir -p "$BOOST_STUB_DIR"',
-          'if ! ls "${BOOST_PREFIX}/lib"/libboost_regex* 1>/dev/null 2>&1; then echo "void _boost_regex_stub(void){}" > /tmp/_br.c && cc -dynamiclib -o "$BOOST_STUB_DIR/libboost_regex.dylib" /tmp/_br.c && rm -f /tmp/_br.c && cp "$BOOST_STUB_DIR/libboost_regex.dylib" "${BOOST_PREFIX}/lib/libboost_regex.dylib" 2>/dev/null || true; fi',
+          'echo "void _boost_regex_stub(void){}" > /tmp/_br.c && cc -dynamiclib -o "$BOOST_STUB_DIR/libboost_regex.dylib" /tmp/_br.c && rm -f /tmp/_br.c',
           'export LDFLAGS="-L$BOOST_STUB_DIR -L${BOOST_PREFIX}/lib $LDFLAGS"',
           'export CPPFLAGS="-I${BOOST_PREFIX}/include $CPPFLAGS"',
         ],
@@ -107,14 +107,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['boost.org']) {
         delete recipe.dependencies['boost.org']
       }
-      // Replace --with-boost=<S3 path> with brew prefix on darwin, or auto-detect on linux
+      // Replace --with-boost=<S3 path> with brew prefix, and add --with-boost-libdir
+      // pointing to our stub dir so AX_BOOST_REGEX finds libboost_regex.dylib there.
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => !a.startsWith('--with-boost='),
         )
-        // Boost 1.82+ made regex header-only. AX_BOOST_REGEX check fails because
-        // no compiled libboost_regex exists. Pass cache var to skip the link test.
+        // Boost 1.82+ made regex header-only. Pass cache var to skip link test.
         recipe.build.env.ARGS.push('ax_cv_boost_regex=yes')
+        // Tell AX_BOOST_REGEX where to find the stub library file
+        recipe.build.env.ARGS.push('--with-boost-libdir=/tmp/boost-regex-stub')
       }
     },
   },
@@ -3207,9 +3209,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
             if (step.includes('sed -i') && !step.includes('sed -i.bak')) {
               recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
             }
-            // Make install *.mod conditional — fails when no Fortran modules exist
+            // Make install *.mod conditional — fails when no Fortran modules exist.
+            // Note: buildkit sets nullglob, so ls with empty glob = ls with no args = success.
+            // Use compgen -G to properly test if glob matches any files.
             if (step.includes('install') && step.includes('*.mod')) {
-              recipe.build.script[i] = 'if ls {{prefix}}/lib/*.mod 1>/dev/null 2>&1; then install {{prefix}}/lib/*.mod {{prefix}}/include/; fi'
+              recipe.build.script[i] = 'if compgen -G "{{prefix}}/lib/*.mod" >/dev/null 2>&1; then install {{prefix}}/lib/*.mod {{prefix}}/include/; fi'
             }
           }
         }
@@ -3582,7 +3586,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       linux: {
         prependScript: [
-          'sudo apt-get install -y libdouble-conversion-dev libfast-float-dev libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+          'sudo apt-get install -y libdouble-conversion-dev libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+          // Install fast_float from source — Ubuntu's libfast-float-dev is too old (missing allow_leading_plus).
+          // folly 2026.02+ needs fast_float >= 8.0.0.
+          '(cd /tmp && curl -fsSL https://github.com/fastfloat/fast_float/archive/refs/tags/v8.0.0.tar.gz | tar xz && cd fast_float-8.0.0 && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DFASTFLOAT_TEST=OFF -S . -B build && cmake --build build && sudo cmake --install build && rm -rf /tmp/fast_float-8.0.0)',
         ],
       },
     },
@@ -3606,6 +3613,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // breaks #include_next <stdlib.h>. Prevent cmake from using -isystem for imported targets.
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('-DCMAKE_NO_SYSTEM_FROM_IMPORTED=ON')
+        recipe.build.env.ARGS.push('-DCMAKE_PREFIX_PATH=/usr/local')
       }
     },
   },
