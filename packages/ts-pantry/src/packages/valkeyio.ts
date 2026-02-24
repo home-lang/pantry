@@ -3,7 +3,7 @@
  *
  * @domain `valkey.io`
  * @programs `valkey-server`, `valkey-cli`, `valkey-benchmark`
- * @version `9.0.2` (24 versions available)
+ * @version `9.0.3` (26 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install valkey.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "valkey"
  * console.log(pkg.description) // "A flexible distributed key-value datastore that..."
  * console.log(pkg.programs)    // ["valkey-server", "valkey-cli", ...]
- * console.log(pkg.versions[0]) // "9.0.2" (latest)
+ * console.log(pkg.versions[0]) // "9.0.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/valkey-io.md
@@ -70,9 +70,11 @@ export const valkeyioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.0.3',
     '9.0.2',
     '9.0.1',
     '9.0.0',
+    '8.1.6',
     '8.1.5',
     '8.1.4',
     '8.1.3',
