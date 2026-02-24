@@ -3373,13 +3373,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         prependScript: [
-          // Debug: understand why pkg-config can't find xmuu despite multiarch path in PKG_CONFIG_PATH
-          'echo "[DEBUG xauth] PKG_CONFIG_PATH=$PKG_CONFIG_PATH"',
-          'ls /usr/lib/x86_64-linux-gnu/pkgconfig/xmu* 2>&1 || echo "[DEBUG xauth] no xmu*.pc in multiarch dir"',
-          'pkg-config --exists xmuu 2>&1 && echo "[DEBUG xauth] pkg-config xmuu: OK" || echo "[DEBUG xauth] pkg-config xmuu: FAILED"',
-          // Bypass pkg-config entirely: provide XAUTH_CFLAGS/XAUTH_LIBS directly
+          // Ubuntu 24.04 has xmu.pc but NOT xmuu.pc (libXmuu merged into libXmu).
+          // Bypass pkg-config: provide XAUTH_CFLAGS/XAUTH_LIBS directly with -lXmu.
           'export XAUTH_CFLAGS="-I/usr/include"',
-          'export XAUTH_LIBS="-L/usr/lib/x86_64-linux-gnu -lX11 -lXau -lXext -lXmuu"',
+          'export XAUTH_LIBS="-L/usr/lib/x86_64-linux-gnu -lX11 -lXau -lXext -lXmu"',
         ],
       },
     },
@@ -3847,18 +3844,42 @@ export const packageOverrides: Record<string, PackageOverride> = {
     // No fixes needed beyond what's in CI
   },
 
+  // ─── wpewebkit.org/libwpe — remove mesa3d.org + gcc deps (use system) ─────
+
+  'wpewebkit.org/libwpe': {
+    modifyRecipe: (recipe: any) => {
+      // Remove mesa3d.org dep (use system EGL/mesa headers)
+      if (recipe.dependencies?.['mesa3d.org']) {
+        delete recipe.dependencies['mesa3d.org']
+      }
+      // Remove xkbcommon.org dep (use system libxkbcommon)
+      if (recipe.dependencies?.['xkbcommon.org']) {
+        delete recipe.dependencies['xkbcommon.org']
+      }
+      // Remove gnu.org/gcc build dep (use system compiler)
+      if (recipe.build?.dependencies?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies['gnu.org/gcc']
+      }
+      // Fix --prefix and --libdir args: remove extra quotes
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
+        )
+      }
+    },
+  },
+
   // ─── wpewebkit.org/wpebackend-fdo — fix prefix quoting + sed -i BSD + remove gcc ─
 
   'wpewebkit.org/wpebackend-fdo': {
     platforms: {
       linux: {
         prependScript: [
-          // Install libwpe (no stderr suppression so we can see if it fails)
-          'sudo apt-get install -y libwpe-1.0-dev || echo "[DEBUG wpebackend-fdo] apt-get install libwpe-1.0-dev FAILED"',
-          // Debug: check pkg-config state
-          'echo "[DEBUG wpebackend-fdo] PKG_CONFIG_PATH=$PKG_CONFIG_PATH"',
-          'ls /usr/lib/x86_64-linux-gnu/pkgconfig/wpe* 2>&1 || echo "[DEBUG wpebackend-fdo] no wpe*.pc in multiarch dir"',
-          'pkg-config --exists wpe-1.0 2>&1 && echo "[DEBUG wpebackend-fdo] pkg-config wpe-1.0: OK" || echo "[DEBUG wpebackend-fdo] pkg-config wpe-1.0: FAILED"',
+          // libwpe-1.0-dev is not available on Ubuntu 24.04 — build libwpe from source
+          '(cd /tmp && curl -fsSL https://github.com/WebPlatformForEmbedded/libwpe/releases/download/1.16.3/libwpe-1.16.3.tar.xz | tar xJ && cd libwpe-1.16.3 && meson setup build --prefix=/usr/local --libdir=/usr/local/lib --buildtype=release --wrap-mode=nofallback && meson compile -C build && sudo meson install -C build && rm -rf /tmp/libwpe-1.16.3)',
+          'export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LIBRARY_PATH="/usr/local/lib:${LIBRARY_PATH:-}"',
+          'export LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH:-}"',
         ],
       },
     },
