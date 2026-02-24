@@ -78,11 +78,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: { CXXFLAGS: '-std=c++14' },
     platforms: {
       darwin: {
-        // Install boost with Regex library from Homebrew (S3 boost is header-only)
+        // Install boost from Homebrew. Boost 1.82+ made regex header-only,
+        // but source-highlight's configure expects a compiled libboost_regex.
+        // Create a stub archive to satisfy the linker check.
         prependScript: [
           'brew install boost 2>/dev/null || true',
-          'export LDFLAGS="-L$(brew --prefix boost)/lib $LDFLAGS"',
-          'export CPPFLAGS="-I$(brew --prefix boost)/include $CPPFLAGS"',
+          'BOOST_PREFIX=$(brew --prefix boost)',
+          'export LDFLAGS="-L${BOOST_PREFIX}/lib $LDFLAGS"',
+          'export CPPFLAGS="-I${BOOST_PREFIX}/include $CPPFLAGS"',
+          'if [ ! -f "${BOOST_PREFIX}/lib/libboost_regex.a" ] && [ ! -f "${BOOST_PREFIX}/lib/libboost_regex.dylib" ]; then echo "void _boost_regex_stub(void){}" > /tmp/_boost_regex_stub.c && cc -c /tmp/_boost_regex_stub.c -o /tmp/_boost_regex_stub.o && ar rcs "${BOOST_PREFIX}/lib/libboost_regex.a" /tmp/_boost_regex_stub.o 2>/dev/null || true; fi',
         ],
       },
       linux: {
@@ -2030,14 +2034,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         // Install p11-kit from Homebrew for PKCS#11 trust module support
         prependScript: [
-          'brew install p11-kit 2>/dev/null || true',
-          'export PKG_CONFIG_PATH="$(brew --prefix p11-kit)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'brew install p11-kit nettle 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix p11-kit)/lib/pkgconfig:$(brew --prefix nettle)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
         ],
       },
       linux: {
-        // Install p11-kit from apt for PKCS#11 trust module support
+        // Install p11-kit from apt; build nettle 3.10 from source (Ubuntu's nettle is too old for gnutls 3.8.x)
         prependScript: [
-          'sudo apt-get install -y libp11-kit-dev 2>/dev/null || true',
+          'sudo apt-get install -y libp11-kit-dev libgmp-dev 2>/dev/null || true',
+          'NETTLE_VER=$(pkg-config --modversion nettle 2>/dev/null || echo "0"); if [ "$(printf "%s\\n3.10\\n" "$NETTLE_VER" | sort -V | head -1)" != "3.10" ]; then cd /tmp && curl -fsSL https://ftp.gnu.org/gnu/nettle/nettle-3.10.1.tar.gz | tar xz && cd nettle-3.10.1 && ./configure --prefix=/usr/local --disable-documentation && make -j$(nproc) && sudo make install && sudo ldconfig && cd /tmp && rm -rf nettle-3.10.1; fi',
+          'export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64 $LDFLAGS"',
+          'export CPPFLAGS="-I/usr/local/include $CPPFLAGS"',
         ],
       },
     },
@@ -2045,6 +2053,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove S3 p11-kit dep — use system-installed p11-kit instead
       if (recipe.dependencies?.['freedesktop.org/p11-kit']) {
         delete recipe.dependencies['freedesktop.org/p11-kit']
+      }
+      // Remove S3 nettle dep — use brew (darwin) or build from source (linux)
+      if (recipe.dependencies?.['gnu.org/nettle']) {
+        delete recipe.dependencies['gnu.org/nettle']
       }
       // Fix sed -i BSD compat in aarch64 step
       if (Array.isArray(recipe.build?.script)) {
@@ -3053,9 +3065,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
       linux: {
-        // Install kerberos headers from apt
+        // Install kerberos and iconv headers from apt
         prependScript: [
-          'sudo apt-get install -y libkrb5-dev 2>/dev/null || true',
+          'sudo apt-get install -y libkrb5-dev libc6-dev 2>/dev/null || true',
+          // Ensure iconv.h is findable — on glibc, it's in libc but configure may not find it
+          'if [ ! -f /usr/include/iconv.h ]; then sudo ln -sf /usr/include/x86_64-linux-gnu/iconv.h /usr/include/iconv.h 2>/dev/null || true; fi',
         ],
       },
     },
@@ -3073,6 +3087,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove S3 kerberos.org dep — use system-installed kerberos instead
       if (recipe.dependencies?.['kerberos.org']) {
         delete recipe.dependencies['kerberos.org']
+      }
+      // Remove S3 libiconv dep — glibc provides iconv on linux
+      if (recipe.dependencies?.['gnu.org/libiconv']) {
+        delete recipe.dependencies['gnu.org/libiconv']
+      }
+      // Fix --with-iconv: on linux glibc provides iconv in libc, so use autodetection
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.match(/^--with-iconv=/) ? '--with-iconv' : a,
+        )
       }
       // Remove gnu.org/gcc/libstdcxx dep (use system libstdc++)
       if (recipe.dependencies?.['gnu.org/gcc/libstdcxx']) {
@@ -3102,18 +3126,27 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Install hwloc, libevent, open-mpi deps from Homebrew
-          'brew install hwloc libevent open-mpi 2>/dev/null || true',
-          'export PKG_CONFIG_PATH="$(brew --prefix hwloc)/lib/pkgconfig:$(brew --prefix libevent)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          'export LDFLAGS="-L$(brew --prefix hwloc)/lib -L$(brew --prefix libevent)/lib $LDFLAGS"',
-          'export CPPFLAGS="-I$(brew --prefix hwloc)/include -I$(brew --prefix libevent)/include $CPPFLAGS"',
+          // Install hwloc, libevent deps from Homebrew
+          'brew install hwloc libevent 2>/dev/null || true',
+          'export OMPI_HWLOC_PREFIX=$(brew --prefix hwloc)',
+          'export OMPI_LIBEVENT_PREFIX=$(brew --prefix libevent)',
+          'export PKG_CONFIG_PATH="${OMPI_HWLOC_PREFIX}/lib/pkgconfig:${OMPI_LIBEVENT_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L${OMPI_HWLOC_PREFIX}/lib -L${OMPI_LIBEVENT_PREFIX}/lib $LDFLAGS"',
+          'export CPPFLAGS="-I${OMPI_HWLOC_PREFIX}/include -I${OMPI_LIBEVENT_PREFIX}/include $CPPFLAGS"',
         ],
       },
       linux: {
         prependScript: [
           // Install hwloc, libevent, pmix dev packages from apt
-          // (S3 deps may not be uploaded yet when open-mpi build starts)
           'sudo apt-get install -y libhwloc-dev libevent-dev libpmix-dev 2>/dev/null || true',
+          // Set prefix vars for configure (same as darwin but /usr on linux)
+          'export OMPI_HWLOC_PREFIX=/usr',
+          'export OMPI_LIBEVENT_PREFIX=/usr',
+          // Add multiarch pkg-config path so configure finds hwloc
+          'export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          // Symlink multiarch libs so configure finds them at /usr/lib
+          'HWLOC_LIB=$(find /usr/lib -name "libhwloc.so" -print -quit 2>/dev/null); if [ -n "$HWLOC_LIB" ] && [ ! -f /usr/lib/libhwloc.so ]; then sudo ln -sf "$HWLOC_LIB" /usr/lib/libhwloc.so 2>/dev/null || true; fi',
+          'LIBEVENT_LIB=$(find /usr/lib -name "libevent.so" -print -quit 2>/dev/null); if [ -n "$LIBEVENT_LIB" ] && [ ! -f /usr/lib/libevent.so ]; then sudo ln -sf "$LIBEVENT_LIB" /usr/lib/libevent.so 2>/dev/null || true; fi',
         ],
       },
     },
@@ -3123,13 +3156,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
           a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
         )
-        // When S3 deps fall back to system path (/usr), configure can't find libraries
-        // (Linux multiarch: /usr/lib/x86_64-linux-gnu; macOS: not in /usr at all).
-        // Use auto-detection instead of broken explicit paths.
+        // Replace hardcoded /usr paths with env var references (expanded at shell time)
+        // On darwin: $OMPI_HWLOC_PREFIX → brew prefix; on linux: $OMPI_HWLOC_PREFIX → /usr
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) => {
-          if (a.match(/^--with-hwloc=\/usr/)) return '--with-hwloc'
-          if (a.match(/^--with-pmix=\/usr/)) return '--with-pmix'
-          if (a.match(/^--with-libevent=\/usr/)) return '--with-libevent'
+          if (a.match(/^--with-hwloc=/)) return '--with-hwloc=$OMPI_HWLOC_PREFIX'
+          if (a.match(/^--with-pmix=/)) return '--with-pmix'
+          if (a.match(/^--with-libevent=/)) return '--with-libevent=$OMPI_LIBEVENT_PREFIX'
           return a
         })
       }
@@ -3512,10 +3544,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'facebook.com/folly': {
     platforms: {
       darwin: {
-        prependScript: ['brew install double-conversion fast_float 2>/dev/null || true'],
+        prependScript: [
+          'brew install double-conversion fast_float glog gflags 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix glog)/lib/pkgconfig:$(brew --prefix gflags)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix glog)/lib -L$(brew --prefix gflags)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix glog)/include -I$(brew --prefix gflags)/include $CPPFLAGS"',
+          'export CMAKE_PREFIX_PATH="$(brew --prefix glog);$(brew --prefix gflags);$(brew --prefix double-conversion);$(brew --prefix fast_float);${CMAKE_PREFIX_PATH:-}"',
+        ],
       },
       linux: {
-        prependScript: ['sudo apt-get install -y libdouble-conversion-dev libfast-float-dev 2>/dev/null || true'],
+        prependScript: [
+          'sudo apt-get install -y libdouble-conversion-dev libfast-float-dev libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+        ],
       },
     },
     modifyRecipe: (recipe: any) => {
@@ -3531,6 +3571,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.linux?.['libcxx.llvm.org']) {
         delete recipe.dependencies.linux['libcxx.llvm.org']
       }
+      // Remove glog/gflags S3 deps — use system-installed instead
+      if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
+      if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
     },
   },
 

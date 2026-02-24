@@ -742,7 +742,7 @@ Options:
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
     'strace.io', // btrfs xlat static assertion: generated headers bypass CFLAGS, can't fix with -D flags
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
-    // microbrew.org/md5sha1sum — needs openssl.org in S3, build openssl first
+    'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'ghostscript.com', // Tag format gs10060 for version 10.06.0 — zero-padded minor not reconstructible from semver
     'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
