@@ -2045,7 +2045,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Install p11-kit from apt; build nettle 3.10 from source (Ubuntu's nettle is too old for gnutls 3.8.x)
         prependScript: [
           'sudo apt-get install -y libp11-kit-dev libgmp-dev 2>/dev/null || true',
-          'NETTLE_VER=$(pkg-config --modversion nettle 2>/dev/null || echo "0"); if [ "$(printf "%s\\n3.10\\n" "$NETTLE_VER" | sort -V | head -1)" != "3.10" ]; then cd /tmp && curl -fsSL https://ftp.gnu.org/gnu/nettle/nettle-3.10.1.tar.gz | tar xz && cd nettle-3.10.1 && ./configure --prefix=/usr/local --disable-documentation && make -j$(nproc) && sudo make install && sudo ldconfig && cd /tmp && rm -rf nettle-3.10.1; fi',
+          'NETTLE_VER=$(pkg-config --modversion nettle 2>/dev/null || echo "0"); if [ "$(printf "%s\\n3.10\\n" "$NETTLE_VER" | sort -V | head -1)" != "3.10" ]; then (cd /tmp && curl -fsSL https://ftp.gnu.org/gnu/nettle/nettle-3.10.1.tar.gz | tar xz && cd nettle-3.10.1 && ./configure --prefix=/usr/local --disable-documentation && make -j$(nproc) && sudo make install && sudo ldconfig && rm -rf /tmp/nettle-3.10.1); fi',
           'export PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:/usr/local/lib64/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export LDFLAGS="-L/usr/local/lib -L/usr/local/lib64 $LDFLAGS"',
           'export CPPFLAGS="-I/usr/local/include $CPPFLAGS"',
@@ -3079,11 +3079,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in php-config/phpize fixup steps
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i\n/g, 'sed -i.bak\n')
-              .replace(/^(\s+)sed -i$/m, '$1sed -i.bak')
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
           }
         }
       }
@@ -3585,6 +3588,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove glog/gflags S3 deps — use system-installed instead
       if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+      // Fix linux build: cmake adds -isystem /usr/include for system packages which
+      // breaks #include_next <stdlib.h>. Prevent cmake from using -isystem for imported targets.
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('-DCMAKE_NO_SYSTEM_FROM_IMPORTED=ON')
+      }
     },
   },
 
