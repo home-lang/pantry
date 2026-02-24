@@ -46,6 +46,8 @@ pub const PantryConfig = struct {
         registry: ?[]const u8 = null,
         /// Frozen lockfile — error if lockfile is out of date (default: false)
         frozen_lockfile: bool = false,
+        /// Custom modules directory name (default: "pantry", set to "node_modules" for Node.js compat)
+        modules_dir: []const u8 = "pantry",
     };
 };
 
@@ -155,6 +157,10 @@ pub fn parseTomlContent(allocator: std.mem.Allocator, content: []const u8) !Pant
 
     if (table.getBool("install.frozenLockfile")) |frozen| {
         config.install.frozen_lockfile = frozen;
+    }
+
+    if (table.getString("install.modulesDir")) |dir| {
+        config.install.modules_dir = try allocator.dupe(u8, dir);
     }
 
     return config;

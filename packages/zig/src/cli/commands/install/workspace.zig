@@ -225,7 +225,7 @@ const WorkspaceThreadContext = struct {
 
             // Skip packages that match lockfile and exist at destination
             if (ctx.lockfile_packages) |lf_pkgs| {
-                if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.workspace_root, ctx.alloc)) {
+                if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.workspace_root, ctx.alloc, ctx.shared_installer.modules_dir)) {
                     const clean = helpers.stripDisplayPrefix(ctx.deps[i].name);
                     ctx.results[i] = .{
                         .name = clean,
@@ -494,6 +494,7 @@ pub fn installWorkspaceCommandWithOptions(
     var shared_installer = try install.Installer.init(allocator, &pkg_cache);
     allocator.free(shared_installer.data_dir);
     shared_installer.data_dir = try allocator.dupe(u8, env_dir);
+    shared_installer.modules_dir = options.modules_dir;
     defer shared_installer.deinit();
 
     var success_count: usize = 0;
@@ -520,7 +521,7 @@ pub fn installWorkspaceCommandWithOptions(
     var ws_skipped_count: usize = 0;
     if (existing_lockfile) |*lf| {
         for (all_deps) |dep| {
-            if (helpers.canSkipFromLockfile(&lf.packages, dep.name, dep.version, workspace_root, allocator)) {
+            if (helpers.canSkipFromLockfile(&lf.packages, dep.name, dep.version, workspace_root, allocator, options.modules_dir)) {
                 ws_skipped_count += 1;
             }
         }

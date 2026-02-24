@@ -87,6 +87,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .force = force,
         .filter = filter,
         .linker = pantry_config.install.linker,
+        .modules_dir = pantry_config.install.modules_dir,
     };
     const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);

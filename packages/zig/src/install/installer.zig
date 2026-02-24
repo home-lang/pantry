@@ -219,6 +219,8 @@ pub const Installer = struct {
     npm_cache: *NpmCache,
     /// Custom npm registry URL (from .npmrc), null = use default
     custom_registry_url: ?[]const u8 = null,
+    /// Install directory name (default: "pantry", configurable via pantry.toml)
+    modules_dir: []const u8 = "pantry",
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
@@ -433,16 +435,16 @@ pub const Installer = struct {
         const symlink_path = if (options.project_root) |project_root| blk: {
             const modules_bin = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/.bin/{s}",
-                .{ project_root, spec.name },
+                "{s}/{s}/.bin/{s}",
+                .{ project_root, self.modules_dir, spec.name },
             );
             errdefer self.allocator.free(modules_bin);
 
             // Create pantry/.bin directory
             const modules_bin_dir = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/.bin",
-                .{project_root},
+                "{s}/{s}/.bin",
+                .{ project_root, self.modules_dir },
             );
             defer self.allocator.free(modules_bin_dir);
 
@@ -510,8 +512,8 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/{s}",
-                .{ project_root, spec.name },
+                "{s}/{s}/{s}",
+                .{ project_root, self.modules_dir, spec.name },
             );
         } else blk: {
             break :blk try std.fmt.allocPrint(
@@ -643,8 +645,8 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/{s}",
-                .{ project_root, spec.name },
+                "{s}/{s}/{s}",
+                .{ project_root, self.modules_dir, spec.name },
             );
         } else blk: {
             break :blk try std.fmt.allocPrint(
@@ -763,8 +765,8 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/{s}",
-                .{ project_root, spec.name },
+                "{s}/{s}/{s}",
+                .{ project_root, self.modules_dir, spec.name },
             );
         } else blk: {
             break :blk try std.fmt.allocPrint(
@@ -868,8 +870,8 @@ pub const Installer = struct {
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/{s}",
-                .{ project_root, spec.name },
+                "{s}/{s}/{s}",
+                .{ project_root, self.modules_dir, spec.name },
             );
         } else blk: {
             break :blk try std.fmt.allocPrint(
@@ -1096,8 +1098,8 @@ pub const Installer = struct {
     ) !void {
         // 1. Check if already installed at hoisted location (use stack buffer for path check)
         var exist_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/node_modules/{s}", .{ project_root, name }) catch
-            try std.fmt.allocPrint(self.allocator, "{s}/node_modules/{s}", .{ project_root, name });
+        const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/{s}/{s}", .{ project_root, self.modules_dir, name }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ project_root, self.modules_dir, name });
         const exist_is_heap = existing_dir.ptr != &exist_buf;
         defer if (exist_is_heap) self.allocator.free(@constCast(existing_dir));
 
@@ -1482,8 +1484,8 @@ pub const Installer = struct {
             // Create pantry/.bin directory
             const bin_dir = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/node_modules/.bin",
-                .{project_root},
+                "{s}/{s}/.bin",
+                .{ project_root, self.modules_dir },
             );
             defer self.allocator.free(bin_dir);
             try io_helper.makePath(bin_dir);
@@ -1875,8 +1877,8 @@ pub const Installer = struct {
         // Project bin directory (pantry/.bin)
         const project_bin_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/node_modules/.bin",
-            .{project_root},
+            "{s}/{s}/.bin",
+            .{ project_root, self.modules_dir },
         );
         defer self.allocator.free(project_bin_dir);
 
@@ -2011,8 +2013,8 @@ pub const Installer = struct {
         // Project bin directory (pantry/.bin)
         const shim_dir = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/node_modules/.bin",
-            .{project_root},
+            "{s}/{s}/.bin",
+            .{ project_root, self.modules_dir },
         );
         defer self.allocator.free(shim_dir);
 

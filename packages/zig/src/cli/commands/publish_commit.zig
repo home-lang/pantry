@@ -156,7 +156,7 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
             \\
             \\For direct S3 upload, configure AWS credentials in ~/.aws/credentials
             \\Or set PANTRY_REGISTRY_TOKEN for HTTP upload to registry server.
-        ,
+            ,
         );
     }
 

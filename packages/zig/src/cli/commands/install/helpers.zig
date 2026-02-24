@@ -244,6 +244,7 @@ pub fn canSkipFromLockfile(
     _: []const u8,
     proj_dir: []const u8,
     _: std.mem.Allocator,
+    modules_dir: []const u8,
 ) bool {
     // Clean name (strip auto:, npm:, local: prefixes)
     const clean_name = stripDisplayPrefix(dep_name);
@@ -261,7 +262,7 @@ pub fn canSkipFromLockfile(
 
     // Check if destination directory actually exists (use stack buffer + access instead of openDir)
     var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
-    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/node_modules/{s}", .{ proj_dir, clean_name }) catch return false;
+    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/{s}/{s}", .{ proj_dir, modules_dir, clean_name }) catch return false;
     io_helper.accessAbsolute(dest_dir, .{}) catch return false;
 
     return true;
@@ -456,7 +457,7 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", lookup_name });
+        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, options.modules_dir, lookup_name });
         defer allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
@@ -540,7 +541,7 @@ pub fn installSinglePackage(
     inst_result.deinit(allocator);
 
     // Run postinstall lifecycle script if enabled
-    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", lookup_name });
+    const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, options.modules_dir, lookup_name });
     defer allocator.free(package_path);
 
     if (!options.ignore_scripts) {
@@ -548,6 +549,7 @@ pub fn installSinglePackage(
             .cwd = package_path,
             .ignore_scripts = options.ignore_scripts,
             .verbose = options.verbose,
+            .modules_dir = options.modules_dir,
         };
 
         // Run postinstall script
@@ -587,7 +589,7 @@ pub fn installSinglePackage(
 
     // Create symlinks in pantry/.bin for package executables
     // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
-    createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose) catch |err| {
+    createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose, options.modules_dir) catch |err| {
         if (options.verbose) {
             style.print("    Could not create bin symlinks for {s}: {}\n", .{ lookup_name, err });
         }
@@ -604,12 +606,12 @@ pub fn installSinglePackage(
 
 /// Create symlinks in pantry/.bin for executables in the installed package
 /// Called from core.zig after direct package install
-pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8) !void {
-    return createBinSymlinks(allocator, proj_dir, package_path, false);
+pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, modules_dir: []const u8) !void {
+    return createBinSymlinks(allocator, proj_dir, package_path, false, modules_dir);
 }
 
-fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool) !void {
-    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", ".bin" });
+fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool, modules_dir: []const u8) !void {
+    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, modules_dir, ".bin" });
     defer allocator.free(bin_link_dir);
     try io_helper.makePath(bin_link_dir);
 
@@ -1267,7 +1269,7 @@ test "canSkipFromLockfile - no matching entry" {
     defer packages.deinit();
 
     // No entries in lockfile -> should not skip
-    try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator));
+    try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator, "pantry"));
 }
 
 test "canSkipFromLockfile - matching entry but no dir" {
@@ -1293,7 +1295,7 @@ test "canSkipFromLockfile - matching entry but no dir" {
     try packages.put(try allocator.dupe(u8, "foo@1.0.0"), entry);
 
     // Has lockfile entry but dir doesn't exist -> should not skip
-    try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator));
+    try std.testing.expect(!canSkipFromLockfile(&packages, "foo", "1.0.0", "/nonexistent", allocator, "pantry"));
 }
 
 test "validatePackageName - valid names" {

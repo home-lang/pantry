@@ -22,7 +22,7 @@ const install = lib.install;
 /// Fast path: check if all packages are already installed without doing expensive
 /// workspace detection, config loading, hook execution, etc.
 /// Returns a CommandResult if everything is up-to-date, null otherwise.
-fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64) !?types.CommandResult {
+fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i64, modules_dir: []const u8) !?types.CommandResult {
     const detector = @import("../../../deps/detector.zig");
     const parser = @import("../../../deps/parser.zig");
     const lockfile_reader = @import("../../../packages/lockfile.zig");
@@ -69,7 +69,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     // 4. Check all deps against lockfile + verify dirs exist
     var checked_count: usize = 0;
     for (deps) |dep| {
-        if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator)) {
+        if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator, modules_dir)) {
             return null; // At least one package needs work → fall through to slow path
         }
         checked_count += 1;
@@ -138,7 +138,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // This avoids expensive workspace detection, config loading, hooks, etc.
         // Skipped when --force is set (user wants to re-download everything)
         if (!opts.force) {
-            if (try tryFastUpToDate(allocator, cwd, start_time)) |result| {
+            if (try tryFastUpToDate(allocator, cwd, start_time, opts.modules_dir)) |result| {
                 return result;
             }
         }
@@ -397,6 +397,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         var shared_installer = try install.Installer.init(allocator, &pkg_cache);
         allocator.free(shared_installer.data_dir);
         shared_installer.data_dir = try allocator.dupe(u8, env_dir);
+        shared_installer.modules_dir = opts.modules_dir;
 
         // Configure installer with .npmrc settings
         if (npmrc_config.registry) |custom_registry| {
@@ -460,7 +461,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     // (bypassed when --force is set)
                     if (!ctx.opts.force) {
                         if (ctx.lockfile_packages) |lf_pkgs| {
-                            if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc)) {
+                            if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc, ctx.opts.modules_dir)) {
                                 ctx.results[i] = .{
                                     .name = clean_name,
                                     .version = ctx.deps[i].version,
@@ -564,7 +565,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Handle local packages separately (they need special symlink handling)
         // Create pantry directory if it doesn't exist
-        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules", .{proj_dir});
+        const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ proj_dir, opts.modules_dir });
         defer allocator.free(pantry_dir);
         try io_helper.makePath(pantry_dir);
 
@@ -662,7 +663,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
 
             // Create pantry/.bin directory and symlink binaries from zig-out/bin
-            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules/.bin", .{proj_dir});
+            const local_bin_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ proj_dir, opts.modules_dir });
             defer allocator.free(local_bin_dir);
             try io_helper.makePath(local_bin_dir);
 
@@ -781,7 +782,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 };
 
                 // Record installed files/directories
-                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/node_modules/{s}", .{ proj_dir, clean_name });
+                const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ proj_dir, opts.modules_dir, clean_name });
                 defer allocator.free(pkg_dir);
                 checkpoint.recordDir(pkg_dir) catch |err| {
                     if (options.verbose) {
@@ -878,6 +879,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     defer pkg_cache.deinit();
 
     var installer = try install.Installer.init(allocator, &pkg_cache);
+    installer.modules_dir = opts.modules_dir;
     defer installer.deinit();
 
     // Start timing (millisecond precision)
@@ -1046,7 +1048,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         };
 
         // Create symlinks in pantry/.bin for package executables
-        helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path) catch |err| {
+        helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path, opts.modules_dir) catch |err| {
             style.print("Warning: Failed to create bin symlinks for {s}: {}\n", .{ name, err });
         };
 

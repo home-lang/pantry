@@ -32,6 +32,7 @@ pub const InstallOptions = struct {
     force: bool = false, // Force re-download, ignore cache and lockfile
     filter: ?[]const u8 = null, // Filter pattern for workspace packages
     linker: LinkerMode = .isolated, // Linker strategy (default: isolated, opt-in: hoisted)
+    modules_dir: []const u8 = "pantry", // Install directory name (default: pantry, or node_modules for Node.js compat)
 };
 
 /// Result of a single package installation task

@@ -107,6 +107,7 @@ pub const ScriptOptions = struct {
     ignore_scripts: bool = false,
     verbose: bool = false,
     timeout_ms: u32 = 120000, // 2 minutes default
+    modules_dir: []const u8 = "pantry",
 };
 
 // ============================================================================
@@ -276,9 +277,9 @@ pub fn executeScript(
     // Execute the script using Child.run for simplicity
     const is_windows = @import("builtin").os.tag == .windows;
 
-    // Prepend node_modules/.bin to PATH like npm does, so local binaries
+    // Prepend {modules_dir}/.bin to PATH so local binaries
     // (tsc, eslint, etc.) are found without global installation.
-    // We walk UP the directory tree from CWD, adding each node_modules/.bin
+    // We walk UP the directory tree from CWD, adding each {modules_dir}/.bin
     // found along the way. This is critical for monorepo support where
     // dependencies (and their .bin stubs) are hoisted to the workspace root.
     // We bake the actual parent PATH value into the command instead of relying
@@ -286,7 +287,7 @@ pub fn executeScript(
     // properly inherit the parent's PATH (e.g., in CI environments).
     const current_path = io_helper.getenv("PATH") orelse "/usr/local/bin:/usr/bin:/bin";
 
-    // Build colon-separated list of node_modules/.bin paths from CWD upward
+    // Build colon-separated list of {modules_dir}/.bin paths from CWD upward
     var nm_path_buf = std.ArrayList(u8){};
     defer nm_path_buf.deinit(allocator);
 
@@ -298,7 +299,9 @@ pub fn executeScript(
                 try nm_path_buf.append(allocator, ':');
             }
             try nm_path_buf.appendSlice(allocator, dir);
-            try nm_path_buf.appendSlice(allocator, "/node_modules/.bin");
+            try nm_path_buf.append(allocator, '/');
+            try nm_path_buf.appendSlice(allocator, options.modules_dir);
+            try nm_path_buf.appendSlice(allocator, "/.bin");
 
             dir = std.fs.path.dirname(dir) orelse break;
         }
@@ -309,7 +312,7 @@ pub fn executeScript(
     else if (nm_path_buf.items.len > 0)
         try std.fmt.allocPrint(allocator, "export PATH=\"{s}:{s}\" && {s}", .{ nm_path_buf.items, current_path, script_cmd })
     else
-        try std.fmt.allocPrint(allocator, "export PATH=\"{s}/node_modules/.bin:{s}\" && {s}", .{ options.cwd, current_path, script_cmd });
+        try std.fmt.allocPrint(allocator, "export PATH=\"{s}/{s}/.bin:{s}\" && {s}", .{ options.cwd, options.modules_dir, current_path, script_cmd });
     defer if (!is_windows) allocator.free(wrapped_cmd);
 
     const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{

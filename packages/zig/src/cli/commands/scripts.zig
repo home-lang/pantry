@@ -115,8 +115,11 @@ pub fn runScriptCommandWithOptions(
     // Print what we're running
     style.print("{s}$ {s}{s}\n", .{ style.dim, display_command, style.reset });
 
+    // Load pantry.toml to get modules directory name
+    const pantry_config = lib.config.loadPantryToml(allocator, cwd) catch lib.config.PantryConfig{};
+
     // Set up command wrapper with pantry/.bin in PATH
-    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/node_modules/.bin", .{cwd});
+    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ cwd, pantry_config.install.modules_dir });
     defer allocator.free(pantry_bin);
 
     // Get current PATH and prepend pantry/.bin

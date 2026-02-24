@@ -171,7 +171,7 @@ describe('commit publish', () => {
         })
 
         expect(res.status).toBe(201)
-        const body = await res.json()
+        const body = await res.json() as any
         expect(body.success).toBe(true)
         expect(body.packages).toHaveLength(1)
         expect(body.packages[0].name).toBe('server-test-pkg')
@@ -192,7 +192,7 @@ describe('commit publish', () => {
       try {
         const res = await fetch(`${baseUrl}/commits/ff06666`)
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await res.json() as any
         expect(body.sha).toBe('ff06666')
         expect(body.packages).toHaveLength(1)
         expect(body.packages[0].name).toBe('get-pkg')
@@ -214,7 +214,7 @@ describe('commit publish', () => {
       try {
         const res = await fetch(`${baseUrl}/commits/aa07777/meta-pkg`)
         expect(res.status).toBe(200)
-        const body = await res.json()
+        const body = await res.json() as any
         expect(body.name).toBe('meta-pkg')
         expect(body.sha).toBe('aa07777')
         expect(body.version).toBe('3.0.0')
@@ -280,7 +280,7 @@ describe('commit publish', () => {
         // GET /commits/{sha}/@scope/name
         const metaRes = await fetch(`${baseUrl}/commits/cc09999/@stacksjs/actions`)
         expect(metaRes.status).toBe(200)
-        const meta = await metaRes.json()
+        const meta = await metaRes.json() as any
         expect(meta.name).toBe('@stacksjs/actions')
 
         // GET /commits/{sha}/@scope/name/tarball
