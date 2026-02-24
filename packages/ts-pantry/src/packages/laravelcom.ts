@@ -3,7 +3,7 @@
  *
  * @domain `laravel.com`
  * @programs `laravel`
- * @version `5.24.6` (33 versions available)
+ * @version `5.24.7` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install laravel.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "laravel"
  * console.log(pkg.description) // "The Laravel application installer."
  * console.log(pkg.programs)    // ["laravel"]
- * console.log(pkg.versions[0]) // "5.24.6" (latest)
+ * console.log(pkg.versions[0]) // "5.24.7" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/laravel-com.md
@@ -77,6 +77,7 @@ export const laravelcomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.24.7',
     '5.24.6',
     '5.24.5',
     '5.24.4',

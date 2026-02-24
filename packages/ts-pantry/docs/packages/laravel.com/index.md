@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 33 versions</summary>
+<summary>Show all 34 versions</summary>
 
-- `5.24.6`, `5.24.5`, `5.24.4`, `5.24.3`, `5.24.2`, `5.24.1`, `5.24.0`
+- `5.24.7`, `5.24.6`, `5.24.5`, `5.24.4`, `5.24.3`, `5.24.2`, `5.24.1`, `5.24.0`
 - `5.23.2`, `5.23.1`, `5.23.0`
 - `5.22.0`
 - `5.21.0`
@@ -47,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `5.24.6`
+**Latest Version**: `5.24.7`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +laravel.com@5.24.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +laravel.com@5.24.7 -- $SHELL -i
 ```
 
 ## Dependencies
