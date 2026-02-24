@@ -3370,6 +3370,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/xauth — fix prefix quoting + remove gcc dep ──────────────
 
   'x.org/xauth': {
+    platforms: {
+      linux: {
+        // xauth needs xmuu.pc from libxmu-dev — ensure multiarch pkg-config path is set
+        prependScript: [
+          'export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix and other args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
@@ -3837,6 +3845,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── wpewebkit.org/wpebackend-fdo — fix prefix quoting + sed -i BSD + remove gcc ─
 
   'wpewebkit.org/wpebackend-fdo': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libwpe-1.0-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix and --libdir args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
