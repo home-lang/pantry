@@ -1358,7 +1358,35 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       }
     }
     depPaths = await downloadDependencies(allDeps, depsDir, platform, bucket, region)
-    console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies`)
+
+    // Resolve transitive dependencies: deps of our deps that are needed for pkg-config
+    // (e.g., xmu → xt → ice: xt.pc has Requires: ice, so ice must also be available)
+    const resolvedDomains = new Set(allDepDomains)
+    for (let depth = 0; depth < 3; depth++) {
+      const transitiveDeps: string[] = []
+      for (const domain of resolvedDomains) {
+        try {
+          const depYamlPath = join(process.cwd(), 'src', 'pantry', domain, 'package.yml')
+          if (!existsSync(depYamlPath)) continue
+          const depYaml = parseYaml(readFileSync(depYamlPath, 'utf-8')) as any
+          const depRuntimeDeps = extractYamlDeps(depYaml.dependencies, platform)
+          const depBuildDeps = extractYamlDeps(depYaml.build?.dependencies, platform)
+          for (const td of [...depRuntimeDeps, ...depBuildDeps]) {
+            const tdDomain = parseDep(td)
+            if (tdDomain && !resolvedDomains.has(tdDomain) && !removedDeps.has(tdDomain)) {
+              transitiveDeps.push(td)
+              resolvedDomains.add(tdDomain)
+            }
+          }
+        } catch { /* skip deps whose YAML can't be read */ }
+      }
+      if (transitiveDeps.length === 0) break
+      console.log(`\nResolving ${transitiveDeps.length} transitive dependencies (depth ${depth + 1})...`)
+      const transitiveDepPaths = await downloadDependencies(transitiveDeps, depsDir, platform, bucket, region)
+      Object.assign(depPaths, transitiveDepPaths)
+    }
+
+    console.log(`\nDownloaded ${Object.keys(depPaths).filter(k => k.endsWith('.prefix')).length} dependencies (including transitive)`)
   }
 
   // Create directories
