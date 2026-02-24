@@ -1522,15 +1522,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
     modifyRecipe: (recipe: any) => {
-      // Replace hw.concurrency with a fixed job count to prevent race condition
+      // Replace hw.concurrency with a fixed job count to prevent OOM during LTO link phase
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('make') && step.includes('install')) {
-            recipe.build.script[i] = step.replace('{{hw.concurrency}}', '4')
+            recipe.build.script[i] = step.replace('{{hw.concurrency}}', '2')
           } else if (typeof step === 'object' && typeof step.run === 'string'
             && step.run.includes('make') && step.run.includes('install')) {
-            step.run = step.run.replace('{{hw.concurrency}}', '4')
+            step.run = step.run.replace('{{hw.concurrency}}', '2')
           }
         }
       }
@@ -1921,6 +1921,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['webmproject.org/libvpx']) {
         delete recipe.dependencies['webmproject.org/libvpx']
       }
+      // Remove x264 dep — not available in S3 on either platform
+      if (recipe.dependencies?.['videolan.org/x264']) {
+        delete recipe.dependencies['videolan.org/x264']
+      }
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         // Add --disable-sdl2 for headless CI builds
         if (!recipe.build.env.ARGS.includes('--disable-sdl2')) {
@@ -1931,6 +1935,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           (a: string) => a !== '--enable-libvpx',
         )
         recipe.build.env.ARGS.push('--disable-libvpx')
+        // Remove --enable-libx264 and explicitly disable it (x264 not in S3)
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--enable-libx264',
+        )
+        recipe.build.env.ARGS.push('--disable-libx264')
       }
     },
   },
@@ -1938,21 +1947,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnutls.org — remove p11-kit dep (not in S3) ────────────────────
 
   'gnutls.org': {
-    platforms: {
-      linux: {
-        prependScript: [
-          // Install nettle from apt since S3 binary may not have proper pkg-config paths
-          'sudo apt-get install -y nettle-dev libhogweed-dev 2>/dev/null || true',
-        ],
-      },
-    },
     modifyRecipe: (recipe: any) => {
       // Remove freedesktop.org/p11-kit dep (not in S3)
       if (recipe.dependencies?.['freedesktop.org/p11-kit']) {
         delete recipe.dependencies['freedesktop.org/p11-kit']
       }
-      // Remove nettle dep on linux — use system nettle instead
-      if (recipe.dependencies?.['gnu.org/nettle']) delete recipe.dependencies['gnu.org/nettle']
       // Add --without-p11-kit to ARGS
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('--without-p11-kit')) {
@@ -2002,6 +2001,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
+      // Reduce parallel jobs on Linux to prevent scmconfig.h race condition
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('make') && step.includes('{{hw.concurrency}}')) {
+            recipe.build.script[i] = step.replace('{{hw.concurrency}}', '1')
+          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('make') && step.run.includes('{{hw.concurrency}}')) {
+            step.run = step.run.replace('{{hw.concurrency}}', '1')
+          }
+        }
+      }
       // Remove deps not reliably in S3 — use system packages instead
       if (recipe.dependencies?.['hboehm.info/gc']) delete recipe.dependencies['hboehm.info/gc']
       if (recipe.dependencies?.['gnu.org/libunistring']) delete recipe.dependencies['gnu.org/libunistring']
@@ -2035,8 +2046,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'gnu.org/emacs': {
     platforms: {
       darwin: {
-        // Set deployment target to avoid using posix_spawn_file_actions_addchdir (macOS 13+)
-        prependScript: ['export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-$(sw_vers -productVersion | cut -d. -f1)}"'],
+        // Set deployment target to 12 to prevent using posix_spawn_file_actions_addchdir (macOS 13.4+)
+        // The Xcode SDK may declare the symbol but the runtime may not have it
+        prependScript: ['export MACOSX_DEPLOYMENT_TARGET=12.0'],
       },
     },
     modifyRecipe: (recipe: any) => {
@@ -2050,6 +2062,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           (a: string) => a === '--with-gnutls' ? '--without-gnutls' : a,
         )
       }
+      // Tell configure that posix_spawn_file_actions_addchdir is not available
+      // (avoids runtime symbol lookup failure on some macOS versions)
+      if (!recipe.build.env.darwin) recipe.build.env.darwin = {}
+      if (!recipe.build.env.darwin.CFLAGS) recipe.build.env.darwin.CFLAGS = ''
+      recipe.build.env.darwin.ac_cv_func_posix_spawn_file_actions_addchdir = 'no'
     },
   },
 
@@ -2465,6 +2482,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'mupdf.com': {
     // Set SRCROOT so post-install dylib copy step can find build artifacts
     prependScript: ['export SRCROOT="$PWD"'],
+    platforms: {
+      darwin: {
+        // Install openjpeg headers on macOS (not reliably in S3 dep tree)
+        prependScript: ['brew install openjpeg 2>/dev/null || true'],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
@@ -2930,6 +2953,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── open-mpi.org — fix prefix quoting + sed -i BSD ──────────────────
 
   'open-mpi.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install hwloc, libevent, pmix dev packages from apt
+          // (S3 deps may not be uploaded yet when open-mpi build starts)
+          'sudo apt-get install -y libhwloc-dev libevent-dev libpmix-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix and other args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
