@@ -506,7 +506,7 @@ async function buildAndUpload(
   try {
     // Create tarball
     console.log(`   Packaging...`)
-    const artifactDir = join(artifactsDir, `${domain}-${usedVersion}-${platform}`)
+    const artifactDir = join(artifactsDir, `${domain.replace(/\//g, '-')}-${usedVersion}-${platform}`)
     mkdirSync(artifactDir, { recursive: true })
 
     const tarball = `${domain.replace(/\//g, '-')}-${usedVersion}.tar.gz`

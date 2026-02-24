@@ -783,6 +783,12 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     if (recipe.build.env.darwin) fixAutotoolsQuotes(recipe.build.env.darwin)
   }
 
+  // cmake.org from S3 has broken rpaths on macOS (needs libcurl.4.dylib at build-time path).
+  // CI installs cmake 3.31.10 via pip, so remove the S3 dep and use system cmake instead.
+  if (os === 'darwin' && recipe.build?.dependencies?.['cmake.org']) {
+    delete recipe.build.dependencies['cmake.org']
+  }
+
   // ── Inline legacy override ─────────────────────────────────────────
 
   // x.org/x11: disable local-transport on Linux (sys/stropts.h removed in glibc 2.38+)
