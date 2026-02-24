@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 60 versions</summary>
+<summary>Show all 61 versions</summary>
 
-- `2.48.11`, `2.48.10`, `2.48.9`, `2.48.6`, `2.48.5`, `2.48.4`, `2.48.3`, `2.48.2`, `2.48.1`, `2.48.0`
+- `2.48.12`, `2.48.11`, `2.48.10`, `2.48.9`, `2.48.6`, `2.48.5`, `2.48.4`, `2.48.3`, `2.48.2`, `2.48.1`, `2.48.0`
 - `2.47.0`
 - `2.46.0`
 - `2.45.3`, `2.45.2`, `2.45.1`, `2.45.0`
@@ -49,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.48.11`
+**Latest Version**: `2.48.12`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +hasura.io@2.48.11 -- $SHELL -i
+sh <(curl https://pkgx.sh) +hasura.io@2.48.12 -- $SHELL -i
 ```
 
 ## Usage Examples

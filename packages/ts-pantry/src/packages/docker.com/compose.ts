@@ -3,7 +3,7 @@
  *
  * @domain `docker.com/compose`
  * @programs `docker-compose`
- * @version `5.0.2` (69 versions available)
+ * @version `5.1.0` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install docker.com/compose`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "docker-compose"
  * console.log(pkg.description) // "Define and run multi-container applications wit..."
  * console.log(pkg.programs)    // ["docker-compose"]
- * console.log(pkg.versions[0]) // "5.0.2" (latest)
+ * console.log(pkg.versions[0]) // "5.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/docker-com/compose.md
@@ -68,6 +68,7 @@ export const dockercomcomposePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.1.0',
     '5.0.2',
     '5.0.1',
     '5.0.0',

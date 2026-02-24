@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 27 versions</summary>
+<summary>Show all 28 versions</summary>
 
-- `5.22.7`, `5.22.6`, `5.22.5`, `5.22.3`, `5.22.2`, `5.22.1`, `5.22.0`
+- `5.22.8`, `5.22.7`, `5.22.6`, `5.22.5`, `5.22.3`, `5.22.2`, `5.22.1`, `5.22.0`
 - `5.21.9`, `5.21.8`, `5.21.7`, `5.21.6`, `5.21.4`, `5.21.3`, `5.21.2`, `5.21.1`, `5.21.0`
 - `5.20.3`, `5.20.2`, `5.20.1`, `5.20.0`
 - `5.19.4`, `5.19.3`, `5.19.2`, `5.19.1`, `5.19.0`
@@ -35,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `5.22.7`
+**Latest Version**: `5.22.8`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +fairwinds.com/pluto@5.22.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +fairwinds.com/pluto@5.22.8 -- $SHELL -i
 ```
 
 ## Usage Examples

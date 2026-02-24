@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 69 versions</summary>
+<summary>Show all 70 versions</summary>
 
+- `5.1.0`
 - `5.0.2`, `5.0.1`, `5.0.0`
 - `2.40.3`, `2.40.2`, `2.40.1`, `2.40.0`
 - `2.39.4`, `2.39.3`, `2.39.2`, `2.39.1`, `2.39.0`
@@ -52,13 +53,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `5.0.2`
+**Latest Version**: `5.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +docker.com/compose@5.0.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +docker.com/compose@5.1.0 -- $SHELL -i
 ```
 
 ## Usage Examples
