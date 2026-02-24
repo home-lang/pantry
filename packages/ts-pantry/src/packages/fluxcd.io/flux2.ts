@@ -3,7 +3,7 @@
  *
  * @domain `fluxcd.io/flux2`
  * @programs `flux`
- * @version `2.7.5` (20 versions available)
+ * @version `2.8.0` (21 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fluxcd.io/flux2`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "flux"
  * console.log(pkg.description) // "Open and extensible continuous delivery solutio..."
  * console.log(pkg.programs)    // ["flux"]
- * console.log(pkg.versions[0]) // "2.7.5" (latest)
+ * console.log(pkg.versions[0]) // "2.8.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fluxcd-io/flux2.md
@@ -70,6 +70,7 @@ export const fluxcdioflux2Package = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.8.0',
     '2.7.5',
     '2.7.4',
     '2.7.3',

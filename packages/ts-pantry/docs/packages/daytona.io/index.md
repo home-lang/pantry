@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 138 versions</summary>
+<summary>Show all 139 versions</summary>
 
+- `0.145.0`
 - `0.144.1`, `0.144.0`
 - `0.143.0`
 - `0.142.0`
@@ -127,13 +128,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.144.1`
+**Latest Version**: `0.145.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +daytona.io@0.144.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +daytona.io@0.145.0 -- $SHELL -i
 ```
 
 ## Usage Examples
