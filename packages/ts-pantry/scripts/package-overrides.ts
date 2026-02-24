@@ -3372,9 +3372,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'x.org/xauth': {
     platforms: {
       linux: {
-        // xauth needs xmuu.pc from libxmu-dev — ensure multiarch pkg-config path is set
         prependScript: [
-          'export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          // Debug: understand why pkg-config can't find xmuu despite multiarch path in PKG_CONFIG_PATH
+          'echo "[DEBUG xauth] PKG_CONFIG_PATH=$PKG_CONFIG_PATH"',
+          'ls /usr/lib/x86_64-linux-gnu/pkgconfig/xmu* 2>&1 || echo "[DEBUG xauth] no xmu*.pc in multiarch dir"',
+          'pkg-config --exists xmuu 2>&1 && echo "[DEBUG xauth] pkg-config xmuu: OK" || echo "[DEBUG xauth] pkg-config xmuu: FAILED"',
+          // Bypass pkg-config entirely: provide XAUTH_CFLAGS/XAUTH_LIBS directly
+          'export XAUTH_CFLAGS="-I/usr/include"',
+          'export XAUTH_LIBS="-L/usr/lib/x86_64-linux-gnu -lX11 -lXau -lXext -lXmuu"',
         ],
       },
     },
@@ -3848,7 +3853,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         prependScript: [
-          'sudo apt-get install -y libwpe-1.0-dev 2>/dev/null || true',
+          // Install libwpe (no stderr suppression so we can see if it fails)
+          'sudo apt-get install -y libwpe-1.0-dev || echo "[DEBUG wpebackend-fdo] apt-get install libwpe-1.0-dev FAILED"',
+          // Debug: check pkg-config state
+          'echo "[DEBUG wpebackend-fdo] PKG_CONFIG_PATH=$PKG_CONFIG_PATH"',
+          'ls /usr/lib/x86_64-linux-gnu/pkgconfig/wpe* 2>&1 || echo "[DEBUG wpebackend-fdo] no wpe*.pc in multiarch dir"',
+          'pkg-config --exists wpe-1.0 2>&1 && echo "[DEBUG wpebackend-fdo] pkg-config wpe-1.0: OK" || echo "[DEBUG wpebackend-fdo] pkg-config wpe-1.0: FAILED"',
         ],
       },
     },
