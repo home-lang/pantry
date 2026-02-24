@@ -40,7 +40,7 @@
     "postinstall": "bun scripts/patch-ts-cloud.ts"
   },
   "devDependencies": {
-    "better-dx": "^0.2.3"
+    "better-dx": "^0.2.6"
   },
   "git-hooks": {
     "pre-commit": {
