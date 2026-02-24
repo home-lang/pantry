@@ -80,13 +80,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         // Install boost from Homebrew. Boost 1.82+ made regex header-only,
         // but source-highlight's configure expects a compiled libboost_regex.
-        // Create a stub archive to satisfy the linker check.
+        // Use configure cache vars to bypass the compiled library check.
         prependScript: [
           'brew install boost 2>/dev/null || true',
+          'brew link boost --overwrite 2>/dev/null || true',
           'BOOST_PREFIX=$(brew --prefix boost)',
           'export LDFLAGS="-L${BOOST_PREFIX}/lib $LDFLAGS"',
           'export CPPFLAGS="-I${BOOST_PREFIX}/include $CPPFLAGS"',
-          'if [ ! -f "${BOOST_PREFIX}/lib/libboost_regex.a" ] && [ ! -f "${BOOST_PREFIX}/lib/libboost_regex.dylib" ]; then echo "void _boost_regex_stub(void){}" > /tmp/_boost_regex_stub.c && cc -c /tmp/_boost_regex_stub.c -o /tmp/_boost_regex_stub.o && ar rcs "${BOOST_PREFIX}/lib/libboost_regex.a" /tmp/_boost_regex_stub.o 2>/dev/null || true; fi',
         ],
       },
       linux: {
@@ -106,6 +106,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => !a.startsWith('--with-boost='),
         )
+        // Boost 1.82+ made regex header-only. AX_BOOST_REGEX check fails because
+        // no compiled libboost_regex exists. Pass cache var to skip the link test.
+        recipe.build.env.ARGS.push('ax_cv_boost_regex=yes')
       }
     },
   },
@@ -3137,6 +3140,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'export PKG_CONFIG_PATH="${OMPI_HWLOC_PREFIX}/lib/pkgconfig:${OMPI_LIBEVENT_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export LDFLAGS="-L${OMPI_HWLOC_PREFIX}/lib -L${OMPI_LIBEVENT_PREFIX}/lib $LDFLAGS"',
           'export CPPFLAGS="-I${OMPI_HWLOC_PREFIX}/include -I${OMPI_LIBEVENT_PREFIX}/include $CPPFLAGS"',
+          // Re-export CONFIGURE_ARGS with actual hwloc/libevent paths — env vars in
+          // CONFIGURE_ARGS expand to empty at assignment time because env section runs
+          // before prependScript. Fix by substituting the values at runtime.
+          'export CONFIGURE_ARGS=$(echo "$CONFIGURE_ARGS" | sed "s|--with-hwloc=[^ ]*|--with-hwloc=${OMPI_HWLOC_PREFIX}|g; s|--with-libevent=[^ ]*|--with-libevent=${OMPI_LIBEVENT_PREFIX}|g")',
         ],
       },
       linux: {
