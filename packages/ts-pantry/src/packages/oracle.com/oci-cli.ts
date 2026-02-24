@@ -3,7 +3,7 @@
  *
  * @domain `oracle.com/oci-cli`
  * @programs `oci`
- * @version `3.74.1` (98 versions available)
+ * @version `3.74.2` (99 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install oracle.com/oci-cli`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "oci"
  * console.log(pkg.description) // "Command Line Interface for Oracle Cloud Infrast..."
  * console.log(pkg.programs)    // ["oci"]
- * console.log(pkg.versions[0]) // "3.74.1" (latest)
+ * console.log(pkg.versions[0]) // "3.74.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/oracle-com/oci-cli.md
@@ -78,6 +78,7 @@ export const oraclecomocicliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.74.2',
     '3.74.1',
     '3.74.0',
     '3.73.2',
