@@ -609,73 +609,80 @@ pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []co
 }
 
 fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool) !void {
-    // Create pantry/.bin directory
     const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, "node_modules", ".bin" });
     defer allocator.free(bin_link_dir);
     try io_helper.makePath(bin_link_dir);
 
-    // Find bin directory in package - could be at different locations
-    // Try: {package_path}/bin, or search for bin subdirectory
-    const possible_bin_paths = [_][]const u8{
-        "bin",
+    // Read package.json bin field (the standard way npm/yarn/bun resolve bins)
+    const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_path, "package.json" });
+    defer allocator.free(pkg_json_path);
+
+    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 1024 * 1024) catch {
+        // No package.json — fall back to scanning bin/ directory (non-npm packages)
+        try scanBinDirectory(allocator, package_path, bin_link_dir, verbose);
+        return;
     };
+    defer allocator.free(content);
 
-    for (possible_bin_paths) |bin_subpath| {
-        const pkg_bin_dir = try std.fs.path.join(allocator, &[_][]const u8{ package_path, bin_subpath });
-        defer allocator.free(pkg_bin_dir);
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+        try scanBinDirectory(allocator, package_path, bin_link_dir, verbose);
+        return;
+    };
+    defer parsed.deinit();
 
-        // Try to iterate the bin directory
-        if (io_helper.openDirAbsoluteForIteration(pkg_bin_dir)) |dir_val| {
-            var dir = dir_val;
-            defer dir.close();
-            var iter = dir.iterate();
-
-            while (iter.next() catch null) |entry| {
-                if (entry.kind == .file or entry.kind == .sym_link) {
-                    const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ pkg_bin_dir, entry.name });
-                    defer allocator.free(bin_src);
-                    const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, entry.name });
-                    defer allocator.free(bin_dst);
-
-                    // Validate entry name
-                    if (std.mem.indexOfScalar(u8, entry.name, '/') != null or
-                        std.mem.eql(u8, entry.name, ".."))
-                    {
-                        continue;
-                    }
-
-                    // Atomic symlink: try create first, replace if exists
-                    io_helper.symLink(bin_src, bin_dst) catch |err| switch (err) {
-                        error.PathAlreadyExists => {
-                            io_helper.deleteFile(bin_dst) catch {};
-                            io_helper.symLink(bin_src, bin_dst) catch |err2| {
-                                if (verbose) {
-                                    style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
-                                }
-                            };
-                        },
-                        else => {
-                            if (verbose) {
-                                style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
-                            }
-                        },
-                    };
-                }
-            }
-            return; // Found and processed bin directory
-        } else |_| {
-            continue; // Try next possible location
-        }
+    if (parsed.value != .object) {
+        try scanBinDirectory(allocator, package_path, bin_link_dir, verbose);
+        return;
     }
 
-    // Also search for versioned bin directories (e.g., github.com/org/pkg/v1.2.3/bin)
-    // Walk the package directory tree to find bin folders
-    try findAndLinkBinDirs(allocator, package_path, bin_link_dir, verbose);
+    const bin_val = parsed.value.object.get("bin") orelse {
+        try scanBinDirectory(allocator, package_path, bin_link_dir, verbose);
+        return;
+    };
+
+    if (bin_val == .string) {
+        // "bin": "./path/to/cli.js" — single binary named after the package
+        const name_val = parsed.value.object.get("name") orelse return;
+        if (name_val != .string) return;
+        // For scoped packages (@scope/name), use just the name part
+        const pkg_name = if (std.mem.lastIndexOfScalar(u8, name_val.string, '/')) |slash|
+            name_val.string[slash + 1 ..]
+        else
+            name_val.string;
+
+        const source = try std.fs.path.join(allocator, &[_][]const u8{ package_path, bin_val.string });
+        defer allocator.free(source);
+        const link = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, pkg_name });
+        defer allocator.free(link);
+
+        makeExecutable(source);
+        io_helper.deleteFile(link) catch {};
+        io_helper.symLink(source, link) catch |err| {
+            if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ link, err });
+        };
+    } else if (bin_val == .object) {
+        // "bin": { "cmd1": "./path1.js", "cmd2": "./path2.js" }
+        var it = bin_val.object.iterator();
+        while (it.next()) |entry| {
+            const bin_name = entry.key_ptr.*;
+            if (entry.value_ptr.* != .string) continue;
+
+            const source = try std.fs.path.join(allocator, &[_][]const u8{ package_path, entry.value_ptr.string });
+            defer allocator.free(source);
+            const link = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, bin_name });
+            defer allocator.free(link);
+
+            makeExecutable(source);
+            io_helper.deleteFile(link) catch {};
+            io_helper.symLink(source, link) catch |err| {
+                if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ link, err });
+            };
+        }
+    }
 }
 
 /// Make a file executable (chmod +x) using native syscall instead of spawning a process
 fn makeExecutable(path: []const u8) void {
-    // Use libc chmod — avoids fork+exec overhead per file
     var path_buf: [std.fs.max_path_bytes:0]u8 = undefined;
     if (path.len >= std.fs.max_path_bytes) return;
     @memcpy(path_buf[0..path.len], path);
@@ -683,78 +690,29 @@ fn makeExecutable(path: []const u8) void {
     _ = std.c.chmod(&path_buf, 0o755);
 }
 
-/// Recursively search for bin directories and create symlinks (with depth limit)
-fn findAndLinkBinDirs(allocator: std.mem.Allocator, search_path: []const u8, bin_link_dir: []const u8, verbose: bool) !void {
-    return findAndLinkBinDirsWithDepth(allocator, search_path, bin_link_dir, verbose, 0);
-}
+/// Fallback: scan bin/ directory for non-npm packages (Pantry registry, GitHub, etc.)
+fn scanBinDirectory(allocator: std.mem.Allocator, package_path: []const u8, bin_link_dir: []const u8, verbose: bool) !void {
+    const pkg_bin_dir = try std.fs.path.join(allocator, &[_][]const u8{ package_path, "bin" });
+    defer allocator.free(pkg_bin_dir);
 
-fn findAndLinkBinDirsWithDepth(allocator: std.mem.Allocator, search_path: []const u8, bin_link_dir: []const u8, verbose: bool, depth: u32) !void {
-    const max_depth = 8;
-    if (depth >= max_depth) return;
-
-    var dir = io_helper.openDirAbsoluteForIteration(search_path) catch return;
+    var dir = io_helper.openDirAbsoluteForIteration(pkg_bin_dir) catch return;
     defer dir.close();
 
     var iter = dir.iterate();
     while (iter.next() catch null) |entry| {
-        if (entry.kind == .directory) {
-            // Validate entry name doesn't contain path separators or traversal
-            if (std.mem.indexOfScalar(u8, entry.name, '/') != null or
-                std.mem.eql(u8, entry.name, "..") or
-                std.mem.eql(u8, entry.name, "."))
-            {
-                continue;
-            }
+        if (entry.kind != .file and entry.kind != .sym_link) continue;
+        if (std.mem.indexOfScalar(u8, entry.name, '/') != null or std.mem.eql(u8, entry.name, "..")) continue;
 
-            const subpath = try std.fs.path.join(allocator, &[_][]const u8{ search_path, entry.name });
-            defer allocator.free(subpath);
+        const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ pkg_bin_dir, entry.name });
+        defer allocator.free(bin_src);
+        const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, entry.name });
+        defer allocator.free(bin_dst);
 
-            if (std.mem.eql(u8, entry.name, "bin")) {
-                // Found a bin directory - symlink its contents
-                var bin_dir = io_helper.openDirAbsoluteForIteration(subpath) catch continue;
-                defer bin_dir.close();
-
-                var bin_iter = bin_dir.iterate();
-                while (bin_iter.next() catch null) |bin_entry| {
-                    if (bin_entry.kind == .file or bin_entry.kind == .sym_link) {
-                        // Validate binary name
-                        if (std.mem.indexOfScalar(u8, bin_entry.name, '/') != null or
-                            std.mem.eql(u8, bin_entry.name, ".."))
-                        {
-                            continue;
-                        }
-
-                        const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ subpath, bin_entry.name });
-                        defer allocator.free(bin_src);
-                        const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, bin_entry.name });
-                        defer allocator.free(bin_dst);
-
-                        // Make source executable
-                        makeExecutable(bin_src);
-
-                        // Atomic symlink: try create first, then replace if exists
-                        io_helper.symLink(bin_src, bin_dst) catch |err| switch (err) {
-                            error.PathAlreadyExists => {
-                                io_helper.deleteFile(bin_dst) catch {};
-                                io_helper.symLink(bin_src, bin_dst) catch |err2| {
-                                    if (verbose) {
-                                        style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err2 });
-                                    }
-                                };
-                            },
-                            else => {
-                                if (verbose) {
-                                    style.print("    Warning: Failed to create symlink {s} -> {s}: {}\n", .{ bin_dst, bin_src, err });
-                                }
-                            },
-                        };
-                    }
-                }
-            } else {
-                // Recurse into subdirectory (with depth limit)
-                try findAndLinkBinDirsWithDepth(allocator, subpath, bin_link_dir, verbose, depth + 1);
-            }
-        }
+        makeExecutable(bin_src);
+        io_helper.deleteFile(bin_dst) catch {};
+        io_helper.symLink(bin_src, bin_dst) catch |err| {
+            if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ bin_dst, err });
+        };
     }
 }
 
