@@ -1084,6 +1084,50 @@ export const packageOverrides: Record<string, PackageOverride> = {
     distributableUrl: 'https://xorg.freedesktop.org/archive/individual/xcb/libpthread-stubs-{{version.marketing}}.tar.gz',
   },
 
+  // ─── x.org/xdmcp — fix sed -i BSD compat ──────────────────────────────
+  'x.org/xdmcp': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat: the build script does `sed -i 's/...' *.la`
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── x.org/xcb — fix $SHELF variable references ──────────────────────────
+  'x.org/xcb': {
+    modifyRecipe: (recipe: any) => {
+      // Fix $SHELF in ARGS array (same pattern as x.org/ice)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a.replace(/"\$SHELF"\/etc/, '"{{prefix}}/etc"')
+           .replace(/"\$SHELF"\/var/, '"{{prefix}}/var"'),
+        )
+      }
+      // Remove python.org build dep (uses ~3.11 constraint, S3 has 3.14+)
+      // System python3 is sufficient for xcb-proto parsing
+      if (recipe.build?.dependencies?.['python.org']) {
+        delete recipe.build.dependencies['python.org']
+      }
+    },
+  },
+
+  // ─── x.org/protocol/xcb — remove python.org build dep ────────────────────
+  'x.org/protocol/xcb': {
+    modifyRecipe: (recipe: any) => {
+      // Remove python.org ~3.11 build dep (system python3 is sufficient)
+      if (recipe.build?.dependencies?.['python.org']) {
+        delete recipe.build.dependencies['python.org']
+      }
+    },
+  },
+
   // xcb.freedesktop.org → xorg.freedesktop.org mirror is handled generically
   // in applyRecipeOverrides (build-package.ts), no per-package overrides needed.
 
