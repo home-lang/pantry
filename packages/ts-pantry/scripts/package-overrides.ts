@@ -76,6 +76,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'gnu.org/source-highlight': {
     env: { CXXFLAGS: '-std=c++14' },
+    platforms: {
+      darwin: {
+        // Install boost with Regex library from Homebrew (S3 boost is header-only)
+        prependScript: ['brew install boost 2>/dev/null || true'],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // On darwin, boost.org S3 binary is header-only (no lib/).
       // Remove boost.org dep so configure finds Homebrew's boost instead.
@@ -1754,6 +1760,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/gobject-introspection — fix sed -i BSD + CC ──────────
 
   'gnome.org/gobject-introspection': {
+    platforms: {
+      darwin: {
+        // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
+        prependScript: ['brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"'],
+      },
+      linux: {
+        // gobject-introspection requires meson >= 1.4.0 (Ubuntu runner has 1.3.2)
+        prependScript: ['pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || true'],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in g-ir-scanner shebang fix
       if (Array.isArray(recipe.build?.script)) {
@@ -1780,11 +1796,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
       }
-      // Add -Dintrospection=disabled to meson args
+      // ATK's meson declares introspection as boolean (true/false), not feature (enabled/disabled)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
-        if (!recipe.build.env.ARGS.includes('-Dintrospection=disabled')) {
-          recipe.build.env.ARGS.push('-Dintrospection=disabled')
-        }
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('introspection'))
+        recipe.build.env.ARGS.push('-Dintrospection=false')
       }
     },
   },
@@ -3346,6 +3361,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/folly — fix sed -i BSD + remove gcc dep ──────────────
 
   'facebook.com/folly': {
+    platforms: {
+      darwin: {
+        prependScript: ['brew install double-conversion 2>/dev/null || true'],
+      },
+      linux: {
+        prependScript: ['sudo apt-get install -y libdouble-conversion-dev 2>/dev/null || true'],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove linux gnu.org/gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
