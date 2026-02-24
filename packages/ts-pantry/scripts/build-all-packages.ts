@@ -510,6 +510,11 @@ async function buildAndUpload(
     mkdirSync(artifactDir, { recursive: true })
 
     const tarball = `${domain.replace(/\//g, '-')}-${usedVersion}.tar.gz`
+    // Diagnostic: show what's being packaged
+    try {
+      const treeOutput = execSync(`find "${installDir}" -maxdepth 3 -type f | head -20`, { encoding: 'utf-8' })
+      console.log(`   [diag] Install dir contents (first 20 files):\n${treeOutput.trim().split('\n').map(l => `     ${l}`).join('\n')}`)
+    } catch {}
     execSync(`cd "${installDir}" && tar -czf "${join(artifactDir, tarball)}" .`)
     execSync(`cd "${artifactDir}" && shasum -a 256 "${tarball}" > "${tarball}.sha256"`)
 
