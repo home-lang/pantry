@@ -1310,9 +1310,20 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   const yamlContent = readFileSync(pantryPath, 'utf-8')
   const recipe = parseYaml(yamlContent) as PackageRecipe
 
+  // Capture dep domains BEFORE overrides to detect removals
+  const preOverrideRuntimeDeps = new Set(extractYamlDeps(recipe.dependencies, platform).map(d => parseDep(d)))
+  const preOverrideBuildDeps = new Set(extractYamlDeps(recipe.build?.dependencies, platform).map(d => parseDep(d)))
+
   // Apply buildkit-level recipe overrides that survive pantry YAML regeneration.
   // These fix platform-specific issues in upstream recipes without modifying the YAML files.
   applyRecipeOverrides(recipe, pkgName, platform)
+
+  // Compute deps removed by modifyRecipe overrides
+  const postOverrideRuntimeDeps = new Set(extractYamlDeps(recipe.dependencies, platform).map(d => parseDep(d)))
+  const postOverrideBuildDeps = new Set(extractYamlDeps(recipe.build?.dependencies, platform).map(d => parseDep(d)))
+  const removedDeps = new Set<string>()
+  for (const d of preOverrideRuntimeDeps) if (!postOverrideRuntimeDeps.has(d)) removedDeps.add(d)
+  for (const d of preOverrideBuildDeps) if (!postOverrideBuildDeps.has(d)) removedDeps.add(d)
 
   console.log(`\nBuild recipe: ${pantryPath}`)
 
@@ -1327,12 +1338,13 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   let depPaths: Record<string, string> = {}
   if (bucket && region && depsDir) {
     // Merge TS metadata deps + YAML deps (deduplicate by domain)
+    // Filter out deps that were explicitly removed by modifyRecipe overrides
     const tsDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
     const allDepDomains = new Set<string>()
     const allDeps: string[] = []
     for (const dep of [...tsDeps, ...yamlBuildDeps, ...yamlRuntimeDeps]) {
       const domain = parseDep(dep)
-      if (!allDepDomains.has(domain)) {
+      if (!allDepDomains.has(domain) && !removedDeps.has(domain)) {
         allDepDomains.add(domain)
         allDeps.push(dep)
       }
