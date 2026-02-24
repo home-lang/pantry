@@ -1606,17 +1606,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
         )
       }
       // On darwin, bzip2 is not in S3 and macOS SIP prevents /usr/lib symlinks.
-      // Use cmake's bundled bzip2 instead of system one.
+      // Remove BZIP2 cmake args — cmake will use its bundled bzip2 if system one isn't found
       if (Array.isArray(recipe.build?.env?.darwin?.ARGS)) {
         recipe.build.env.darwin.ARGS = recipe.build.env.darwin.ARGS.filter(
           (a: string) => !a.includes('BZIP2_LIBRARIES') && !a.includes('BZIP2_INCLUDE_DIR'),
         )
       }
-      // Add --no-system-bzip2 to use bundled bzip2 (system bzip2 not reliably available)
+      // Remove --system-bzip2 from ARGS (let cmake auto-detect)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
-        if (!recipe.build.env.ARGS.includes('--no-system-bzip2')) {
-          recipe.build.env.ARGS.push('--no-system-bzip2')
-        }
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--system-bzip2' && a !== '--no-system-bzip2',
+        )
       }
     },
   },
@@ -2607,7 +2607,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         // Install openjpeg headers on macOS (not reliably in S3 dep tree)
-        prependScript: ['brew install openjpeg 2>/dev/null || true'],
+        // Must also set CPPFLAGS since openjpeg installs to a versioned subdir
+        prependScript: [
+          'brew install openjpeg 2>/dev/null || true',
+          'OJ_INC=$(find $(brew --prefix openjpeg)/include -maxdepth 1 -name "openjpeg-*" -type d | head -1); if [ -n "$OJ_INC" ]; then export CPPFLAGS="-I$OJ_INC $CPPFLAGS"; fi',
+          'export LDFLAGS="-L$(brew --prefix openjpeg)/lib $LDFLAGS"',
+        ],
       },
     },
     modifyRecipe: (recipe: any) => {
@@ -3039,6 +3044,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── php.net — fix sed -i BSD compat + remove kerberos dep ──────────
 
   'php.net': {
+    platforms: {
+      darwin: {
+        // Install kerberos headers from Homebrew
+        prependScript: [
+          'brew install krb5 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+      linux: {
+        // Install kerberos headers from apt
+        prependScript: [
+          'sudo apt-get install -y libkrb5-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in php-config/phpize fixup steps
       if (Array.isArray(recipe.build?.script)) {
@@ -3050,15 +3070,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
-      // Remove kerberos.org dep (not in S3)
+      // Remove S3 kerberos.org dep — use system-installed kerberos instead
       if (recipe.dependencies?.['kerberos.org']) {
         delete recipe.dependencies['kerberos.org']
-      }
-      // Remove --with-kerberos from ARGS
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
-          (a: string) => a !== '--with-kerberos',
-        )
       }
       // Remove gnu.org/gcc/libstdcxx dep (use system libstdc++)
       if (recipe.dependencies?.['gnu.org/gcc/libstdcxx']) {
@@ -3086,6 +3100,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'open-mpi.org': {
     platforms: {
+      darwin: {
+        prependScript: [
+          // Install hwloc, libevent, open-mpi deps from Homebrew
+          'brew install hwloc libevent open-mpi 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix hwloc)/lib/pkgconfig:$(brew --prefix libevent)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix hwloc)/lib -L$(brew --prefix libevent)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix hwloc)/include -I$(brew --prefix libevent)/include $CPPFLAGS"',
+        ],
+      },
       linux: {
         prependScript: [
           // Install hwloc, libevent, pmix dev packages from apt
@@ -3100,12 +3123,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
           a.replace(/^(--\w[\w-]+=)"([^"]+)"$/, '$1$2'),
         )
-        // Fix multiarch hwloc path on Linux: /usr/lib/x86_64-linux-gnu vs /usr/lib
-        // When hwloc falls back to /usr, configure can't find libhwloc.so in /usr/lib
-        // because Ubuntu uses multiarch paths. Replace with auto-detection.
+        // When S3 deps fall back to system path (/usr), configure can't find libraries
+        // (Linux multiarch: /usr/lib/x86_64-linux-gnu; macOS: not in /usr at all).
+        // Use auto-detection instead of broken explicit paths.
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) => {
-          if (a.startsWith('--with-hwloc=/usr')) return '--with-hwloc'
-          if (a.startsWith('--with-pmix=/usr')) return '--with-pmix'
+          if (a.match(/^--with-hwloc=\/usr/)) return '--with-hwloc'
+          if (a.match(/^--with-pmix=\/usr/)) return '--with-pmix'
+          if (a.match(/^--with-libevent=\/usr/)) return '--with-libevent'
           return a
         })
       }
