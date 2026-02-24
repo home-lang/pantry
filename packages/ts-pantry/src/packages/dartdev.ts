@@ -3,7 +3,7 @@
  *
  * @domain `dart.dev`
  * @programs `dart`, `dartaotruntime`
- * @version `3.11.0` (54 versions available)
+ * @version `3.11.1` (55 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dart.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "dart"
  * console.log(pkg.description) // "The Dart SDK, including the VM, JS and Wasm com..."
  * console.log(pkg.programs)    // ["dart", "dartaotruntime"]
- * console.log(pkg.versions[0]) // "3.11.0" (latest)
+ * console.log(pkg.versions[0]) // "3.11.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dart-dev.md
@@ -71,6 +71,7 @@ export const dartdevPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.11.1',
     '3.11.0',
     '3.10.9',
     '3.10.8',

@@ -25,20 +25,20 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
-- `1.1.5`, `1.1.4`, `1.1.3`, `1.1.2`, `1.1.1`
+- `1.1.6`, `1.1.5`, `1.1.4`, `1.1.3`, `1.1.2`, `1.1.1`
 - `1.0.6`
 
 </details>
 
-**Latest Version**: `1.1.5`
+**Latest Version**: `1.1.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dkrz.de/libaec@1.1.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dkrz.de/libaec@1.1.6 -- $SHELL -i
 ```
 
 ## Usage Examples

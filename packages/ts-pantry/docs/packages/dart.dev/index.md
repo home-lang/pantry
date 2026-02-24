@@ -26,9 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 54 versions</summary>
+<summary>Show all 55 versions</summary>
 
-- `3.11.0`
+- `3.11.1`, `3.11.0`
 - `3.10.9`, `3.10.8`, `3.10.7`, `3.10.6`, `3.10.5`, `3.10.4`, `3.10.3`, `3.10.2`, `3.10.1`, `3.10.0`
 - `3.9.4`, `3.9.3`, `3.9.2`, `3.9.1`, `3.9.0`
 - `3.8.3`, `3.8.2`, `3.8.1`, `3.8.0`
@@ -42,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.11.0`
+**Latest Version**: `3.11.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dart.dev@3.11.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dart.dev@3.11.1 -- $SHELL -i
 ```
 
 ## Usage Examples

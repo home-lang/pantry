@@ -2,7 +2,7 @@
  * **libaec** - libaec - Adaptive Entropy Coding library
  *
  * @domain `dkrz.de/libaec`
- * @version `1.1.5` (6 versions available)
+ * @version `1.1.6` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dkrz.de/libaec`
@@ -16,7 +16,7 @@
  * const pkg = pantry.dkrzdelibaec
  * console.log(pkg.name)        // "libaec"
  * console.log(pkg.description) // "libaec - Adaptive Entropy Coding library"
- * console.log(pkg.versions[0]) // "1.1.5" (latest)
+ * console.log(pkg.versions[0]) // "1.1.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dkrz-de/libaec.md
@@ -60,6 +60,7 @@ export const dkrzdelibaecPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.1.6',
     '1.1.5',
     '1.1.4',
     '1.1.3',

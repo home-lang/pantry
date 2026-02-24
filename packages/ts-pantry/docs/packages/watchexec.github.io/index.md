@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
-- `2.4.1`, `2.4.0`
+- `2.4.2`, `2.4.1`, `2.4.0`
 - `2.3.3`, `2.3.2`, `2.3.1`, `2.3.0`
 - `2.2.1`, `2.2.0`
 - `2.1.2`
 
 </details>
 
-**Latest Version**: `2.4.1`
+**Latest Version**: `2.4.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +watchexec.github.io@2.4.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +watchexec.github.io@2.4.2 -- $SHELL -i
 ```
 
 ## Usage Examples
