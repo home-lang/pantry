@@ -3,7 +3,7 @@
  *
  * @domain `github.com/containers/skopeo`
  * @programs `skopeo`
- * @version `1.22.0` (20 versions available)
+ * @version `1.22.0` (21 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/containers/skopeo`
@@ -95,6 +95,7 @@ export const skopeoPackage = {
     '1.13.3',
     '1.11.4',
     '1.11.3',
+    '1.9.5',
   ] as const,
   aliases: [] as const,
 }

@@ -25,7 +25,7 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 20 versions</summary>
+<summary>Show all 21 versions</summary>
 
 - `1.22.0`
 - `1.21.0`
@@ -38,6 +38,7 @@ This package provides the following executable programs:
 - `1.14.5`, `1.14.4`, `1.14.3`, `1.14.2`, `1.14.1`, `1.14.0`
 - `1.13.3`
 - `1.11.4`, `1.11.3`
+- `1.9.5`
 
 </details>
 
