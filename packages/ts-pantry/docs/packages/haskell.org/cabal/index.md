@@ -27,20 +27,20 @@ This package provides the following executable programs:
 <details>
 <summary>Show all 7 versions</summary>
 
-- `3.8.1`
 - `3.14.2.0`, `3.14.1.1`, `3.14.1.0`
 - `3.12.1.0`
 - `3.10.3.0`, `3.10.1`
+- `3.8.1`
 
 </details>
 
-**Latest Version**: `3.8.1`
+**Latest Version**: `3.14.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +haskell.org/cabal@3.8.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +haskell.org/cabal@3.14.2.0 -- $SHELL -i
 ```
 
 ## Dependencies

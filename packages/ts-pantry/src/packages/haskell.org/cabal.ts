@@ -3,7 +3,7 @@
  *
  * @domain `haskell.org/cabal`
  * @programs `cabal`
- * @version `3.8.1` (7 versions available)
+ * @version `3.14.2.0` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install haskell.org/cabal`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "cabal"
  * console.log(pkg.description) // "Official upstream development repository for Ca..."
  * console.log(pkg.programs)    // ["cabal"]
- * console.log(pkg.versions[0]) // "3.8.1" (latest)
+ * console.log(pkg.versions[0]) // "3.14.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/haskell-org/cabal.md
@@ -79,13 +79,13 @@ export const haskellorgcabalPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
-    '3.8.1',
     '3.14.2.0',
     '3.14.1.1',
     '3.14.1.0',
     '3.12.1.0',
     '3.10.3.0',
     '3.10.1',
+    '3.8.1',
   ] as const,
   aliases: [] as const,
 }

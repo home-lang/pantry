@@ -3,7 +3,7 @@
  *
  * @domain `ijg.org`
  * @programs `cjpeg`, `djpeg`, `jpegtran`, `rdjpgcom`, `wrjpgcom`
- * @version `9f` (5 versions available)
+ * @version `10.0.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install ijg.org`
@@ -16,7 +16,7 @@
  * const pkg = pantry.ijgorg
  * console.log(pkg.name)        // "ijg"
  * console.log(pkg.programs)    // ["cjpeg", "djpeg", ...]
- * console.log(pkg.versions[0]) // "9f" (latest)
+ * console.log(pkg.versions[0]) // "10.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/ijg-org.md
@@ -70,11 +70,11 @@ export const ijgorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.0.0',
+    '9.5.0',
     '9f',
     '9e',
     '8d',
-    '10.0.0',
-    '9.5.0',
   ] as const,
   aliases: [] as const,
 }
