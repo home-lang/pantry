@@ -1842,27 +1842,49 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
-        prependScript: ['brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"'],
+        // Also fix python detection: use system python3 so meson embeds a valid path in ninja rules
+        prependScript: [
+          'brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"',
+          'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+          'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"',
+        ],
       },
       linux: {
         // gobject-introspection requires meson >= 1.4.0 (Ubuntu runner has 1.3.2)
-        prependScript: ['pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || true'],
+        // pip3 installs meson to /usr/local/bin, but dep paths prepend /usr/bin first,
+        // so we must prepend /usr/local/bin to PATH to find the pip-installed meson
+        prependScript: [
+          'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || true',
+          'export PATH="/usr/local/bin:$PATH"',
+        ],
       },
     },
     modifyRecipe: (recipe: any) => {
-      // Fix sed -i BSD compat in g-ir-scanner shebang fix
+      // Fix sed -i BSD compat and replace python dep template references
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && step.run.includes('g-ir-scanner')
-            && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            // Replace the sed step that uses {{deps.python.org.prefix}} with a generic version
+            if (step.run.includes('deps.python.org.prefix')) {
+              step.run = "sed -i.bak 's|env .*/bin/python[23]*|env python3|' g-ir-annotation-tool g-ir-scanner 2>/dev/null || true"
+            }
+            // Fix sed -i BSD compat in other steps
+            if (step.run.includes('sed -i') && step.run.includes('g-ir-scanner')
+              && !step.run.includes('sed -i.bak')) {
+              step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+            }
           }
         }
       }
       // Remove hardcoded CC: clang (let build system choose)
       if (recipe.build?.env?.CC === 'clang') {
         delete recipe.build.env.CC
+      }
+      // Remove python.org dep — use system python3 to avoid broken meson python path detection
+      // (S3 python 3.14 doesn't match the >=3<3.12 constraint and causes meson path issues)
+      if (recipe.dependencies?.['python.org']) {
+        delete recipe.dependencies['python.org']
       }
     },
   },
@@ -3590,6 +3612,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'export PKG_CONFIG_PATH="$(brew --prefix glog)/lib/pkgconfig:$(brew --prefix gflags)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export LDFLAGS="-L$(brew --prefix glog)/lib -L$(brew --prefix gflags)/lib $LDFLAGS"',
           'export CPPFLAGS="-I$(brew --prefix glog)/include -I$(brew --prefix gflags)/include $CPPFLAGS"',
+          // CMAKE_PREFIX_PATH set via env var (not -D flag) so it's not overridden by ARGS
           'export CMAKE_PREFIX_PATH="$(brew --prefix glog);$(brew --prefix gflags);$(brew --prefix double-conversion);$(brew --prefix fast_float);${CMAKE_PREFIX_PATH:-}"',
         ],
       },
@@ -3599,6 +3622,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install fast_float from source — Ubuntu's libfast-float-dev is too old (missing allow_leading_plus).
           // folly 2026.02+ needs fast_float >= 8.0.0.
           '(cd /tmp && curl -fsSL https://github.com/fastfloat/fast_float/archive/refs/tags/v8.0.0.tar.gz | tar xz && cd fast_float-8.0.0 && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DFASTFLOAT_TEST=OFF -S . -B build && cmake --build build && sudo cmake --install build && rm -rf /tmp/fast_float-8.0.0)',
+          'export CMAKE_PREFIX_PATH="/usr/local:${CMAKE_PREFIX_PATH:-}"',
         ],
       },
     },
@@ -3620,9 +3644,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
       // Fix linux build: cmake adds -isystem /usr/include for system packages which
       // breaks #include_next <stdlib.h>. Prevent cmake from using -isystem for imported targets.
+      // NOTE: Do NOT add -DCMAKE_PREFIX_PATH to ARGS — it overrides the env var set in prependScript.
+      // CMAKE_PREFIX_PATH is set via env var in platform prependScript above.
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('-DCMAKE_NO_SYSTEM_FROM_IMPORTED=ON')
-        recipe.build.env.ARGS.push('-DCMAKE_PREFIX_PATH=/usr/local')
       }
     },
   },
