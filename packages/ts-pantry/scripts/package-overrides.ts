@@ -3058,18 +3058,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'php.net': {
     platforms: {
       darwin: {
-        // Install kerberos headers from Homebrew
+        // Install kerberos and ICU from Homebrew (not reliably in S3)
         prependScript: [
-          'brew install krb5 2>/dev/null || true',
-          'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'brew install krb5 icu4c 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix icu4c)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix icu4c)/include $CPPFLAGS"',
         ],
       },
       linux: {
-        // Install kerberos and iconv headers from apt
+        // Install kerberos, ICU, and iconv headers from apt
         prependScript: [
-          'sudo apt-get install -y libkrb5-dev libc6-dev 2>/dev/null || true',
-          // Ensure iconv.h is findable — on glibc, it's in libc but configure may not find it
-          'if [ ! -f /usr/include/iconv.h ]; then sudo ln -sf /usr/include/x86_64-linux-gnu/iconv.h /usr/include/iconv.h 2>/dev/null || true; fi',
+          'sudo apt-get install -y libkrb5-dev libicu-dev libc6-dev 2>/dev/null || true',
         ],
       },
     },
@@ -3088,7 +3088,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['kerberos.org']) {
         delete recipe.dependencies['kerberos.org']
       }
-      // Remove S3 libiconv dep — glibc provides iconv on linux
+      // Remove S3 ICU dep — use system-installed ICU instead
+      if (recipe.dependencies?.['unicode.org']) {
+        delete recipe.dependencies['unicode.org']
+      }
+      // Remove S3 libiconv dep — glibc provides iconv on linux, brew has it on darwin
       if (recipe.dependencies?.['gnu.org/libiconv']) {
         delete recipe.dependencies['gnu.org/libiconv']
       }
