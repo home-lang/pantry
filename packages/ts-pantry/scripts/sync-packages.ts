@@ -122,7 +122,7 @@ const packages: Record<string, PackageConfig> = {
       const { os, arch } = detectPlatform()
       const bunArch = arch === 'arm64' ? 'aarch64' : 'x64'
       const bunPlatform = os === 'darwin' ? 'darwin' : 'linux'
-      const ext = os === 'linux' ? '' : ''
+      const _ext = os === 'linux' ? '' : ''
 
       // Bun URL format: bun-darwin-aarch64.zip
       const url = `https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-${bunPlatform}-${bunArch}.zip`
@@ -490,7 +490,7 @@ async function syncPackage(
 }
 
 async function main() {
-  const { values, positionals } = parseArgs({
+  const { values, positionals: _positionals } = parseArgs({
     options: {
       bucket: { type: 'string', short: 'b' },
       region: { type: 'string', short: 'r', default: 'us-east-1' },

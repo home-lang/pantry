@@ -157,6 +157,7 @@ export function listAliases(): CLIResult<string[]> {
 /**
  * Validate a package specification
  */
+// eslint-disable-next-line no-unused-vars
 export async function validatePackage(packageSpec: string): Promise<CLIResult<{
   packageName: PackageName
   version?: string
@@ -261,6 +262,7 @@ export async function createInstallPlan(packageSpec: string): Promise<CLIResult<
 /**
  * Get version information for a package
  */
+// eslint-disable-next-line no-unused-vars
 export async function getVersionInfo(packageName: string): Promise<CLIResult<{
   latest: string
   total: number

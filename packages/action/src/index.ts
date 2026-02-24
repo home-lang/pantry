@@ -80,7 +80,7 @@ async function ensurePantryBinary(): Promise<void> {
   }
 
   // Download or use pre-built pantry binary from release
-  const zigDir = path.join(process.cwd(), 'packages', 'zig')
+  const _zigDir = path.join(process.cwd(), 'packages', 'zig')
 
   core.startGroup('Downloading pantry binary')
 
@@ -219,7 +219,7 @@ async function installSpecifiedPackages(packages: string): Promise<void> {
  * Install project dependencies using pantry install
  * This reads from pantry.json, pantry.jsonc, package.json, or package.jsonc
  */
-async function installProjectDependencies(configPath: string): Promise<void> {
+async function installProjectDependencies(_configPath: string): Promise<void> {
   core.info('Installing project dependencies using pantry...')
 
   const options = {

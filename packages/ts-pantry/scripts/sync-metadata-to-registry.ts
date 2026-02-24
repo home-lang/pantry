@@ -144,6 +144,7 @@ function collectPackageFiles(dir: string): string[] {
   return files
 }
 
+// eslint-disable-next-line no-unused-vars
 async function extractPackageData(filePath: string): Promise<{
   domain: string
   name: string

@@ -257,6 +257,7 @@ pub fn getPackageByName(name: []const u8) ?*const PackageInfo {
 
 /// Get all package domains
 pub fn getAllDomains(allocator: std.mem.Allocator) ![][]const u8 {
+    // eslint-disable-next-line prefer-const
     var domains = try allocator.alloc([]const u8, packages.len);
     for (packages, 0..) |pkg, i| {
         domains[i] = pkg.domain;

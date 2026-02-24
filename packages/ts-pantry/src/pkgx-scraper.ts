@@ -184,6 +184,7 @@ async function fetchPantryData(packageName: string, timeout: number): Promise<Pa
  * Simple YAML parser for package.yml (we only need a few fields)
  * This handles the specific structure of pkgx pantry files
  */
+// eslint-disable-next-line no-unused-vars
 function parseSimpleYaml(yaml: string): PantryData {
   const data: PantryData = {}
   const lines = yaml.split('\n')

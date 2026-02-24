@@ -159,7 +159,7 @@ async function scrapeRegistryPackages(_validate = false): Promise<string[]> {
   // Filter out problematic patterns
   for (const pkg of packageArray) {
     // Basic filtering
-    if (!pkg.includes('.') || pkg.match(/^[a-z0-9.-]+\.[a-z]{2,}(\/[\w.-]+)*$/i) === null) {
+    if (!pkg.includes('.') || pkg.match(/^[a-z0-9.-]+\.[a-z]{2,}(\/[\w.-]+){0,20}$/i) === null) {
       continue
     }
 

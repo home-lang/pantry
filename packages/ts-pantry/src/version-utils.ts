@@ -344,6 +344,7 @@ export async function getActivePackages(limit: number = 50): Promise<PackageInfo
 /**
  * Validate a package specification
  */
+// eslint-disable-next-line no-unused-vars
 export async function validatePackageSpec(packageSpec: string): Promise<{
   isValid: boolean
   packageName?: PackageName

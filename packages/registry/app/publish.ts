@@ -71,6 +71,7 @@ function getGitRemoteUrl(targetDir: string): string | null {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 async function publish(targetDir: string = process.cwd()): Promise<void> {
   console.log('🚀 Pantry Publish')
   console.log('='.repeat(40))
@@ -320,6 +321,7 @@ async function getOrCreateMetadata(
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 function runPack(targetDir: string): Promise<{
   success: boolean
   tarballPath?: string

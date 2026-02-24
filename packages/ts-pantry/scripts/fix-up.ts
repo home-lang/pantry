@@ -330,7 +330,7 @@ function walkFiles(dir: string, callback: (filePath: string) => void): void {
  */
 function isMachO(filePath: string): boolean {
   try {
-    const fd = Bun.file(filePath)
+    const _fd = Bun.file(filePath)
     // Quick check: read magic bytes
     const buffer = new Uint8Array(4)
     const file = require('node:fs').openSync(filePath, 'r')

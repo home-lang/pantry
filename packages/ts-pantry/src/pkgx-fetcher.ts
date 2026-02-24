@@ -351,6 +351,7 @@ export async function searchPkgxPackages(
 /**
  * Get package metadata including versions and dependencies
  */
+// eslint-disable-next-line no-unused-vars
 export async function getPkgxPackageMetadata(
   packageName: string,
   options: PkgxFetchOptions = {},

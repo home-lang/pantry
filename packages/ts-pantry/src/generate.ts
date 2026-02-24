@@ -1829,7 +1829,7 @@ async function generatePackageCatalog(outputDir: string, packagesDir?: string): 
 
   // Add uncategorized packages to Utilities (only valid unique domains)
   const uncategorizedPackages: string[] = []
-  domainToPackage.forEach((pkg, domain) => {
+  domainToPackage.forEach((_pkg, domain) => {
     if (!categorizedDomains.has(domain)) {
       uncategorizedPackages.push(domain)
     }

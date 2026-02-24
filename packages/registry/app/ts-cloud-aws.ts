@@ -196,9 +196,9 @@ export class S3Client {
 }
 
 export function getSignedUrl(
-  client: S3Client,
-  command: unknown,
-  options?: { expiresIn?: number }
+  _client: S3Client,
+  _command: unknown,
+  _options?: { expiresIn?: number }
 ): Promise<string> {
   return Promise.resolve('')
 }

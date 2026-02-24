@@ -43,7 +43,7 @@ export interface PackageRecipe {
  * Matches brewkit's useMoustaches.tokenize.all() + tokenizeHost()
  */
 export function buildTokens(
-  pkg: string,
+  _pkg: string,
   version: string,
   platform: string,
   prefix: string,
@@ -178,7 +178,7 @@ function evaluateVersionRange(range: string, version: string): boolean {
     op: string
     ver: number[]
   }> = []
-  const re = /(>=|<=|>|<|~|\^|=)?(\d+(?:\.\d+)*)/g
+  const re = /(>=|<=|>|<|~|\^|=)?(\d+(?:\.\d+){0,10})/g
   let match: RegExpExecArray | null
   while ((match = re.exec(range)) !== null) {
     const op = match[1] || '='

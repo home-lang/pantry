@@ -621,7 +621,7 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
   }
 
   // Extract transform function if present (e.g. transform: v => v.replace('-', '.'))
-  let transformFn: ((v: string) => string | undefined) | null = null
+  let transformFn: ((_v: string) => string | undefined) | null = null
   const transformMatch = yamlContent.match(/transform:\s*['"]?([^\n'"]+)['"]?$/m)
   if (transformMatch) {
     try {
@@ -1166,7 +1166,7 @@ async function downloadDependencies(
           const pcFiles = readdirSync(pcDir).filter(f => f.endsWith('.pc'))
           for (const pcFile of pcFiles) {
             const pcPath = join(pcDir, pcFile)
-            let content = readFileSync(pcPath, 'utf-8')
+            const content = readFileSync(pcPath, 'utf-8')
             // Replace any hardcoded /tmp/buildkit-install-* prefix with actual dep path
             const replaced = content.replace(/\/tmp\/buildkit-install-[^\s/]+(\/[^\s]*)?/g, (match) => {
               // Extract the relative path part after the prefix
@@ -1230,7 +1230,7 @@ async function downloadDependencies(
                 // Shell wrapper from bkpyvenv seal — the venv Python path is stale.
                 // Create a new wrapper that uses system python3 with the venv's site-packages.
                 const venvDir = join(depInstallDir, 'venv')
-                const siteGlob = join(venvDir, 'lib', 'python*', 'site-packages')
+                const _siteGlob = join(venvDir, 'lib', 'python*', 'site-packages')
                 writeFileSync(mesonBin, [
                   '#!/bin/sh',
                   `VENV_DIR="$(cd "$(dirname "$0")/../venv" && pwd)"`,

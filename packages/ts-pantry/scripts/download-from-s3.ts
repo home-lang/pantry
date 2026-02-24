@@ -403,6 +403,7 @@ function listInstalledVersions(pkgName: string, installDir: string): string[] {
 /**
  * Install all packages from pantry.yaml
  */
+// eslint-disable-next-line no-unused-vars
 async function installFromConfig(
   configPath: string,
   options: {
