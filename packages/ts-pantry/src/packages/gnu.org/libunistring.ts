@@ -2,7 +2,7 @@
  * **libunistring** - pkgx package
  *
  * @domain `gnu.org/libunistring`
- * @version `1.4.1` (5 versions available)
+ * @version `1.4.2` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/libunistring`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.gnuorglibunistring
  * console.log(pkg.name)        // "libunistring"
- * console.log(pkg.versions[0]) // "1.4.1" (latest)
+ * console.log(pkg.versions[0]) // "1.4.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/libunistring.md
@@ -67,6 +67,7 @@ export const gnuorglibunistringPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.2',
     '1.4.1',
     '1.4.0',
     '1.3.0',
