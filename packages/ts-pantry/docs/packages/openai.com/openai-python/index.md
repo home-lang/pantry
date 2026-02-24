@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 315 versions</summary>
+<summary>Show all 316 versions</summary>
 
+- `2.23.0`
 - `2.22.0`
 - `2.21.0`
 - `2.20.0`
@@ -165,13 +166,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.22.0`
+**Latest Version**: `2.23.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +openai.com/openai-python@2.22.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +openai.com/openai-python@2.23.0 -- $SHELL -i
 ```
 
 ## Dependencies
