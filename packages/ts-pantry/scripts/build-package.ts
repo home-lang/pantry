@@ -1209,12 +1209,22 @@ async function downloadDependencies(
               if (systemMeson.includes('buildkit-deps')) systemMeson = ''
             } catch { /* not found */ }
 
+            if (!systemMeson) {
+              // No system meson found — install via pip3 and try again
+              try {
+                console.log(`   - No system meson found, installing via pip3...`)
+                execSync('pip3 install --break-system-packages meson 2>/dev/null || pip3 install meson', { stdio: 'pipe' })
+                systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe' }).trim()
+                if (systemMeson.includes('buildkit-deps')) systemMeson = ''
+              } catch { /* pip install failed */ }
+            }
+
             if (systemMeson) {
               // Always replace with wrapper that calls system meson
               writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
               console.log(`   - Replaced S3 meson with system meson wrapper (${systemMeson})`)
             } else {
-              // No system meson — fix the S3 binary to use system python3
+              // No system meson even after pip — fix the S3 binary to use system python3
               const mesonContent = readFileSync(mesonBin, 'utf-8')
               if (mesonContent.includes('SCRIPT_DIR=') || mesonContent.includes('exec ')) {
                 // Shell wrapper from bkpyvenv seal — the venv Python path is stale.

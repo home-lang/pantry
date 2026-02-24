@@ -997,12 +997,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
         delete recipe.build.dependencies['pagure.io/xmlto']
       }
       // Add meson args to skip xmlto-dependent doc generation
+      // Note: doc_xml_dtd removed — not a valid option in newer dbus versions
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
-        for (const flag of ['-Ddoc_xml_dtd=no', '-Ddoxygen_docs=disabled', '-Dxml_docs=disabled']) {
+        for (const flag of ['-Ddoxygen_docs=disabled', '-Dxml_docs=disabled']) {
           if (!recipe.build.env.MESON_ARGS.includes(flag)) {
             recipe.build.env.MESON_ARGS.push(flag)
           }
         }
+        // Remove any stale doc_xml_dtd options that might already be in ARGS
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.filter(
+          (a: string) => !a.includes('doc_xml_dtd'),
+        )
       }
     },
   },
@@ -1880,11 +1885,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
       }
-      // Add -Dintrospection=disabled to meson args
+      // gsettings declares introspection as boolean (true/false), not feature (enabled/disabled)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
-        if (!recipe.build.env.ARGS.includes('-Dintrospection=disabled')) {
-          recipe.build.env.ARGS.push('-Dintrospection=disabled')
-        }
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('introspection'))
+        recipe.build.env.ARGS.push('-Dintrospection=false')
       }
     },
   },
