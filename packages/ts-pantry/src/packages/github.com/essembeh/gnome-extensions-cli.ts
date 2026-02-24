@@ -3,7 +3,7 @@
  *
  * @domain `github.com/essembeh/gnome-extensions-cli`
  * @programs `gnome-extensions-cli`, `gext`
- * @version `0.10.8` (8 versions available)
+ * @version `0.11.0` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/essembeh/gnome-extensions-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gnome-extensions-cli"
  * console.log(pkg.description) // "Command line tool to manage your Gnome Shell ex..."
  * console.log(pkg.programs)    // ["gnome-extensions-cli", "gext"]
- * console.log(pkg.versions[0]) // "0.10.8" (latest)
+ * console.log(pkg.versions[0]) // "0.11.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/essembeh/gnome-extensions-cli.md
@@ -75,6 +75,7 @@ export const gnomeextensionscliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.11.0',
     '0.10.8',
     '0.10.7',
     '0.10.6',
