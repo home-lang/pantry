@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 24 versions</summary>
+<summary>Show all 25 versions</summary>
 
-- `0.21.8`, `0.21.7`, `0.21.6`, `0.21.5`, `0.21.4`, `0.21.3`, `0.21.2`, `0.21.1`, `0.21.0`
+- `0.21.10`, `0.21.8`, `0.21.7`, `0.21.6`, `0.21.5`, `0.21.4`, `0.21.3`, `0.21.2`, `0.21.1`, `0.21.0`
 - `0.20.2`, `0.20.1`, `0.20.0`
 - `0.19.3`, `0.19.2`, `0.19.1`, `0.19.0`
 - `0.18.4`, `0.18.3`, `0.18.2`, `0.18.1`, `0.18.0`
@@ -36,13 +36,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.21.8`
+**Latest Version**: `0.21.10`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +mercure.rocks@0.21.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +mercure.rocks@0.21.10 -- $SHELL -i
 ```
 
 ## Usage Examples
