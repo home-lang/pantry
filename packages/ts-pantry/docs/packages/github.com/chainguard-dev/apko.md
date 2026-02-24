@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 114 versions</summary>
+<summary>Show all 115 versions</summary>
 
-- `1.1.10`, `1.1.9`, `1.1.8`, `1.1.7`, `1.1.6`, `1.1.5`, `1.1.4`, `1.1.3`, `1.1.2`, `1.1.1`, `1.1.0`
+- `1.1.11`, `1.1.10`, `1.1.9`, `1.1.8`, `1.1.7`, `1.1.6`, `1.1.5`, `1.1.4`, `1.1.3`, `1.1.2`, `1.1.1`, `1.1.0`
 - `1.0.5`, `1.0.4`, `1.0.3`, `1.0.2`, `1.0.1`, `1.0.0`
 - `0.30.35`, `0.30.34`, `0.30.33`, `0.30.32`, `0.30.31`, `0.30.30`, `0.30.29`, `0.30.28`, `0.30.27`, `0.30.26`, `0.30.25`, `0.30.24`, `0.30.23`, `0.30.22`, `0.30.21`, `0.30.20`, `0.30.18`, `0.30.17`, `0.30.16`, `0.30.15`, `0.30.14`, `0.30.13`, `0.30.12`, `0.30.11`, `0.30.10`, `0.30.9`, `0.30.8`, `0.30.7`, `0.30.6`, `0.30.5`, `0.30.4`, `0.30.3`, `0.30.2`, `0.30.1`, `0.30.0`
 - `0.29.10`, `0.29.9`, `0.29.8`, `0.29.7`, `0.29.6`, `0.29.5`, `0.29.4`, `0.29.3`, `0.29.2`, `0.29.1`, `0.29.0`
@@ -48,13 +48,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.1.10`
+**Latest Version**: `1.1.11`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/chainguard-dev/apko@1.1.10 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/chainguard-dev/apko@1.1.11 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -3,7 +3,7 @@
  *
  * @domain `vektra.github.io/mockery`
  * @programs `mockery`
- * @version `3.6.4` (94 versions available)
+ * @version `3.6.4` (95 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install vektra.github.io/mockery`
@@ -95,6 +95,7 @@ export const vektragithubiomockeryPackage = {
     '3.0.2',
     '3.0.1',
     '3.0.0',
+    '2.53.6',
     '2.53.5',
     '2.53.4',
     '2.53.3',
