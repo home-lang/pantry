@@ -80,13 +80,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         // Install boost from Homebrew. Boost 1.82+ made regex header-only,
         // but source-highlight's configure expects a compiled libboost_regex.
-        // Use configure cache vars to bypass the compiled library check.
+        // Create stub dylib so AX_BOOST_REGEX file search finds a library.
         prependScript: [
           'brew install boost 2>/dev/null || true',
           'brew link boost --overwrite 2>/dev/null || true',
           'BOOST_PREFIX=$(brew --prefix boost)',
           'export LDFLAGS="-L${BOOST_PREFIX}/lib $LDFLAGS"',
           'export CPPFLAGS="-I${BOOST_PREFIX}/include $CPPFLAGS"',
+          // Create stub libboost_regex.dylib — AX_BOOST_REGEX searches for libboost_regex*
+          // files to determine the library version suffix. Boost 1.82+ made regex header-only
+          // so no library file exists. Create a minimal dylib to satisfy the file search.
+          'if ! ls "${BOOST_PREFIX}/lib"/libboost_regex* 1>/dev/null 2>&1; then echo "void _boost_regex_stub(void){}" > /tmp/_br.c && cc -dynamiclib -o "${BOOST_PREFIX}/lib/libboost_regex.dylib" /tmp/_br.c 2>/dev/null && rm -f /tmp/_br.c; fi',
         ],
       },
       linux: {
@@ -3136,17 +3140,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Install hwloc, libevent deps from Homebrew
-          'brew install hwloc libevent 2>/dev/null || true',
+          // Install hwloc, libevent, pmix deps from Homebrew
+          'brew install hwloc libevent open-mpi/open-mpi/pmix 2>/dev/null || brew install hwloc libevent pmix 2>/dev/null || true',
           'export OMPI_HWLOC_PREFIX=$(brew --prefix hwloc)',
           'export OMPI_LIBEVENT_PREFIX=$(brew --prefix libevent)',
-          'export PKG_CONFIG_PATH="${OMPI_HWLOC_PREFIX}/lib/pkgconfig:${OMPI_LIBEVENT_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          'export LDFLAGS="-L${OMPI_HWLOC_PREFIX}/lib -L${OMPI_LIBEVENT_PREFIX}/lib $LDFLAGS"',
-          'export CPPFLAGS="-I${OMPI_HWLOC_PREFIX}/include -I${OMPI_LIBEVENT_PREFIX}/include $CPPFLAGS"',
-          // Re-export CONFIGURE_ARGS with actual hwloc/libevent paths — env vars in
-          // CONFIGURE_ARGS expand to empty at assignment time because env section runs
-          // before prependScript. Fix by substituting the values at runtime.
-          'export CONFIGURE_ARGS=$(echo "$CONFIGURE_ARGS" | sed "s|--with-hwloc=[^ ]*|--with-hwloc=${OMPI_HWLOC_PREFIX}|g; s|--with-libevent=[^ ]*|--with-libevent=${OMPI_LIBEVENT_PREFIX}|g")',
+          'export OMPI_PMIX_PREFIX=$(brew --prefix pmix 2>/dev/null || echo /usr/local)',
+          'export PKG_CONFIG_PATH="${OMPI_HWLOC_PREFIX}/lib/pkgconfig:${OMPI_LIBEVENT_PREFIX}/lib/pkgconfig:${OMPI_PMIX_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L${OMPI_HWLOC_PREFIX}/lib -L${OMPI_LIBEVENT_PREFIX}/lib -L${OMPI_PMIX_PREFIX}/lib $LDFLAGS"',
+          'export CPPFLAGS="-I${OMPI_HWLOC_PREFIX}/include -I${OMPI_LIBEVENT_PREFIX}/include -I${OMPI_PMIX_PREFIX}/include $CPPFLAGS"',
+          // Re-export CONFIGURE_ARGS with actual paths — env vars in CONFIGURE_ARGS expand
+          // to empty at assignment time because env section runs before prependScript.
+          'export CONFIGURE_ARGS=$(echo "$CONFIGURE_ARGS" | sed "s|--with-hwloc=[^ ]*|--with-hwloc=${OMPI_HWLOC_PREFIX}|g; s|--with-libevent=[^ ]*|--with-libevent=${OMPI_LIBEVENT_PREFIX}|g; s|--with-pmix[^ ]*|--with-pmix=${OMPI_PMIX_PREFIX}|g")',
         ],
       },
       linux: {
@@ -3174,7 +3178,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // On darwin: $OMPI_HWLOC_PREFIX → brew prefix; on linux: $OMPI_HWLOC_PREFIX → /usr
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) => {
           if (a.match(/^--with-hwloc=/)) return '--with-hwloc=$OMPI_HWLOC_PREFIX'
-          if (a.match(/^--with-pmix=/)) return '--with-pmix'
+          if (a.match(/^--with-pmix=/)) return '--with-pmix=$OMPI_PMIX_PREFIX'
           if (a.match(/^--with-libevent=/)) return '--with-libevent=$OMPI_LIBEVENT_PREFIX'
           return a
         })
