@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 43 versions</summary>
+<summary>Show all 44 versions</summary>
 
+- `4.46.0`
 - `4.45.0`
 - `4.44.0`
 - `4.43.0`
@@ -58,13 +59,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.45.0`
+**Latest Version**: `4.46.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +tox.wiki@4.45.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +tox.wiki@4.46.0 -- $SHELL -i
 ```
 
 ## Dependencies
