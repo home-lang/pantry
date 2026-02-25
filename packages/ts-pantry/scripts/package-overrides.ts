@@ -4365,15 +4365,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
             }
           }
         }
-        // On Linux, replace system glog 0.6.0 with our buildkit glog 0.7.1.
-        // Our folly dep was built against glog 0.7.1 (different ABI), but folly's cmake config
-        // has /usr/lib/x86_64-linux-gnu/libglog.so baked in. Overwrite the system .so files
-        // with our buildkit versions so the hardcoded paths still work with the right ABI.
-        if (platform === 'linux-x86-64') {
-          recipe.build.script.unshift(
-            'if [ -d /tmp/buildkit-deps/google.com/glog ]; then _GLOG_DIR=$(ls -d /tmp/buildkit-deps/google.com/glog/*/lib 2>/dev/null | head -1); if [ -n "$_GLOG_DIR" ]; then sudo cp -a "$_GLOG_DIR"/libglog.so* /usr/lib/x86_64-linux-gnu/ 2>/dev/null || true; sudo cp -a "$_GLOG_DIR"/libglog.a /usr/lib/x86_64-linux-gnu/ 2>/dev/null || true; echo "[fizz] Replaced system glog with buildkit glog from $_GLOG_DIR"; fi; fi',
-          )
-        }
+        // NOTE: glog ABI mismatch (system 0.6 vs buildkit 0.7) is now handled
+        // generically in buildkit.ts (syslib-override) for all packages on Linux.
       }
     },
   },
