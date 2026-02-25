@@ -1001,6 +1001,7 @@ Options:
     // musepack.net removed — fixed stray cmake prefix quote in override
     // wpewebkit.org/wpebackend-fdo removed — fixed prefix quoting + sed -i BSD + removed gcc/mesa deps in override
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
+    'github.com/antfu/ni', // pnpm spawns dozens of workers, unclean SIGTERM shutdown crashes entire batch
     // crates.io/qsv removed — removed linux wayland dep in override
     // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
   ])

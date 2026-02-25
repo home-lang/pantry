@@ -843,6 +843,15 @@ export function generateBuildScript(
     sections.push(`export CPATH="${depIncludePaths.join(':')}:\${CPATH:-}"`)
     sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
     sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
+    if (osName === 'linux') {
+      // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. If any S3 dep
+      // ships a libcurl without HTTP/2 support, cargo picks it up and fails with
+      // "failed to enable HTTP/2, is curl not built right?". Disable HTTP/2 multiplexing
+      // for cargo to avoid this. Also save the original LD_LIBRARY_PATH so cargo can
+      // use system libraries for network operations.
+      sections.push('export _BUILDKIT_ORIG_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"')
+      sections.push('export CARGO_HTTP_MULTIPLEXING=false')
+    }
     if (osName === 'darwin') {
       // Use DYLD_FALLBACK_LIBRARY_PATH instead of DYLD_LIBRARY_PATH on macOS.
       // DYLD_LIBRARY_PATH is searched BEFORE default locations (including @rpath),
