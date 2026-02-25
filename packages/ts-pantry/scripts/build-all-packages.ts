@@ -200,6 +200,29 @@ function domainToKey(domain: string): string {
   return domain.replace(/[.\-/]/g, '').toLowerCase()
 }
 
+// Build a reverse lookup from domain → pantry key, since auto-generated keys
+// use collision suffixes (e.g. xorgprotocol1 for x.org/protocol/xcb) that
+// don't match domainToKey output (xorgprotocolxcb).
+const _pantryDomainMap = new Map<string, string>()
+for (const [key, val] of Object.entries(pantry as Record<string, any>)) {
+  if (val && typeof val === 'object' && typeof val.domain === 'string') {
+    _pantryDomainMap.set(val.domain, key)
+  }
+}
+
+function lookupPantryPackage(domain: string): any {
+  // Try direct key first (works for most packages)
+  const directKey = domainToKey(domain)
+  const direct = (pantry as Record<string, any>)[directKey]
+  if (direct?.versions) return direct
+
+  // Fall back to domain-based reverse lookup (handles collision-resolved keys)
+  const mappedKey = _pantryDomainMap.get(domain)
+  if (mappedKey) return (pantry as Record<string, any>)[mappedKey]
+
+  return null
+}
+
 interface BuildPlatformInfo {
   platform: string
   os: string
@@ -262,8 +285,7 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
           const hasPropsDir = existsSync(join(dir, 'props'))
 
           // Look up version from package metadata
-          const key = domainToKey(domain)
-          const pkg = (pantry as Record<string, any>)[key]
+          const pkg = lookupPantryPackage(domain)
 
           if (!pkg || !pkg.versions || pkg.versions.length === 0) {
             // No version data available, skip (continue to allow child dirs)
