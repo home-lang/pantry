@@ -1931,6 +1931,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
         prependScript: [
           'brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"',
+          // Python 3.12+ removed distutils from stdlib. g-ir-scanner imports
+          // distutils.cygwinccompiler (only needed on Windows/Cygwin). Patch it out.
+          'sed -i.bak "s/import distutils\\.cygwinccompiler/pass  # distutils removed in Python 3.12+/" giscanner/utils.py 2>/dev/null || true',
         ],
       },
     },
