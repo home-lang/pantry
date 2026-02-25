@@ -4339,7 +4339,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/facebookincubator/fizz — fix cmake prefix quote + remove gcc dep ─
 
   'github.com/facebookincubator/fizz': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: any, platform?: string) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2')
@@ -4364,6 +4364,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
                 .replace(/sed -i -f /g, 'sed -i.bak -f ')
             }
           }
+        }
+        // On Linux, remove system glog-dev (0.6.0) before building — our folly dep was built
+        // against glog 0.7.1 which has a different ABI (google::logging::internal namespace).
+        // System glog causes undefined reference errors at link time.
+        if (platform === 'linux-x86-64') {
+          recipe.build.script.unshift(
+            'sudo apt-get remove -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+          )
         }
       }
     },
