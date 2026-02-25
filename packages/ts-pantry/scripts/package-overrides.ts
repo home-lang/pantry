@@ -1041,11 +1041,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS.push('-Dintrospection=disabled')
       }
       // Fix sed -i calls in build script (BSD requires suffix)
+      // Also fix the meson python path sed: YAML parser splits the multi-line plain scalar
+      // into separate lines, detaching file args from the sed command.
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i -e')) {
-            step.run = step.run.replace(/sed -i -e /g, 'sed -i.bak -e ')
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            if (step.run.includes('sed -i -e')) {
+              step.run = step.run.replace(/sed -i -e /g, 'sed -i.bak -e ')
+            }
+            // Fix meson python path sed: join newline-split file args back onto sed line
+            if (step.run.includes('mesonbuild.com') && step.run.includes('python')) {
+              step.run = step.run.replace(/\n\s+/g, ' ')
+            }
           }
         }
       }
