@@ -952,7 +952,7 @@ Options:
     // opendap.org removed — removed linux libtirpc/util-linux deps in override
     // openresty.org removed — fixed sed -i BSD compat in override
     // opensearch.org removed — fixed sed -i BSD compat in override
-    // openslide.org removed — fixed prefix quoting in override
+    'openslide.org', // v4.0.0 requires libdicom dep which is not in pantry
     // openssh.com removed — standard autotools, OpenSSL available
     // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
     // php.net removed — fixed sed -i BSD + removed kerberos dep in override
