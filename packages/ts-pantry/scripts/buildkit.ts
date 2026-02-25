@@ -882,6 +882,7 @@ export function generateBuildScript(
         sections.push('# Create compat symlinks for stale /tmp/buildkit-install-* dylib paths')
         sections.push('for _dep_prefix in ' + depPrefixes.map(p => `"${p}"`).join(' ') + '; do')
         sections.push('  [ -d "$_dep_prefix" ] || continue')
+        sections.push('  case "$_dep_prefix" in /tmp/buildkit-deps/*) ;; *) continue ;; esac')
         sections.push('  _domain_with_ver="${_dep_prefix#/tmp/buildkit-deps/}"')
         sections.push('  _domain="${_domain_with_ver%/*}"')
         sections.push('  _safe_domain="$(echo "$_domain" | tr \'/\' \'-\')"')
