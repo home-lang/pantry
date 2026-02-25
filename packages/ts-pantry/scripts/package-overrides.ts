@@ -4337,6 +4337,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) {
         delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
       }
+      // Fix sed -i BSD compat (macOS requires suffix argument)
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak') && !step.includes('sed -i -f')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace(/sed (-E )?-i /g, 'sed $1-i.bak ')
+          } else if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+              step.run = step.run.replace(/sed (-E )?-i /g, 'sed $1-i.bak ')
+                .replace(/sed -i -f /g, 'sed -i.bak -f ')
+            }
+          }
+        }
+      }
     },
   },
 
