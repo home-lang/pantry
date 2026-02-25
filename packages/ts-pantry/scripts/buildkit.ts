@@ -869,8 +869,9 @@ export function generateBuildScript(
     // - macOS: Xcode SDK paths from the build machine (e.g. MacOSX26.2.sdk) that don't
     //   exist on the current runner. CMake errors on non-existent INTERFACE_INCLUDE_DIRECTORIES.
     if (depPrefixes.length > 0) {
-      sections.push('# Scrub stale system paths from dep cmake configs')
+      sections.push('# Scrub stale system paths from dep cmake configs (only in /tmp buildkit deps)')
       sections.push(`for _cmake_dir in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
+      sections.push('  case "$_cmake_dir" in /tmp/*) ;; *) continue ;; esac')
       sections.push('  find "$_cmake_dir" -name "*.cmake" -type f 2>/dev/null | while read -r _f; do')
       if (osName === 'linux') {
         // Remove /usr/include references (prevents -isystem /usr/include)
