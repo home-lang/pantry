@@ -988,7 +988,7 @@ Options:
     // x.org/xauth removed — fixed prefix quoting + removed gcc dep in override
     // x.org/xinput removed — fixed prefix quoting in override
     // xkbcommon.org removed — removed XKeyboardConfig dep, fixed meson args (see above)
-    // bytebase.com and dozzle.dev removed — 45min timeout should be sufficient
+    // bytebase.com and dozzle.dev removed — 60min timeout should be sufficient
     // freedesktop.org/dbus removed — removed xmlto dep, disabled docs
     // gnu.org/gmp removed — URL override to use ftpmirror.gnu.org
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
@@ -1001,7 +1001,7 @@ Options:
     // musepack.net removed — fixed stray cmake prefix quote in override
     // wpewebkit.org/wpebackend-fdo removed — fixed prefix quoting + sed -i BSD + removed gcc/mesa deps in override
     'bytebase.com', // Massive Go+pnpm build, exceeds CI timeout (ETIMEDOUT)
-    'github.com/antfu/ni', // pnpm spawns dozens of workers, unclean SIGTERM shutdown crashes entire batch
+    // github.com/antfu/ni removed — fixed pnpm self-install globally in buildkit.ts (npm_config_manage_package_manager_versions=false)
     // crates.io/qsv removed — removed linux wayland dep in override
     // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
   ])

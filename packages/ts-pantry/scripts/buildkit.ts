@@ -599,11 +599,16 @@ export function generateBuildScript(
   sections.push('fi')
   sections.push('')
 
-  // Node.js / npm
+  // Node.js / npm / pnpm
   sections.push('# Node.js')
   sections.push('if [ -d "$REAL_HOME/.nvm" ]; then')
   sections.push('  export NVM_DIR="$REAL_HOME/.nvm"')
   sections.push('fi')
+  // Prevent pnpm from auto-downloading a different version when project has
+  // "packageManager": "pnpm@X.Y.Z" in package.json. This spawns dozens of
+  // worker processes that can crash CI batches with SIGTERM cascades.
+  sections.push('export npm_config_manage_package_manager_versions=false')
+  sections.push('export COREPACK_ENABLE_STRICT=0')
   sections.push('')
 
   // Python: make system dist-packages visible to S3-downloaded Python
@@ -864,6 +869,7 @@ export function generateBuildScript(
       sections.push('export CARGO_HTTP_MULTIPLEXING=false')
       sections.push('_CARGO_REAL="$(command -v cargo 2>/dev/null || true)"')
       sections.push('if [ -n "$_CARGO_REAL" ]; then')
+      sections.push('  mkdir -p "${TMPDIR:-/tmp}/_cc_wrapper"')
       sections.push('  printf \'#!/bin/bash\\nunset LD_LIBRARY_PATH\\nexec "%s" "$@"\\n\' "$_CARGO_REAL" > "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
       sections.push('  chmod +x "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
       sections.push('fi')

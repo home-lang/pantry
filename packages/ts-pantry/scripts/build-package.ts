@@ -844,7 +844,8 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
       ]
       : [
         // On macOS: install meson via pip (S3 meson has broken hardcoded python paths)
-        'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+        // Also install setuptools which meson requires for Python module detection
+        'pip3 install --break-system-packages "meson>=1.4.0" setuptools 2>/dev/null || pip3 install "meson>=1.4.0" setuptools 2>/dev/null || true',
         // pip on macOS installs to ~/Library/Python/3.x/bin/ which isn't in PATH
         'export PATH="$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
       ]
@@ -1398,6 +1399,14 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   const removedDeps = new Set<string>()
   for (const d of preOverrideRuntimeDeps) if (!postOverrideRuntimeDeps.has(d)) removedDeps.add(d)
   for (const d of preOverrideBuildDeps) if (!postOverrideBuildDeps.has(d)) removedDeps.add(d)
+
+  // On Linux, globally exclude S3 readline from deps (including transitive).
+  // S3 readline's libreadline.so.8 needs libtinfo.so.6 from ncurses, but when
+  // LD_LIBRARY_PATH includes S3 readline, system tools like gawk pick it up and
+  // crash with "undefined symbol: UP". System readline (libreadline-dev) works fine.
+  if (os === 'linux') {
+    removedDeps.add('gnu.org/readline')
+  }
 
   console.log(`\nBuild recipe: ${pantryPath}`)
 
