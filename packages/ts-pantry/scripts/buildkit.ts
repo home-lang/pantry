@@ -863,17 +863,31 @@ export function generateBuildScript(
 
     sections.push('')
 
-    // On Linux, scrub /usr/include from cmake config files in deps.
-    // S3-built deps may have /usr/include in INTERFACE_INCLUDE_DIRECTORIES,
-    // which CMake turns into -isystem /usr/include, breaking GCC's
-    // #include_next <stdlib.h> (same issue as the CPATH fix above).
-    if (osName === 'linux' && depPrefixes.length > 0) {
-      sections.push('# Scrub /usr/include from dep cmake configs (prevents -isystem /usr/include)')
+    // Scrub hardcoded system paths from dep cmake config files.
+    // S3-built deps may have stale paths in INTERFACE_INCLUDE_DIRECTORIES:
+    // - Linux: /usr/include → CMake adds -isystem /usr/include, breaking GCC #include_next
+    // - macOS: Xcode SDK paths from the build machine (e.g. MacOSX26.2.sdk) that don't
+    //   exist on the current runner. CMake errors on non-existent INTERFACE_INCLUDE_DIRECTORIES.
+    if (depPrefixes.length > 0) {
+      sections.push('# Scrub stale system paths from dep cmake configs')
       sections.push(`for _cmake_dir in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
       sections.push('  find "$_cmake_dir" -name "*.cmake" -type f 2>/dev/null | while read -r _f; do')
-      sections.push('    if grep -q "/usr/include" "$_f" 2>/dev/null; then')
-      sections.push('      sed -i \'s|;/usr/include||g; s|/usr/include;||g; s|/usr/include||g\' "$_f"')
-      sections.push('    fi')
+      if (osName === 'linux') {
+        // Remove /usr/include references (prevents -isystem /usr/include)
+        sections.push('    if grep -q "/usr/include" "$_f" 2>/dev/null; then')
+        sections.push('      sed -i \'s|;/usr/include||g; s|/usr/include;||g; s|/usr/include||g\' "$_f"')
+        sections.push('    fi')
+      } else if (osName === 'darwin') {
+        // Replace stale Xcode SDK paths with current SDK path.
+        // S3-built deps hardcode paths like .../MacOSX26.2.sdk/... which don't exist
+        // on runners with different Xcode versions.
+        sections.push('    if grep -qE "/Applications/Xcode[^;]*/SDKs/MacOSX[^;]*.sdk" "$_f" 2>/dev/null; then')
+        sections.push('      _CUR_SDK="$(xcrun --show-sdk-path 2>/dev/null)"')
+        sections.push('      if [ -n "$_CUR_SDK" ]; then')
+        sections.push('        sed -i.bak -E "s|/Applications/Xcode[^\";]*/SDKs/MacOSX[^\";]*.sdk|${_CUR_SDK}|g" "$_f" 2>/dev/null || true')
+        sections.push('      fi')
+        sections.push('    fi')
+      }
       sections.push('  done')
       sections.push('done')
       sections.push('')
