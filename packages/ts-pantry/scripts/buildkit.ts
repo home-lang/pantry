@@ -884,9 +884,30 @@ export function generateBuildScript(
     if (osName === 'linux') {
       // On Linux, system cmake packages (e.g. gflags from apt) have /usr/include in their
       // INTERFACE_INCLUDE_DIRECTORIES. CMake adds these as -isystem, which breaks GCC's
-      // #include_next <stdlib.h>. Setting NO_SYSTEM_FROM_IMPORTED makes cmake use -I instead
-      // of -isystem for imported target includes, avoiding the header search order issue.
-      sections.push('export CMAKE_NO_SYSTEM_FROM_IMPORTED=ON')
+      // #include_next <stdlib.h>. Scrub these paths from system cmake configs too using sudo.
+      sections.push('# Scrub /usr/include from system cmake configs (gflags, glog, etc.)')
+      sections.push(`sudo python3 << 'SCRUB_SYSTEM_CMAKE_EOF'
+import os, glob, sys
+BAD = ["/usr/include", "/usr/local/include"]
+modified = 0
+for d in ["/usr/lib/x86_64-linux-gnu/cmake", "/usr/share/cmake"]:
+    if not os.path.isdir(d): continue
+    for f in glob.glob(os.path.join(d, "**", "*.cmake"), recursive=True):
+        try:
+            t = open(f).read()
+            orig = t
+            for b in BAD:
+                t = t.replace(f'"{b}"', '""')
+                t = t.replace(f';{b};', ';')
+                t = t.replace(f';{b}"', '"')
+                t = t.replace(f'"{b};', '"')
+            if t != orig:
+                open(f, "w").write(t)
+                modified += 1
+                print(f"[cmake-scrub-sys] modified: {f}", file=sys.stderr)
+        except: pass
+print(f"[cmake-scrub-sys] done: {modified} system cmake files modified", file=sys.stderr)
+SCRUB_SYSTEM_CMAKE_EOF`)
     }
 
     sections.push('')
