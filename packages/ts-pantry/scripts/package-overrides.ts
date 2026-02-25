@@ -1955,8 +1955,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // build/giscanner/utils.py via configure_file(), so patch the build
           // dir copy AFTER meson setup but BEFORE ninja build.
           if (platform?.startsWith('darwin') && typeof step === 'string' && step.startsWith('ninja')) {
+            // Comment out ALL lines referencing distutils.cygwinccompiler (import + usage)
             recipe.build.script.splice(i, 0,
-              'sed -i.bak "s/import distutils\\.cygwinccompiler/pass  # distutils removed in Python 3.12+/" giscanner/utils.py 2>/dev/null || true',
+              'sed -i.bak "/distutils\\.cygwinccompiler/s/^/# /" giscanner/utils.py 2>/dev/null || true',
             )
             i++ // skip the newly inserted step
           }
