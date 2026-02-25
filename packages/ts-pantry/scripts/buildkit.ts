@@ -641,15 +641,27 @@ export function generateBuildScript(
   sections.push('__sed_is_gnu=false')
   sections.push('if "$__real_sed" --version 2>&1 | grep -q GNU; then __sed_is_gnu=true; fi')
   sections.push('sed() {')
-  // With -i flag, we need at least 3 args: sed -i 'pattern' file...
-  // If only 2 args (no files due to nullglob), silently succeed
-  sections.push('  if [ "$1" = "-i" ] && [ $# -le 2 ]; then return 0; fi')
-  // Also handle sed -i -e 'pattern' with no files (3 args, no file)
-  sections.push('  if [ "$1" = "-i" ] && [ "$2" = "-e" ] && [ $# -le 3 ]; then return 0; fi')
-  // If BSD sed (not GNU), translate sed -i ... to sed -i '' ...
-  sections.push('  if ! $__sed_is_gnu && [ "$1" = "-i" ]; then')
-  sections.push('    shift')
-  sections.push('    "$__real_sed" -i \'\' "$@"')
+  // Check if bare -i flag (no suffix) appears anywhere (handles sed -E -i, sed -i, etc.)
+  sections.push('  local _has_bare_i=false')
+  sections.push('  for _a in "$@"; do')
+  sections.push('    if [ "$_a" = "-i" ]; then _has_bare_i=true; break; fi')
+  sections.push('  done')
+  // With -i flag, we need enough args: flags + pattern + file
+  // If too few args (no files due to nullglob), silently succeed
+  sections.push('  if $_has_bare_i && [ $# -le 2 ]; then return 0; fi')
+  // If BSD sed (not GNU), insert '' after bare -i to provide empty backup extension
+  // (BSD sed requires: sed -i '' pattern file; GNU accepts: sed -i pattern file)
+  // Flags like -i.bak already have a suffix and don't need translation.
+  sections.push('  if ! $__sed_is_gnu && $_has_bare_i; then')
+  sections.push('    local _args=()')
+  sections.push('    for _a in "$@"; do')
+  sections.push('      if [ "$_a" = "-i" ]; then')
+  sections.push('        _args+=("-i" "")')
+  sections.push('      else')
+  sections.push('        _args+=("$_a")')
+  sections.push('      fi')
+  sections.push('    done')
+  sections.push('    "$__real_sed" "${_args[@]}"')
   sections.push('    return')
   sections.push('  fi')
   sections.push('  "$__real_sed" "$@"')
