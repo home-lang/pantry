@@ -3765,6 +3765,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/edencommon — fix sed -i BSD + remove gcc dep ───────
 
   'facebook.com/edencommon': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Use system glog/gflags to match folly's ABI
+          'sudo apt-get install -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
@@ -3779,6 +3787,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
+      // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
+      if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
+      if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
       // Remove linux gnu.org/gcc build dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -3793,6 +3804,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/fb303 — fix stray cmake prefix + remove gcc dep ────
 
   'facebook.com/fb303': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Use system glog/gflags to match folly's ABI
+          'sudo apt-get install -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
@@ -3800,6 +3819,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
+      // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
+      if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
+      if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
       // Remove linux gnu.org/gcc build dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -3814,6 +3836,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/fbthrift — fix stray cmake prefix + sed -i BSD + remove gcc ─
 
   'facebook.com/fbthrift': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Use system glog/gflags to match folly's ABI (folly is built against system glog)
+          'sudo apt-get install -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+          'export CMAKE_PREFIX_PATH="/usr/local:${CMAKE_PREFIX_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
@@ -3821,6 +3852,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
+      // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
+      if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
+      if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
       // Fix sed steps: the YAML parser truncates multi-line plain scalar continuation,
       // so 'run: sed -i -E\n  -e "..." FBThriftTargets.cmake' becomes just 'sed -i -E'.
       // Reconstruct the full commands. The sed wrapper in buildkit.ts handles -i BSD compat.
@@ -3915,7 +3949,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/watchman — fix cmake prefix + sed -i BSD + remove gcc ─
 
   'facebook.com/watchman': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Use system glog/gflags to match folly's ABI
+          'sudo apt-get install -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
+      // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
+      if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
+      if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
