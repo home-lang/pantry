@@ -156,7 +156,7 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2 \
+            libsecret libfido2 double-conversion \
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
           # Link keg-only libtool so glibtool/glibtoolize are in PATH
           brew link --force libtool 2>/dev/null || true
