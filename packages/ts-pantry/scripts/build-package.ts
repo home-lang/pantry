@@ -1063,6 +1063,7 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
     execSync(`rm -rf "${tmpExtract}"`)
   } else {
     // tar auto-detects format (gz, xz, bz2, zstd)
+    console.log(`   tar --strip-components=${stripComponents}`)
     execSync(`tar -xf "${tempFile}" -C "${destDir}" --strip-components=${stripComponents}`, { stdio: 'inherit' })
   }
 
