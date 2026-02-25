@@ -3,7 +3,7 @@
  *
  * @domain `github.com/canonical/pebble`
  * @programs `pebble`
- * @version `1.28.0` (37 versions available)
+ * @version `1.29.0` (38 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/canonical/pebble`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "canonical/pebble"
  * console.log(pkg.description) // "Pebble is a lightweight Linux service manager w..."
  * console.log(pkg.programs)    // ["pebble"]
- * console.log(pkg.versions[0]) // "1.28.0" (latest)
+ * console.log(pkg.versions[0]) // "1.29.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/canonical/pebble.md
@@ -70,6 +70,7 @@ export const pebblePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.29.0',
     '1.28.0',
     '1.27.0',
     '1.26.0',

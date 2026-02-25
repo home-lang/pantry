@@ -25,8 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
+- `2026.2.25`
 - `2026.1.4`
 - `2025.11.12`
 - `2025.10.5`
@@ -43,13 +44,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `2026.1.4`
+**Latest Version**: `2026.2.25`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +certifi.io/python-certifi@2026.1.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +certifi.io/python-certifi@2026.2.25 -- $SHELL -i
 ```
 
 ## Dependencies

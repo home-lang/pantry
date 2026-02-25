@@ -2,7 +2,7 @@
  * **python-certifi** - (Python Distribution) A carefully curated collection of Root Certificates for validating the trustworthiness of SSL certificates while verifying the identity of TLS hosts.
  *
  * @domain `certifi.io/python-certifi`
- * @version `2026.1.4` (14 versions available)
+ * @version `2026.2.25` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install certifi.io/python-certifi`
@@ -15,7 +15,7 @@
  * const pkg = pantry.certifiiopythoncertifi
  * console.log(pkg.name)        // "python-certifi"
  * console.log(pkg.description) // "(Python Distribution) A carefully curated colle..."
- * console.log(pkg.versions[0]) // "2026.1.4" (latest)
+ * console.log(pkg.versions[0]) // "2026.2.25" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/certifi-io/python-certifi.md
@@ -59,6 +59,7 @@ export const certifiiopythoncertifiPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.2.25',
     '2026.1.4',
     '2025.11.12',
     '2025.10.5',
