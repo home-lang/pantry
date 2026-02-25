@@ -2504,17 +2504,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
         )
       }
-      // Disable pycairo — S3 pycairo binaries are corrupt/missing lib dir
-      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
-        recipe.build.env.MESON_ARGS.push('-Dpycairo=disabled')
-      }
-      // Remove pycairo dep
-      if (recipe.dependencies?.['cairographics.org/pycairo']) {
-        delete recipe.dependencies['cairographics.org/pycairo']
-      }
-      if (recipe.build?.dependencies?.['cairographics.org/pycairo']) {
-        delete recipe.build.dependencies['cairographics.org/pycairo']
-      }
+      // pycairo S3 binaries rebuilt — pycairo=enabled (default)
     },
   },
 
