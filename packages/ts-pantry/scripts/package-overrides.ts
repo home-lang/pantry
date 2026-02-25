@@ -2107,6 +2107,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Install codec libraries from Homebrew so ffmpeg links against them
         prependScript: [
           'brew install x264 x265 libvpx opus webp 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix x264)/lib/pkgconfig:$(brew --prefix x265)/lib/pkgconfig:$(brew --prefix libvpx)/lib/pkgconfig:$(brew --prefix opus)/lib/pkgconfig:$(brew --prefix webp)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
         ],
       },
       linux: {
@@ -2497,6 +2498,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/PyGObject — fix prefix quoting ────────────────────────
 
   'gnome.org/PyGObject': {
+    platforms: {
+      darwin: {
+        // Install cairo + setuptools (distutils removed in Python 3.12+) from system
+        prependScript: [
+          'brew install cairo 2>/dev/null || true',
+          'pip3 install setuptools 2>/dev/null || python3 -m pip install setuptools 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix cairo)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export CPPFLAGS="-I$(brew --prefix cairo)/include/cairo $CPPFLAGS"',
+        ],
+      },
+      linux: {
+        // Install cairo dev headers for gobject-introspection-tests subproject
+        prependScript: [
+          'sudo apt-get install -y libcairo2-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
@@ -2980,10 +2998,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
           && a !== '--enable-python3interp',
         )
         recipe.build.env.ARGS.push('--disable-python3interp')
+        // Prevent configure from auto-detecting Python3 even with --disable
+        recipe.build.env.ARGS.push('vi_cv_path_python3=no')
       }
       // Remove ruby-lang.org dep
       if (recipe.dependencies?.['ruby-lang.org']) {
         delete recipe.dependencies['ruby-lang.org']
+      }
+      // Remove python.org dep (not needed without python3interp)
+      if (recipe.dependencies?.['python.org']) {
+        delete recipe.dependencies['python.org']
+      }
+      // Also check for versioned python dep
+      for (const key of Object.keys(recipe.dependencies || {})) {
+        if (key.startsWith('python.org')) {
+          delete recipe.dependencies[key]
+        }
       }
     },
   },
