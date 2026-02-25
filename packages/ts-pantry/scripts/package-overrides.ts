@@ -1052,7 +1052,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
             // Fix meson python path sed: join newline-split file args, make non-fatal
             // (files may not exist if build config changes, e.g. introspection disabled)
             if (step.run.includes('mesonbuild.com') && step.run.includes('python')) {
-              step.run = step.run.replace(/\n\s+/g, ' ').replace(/^(sed .+)$/, '$1 || true')
+              // YAML parser strips indentation, leaving bare \n between file args
+              step.run = step.run.replace(/\n\s*/g, ' ')
+              // Append || true so missing files (from disabled introspection) don't fail the build
+              if (!step.run.includes('|| true')) {
+                step.run = `${step.run.trimEnd()} || true`
+              }
             }
           }
         }

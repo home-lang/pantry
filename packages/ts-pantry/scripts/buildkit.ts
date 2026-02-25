@@ -473,7 +473,11 @@ export function generateBuildScript(
     // Use the system's actual macOS version — brew libraries are built for the runner's
     // macOS version, so using a lower target (11.0) causes linker warnings/errors
     sections.push('export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-$(sw_vers -productVersion 2>/dev/null | cut -d. -f1-2 || echo 11.0)}"')
-    sections.push(`export LDFLAGS="-Wl,-rpath,${prefix} \${LDFLAGS:-}"`)
+    // NOTE: Do NOT add -Wl,-rpath,prefix to LDFLAGS. The fix-up.ts post-install step
+    // handles rpaths correctly (@loader_path/../lib), and DYLD_FALLBACK_LIBRARY_PATH
+    // handles runtime library resolution during the build. Adding -Wl,-rpath with the
+    // absolute /tmp prefix path conflicts with CMAKE_INSTALL_RPATH on Xcode 26.3+
+    // (install_name_tool treats duplicate rpaths as fatal errors).
     // Modern Clang treats these warnings as errors by default, breaking older packages
     // (e.g. pixman 0.40 has incompatible function pointer types)
     sections.push('export CFLAGS="-Wno-error=incompatible-function-pointer-types -Wno-error=int-conversion -Wno-error=implicit-function-declaration ${CFLAGS:-}"')
