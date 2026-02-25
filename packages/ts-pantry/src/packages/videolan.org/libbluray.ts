@@ -2,7 +2,7 @@
  * **libbluray** - pkgx package
  *
  * @domain `videolan.org/libbluray`
- * @version `1.4.0` (2 versions available)
+ * @version `1.4.1` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install videolan.org/libbluray`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.videolanorglibbluray
  * console.log(pkg.name)        // "libbluray"
- * console.log(pkg.versions[0]) // "1.4.0" (latest)
+ * console.log(pkg.versions[0]) // "1.4.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/videolan-org/libbluray.md
@@ -70,6 +70,7 @@ export const videolanorglibblurayPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.1',
     '1.4.0',
     '1.3.4',
   ] as const,
