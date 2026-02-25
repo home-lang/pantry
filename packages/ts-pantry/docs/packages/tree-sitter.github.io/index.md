@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 37 versions</summary>
+<summary>Show all 38 versions</summary>
 
-- `0.26.5`, `0.26.4`, `0.26.3`, `0.26.2`, `0.26.1`
+- `0.26.6`, `0.26.5`, `0.26.4`, `0.26.3`, `0.26.2`, `0.26.1`
 - `0.25.10`, `0.25.9`, `0.25.8`, `0.25.7`, `0.25.6`, `0.25.5`, `0.25.4`, `0.25.3`, `0.25.2`, `0.25.1`, `0.25.0`
 - `0.24.7`, `0.24.6`, `0.24.5`, `0.24.4`, `0.24.3`, `0.24.2`, `0.24.1`, `0.24.0`
 - `0.23.2`, `0.23.1`, `0.23.0`
@@ -37,13 +37,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.26.5`
+**Latest Version**: `0.26.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +tree-sitter.github.io@0.26.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +tree-sitter.github.io@0.26.6 -- $SHELL -i
 ```
 
 ## Usage Examples
