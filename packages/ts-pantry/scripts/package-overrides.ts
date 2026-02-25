@@ -1815,6 +1815,45 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── gnome.org/adwaita-icon-theme — no-op gtk4-update-icon-cache ──
+  'gnome.org/adwaita-icon-theme': {
+    prependScript: [
+      // gtk4-update-icon-cache may not be available — icon cache is optional
+      'mkdir -p "${TMPDIR:-/tmp}/_icon_fix"',
+      'printf \'#!/bin/sh\\nexit 0\\n\' > "${TMPDIR:-/tmp}/_icon_fix/gtk4-update-icon-cache"',
+      'chmod +x "${TMPDIR:-/tmp}/_icon_fix/gtk4-update-icon-cache"',
+      'export PATH="${TMPDIR:-/tmp}/_icon_fix:$PATH"',
+    ],
+    modifyRecipe: (recipe: any) => {
+      // Remove gtk4 build dep — we provide a no-op icon cache updater
+      if (recipe.build?.dependencies?.['gtk.org/gtk4']) {
+        delete recipe.build.dependencies['gtk.org/gtk4']
+      }
+    },
+  },
+
+  // ─── github.com/thkukuk/libnsl — ensure libtirpc headers found ──
+  'github.com/thkukuk/libnsl': {
+    prependScript: [
+      // libtirpc headers are in a tirpc/ subdirectory — add to CPPFLAGS
+      'TIRPC_CFLAGS=$(pkg-config --cflags libtirpc 2>/dev/null || echo "")',
+      'TIRPC_LIBS=$(pkg-config --libs libtirpc 2>/dev/null || echo "")',
+      'export CPPFLAGS="${CPPFLAGS:-} $TIRPC_CFLAGS"',
+      'export LDFLAGS="${LDFLAGS:-} $TIRPC_LIBS"',
+    ],
+  },
+
+  // ─── astral.sh/uv — ensure RUSTFLAGS and cmake compat ──
+  'astral.sh/uv': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    modifyRecipe: (recipe: any) => {
+      // Widen cmake constraint to include 4.x
+      if (recipe.build?.dependencies?.['cmake.org'] === '^3.28') {
+        recipe.build.dependencies['cmake.org'] = '>=3.28'
+      }
+    },
+  },
+
   // ════════════════════════════════════════════════════════════════════════
   //  ADDITIONAL FIXES FOR knownBrokenDomains PACKAGES
   // ════════════════════════════════════════════════════════════════════════
