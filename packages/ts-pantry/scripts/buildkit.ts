@@ -943,6 +943,34 @@ export function generateBuildScript(
     // which catches dynamically-computed paths (e.g. gflags computes /usr/include from its
     // install prefix at cmake configure time, so string replacement in .cmake files can't catch it).
 
+    // Create missing unversioned dylib/so symlinks in dep dirs.
+    // S3-built deps may have versioned shared libs (e.g. libz.1.3.2.dylib) without the
+    // unversioned symlink (libz.dylib). Other deps' cmake configs reference the unversioned name.
+    if (depPrefixes.length > 0) {
+      const libExt = osName === 'darwin' ? 'dylib' : 'so'
+      sections.push('# Create missing unversioned shared library symlinks in dep dirs')
+      sections.push(`for _dep_prefix in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
+      sections.push(`  for _libdir in "$_dep_prefix/lib" "$_dep_prefix/lib64"; do`)
+      sections.push(`    [ -d "$_libdir" ] || continue`)
+      sections.push(`    for _vlib in "$_libdir"/*.${libExt}.*; do`)
+      sections.push(`      [ -f "$_vlib" ] || continue`)
+      sections.push(`      _base="$(basename "$_vlib")"`)
+      // Extract the unversioned name: libz.1.3.2.dylib → libz.dylib, libz.so.1.3.2 → libz.so
+      if (osName === 'darwin') {
+        // macOS: libfoo.1.2.3.dylib → libfoo.dylib
+        sections.push(`      _unver="$(echo "$_base" | sed 's/\\.[0-9][0-9]*\\(\\.[0-9][0-9]*\\)*\\.dylib/.dylib/')"`)
+      } else {
+        // Linux: libfoo.so.1.2.3 → libfoo.so
+        sections.push(`      _unver="$(echo "$_base" | sed 's/\\.so\\..*/\\.so/')"`)
+      }
+      sections.push(`      if [ "$_unver" != "$_base" ] && [ ! -e "$_libdir/$_unver" ]; then`)
+      sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
+      sections.push(`      fi`)
+      sections.push(`    done`)
+      sections.push(`  done`)
+      sections.push(`done`)
+    }
+
     sections.push('')
 
     // Scrub stale/non-existent paths from dep cmake config files.
