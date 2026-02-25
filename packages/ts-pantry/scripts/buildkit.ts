@@ -897,38 +897,39 @@ export function generateBuildScript(
       sections.push('# Scrub non-existent paths from dep cmake configs (only /tmp buildkit deps)')
       sections.push(`python3 << 'SCRUB_CMAKE_EOF'`)
       sections.push(`import os, re, sys, glob
-# System include paths that must NEVER appear with -isystem (breaks GCC #include_next)
+# System include paths that break builds when used with -isystem (GCC #include_next)
 BAD_INCLUDES = {"/usr/include", "/usr/local/include"}
 dirs = [${depPrefixes.map(p => `"${p}"`).join(', ')}]
 print(f"[cmake-scrub] scanning {len(dirs)} dep dirs", file=sys.stderr)
 modified = 0
 for d in dirs:
     if not d.startswith("/tmp"):
-        print(f"[cmake-scrub] skip non-tmp: {d}", file=sys.stderr)
         continue
     files = glob.glob(os.path.join(d, "**", "*.cmake"), recursive=True)
-    if files:
-        print(f"[cmake-scrub] {d}: {len(files)} cmake files", file=sys.stderr)
     for f in files:
         try:
             t = open(f).read()
             orig = t
-            def fix_inc(m):
+            # 1. Fix semicolon-separated path lists (INTERFACE_INCLUDE_DIRECTORIES, etc.)
+            def fix_pathlist(m):
                 paths = m.group(1).split(";")
-                removed = [p.strip() for p in paths if p.strip() in BAD_INCLUDES or (p.strip() and not p.strip().startswith("$") and not p.strip().startswith("@") and not os.path.isdir(p.strip()))]
-                if removed:
-                    print(f"[cmake-scrub] {os.path.basename(f)}: removing includes: {removed}", file=sys.stderr)
                 kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or (p.strip() not in BAD_INCLUDES and os.path.isdir(p.strip()))]
                 return m.group(0).replace(m.group(1), ";".join(kept))
-            def fix_link(m):
-                paths = m.group(1).split(";")
-                kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or os.path.isdir(p.strip())]
-                return m.group(0).replace(m.group(1), ";".join(kept))
-            t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_inc, t)
-            t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_link, t)${sdkFixLine}
+            t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
+            t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
+            # 2. Fix standalone path assignments (e.g. set(gflags_INCLUDE_DIR "/usr/include"))
+            # These cmake config variables feed into find_package() and end up as -isystem
+            for bad in BAD_INCLUDES:
+                # Replace standalone bad path in quotes: "/usr/include" → ""
+                t = t.replace(f'"{bad}"', '""')
+                # Remove bad path from semicolon lists: "...;/usr/include;..." → "...;..."
+                t = t.replace(f';{bad};', ';')
+                t = t.replace(f';{bad}"', '"')
+                t = t.replace(f'"{bad};', '"')${sdkFixLine}
             if t != orig:
                 open(f, "w").write(t)
                 modified += 1
+                print(f"[cmake-scrub] modified: {os.path.relpath(f, d)}", file=sys.stderr)
         except Exception as e:
             print(f"[cmake-scrub] ERROR {f}: {e}", file=sys.stderr)
 print(f"[cmake-scrub] done: {modified} files modified", file=sys.stderr)`)
