@@ -811,18 +811,27 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   // When ninja runs meson internal commands, it tries to execute a non-existent path like
   // /tmp/buildkit-<pkg>/-c which fails with "No such file or directory".
   // Also, Ubuntu runner has meson 1.3.2 but many packages require >= 1.4.0.
-  // Fix: install fresh meson via pip AND venv, then ensure it's found first in PATH.
+  // Fix: remove S3 dep and force-install fresh meson via pip system-wide.
+  // Note: python3 venv doesn't work on Debian/Ubuntu because their patched Python
+  // includes /usr/lib/python3/dist-packages even in venvs, making the old meson win.
   if (recipe.build?.dependencies?.['mesonbuild.com']) {
     delete recipe.build.dependencies['mesonbuild.com']
     if (!recipe.build.script) recipe.build.script = []
     const existing = recipe.build.script
     const existingArray = Array.isArray(existing) ? existing : [existing]
+    const mesonFixLines = os === 'linux'
+      ? [
+        // On Linux: Debian Python includes dist-packages in venvs, so venv approach fails.
+        // Remove apt meson (1.3.2) and install fresh via pip (1.10.x).
+        'sudo apt-get remove -y meson 2>/dev/null || true',
+        'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+      ]
+      : [
+        // On macOS: install meson via pip (S3 meson has broken hardcoded python paths)
+        'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+      ]
     recipe.build.script = [
-      // Install meson in a venv (clean Python env, no hardcoded paths)
-      'python3 -m venv /tmp/meson-venv && /tmp/meson-venv/bin/pip install "meson>=1.4.0" ninja || true',
-      'export PATH="/tmp/meson-venv/bin:$PATH"',
-      // Also upgrade system meson as fallback (Ubuntu has 1.3.2, packages need >= 1.4.0)
-      'pip3 install --break-system-packages --upgrade "meson>=1.4.0" 2>/dev/null || true',
+      ...mesonFixLines,
       'hash -r 2>/dev/null || true',
       'echo "[buildkit] meson=$(which meson) version=$(meson --version 2>/dev/null)" >&2',
       ...existingArray,
