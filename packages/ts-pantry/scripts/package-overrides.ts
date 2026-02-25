@@ -1049,9 +1049,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
             if (step.run.includes('sed -i -e')) {
               step.run = step.run.replace(/sed -i -e /g, 'sed -i.bak -e ')
             }
-            // Fix meson python path sed: join newline-split file args back onto sed line
+            // Fix meson python path sed: join newline-split file args, make non-fatal
+            // (files may not exist if build config changes, e.g. introspection disabled)
             if (step.run.includes('mesonbuild.com') && step.run.includes('python')) {
-              step.run = step.run.replace(/\n\s+/g, ' ')
+              step.run = step.run.replace(/\n\s+/g, ' ').replace(/^(sed .+)$/, '$1 || true')
             }
           }
         }

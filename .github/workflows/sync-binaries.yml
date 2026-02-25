@@ -217,7 +217,8 @@ jobs:
             libsdl2-dev libplist-dev \
             libassuan-dev libgpg-error-dev \
             libfido2-dev \
-            libdouble-conversion-dev \
+            libdouble-conversion-dev libgoogle-glog-dev libgflags-dev \
+            libsodium-dev liblzo2-dev libsnappy-dev libbrotli-dev \
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
@@ -259,7 +260,8 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2 double-conversion \
+            libsecret libfido2 double-conversion glog gflags \
+            libsodium lzo snappy brotli \
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
           # Homebrew cmake 4.x breaks old packages — unlink it and install cmake 3.x via pip
           brew unlink cmake 2>/dev/null || true
@@ -404,7 +406,8 @@ jobs:
             libsdl2-dev libplist-dev \
             libassuan-dev libgpg-error-dev \
             libfido2-dev \
-            libdouble-conversion-dev \
+            libdouble-conversion-dev libgoogle-glog-dev libgflags-dev \
+            libsodium-dev liblzo2-dev libsnappy-dev libbrotli-dev \
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
@@ -446,7 +449,8 @@ jobs:
             gobject-introspection cairo pango atk gtk+3 glib gdk-pixbuf librsvg json-glib libsoup \
             gnutls libgcrypt libgpg-error libassuan libksba libusb pcre2 \
             libarchive jemalloc lua protobuf grpc c-ares re2 capnp \
-            libsecret libfido2 double-conversion \
+            libsecret libfido2 double-conversion glog gflags \
+            libsodium lzo snappy brotli \
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
           # Homebrew cmake 4.x breaks old packages — unlink it and install cmake 3.x via pip
           brew unlink cmake 2>/dev/null || true
