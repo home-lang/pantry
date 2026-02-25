@@ -1629,11 +1629,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── aomedia.googlesource.com/aom — googlesource tarballs extract flat ──
-  'aomedia.googlesource.com/aom': {
-    // googlesource.com +archive tarballs have no top-level directory
-    stripComponents: 0,
-  },
+  // aomedia.googlesource.com/aom override merged into the existing entry below (line ~4560)
 
   // ════════════════════════════════════════════════════════════════════════
   //  ADDITIONAL FIXES FOR knownBrokenDomains PACKAGES
@@ -4555,9 +4551,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── aomedia.googlesource.com/aom — fix cmake prefix quote ──────────
+  // ─── aomedia.googlesource.com/aom — googlesource flat tarball + cmake prefix ─
 
   'aomedia.googlesource.com/aom': {
+    // googlesource.com +archive tarballs have no top-level directory
+    stripComponents: 0,
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>

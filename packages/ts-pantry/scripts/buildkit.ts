@@ -1380,6 +1380,15 @@ SYSLIB_OVERRIDE_EOF`)
   }
   sections.push('')
 
+  // Remove rust-toolchain.toml to prevent rustup from switching compilers mid-build.
+  // Source repos pin specific (sometimes nightly) Rust versions via rust-toolchain.toml.
+  // When rustup detects this file, it downloads that version, causing some crates to be
+  // compiled with stable and others with the pinned version → E0514 ABI mismatch.
+  sections.push('# Remove rust-toolchain files to prevent rustup version switching')
+  sections.push('rm -f rust-toolchain.toml rust-toolchain 2>/dev/null || true')
+  sections.push('if command -v rustup &>/dev/null; then rustup default stable 2>/dev/null || true; fi')
+  sections.push('')
+
   // Git init for Python packages that use setuptools-scm (ported from brewkit's bkpyvenv)
   // Many Python builds fail without git metadata for version detection
   sections.push('# Git init for setuptools-scm compatibility (brewkit)')
