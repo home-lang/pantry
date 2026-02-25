@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 159 versions</summary>
+<summary>Show all 160 versions</summary>
 
+- `21.2.0`
 - `21.1.5`, `21.1.4`, `21.1.3`, `21.1.2`, `21.1.1`, `21.1.0`
 - `21.0.6`, `21.0.5`, `21.0.4`, `21.0.3`, `21.0.2`, `21.0.1`, `21.0.0`
 - `20.3.17`, `20.3.16`, `20.3.15`, `20.3.14`, `20.3.12`, `20.3.11`, `20.3.10`, `20.3.9`, `20.3.8`, `20.3.7`, `20.3.6`, `20.3.5`, `20.3.4`, `20.3.3`, `20.3.2`, `20.3.1`, `20.3.0`
@@ -48,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `21.1.5`
+**Latest Version**: `21.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +angular.dev@21.1.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +angular.dev@21.2.0 -- $SHELL -i
 ```
 
 ## Dependencies
