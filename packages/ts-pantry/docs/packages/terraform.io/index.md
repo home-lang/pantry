@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 87 versions</summary>
+<summary>Show all 88 versions</summary>
 
-- `1.14.5`, `1.14.4`, `1.14.3`, `1.14.2`, `1.14.1`, `1.14.0`
+- `1.14.6`, `1.14.5`, `1.14.4`, `1.14.3`, `1.14.2`, `1.14.1`, `1.14.0`
 - `1.13.5`, `1.13.4`, `1.13.3`, `1.13.2`, `1.13.1`, `1.13.0`
 - `1.12.2`, `1.12.1`, `1.12.0`
 - `1.11.4`, `1.11.3`, `1.11.2`, `1.11.1`, `1.11.0`
@@ -49,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.14.5`
+**Latest Version**: `1.14.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +terraform.io@1.14.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +terraform.io@1.14.6 -- $SHELL -i
 ```
 
 ## Usage Examples
