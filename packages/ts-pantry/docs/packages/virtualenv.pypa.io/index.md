@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 54 versions</summary>
+<summary>Show all 55 versions</summary>
 
+- `21.0.0`
 - `20.39.1`, `20.39.0`
 - `20.38.0`
 - `20.36.1`, `20.36.0`
@@ -51,13 +52,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `20.39.1`
+**Latest Version**: `21.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +virtualenv.pypa.io@20.39.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +virtualenv.pypa.io@21.0.0 -- $SHELL -i
 ```
 
 ## Dependencies
