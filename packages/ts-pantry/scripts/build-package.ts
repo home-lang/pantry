@@ -823,8 +823,11 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
       ? [
         // On Linux: Debian Python includes dist-packages in venvs, so venv approach fails.
         // Remove apt meson (1.3.2) and install fresh via pip (1.10.x).
+        // Use sudo for system-wide install to /usr/local/bin (reliable PATH).
         'sudo apt-get remove -y meson 2>/dev/null || true',
-        'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+        'sudo pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+        // Ensure pip user bin dir is in PATH (fallback if non-sudo install was used)
+        'export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"',
       ]
       : [
         // On macOS: install meson via pip (S3 meson has broken hardcoded python paths)
@@ -833,7 +836,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     recipe.build.script = [
       ...mesonFixLines,
       'hash -r 2>/dev/null || true',
-      'echo "[buildkit] meson=$(which meson) version=$(meson --version 2>/dev/null)" >&2',
+      'echo "[buildkit] meson=$(which meson 2>/dev/null || echo NOT_FOUND) version=$(meson --version 2>/dev/null || echo UNKNOWN)" >&2',
       ...existingArray,
     ]
   }
