@@ -29,7 +29,7 @@ export interface PackageOverride {
     linux?: Omit<PackageOverride, 'platforms' | 'modifyRecipe'>
     darwin?: Omit<PackageOverride, 'platforms' | 'modifyRecipe'>
   }
-  modifyRecipe?: (recipe: any) => void
+  modifyRecipe?: (recipe: any, platform?: string) => void
 }
 
 // ── Shared script patterns ─────────────────────────────────────────────
@@ -1020,13 +1020,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/glib — disable introspection, fix sed -i BSD ─────────────
 
   'gnome.org/glib': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: any, platform?: string) => {
       // Remove gobject-introspection build dep (circular dep chain)
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
       }
-      // Remove gnome.org/libxml2 build dep (not strictly needed)
-      if (recipe.build?.dependencies?.['gnome.org/libxml2']) {
+      // Remove gnome.org/libxml2 build dep on linux (not in S3 for linux).
+      // On darwin, KEEP it — gettext from S3 has hardcoded libxml2.16.dylib path
+      // and DYLD_FALLBACK_LIBRARY_PATH needs gnome.org/libxml2 in deps to find it.
+      if (platform?.startsWith('linux') && recipe.build?.dependencies?.['gnome.org/libxml2']) {
         delete recipe.build.dependencies['gnome.org/libxml2']
       }
       // Relax python version constraint (S3 has 3.14, YAML wants >=3.5<3.12)

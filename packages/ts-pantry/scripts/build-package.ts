@@ -909,7 +909,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
 
   // 5. Apply modifyRecipe callback for complex mutations
   if (override.modifyRecipe) {
-    override.modifyRecipe(recipe)
+    override.modifyRecipe(recipe, platform)
   }
 }
 
