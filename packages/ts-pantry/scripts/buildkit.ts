@@ -947,26 +947,32 @@ export function generateBuildScript(
     // S3-built deps may have versioned shared libs (e.g. libz.1.3.2.dylib) without the
     // unversioned symlink (libz.dylib). Other deps' cmake configs reference the unversioned name.
     if (depPrefixes.length > 0) {
-      const libExt = osName === 'darwin' ? 'dylib' : 'so'
       sections.push('# Create missing unversioned shared library symlinks in dep dirs')
       sections.push(`for _dep_prefix in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
       sections.push(`  for _libdir in "$_dep_prefix/lib" "$_dep_prefix/lib64"; do`)
       sections.push(`    [ -d "$_libdir" ] || continue`)
-      sections.push(`    for _vlib in "$_libdir"/*.${libExt}.*; do`)
-      sections.push(`      [ -f "$_vlib" ] || continue`)
-      sections.push(`      _base="$(basename "$_vlib")"`)
-      // Extract the unversioned name: libz.1.3.2.dylib → libz.dylib, libz.so.1.3.2 → libz.so
       if (osName === 'darwin') {
-        // macOS: libfoo.1.2.3.dylib → libfoo.dylib
+        // macOS: versioned dylibs are libfoo.1.2.3.dylib — find them with ls and regex
+        sections.push(`    for _vlib in "$_libdir"/*.dylib; do`)
+        sections.push(`      [ -f "$_vlib" ] || continue`)
+        sections.push(`      _base="$(basename "$_vlib")"`)
+        // libz.1.3.2.dylib → libz.dylib (remove version numbers before .dylib)
         sections.push(`      _unver="$(echo "$_base" | sed 's/\\.[0-9][0-9]*\\(\\.[0-9][0-9]*\\)*\\.dylib/.dylib/')"`)
+        sections.push(`      if [ "$_unver" != "$_base" ] && [ ! -e "$_libdir/$_unver" ]; then`)
+        sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
+        sections.push(`      fi`)
+        sections.push(`    done`)
       } else {
-        // Linux: libfoo.so.1.2.3 → libfoo.so
+        // Linux: versioned .so are libfoo.so.1.2.3
+        sections.push(`    for _vlib in "$_libdir"/*.so.*; do`)
+        sections.push(`      [ -f "$_vlib" ] || continue`)
+        sections.push(`      _base="$(basename "$_vlib")"`)
         sections.push(`      _unver="$(echo "$_base" | sed 's/\\.so\\..*/\\.so/')"`)
+        sections.push(`      if [ "$_unver" != "$_base" ] && [ ! -e "$_libdir/$_unver" ]; then`)
+        sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
+        sections.push(`      fi`)
+        sections.push(`    done`)
       }
-      sections.push(`      if [ "$_unver" != "$_base" ] && [ ! -e "$_libdir/$_unver" ]; then`)
-      sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
-      sections.push(`      fi`)
-      sections.push(`    done`)
       sections.push(`  done`)
       sections.push(`done`)
     }
@@ -1030,6 +1036,27 @@ for d in dirs:
                 t = t.replace(f';{bad};', ';')
                 t = t.replace(f';{bad}"', '"')
                 t = t.replace(f'"{bad};', '"')${sdkFixLine}
+            # 3. Fix references to non-existent library files in dep dirs.
+            # S3-built deps may reference libz.dylib etc. that doesn't exist in the downloaded dep.
+            def fix_missing_libs(match):
+                path = match.group(0)
+                if path.startswith("/tmp/buildkit-deps/") and not os.path.exists(path):
+                    # Try to find the library in system locations
+                    libname = os.path.basename(path)
+                    for sysdir in ["/usr/lib", "/usr/local/lib"]:
+                        syspath = os.path.join(sysdir, libname)
+                        if os.path.exists(syspath):
+                            print(f"[cmake-scrub] replacing missing {path} -> {syspath}", file=sys.stderr)
+                            return syspath${osName === 'darwin' ? `
+                    # On macOS, also check SDK for .tbd stubs
+                    if sdk:
+                        tbd_name = libname.replace(".dylib", ".tbd")
+                        sdklib = os.path.join(sdk, "usr", "lib", tbd_name)
+                        if os.path.exists(sdklib):
+                            print(f"[cmake-scrub] replacing missing {path} -> {sdklib}", file=sys.stderr)
+                            return sdklib` : ''}
+                return path
+            t = re.sub(r'/tmp/buildkit-deps/[^;"\\s]+\\.(?:dylib|so|a|tbd)(?:\\.[0-9]+)*', fix_missing_libs, t)
             if t != orig:
                 open(f, "w").write(t)
                 modified += 1
