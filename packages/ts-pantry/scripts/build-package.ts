@@ -1412,6 +1412,13 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     removedDeps.add('gnu.org/readline')
   }
 
+  // Globally exclude S3 rust-lang.org/cargo — its bin/rustc is an older version
+  // (e.g. 1.83.0) that conflicts with the CI runner's rustup stable (1.93.1).
+  // When S3 cargo's bin/ is prepended to PATH, cargo invokes S3's rustc instead
+  // of system rustc, causing E0514 ABI mismatch between crates compiled by
+  // different rustc versions. System cargo/rustc from rustup is always preferred.
+  removedDeps.add('rust-lang.org/cargo')
+
   console.log(`\nBuild recipe: ${pantryPath}`)
 
   // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
