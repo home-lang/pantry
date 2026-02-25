@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-23T23:04:37.037Z
+ * Generated on 2026-02-25T19:40:43.040Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1647 total)
+ * List of all known packages (1648 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -1089,6 +1089,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'khronos.org/glslang',
   'khronos.org/opencl-headers',
   'kind.sigs.k8s.io',
+  'kiro.dev/cli',
   'kislyuk.github.io/argcomplete',
   'kluctl.io',
   'ko.build',
