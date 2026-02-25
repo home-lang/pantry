@@ -3973,6 +3973,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'sudo apt-get install -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
         ],
       },
+      darwin: {
+        prependScript: [
+          // pywatchman install needs setuptools
+          'pip3 install setuptools 2>/dev/null || python3 -m pip install setuptools 2>/dev/null || true',
+        ],
+      },
     },
     modifyRecipe: (recipe: any) => {
       // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
