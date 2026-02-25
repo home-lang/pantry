@@ -843,12 +843,15 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         'export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"',
       ]
       : [
-        // On macOS: install meson+setuptools via python3 -m pip (NOT pip3, which may
-        // belong to a different Python than `python3` — e.g. pip3→Python 3.9 but
-        // python3→Homebrew Python 3.14. Meson checks `python3` for module availability.)
-        'python3 -m pip install --break-system-packages "meson>=1.4.0" setuptools 2>/dev/null || python3 -m pip install "meson>=1.4.0" setuptools 2>/dev/null || true',
-        // pip on macOS installs to ~/Library/Python/3.x/bin/ which isn't in PATH
-        'export PATH="$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
+        // On macOS: install meson+setuptools to a known --target dir and add to
+        // PYTHONPATH. pip installs to unpredictable locations when HOME is overridden
+        // (build script isolation), and meson's python3 module check fails if setuptools
+        // ends up in user site-packages under the fake HOME. Using --target gives us full
+        // control over where packages land.
+        '_MESON_PKGS="/tmp/buildkit-meson-pkgs"',
+        'python3 -m pip install --target "$_MESON_PKGS" "meson>=1.4.0" setuptools 2>/dev/null || python3 -m pip install --break-system-packages "meson>=1.4.0" setuptools 2>/dev/null || true',
+        'export PYTHONPATH="$_MESON_PKGS:${PYTHONPATH:-}"',
+        'export PATH="$_MESON_PKGS/bin:$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
       ]
     recipe.build.script = [
       ...mesonFixLines,

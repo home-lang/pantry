@@ -570,6 +570,12 @@ export function generateBuildScript(
   sections.push('  _cargo_found=true')
   sections.push('fi')
   sections.push('echo "[buildkit] Rust: cargo=$(command -v cargo 2>/dev/null || echo NOT_FOUND), REAL_HOME=$REAL_HOME, _cargo_found=$_cargo_found"')
+  // Pre-install rust-src to prevent race condition: parallel rustc invocations
+  // during cargo builds trigger concurrent rustup channel syncs, each trying to
+  // install rust-src and conflicting. Installing it upfront avoids this.
+  sections.push('if command -v rustup &>/dev/null; then')
+  sections.push('  rustup component add rust-src 2>/dev/null || true')
+  sections.push('fi')
   sections.push('')
 
   // Go toolchain — set default GOPATH only if recipe didn't already set it
