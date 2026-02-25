@@ -1931,13 +1931,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
         prependScript: [
           'brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"',
-          // Python 3.12+ removed distutils from stdlib. g-ir-scanner imports
-          // distutils.cygwinccompiler (only needed on Windows/Cygwin). Patch it out.
-          'sed -i.bak "s/import distutils\\.cygwinccompiler/pass  # distutils removed in Python 3.12+/" giscanner/utils.py 2>/dev/null || true',
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: any, platform?: string) => {
       // Fix sed -i BSD compat and replace python dep template references
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -1952,6 +1949,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
               && !step.run.includes('sed -i.bak')) {
               step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
             }
+          }
+          // Python 3.12+ removed distutils from stdlib. g-ir-scanner imports
+          // distutils.cygwinccompiler (Windows/Cygwin only). Meson generates
+          // build/giscanner/utils.py via configure_file(), so patch the build
+          // dir copy AFTER meson setup but BEFORE ninja build.
+          if (platform?.startsWith('darwin') && typeof step === 'string' && step.startsWith('ninja')) {
+            recipe.build.script.splice(i, 0,
+              'sed -i.bak "s/import distutils\\.cygwinccompiler/pass  # distutils removed in Python 3.12+/" giscanner/utils.py 2>/dev/null || true',
+            )
+            i++ // skip the newly inserted step
           }
         }
       }
