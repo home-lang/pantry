@@ -2495,6 +2495,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── fukuchi.org/qrencode — fix glibtoolize not found on darwin ───────
+
+  'fukuchi.org/qrencode': {
+    platforms: {
+      darwin: {
+        // autogen.sh calls glibtoolize (Homebrew naming) but S3 libtool provides libtoolize
+        prependScript: [
+          'if command -v libtoolize >/dev/null 2>&1 && ! command -v glibtoolize >/dev/null 2>&1; then ln -sf "$(command -v libtoolize)" "$(dirname "$(command -v libtoolize)")/glibtoolize"; fi',
+        ],
+      },
+    },
+  },
+
   // ─── gnome.org/PyGObject — fix prefix quoting ────────────────────────
 
   'gnome.org/PyGObject': {
