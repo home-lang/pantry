@@ -876,18 +876,24 @@ export function generateBuildScript(
       sections.push('# Scrub non-existent paths from dep cmake configs (only /tmp buildkit deps)')
       sections.push(`python3 << 'SCRUB_CMAKE_EOF'`)
       sections.push(`import os, re, sys, glob
+# System include paths that must NEVER appear with -isystem (breaks GCC #include_next)
+BAD_INCLUDES = {"/usr/include", "/usr/local/include"}
 for d in [${depPrefixes.map(p => `"${p}"`).join(', ')}]:
     if not d.startswith("/tmp"): continue
     for f in glob.glob(os.path.join(d, "**", "*.cmake"), recursive=True):
         try:
             t = open(f).read()
             orig = t
-            def fix_paths(m):
+            def fix_inc(m):
+                paths = m.group(1).split(";")
+                kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or (p.strip() not in BAD_INCLUDES and os.path.isdir(p.strip()))]
+                return m.group(0).replace(m.group(1), ";".join(kept))
+            def fix_link(m):
                 paths = m.group(1).split(";")
                 kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or os.path.isdir(p.strip())]
                 return m.group(0).replace(m.group(1), ";".join(kept))
-            t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_paths, t)
-            t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_paths, t)${sdkFixLine}
+            t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_inc, t)
+            t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_link, t)${sdkFixLine}
             if t != orig: open(f, "w").write(t)
         except: pass`)
       sections.push('SCRUB_CMAKE_EOF')
