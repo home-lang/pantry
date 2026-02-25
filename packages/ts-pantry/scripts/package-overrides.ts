@@ -1619,8 +1619,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       // S3 gnutls.org dep pollutes LD_LIBRARY_PATH, causing git-remote-https to crash
       // with "undefined symbol: nettle_rsa_oaep_sha384_decrypt" when pip clones git deps.
-      // Unset LD_LIBRARY_PATH for git operations.
-      'alias git="env -u LD_LIBRARY_PATH git"',
+      // Create a git wrapper that unsets LD_LIBRARY_PATH (alias doesn't work in non-interactive bash).
+      'mkdir -p "${TMPDIR:-/tmp}/_git_wrapper"',
+      'printf \'#!/bin/bash\\nunset LD_LIBRARY_PATH\\nexec /usr/bin/git "$@"\\n\' > "${TMPDIR:-/tmp}/_git_wrapper/git"',
+      'chmod +x "${TMPDIR:-/tmp}/_git_wrapper/git"',
+      'export PATH="${TMPDIR:-/tmp}/_git_wrapper:$PATH"',
     ],
     modifyRecipe: (recipe: any) => {
       // Remove gnutls.org from deps if present (system gnutls is compatible)
