@@ -863,36 +863,34 @@ export function generateBuildScript(
 
     sections.push('')
 
-    // Scrub hardcoded system paths from dep cmake config files.
-    // S3-built deps may have stale paths in INTERFACE_INCLUDE_DIRECTORIES:
-    // - Linux: /usr/include → CMake adds -isystem /usr/include, breaking GCC #include_next
-    // - macOS: Xcode SDK paths from the build machine (e.g. MacOSX26.2.sdk) that don't
-    //   exist on the current runner. CMake errors on non-existent INTERFACE_INCLUDE_DIRECTORIES.
+    // Scrub stale/non-existent paths from dep cmake config files.
+    // S3-built deps may have hardcoded paths in INTERFACE_INCLUDE_DIRECTORIES
+    // that don't exist on the current runner, causing CMake errors or -isystem issues:
+    // - /usr/include → breaks GCC #include_next on Linux
+    // - /usr/local/include/x86_64-linux-gnu → doesn't exist on runners
+    // - Xcode SDK paths from different macOS versions
     if (depPrefixes.length > 0) {
-      sections.push('# Scrub stale system paths from dep cmake configs (only in /tmp buildkit deps)')
-      sections.push(`for _cmake_dir in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
-      sections.push('  case "$_cmake_dir" in /tmp/*) ;; *) continue ;; esac')
-      sections.push('  find "$_cmake_dir" -name "*.cmake" -type f 2>/dev/null | while read -r _f; do')
-      if (osName === 'linux') {
-        // Remove /usr/include references (prevents -isystem /usr/include)
-        sections.push('    if grep -q "/usr/include" "$_f" 2>/dev/null; then')
-        sections.push('      sed -i \'s|;/usr/include||g; s|/usr/include;||g; s|/usr/include||g\' "$_f"')
-        sections.push('    fi')
-      } else if (osName === 'darwin') {
-        // Replace stale Xcode SDK paths with current SDK path.
-        // S3-built deps hardcode paths like .../MacOSX26.2.sdk/... which don't exist
-        // on runners with different Xcode versions.
-        sections.push('    if grep -q "MacOSX.*\\.sdk" "$_f" 2>/dev/null; then')
-        sections.push('      _CUR_SDK="$(xcrun --show-sdk-path 2>/dev/null)"')
-        sections.push('      if [ -n "$_CUR_SDK" ]; then')
-        // Use single quotes for sed pattern to avoid bash escaping issues with BSD sed.
-        // Break out of single quotes to insert the shell variable.
-        sections.push("        sed -i.bak -E 's|/Applications/Xcode[^;]*/SDKs/MacOSX[^;]*.sdk|'\"$_CUR_SDK\"'|g' \"$_f\" 2>/dev/null || true")
-        sections.push('      fi')
-        sections.push('    fi')
-      }
-      sections.push('  done')
-      sections.push('done')
+      const sdkFixLine = osName === 'darwin'
+        ? `\n            sdk = os.popen("xcrun --show-sdk-path 2>/dev/null").read().strip()\n            if sdk: t = re.sub(r'/Applications/Xcode[^;"]*?/SDKs/MacOSX[^;"]*?\\.sdk', sdk, t)`
+        : ''
+      sections.push('# Scrub non-existent paths from dep cmake configs (only /tmp buildkit deps)')
+      sections.push(`python3 << 'SCRUB_CMAKE_EOF'`)
+      sections.push(`import os, re, sys, glob
+for d in [${depPrefixes.map(p => `"${p}"`).join(', ')}]:
+    if not d.startswith("/tmp"): continue
+    for f in glob.glob(os.path.join(d, "**", "*.cmake"), recursive=True):
+        try:
+            t = open(f).read()
+            orig = t
+            def fix_paths(m):
+                paths = m.group(1).split(";")
+                kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or os.path.isdir(p.strip())]
+                return m.group(0).replace(m.group(1), ";".join(kept))
+            t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_paths, t)
+            t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_paths, t)${sdkFixLine}
+            if t != orig: open(f, "w").write(t)
+        except: pass`)
+      sections.push('SCRUB_CMAKE_EOF')
       sections.push('')
     }
   }
