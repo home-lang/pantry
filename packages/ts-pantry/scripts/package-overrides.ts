@@ -856,11 +856,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── lloyd.github.io/yajl — fix deprecated cmake policy ────────────────
-  // yajl 2.1.0 uses cmake_policy(SET CMP0026 OLD) which is removed in cmake 3.20+.
+  // ─── lloyd.github.io/yajl — fix deprecated GET_TARGET_PROPERTY LOCATION ──
   'lloyd.github.io/yajl': {
     prependScript: [
-      'sed -i.bak "/cmake_policy.*CMP0026/d" CMakeLists.txt 2>/dev/null || true',
+      // yajl uses GET_TARGET_PROPERTY(... LOCATION) which cmake 4.x forbids (CMP0026).
+      // Replace with $<TARGET_FILE:...> generator expressions in subdirectory CMakeLists.
+      'sed -i.bak "/GET_TARGET_PROPERTY/d" reformatter/CMakeLists.txt 2>/dev/null || true',
+      'sed -i.bak "s|\\${binPath}|\\$<TARGET_FILE:json_reformat>|" reformatter/CMakeLists.txt 2>/dev/null || true',
+      'sed -i.bak "/GET_TARGET_PROPERTY/d" verify/CMakeLists.txt 2>/dev/null || true',
+      'sed -i.bak "s|\\${binPath}|\\$<TARGET_FILE:json_verify>|" verify/CMakeLists.txt 2>/dev/null || true',
     ],
   },
 
