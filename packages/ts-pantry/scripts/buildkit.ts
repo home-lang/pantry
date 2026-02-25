@@ -862,6 +862,22 @@ export function generateBuildScript(
     }
 
     sections.push('')
+
+    // On Linux, scrub /usr/include from cmake config files in deps.
+    // S3-built deps may have /usr/include in INTERFACE_INCLUDE_DIRECTORIES,
+    // which CMake turns into -isystem /usr/include, breaking GCC's
+    // #include_next <stdlib.h> (same issue as the CPATH fix above).
+    if (osName === 'linux' && depPrefixes.length > 0) {
+      sections.push('# Scrub /usr/include from dep cmake configs (prevents -isystem /usr/include)')
+      sections.push(`for _cmake_dir in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
+      sections.push('  find "$_cmake_dir" -name "*.cmake" -type f 2>/dev/null | while read -r _f; do')
+      sections.push('    if grep -q "/usr/include" "$_f" 2>/dev/null; then')
+      sections.push('      sed -i \'s|;/usr/include||g; s|/usr/include;||g; s|/usr/include||g\' "$_f"')
+      sections.push('    fi')
+      sections.push('  done')
+      sections.push('done')
+      sections.push('')
+    }
   }
 
   // Compiler wrapper: filter -Werror, resolve -shared/-pie conflicts, and work around
