@@ -942,13 +942,17 @@ print(f"[cmake-scrub] done: {modified} files modified", file=sys.stderr)`)
     }
 
     if (osName === 'linux' && depPrefixes.length > 0) {
-      // On Linux, S3-built deps may have cmake configs with hardcoded system library paths
-      // (e.g. /usr/lib/x86_64-linux-gnu/libglog.so from folly's cmake). If we have a newer
-      // version of that library in buildkit-deps, overwrite the system .so to avoid ABI mismatches.
-      // This specifically fixes glog 0.6 (system) vs 0.7 (buildkit) ABI incompatibility.
-      sections.push('# Overwrite system libs with buildkit versions to fix ABI mismatches')
+      // On Linux, S3-built deps (e.g. folly) may have cmake configs with hardcoded system
+      // library paths. When buildkit-deps provide a newer version of specific libraries known
+      // to have ABI mismatches with Ubuntu system versions, overwrite the system .so files.
+      // Only target specific libraries to avoid breaking system tools.
+      sections.push('# Overwrite specific system libs with buildkit versions (ABI mismatch fix)')
       sections.push(`sudo python3 << 'SYSLIB_OVERRIDE_EOF'
 import os, shutil, sys
+# Only override libraries known to have ABI mismatches between system and buildkit
+# glog: Ubuntu has 0.6.0, buildkit has 0.7.1 (google::logging::internal namespace changes)
+# gflags: Ubuntu has 2.2.2, buildkit has 2.3.0
+ALLOW_OVERRIDE = {"libglog", "libgflags"}
 SYS_LIB = "/usr/lib/x86_64-linux-gnu"
 if not os.path.isdir(SYS_LIB):
     sys.exit(0)
@@ -960,15 +964,18 @@ for d in deps:
     if not os.path.isdir(lib_dir): continue
     for f in os.listdir(lib_dir):
         if not (f.endswith(".so") or ".so." in f): continue
+        # Check if this library basename matches any in the allow list
+        base = f.split(".so")[0]
+        if base not in ALLOW_OVERRIDE: continue
         dep_lib = os.path.join(lib_dir, f)
         sys_lib = os.path.join(SYS_LIB, f)
         if os.path.exists(sys_lib) and os.path.isfile(dep_lib):
             try:
                 shutil.copy2(dep_lib, sys_lib)
                 overwritten += 1
+                print(f"[syslib-override] {f}: {dep_lib} -> {sys_lib}", file=sys.stderr)
             except: pass
 if overwritten:
-    print(f"[syslib-override] overwritten {overwritten} system libs with buildkit versions", file=sys.stderr)
     os.system("ldconfig 2>/dev/null")
 SYSLIB_OVERRIDE_EOF`)
       sections.push('')
