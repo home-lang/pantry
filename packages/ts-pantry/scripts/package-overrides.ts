@@ -3715,6 +3715,35 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('-DCMAKE_NO_SYSTEM_FROM_IMPORTED=ON')
       }
+      // Fix multi-line sed steps truncated by YAML parser.
+      // 'run: sed -i -E\n  -e "..." folly-targets.cmake' becomes just 'sed -i -E'
+      // 'run: sed -i\n  -e "..." libfolly.pc' becomes just 'sed -i'
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step !== 'object' || !step.run) continue
+          // Fix folly-targets.cmake sed (multi-line truncated to 'sed -i -E')
+          if (step.run === 'sed -i -E') {
+            step.run = 'sed -i -E'
+              + ' -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../..:g"'
+              + ' -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g\''
+              + ' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g\''
+              + ' folly-targets.cmake'
+            if (!step['working-directory']) {
+              step['working-directory'] = '${{prefix}}/lib/cmake/folly'
+            }
+          }
+          // Fix libfolly.pc sed (multi-line truncated to 'sed -i')
+          if (step.run === 'sed -i') {
+            step.run = 'sed -i'
+              + " -e 's/-I[^ ]* *//g'"
+              + ' -e \'s:{{pkgx.prefix}}:${prefix}/../../..:g\''
+              + ' libfolly.pc'
+            if (!step['working-directory']) {
+              step['working-directory'] = '${{prefix}}/lib/pkgconfig'
+            }
+          }
+        }
+      }
     },
   },
 
@@ -3792,18 +3821,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Fix sed -i BSD compat
+      // Fix sed steps: the YAML parser truncates multi-line plain scalar continuation,
+      // so 'run: sed -i -E\n  -e "..." FBThriftTargets.cmake' becomes just 'sed -i -E'.
+      // Reconstruct the full commands. The sed wrapper in buildkit.ts handles -i BSD compat.
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
-              .replace(/sed -i -E\n/g, 'sed -i.bak -E\n')
+          // Fix the post-install cmake targets sed (truncated multi-line)
+          if (typeof step === 'object' && (step.run === 'sed -i -E' || step.run === 'sed -i')) {
+            step.run = 'sed -i -E'
+              + ' -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../..:g"'
+              + ' -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/include|/v\\1/include|g\''
+              + ' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)(\\.[0-9]+)*[a-z]?/lib|/v\\1/lib|g\''
+              + ' FBThriftTargets.cmake'
+            if (!step['working-directory']) {
+              step['working-directory'] = '${{prefix}}/lib/cmake/fbthrift'
+            }
           }
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+          // Fix other sed -i BSD compat (single-line seds that parsed correctly)
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i ') && !step.run.includes('sed -i.bak ')) {
+            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i ') && !step.includes('sed -i.bak ')) {
             const idx = recipe.build.script.indexOf(step)
             recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
-              .replace(/sed -i -E\n/g, 'sed -i.bak -E\n')
           }
         }
       }
