@@ -408,7 +408,7 @@ function tryBuildVersion(
     cwd: join(process.cwd()),
     env: { ...process.env },
     stdio: 'inherit',
-    timeout: 45 * 60 * 1000, // 45 min per package
+    timeout: 60 * 60 * 1000, // 60 min per package (fbthrift/heavy C++ need >45 min)
   })
 }
 
