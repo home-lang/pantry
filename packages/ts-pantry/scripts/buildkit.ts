@@ -817,7 +817,10 @@ export function generateBuildScript(
     depPkgConfigPaths.push('/usr/lib/pkgconfig')
     depPkgConfigPaths.push('/usr/share/pkgconfig')
     depLibPaths.push('/usr/lib/x86_64-linux-gnu')
-    depIncludePaths.push('/usr/include')
+    // NOTE: Do NOT add /usr/include to depIncludePaths. It's already in GCC's
+    // default search path, and adding it to CPATH causes CMake to emit
+    // -isystem /usr/include, which changes header search order and breaks
+    // GCC's #include_next <stdlib.h> in C++ standard library headers.
   } else if (osName === 'darwin') {
     depPkgConfigPaths.push('/opt/homebrew/lib/pkgconfig')
     depPkgConfigPaths.push('/opt/homebrew/share/pkgconfig')
