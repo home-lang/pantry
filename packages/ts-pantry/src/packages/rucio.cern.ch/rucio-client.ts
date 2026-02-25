@@ -3,7 +3,7 @@
  *
  * @domain `rucio.cern.ch/rucio-client`
  * @programs `rucio`, `rucio-admin`
- * @version `39.3.0` (46 versions available)
+ * @version `39.3.1` (47 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rucio.cern.ch/rucio-client`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "rucio-client"
  * console.log(pkg.description) // "Rucio - Scientific Data Management"
  * console.log(pkg.programs)    // ["rucio", "rucio-admin"]
- * console.log(pkg.versions[0]) // "39.3.0" (latest)
+ * console.log(pkg.versions[0]) // "39.3.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rucio-cern-ch/rucio-client.md
@@ -78,6 +78,7 @@ export const ruciocernchrucioclientPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '39.3.1',
     '39.3.0',
     '39.2.0',
     '39.1.0',

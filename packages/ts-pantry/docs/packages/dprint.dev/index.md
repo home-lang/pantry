@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 31 versions</summary>
+<summary>Show all 32 versions</summary>
 
+- `0.52.0`
 - `0.51.1`, `0.51.0`
 - `0.50.2`, `0.50.1`, `0.50.0`
 - `0.49.1`, `0.49.0`
@@ -42,13 +43,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.51.1`
+**Latest Version**: `0.52.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dprint.dev@0.51.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dprint.dev@0.52.0 -- $SHELL -i
 ```
 
 ## Usage Examples
