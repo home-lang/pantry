@@ -2505,11 +2505,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
         )
       }
       // Disable pycairo — buildkit can't set PYTHONPATH for Python dep modules at build time
+      // Replace -Dpycairo=enabled with -Dpycairo=disabled (avoid duplicate flags)
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
-        recipe.build.env.MESON_ARGS.push('-Dpycairo=disabled')
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
+          a === '-Dpycairo=enabled' ? '-Dpycairo=disabled' : a,
+        )
+        // Disable tests that require cairo.h from pycairo
+        recipe.build.env.MESON_ARGS.push('-Dtests=false')
       }
+      // Remove pycairo dep but keep cairographics.org for cairo.h
       if (recipe.dependencies?.['cairographics.org/pycairo']) {
         delete recipe.dependencies['cairographics.org/pycairo']
+        recipe.dependencies['cairographics.org'] = '*'
       }
     },
   },
