@@ -1029,6 +1029,11 @@ Options:
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
     'github.com/allure-framework/allure2', // ZIP extraction structure mismatch
     'man-db.gitlab.io/man-db', // Dependency chain failure (libpipeline, groff)
+    'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
+    'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
+    'github.com/essembeh/gnome-extensions-cli', // git tag v0.11.0 deleted upstream
+    'github.com/sindresorhus/macos-term-size', // codesign verification fails in CI
+    'eyrie.org/eagle/podlators', // source tarball 404 — older versions removed from server
   ])
 
   let platformSkipped = 0

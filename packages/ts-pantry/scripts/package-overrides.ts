@@ -393,8 +393,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'github.com/xiph/speexdsp': { prependScript: [GLIBTOOL_FIX] },
   'vapoursynth.com': { prependScript: [GLIBTOOL_FIX] },
   'github.com/maxmind/libmaxminddb': { prependScript: [GLIBTOOL_FIX] },
-  'ferzkopp.net/SDL2_gfx': { prependScript: [GLIBTOOL_FIX] },
-  'midnight-commander.org': { prependScript: [GLIBTOOL_FIX] },
+  'ferzkopp.net/SDL2_gfx': {
+    prependScript: [
+      GLIBTOOL_FIX,
+      // Linux: force libtoolize to match system libtool version (source tarball has 2.5.4, Ubuntu has 2.4.7)
+      'libtoolize --force --copy 2>/dev/null || true',
+    ],
+  },
+  'midnight-commander.org': {
+    prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: any) => {
+      // Fix broken find/sed in post-install script:
+      // - `find ... -depth 1` is invalid — use `-maxdepth 1`
+      // - `sed -i.bak "s|$PKGX_DIR|..."` fails when $PKGX_DIR is empty
+      if (typeof recipe.build?.script === 'string') {
+        recipe.build.script = recipe.build.script
+          .replace(/-depth 1/g, '-maxdepth 1')
+          .replace(
+            /sed -i\.bak "s\|(\$PKGX_DIR)\|/g,
+            'sed -i.bak "s|${PKGX_DIR:-.}|',
+          )
+      }
+    },
+  },
 
   // ─── sed portability fixes ─────────────────────────────────────────
 
@@ -1641,24 +1662,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // aomedia.googlesource.com/aom override merged into the existing entry below (line ~4560)
 
-  // ─── aws.amazon.com/sam — widen Python constraint for CI (has 3.14) ───
-  'aws.amazon.com/sam': {
-    modifyRecipe: (recipe: any) => {
-      if (recipe.build?.dependencies?.['python.org']) {
-        recipe.build.dependencies['python.org'] = '>=3.9'
-      }
-    },
-  },
-
-  // ─── github.com/essembeh/gnome-extensions-cli — widen Python constraint ──
-  'github.com/essembeh/gnome-extensions-cli': {
-    modifyRecipe: (recipe: any) => {
-      if (recipe.build?.dependencies?.['python.org']) {
-        recipe.build.dependencies['python.org'] = '>=3.9'
-      }
-    },
-  },
-
   // ─── github.com/mikefarah/yq — remove pandoc dep, skip man page generation ──
   'github.com/mikefarah/yq': {
     modifyRecipe: (recipe: any) => {
@@ -1720,8 +1723,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── info-zip.org/zip — skip Debian patches (typo/hardening fixes not needed) ──
+  // ─── info-zip.org/zip — skip Debian patches, fix Xcode 26 SDK conflict ──
   'info-zip.org/zip': {
+    platforms: {
+      darwin: {
+        // Xcode 26 SDK conflicts with K&R-style memset/memcpy/memcmp prototypes
+        // enabled by -DZMEM. Undefine it to use the SDK's proper declarations.
+        env: { LOCAL_ZIP: '-UZMEM' },
+      },
+    },
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script = recipe.build.script.filter((step: any) => {
@@ -1746,12 +1756,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/google/shaderc — disable copyright check, widen Python ──
   'github.com/google/shaderc': {
     prependScript: [
-      // Remove copyright check cmake target that fails in CI
-      'sed -i.bak "/check.copyright/d" CMakeLists.txt 2>/dev/null || true',
+      // Remove copyright check cmake target (fails on pantry-injected python-venv.py)
+      'sed -i.bak "/check.copyright\\|check-copyright/d" CMakeLists.txt 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       if (recipe.build?.dependencies?.['python.org'] === '~3.12') {
         recipe.build.dependencies['python.org'] = '3'
+      }
+      // Also remove copyright check after git-sync-deps populates third_party
+      if (Array.isArray(recipe.build?.script)) {
+        const syncIdx = recipe.build.script.findIndex((s: any) =>
+          typeof s === 'string' && s.includes('git-sync-deps'),
+        )
+        if (syncIdx >= 0) {
+          recipe.build.script.splice(
+            syncIdx + 1,
+            0,
+            'find .. -name CMakeLists.txt -exec sed -i.bak "/check.copyright\\|check-copyright/d" {} \\; 2>/dev/null || true',
+          )
+        }
       }
     },
   },
@@ -1769,7 +1792,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         delete recipe.build.dependencies['gnome.org/gsettings-desktop-schemas']
       }
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
-        recipe.build.env.MESON_ARGS.push('-Dintrospection=false', '-Dvapi=false')
+        recipe.build.env.MESON_ARGS.push('-Dintrospection=false', '-Dvapi=false', '-Dconfig-gnome=false')
       }
     },
   },
@@ -1788,7 +1811,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('meson setup')) {
-            recipe.build.script[i] = step + ' -Dintrospection=false -Dvapi=false'
+            recipe.build.script[i] = step + ' -Dintrospection=false'
           }
         }
       }
@@ -1805,12 +1828,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
     distributableUrl: 'https://archives.eyrie.org/software/perl/podlators-v{{version}}.tar.xz',
   },
 
-  // ─── github.com/chainguard-dev/apko — disable CGO, remove cmake dep ──
+  // ─── github.com/chainguard-dev/apko — disable CGO, fix BSD install -D ──
   'github.com/chainguard-dev/apko': {
     env: { CGO_ENABLED: '0' },
     modifyRecipe: (recipe: any) => {
       if (recipe.build?.dependencies?.['cmake.org']) {
         delete recipe.build.dependencies['cmake.org']
+      }
+      // BSD install doesn't support -D (create directories) — add mkdir before install
+      if (Array.isArray(recipe.build?.script)) {
+        const installIdx = recipe.build.script.findIndex(
+          (s: any) => typeof s === 'string' && s === 'make install',
+        )
+        if (installIdx >= 0) {
+          recipe.build.script.splice(installIdx, 0, 'mkdir -p "$DESTDIR$BINDIR"')
+        }
       }
     },
   },
