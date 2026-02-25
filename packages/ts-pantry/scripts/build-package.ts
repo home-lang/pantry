@@ -802,7 +802,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   }
 
   // cmake.org from S3 has broken rpaths on macOS (needs libcurl.4.dylib at build-time path).
-  // CI installs cmake 3.31.10 via pip, so remove the S3 dep and use system cmake instead.
+  // Use Homebrew cmake (4.x) instead, which is pre-installed on CI runners.
   if (os === 'darwin' && recipe.build?.dependencies?.['cmake.org']) {
     delete recipe.build.dependencies['cmake.org']
   }
