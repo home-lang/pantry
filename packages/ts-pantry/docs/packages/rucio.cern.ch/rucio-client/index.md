@@ -26,13 +26,13 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 47 versions</summary>
+<summary>Show all 48 versions</summary>
 
 - `39.3.1`, `39.3.0`
 - `39.2.0`
 - `39.1.0`
 - `39.0.0`
-- `38.5.3`, `38.5.2`, `38.5.1`, `38.5.0`
+- `38.5.4`, `38.5.3`, `38.5.2`, `38.5.1`, `38.5.0`
 - `38.4.0`
 - `38.3.0`
 - `38.2.0`

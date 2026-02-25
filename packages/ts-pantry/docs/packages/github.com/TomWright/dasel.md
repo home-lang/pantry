@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 16 versions</summary>
+<summary>Show all 17 versions</summary>
 
+- `3.3.0`
 - `3.2.3`, `3.2.2`, `3.2.1`, `3.2.0`
 - `3.1.5`, `3.1.3`, `3.1.2`, `3.1.1`, `3.1.0`
 - `3.0.0`
@@ -38,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.2.3`
+**Latest Version**: `3.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/TomWright/dasel@3.2.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/TomWright/dasel@3.3.0 -- $SHELL -i
 ```
 
 ## Usage Examples
