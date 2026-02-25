@@ -3,7 +3,7 @@
  *
  * @domain `watchexec.github.io`
  * @programs `watchexec`
- * @version `2.4.2` (10 versions available)
+ * @version `2.5.0` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install watchexec.github.io`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "watchexec"
  * console.log(pkg.description) // "Executes commands in response to file modificat..."
  * console.log(pkg.programs)    // ["watchexec"]
- * console.log(pkg.versions[0]) // "2.4.2" (latest)
+ * console.log(pkg.versions[0]) // "2.5.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/watchexec-github-io.md
@@ -61,6 +61,7 @@ export const watchexecgithubioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.5.0',
     '2.4.2',
     '2.4.1',
     '2.4.0',
