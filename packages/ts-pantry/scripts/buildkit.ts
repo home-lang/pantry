@@ -881,34 +881,10 @@ export function generateBuildScript(
     if (depPrefixes.length > 0) {
       sections.push(`export CMAKE_PREFIX_PATH="${depPrefixes.join(':')}:\${CMAKE_PREFIX_PATH:-}"`)
     }
-    if (osName === 'linux') {
-      // On Linux, system cmake packages (e.g. gflags from apt) have /usr/include in their
-      // INTERFACE_INCLUDE_DIRECTORIES. CMake adds these as -isystem, which breaks GCC's
-      // #include_next <stdlib.h>. Scrub these paths from system cmake configs too using sudo.
-      sections.push('# Scrub /usr/include from system cmake configs (gflags, glog, etc.)')
-      sections.push(`sudo python3 << 'SCRUB_SYSTEM_CMAKE_EOF'
-import os, glob, sys
-BAD = ["/usr/include", "/usr/local/include"]
-modified = 0
-for d in ["/usr/lib/x86_64-linux-gnu/cmake", "/usr/share/cmake"]:
-    if not os.path.isdir(d): continue
-    for f in glob.glob(os.path.join(d, "**", "*.cmake"), recursive=True):
-        try:
-            t = open(f).read()
-            orig = t
-            for b in BAD:
-                t = t.replace(f'"{b}"', '""')
-                t = t.replace(f';{b};', ';')
-                t = t.replace(f';{b}"', '"')
-                t = t.replace(f'"{b};', '"')
-            if t != orig:
-                open(f, "w").write(t)
-                modified += 1
-                print(f"[cmake-scrub-sys] modified: {f}", file=sys.stderr)
-        except: pass
-print(f"[cmake-scrub-sys] done: {modified} system cmake files modified", file=sys.stderr)
-SCRUB_SYSTEM_CMAKE_EOF`)
-    }
+    // NOTE: system cmake scrubbing for /usr/include removed — the compiler wrapper
+    // (cc/c++/gcc/g++) now strips -isystem /usr/include directly from compiler args,
+    // which catches dynamically-computed paths (e.g. gflags computes /usr/include from its
+    // install prefix at cmake configure time, so string replacement in .cmake files can't catch it).
 
     sections.push('')
 
@@ -1002,6 +978,24 @@ print(f"[cmake-scrub] done: {modified} files modified", file=sys.stderr)`)
   sections.push('    [ "$arg" = "-pie" ] || new_args+=("$arg")')
   sections.push('  done')
   sections.push('  args=("${new_args[@]}")')
+  sections.push('fi')
+  // On Linux, strip -isystem /usr/include from compiler args.
+  // cmake packages (e.g. gflags from apt) compute /usr/include dynamically from their
+  // install prefix, so scrubbing cmake config files can't catch it.
+  // -isystem /usr/include breaks GCC's #include_next <stdlib.h> by changing the
+  // header search order so GCC's internal fixed headers aren't found.
+  sections.push('# Strip -isystem /usr/include on Linux (breaks GCC #include_next)')
+  sections.push('if [ "$(uname)" = "Linux" ]; then')
+  sections.push('  _clean=(); _i=0')
+  sections.push('  while [ $_i -lt ${#args[@]} ]; do')
+  sections.push('    if [ "${args[$_i]}" = "-isystem" ] && [ $((_i+1)) -lt ${#args[@]} ]; then')
+  sections.push('      case "${args[$((_i+1))]}" in')
+  sections.push('        /usr/include|/usr/local/include) _i=$((_i+2)); continue ;;')
+  sections.push('      esac')
+  sections.push('    fi')
+  sections.push('    _clean+=("${args[$_i]}"); _i=$((_i+1))')
+  sections.push('  done')
+  sections.push('  args=("${_clean[@]}")')
   sections.push('fi')
   // GCC specs workaround: if ./specs is a directory, run GCC from /tmp
   // to prevent "fatal error: cannot read spec file './specs': Is a directory"
