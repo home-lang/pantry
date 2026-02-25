@@ -37,10 +37,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 43 versions</summary>
+<summary>Show all 45 versions</summary>
 
-- `4.6.3`, `4.6.2`, `4.6.1`, `4.6.0`
-- `4.4.13`, `4.4.12`, `4.4.11`, `4.4.9`, `4.4.8`, `4.4.7`, `4.4.6`, `4.4.5`, `4.4.4`, `4.4.3`, `4.4.2`, `4.4.1`, `4.4.0`
+- `4.6.4`, `4.6.3`, `4.6.2`, `4.6.1`, `4.6.0`
+- `4.4.14`, `4.4.13`, `4.4.12`, `4.4.11`, `4.4.9`, `4.4.8`, `4.4.7`, `4.4.6`, `4.4.5`, `4.4.4`, `4.4.3`, `4.4.2`, `4.4.1`, `4.4.0`
 - `4.3.1`, `4.3.0`
 - `4.2.14`, `4.2.13`, `4.2.12`, `4.2.11`, `4.2.10`, `4.2.9`, `4.2.8`, `4.2.7`, `4.2.5`, `4.2.3`, `4.2.2`, `4.2.1`, `4.2.0`
 - `4.0.17`, `4.0.16`, `4.0.15`, `4.0.14`, `4.0.13`, `4.0.12`
@@ -48,13 +48,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.6.3`
+**Latest Version**: `4.6.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +wireshark.org@4.6.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +wireshark.org@4.6.4 -- $SHELL -i
 ```
 
 ## Dependencies

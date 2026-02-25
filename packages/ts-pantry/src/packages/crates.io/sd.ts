@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/sd`
  * @programs `sd`
- * @version `1.0.0` (2 versions available)
+ * @version `1.1.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/sd`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "sd"
  * console.log(pkg.description) // "Intuitive find & replace CLI (sed alternative)"
  * console.log(pkg.programs)    // ["sd"]
- * console.log(pkg.versions[0]) // "1.0.0" (latest)
+ * console.log(pkg.versions[0]) // "1.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/sd.md
@@ -60,6 +60,7 @@ export const cratesiosdPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.1.0',
     '1.0.0',
     '0.7.6',
   ] as const,

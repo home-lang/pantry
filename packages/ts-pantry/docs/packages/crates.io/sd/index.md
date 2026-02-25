@@ -25,20 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
+- `1.1.0`
 - `1.0.0`
 - `0.7.6`
 
 </details>
 
-**Latest Version**: `1.0.0`
+**Latest Version**: `1.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/sd@1.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/sd@1.1.0 -- $SHELL -i
 ```
 
 ## Usage Examples

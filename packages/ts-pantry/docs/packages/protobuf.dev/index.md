@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 52 versions</summary>
+<summary>Show all 53 versions</summary>
 
+- `34.0.0`
 - `33.5.0`
 - `33.4.0`
 - `33.3.0`
@@ -82,13 +83,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `33.5.0`
+**Latest Version**: `34.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +protobuf.dev@33.5.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +protobuf.dev@34.0.0 -- $SHELL -i
 ```
 
 ## Dependencies
