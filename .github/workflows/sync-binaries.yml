@@ -217,6 +217,7 @@ jobs:
             libsdl2-dev libplist-dev \
             libassuan-dev libgpg-error-dev \
             libfido2-dev \
+            libdouble-conversion-dev \
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
@@ -403,6 +404,7 @@ jobs:
             libsdl2-dev libplist-dev \
             libassuan-dev libgpg-error-dev \
             libfido2-dev \
+            libdouble-conversion-dev \
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
