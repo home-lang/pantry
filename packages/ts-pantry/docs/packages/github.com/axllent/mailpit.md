@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 88 versions</summary>
+<summary>Show all 89 versions</summary>
 
-- `1.29.1`, `1.29.0`
+- `1.29.2`, `1.29.1`, `1.29.0`
 - `1.28.4`, `1.28.3`, `1.28.2`, `1.28.1`, `1.28.0`
 - `1.27.11`, `1.27.10`, `1.27.9`, `1.27.8`, `1.27.7`, `1.27.6`, `1.27.5`, `1.27.4`, `1.27.3`, `1.27.2`, `1.27.1`, `1.27.0`
 - `1.26.2`, `1.26.1`, `1.26.0`
@@ -51,13 +51,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.29.1`
+**Latest Version**: `1.29.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/axllent/mailpit@1.29.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/axllent/mailpit@1.29.2 -- $SHELL -i
 ```
 
 ## Dependencies
