@@ -2504,7 +2504,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
         )
       }
-      // pycairo S3 binaries rebuilt — pycairo=enabled (default)
+      // Disable pycairo — buildkit can't set PYTHONPATH for Python dep modules at build time
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS.push('-Dpycairo=disabled')
+      }
+      if (recipe.dependencies?.['cairographics.org/pycairo']) {
+        delete recipe.dependencies['cairographics.org/pycairo']
+      }
     },
   },
 
