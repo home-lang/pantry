@@ -34,6 +34,18 @@ export interface PackageOverride {
 
 // ── Shared script patterns ─────────────────────────────────────────────
 
+/**
+ * Reliable meson installation via python3 venv.
+ * The mesonbuild.com S3 binary has hardcoded python paths from the build machine
+ * which causes "No such file or directory" errors when ninja runs meson internal commands.
+ * Installing meson via venv ensures it uses the correct system python3.
+ * Must be TWO lines: first creates venv + installs, second prepends PATH.
+ */
+const MESON_VENV_FIX: ScriptStep[] = [
+  'python3 -m venv /tmp/meson-venv && /tmp/meson-venv/bin/pip install "meson>=1.4.0" || true',
+  'export PATH="/tmp/meson-venv/bin:$PATH"',
+]
+
 /** macOS glibtool PATH fix — Makefiles expect 'glibtool' from Homebrew's keg-only libtool */
 const GLIBTOOL_FIX: ScriptStep = {
   run: [
@@ -1020,6 +1032,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/glib — disable introspection, fix sed -i BSD ─────────────
 
   'gnome.org/glib': {
+    // Install meson via venv (S3 meson binary has broken hardcoded python paths)
+    prependScript: [
+      ...MESON_VENV_FIX,
+    ],
     modifyRecipe: (recipe: any) => {
       // Remove gobject-introspection build dep (circular dep chain)
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
@@ -1028,6 +1044,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove gnome.org/libxml2 build dep (not strictly needed)
       if (recipe.build?.dependencies?.['gnome.org/libxml2']) {
         delete recipe.build.dependencies['gnome.org/libxml2']
+      }
+      // Relax python version constraint (S3 has 3.14, YAML wants >=3.5<3.12)
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '3'
       }
       // Disable introspection in meson args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
@@ -1118,12 +1138,27 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── x.org/protocol/xcb — remove python.org build dep ────────────────────
+  // ─── x.org/protocol/xcb — relax python version + fix module path ─────────
   'x.org/protocol/xcb': {
     modifyRecipe: (recipe: any) => {
-      // Remove python.org ~3.11 build dep (system python3 is sufficient)
+      // Relax python version constraint (S3 has 3.14, YAML wants ~3.11)
       if (recipe.build?.dependencies?.['python.org']) {
-        delete recipe.build.dependencies['python.org']
+        recipe.build.dependencies['python.org'] = '3'
+      }
+      if (recipe.test?.dependencies?.['python.org']) {
+        recipe.test.dependencies['python.org'] = '3'
+      }
+      // After make install, create python3.11 compat symlink for the hardcoded
+      // runtime PYTHONPATH (${{prefix}}/lib/python3.11/site-packages)
+      if (typeof recipe.build?.script === 'string') {
+        recipe.build.script += [
+          '',
+          '# Create python3.11 compat symlink for hardcoded PYTHONPATH',
+          'PY_VER=$(python3 -c "import sys; print(f\'{sys.version_info.major}.{sys.version_info.minor}\')")',
+          'if [ "$PY_VER" != "3.11" ] && [ -d "{{prefix}}/lib/python$PY_VER" ]; then',
+          '  ln -sfn "python$PY_VER" "{{prefix}}/lib/python3.11"',
+          'fi',
+        ].join('\n')
       }
     },
   },
@@ -1886,20 +1921,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
-        // Also fix python detection: use system python3 so meson embeds a valid path in ninja rules
+        // Install meson via venv (S3 meson binary has broken hardcoded python paths)
         prependScript: [
           'brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"',
-          'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
-          'export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"',
+          ...MESON_VENV_FIX,
         ],
       },
       linux: {
-        // gobject-introspection requires meson >= 1.4.0 (Ubuntu runner has 1.3.2)
-        // pip3 installs meson to /usr/local/bin, but dep paths prepend /usr/bin first,
-        // so we must prepend /usr/local/bin to PATH to find the pip-installed meson
+        // Install meson via venv (S3 meson binary has broken hardcoded python paths,
+        // and Ubuntu runner has meson 1.3.2 but gobject-introspection requires >= 1.4.0)
         prependScript: [
-          'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || true',
-          'export PATH="/usr/local/bin:$PATH"',
+          ...MESON_VENV_FIX,
         ],
       },
     },
