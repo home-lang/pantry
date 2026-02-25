@@ -3984,9 +3984,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Fix sed -i BSD compat
+      // Fix YAML '' escape issue and sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
+          // Fix run array steps with YAML '' escaping that breaks bash
+          if (typeof step === 'object' && Array.isArray(step.run)) {
+            step.run = step.run.map((line: string) => {
+              // Fix: newline=''...'' → properly single-quoted bash string
+              if (line.startsWith("newline=''") && line.endsWith("''")) {
+                const inner = line.slice("newline=''".length, -"''".length)
+                return `newline='${inner}'`
+              }
+              return line
+            })
+          }
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
             step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
