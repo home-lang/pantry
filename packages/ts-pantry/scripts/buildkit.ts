@@ -872,6 +872,25 @@ export function generateBuildScript(
       // DYLD_FALLBACK_LIBRARY_PATH is searched AFTER default locations, so it helps
       // builds find dependency libraries without interfering with system tools.
       sections.push(`export DYLD_FALLBACK_LIBRARY_PATH="${depLibPaths.join(':')}:\${DYLD_FALLBACK_LIBRARY_PATH:-}"`)
+
+      // Create compat symlinks for stale /tmp/buildkit-install-* paths in pre-built deps.
+      // S3-built binaries may have hardcoded dylib references to their original build-time
+      // install prefix (e.g., /tmp/buildkit-install-curl.se/lib/libcurl.4.dylib). When such
+      // a binary is later used as a dependency, that install prefix doesn't exist. Create
+      // symlinks from the stale install-prefix to the actual dep location so dyld resolves them.
+      if (depPrefixes.length > 0) {
+        sections.push('# Create compat symlinks for stale /tmp/buildkit-install-* dylib paths')
+        sections.push('for _dep_prefix in ' + depPrefixes.map(p => `"${p}"`).join(' ') + '; do')
+        sections.push('  [ -d "$_dep_prefix" ] || continue')
+        sections.push('  _domain_with_ver="${_dep_prefix#/tmp/buildkit-deps/}"')
+        sections.push('  _domain="${_domain_with_ver%/*}"')
+        sections.push('  _safe_domain="$(echo "$_domain" | tr \'/\' \'-\')"')
+        sections.push('  _compat="/tmp/buildkit-install-${_safe_domain}"')
+        sections.push('  if [ ! -e "$_compat" ]; then')
+        sections.push('    ln -sf "$_dep_prefix" "$_compat"')
+        sections.push('  fi')
+        sections.push('done')
+      }
     }
 
     // CMAKE_PREFIX_PATH: help CMake find deps (ported from brewkit)
