@@ -1939,6 +1939,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
         prependScript: [
           'brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"',
+          // Python 3.12+ removed distutils from stdlib. g-i imports distutils in
+          // multiple files (utils.py, ccompiler.py, etc). Install setuptools and create
+          // a sitecustomize.py that activates the distutils compatibility shim for all
+          // Python subprocesses (including g-ir-scanner launched by ninja).
+          'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+          '_GI_PYFIX="/tmp/buildkit-gi-pyfix"; mkdir -p "$_GI_PYFIX"',
+          'printf "try:\\n    import _distutils_hack\\n    _distutils_hack.add_shim()\\nexcept Exception:\\n    pass\\n" > "$_GI_PYFIX/sitecustomize.py"',
+          'export PYTHONPATH="$_GI_PYFIX:$(python3 -c "import site; print(site.getsitepackages()[0])" 2>/dev/null):${PYTHONPATH:-}"',
         ],
       },
     },
