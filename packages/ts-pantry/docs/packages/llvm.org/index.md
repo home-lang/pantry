@@ -38,8 +38,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 53 versions</summary>
+<summary>Show all 54 versions</summary>
 
+- `22.1.0`
 - `21.1.8`, `21.1.7`, `21.1.6`, `21.1.5`, `21.1.4`, `21.1.3`, `21.1.2`, `21.1.1`, `21.1.0`
 - `20.1.8`, `20.1.7`, `20.1.6`, `20.1.5`, `20.1.4`, `20.1.3`, `20.1.2`, `20.1.1`, `20.1.0`
 - `19.1.7`, `19.1.6`, `19.1.4`, `19.1.3`, `19.1.2`, `19.1.1`, `19.1.0`
@@ -53,13 +54,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `21.1.8`
+**Latest Version**: `22.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +llvm.org@21.1.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +llvm.org@22.1.0 -- $SHELL -i
 ```
 
 ## Dependencies

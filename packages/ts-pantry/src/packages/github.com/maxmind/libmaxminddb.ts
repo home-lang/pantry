@@ -3,7 +3,7 @@
  *
  * @domain `github.com/maxmind/libmaxminddb`
  * @programs `mmdblookup`
- * @version `1.12.2` (9 versions available)
+ * @version `1.13.1` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/maxmind/libmaxminddb`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "mmdblookup"
  * console.log(pkg.description) // "C library for the MaxMind DB file format"
  * console.log(pkg.programs)    // ["mmdblookup"]
- * console.log(pkg.versions[0]) // "1.12.2" (latest)
+ * console.log(pkg.versions[0]) // "1.13.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/maxmind/libmaxminddb.md
@@ -69,6 +69,7 @@ export const libmaxminddbPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.13.1',
     '1.12.2',
     '1.12.1',
     '1.12.0',
