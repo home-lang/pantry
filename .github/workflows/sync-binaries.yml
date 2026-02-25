@@ -288,7 +288,7 @@ jobs:
           cargo install cargo-c 2>/dev/null || true
           echo "Rust: $(rustc --version), Cargo: $(cargo --version)"
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
-          pip3 install --break-system-packages setuptools meson 2>/dev/null || python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || true
+          python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || pip3 install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Build targeted packages
         env:
@@ -485,7 +485,7 @@ jobs:
           # Persist cargo PATH for subsequent steps (GitHub Actions doesn't source .profile)
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           # Ensure pip packages needed for building are available
-          pip3 install --break-system-packages setuptools meson 2>/dev/null || python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || true
+          python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || pip3 install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Verify toolchains
         run: |

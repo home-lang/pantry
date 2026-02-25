@@ -843,9 +843,10 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         'export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"',
       ]
       : [
-        // On macOS: install meson via pip (S3 meson has broken hardcoded python paths)
-        // Also install setuptools which meson requires for Python module detection
-        'pip3 install --break-system-packages "meson>=1.4.0" setuptools 2>/dev/null || pip3 install "meson>=1.4.0" setuptools 2>/dev/null || true',
+        // On macOS: install meson+setuptools via python3 -m pip (NOT pip3, which may
+        // belong to a different Python than `python3` — e.g. pip3→Python 3.9 but
+        // python3→Homebrew Python 3.14. Meson checks `python3` for module availability.)
+        'python3 -m pip install --break-system-packages "meson>=1.4.0" setuptools 2>/dev/null || python3 -m pip install "meson>=1.4.0" setuptools 2>/dev/null || true',
         // pip on macOS installs to ~/Library/Python/3.x/bin/ which isn't in PATH
         'export PATH="$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
       ]
