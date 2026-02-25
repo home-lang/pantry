@@ -789,6 +789,22 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     delete recipe.build.dependencies['cmake.org']
   }
 
+  // mesonbuild.com from S3 has hardcoded python paths from the build machine.
+  // When ninja runs meson internal commands, it tries to execute a non-existent path like
+  // /tmp/buildkit-<pkg>/-c which fails with "No such file or directory".
+  // Also, Ubuntu runner has meson 1.3.2 but many packages require >= 1.4.0.
+  // Fix: install meson via python3 venv and prepend to PATH for all meson-dependent packages.
+  if (recipe.build?.dependencies?.['mesonbuild.com']) {
+    if (!recipe.build.script) recipe.build.script = []
+    const existing = recipe.build.script
+    const existingArray = Array.isArray(existing) ? existing : [existing]
+    recipe.build.script = [
+      'python3 -m venv /tmp/meson-venv && /tmp/meson-venv/bin/pip install "meson>=1.4.0" || true',
+      'export PATH="/tmp/meson-venv/bin:$PATH"',
+      ...existingArray,
+    ]
+  }
+
   // ── Inline legacy override ─────────────────────────────────────────
 
   // x.org/x11: disable local-transport on Linux (sys/stropts.h removed in glibc 2.38+)

@@ -34,18 +34,6 @@ export interface PackageOverride {
 
 // ── Shared script patterns ─────────────────────────────────────────────
 
-/**
- * Reliable meson installation via python3 venv.
- * The mesonbuild.com S3 binary has hardcoded python paths from the build machine
- * which causes "No such file or directory" errors when ninja runs meson internal commands.
- * Installing meson via venv ensures it uses the correct system python3.
- * Must be TWO lines: first creates venv + installs, second prepends PATH.
- */
-const MESON_VENV_FIX: ScriptStep[] = [
-  'python3 -m venv /tmp/meson-venv && /tmp/meson-venv/bin/pip install "meson>=1.4.0" || true',
-  'export PATH="/tmp/meson-venv/bin:$PATH"',
-]
-
 /** macOS glibtool PATH fix — Makefiles expect 'glibtool' from Homebrew's keg-only libtool */
 const GLIBTOOL_FIX: ScriptStep = {
   run: [
@@ -1032,10 +1020,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/glib — disable introspection, fix sed -i BSD ─────────────
 
   'gnome.org/glib': {
-    // Install meson via venv (S3 meson binary has broken hardcoded python paths)
-    prependScript: [
-      ...MESON_VENV_FIX,
-    ],
     modifyRecipe: (recipe: any) => {
       // Remove gobject-introspection build dep (circular dep chain)
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
@@ -1921,17 +1905,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         // macOS /usr/bin/bison is too old (v2.3), gobject-introspection needs GNU bison 3+
-        // Install meson via venv (S3 meson binary has broken hardcoded python paths)
         prependScript: [
           'brew install bison 2>/dev/null || true; export PATH="/opt/homebrew/opt/bison/bin:$PATH"',
-          ...MESON_VENV_FIX,
-        ],
-      },
-      linux: {
-        // Install meson via venv (S3 meson binary has broken hardcoded python paths,
-        // and Ubuntu runner has meson 1.3.2 but gobject-introspection requires >= 1.4.0)
-        prependScript: [
-          ...MESON_VENV_FIX,
         ],
       },
     },
