@@ -4357,10 +4357,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak') && !step.includes('sed -i -f')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed (-E )?-i /g, 'sed $1-i.bak ')
+            recipe.build.script[idx] = step.replace(/sed (-E )?-i([ \n])/g, 'sed $1-i.bak$2')
           } else if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-              step.run = step.run.replace(/sed (-E )?-i /g, 'sed $1-i.bak ')
+              step.run = step.run.replace(/sed (-E )?-i([ \n])/g, 'sed $1-i.bak$2')
                 .replace(/sed -i -f /g, 'sed -i.bak -f ')
             }
           }
