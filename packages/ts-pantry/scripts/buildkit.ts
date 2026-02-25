@@ -915,8 +915,11 @@ export function generateBuildScript(
     // - /usr/local/include/x86_64-linux-gnu → doesn't exist on runners
     // - Xcode SDK paths from different macOS versions
     if (depPrefixes.length > 0) {
+      const sdkFixInit = osName === 'darwin'
+        ? `\nsdk = os.popen("xcrun --show-sdk-path 2>/dev/null").read().strip()`
+        : ''
       const sdkFixLine = osName === 'darwin'
-        ? `\n            sdk = os.popen("xcrun --show-sdk-path 2>/dev/null").read().strip()\n            if sdk: t = re.sub(r'/Applications/Xcode[^;"]*?/SDKs/MacOSX[^;"]*?\\.sdk', sdk, t)`
+        ? `\n            if sdk: t = re.sub(r'/Applications/Xcode[^;"]*?/SDKs/MacOSX[^;"]*?\\.sdk', sdk, t)`
         : ''
       sections.push('# Scrub non-existent paths from dep cmake configs (only /tmp buildkit deps)')
       sections.push(`python3 << 'SCRUB_CMAKE_EOF'`)
@@ -926,10 +929,22 @@ BAD_INCLUDES = {"/usr/include", "/usr/local/include"}
 dirs = [${depPrefixes.map(p => `"${p}"`).join(', ')}]
 print(f"[cmake-scrub] scanning {len(dirs)} dep dirs", file=sys.stderr)
 modified = 0
+_isdir_cache = {}
+def cached_isdir(p):
+    if p not in _isdir_cache:
+        _isdir_cache[p] = os.path.isdir(p)
+    return _isdir_cache[p]${sdkFixInit}
 for d in dirs:
     if not d.startswith("/tmp"):
         continue
-    files = glob.glob(os.path.join(d, "**", "*.cmake"), recursive=True)
+    # Only search lib/cmake/ and share/cmake/ — cmake config files live here, not in bin/include/etc.
+    files = []
+    for sub in ("lib/cmake", "share/cmake", "lib64/cmake"):
+        sub_dir = os.path.join(d, sub)
+        if os.path.isdir(sub_dir):
+            files.extend(glob.glob(os.path.join(sub_dir, "**", "*.cmake"), recursive=True))
+    if not files:
+        continue
     for f in files:
         try:
             t = open(f).read()
@@ -937,7 +952,7 @@ for d in dirs:
             # 1. Fix semicolon-separated path lists (INTERFACE_INCLUDE_DIRECTORIES, etc.)
             def fix_pathlist(m):
                 paths = m.group(1).split(";")
-                kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or (p.strip() not in BAD_INCLUDES and os.path.isdir(p.strip()))]
+                kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or (p.strip() not in BAD_INCLUDES and cached_isdir(p.strip()))]
                 return m.group(0).replace(m.group(1), ";".join(kept))
             t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
             t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
