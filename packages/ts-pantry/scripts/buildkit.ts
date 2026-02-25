@@ -949,6 +949,7 @@ export function generateBuildScript(
     if (depPrefixes.length > 0) {
       sections.push('# Create missing unversioned shared library symlinks in dep dirs')
       sections.push(`for _dep_prefix in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
+      sections.push(`  case "$_dep_prefix" in /tmp/buildkit-deps/*) ;; *) continue ;; esac`)
       sections.push(`  for _libdir in "$_dep_prefix/lib" "$_dep_prefix/lib64"; do`)
       sections.push(`    [ -d "$_libdir" ] || continue`)
       if (osName === 'darwin') {
