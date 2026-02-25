@@ -856,6 +856,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── lloyd.github.io/yajl — fix deprecated cmake policy ────────────────
+  // yajl 2.1.0 uses cmake_policy(SET CMP0026 OLD) which is removed in cmake 3.20+.
+  'lloyd.github.io/yajl': {
+    prependScript: [
+      'sed -i.bak "/cmake_policy.*CMP0026/d" CMakeLists.txt 2>/dev/null || true',
+    ],
+  },
+
   'videolan.org/x265': {
     modifyRecipe: (recipe: any) => {
       // Move nasm.us dependency to linux-only (assembly disabled on darwin)
