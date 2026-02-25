@@ -807,6 +807,19 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     delete recipe.build.dependencies['cmake.org']
   }
 
+  // gnu.org/readline from S3 breaks system tools on Linux. S3 readline's libreadline.so.8
+  // needs libtinfo.so.6 (from ncurses), but system tools like gawk pick up S3 readline via
+  // LD_LIBRARY_PATH and can't resolve the UP/BC termcap symbols. System readline (from
+  // libreadline-dev) works fine since it's properly linked against system ncurses/tinfo.
+  if (os === 'linux') {
+    if (recipe.dependencies?.['gnu.org/readline']) {
+      delete recipe.dependencies['gnu.org/readline']
+    }
+    if (recipe.build?.dependencies?.['gnu.org/readline']) {
+      delete recipe.build.dependencies['gnu.org/readline']
+    }
+  }
+
   // mesonbuild.com from S3 has hardcoded python paths from the build machine.
   // When ninja runs meson internal commands, it tries to execute a non-existent path like
   // /tmp/buildkit-<pkg>/-c which fails with "No such file or directory".
@@ -832,6 +845,8 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
       : [
         // On macOS: install meson via pip (S3 meson has broken hardcoded python paths)
         'pip3 install --break-system-packages "meson>=1.4.0" 2>/dev/null || pip3 install "meson>=1.4.0" 2>/dev/null || true',
+        // pip on macOS installs to ~/Library/Python/3.x/bin/ which isn't in PATH
+        'export PATH="$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
       ]
     recipe.build.script = [
       ...mesonFixLines,

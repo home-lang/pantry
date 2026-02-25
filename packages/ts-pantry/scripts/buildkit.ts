@@ -856,13 +856,18 @@ export function generateBuildScript(
     sections.push(`export PKG_CONFIG_PATH="${depPkgConfigPaths.join(':')}:\${PKG_CONFIG_PATH:-}"`)
     sections.push(`export LD_LIBRARY_PATH="${depLibPaths.join(':')}:\${LD_LIBRARY_PATH:-}"`)
     if (osName === 'linux') {
-      // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. If any S3 dep
-      // ships a libcurl without HTTP/2 support, cargo picks it up and fails with
-      // "failed to enable HTTP/2, is curl not built right?". Disable HTTP/2 multiplexing
-      // for cargo to avoid this. Also save the original LD_LIBRARY_PATH so cargo can
-      // use system libraries for network operations.
-      sections.push('export _BUILDKIT_ORIG_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"')
+      // On Linux, LD_LIBRARY_PATH is searched BEFORE default locations. S3 deps may
+      // ship libcurl/libreadline that override system libraries, breaking system tools
+      // (cargo gets "failed to enable HTTP/2", gawk gets "undefined symbol: UP").
+      // Create a cargo wrapper that clears LD_LIBRARY_PATH so cargo uses system curl
+      // for HTTP operations (system curl has proper HTTP/2/nghttp2 support).
       sections.push('export CARGO_HTTP_MULTIPLEXING=false')
+      sections.push('_CARGO_REAL="$(command -v cargo 2>/dev/null || true)"')
+      sections.push('if [ -n "$_CARGO_REAL" ]; then')
+      sections.push('  printf \'#!/bin/bash\\nunset LD_LIBRARY_PATH\\nexec "%s" "$@"\\n\' "$_CARGO_REAL" > "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
+      sections.push('  chmod +x "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
+      sections.push('fi')
+      sections.push('unset _CARGO_REAL')
     }
     if (osName === 'darwin') {
       // Create stub pkg-config files for system libraries that lack them on macOS.
