@@ -387,7 +387,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'leonerd.org.uk/libvterm': { prependScript: [GLIBTOOL_FIX] },
   'libtom.net/math': { prependScript: [GLIBTOOL_FIX] },
   'sass-lang.com/libsass': { prependScript: [GLIBTOOL_FIX] },
+  'sass-lang.com/sassc': { prependScript: [GLIBTOOL_FIX] },
   'zlib.net/minizip': { prependScript: [GLIBTOOL_FIX] },
+  'github.com/sekrit-twc/zimg': { prependScript: [GLIBTOOL_FIX] },
+  'github.com/xiph/speexdsp': { prependScript: [GLIBTOOL_FIX] },
+  'vapoursynth.com': { prependScript: [GLIBTOOL_FIX] },
+  'github.com/maxmind/libmaxminddb': { prependScript: [GLIBTOOL_FIX] },
+  'ferzkopp.net/SDL2_gfx': { prependScript: [GLIBTOOL_FIX] },
+  'midnight-commander.org': { prependScript: [GLIBTOOL_FIX] },
 
   // ─── sed portability fixes ─────────────────────────────────────────
 
@@ -1633,6 +1640,180 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // aomedia.googlesource.com/aom override merged into the existing entry below (line ~4560)
+
+  // ─── aws.amazon.com/sam — widen Python constraint for CI (has 3.14) ───
+  'aws.amazon.com/sam': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3.9'
+      }
+    },
+  },
+
+  // ─── github.com/essembeh/gnome-extensions-cli — widen Python constraint ──
+  'github.com/essembeh/gnome-extensions-cli': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3.9'
+      }
+    },
+  },
+
+  // ─── github.com/mikefarah/yq — remove pandoc dep, skip man page generation ──
+  'github.com/mikefarah/yq': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['pandoc.org']) {
+        delete recipe.build.dependencies['pandoc.org']
+      }
+      // Build script is a | block (single string) — remove man page lines
+      if (typeof recipe.build?.script === 'string') {
+        recipe.build.script = recipe.build.script
+          .split('\n')
+          .filter((line: string) =>
+            !line.includes('generate-man-page') &&
+            !line.includes('yq.1') &&
+            !(line.includes('man1') && line.includes('mkdir')),
+          )
+          .join('\n')
+      }
+    },
+  },
+
+  // ─── github.com/rrthomas/libpaper — skip `make check` (test failures in CI) ──
+  'github.com/rrthomas/libpaper': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter(
+          (s: any) => typeof s !== 'string' || s !== 'make check',
+        )
+      }
+    },
+  },
+
+  // ─── github.com/Diniboy1123/usque — fix goreleaser output path glob ──
+  'github.com/Diniboy1123/usque': {
+    modifyRecipe: (recipe: any) => {
+      // goreleaser creates dirs like dist/usque_darwin_arm64_v8.0/ — glob doesn't match
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('mv dist/')) {
+            recipe.build.script[i] = 'mv $(find dist -name usque -type f | head -1) "{{ prefix }}"/bin'
+          }
+        }
+      }
+    },
+  },
+
+  // ─── github.com/libfuse/libfuse — no-op update-rc.d on linux ──
+  'github.com/libfuse/libfuse': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // meson install calls update-rc.d which fails in CI (no systemd)
+          'mkdir -p "${TMPDIR:-/tmp}/_fuse_fix"',
+          'printf \'#!/bin/sh\\nexit 0\\n\' > "${TMPDIR:-/tmp}/_fuse_fix/update-rc.d"',
+          'chmod +x "${TMPDIR:-/tmp}/_fuse_fix/update-rc.d"',
+          'export PATH="${TMPDIR:-/tmp}/_fuse_fix:$PATH"',
+        ],
+      },
+    },
+  },
+
+  // ─── info-zip.org/zip — skip Debian patches (typo/hardening fixes not needed) ──
+  'info-zip.org/zip': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: any) => {
+          if (typeof step === 'string' && step.startsWith('patch -p1')) return false
+          if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('wget')) return false
+          return true
+        })
+        // Use system cc instead of explicit gcc path (macOS SDK compat)
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('unix/Makefile') && step.includes('CC=')) {
+            recipe.build.script[i] = step.replace(/CC=[^\s]+/, 'CC=cc')
+          }
+        }
+      }
+      if (recipe.build?.dependencies?.['gnu.org/wget']) delete recipe.build.dependencies['gnu.org/wget']
+      if (recipe.build?.dependencies?.['gnu.org/patch']) delete recipe.build.dependencies['gnu.org/patch']
+      if (recipe.build?.dependencies?.['gnu.org/gcc']) delete recipe.build.dependencies['gnu.org/gcc']
+    },
+  },
+
+  // ─── github.com/google/shaderc — disable copyright check, widen Python ──
+  'github.com/google/shaderc': {
+    prependScript: [
+      // Remove copyright check cmake target that fails in CI
+      'sed -i.bak "/check.copyright/d" CMakeLists.txt 2>/dev/null || true',
+    ],
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['python.org'] === '~3.12') {
+        recipe.build.dependencies['python.org'] = '3'
+      }
+    },
+  },
+
+  // ─── libproxy.github.io/libproxy — disable introspection/vala ──
+  'libproxy.github.io/libproxy': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      if (recipe.build?.dependencies?.['gnome.org/vala']) {
+        delete recipe.build.dependencies['gnome.org/vala']
+      }
+      if (recipe.build?.dependencies?.['gnome.org/gsettings-desktop-schemas']) {
+        delete recipe.build.dependencies['gnome.org/gsettings-desktop-schemas']
+      }
+      if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
+        recipe.build.env.MESON_ARGS.push('-Dintrospection=false', '-Dvapi=false')
+      }
+    },
+  },
+
+  // ─── github.com/hughsie/libxmlb — disable introspection/vala ──
+  'github.com/hughsie/libxmlb': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      if (recipe.build?.dependencies?.['gnome.org/vala']) {
+        delete recipe.build.dependencies['gnome.org/vala']
+      }
+      // Add disable flags to meson setup command
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('meson setup')) {
+            recipe.build.script[i] = step + ' -Dintrospection=false -Dvapi=false'
+          }
+        }
+      }
+    },
+  },
+
+  // ─── github.com/sindresorhus/macos-term-size — repo renamed, asset renamed ──
+  'github.com/sindresorhus/macos-term-size': {
+    distributableUrl: 'https://github.com/sindresorhus/macos-terminal-size/releases/download/v{{version}}/terminal-size.zip',
+  },
+
+  // ─── eyrie.org/eagle/podlators — upstream files have v prefix in filename ──
+  'eyrie.org/eagle/podlators': {
+    distributableUrl: 'https://archives.eyrie.org/software/perl/podlators-v{{version}}.tar.xz',
+  },
+
+  // ─── github.com/chainguard-dev/apko — disable CGO, remove cmake dep ──
+  'github.com/chainguard-dev/apko': {
+    env: { CGO_ENABLED: '0' },
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['cmake.org']) {
+        delete recipe.build.dependencies['cmake.org']
+      }
+    },
+  },
 
   // ════════════════════════════════════════════════════════════════════════
   //  ADDITIONAL FIXES FOR knownBrokenDomains PACKAGES

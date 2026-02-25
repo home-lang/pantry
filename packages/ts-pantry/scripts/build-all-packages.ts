@@ -1018,6 +1018,17 @@ Options:
     'github.com/pressly/sup', // Build failure on both platforms
     'github.com/moretension/duti', // make install failure on darwin
     'github.com/a7ex/xcresultparser', // ncurses unctrl.h conflict on darwin
+    'github.com/peripheryapp/periphery', // Swift ncurses unctrl.h conflict on darwin
+    'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
+    'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
+    'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
+    'github.com/glauth/glauth', // PAM plugin API mismatch — needs upstream code fix
+    'github.com/shaka-project/shaka-packager', // Complex git submodule + ninja build failures
+    'github.com/libkml/libkml', // Old C++ code failing with modern Boost/compilers
+    'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
+    'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
+    'github.com/allure-framework/allure2', // ZIP extraction structure mismatch
+    'man-db.gitlab.io/man-db', // Dependency chain failure (libpipeline, groff)
   ])
 
   let platformSkipped = 0
