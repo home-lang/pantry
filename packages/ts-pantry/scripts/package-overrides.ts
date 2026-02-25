@@ -3984,6 +3984,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
+      // Pre-install rust-src to prevent race condition when parallel cmake jobs
+      // both try to rustup component add rust-src simultaneously
+      if (Array.isArray(recipe.build?.script)) {
+        const cmakeIdx = recipe.build.script.findIndex((s: any) =>
+          typeof s === 'string' && s.includes('cmake -S'))
+        if (cmakeIdx >= 0) {
+          recipe.build.script.splice(cmakeIdx, 0, 'rustup component add rust-src 2>/dev/null || true')
+        }
+      }
       // Fix YAML '' escape issue and sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
