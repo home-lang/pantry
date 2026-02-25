@@ -105,6 +105,24 @@ const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathna
 // eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
+// Build reverse domain→key map for packages with collision-resolved keys
+// (e.g. x.org/protocol/xcb → xorgprotocol1, not xorgprotocolxcb)
+const _pantryDomainMap = new Map<string, string>()
+for (const [key, val] of Object.entries(pantry as Record<string, any>)) {
+  if (val && typeof val === 'object' && typeof val.domain === 'string') {
+    _pantryDomainMap.set(val.domain, key)
+  }
+}
+
+function lookupPantryPackage(domain: string): any {
+  const directKey = domainToKey(domain)
+  const direct = (pantry as Record<string, any>)[directKey]
+  if (direct?.versions) return direct
+  const mappedKey = _pantryDomainMap.get(domain)
+  if (mappedKey) return (pantry as Record<string, any>)[mappedKey]
+  return null
+}
+
 // Check if a trimmed line looks like a YAML key-value pair (key: value)
 // Returns false for lines that are pure URLs (e.g. "https://example.com/path")
 function looksLikeKeyValue(trimmedLine: string): boolean {
@@ -1295,12 +1313,11 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   console.log(`Building ${pkgName} ${version} for ${platform}`)
   console.log(`${'='.repeat(60)}`)
 
-  // Get package metadata from src/packages/*.ts
-  const pkgKey = domainToKey(pkgName)
-  const pkg = (pantry as Record<string, any>)[pkgKey]
+  // Get package metadata from src/packages/*.ts (uses reverse domain lookup for collision-resolved keys)
+  const pkg = lookupPantryPackage(pkgName)
 
   if (!pkg) {
-    throw new Error(`Package not found in src/packages: ${pkgName} (key: ${pkgKey})`)
+    throw new Error(`Package not found in src/packages: ${pkgName} (key: ${domainToKey(pkgName)})`)
   }
 
   console.log(`\nPackage: ${pkg.name} (${pkg.domain})`)
