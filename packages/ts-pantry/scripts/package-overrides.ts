@@ -1581,6 +1581,60 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── github.com/cosmtrek/air — skip Makefile check target (needs git repo) ──
+  'github.com/cosmtrek/air': {
+    modifyRecipe: (recipe: any) => {
+      // The Makefile's `build` target depends on `check` which runs `git diff --cached`
+      // and `golangci-lint`. In our tarball build env there's no .git dir, so it fails.
+      // Replace `make build` with direct `go build`.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step === 'make build') {
+            recipe.build.script[i] = 'go build -o air .'
+          }
+        }
+      }
+    },
+  },
+
+  // ─── github.com/benjaminp/six — use pip instead of distutils setup.py ──
+  'github.com/benjaminp/six': {
+    modifyRecipe: (recipe: any) => {
+      // setup.py imports distutils which was removed in Python 3.12+.
+      // Replace with pip install which uses setuptools backend.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('setup.py install')) {
+            recipe.build.script[i] = 'python -m pip install --prefix={{prefix}} .'
+          }
+        }
+      }
+    },
+  },
+
+  // ─── github.com/romanz/trezor-agent — unset LD_LIBRARY_PATH for git ──
+  'github.com/romanz/trezor-agent': {
+    prependScript: [
+      // S3 gnutls.org dep pollutes LD_LIBRARY_PATH, causing git-remote-https to crash
+      // with "undefined symbol: nettle_rsa_oaep_sha384_decrypt" when pip clones git deps.
+      // Unset LD_LIBRARY_PATH for git operations.
+      'alias git="env -u LD_LIBRARY_PATH git"',
+    ],
+    modifyRecipe: (recipe: any) => {
+      // Remove gnutls.org from deps if present (system gnutls is compatible)
+      if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
+      if (recipe.build?.dependencies?.['gnutls.org']) delete recipe.build.dependencies['gnutls.org']
+    },
+  },
+
+  // ─── aomedia.googlesource.com/aom — googlesource tarballs extract flat ──
+  'aomedia.googlesource.com/aom': {
+    // googlesource.com +archive tarballs have no top-level directory
+    stripComponents: 0,
+  },
+
   // ════════════════════════════════════════════════════════════════════════
   //  ADDITIONAL FIXES FOR knownBrokenDomains PACKAGES
   // ════════════════════════════════════════════════════════════════════════

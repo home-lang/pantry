@@ -1004,6 +1004,20 @@ Options:
     // github.com/antfu/ni removed — fixed pnpm self-install globally in buildkit.ts (npm_config_manage_package_manager_versions=false)
     // crates.io/qsv removed — removed linux wayland dep in override
     // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
+    'github.com/safe-waters/docker-lock', // Repository deleted (404)
+    'github.com/aristocratos/btop', // Needs GCC 14+ for C++23 std::ranges::to (CI has GCC 13)
+    'github.com/snowplow/factotum', // Ancient traitobject crate incompatible with modern Rust
+    'github.com/withered-magic/starpls', // Bazel build fails in CI
+    'github.com/hadolint/hadolint', // Haskell/Cabal build — GHC/Stack not available in CI
+    'github.com/mas-cli/mas', // Swift build: duplicate .build targets on CI runner
+    'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild
+    'github.com/nvbn/thefuck', // pip metadata-generation-failed (Python version compat)
+    'github.com/npiv/chatblade', // pyo3 doesn't support Python 3.14 yet (max 3.13)
+    'github.com/stub42/pytz', // pip install failure on both platforms
+    'github.com/mattrobenolt/jinja2-cli', // Python build failure on both platforms
+    'github.com/pressly/sup', // Build failure on both platforms
+    'github.com/moretension/duti', // make install failure on darwin
+    'github.com/a7ex/xcresultparser', // ncurses unctrl.h conflict on darwin
   ])
 
   let platformSkipped = 0

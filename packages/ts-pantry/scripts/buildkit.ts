@@ -576,6 +576,10 @@ export function generateBuildScript(
   sections.push('if command -v rustup &>/dev/null; then')
   sections.push('  rustup component add rust-src 2>/dev/null || true')
   sections.push('fi')
+  // Cap dependency lints to warning level globally — prevents build failures
+  // from dependency crates that trigger errors with newer Rust compilers
+  // (check-cfg, deprecated APIs, etc.). Appends to any recipe-level RUSTFLAGS.
+  sections.push('export RUSTFLAGS="${RUSTFLAGS:-} --cap-lints warn"')
   sections.push('')
 
   // Go toolchain — set default GOPATH only if recipe didn't already set it
