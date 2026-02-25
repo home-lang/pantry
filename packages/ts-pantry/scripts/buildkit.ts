@@ -865,6 +865,27 @@ export function generateBuildScript(
       sections.push('export CARGO_HTTP_MULTIPLEXING=false')
     }
     if (osName === 'darwin') {
+      // Create stub pkg-config files for system libraries that lack them on macOS.
+      // S3-built freetype2.pc requires bzip2, but macOS system bzip2 has no .pc file.
+      sections.push('_bk_pc="/tmp/buildkit-pkgconfig"')
+      sections.push('mkdir -p "$_bk_pc"')
+      sections.push('if ! pkg-config --exists bzip2 2>/dev/null; then')
+      sections.push('  _sdk="$(xcrun --show-sdk-path 2>/dev/null || echo /usr)"')
+      sections.push('  cat > "$_bk_pc/bzip2.pc" << BZIP2PC')
+      sections.push('prefix=/usr')
+      sections.push('libdir=\\${prefix}/lib')
+      sections.push('includedir=${_sdk}/usr/include')
+      sections.push('')
+      sections.push('Name: bzip2')
+      sections.push('Description: bzip2 compression library')
+      sections.push('Version: 1.0.8')
+      sections.push('Libs: -lbz2')
+      sections.push('Cflags: -I\\${includedir}')
+      sections.push('BZIP2PC')
+      sections.push('fi')
+      sections.push('export PKG_CONFIG_PATH="$_bk_pc:${PKG_CONFIG_PATH:-}"')
+      sections.push('')
+
       // Use DYLD_FALLBACK_LIBRARY_PATH instead of DYLD_LIBRARY_PATH on macOS.
       // DYLD_LIBRARY_PATH is searched BEFORE default locations (including @rpath),
       // which breaks programs like the JVM that load native libraries from their own

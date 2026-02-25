@@ -2497,16 +2497,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/PyGObject — fix prefix quoting ────────────────────────
 
   'gnome.org/PyGObject': {
-    platforms: {
-      darwin: {
-        prependScript: [
-          // Create bzip2.pc — macOS system bzip2 lacks a pkg-config file but freetype2.pc requires it
-          'mkdir -p /tmp/buildkit-pkgconfig',
-          'cat > /tmp/buildkit-pkgconfig/bzip2.pc << \'BZIP2PC\'\nprefix=/usr\nlibdir=${prefix}/lib\nincludedir=$(xcrun --show-sdk-path)/usr/include\n\nName: bzip2\nDescription: bzip2 compression library\nVersion: 1.0.8\nLibs: -lbz2\nCflags: -I${includedir}\nBZIP2PC',
-          'export PKG_CONFIG_PATH="/tmp/buildkit-pkgconfig:${PKG_CONFIG_PATH:-}"',
-        ],
-      },
-    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
