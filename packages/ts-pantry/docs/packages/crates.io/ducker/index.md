@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 16 versions</summary>
+<summary>Show all 17 versions</summary>
 
-- `0.6.2`, `0.6.1`, `0.6.0`
+- `0.6.3`, `0.6.2`, `0.6.1`, `0.6.0`
 - `0.5.7`, `0.5.6`, `0.5.5`, `0.5.4`, `0.5.3`, `0.5.2`, `0.5.1`, `0.5.0`
 - `0.4.2`, `0.4.1`, `0.4.0`
 - `0.3.1`, `0.3.0`
 
 </details>
 
-**Latest Version**: `0.6.2`
+**Latest Version**: `0.6.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/ducker@0.6.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/ducker@0.6.3 -- $SHELL -i
 ```
 
 ## Usage Examples
