@@ -882,10 +882,12 @@ export function generateBuildScript(
         // Replace stale Xcode SDK paths with current SDK path.
         // S3-built deps hardcode paths like .../MacOSX26.2.sdk/... which don't exist
         // on runners with different Xcode versions.
-        sections.push('    if grep -qE "/Applications/Xcode[^;]*/SDKs/MacOSX[^;]*.sdk" "$_f" 2>/dev/null; then')
+        sections.push('    if grep -q "MacOSX.*\\.sdk" "$_f" 2>/dev/null; then')
         sections.push('      _CUR_SDK="$(xcrun --show-sdk-path 2>/dev/null)"')
         sections.push('      if [ -n "$_CUR_SDK" ]; then')
-        sections.push('        sed -i.bak -E "s|/Applications/Xcode[^\";]*/SDKs/MacOSX[^\";]*.sdk|${_CUR_SDK}|g" "$_f" 2>/dev/null || true')
+        // Use single quotes for sed pattern to avoid bash escaping issues with BSD sed.
+        // Break out of single quotes to insert the shell variable.
+        sections.push("        sed -i.bak -E 's|/Applications/Xcode[^;]*/SDKs/MacOSX[^;]*.sdk|'\"$_CUR_SDK\"'|g' \"$_f\" 2>/dev/null || true")
         sections.push('      fi')
         sections.push('    fi')
       }
