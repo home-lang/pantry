@@ -867,7 +867,14 @@ export function generateBuildScript(
       // Create a cargo wrapper that clears LD_LIBRARY_PATH so cargo uses system curl
       // for HTTP operations (system curl has proper HTTP/2/nghttp2 support).
       sections.push('export CARGO_HTTP_MULTIPLEXING=false')
-      sections.push('_CARGO_REAL="$(command -v cargo 2>/dev/null || true)"')
+      // Find system cargo explicitly — `command -v cargo` would pick up the S3 cargo
+      // from /tmp/buildkit-deps/ since dep bin paths are prepended to PATH above.
+      // S3 cargo needs libgit2.so.1.9 via LD_LIBRARY_PATH; unsetting LD_LIBRARY_PATH
+      // while using S3 cargo would break it. We need the system cargo (rustup-installed).
+      sections.push('_CARGO_REAL=""')
+      sections.push('for _cp in "$REAL_HOME/.cargo/bin/cargo" "/usr/share/rust/.cargo/bin/cargo" "/usr/local/bin/cargo" "/usr/bin/cargo"; do')
+      sections.push('  [ -x "$_cp" ] && _CARGO_REAL="$_cp" && break')
+      sections.push('done')
       sections.push('if [ -n "$_CARGO_REAL" ]; then')
       sections.push('  mkdir -p "${TMPDIR:-/tmp}/_cc_wrapper"')
       sections.push('  printf \'#!/bin/bash\\nunset LD_LIBRARY_PATH\\nexec "%s" "$@"\\n\' "$_CARGO_REAL" > "${TMPDIR:-/tmp}/_cc_wrapper/cargo"')
