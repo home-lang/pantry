@@ -881,6 +881,13 @@ export function generateBuildScript(
     if (depPrefixes.length > 0) {
       sections.push(`export CMAKE_PREFIX_PATH="${depPrefixes.join(':')}:\${CMAKE_PREFIX_PATH:-}"`)
     }
+    if (osName === 'linux') {
+      // On Linux, system cmake packages (e.g. gflags from apt) have /usr/include in their
+      // INTERFACE_INCLUDE_DIRECTORIES. CMake adds these as -isystem, which breaks GCC's
+      // #include_next <stdlib.h>. Setting NO_SYSTEM_FROM_IMPORTED makes cmake use -I instead
+      // of -isystem for imported target includes, avoiding the header search order issue.
+      sections.push('export CMAKE_NO_SYSTEM_FROM_IMPORTED=ON')
+    }
 
     sections.push('')
 
