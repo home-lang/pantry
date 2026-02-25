@@ -1077,6 +1077,12 @@ print(f"[cmake-scrub] done: {modified} files modified", file=sys.stderr)`)
   sections.push('  export PATH="$wrapper_dir:$PATH"')
   sections.push('}')
   sections.push('__setup_cc_wrapper')
+  // Set CC/CXX to our wrappers so cmake uses them instead of finding /usr/bin/c++ directly.
+  // Without this, cmake's compiler detection resolves absolute paths and bypasses our wrapper,
+  // which means our -isystem /usr/include stripping doesn't take effect.
+  sections.push('_ccw="${TMPDIR:-/tmp}/_cc_wrapper"')
+  sections.push('[ -x "$_ccw/cc" ] && export CC="$_ccw/cc"')
+  sections.push('[ -x "$_ccw/c++" ] && export CXX="$_ccw/c++"')
   sections.push('')
 
   // Ensure gfortran is available: brew installs gcc which provides gfortran-14,
