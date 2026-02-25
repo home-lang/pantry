@@ -3837,11 +3837,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'facebook.com/fbthrift': {
     platforms: {
+      darwin: {
+        prependScript: [
+          // Fix fmt::join missing in fmt 12+ — it moved to <fmt/ranges.h>
+          'sed -i.bak \'1s/^/#include <fmt\\/ranges.h>\\n/\' thrift/lib/cpp2/server/RoundRobinRequestPile.h 2>/dev/null || true',
+        ],
+      },
       linux: {
         prependScript: [
           // Use system glog/gflags to match folly's ABI (folly is built against system glog)
           'sudo apt-get install -y libgoogle-glog-dev libgflags-dev 2>/dev/null || true',
           'export CMAKE_PREFIX_PATH="/usr/local:${CMAKE_PREFIX_PATH:-}"',
+          // Fix fmt::join missing in fmt 12+ — it moved to <fmt/ranges.h>
+          'sed -i \'1s/^/#include <fmt\\/ranges.h>\\n/\' thrift/lib/cpp2/server/RoundRobinRequestPile.h 2>/dev/null || true',
         ],
       },
     },
