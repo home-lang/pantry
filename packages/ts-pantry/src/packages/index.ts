@@ -1043,6 +1043,7 @@ import { khronosorgspirvtoolsPackage } from './khronos.org/SPIRV-Tools'
 import { khronosorgglslangPackage } from './khronos.org/glslang'
 import { khronosorgopenclheadersPackage } from './khronos.org/opencl-headers'
 import { kindsigsk8sioPackage } from './kindsigsk8sio'
+import { kirodevcliPackage } from './kiro.dev/cli'
 import { kislyukgithubioargcompletePackage } from './kislyuk.github.io/argcomplete'
 import { kluctlioPackage } from './kluctlio'
 import { kobuildPackage } from './kobuild'
@@ -3528,6 +3529,8 @@ export interface Pantry {
   opencl_headers: typeof khronosorgopenclheadersPackage
   khronosorgopenclheaders: typeof khronosorgopenclheadersPackage
   kindsigsk8sio: typeof kindsigsk8sioPackage
+  cli5: typeof kirodevcliPackage
+  kirodevcli: typeof kirodevcliPackage
 
   kislyukgithubioargcomplete: typeof kislyukgithubioargcompletePackage
   kluctlio: typeof kluctlioPackage
@@ -3633,7 +3636,7 @@ export interface Pantry {
   localaiio: typeof localaiioPackage
   awscli_local: typeof localstackcloudawsclilocalPackage
   localstackcloudawsclilocal: typeof localstackcloudawsclilocalPackage
-  cli5: typeof localstackcloudcliPackage
+  cli6: typeof localstackcloudcliPackage
   localstackcloudcli: typeof localstackcloudcliPackage
   logdydev: typeof logdydevPackage
 
@@ -4098,7 +4101,7 @@ export interface Pantry {
   singboxapp: typeof singboxappPackage
   skaffolddev: typeof skaffolddevPackage
   smartmontoolsorg: typeof smartmontoolsorgPackage
-  cli6: typeof snapletdevcliPackage
+  cli7: typeof snapletdevcliPackage
   snapletdevcli: typeof snapletdevcliPackage
   sniffnetnet: typeof sniffnetnetPackage
 
@@ -4154,7 +4157,7 @@ export interface Pantry {
   straceio: typeof straceioPackage
   streamlinkgithubio: typeof streamlinkgithubioPackage
   stripecom: typeof stripecomPackage
-  cli7: typeof supabasecomcliPackage
+  cli8: typeof supabasecomcliPackage
   supabasecomcli: typeof supabasecomcliPackage
   surrealdbcom: typeof surrealdbcomPackage
 
@@ -7879,6 +7882,8 @@ export const pantry: Pantry = {
   opencl_headers: khronosorgopenclheadersPackage,
   khronosorgopenclheaders: khronosorgopenclheadersPackage,
   kindsigsk8sio: kindsigsk8sioPackage,
+  cli5: kirodevcliPackage,
+  kirodevcli: kirodevcliPackage,
 
   kislyukgithubioargcomplete: kislyukgithubioargcompletePackage,
   kluctlio: kluctlioPackage,
@@ -7984,7 +7989,7 @@ export const pantry: Pantry = {
   localaiio: localaiioPackage,
   awscli_local: localstackcloudawsclilocalPackage,
   localstackcloudawsclilocal: localstackcloudawsclilocalPackage,
-  cli5: localstackcloudcliPackage,
+  cli6: localstackcloudcliPackage,
   localstackcloudcli: localstackcloudcliPackage,
   logdydev: logdydevPackage,
 
@@ -8449,7 +8454,7 @@ export const pantry: Pantry = {
   singboxapp: singboxappPackage,
   skaffolddev: skaffolddevPackage,
   smartmontoolsorg: smartmontoolsorgPackage,
-  cli6: snapletdevcliPackage,
+  cli7: snapletdevcliPackage,
   snapletdevcli: snapletdevcliPackage,
   sniffnetnet: sniffnetnetPackage,
 
@@ -8505,7 +8510,7 @@ export const pantry: Pantry = {
   straceio: straceioPackage,
   streamlinkgithubio: streamlinkgithubioPackage,
   stripecom: stripecomPackage,
-  cli7: supabasecomcliPackage,
+  cli8: supabasecomcliPackage,
   supabasecomcli: supabasecomcliPackage,
   surrealdbcom: surrealdbcomPackage,
 
