@@ -3837,17 +3837,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Fix sed -i BSD compat
+      // Fix sed step: the YAML parser doesn't handle multi-line plain scalar continuation
+      // for 'run: sed -i\n  -e "s:..." mvfst-targets.cmake', so it only captures 'sed -i'
+      // and loses the -e expression and filename args. Also loses the working-directory sibling key.
+      // Reconstruct the full command here. The sed wrapper in buildkit.ts handles -i BSD compat.
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i\n/g, 'sed -i.bak\n')
-              .replace(/^(\s*)sed -i$/m, '$1sed -i.bak')
-          }
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          if (typeof step === 'object' && step.run === 'sed -i') {
+            step.run = 'sed -i -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../..:g" mvfst-targets.cmake'
+            if (!step['working-directory']) {
+              step['working-directory'] = '${{prefix}}/lib/cmake/mvfst'
+            }
           }
         }
       }
