@@ -811,14 +811,20 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   // When ninja runs meson internal commands, it tries to execute a non-existent path like
   // /tmp/buildkit-<pkg>/-c which fails with "No such file or directory".
   // Also, Ubuntu runner has meson 1.3.2 but many packages require >= 1.4.0.
-  // Fix: install meson via python3 venv and prepend to PATH for all meson-dependent packages.
+  // Fix: install fresh meson via pip AND venv, then ensure it's found first in PATH.
   if (recipe.build?.dependencies?.['mesonbuild.com']) {
+    delete recipe.build.dependencies['mesonbuild.com']
     if (!recipe.build.script) recipe.build.script = []
     const existing = recipe.build.script
     const existingArray = Array.isArray(existing) ? existing : [existing]
     recipe.build.script = [
-      'python3 -m venv /tmp/meson-venv && /tmp/meson-venv/bin/pip install "meson>=1.4.0" || true',
+      // Install meson in a venv (clean Python env, no hardcoded paths)
+      'python3 -m venv /tmp/meson-venv && /tmp/meson-venv/bin/pip install "meson>=1.4.0" ninja || true',
       'export PATH="/tmp/meson-venv/bin:$PATH"',
+      // Also upgrade system meson as fallback (Ubuntu has 1.3.2, packages need >= 1.4.0)
+      'pip3 install --break-system-packages --upgrade "meson>=1.4.0" 2>/dev/null || true',
+      'hash -r 2>/dev/null || true',
+      'echo "[buildkit] meson=$(which meson) version=$(meson --version 2>/dev/null)" >&2',
       ...existingArray,
     ]
   }
