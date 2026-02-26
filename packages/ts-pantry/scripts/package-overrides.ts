@@ -3900,6 +3900,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── browser-use.com — remove darwin --no-binary reinstall step ──────
+  // The --no-binary :all: force-reinstall of jiter/rpds-py is for headerpad,
+  // but fix-machos is skipped (breaks aarch64 binaries), so it's unnecessary
+  // and causes a build timeout from infinite setuptools copy loops.
+
+  'browser-use.com': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: any) => {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            return !step.run.includes('--no-binary')
+          }
+          return true
+        })
+      }
+    },
+  },
+
   // ─── bitcoin.org — remove linux llvm/gcc dep ─────────────────────────
 
   'bitcoin.org': {
