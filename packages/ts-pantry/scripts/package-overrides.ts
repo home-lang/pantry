@@ -723,13 +723,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // lloyd.github.io/yajl — first entry removed, see second entry below with GET_TARGET_PROPERTY fix
 
   'musepack.net': {
-    env: { LDFLAGS: '-lm' },
     modifyRecipe: (recipe: any) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
+        // Add -lm to linker flags for math library (pow, log10)
+        recipe.build.env.CMAKE_ARGS.push('-DCMAKE_EXE_LINKER_FLAGS=-lm')
+        recipe.build.env.CMAKE_ARGS.push('-DCMAKE_SHARED_LINKER_FLAGS=-lm')
       }
     },
   },
@@ -743,7 +745,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('cargo install') && step.includes('--path .')) {
-            recipe.build.script[i] = step.replace('--path .', '--path crates/sd')
+            recipe.build.script[i] = step.replace('--locked --path .', '--locked -p sd-cli')
           }
         }
       }
@@ -1144,6 +1146,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/dbus — remove xmlto dep, disable docs ──────────────
 
   'freedesktop.org/dbus': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install glib/gio from Homebrew for gio-unix-2.0 dependency
+          'brew install glib 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix glib)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // pagure.io/xmlto is linux-only (BSD getopt incompatibility on macOS)
       if (recipe.build?.dependencies?.['pagure.io/xmlto']) {
@@ -1343,6 +1354,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Install xcb-xkb dev headers for x11 support
           'sudo apt-get install -y libxcb-xkb-dev 2>/dev/null || true',
+        ],
+      },
+      darwin: {
+        prependScript: [
+          // Install libxml2 from Homebrew for pkg-config discovery
+          'brew install libxml2 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
         ],
       },
     },
@@ -1587,6 +1605,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Install libunistring and libidn2 dev libs for PSL runtime
           'sudo apt-get install -y libunistring-dev libidn2-dev 2>/dev/null || true',
+        ],
+      },
+      darwin: {
+        prependScript: [
+          // Install libidn2 and libunistring from Homebrew
+          'brew install libidn2 libunistring 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix libidn2)/lib/pkgconfig:$(brew --prefix libunistring)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix libidn2)/lib -L$(brew --prefix libunistring)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libidn2)/include -I$(brew --prefix libunistring)/include ${CPPFLAGS:-}"',
         ],
       },
     },
@@ -3408,14 +3435,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
         delete recipe.build.dependencies['goreleaser.com']
       }
       // Fix: replace `rm -r props` with `rm -rf props` (dir may not exist in newer versions)
+      // The script step is an object with `run` as an ARRAY of commands
       if (Array.isArray(recipe.build?.script)) {
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
+        for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('rm -r props')) {
-            recipe.build.script[i] = step.replace('rm -r props', 'rm -rf props')
-          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('rm -r props')) {
-            step.run = step.run.replace('rm -r props', 'rm -rf props')
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replace('rm -r props', 'rm -rf props')
+          } else if (typeof step === 'object' && step.run) {
+            // Handle run as string
+            if (typeof step.run === 'string' && step.run.includes('rm -r props')) {
+              step.run = step.run.replace('rm -r props', 'rm -rf props')
+            }
+            // Handle run as array of strings
+            if (Array.isArray(step.run)) {
+              for (let j = 0; j < step.run.length; j++) {
+                if (typeof step.run[j] === 'string' && step.run[j].includes('rm -r props')) {
+                  step.run[j] = step.run[j].replace('rm -r props', 'rm -rf props')
+                }
+              }
+            }
           }
         }
       }

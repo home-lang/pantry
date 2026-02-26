@@ -1053,6 +1053,9 @@ Options:
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
     'opendap.org', // configure cannot determine DODS XDR integer sizes
+    'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
+    'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
+    'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
   ])
 
   let platformSkipped = 0
