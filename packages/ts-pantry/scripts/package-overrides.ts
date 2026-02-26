@@ -5918,4 +5918,67 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── github.com/luvit/luv — fix stray cmake prefix quote ────────────
+  // CMAKE_ARGS has '-DCMAKE_INSTALL_PREFIX="{{prefix}}' (missing closing quote)
+
+  'github.com/luvit/luv': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+    },
+  },
+
+  // ─── github.com/pressly/sup — fix go mod init missing module name ───
+
+  'github.com/pressly/sup': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
+          if (typeof step === 'string' && step.includes('go mod init')) {
+            return step.replace('go mod init', 'go mod init github.com/pressly/sup')
+          }
+          return step
+        })
+      }
+    },
+  },
+
+  // ─── freedesktop.org/appstream — install libfyaml from apt ──────────
+
+  'freedesktop.org/appstream': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libfyaml-dev 2>/dev/null || true',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: any) => {
+      // Remove deps not available in S3
+      if (recipe.dependencies?.['github.com/pantoniou/libfyaml']) {
+        delete recipe.dependencies['github.com/pantoniou/libfyaml']
+      }
+      if (recipe.dependencies?.linux?.['systemd.io']) {
+        delete recipe.dependencies.linux['systemd.io']
+      }
+    },
+  },
+
+  // ─── snaplet.dev/cli — pin Node to v20 LTS ──────────────────────────
+  // better-sqlite3 8.5.0 incompatible with Node.js 24 V8 API
+
+  'snaplet.dev/cli': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['nodejs.org']) {
+        recipe.build.dependencies['nodejs.org'] = '~20'
+      }
+      if (recipe.dependencies?.['nodejs.org']) {
+        recipe.dependencies['nodejs.org'] = '~20'
+      }
+    },
+  },
 }
