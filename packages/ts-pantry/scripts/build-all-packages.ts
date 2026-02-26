@@ -277,7 +277,7 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
             }
           }
 
-          const hasDistributable = !!(recipe.distributable?.url)
+          const hasDistributable = !!(recipe.distributable?.url) || Array.isArray(recipe.distributable)
           const isVendored = Array.isArray(recipe.warnings) && recipe.warnings.includes('vendored')
           const hasBuildScript = !!(recipe.build?.script) || Array.isArray(recipe.build) || typeof recipe.build === 'string'
 

@@ -173,15 +173,28 @@ const packages: Record<string, PackageConfig> = {
     getLatestVersion: () => githubLatestVersion('meilisearch/meilisearch'),
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
-      const msArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
-      const msPlatform = os === 'darwin' ? 'macos' : 'linux'
+      // Meilisearch uses specific asset names per platform
+      let assetSuffix: string
+      if (os === 'darwin' && arch === 'arm64') assetSuffix = 'macos-apple-silicon'
+      else if (os === 'darwin') assetSuffix = 'macos-amd64'
+      else if (arch === 'arm64') assetSuffix = 'linux-aarch64'
+      else assetSuffix = 'linux-amd64'
 
-      const url = `https://github.com/meilisearch/meilisearch/releases/download/v${version}/meilisearch-${msPlatform}-${msArch}`
+      const url = `https://github.com/meilisearch/meilisearch/releases/download/v${version}/meilisearch-${assetSuffix}`
 
       console.log(`   Downloading from ${url}`)
       mkdirSync(join(destDir, 'bin'), { recursive: true })
-      execSync(`curl -L -o "${destDir}/bin/meilisearch" "${url}"`, { stdio: 'inherit' })
-      chmodSync(join(destDir, 'bin', 'meilisearch'), 0o755)
+      const binPath = join(destDir, 'bin', 'meilisearch')
+      execSync(`curl -fSL -o "${binPath}" "${url}"`, { stdio: 'inherit' })
+
+      // Validate download (must be >1MB for a real binary)
+      const { statSync: fstat } = await import('node:fs')
+      const size = fstat(binPath).size
+      if (size < 1_000_000) {
+        throw new Error(`Meilisearch download too small (${size} bytes). Expected >1MB for binary. URL may have returned an error page.`)
+      }
+
+      chmodSync(binPath, 0o755)
     },
   },
 
@@ -253,29 +266,63 @@ const packages: Record<string, PackageConfig> = {
     domain: 'mysql.com',
     name: 'mysql',
     getLatestVersion: async () => {
-      // MySQL versioning is complex, hardcode a known good version for now
-      return '8.0.40'
+      // Fetch latest MySQL version from GitHub tags
+      try {
+        const tag = await githubLatestVersion('mysql/mysql-server')
+        return tag
+      } catch {
+        return '9.2.0' // Fallback to a known recent version
+      }
     },
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
+      const major = version.split('.').slice(0, 2).join('.')
 
       if (os === 'darwin') {
         const mysqlArch = arch === 'arm64' ? 'arm64' : 'x86_64'
-        const url = `https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-${version}-macos14-${mysqlArch}.tar.gz`
+        // MySQL 9.x uses macosNN naming, try recent macOS versions
+        const urls = [
+          `https://dev.mysql.com/get/Downloads/MySQL-${major}/mysql-${version}-macos15-${mysqlArch}.tar.gz`,
+          `https://dev.mysql.com/get/Downloads/MySQL-${major}/mysql-${version}-macos14-${mysqlArch}.tar.gz`,
+          `https://cdn.mysql.com/Downloads/MySQL-${major}/mysql-${version}-macos15-${mysqlArch}.tar.gz`,
+          `https://cdn.mysql.com/Downloads/MySQL-${major}/mysql-${version}-macos14-${mysqlArch}.tar.gz`,
+        ]
 
-        console.log(`   Downloading from ${url}`)
-        console.log(`   (MySQL downloads can be slow...)`)
-        execSync(`curl -L -o "${destDir}/mysql.tar.gz" "${url}"`, { stdio: 'inherit' })
+        let downloaded = false
+        for (const url of urls) {
+          try {
+            console.log(`   Trying ${url}`)
+            execSync(`curl -fSL -o "${destDir}/mysql.tar.gz" "${url}"`, { stdio: 'inherit' })
+            downloaded = true
+            break
+          } catch { /* try next URL */ }
+        }
+        if (!downloaded) throw new Error(`Failed to download MySQL ${version} for darwin-${mysqlArch}`)
+
+        console.log(`   Extracting...`)
         execSync(`cd "${destDir}" && tar -xf mysql.tar.gz --strip-components=1`, { stdio: 'pipe' })
         execSync(`rm "${destDir}/mysql.tar.gz"`)
       } else {
-        // Linux generic binary
         const mysqlArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
-        const url = `https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-${version}-linux-glibc2.17-${mysqlArch}.tar.xz`
+        const urls = [
+          `https://dev.mysql.com/get/Downloads/MySQL-${major}/mysql-${version}-linux-glibc2.28-${mysqlArch}.tar.xz`,
+          `https://dev.mysql.com/get/Downloads/MySQL-${major}/mysql-${version}-linux-glibc2.17-${mysqlArch}.tar.xz`,
+          `https://cdn.mysql.com/Downloads/MySQL-${major}/mysql-${version}-linux-glibc2.28-${mysqlArch}.tar.xz`,
+          `https://cdn.mysql.com/Downloads/MySQL-${major}/mysql-${version}-linux-glibc2.17-${mysqlArch}.tar.xz`,
+        ]
 
-        console.log(`   Downloading from ${url}`)
-        console.log(`   (MySQL downloads can be slow...)`)
-        execSync(`curl -L -o "${destDir}/mysql.tar.xz" "${url}"`, { stdio: 'inherit' })
+        let downloaded = false
+        for (const url of urls) {
+          try {
+            console.log(`   Trying ${url}`)
+            execSync(`curl -fSL -o "${destDir}/mysql.tar.xz" "${url}"`, { stdio: 'inherit' })
+            downloaded = true
+            break
+          } catch { /* try next URL */ }
+        }
+        if (!downloaded) throw new Error(`Failed to download MySQL ${version} for linux-${mysqlArch}`)
+
+        console.log(`   Extracting...`)
         execSync(`cd "${destDir}" && tar -xf mysql.tar.xz --strip-components=1`, { stdio: 'pipe' })
         execSync(`rm "${destDir}/mysql.tar.xz"`)
       }

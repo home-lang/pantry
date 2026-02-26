@@ -1572,7 +1572,29 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   }
 
   // Download source
-  if (recipe.distributable?.url) {
+  if (Array.isArray(recipe.distributable)) {
+    // Array-format distributable (e.g. sqlite.org) — try each URL until one works
+    let downloaded = false
+    for (const entry of recipe.distributable) {
+      if (!entry.url) continue
+      const rawUrl = typeof entry.url === 'string' ? entry.url : String(entry.url)
+      const sourceUrl = interpolate(rawUrl, templateVars)
+      const isZipUrl = rawUrl.endsWith('.zip') || sourceUrl.endsWith('.zip')
+      const stripComponents = entry['strip-components'] ?? (isZipUrl ? 0 : 1)
+      const ref = entry.ref ? interpolate(entry.ref, templateVars) : undefined
+      try {
+        console.log(`📥 Trying distributable URL: ${sourceUrl}`)
+        await downloadSource(sourceUrl, buildDir, stripComponents, ref, pkgName, version)
+        downloaded = true
+        break
+      } catch {
+        console.log(`   ⚠️  Failed, trying next URL...`)
+      }
+    }
+    if (!downloaded) {
+      throw new Error(`All distributable URLs failed for ${pkgName}@${version}`)
+    }
+  } else if (recipe.distributable?.url) {
     const rawUrl = typeof recipe.distributable.url === 'string' ? recipe.distributable.url : String(recipe.distributable.url)
     const sourceUrl = interpolate(rawUrl, templateVars)
     // Default strip-components: 1 for tar (standard), 0 for zip (many recipes expect outer dir)
