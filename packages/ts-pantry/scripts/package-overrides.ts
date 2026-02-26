@@ -1514,6 +1514,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux?.['imagemagick.org']) {
         delete recipe.build.dependencies.linux['imagemagick.org']
       }
+      // Disable halibut doc generation in cmake (not available)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS.push('-DHALIBUT_EXECUTABLE=NOTFOUND')
+      }
     },
   },
 
@@ -3184,6 +3188,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── github.com/libass/libass — link libiconv on darwin ────────────────
+
+  'github.com/libass/libass': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install libiconv (keg-only) for subtitle character encoding conversion
+          'brew install libiconv 2>/dev/null || true',
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
+        ],
+      },
+    },
+  },
+
   // ─── gtk.org/gtk3 — disable introspection + remove heavy deps ────────
 
   'gtk.org/gtk3': {
@@ -3411,8 +3430,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── fluxcd.io/flux2 — fix Go build ──────────────────────────────────
 
   'fluxcd.io/flux2': {
+    prependScript: [
+      // Install kustomize for manifest generation (not in S3)
+      'go install sigs.k8s.io/kustomize/kustomize/v5@latest 2>/dev/null || true',
+      'export PATH="$HOME/go/bin:$PATH"',
+    ],
     modifyRecipe: (recipe: any) => {
-      // Remove kubernetes.io/kustomize build dep (not in S3)
+      // Remove kubernetes.io/kustomize build dep (use go-installed instead)
       if (recipe.build?.dependencies?.['kubernetes.io/kustomize']) {
         delete recipe.build.dependencies['kubernetes.io/kustomize']
       }
@@ -3428,6 +3452,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── pwmt.org/zathura — fix sed -i BSD compat ────────────────────────
 
   'pwmt.org/zathura': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libmagic-dev 2>/dev/null || true',
+        ],
+      },
+      darwin: {
+        prependScript: [
+          'brew install libmagic 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix libmagic)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in girara_warn rename
       if (Array.isArray(recipe.build?.script)) {
@@ -3733,6 +3770,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── getmonero.org — remove linux llvm dep ───────────────────────────
 
   'getmonero.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install protobuf for protoc (needed for monero protobuf components)
+          'brew install protobuf 2>/dev/null || true',
+          'export PATH="$(brew --prefix protobuf)/bin:$PATH"',
+          'export PKG_CONFIG_PATH="$(brew --prefix protobuf)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove linux llvm.org build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
@@ -4110,8 +4157,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── tlr.dev — remove protobuf dep ───────────────────────────────────
 
   'tlr.dev': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install protobuf for protoc (prost-build needs it for etcd-client crate)
+          'brew install protobuf 2>/dev/null || true',
+          'export PATH="$(brew --prefix protobuf)/bin:$PATH"',
+        ],
+      },
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y protobuf-compiler 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Remove protobuf.dev build dep (not needed for Rust build)
+      // Remove protobuf.dev build dep (use system protoc instead)
       if (recipe.build?.dependencies?.['protobuf.dev']) {
         delete recipe.build.dependencies['protobuf.dev']
       }

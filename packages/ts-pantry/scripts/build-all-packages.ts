@@ -653,6 +653,9 @@ Options:
     'pagure.io/xmlto', // xmlto uses BSD getopt on macOS which lacks long options support
     'freedesktop.org/dbus', // gio-unix-2.0 pkg-config chain fails on darwin (S3 pkg-config vs Homebrew glib)
     'swagger.io/swagger-codegen', // Maven/Java build, install -D flag incompatible with macOS
+    'github.com/opencollab/arpack-ng', // Needs gfortran (not available on macOS CI runners)
+    'apache.org/zookeeper', // Maven native build (zookeeper-client-c configure) broken on darwin
+    'apache.org/httpd', // --with-apr-util path resolution broken on darwin
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
     // laravel.com — fixed: symlink ICU libs from unicode.org into PHP lib dir on darwin
@@ -1071,6 +1074,7 @@ Options:
     'lavinmq.com', // Crystal/shards toolchain not available in CI
     'vapoursynth.com', // Needs zimg (not in S3 dep chain)
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)
+    'imagemagick.org', // Download 404 — GitHub archive URLs for all versions return 404
   ])
 
   let platformSkipped = 0
