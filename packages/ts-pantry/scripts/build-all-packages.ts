@@ -663,6 +663,7 @@ Options:
     'fuellabs.github.io/sway', // Rust linker failure on darwin (forc binary), linux OK
     'gitlab.com/procps-ng/watch', // Linux process utilities, darwin build fails
     'sfcgal.gitlab.io', // CGAL cmake failure on darwin, linux OK
+    'getmonero.org', // cmake security-hardening test failures on darwin ARM64, linux OK
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
     // laravel.com — fixed: symlink ICU libs from unicode.org into PHP lib dir on darwin
@@ -680,6 +681,7 @@ Options:
     'microsoft.com/code-cli', // OpenSSL linking issues on Linux, builds fine on darwin
     'proj.org', // S3 curl.so missing version info breaks cmake on linux, darwin OK
     'pwmt.org/zathura', // gnutls/nettle ABI mismatch breaks HTTPS git on linux, darwin OK
+    'facebook.com/watchman', // glog ABI mismatch in S3 wangle/fizz on linux, darwin OK
   ])
 
   // Packages needing specialized toolchains not available in CI

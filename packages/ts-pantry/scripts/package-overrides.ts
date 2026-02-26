@@ -3118,9 +3118,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Install c-ares from Homebrew (not reliably found via S3 dep tree)
+          // Install c-ares from Homebrew (S3 binary missing headers)
           'brew install c-ares 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix c-ares)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export CMAKE_PREFIX_PATH="$(brew --prefix c-ares):${CMAKE_PREFIX_PATH:-}"',
+        ],
+      },
+      linux: {
+        prependScript: [
+          // Ensure c-ares dev headers are available (S3 binary missing headers)
+          'sudo apt-get install -y libc-ares-dev 2>/dev/null || true',
         ],
       },
     },
@@ -3134,6 +3141,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove ibr.cs.tu-bs.de/libsmi dep (not in S3, optional)
       if (recipe.dependencies?.['ibr.cs.tu-bs.de/libsmi']) {
         delete recipe.dependencies['ibr.cs.tu-bs.de/libsmi']
+      }
+      // Remove c-ares.org dep (S3 binary missing headers, use Homebrew/apt instead)
+      if (recipe.dependencies?.['c-ares.org']) {
+        delete recipe.dependencies['c-ares.org']
+      }
+      // Remove lua.org dep (S3 lua 5.5.0 has breaking API change for lua_newstate)
+      if (recipe.dependencies?.['lua.org']) {
+        delete recipe.dependencies['lua.org']
+      }
+      if (recipe.build?.dependencies?.['lua.org']) {
+        delete recipe.build.dependencies['lua.org']
       }
       // Disable SMI in cmake args
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
@@ -3196,11 +3214,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['vapoursynth.com']) {
         delete recipe.dependencies['vapoursynth.com']
       }
-      // Disable vapoursynth in meson args + disable libvpx on linux (S3 libvpx.so path issue)
+      // Disable vapoursynth in meson args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a === '-Dvapoursynth=enabled' ? '-Dvapoursynth=disabled' : a,
         )
+        // Disable vpx on linux (S3 libvpx.so.9 has broken RPATH)
+        recipe.build.env.ARGS.push('-Dvpx=disabled')
       }
       // Remove linux clang/lld override (use system compiler)
       if (recipe.build?.env?.linux) {
@@ -3290,7 +3310,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
           a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
         )
-        recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled', '-Ddocumentation=false')
+        recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled', '-Ddocumentation=false', '-Dwayland-backend=false')
       }
     },
   },
@@ -4739,7 +4759,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
-          // pywatchman install needs setuptools (--break-system-packages for newer macOS Python)
+          // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
+          'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install setuptools 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages setuptools 2>/dev/null || pip3 install setuptools 2>/dev/null || true',
         ],
       },
