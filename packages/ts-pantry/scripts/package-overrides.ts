@@ -3162,6 +3162,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.filter(
           (a: string) => !a.includes('libsmi'),
         )
+        // Disable c-ares (S3 binary missing headers, system version too old on linux)
+        recipe.build.env.CMAKE_ARGS.push('-DENABLE_CARES=OFF')
       }
     },
   },
@@ -3206,6 +3208,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Install libass-dev for subtitle rendering
           'sudo apt-get install -y libass-dev 2>/dev/null || true',
+          // Set LD_LIBRARY_PATH so meson can run built mpv binary (step 313/314 mpv --list-protocols)
+          // S3 dep shared libs (e.g. libvpx.so.9) aren't in RPATH at build time
+          'for d in /tmp/buildkit-deps/*/lib /tmp/buildkit-deps/*/*/lib /tmp/buildkit-deps/*/*/*/lib; do [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
         ],
       },
     },
@@ -3219,8 +3224,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a === '-Dvapoursynth=enabled' ? '-Dvapoursynth=disabled' : a,
         )
-        // Disable vpx on linux (S3 libvpx.so.9 has broken RPATH)
-        recipe.build.env.ARGS.push('-Dvpx=disabled')
       }
       // Remove linux clang/lld override (use system compiler)
       if (recipe.build?.env?.linux) {
