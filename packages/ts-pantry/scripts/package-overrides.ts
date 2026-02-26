@@ -5179,20 +5179,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       // Fix: Lua 5.5 header uses LUA_VERSION_MAJOR_N macro instead of string literals.
       // luv's CMakeLists.txt reads lua.h with file(STRINGS) regex and gets raw #define
-      // text in the version variables, breaking install paths. Patch CMakeLists.txt to
-      // force-set the correct Lua version after the broken detection block.
+      // text in the version variables, breaking install paths. After each cmake configure,
+      // fix the generated cmake_install.cmake to use the correct path.
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script.unshift(
-          'python3 -c "' +
-          "f=open('CMakeLists.txt');c=f.read();f.close();" +
-          "c=c.replace('unset(lua_version_strings)','unset(lua_version_strings)\\n" +
-          'set(LUA_VERSION_MAJOR \\"5\\")\\n' +
-          'set(LUA_VERSION_MINOR \\"5\\")\\n' +
-          'set(LUA_VERSION_PATCH \\"0\\")\\n' +
-          'set(LUA_VERSION_STRING \\"5.5.0\\")');" +
-          "f=open('CMakeLists.txt','w');f.write(c);f.close()" +
-          '"',
-        )
+        const newScript: any[] = []
+        for (const step of recipe.build.script) {
+          newScript.push(step)
+          const stepStr = typeof step === 'string' ? step : ''
+          // After each cmake --install, the install path is already baked in.
+          // Insert fixup AFTER cmake --build but BEFORE cmake --install.
+          if (stepStr.includes('cmake --build')) {
+            const dir = stepStr.includes('buildjit') ? 'buildjit' : 'buildlua'
+            newScript.push(
+              `perl -pi -e 's{lib/lua/[^"]*}{lib/lua/5.5}g' ${dir}/cmake_install.cmake`,
+            )
+          }
+        }
+        recipe.build.script = newScript
       }
     },
   },
