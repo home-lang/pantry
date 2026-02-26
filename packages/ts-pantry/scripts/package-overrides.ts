@@ -4007,6 +4007,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
           recipe.build.env.CMAKE_ARGS.push('-DENABLE_IPC=OFF')
         }
       }
+      // Make patchelf steps error-tolerant — sqlite.org dep may use system path
+      // where the binary doesn't reference the full /usr/lib/libsqlite3.so path
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
+          if (typeof step === 'object' && Array.isArray(step.run)) {
+            step.run = step.run.map((cmd: string) =>
+              typeof cmd === 'string' && cmd.includes('patchelf') ? `${cmd} || true` : cmd,
+            )
+          }
+          return step
+        })
+      }
     },
   },
 
