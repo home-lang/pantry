@@ -743,6 +743,7 @@ export function generateBuildScript(
   sections.push('      "$_prefix/venv/bin/pip" install --upgrade pip "setuptools<78" wheel || echo "[buildkit] WARN: setuptools install failed" >&2')
   sections.push('      if [ "$_engine" = "poetry" ]; then')
   sections.push('        "$_prefix/venv/bin/pip" install poetry || echo "[buildkit] WARN: poetry install failed" >&2')
+  sections.push('        "$_prefix/venv/bin/pip" install --upgrade packaging || echo "[buildkit] WARN: packaging upgrade failed" >&2')
   sections.push('      fi')
   sections.push('      # Add venv bin to PATH so recipe scripts find venv tools (poetry, etc)')
   sections.push('      export PATH="$_prefix/venv/bin:$PATH"')

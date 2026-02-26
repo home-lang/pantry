@@ -6062,6 +6062,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3.11<3.15'
       }
+      // Upgrade packaging lib after bkpyvenv stage — Python 3.14 needs packaging>=24.0
+      // for packaging.licenses module used by poetry
+      if (Array.isArray(recipe.build?.script)) {
+        const stageIdx = recipe.build.script.findIndex(
+          (s: any) => typeof s === 'string' && s.includes('bkpyvenv stage'),
+        )
+        if (stageIdx >= 0) {
+          recipe.build.script.splice(stageIdx + 1, 0,
+            '{{prefix}}/venv/bin/pip install --upgrade packaging',
+          )
+        }
+      }
     },
   },
 
