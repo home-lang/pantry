@@ -2974,6 +2974,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['littlecms.com']) delete recipe.dependencies['littlecms.com']
       // Remove linux gcc/libstdcxx runtime deps
       if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
+      // Fix static lib install: GLIB is disabled so libpoppler-glib.a doesn't get built.
+      // Replace the install command that references it with one that only copies the libs that exist.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
+          if (typeof step === 'string' && step.includes('libpoppler-glib.a')) {
+            // Replace with: install only libpoppler.a and libpoppler-cpp.a (skip glib)
+            return step.replace(/ build_static\/glib\/libpoppler-glib\.a/, '')
+          }
+          return step
+        })
+      }
     },
   },
 
