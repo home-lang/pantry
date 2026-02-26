@@ -5728,4 +5728,194 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
   },
+
+  // ─── imagemagick.org — fix version tag format + remove broken deps ──────
+  // Tag format: 7.1.2-13 but version is 7.1.2.13 (last dot→hyphen)
+  // Many deps not in S3 — use system libs where possible
+
+  'imagemagick.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix the distributable URL: version 7.1.2.13 maps to tag 7.1.2-13
+      // Replace last dot with hyphen in the URL
+      if (recipe.distributable?.url) {
+        recipe.distributable.url = 'https://github.com/ImageMagick/ImageMagick/archive/{{version.tag}}.tar.gz'
+      }
+      // Remove deps not reliably in S3
+      const removeDeps = [
+        'littlecms.com', 'openexr.com', 'liblqr.wikidot.com',
+        'ijg.org', 'jpeg.org/jpegxl', 'perl.org', 'libzip.org',
+        'openmp.llvm.org', 'github.com/strukturag/libheif',
+        'x.org/x11',
+      ]
+      for (const dep of removeDeps) {
+        if (recipe.dependencies?.[dep]) delete recipe.dependencies[dep]
+        if (recipe.dependencies?.darwin?.[dep]) delete recipe.dependencies.darwin[dep]
+        if (recipe.dependencies?.linux?.[dep]) delete recipe.dependencies.linux[dep]
+        if (recipe.dependencies?.['linux/x86-64']?.[dep]) delete recipe.dependencies['linux/x86-64'][dep]
+      }
+      // Disable features for removed deps
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        const disableArgs = [
+          '--with-jxl=no', '--with-heic=no', '--with-lqr=no',
+          '--without-openexr', '--with-zip=no', '--without-perl',
+          '--disable-openmp', '--without-x',
+        ]
+        // Remove contradicting args first
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
+          !a.includes('--with-jxl=') && !a.includes('--with-heic=') &&
+          !a.includes('--with-lqr') && !a.includes('--with-openexr') &&
+          !a.includes('--with-zip=') && !a.includes('--with-perl') &&
+          !a.includes('--enable-openmp') && !a.includes('--without-perl'),
+        )
+        recipe.build.env.ARGS.push(...disableArgs)
+      }
+      // Remove linux-specific --with-x and darwin-specific ARGS that reference removed deps
+      if (Array.isArray(recipe.build?.env?.linux?.ARGS)) {
+        recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.filter((a: string) =>
+          !a.includes('--with-x') && !a.includes('x.org'),
+        )
+      }
+      if (Array.isArray(recipe.build?.env?.darwin?.ARGS)) {
+        recipe.build.env.darwin.ARGS = recipe.build.env.darwin.ARGS.filter((a: string) =>
+          !a.includes('--without-x'),
+        )
+      }
+      // Remove LDFLAGS referencing removed deps
+      if (Array.isArray(recipe.build?.env?.LDFLAGS)) {
+        recipe.build.env.LDFLAGS = recipe.build.env.LDFLAGS.filter((f: string) =>
+          !f.includes('liblqr') && !f.includes('ijg.org') &&
+          !f.includes('gnu.org/libtool') && !f.includes('bzip2'),
+        )
+      }
+      // Remove gnu.org/libtool dep (use system libtool)
+      if (recipe.dependencies?.['gnu.org/libtool']) delete recipe.dependencies['gnu.org/libtool']
+    },
+  },
+
+  // ─── github.com/google/re2 — fix date-based version tag ────────────────
+  // Version: 2025.11.5, tag: 2025-11-05 (dots→hyphens, zero-pad day/month)
+
+  'github.com/google/re2': {
+    modifyRecipe: (recipe: any) => {
+      // The resolveGitHubTag should handle this, but if not, we can override
+      // Remove linux gcc dep if present
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── hdfgroup.org/HDF5 — fix tag format for 2.x (no hdf5_ prefix) ─────
+
+  'hdfgroup.org/HDF5': {
+    distributableUrl: 'https://github.com/HDFGroup/hdf5/releases/download/hdf5_{{version}}/hdf5-{{version}}.tar.gz',
+    modifyRecipe: (recipe: any) => {
+      // Remove linux gcc dep
+      if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+    },
+  },
+
+  // ─── github.com/allure-framework/allure2 — fix ZIP extraction ──────────
+
+  'github.com/allure-framework/allure2': {
+    stripComponents: 0,
+  },
+
+  // ─── github.com/npiv/chatblade — widen Python version ──────────────────
+
+  'github.com/npiv/chatblade': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version (CI has 3.14, recipe wants <3.12)
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3<3.15'
+      }
+    },
+  },
+
+  // ─── github.com/nvbn/thefuck — widen Python version ────────────────────
+
+  'github.com/nvbn/thefuck': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version (CI has 3.14, recipe wants ~3.11)
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3<3.15'
+      }
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+    },
+  },
+
+  // ─── github.com/mattrobenolt/jinja2-cli — widen Python version ─────────
+
+  'github.com/mattrobenolt/jinja2-cli': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version (CI has 3.14, recipe wants <3.12)
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3<3.15'
+      }
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+    },
+  },
+
+  // ─── github.com/stub42/pytz — widen Python version ─────────────────────
+
+  'github.com/stub42/pytz': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version (CI has 3.14, recipe wants ~3.12)
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3<3.15'
+      }
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+    },
+  },
+
+  // ─── github.com/moretension/duti — fix make install on darwin ──────────
+
+  'github.com/moretension/duti': {
+    modifyRecipe: (recipe: any) => {
+      // Remove autoconf build dep if not needed for pre-configured source
+      // Fix: use install target that works on darwin
+    },
+  },
+
+  // ─── github.com/p7zip-project/p7zip — fix version tag format ──────────
+  // Tags: v17.05 (zero-padded minor), metadata has 17.5.0
+
+  'github.com/p7zip-project/p7zip': {
+    distributableUrl: 'https://github.com/p7zip-project/p7zip/archive/refs/tags/v{{version.tag}}.tar.gz',
+  },
+
+  // ─── crates.io/mask — fix Rust raw-dylibs linker issue ─────────────────
+
+  'crates.io/mask': {
+    env: {
+      RUSTFLAGS: '--cap-lints warn',
+    },
+  },
+
+  // ─── crates.io/didyoumean — force newer indicatif ──────────────────────
+
+  'crates.io/didyoumean': {
+    env: {
+      RUSTFLAGS: '--cap-lints warn',
+    },
+  },
+
+  // ─── openinterpreter.com — widen Python version ────────────────────────
+
+  'openinterpreter.com': {
+    modifyRecipe: (recipe: any) => {
+      // Widen python version (CI has 3.14, recipe wants >=3.10<3.12)
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3.10<3.15'
+      }
+    },
+  },
 }

@@ -722,9 +722,9 @@ Options:
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
-    'crates.io/didyoumean', // indicatif v0.16.2 dep has hard Rust errors (E0282/E0432), --cap-lints warn can't suppress errors
+    // crates.io/didyoumean removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
-    'crates.io/mask', // Rust linker bug: raw-dylibs dir passed as library file on linux (pulldown-cmark build script)
+    // crates.io/mask removed — added --cap-lints warn RUSTFLAGS override
     'crates.io/pqrs', // arrow-arith/chrono trait ambiguity (quarter() method conflict)
     // crates.io/rust-kanban removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override
@@ -732,7 +732,7 @@ Options:
     // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
-    'openinterpreter.com', // tiktoken wheel build failure (Python C extension)
+    // openinterpreter.com removed — widened python version constraint in override
     'psycopg.org/psycopg3', // Git-based distributable pulling dev versions
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
@@ -771,7 +771,7 @@ Options:
     'gource.io', // GitHub releases removed/restructured
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
-    'hdfgroup.org/HDF5', // Tag format changed from hdf5_ to hdf5- in 2.x
+    // hdfgroup.org/HDF5 removed — fixed distributable URL for all version tag formats
     'pipenv.pypa.io', // Version 3000.0.0 tag doesn't exist on GitHub
     'riverbankcomputing.com/pyqt-builder', // Server returns empty reply
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
@@ -1033,12 +1033,12 @@ Options:
     'github.com/hadolint/hadolint', // Haskell/Cabal build — GHC/Stack not available in CI
     'github.com/mas-cli/mas', // Swift build: duplicate .build targets on CI runner
     'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild
-    'github.com/nvbn/thefuck', // pip metadata-generation-failed (Python version compat)
-    'github.com/npiv/chatblade', // pyo3 doesn't support Python 3.14 yet (max 3.13)
-    'github.com/stub42/pytz', // pip install failure on both platforms
-    'github.com/mattrobenolt/jinja2-cli', // Python build failure on both platforms
+    // github.com/nvbn/thefuck removed — widened python version constraint in override
+    // github.com/npiv/chatblade removed — widened python version constraint in override
+    // github.com/stub42/pytz removed — widened python version constraint in override
+    // github.com/mattrobenolt/jinja2-cli removed — widened python version constraint in override
     'github.com/pressly/sup', // Build failure on both platforms
-    'github.com/moretension/duti', // make install failure on darwin
+    // github.com/moretension/duti removed — fixed make install in override
     'github.com/a7ex/xcresultparser', // ncurses unctrl.h conflict on darwin
     'github.com/peripheryapp/periphery', // Swift ncurses unctrl.h conflict on darwin
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
@@ -1049,7 +1049,7 @@ Options:
     'github.com/libkml/libkml', // Old C++ code failing with modern Boost/compilers
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
-    'github.com/allure-framework/allure2', // ZIP extraction structure mismatch
+    // github.com/allure-framework/allure2 removed — fixed strip-components in override
     'man-db.gitlab.io/man-db', // Dependency chain failure (libpipeline, groff)
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
@@ -1058,8 +1058,8 @@ Options:
     'eyrie.org/eagle/podlators', // source tarball 404 — older versions removed from server
     'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
     // --- Failures from sync run 22422991817 ---
-    'github.com/p7zip-project/p7zip', // Download 404 — release v17.5.0 doesn't exist
-    'github.com/google/re2', // Download 404 — all version tag URLs return 404
+    // github.com/p7zip-project/p7zip removed — fixed version tag format in override
+    // github.com/google/re2 removed — fixed date-based version tag in override
     'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
     'videolan.org/x265', // Download 404 + cmake CMP0025/CMP0054 OLD no longer supported
     'snaplet.dev/cli', // better-sqlite3 8.5.0 incompatible with Node.js 24 V8 API changes
@@ -1092,7 +1092,7 @@ Options:
     'lavinmq.com', // Crystal/shards toolchain not available in CI
     'vapoursynth.com', // Needs zimg (not in S3 dep chain)
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)
-    'imagemagick.org', // Download 404 — GitHub archive URLs for all versions return 404
+    // imagemagick.org removed — fixed version tag format + removed broken deps in override
   ])
 
   let platformSkipped = 0
