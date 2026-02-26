@@ -5164,21 +5164,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
-        // Fix: Lua 5.5 header uses LUA_VERSION_MAJOR_N/MINOR_N format which breaks
-        // cmake's FindLua version regex, causing raw #define text in install paths.
-        // Set explicit version vars and install dirs to bypass broken detection.
-        const extraArgs = [
-          '-DLUA_VERSION_MAJOR=5',
-          '-DLUA_VERSION_MINOR=5',
-          '-DLUA_INSTALL_CMOD_DIR=lib/lua/5.5',
-          '-DLUA_INSTALL_LMOD_DIR=lib/lua/5.5',
-        ]
-        for (const arg of extraArgs) {
-          const key = arg.split('=')[0]
-          if (!recipe.build.env.CMAKE_ARGS.some((a: string) => a.startsWith(key))) {
-            recipe.build.env.CMAKE_ARGS.push(arg)
-          }
-        }
+      }
+      // Fix: Lua 5.5 header uses LUA_VERSION_MAJOR_N macro instead of string literals.
+      // luv's CMakeLists.txt reads lua.h with file(STRINGS) regex and gets raw #define
+      // text in the version variables, breaking install paths. Patch CMakeLists.txt to
+      // force-set the correct Lua version after the broken detection block.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script.unshift(
+          'python3 -c "' +
+          "f=open('CMakeLists.txt');c=f.read();f.close();" +
+          "c=c.replace('unset(lua_version_strings)','unset(lua_version_strings)\\n" +
+          'set(LUA_VERSION_MAJOR \\"5\\")\\n' +
+          'set(LUA_VERSION_MINOR \\"5\\")\\n' +
+          'set(LUA_VERSION_PATCH \\"0\\")\\n' +
+          'set(LUA_VERSION_STRING \\"5.5.0\\")');" +
+          "f=open('CMakeLists.txt','w');f.write(c);f.close()" +
+          '"',
+        )
       }
     },
   },
