@@ -3153,17 +3153,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['lua.org']) {
         delete recipe.build.dependencies['lua.org']
       }
-      // Disable SMI in cmake args
+      // Clean up cmake args: remove SMI, broken S3 dep paths for c-ares/lua
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DENABLE_SMI=ON' ? '-DENABLE_SMI=OFF' : a,
+        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS
+          .map((a: string) =>
+            a === '-DENABLE_SMI=ON' ? '-DENABLE_SMI=OFF'
+              : a === '-DENABLE_LUA=ON' ? '-DENABLE_LUA=OFF'
+                : a,
+          )
+          .filter((a: string) =>
+            !a.includes('libsmi')
+            && !a.startsWith('-DCARES_INCLUDE_DIR=')
+            && !a.startsWith('-DLUA_INCLUDE_DIR='),
+          )
+      }
+      // Remove platform-specific LUA_LIBRARY args (template won't resolve without lua dep)
+      if (Array.isArray(recipe.build?.env?.darwin?.CMAKE_ARGS)) {
+        recipe.build.env.darwin.CMAKE_ARGS = recipe.build.env.darwin.CMAKE_ARGS.filter(
+          (a: string) => !a.startsWith('-DLUA_LIBRARY='),
         )
-        // Also remove the SMI include dir arg
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.filter(
-          (a: string) => !a.includes('libsmi'),
+      }
+      if (Array.isArray(recipe.build?.env?.linux?.CMAKE_ARGS)) {
+        recipe.build.env.linux.CMAKE_ARGS = recipe.build.env.linux.CMAKE_ARGS.filter(
+          (a: string) => !a.startsWith('-DLUA_LIBRARY='),
         )
-        // Disable c-ares (S3 binary missing headers, system version too old on linux)
-        recipe.build.env.CMAKE_ARGS.push('-DENABLE_CARES=OFF')
       }
     },
   },
@@ -3208,9 +3221,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Install libass-dev for subtitle rendering
           'sudo apt-get install -y libass-dev 2>/dev/null || true',
-          // Set LD_LIBRARY_PATH so meson can run built mpv binary (step 313/314 mpv --list-protocols)
-          // S3 dep shared libs (e.g. libvpx.so.9) aren't in RPATH at build time
-          'for d in /tmp/buildkit-deps/*/lib /tmp/buildkit-deps/*/*/lib /tmp/buildkit-deps/*/*/*/lib; do [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
+          // Set LD_RUN_PATH so the linker embeds RPATH in the built mpv binary.
+          // meson step 313/314 runs the built binary (mpv --list-protocols) via
+          // "meson --internal exe" which doesn't inherit LD_LIBRARY_PATH reliably.
+          // LD_RUN_PATH makes the binary self-sufficient at runtime.
+          'for d in $(find /tmp/buildkit-deps -type d -name lib 2>/dev/null); do export LD_RUN_PATH="$d:${LD_RUN_PATH:-}"; done',
         ],
       },
     },
