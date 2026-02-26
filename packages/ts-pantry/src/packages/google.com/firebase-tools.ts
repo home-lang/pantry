@@ -3,7 +3,7 @@
  *
  * @domain `google.com/firebase-tools`
  * @programs `firebase`
- * @version `15.7.0` (139 versions available)
+ * @version `15.8.0` (140 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install google.com/firebase-tools`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "firebase"
  * console.log(pkg.description) // "The Firebase Command Line Tools"
  * console.log(pkg.programs)    // ["firebase"]
- * console.log(pkg.versions[0]) // "15.7.0" (latest)
+ * console.log(pkg.versions[0]) // "15.8.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/google-com/firebase-tools.md
@@ -75,6 +75,7 @@ export const googlecomfirebasetoolsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '15.8.0',
     '15.7.0',
     '15.6.0',
     '15.5.1',
