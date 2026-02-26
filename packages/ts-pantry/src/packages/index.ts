@@ -721,6 +721,7 @@ import { gomodupgradePackage } from './github.com/oligot/go-mod-upgrade'
 import { onetbbPackage } from './github.com/oneapi-src/oneTBB'
 import { textgenerationwebuiPackage } from './github.com/oobabooga/text-generation-webui'
 import { jsoncppPackage } from './github.com/open-source-parsers/jsoncpp'
+import { openclawPackage } from './github.com/openclaw/openclaw'
 import { arpackngPackage } from './github.com/opencollab/arpack-ng'
 import { p7zipPackage } from './github.com/p7zip-project/p7zip'
 import { libfyamlPackage } from './github.com/pantoniou/libfyaml'
@@ -2952,6 +2953,8 @@ export interface Pantry {
   githubcomoobabooga: typeof textgenerationwebuiPackage
 
   githubcomopensourceparsers: typeof jsoncppPackage
+
+  githubcomopenclaw: typeof openclawPackage
   arpack_ng: typeof arpackngPackage
   githubcomopencollab: typeof arpackngPackage
 
@@ -5659,6 +5662,7 @@ export interface Pantry {
   libccd: typeof libccdPackage
   awslogs: typeof awslogsPackage
   libass: typeof libassPackage
+  openclaw: typeof openclawPackage
   rswift: typeof rswiftPackage
   license: typeof licensePackage
   libatomic_ops: typeof libatomic_opsPackage
@@ -7309,6 +7313,8 @@ export const pantry: Pantry = {
   githubcomoobabooga: textgenerationwebuiPackage,
 
   githubcomopensourceparsers: jsoncppPackage,
+
+  githubcomopenclaw: openclawPackage,
   arpack_ng: arpackngPackage,
   githubcomopencollab: arpackngPackage,
 
@@ -10016,6 +10022,7 @@ export const pantry: Pantry = {
   libccd: libccdPackage,
   awslogs: awslogsPackage,
   libass: libassPackage,
+  openclaw: openclawPackage,
   rswift: rswiftPackage,
   license: licensePackage,
   libatomic_ops: libatomic_opsPackage,

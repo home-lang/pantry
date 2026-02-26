@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 113 versions</summary>
+<summary>Show all 114 versions</summary>
 
+- `2.93.0`
 - `2.92.0`
 - `2.91.0`
 - `2.90.0`
@@ -84,13 +85,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.92.0`
+**Latest Version**: `2.93.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +jfrog.com/jfrog-cli@2.92.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +jfrog.com/jfrog-cli@2.93.0 -- $SHELL -i
 ```
 
 ## Usage Examples

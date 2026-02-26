@@ -954,6 +954,7 @@ export const aliases: Record<string, string> = {
   'openblas': 'openblas.net',
   'opencanaryd': 'github.com/thinkst/opencanary',
   'opencl-headers': 'khronos.org/opencl-headers',
+  'openclaw': 'github.com/openclaw/openclaw',
   'opencore-amr.sourceforge': 'opencore-amr.sourceforge.io',
   'opendap': 'opendap.org',
   'openjdk': 'openjdk.org',
