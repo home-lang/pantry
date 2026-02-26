@@ -2810,8 +2810,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install leptonica from Homebrew for tesseract dependency
           'brew install leptonica 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix leptonica)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          // Rename ./version file that conflicts with C++20 <version> header
-          'mv ./version ./version.bak 2>/dev/null || true',
         ],
       },
     },
@@ -2845,6 +2843,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
           return true
         })
+        // On darwin: rename ./version AFTER configure but BEFORE make to avoid
+        // C++20 <version> header shadowing by the local ./version file.
+        // The ./version file is read by autogen.sh/configure for libtool version info,
+        // so it must exist during those steps.
+        const configureIdx = recipe.build.script.findIndex((step: any) =>
+          typeof step === 'string' && step.includes('./configure'),
+        )
+        if (configureIdx >= 0 && configureIdx < recipe.build.script.length - 1) {
+          recipe.build.script.splice(configureIdx + 1, 0,
+            'mv ./version ./version.bak 2>/dev/null || true',
+          )
+        }
       }
     },
   },

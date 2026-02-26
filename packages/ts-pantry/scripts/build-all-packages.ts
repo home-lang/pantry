@@ -651,6 +651,7 @@ Options:
     // gstreamer.freedesktop.org/orc — fixed: fallback to python3 -m mesonbuild on darwin
     'gnome.org/glib-networking', // GNOME networking, glib dep chain fails on darwin
     'pagure.io/xmlto', // xmlto uses BSD getopt on macOS which lacks long options support
+    'freedesktop.org/dbus', // gio-unix-2.0 pkg-config chain fails on darwin (S3 pkg-config vs Homebrew glib)
     'swagger.io/swagger-codegen', // Maven/Java build, install -D flag incompatible with macOS
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
