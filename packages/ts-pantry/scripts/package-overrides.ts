@@ -1751,11 +1751,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Xcode 26 SDK conflicts with ZMEM (custom memset/memcpy/memcmp impls).
-          // unix/configure auto-detects and enables -DZMEM, which causes K&R-style
-          // function definitions in fileio.c to conflict with SDK checked builtins.
-          // Fix: strip all ZMEM references from configure to prevent detection.
+          // Xcode 26 SDK conflicts with ZMEM (custom memset/memcpy/memcmp impls)
+          // AND its C23 mode treats implicit function declarations as errors, which
+          // breaks all of unix/configure's function detection tests (they set NO_DIR,
+          // NO_STRCHR etc. incorrectly). Fix both:
+          // 1. Strip ZMEM detection from configure
           "sed -i.bak '/ZMEM/d' unix/configure",
+          // 2. Create a cc wrapper that suppresses C23 strictness for this 2008 codebase
+          'mkdir -p "${TMPDIR:-/tmp}/_zip_cc"',
+          'printf \'#!/bin/sh\\nexec /usr/bin/cc -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types "$@"\\n\' > "${TMPDIR:-/tmp}/_zip_cc/cc"',
+          'chmod +x "${TMPDIR:-/tmp}/_zip_cc/cc"',
+          'export PATH="${TMPDIR:-/tmp}/_zip_cc:$PATH"',
         ],
       },
     },
