@@ -1581,9 +1581,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         prependScript: [
-          // Fix npm ENOENT _cacache/tmp by cleaning npm cache and using fresh temp dir
-          'npm cache clean --force 2>/dev/null || true',
+          // Fix npm ENOENT _cacache/tmp by setting TMPDIR to a proper temp dir
+          // and ensuring npm cache is in a known-good location
+          'export TMPDIR=$(mktemp -d)',
           'export npm_config_cache=$(mktemp -d)',
+          'export npm_config_tmp=$(mktemp -d)',
         ],
       },
     },
@@ -2920,6 +2922,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── poppler.freedesktop.org — disable gobject-introspection ─────────
 
   'poppler.freedesktop.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install libnss3-dev for PDF signing support (required by cmake)
+          'sudo apt-get install -y libnss3-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
@@ -2935,14 +2945,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}"' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Disable glib/gobject and optional crypto deps in cmake args
+      // Disable glib/gobject and optional GPGME in cmake args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('-DENABLE_GLIB=OFF')) {
           recipe.build.env.ARGS.push('-DENABLE_GLIB=OFF')
-        }
-        // Disable NSS3 and GPGME (not in S3, optional for poppler)
-        if (!recipe.build.env.ARGS.includes('-DWITH_NSS3=OFF')) {
-          recipe.build.env.ARGS.push('-DWITH_NSS3=OFF')
         }
         if (!recipe.build.env.ARGS.includes('-DENABLE_GPGME=OFF')) {
           recipe.build.env.ARGS.push('-DENABLE_GPGME=OFF')
@@ -5013,13 +5019,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'mypy-lang.org': {
     prependScript: [
-      // Ensure setuptools is available for build; pin pathspec<0.12 (0.12+ removed GitWildMatchPatternError export)
-      'python3 -m pip install --break-system-packages setuptools "pathspec<0.12" 2>/dev/null || true',
+      // Ensure setuptools is available for build
+      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       // Widen python version constraint — current CI has 3.14
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+      // Inject pathspec<0.12 install into venv BEFORE pip install mypy
+      // (pathspec>=0.12 removed GitWildMatchPatternError export which mypy references)
+      if (Array.isArray(recipe.build?.script)) {
+        const pipIdx = recipe.build.script.findIndex((s: any) =>
+          (typeof s === 'string' && s.includes('pip install .'))
+          || (typeof s === 'object' && s.run && typeof s.run === 'string' && s.run.includes('pip install .')),
+        )
+        if (pipIdx > 0) {
+          recipe.build.script.splice(pipIdx, 0, '${prefix}/venv/bin/pip install "pathspec<0.12"')
+        }
       }
     },
   },
