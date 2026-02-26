@@ -3118,16 +3118,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Install c-ares from Homebrew (S3 binary missing headers)
-          'brew install c-ares 2>/dev/null || true',
-          'export PKG_CONFIG_PATH="$(brew --prefix c-ares)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          'export CMAKE_PREFIX_PATH="$(brew --prefix c-ares):${CMAKE_PREFIX_PATH:-}"',
+          // Install c-ares, gnutls, libgcrypt from Homebrew (use system libs instead of S3)
+          'brew install c-ares gnutls libgcrypt 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix c-ares)/lib/pkgconfig:$(brew --prefix gnutls)/lib/pkgconfig:$(brew --prefix libgcrypt)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export CMAKE_PREFIX_PATH="$(brew --prefix c-ares):$(brew --prefix gnutls):$(brew --prefix libgcrypt):${CMAKE_PREFIX_PATH:-}"',
         ],
       },
       linux: {
         prependScript: [
-          // Ensure c-ares dev headers are available (S3 binary missing headers)
-          'sudo apt-get install -y libc-ares-dev 2>/dev/null || true',
+          // Use system c-ares, gnutls, libgcrypt (S3 gnutls has ABI mismatch:
+          // references NETTLE_8/HOGWEED_6 symbols not in system nettle)
+          'sudo apt-get install -y libc-ares-dev libgnutls28-dev libgcrypt20-dev 2>/dev/null || true',
         ],
       },
     },
@@ -3138,22 +3139,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Remove ibr.cs.tu-bs.de/libsmi dep (not in S3, optional)
-      if (recipe.dependencies?.['ibr.cs.tu-bs.de/libsmi']) {
-        delete recipe.dependencies['ibr.cs.tu-bs.de/libsmi']
-      }
-      // Remove c-ares.org dep (S3 binary missing headers, use Homebrew/apt instead)
-      if (recipe.dependencies?.['c-ares.org']) {
-        delete recipe.dependencies['c-ares.org']
-      }
-      // Remove lua.org dep (S3 lua 5.5.0 has breaking API change for lua_newstate)
-      if (recipe.dependencies?.['lua.org']) {
-        delete recipe.dependencies['lua.org']
-      }
-      if (recipe.build?.dependencies?.['lua.org']) {
-        delete recipe.build.dependencies['lua.org']
-      }
-      // Clean up cmake args: remove SMI, broken S3 dep paths for c-ares/lua
+      // Remove deps that use S3 binaries with ABI/header issues — use brew/apt instead
+      if (recipe.dependencies?.['ibr.cs.tu-bs.de/libsmi']) delete recipe.dependencies['ibr.cs.tu-bs.de/libsmi']
+      if (recipe.dependencies?.['c-ares.org']) delete recipe.dependencies['c-ares.org']
+      if (recipe.dependencies?.['lua.org']) delete recipe.dependencies['lua.org']
+      if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
+      if (recipe.dependencies?.['gnupg.org/libgcrypt']) delete recipe.dependencies['gnupg.org/libgcrypt']
+      if (recipe.dependencies?.['gnupg.org/libgpg-error']) delete recipe.dependencies['gnupg.org/libgpg-error']
+      if (recipe.build?.dependencies?.['lua.org']) delete recipe.build.dependencies['lua.org']
+      // Clean up cmake args: disable optional features and remove template-based
+      // include/lib paths whose deps are removed (templates would go unresolved)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS
           .map((a: string) =>
@@ -3164,7 +3159,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           .filter((a: string) =>
             !a.includes('libsmi')
             && !a.startsWith('-DCARES_INCLUDE_DIR=')
-            && !a.startsWith('-DLUA_INCLUDE_DIR='),
+            && !a.startsWith('-DLUA_INCLUDE_DIR=')
+            && !a.startsWith('-DGCRYPT_INCLUDE_DIR=')
+            && !a.startsWith('-DGNUTLS_INCLUDE_DIR='),
           )
       }
       // Remove platform-specific LUA_LIBRARY args (template won't resolve without lua dep)
@@ -3219,13 +3216,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       linux: {
         prependScript: [
-          // Install libass-dev for subtitle rendering
-          'sudo apt-get install -y libass-dev 2>/dev/null || true',
-          // Set LD_RUN_PATH so the linker embeds RPATH in the built mpv binary.
-          // meson step 313/314 runs the built binary (mpv --list-protocols) via
-          // "meson --internal exe" which doesn't inherit LD_LIBRARY_PATH reliably.
-          // LD_RUN_PATH makes the binary self-sufficient at runtime.
-          'for d in $(find /tmp/buildkit-deps -type d -name lib 2>/dev/null); do export LD_RUN_PATH="$d:${LD_RUN_PATH:-}"; done',
+          // Install libass-dev for subtitle rendering + libvpx-dev so libvpx.so.9
+          // is in /usr/lib/x86_64-linux-gnu/ (system linker path). meson's
+          // "meson --internal exe" step runs the built binary and doesn't reliably
+          // inherit LD_LIBRARY_PATH, and meson overrides LD_RUN_PATH with its own -rpath.
+          'sudo apt-get install -y libass-dev libvpx-dev 2>/dev/null || true',
         ],
       },
     },
