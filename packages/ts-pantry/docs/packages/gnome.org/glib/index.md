@@ -38,9 +38,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 57 versions</summary>
+<summary>Show all 58 versions</summary>
 
-- `2.87.2`, `2.87.1`, `2.87.0`
+- `2.87.3`, `2.87.2`, `2.87.1`, `2.87.0`
 - `2.86.4`, `2.86.3`, `2.86.2`, `2.86.1`, `2.86.0`
 - `2.85.4`, `2.85.3`, `2.85.2`, `2.85.1`, `2.85.0`
 - `2.84.4`, `2.84.3`, `2.84.2`, `2.84.1`, `2.84.0`
@@ -56,13 +56,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.87.2`
+**Latest Version**: `2.87.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnome.org/glib@2.87.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnome.org/glib@2.87.3 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 49 versions</summary>
+<summary>Show all 50 versions</summary>
 
-- `3.15.0`
+- `3.15.1`, `3.15.0`
 - `3.14.1`, `3.14.0`
 - `3.13.1`, `3.13.0`
 - `3.12.2`, `3.12.1`, `3.12.0`
@@ -56,13 +56,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.15.0`
+**Latest Version**: `3.15.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +bytebase.com@3.15.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +bytebase.com@3.15.1 -- $SHELL -i
 ```
 
 ## Dependencies
