@@ -3,7 +3,7 @@
  *
  * @domain `darwinsys.com/file`
  * @programs `file`
- * @version `5.46.0` (3 versions available)
+ * @version `5.47.0` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install darwinsys.com/file`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "file"
  * console.log(pkg.description) // "Read-only mirror of file CVS repository, update..."
  * console.log(pkg.programs)    // ["file"]
- * console.log(pkg.versions[0]) // "5.46.0" (latest)
+ * console.log(pkg.versions[0]) // "5.47.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/darwinsys-com/file.md
@@ -75,6 +75,7 @@ export const darwinsyscomfilePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.47.0',
     '5.46.0',
     '5.45.0',
     '5.43.0',
