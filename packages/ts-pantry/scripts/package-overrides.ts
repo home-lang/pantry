@@ -740,16 +740,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'crates.io/sd': {
     modifyRecipe: (recipe: any) => {
       // The repo root has a virtual workspace manifest. cargo install --path .
-      // doesn't work — use -p sd-cli to install from workspace.
+      // doesn't work — use --path sd-cli to install from the sd-cli workspace member.
       // Handle script as string (YAML scalar) or array
       if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--path .')) {
-        recipe.build.script = recipe.build.script.replace('--locked --path .', '--locked -p sd-cli')
+        recipe.build.script = recipe.build.script.replace('--path .', '--path sd-cli')
       }
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('cargo install') && step.includes('--path .')) {
-            recipe.build.script[i] = step.replace('--locked --path .', '--locked -p sd-cli')
+            recipe.build.script[i] = step.replace('--path .', '--path sd-cli')
           }
         }
       }
@@ -1157,7 +1157,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'brew install glib 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix glib)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export LDFLAGS="-L$(brew --prefix glib)/lib ${LDFLAGS:-}"',
-          'export CPPFLAGS="-I$(brew --prefix glib)/include ${CPPFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix glib)/include -I$(brew --prefix glib)/include/glib-2.0 -I$(brew --prefix glib)/lib/glib-2.0/include ${CPPFLAGS:-}"',
         ],
       },
     },
@@ -1615,11 +1615,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
-          // Install libidn2 and libunistring from Homebrew
-          'brew install libidn2 libunistring 2>/dev/null || true',
+          // Install libidn2, libunistring, and libiconv (keg-only) from Homebrew
+          'brew install libidn2 libunistring libiconv 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix libidn2)/lib/pkgconfig:$(brew --prefix libunistring)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          'export LDFLAGS="-L$(brew --prefix libidn2)/lib -L$(brew --prefix libunistring)/lib ${LDFLAGS:-}"',
-          'export CPPFLAGS="-I$(brew --prefix libidn2)/include -I$(brew --prefix libunistring)/include ${CPPFLAGS:-}"',
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib -L$(brew --prefix libidn2)/lib -L$(brew --prefix libunistring)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include -I$(brew --prefix libidn2)/include -I$(brew --prefix libunistring)/include ${CPPFLAGS:-}"',
         ],
       },
     },
@@ -2810,6 +2810,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install leptonica from Homebrew for tesseract dependency
           'brew install leptonica 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix leptonica)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          // Rename ./version file that conflicts with C++20 <version> header
+          'mv ./version ./version.bak 2>/dev/null || true',
         ],
       },
     },
@@ -3427,6 +3429,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Ensure AR and RANLIB point to system tools (LLVM ar at /tools/llvm/bin may not exist)
           'export AR="$(command -v ar)"',
           'export RANLIB="$(command -v ranlib)"',
+          // Install lcms2 dev headers for pillow's lcms support
+          'sudo apt-get install -y liblcms2-dev 2>/dev/null || true',
         ],
       },
     },
@@ -3434,6 +3438,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove x.org/xcb dep (not in S3)
       if (recipe.dependencies?.['x.org/xcb']) {
         delete recipe.dependencies['x.org/xcb']
+      }
+      // Remove littlecms.com dep (use system lcms2 instead)
+      if (recipe.dependencies?.['littlecms.com']) {
+        delete recipe.dependencies['littlecms.com']
       }
       // Remove xcb from pip install args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
@@ -3481,7 +3489,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
               if (hasGoreleaser) {
                 // Replace entire goreleaser-based build with direct go build
                 step.run = [
-                  'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\' ./cmd',
+                  'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\' .',
                 ]
               }
               // Also fix rm -rf
@@ -5427,8 +5435,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
-          'brew install minizip 2>/dev/null || true',
+          'brew install minizip libiconv 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix minizip)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          // Link against Homebrew libiconv (keg-only) for GNU _libiconv symbols
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
         ],
       },
     },
