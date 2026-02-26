@@ -3,7 +3,7 @@
  *
  * @domain `microsoft.com/dxc`
  * @programs `dxc`, `dxv`, `dxa`, `dxr`, `dxl`
- * @version `1.8.2505.1` (9 versions available)
+ * @version `1.9.2602` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install microsoft.com/dxc`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "dxc"
  * console.log(pkg.description) // "This repo hosts the source for the DirectX Shad..."
  * console.log(pkg.programs)    // ["dxc", "dxv", ...]
- * console.log(pkg.versions[0]) // "1.8.2505.1" (latest)
+ * console.log(pkg.versions[0]) // "1.9.2602" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/microsoft-com/dxc.md
@@ -79,6 +79,7 @@ export const microsoftcomdxcPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.9.2602',
     '1.8.2505.1',
     '1.8.2505',
     '1.8.2502',

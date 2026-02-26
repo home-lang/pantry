@@ -29,20 +29,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
+- `1.9.2602`
 - `1.8.2505.1`, `1.8.2505`, `1.8.2502`, `1.8.2407`, `1.8.2405`, `1.8.2403.2`, `1.8.2403.1`, `1.8.2403`
 - `1.7.2308`
 
 </details>
 
-**Latest Version**: `1.8.2505.1`
+**Latest Version**: `1.9.2602`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +microsoft.com/dxc@1.8.2505.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +microsoft.com/dxc@1.9.2602 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
+- `0.31.0`
 - `0.30.2`, `0.30.1`, `0.30.0`
 - `0.29.1`, `0.29.0`
 - `0.28.2`, `0.28.1`, `0.28.0`
@@ -37,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.30.2`
+**Latest Version**: `0.31.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pkl-lang.org@0.30.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pkl-lang.org@0.31.0 -- $SHELL -i
 ```
 
 ## Usage Examples
