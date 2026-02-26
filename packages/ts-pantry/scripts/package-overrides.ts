@@ -740,7 +740,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'crates.io/sd': {
     modifyRecipe: (recipe: any) => {
       // The repo root has a virtual workspace manifest. cargo install --path .
-      // doesn't work — need to point to the actual package member directory.
+      // doesn't work — use -p sd-cli to install from workspace.
+      // Handle script as string (YAML scalar) or array
+      if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--path .')) {
+        recipe.build.script = recipe.build.script.replace('--locked --path .', '--locked -p sd-cli')
+      }
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -1149,9 +1153,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Install glib/gio from Homebrew for gio-unix-2.0 dependency
+          // Install glib/gio from Homebrew for gio-unix-2.0 dependency (keg-only)
           'brew install glib 2>/dev/null || true',
-          'export PKG_CONFIG_PATH="$(brew --prefix glib)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export PKG_CONFIG_PATH="$(brew --prefix glib)/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix glib)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix glib)/include ${CPPFLAGS:-}"',
         ],
       },
     },
@@ -2799,6 +2805,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'sudo apt-get install -y libleptonica-dev liblept5 2>/dev/null || sudo apt-get install -y libleptonica-dev 2>/dev/null || true',
         ],
       },
+      darwin: {
+        prependScript: [
+          // Install leptonica from Homebrew for tesseract dependency
+          'brew install leptonica 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix leptonica)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
     },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix and --datarootdir args: remove extra quotes
@@ -2810,6 +2823,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove leptonica.org dep (not in S3) — use system leptonica
       if (recipe.dependencies?.['leptonica.org']) {
         delete recipe.dependencies['leptonica.org']
+      }
+      // Remove unicode.org and cairographics.org deps (use system)
+      if (recipe.dependencies?.['unicode.org']) delete recipe.dependencies['unicode.org']
+      if (recipe.dependencies?.['cairographics.org']) delete recipe.dependencies['cairographics.org']
+      if (recipe.dependencies?.['gnome.org/pango']) delete recipe.dependencies['gnome.org/pango']
+      // Strip the post-build wget steps for trained data (wget URL may be empty if $res vars aren't set)
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: any) => {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('wget') && step.run.includes('traineddata')) {
+            return false
+          }
+          if (typeof step === 'object' && step.run && Array.isArray(step.run)) {
+            const hasWget = step.run.some((s: string) =>
+              typeof s === 'string' && s.includes('wget') && s.includes('traineddata'),
+            )
+            if (hasWget) return false
+          }
+          return true
+        })
       }
     },
   },
@@ -3434,20 +3467,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['goreleaser.com']) {
         delete recipe.build.dependencies['goreleaser.com']
       }
-      // Fix: replace `rm -r props` with `rm -rf props` (dir may not exist in newer versions)
-      // The script step is an object with `run` as an ARRAY of commands
+      // Replace goreleaser-based build step (>=4.11.1) with direct go build
+      // Also fix rm -r props → rm -rf props
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'string' && step.includes('rm -r props')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace('rm -r props', 'rm -rf props')
-          } else if (typeof step === 'object' && step.run) {
-            // Handle run as string
-            if (typeof step.run === 'string' && step.run.includes('rm -r props')) {
-              step.run = step.run.replace('rm -r props', 'rm -rf props')
-            }
-            // Handle run as array of strings
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run) {
+            // Handle run as array: replace goreleaser step with go build
             if (Array.isArray(step.run)) {
+              const hasGoreleaser = step.run.some((s: string) =>
+                typeof s === 'string' && s.includes('goreleaser'),
+              )
+              if (hasGoreleaser) {
+                // Replace entire goreleaser-based build with direct go build
+                step.run = [
+                  'go build -ldflags="$GO_LDFLAGS" -o \'{{prefix}}/bin/kubebuilder\' ./cmd',
+                ]
+              }
+              // Also fix rm -rf
               for (let j = 0; j < step.run.length; j++) {
                 if (typeof step.run[j] === 'string' && step.run[j].includes('rm -r props')) {
                   step.run[j] = step.run[j].replace('rm -r props', 'rm -rf props')

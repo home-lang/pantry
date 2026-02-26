@@ -1056,6 +1056,13 @@ Options:
     'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
+    'modal.com', // grpcio-tools 1.59.2 fails to compile with current Python/compilers
+    'rucio.cern.ch/rucio-client', // Python build module chain failure — empty pip install
+    'mypy-lang.org', // pathspec API incompatible — GitWildMatchPatternError not exported
+    'tcl-lang.org', // System Tcl 8.x version conflict with newly built Tcl 9
+    'github.com/luvit/luv', // CMake Lua version detection bug — #define headers leak into install path
+    'musepack.net', // Duplicate symbol Res_bit in libmpcdec (library internal issue)
+    'tcl-lang.org/expect', // SourceForge download mirror unreachable
   ])
 
   let platformSkipped = 0
