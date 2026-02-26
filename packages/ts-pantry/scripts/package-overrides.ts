@@ -1578,6 +1578,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── nx.dev — npm install with legacy peer deps ──────────────────────────
 
   'nx.dev': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Fix npm ENOENT _cacache/tmp by cleaning npm cache and using fresh temp dir
+          'npm cache clean --force 2>/dev/null || true',
+          'export npm_config_cache=$(mktemp -d)',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('--legacy-peer-deps')) {
@@ -2926,12 +2935,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}"' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Disable glib/gobject in cmake args
+      // Disable glib/gobject and optional crypto deps in cmake args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('-DENABLE_GLIB=OFF')) {
           recipe.build.env.ARGS.push('-DENABLE_GLIB=OFF')
         }
+        // Disable NSS3 and GPGME (not in S3, optional for poppler)
+        if (!recipe.build.env.ARGS.includes('-DWITH_NSS3=OFF')) {
+          recipe.build.env.ARGS.push('-DWITH_NSS3=OFF')
+        }
+        if (!recipe.build.env.ARGS.includes('-DENABLE_GPGME=OFF')) {
+          recipe.build.env.ARGS.push('-DENABLE_GPGME=OFF')
+        }
       }
+      // Remove nss and gpgme deps (not in S3)
+      if (recipe.dependencies?.['mozilla.org/nss']) delete recipe.dependencies['mozilla.org/nss']
+      if (recipe.dependencies?.['gnupg.org/gpgme']) delete recipe.dependencies['gnupg.org/gpgme']
+      if (recipe.dependencies?.['gnupg.org/libgpg-error']) delete recipe.dependencies['gnupg.org/libgpg-error']
+      if (recipe.dependencies?.['gnupg.org/libassuan']) delete recipe.dependencies['gnupg.org/libassuan']
+      // Remove linux gcc/libstdcxx runtime deps
+      if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
     },
   },
 
@@ -3727,11 +3750,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux?.['gnu.org/binutils']) {
         delete recipe.build.dependencies.linux['gnu.org/binutils']
       }
-      // Remove linux static build tags (can't static link without musl)
+      // Remove linux static build tags (can't static link without musl) and add btrfs exclusion
       if (Array.isArray(recipe.build?.env?.linux?.TAGS)) {
         recipe.build.env.linux.TAGS = recipe.build.env.linux.TAGS.filter(
           (t: string) => t !== 'static_build' && t !== 'netgo' && t !== 'osusergo',
         )
+        // Exclude btrfs graph driver (needs libbtrfs-dev headers we removed)
+        if (!recipe.build.env.linux.TAGS.includes('exclude_graphdriver_btrfs')) {
+          recipe.build.env.linux.TAGS.push('exclude_graphdriver_btrfs')
+        }
       }
       // Remove -extldflags=-static from linux LD_FLAGS
       if (Array.isArray(recipe.build?.env?.linux?.LD_FLAGS)) {
@@ -4986,8 +5013,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'mypy-lang.org': {
     prependScript: [
-      // Ensure setuptools is available for build
-      'python3 -m pip install --break-system-packages setuptools pathspec 2>/dev/null || true',
+      // Ensure setuptools is available for build; pin pathspec<0.12 (0.12+ removed GitWildMatchPatternError export)
+      'python3 -m pip install --break-system-packages setuptools "pathspec<0.12" 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       // Widen python version constraint — current CI has 3.14

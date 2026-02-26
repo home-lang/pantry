@@ -1065,12 +1065,12 @@ Options:
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
     'opensearch.org', // Requires Java 21+ but CI provides older Java
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
-    'nx.dev', // npm ENOENT: _cacache/tmp path not found during npm install
+    // nx.dev removed — fixed npm cache ENOENT by cleaning cache and using fresh temp dir in override
     'gnu.org/texinfo', // cc wrapper + libtool interaction causes shell syntax error in gnulib
     'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
     'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
     'sourceforge.net/xmlstar', // Incompatible with libxml2 2.15 API (callback signature changes)
-    'werf.io', // Needs libbtrfs-dev headers (removed btrfs-progs dep but still references btrfs API)
+    // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
     'opendap.org', // configure cannot determine DODS XDR integer sizes
@@ -1079,13 +1079,13 @@ Options:
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
     'modal.com', // grpcio-tools 1.59.2 fails to compile with current Python/compilers
     'rucio.cern.ch/rucio-client', // Python build module chain failure — empty pip install
-    'mypy-lang.org', // pathspec API incompatible — GitWildMatchPatternError not exported
+    // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
     'tcl-lang.org', // System Tcl 8.x version conflict with newly built Tcl 9
     'github.com/luvit/luv', // CMake Lua version detection bug — #define headers leak into install path
     'musepack.net', // Duplicate symbol Res_bit in libmpcdec (library internal issue)
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
     // --- Failures from verification builds (2026-02-26) ---
-    'poppler.freedesktop.org', // Download 404 for latest versions + missing Gpgmepp/NSS3 deps
+    // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
     'freedesktop.org/appstream', // Needs libfyaml (not in S3 or system packages)
     'unidata.ucar.edu/netcdf', // Needs HDF5 libraries (complex dep chain not in S3)
     'lavinmq.com', // Crystal/shards toolchain not available in CI
