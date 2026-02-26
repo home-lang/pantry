@@ -57,11 +57,14 @@ function fixMachoRpaths(prefix: string): void {
   console.log('  Fixing Mach-O rpaths...')
 
   const dirs = ['bin', 'sbin', 'lib', 'libexec'].filter(d => existsSync(join(prefix, d)))
+  console.log(`  Scanning dirs: ${dirs.join(', ')} under ${prefix}`)
 
   for (const dir of dirs) {
     const dirPath = join(prefix, dir)
     walkFiles(dirPath, (filePath) => {
-      if (!isMachO(filePath)) return
+      const macho = isMachO(filePath)
+      if (!macho) return
+      console.log(`  Processing Mach-O: ${filePath}`)
 
       try {
         // Get full load commands
@@ -102,8 +105,10 @@ function fixMachoRpaths(prefix: string): void {
 
         // Fix references to OTHER libraries that have build-path install_names
         // (brewkit's fix-machos.rb does this — critical for proper relocation)
+        // Also bundle dep libraries from build paths into this package's lib/
         const depOutput = execSync(`otool -L "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
         const depLines = depOutput.trim().split('\n').slice(1) // skip first line (filename)
+        const libDir = join(prefix, 'lib')
         for (const depLine of depLines) {
           const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
           if (!depMatch) continue
@@ -111,6 +116,25 @@ function fixMachoRpaths(prefix: string): void {
           if (depPath.startsWith('/tmp') || depPath.includes('+brewing') || depPath.includes('buildkit')) {
             const depName = basename(depPath)
             const newDepPath = `@rpath/${depName}`
+            console.log(`    Fixing build-path ref: ${depPath} → ${newDepPath}`)
+
+            // Bundle the dependency library into our lib/ if it exists on disk
+            // This makes the package self-contained (dep libraries from /tmp/buildkit-install-*)
+            const destPath = join(libDir, depName)
+            if (!existsSync(destPath) && existsSync(depPath)) {
+              try {
+                mkdirSync(libDir, { recursive: true })
+                execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+                execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+                execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+                try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may already exist */ }
+                // Recursively fix build-path refs in the copied library
+                bundleBuildDeps(destPath, prefix)
+                try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+                console.log(`    Bundled dep: ${depName}`)
+              } catch { /* could not copy, skip */ }
+            }
+
             try {
               execSync(`install_name_tool -change "${depPath}" "${newDepPath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
             } catch { /* ignore */ }
@@ -310,6 +334,37 @@ function consolidateLib64(prefix: string): void {
   symlinkSync('lib', lib64)
 }
 
+// Recursively bundle build-path dependency libraries into the package's lib/.
+// When a copied library references other /tmp/buildkit-* paths, copy those too.
+function bundleBuildDeps(filePath: string, prefix: string): void {
+  const libDir = join(prefix, 'lib')
+  try {
+    const depOutput = execSync(`otool -L "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
+    const depLines = depOutput.trim().split('\n').slice(1)
+    for (const depLine of depLines) {
+      const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
+      if (!depMatch) continue
+      const depPath = depMatch[1].trim()
+      if (!(depPath.startsWith('/tmp') || depPath.includes('+brewing') || depPath.includes('buildkit'))) continue
+      const depName = basename(depPath)
+      const destPath = join(libDir, depName)
+      if (!existsSync(destPath) && existsSync(depPath)) {
+        try {
+          execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may already exist */ }
+          bundleBuildDeps(destPath, prefix)
+          try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+        } catch { /* skip */ }
+      }
+      try {
+        execSync(`install_name_tool -change "${depPath}" "@rpath/${depName}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+      } catch { /* ignore */ }
+    }
+  } catch { /* otool failed, skip */ }
+}
+
 // Bundle Homebrew dylibs into the package's lib/ directory for self-containment.
 // When a binary references /opt/homebrew/opt/<name>/lib/<name>.dylib, we copy
 // the dylib into prefix/lib/ and rewrite the reference to @rpath/libname.dylib.
@@ -321,6 +376,7 @@ function bundleHomebrewDylibs(filePath: string, prefix: string): void {
     const depOutput = execSync(`otool -L "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
     const depLines = depOutput.trim().split('\n').slice(1)
 
+    let homebrewCount = 0
     for (const depLine of depLines) {
       const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
       if (!depMatch) continue
@@ -328,6 +384,8 @@ function bundleHomebrewDylibs(filePath: string, prefix: string): void {
 
       // Only handle Homebrew paths
       if (!depPath.startsWith('/opt/homebrew/')) continue
+      homebrewCount++
+      console.log(`    Bundling Homebrew dylib: ${depPath}`)
 
       const depName = basename(depPath)
       const destPath = join(libDir, depName)
