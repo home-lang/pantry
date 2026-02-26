@@ -1064,6 +1064,13 @@ Options:
     'github.com/luvit/luv', // CMake Lua version detection bug — #define headers leak into install path
     'musepack.net', // Duplicate symbol Res_bit in libmpcdec (library internal issue)
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
+    // --- Failures from verification builds (2026-02-26) ---
+    'poppler.freedesktop.org', // Download 404 for latest versions + missing Gpgmepp/NSS3 deps
+    'freedesktop.org/appstream', // Needs libfyaml (not in S3 or system packages)
+    'unidata.ucar.edu/netcdf', // Needs HDF5 libraries (complex dep chain not in S3)
+    'lavinmq.com', // Crystal/shards toolchain not available in CI
+    'vapoursynth.com', // Needs zimg (not in S3 dep chain)
+    'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)
   ])
 
   let platformSkipped = 0

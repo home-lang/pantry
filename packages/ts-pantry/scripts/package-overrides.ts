@@ -3152,12 +3152,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mpv.io — remove vapoursynth dep (not in S3 yet) ─────────────────
 
   'mpv.io': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install libass from Homebrew (not reliably in S3 dep tree)
+          'brew install libass 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix libass)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove vapoursynth.com dep (not in S3 yet)
       if (recipe.dependencies?.['vapoursynth.com']) {
         delete recipe.dependencies['vapoursynth.com']
       }
-      // Disable vapoursynth in meson args
+      // Disable vapoursynth in meson args + disable libvpx on linux (S3 libvpx.so path issue)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a === '-Dvapoursynth=enabled' ? '-Dvapoursynth=disabled' : a,
@@ -3167,6 +3176,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.env?.linux) {
         delete recipe.build.env.linux.CC
         delete recipe.build.env.linux.LD
+      }
+      // Remove libass dep on darwin (use Homebrew instead of S3)
+      if (recipe.dependencies?.['github.com/libass/libass']) {
+        delete recipe.dependencies['github.com/libass/libass']
       }
     },
   },
@@ -3287,6 +3300,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
     // Set SRCROOT so post-install dylib copy step can find build artifacts
     prependScript: ['export SRCROOT="$PWD"'],
     platforms: {
+      linux: {
+        prependScript: [
+          // Install freeglut for OpenGL viewer (GL/freeglut.h)
+          'sudo apt-get install -y freeglut3-dev 2>/dev/null || true',
+        ],
+      },
       darwin: {
         // Install openjpeg headers on macOS (not reliably in S3 dep tree)
         // Must also set CPPFLAGS since openjpeg installs to a versioned subdir
@@ -3959,6 +3978,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── qemu.org — fix prefix quoting + sed -i BSD + remove vde dep ────
 
   'qemu.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install libiconv (keg-only) for curses UI iconv requirement
+          'brew install libiconv 2>/dev/null || true',
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
