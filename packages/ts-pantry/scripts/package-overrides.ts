@@ -1501,6 +1501,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── chiark.greenend.org.uk/puzzles — remove halibut dep ─────────────────
 
   'chiark.greenend.org.uk/puzzles': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Create dummy halibut binary so find_program(HALIBUT halibut REQUIRED) succeeds
+          // cmake/platforms/osx.cmake requires halibut but it's only for docs
+          'mkdir -p /tmp/fake-bin && printf "#!/bin/bash\\nexit 0\\n" > /tmp/fake-bin/halibut && chmod +x /tmp/fake-bin/halibut',
+          'export PATH="/tmp/fake-bin:$PATH"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove chiark.greenend.org.uk/halibut dep (not available in CI)
       if (recipe.build?.dependencies?.['chiark.greenend.org.uk/halibut']) {

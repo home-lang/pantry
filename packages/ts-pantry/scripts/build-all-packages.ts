@@ -679,6 +679,7 @@ Options:
     'gnupg.org/libgcrypt', // Linux system libgpg-error too old (needs >= 1.56), builds fine on darwin
     'microsoft.com/code-cli', // OpenSSL linking issues on Linux, builds fine on darwin
     'proj.org', // S3 curl.so missing version info breaks cmake on linux, darwin OK
+    'pwmt.org/zathura', // gnutls/nettle ABI mismatch breaks HTTPS git on linux, darwin OK
   ])
 
   // Packages needing specialized toolchains not available in CI
