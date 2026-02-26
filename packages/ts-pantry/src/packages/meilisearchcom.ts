@@ -28,10 +28,10 @@ export const meilisearchcomPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: 'A lightning-fast search engine that fits effortlessly into your apps, websites, and workflow' as const,
-  packageYmlUrl: 'https://github.com/stacksjs/pantry/tree/main/packages/ts-pantry/src/pantry/meilisearch.com/package.yml' as const,
-  homepageUrl: 'https://www.meilisearch.com' as const,
-  githubUrl: 'https://github.com/meilisearch/meilisearch' as const,
+  description: '' as const,
+  packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/meilisearch.com/package.yml' as const,
+  homepageUrl: '' as const,
+  githubUrl: '' as const,
   /**
   * Command to install this package using launchpad.
   * @example launchpad install package-name
@@ -39,12 +39,12 @@ export const meilisearchcomPackage = {
   installCommand: 'launchpad install meilisearch.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +meilisearch.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install meilisearch.com' as const,
-  programs: ['meilisearch'] as const,
+  programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,
-  versions: ['1.36.0', '1.35.1', '1.35.0', '1.34.0'] as const,
-  aliases: ['meili'] as const,
+  versions: [] as const,
+  aliases: [] as const,
 }
 
 export type MeilisearchcomPackage = typeof meilisearchcomPackage
