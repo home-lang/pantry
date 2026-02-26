@@ -711,6 +711,7 @@ import { nodebuildPackage } from './github.com/nodenv/node-build'
 import { gpt4allPackage } from './github.com/nomic-ai/gpt4all'
 import { chatbladePackage } from './github.com/npiv/chatblade'
 import { adrtoolsPackage } from './github.com/npryce/adr-tools'
+import { nullclawPackage } from './github.com/nullclaw/nullclaw'
 import { numactlPackage } from './github.com/numactl/numactl'
 import { thefuckPackage } from './github.com/nvbn/thefuck'
 import { nvmPackage } from './github.com/nvm-sh/nvm'
@@ -1293,6 +1294,7 @@ import { perlorgPackage } from './perlorg'
 import { permitiocedaragentPackage } from './permit.io/cedar-agent'
 import { phpmyadminnetPackage } from './phpmyadminnet'
 import { phpPackage } from './phpnet'
+import { pidevPackage } from './pidev'
 import { pimalayaorghimalayaPackage } from './pimalaya.org/himalaya'
 import { pinnipeddevPackage } from './pinnipeddev'
 import { pipenvpypaioPackage } from './pipenvpypaio'
@@ -2931,6 +2933,8 @@ export interface Pantry {
   adr_tools: typeof adrtoolsPackage
   githubcomnpryce: typeof adrtoolsPackage
 
+  githubcomnullclaw: typeof nullclawPackage
+
   githubcomnumactl: typeof numactlPackage
 
   githubcomnvbn: typeof thefuckPackage
@@ -3888,6 +3892,7 @@ export interface Pantry {
   permitiocedaragent: typeof permitiocedaragentPackage
   phpmyadminnet: typeof phpmyadminnetPackage
   phpnet: typeof phpPackage
+  pidev: typeof pidevPackage
 
   pimalayaorghimalaya: typeof pimalayaorghimalayaPackage
   pinnipeddev: typeof pinnipeddevPackage
@@ -5808,6 +5813,7 @@ export interface Pantry {
   mutagen: typeof mutagenPackage
   xcodes: typeof xcodesPackage
   when: typeof whenPackage
+  nullclaw: typeof nullclawPackage
   scw: typeof scalewaycomPackage
   'encore-go': typeof encoredevgoPackage
   gomplate: typeof gomplatecaPackage
@@ -7284,6 +7290,8 @@ export const pantry: Pantry = {
   adr_tools: adrtoolsPackage,
   githubcomnpryce: adrtoolsPackage,
 
+  githubcomnullclaw: nullclawPackage,
+
   githubcomnumactl: numactlPackage,
 
   githubcomnvbn: thefuckPackage,
@@ -8241,6 +8249,7 @@ export const pantry: Pantry = {
   permitiocedaragent: permitiocedaragentPackage,
   phpmyadminnet: phpmyadminnetPackage,
   phpnet: phpPackage,
+  pidev: pidevPackage,
 
   pimalayaorghimalaya: pimalayaorghimalayaPackage,
   pinnipeddev: pinnipeddevPackage,
@@ -10161,6 +10170,7 @@ export const pantry: Pantry = {
   mutagen: mutagenPackage,
   xcodes: xcodesPackage,
   when: whenPackage,
+  nullclaw: nullclawPackage,
   scw: scalewaycomPackage,
   'encore-go': encoredevgoPackage,
   gomplate: gomplatecaPackage,

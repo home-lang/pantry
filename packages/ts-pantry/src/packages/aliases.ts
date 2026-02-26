@@ -928,6 +928,7 @@ export const aliases: Record<string, string> = {
   'nss': 'mozilla.org/nss',
   'ntp': 'ntp.org',
   'nuclei': 'projectdiscovery.io/nuclei',
+  'nullclaw': 'github.com/nullclaw/nullclaw',
   'numactl': 'github.com/numactl/numactl',
   'numbat': 'numbat.dev',
   'nvim': 'neovim.io',
