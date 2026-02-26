@@ -1586,19 +1586,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── nx.dev — npm install with legacy peer deps ──────────────────────────
 
   'nx.dev': {
-    platforms: {
-      linux: {
-        prependScript: [
-          // Fix npm ENOENT _cacache/tmp by using a clean temp/cache dir outside the build tree
-          'export TMPDIR=/tmp/nx-build-tmp-$$',
-          'mkdir -p "$TMPDIR"',
-          'export npm_config_cache=/tmp/nx-npm-cache-$$',
-          'mkdir -p "$npm_config_cache"',
-          // Also clean npm cache to avoid stale tarball corruption
-          'npm cache clean --force 2>/dev/null || true',
-        ],
-      },
-    },
+    prependScript: [
+      // Fix npm ENOENT _cacache/tmp by using a clean temp/cache dir outside the build tree
+      'export TMPDIR=/tmp/nx-build-tmp-$$',
+      'mkdir -p "$TMPDIR"',
+      'export npm_config_cache=/tmp/nx-npm-cache-$$',
+      'mkdir -p "$npm_config_cache"',
+      // Also clean npm cache to avoid stale tarball corruption
+      'npm cache clean --force 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('--legacy-peer-deps')) {
@@ -3935,17 +3931,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── openresty.org — fix sed -i BSD compat ───────────────────────────
 
   'openresty.org': {
-    modifyRecipe: (recipe: any) => {
-      // Fix sed -i BSD compat in resty script patching
-      if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i\n/, 'sed -i.bak\n')
-              .replace(/^(\s*)sed -i\s*$/m, '$1sed -i.bak')
-          }
-        }
-      }
+    platforms: {
+      darwin: {
+        prependScript: [
+          // BSD sed '2i' insert command syntax is incompatible with GNU sed.
+          // Shim gsed (GNU sed from Homebrew) as 'sed' so the recipe's sed commands work.
+          'if command -v gsed &>/dev/null; then mkdir -p /tmp/gsed-shim && ln -sf "$(command -v gsed)" /tmp/gsed-shim/sed && export PATH="/tmp/gsed-shim:$PATH"; fi',
+        ],
+      },
     },
   },
 
