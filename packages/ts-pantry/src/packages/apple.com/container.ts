@@ -2,7 +2,7 @@
  * **container** - pkgx package
  *
  * @domain `apple.com/container`
- * @version `0.9.0` (1 versions available)
+ * @version `0.10.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install apple.com/container`
@@ -13,7 +13,7 @@
  *
  * const pkg = pantry.applecomcontainer
  * console.log(pkg.name)        // "container"
- * console.log(pkg.versions[0]) // "0.9.0" (latest)
+ * console.log(pkg.versions[0]) // "0.10.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/apple-com/container.md
@@ -51,6 +51,7 @@ export const applecomcontainerPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.0',
     '0.9.0',
   ] as const,
   aliases: [] as const,
