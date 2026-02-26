@@ -310,12 +310,10 @@ function consolidateLib64(prefix: string): void {
   symlinkSync('lib', lib64)
 }
 
-/**
- * Bundle Homebrew dylibs into the package's lib/ directory for self-containment.
- * When a binary references /opt/homebrew/opt/*/lib/*.dylib, we copy the dylib
- * into prefix/lib/ and rewrite the reference to @rpath/libname.dylib.
- * Processes transitive Homebrew deps recursively.
- */
+// Bundle Homebrew dylibs into the package's lib/ directory for self-containment.
+// When a binary references /opt/homebrew/opt/<name>/lib/<name>.dylib, we copy
+// the dylib into prefix/lib/ and rewrite the reference to @rpath/libname.dylib.
+// Processes transitive Homebrew deps recursively.
 function bundleHomebrewDylibs(filePath: string, prefix: string): void {
   const libDir = join(prefix, 'lib')
 
