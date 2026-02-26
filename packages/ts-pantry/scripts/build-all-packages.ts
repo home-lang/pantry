@@ -731,7 +731,7 @@ Options:
     // fabianlindfors.se/reshape removed — added --cap-lints warn RUSTFLAGS override
     // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
-    'practical-scheme.net/gauche', // Version tag format mismatch (release0_9_x vs v0.9.x)
+    // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     // openinterpreter.com removed — widened python version constraint in override
     'psycopg.org/psycopg3', // Git-based distributable pulling dev versions
     'sourceware.org/dm', // GitLab download URLs return 404
@@ -785,7 +785,7 @@ Options:
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
     'ghostscript.com', // Tag format gs10060 for version 10.06.0 — zero-padded minor not reconstructible from semver
-    'amber-lang.com', // Version tags prefixed with -alpha, tag format mismatch → 404
+    // amber-lang.com removed — distributableUrl override appends -alpha suffix
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
     'brxken128.github.io/dexios', // Rust 'unnecessary qualification' lint errors with modern rustc (unmaintained)
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust

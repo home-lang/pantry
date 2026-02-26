@@ -6029,4 +6029,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── practical-scheme.net/gauche — fix underscore tag format ────────────
+  // Tags: release0_9_15 (underscores), metadata has 0.9.15 (dots)
+
+  'practical-scheme.net/gauche': {
+    distributableUrl: 'https://github.com/shirok/Gauche/releases/download/release{{version.major}}_{{version.minor}}_{{version.patch}}/Gauche-{{version}}.tgz',
+  },
+
+  // ─── amber-lang.com — alpha suffix in tags ──────────────────────────────
+  // All tags have -alpha suffix (e.g. 0.5.1-alpha), stripped for versioning
+
+  'amber-lang.com': {
+    distributableUrl: 'https://github.com/Ph0enixKM/Amber/archive/refs/tags/{{version}}-alpha.tar.gz',
+  },
 }
