@@ -3,7 +3,7 @@
  *
  * @domain `rubocop.org`
  * @programs `rubocop`
- * @version `1.84.2` (44 versions available)
+ * @version `1.85.0` (45 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rubocop.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "rubocop"
  * console.log(pkg.description) // "A Ruby static code analyzer and formatter, base..."
  * console.log(pkg.programs)    // ["rubocop"]
- * console.log(pkg.versions[0]) // "1.84.2" (latest)
+ * console.log(pkg.versions[0]) // "1.85.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rubocop-org.md
@@ -69,6 +69,7 @@ export const rubocoporgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.85.0',
     '1.84.2',
     '1.84.1',
     '1.84.0',

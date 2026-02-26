@@ -3,7 +3,7 @@
  *
  * @domain `astral.sh/ruff`
  * @programs `ruff`
- * @version `0.15.2` (118 versions available)
+ * @version `0.15.3` (119 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install astral.sh/ruff`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "ruff"
  * console.log(pkg.description) // "An extremely fast Python linter and code format..."
  * console.log(pkg.programs)    // ["ruff"]
- * console.log(pkg.versions[0]) // "0.15.2" (latest)
+ * console.log(pkg.versions[0]) // "0.15.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/astral-sh/ruff.md
@@ -61,6 +61,7 @@ export const astralshruffPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.15.3',
     '0.15.2',
     '0.15.1',
     '0.15.0',

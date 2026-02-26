@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 44 versions</summary>
+<summary>Show all 45 versions</summary>
 
+- `1.85.0`
 - `1.84.2`, `1.84.1`, `1.84.0`
 - `1.82.1`, `1.82.0`
 - `1.81.7`, `1.81.6`, `1.81.1`, `1.81.0`
@@ -46,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.84.2`
+**Latest Version**: `1.85.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +rubocop.org@1.84.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +rubocop.org@1.85.0 -- $SHELL -i
 ```
 
 ## Dependencies
