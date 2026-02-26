@@ -3,7 +3,7 @@
  *
  * @domain `oauth2-proxy.github.io`
  * @programs `oauth2-proxy`
- * @version `7.14.2` (14 versions available)
+ * @version `7.14.3` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install oauth2-proxy.github.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "oauth2-proxy"
  * console.log(pkg.description) // "A reverse proxy that provides authentication wi..."
  * console.log(pkg.programs)    // ["oauth2-proxy"]
- * console.log(pkg.versions[0]) // "7.14.2" (latest)
+ * console.log(pkg.versions[0]) // "7.14.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/oauth2-proxy-github-io.md
@@ -68,6 +68,7 @@ export const oauth2proxygithubioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.14.3',
     '7.14.2',
     '7.14.1',
     '7.14.0',
