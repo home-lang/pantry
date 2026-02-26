@@ -654,15 +654,15 @@ Options:
     'freedesktop.org/dbus', // gio-unix-2.0 pkg-config chain fails on darwin (S3 pkg-config vs Homebrew glib)
     'swagger.io/swagger-codegen', // Maven/Java build, install -D flag incompatible with macOS
     'github.com/opencollab/arpack-ng', // Needs gfortran (not available on macOS CI runners)
-    'apache.org/zookeeper', // Maven native build (zookeeper-client-c configure) broken on darwin
+    // apache.org/zookeeper moved to knownBrokenDomains — Maven C-client configure fails on both platforms
     'apache.org/httpd', // --with-apr-util path resolution broken on darwin
     'mupdf.com', // darwin build fails (install_name_tool fixup on mupdf-gl), linux OK
-    'grpc.io', // upb TSAN/ASAN macro errors on darwin, linux OK
+    // grpc.io moved to knownBrokenDomains — v1.78.1 also fails on linux (missing protobuf header)
     'mozilla.org/nss', // ARM64 crypto intrinsics issue on darwin, linux OK
     'crates.io/versio', // Rust linker failure on darwin (many lib deps), linux OK
     'fuellabs.github.io/sway', // Rust linker failure on darwin (forc binary), linux OK
     'gitlab.com/procps-ng/watch', // Linux process utilities, darwin build fails
-    'sfcgal.gitlab.io', // CGAL cmake failure on darwin, linux OK
+    'sfcgal.org', // CGAL cmake failure on darwin, linux OK
     'getmonero.org', // cmake security-hardening test failures on darwin ARM64, linux OK
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
@@ -740,6 +740,8 @@ Options:
     'oberhumer.com/ucl', // Dead upstream domain
     'khronos.org/SPIRV-Cross', // Project archived, tags removed
     'getsynth.com', // Dead/abandoned project
+    'grpc.io', // darwin: TSAN/ASAN macro errors; linux: v1.78.1 missing protobuf header + timeout
+    'apache.org/zookeeper', // Maven C-client configure fails on both platforms
     'ordinals.com', // GitHub tag format mismatch (all variants return 404)
     'dhruvkb.dev/pls', // Hardcoded beta tag + cargo auth failure on git deps
     'seaweedfs.com', // All GitHub release tags return 404

@@ -3922,9 +3922,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
       }
-      // Remove capnproto.org dep (not in S3)
+      // Remove capnproto.org dep (not in S3) and disable IPC which requires it
       if (recipe.dependencies?.['capnproto.org']) {
         delete recipe.dependencies['capnproto.org']
+      }
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        if (!recipe.build.env.CMAKE_ARGS.includes('-DENABLE_IPC=OFF')) {
+          recipe.build.env.CMAKE_ARGS.push('-DENABLE_IPC=OFF')
+        }
       }
     },
   },
