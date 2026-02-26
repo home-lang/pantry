@@ -2933,8 +2933,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       linux: {
         prependScript: [
-          // Install libnss3-dev for PDF signing support + liblcms2-dev for color management
-          'sudo apt-get install -y libnss3-dev liblcms2-dev 2>/dev/null || true',
+          // Install liblcms2-dev for color management (littlecms.com S3 binary unreliable)
+          'sudo apt-get install -y liblcms2-dev 2>/dev/null || true',
         ],
       },
     },
@@ -2953,13 +2953,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}"' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Disable glib/gobject and optional GPGME in cmake args
+      // Disable glib/gobject, NSS3, and optional GPGME in cmake args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('-DENABLE_GLIB=OFF')) {
           recipe.build.env.ARGS.push('-DENABLE_GLIB=OFF')
         }
         if (!recipe.build.env.ARGS.includes('-DENABLE_GPGME=OFF')) {
           recipe.build.env.ARGS.push('-DENABLE_GPGME=OFF')
+        }
+        if (!recipe.build.env.ARGS.includes('-DENABLE_NSS3=OFF')) {
+          recipe.build.env.ARGS.push('-DENABLE_NSS3=OFF')
         }
       }
       // Remove nss and gpgme deps (not in S3)
