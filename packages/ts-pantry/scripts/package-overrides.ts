@@ -937,6 +937,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
         if (!recipe.build.dependencies.linux) recipe.build.dependencies.linux = {}
         recipe.build.dependencies.linux['nasm.us'] = '*'
       }
+      // Fix cmake CMP0025/CMP0054 OLD policy (no longer supported in cmake 3.31+)
+      // Add policy flags to ARGS_DEFAULT
+      if (Array.isArray(recipe.build?.env?.ARGS_DEFAULT)) {
+        recipe.build.env.ARGS_DEFAULT.push(
+          '-DCMAKE_POLICY_DEFAULT_CMP0025=NEW',
+          '-DCMAKE_POLICY_DEFAULT_CMP0054=NEW',
+        )
+      }
       // Add -DENABLE_ASSEMBLY=OFF on darwin to all cmake invocations
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -5978,6 +5986,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       if (recipe.dependencies?.['nodejs.org']) {
         recipe.dependencies['nodejs.org'] = '~20'
+      }
+    },
+  },
+
+  // ─── gnome-extensions-cli — widen Python version ─────────────────────
+  // Recipe requires ~3.11 but CI has Python 3.14
+
+  'github.com/essembeh/gnome-extensions-cli': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3.11<3.15'
       }
     },
   },

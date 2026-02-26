@@ -662,7 +662,7 @@ Options:
     'crates.io/versio', // Rust linker failure on darwin (many lib deps), linux OK
     'fuellabs.github.io/sway', // Rust linker failure on darwin (forc binary), linux OK
     'gitlab.com/procps-ng/watch', // Linux process utilities, darwin build fails
-    'sfcgal.org', // CGAL cmake failure on darwin, linux OK
+    // sfcgal.org removed — added brew CGAL install override for darwin
     'browser-use.com', // Python 3.12 constraint + setuptools timeout on darwin, linux OK
     'getmonero.org', // cmake security-hardening test failures on darwin ARM64, linux OK
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
@@ -1053,7 +1053,7 @@ Options:
     'man-db.gitlab.io/man-db', // Dependency chain failure (libpipeline, groff)
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
-    'github.com/essembeh/gnome-extensions-cli', // git tag v0.11.0 deleted upstream
+    // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     'github.com/sindresorhus/macos-term-size', // codesign verification fails in CI
     'eyrie.org/eagle/podlators', // source tarball 404 — older versions removed from server
     'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
@@ -1061,7 +1061,7 @@ Options:
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
     'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
-    'videolan.org/x265', // Download 404 + cmake CMP0025/CMP0054 OLD no longer supported
+    // videolan.org/x265 removed — fixed cmake CMP0025/CMP0054 policy in override
     // snaplet.dev/cli removed — pinned Node to v20 LTS in override
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
     'opensearch.org', // Requires Java 21+ but CI provides older Java
