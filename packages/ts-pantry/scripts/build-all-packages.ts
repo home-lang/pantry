@@ -1054,8 +1054,8 @@ Options:
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
-    'github.com/sindresorhus/macos-term-size', // codesign verification fails in CI
-    'eyrie.org/eagle/podlators', // source tarball 404 — older versions removed from server
+    // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
+    // eyrie.org/eagle/podlators removed — fixed v prefix in distributableUrl override
     'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override

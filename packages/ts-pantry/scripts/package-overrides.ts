@@ -1956,6 +1956,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/sindresorhus/macos-term-size — repo renamed, asset renamed ──
   'github.com/sindresorhus/macos-term-size': {
     distributableUrl: 'https://github.com/sindresorhus/macos-terminal-size/releases/download/v{{version}}/terminal-size.zip',
+    modifyRecipe: (recipe: any) => {
+      // Replace build steps: skip codesign check (fails in CI), use renamed binary
+      if (recipe.build) {
+        recipe.build.script = [
+          'mkdir -p {{prefix}}/bin',
+          'install terminal-size {{prefix}}/bin/term-size',
+        ]
+      }
+    },
   },
 
   // ─── eyrie.org/eagle/podlators — upstream files have v prefix in filename ──
