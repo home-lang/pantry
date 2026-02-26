@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1771634738",
+  "generatedAt": "1772144943",
   "packages": {
     "bunfig@^0.15.6": {
       "name": "bunfig",
@@ -13,9 +13,9 @@
       "version": "^0.1.1",
       "source": "pkgx"
     },
-    "npm:@actions/core@^1.11.1": {
-      "name": "npm:@actions/core",
-      "version": "^1.11.1",
+    "better-dx@^0.2.6": {
+      "name": "better-dx",
+      "version": "^0.2.6",
       "source": "pkgx"
     },
     "zig-cli@link:zig-cli": {
@@ -26,6 +26,11 @@
     "zig-config@link:zig-config": {
       "name": "zig-config",
       "version": "link:zig-config",
+      "source": "pkgx"
+    },
+    "npm:@actions/core@^1.11.1": {
+      "name": "npm:@actions/core",
+      "version": "^1.11.1",
       "source": "pkgx"
     },
     "typescript@^5.7.0": {
@@ -51,11 +56,6 @@
     "npm:@actions/exec@^1.1.1": {
       "name": "npm:@actions/exec",
       "version": "^1.1.1",
-      "source": "pkgx"
-    },
-    "better-dx@^0.2.2": {
-      "name": "better-dx",
-      "version": "^0.2.2",
       "source": "pkgx"
     },
     "npm:@actions/github@^6.0.1": {

@@ -278,6 +278,7 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
           }
 
           const hasDistributable = !!(recipe.distributable?.url)
+          const isVendored = Array.isArray(recipe.warnings) && recipe.warnings.includes('vendored')
           const hasBuildScript = !!(recipe.build?.script) || Array.isArray(recipe.build) || typeof recipe.build === 'string'
 
           // Check if build script references props/
@@ -292,8 +293,8 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
             continue
           }
 
-          if (!hasDistributable) {
-            // No source to download, skip (continue to allow child dirs)
+          if (!hasDistributable && !isVendored) {
+            // No source to download and not a vendored package, skip
             continue
           }
 

@@ -1,7 +1,7 @@
 //! Package definitions generated from ts-pkgx
 //! DO NOT EDIT MANUALLY - This file is auto-generated
 //! Generated on: 2025-11-01T23:01:02.298Z
-//! Total packages: 1610
+//! Total packages: 1611
 
 const std = @import("std");
 
@@ -18,7 +18,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1610 total)
+/// All known packages (1611 total)
 pub const packages = [_]PackageInfo{
     .{
         .name = "abseil",
@@ -12284,6 +12284,17 @@ pub const packages = [_]PackageInfo{
         .build_dependencies = &[_][]const u8{},
         .aliases = &[_][]const u8{},
         .versions = &[_][]const u8{"4.3.2"},
+    },
+    .{
+        .name = "meilisearch",
+        .domain = "meilisearch.com",
+        .description = "A lightning-fast search engine that fits effortlessly into your apps, websites, and workflow",
+        .homepage_url = "https://www.meilisearch.com",
+        .programs = &[_][]const u8{"meilisearch"},
+        .dependencies = &[_][]const u8{},
+        .build_dependencies = &[_][]const u8{},
+        .aliases = &[_][]const u8{"meili"},
+        .versions = &[_][]const u8{ "1.36.0", "1.35.1", "1.35.0", "1.34.0" },
     },
     .{
         .name = "mercure",

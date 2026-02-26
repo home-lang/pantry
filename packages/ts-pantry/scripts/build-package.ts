@@ -1726,7 +1726,11 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       }
     }
   } else {
-    throw new Error('No distributable URL found in package.yml')
+    // Vendored packages (distributable: ~) have no source to download.
+    // The build script handles fetching (e.g. curl from GitHub releases).
+    // Just ensure the source directory exists for the build script to run in.
+    console.log('📦 No distributable URL — vendored package, skipping source download')
+    mkdirSync(buildDir, { recursive: true })
   }
 
   // Build environment variables

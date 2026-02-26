@@ -117,6 +117,10 @@ function fixMachoRpaths(prefix: string): void {
           }
         }
 
+        // Bundle Homebrew dylibs into the package for full self-containment
+        // Without this, binaries fail on systems without the same Homebrew packages
+        bundleHomebrewDylibs(filePath, prefix)
+
         // Re-sign with entitlement preservation (from brewkit's fix-machos.rb)
         try {
           execSync(`codesign --force --sign - --preserve-metadata=entitlements "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
@@ -304,6 +308,68 @@ function consolidateLib64(prefix: string): void {
   // Remove lib64 and replace with symlink
   execSync(`rm -rf "${lib64}"`)
   symlinkSync('lib', lib64)
+}
+
+/**
+ * Bundle Homebrew dylibs into the package's lib/ directory for self-containment.
+ * When a binary references /opt/homebrew/opt/*/lib/*.dylib, we copy the dylib
+ * into prefix/lib/ and rewrite the reference to @rpath/libname.dylib.
+ * Processes transitive Homebrew deps recursively.
+ */
+function bundleHomebrewDylibs(filePath: string, prefix: string): void {
+  const libDir = join(prefix, 'lib')
+
+  try {
+    const depOutput = execSync(`otool -L "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
+    const depLines = depOutput.trim().split('\n').slice(1)
+
+    for (const depLine of depLines) {
+      const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
+      if (!depMatch) continue
+      const depPath = depMatch[1].trim()
+
+      // Only handle Homebrew paths
+      if (!depPath.startsWith('/opt/homebrew/')) continue
+
+      const depName = basename(depPath)
+      const destPath = join(libDir, depName)
+
+      // Copy the dylib into our lib/ if not already there
+      if (!existsSync(destPath)) {
+        try {
+          mkdirSync(libDir, { recursive: true })
+          execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+
+          // Fix the copied dylib's own install ID
+          execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+
+          // Add @loader_path rpath to the copied dylib
+          try {
+            execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          } catch { /* may already exist */ }
+
+          // Recursively bundle any Homebrew deps of this dylib
+          bundleHomebrewDylibs(destPath, prefix)
+
+          // Re-sign the copied dylib
+          try {
+            execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          } catch { /* ignore */ }
+        } catch {
+          // Could not copy dylib — skip
+          continue
+        }
+      }
+
+      // Rewrite the reference in the original binary to use @rpath
+      try {
+        execSync(`install_name_tool -change "${depPath}" "@rpath/${depName}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+      } catch { /* ignore */ }
+    }
+  } catch {
+    // otool failed, skip
+  }
 }
 
 // --- Helpers ---
