@@ -736,7 +736,7 @@ Options:
     'psycopg.org/psycopg3', // Git-based distributable pulling dev versions
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
-    'taku910.github.io/mecab-ipadic', // Needs mecab built first
+    // taku910.github.io/mecab-ipadic removed — mecab now in S3
     'itstool.org', // Needs Python libxml2 bindings matching exact Python version
     'oberhumer.com/ucl', // Dead upstream domain
     'khronos.org/SPIRV-Cross', // Project archived, tags removed
@@ -1082,7 +1082,7 @@ Options:
     'rucio.cern.ch/rucio-client', // Python build module chain failure — empty pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
     'tcl-lang.org', // System Tcl 8.x version conflict with newly built Tcl 9
-    'github.com/luvit/luv', // cmake build succeeds but post-build step fails
+    // github.com/luvit/luv removed — fixed stray cmake prefix quote + LUA_INSTALL_DIR override
     'musepack.net', // Duplicate symbol Res_bit in libmpcdec (library internal issue)
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
     // --- Failures from verification builds (2026-02-26) ---

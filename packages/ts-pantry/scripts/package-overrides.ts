@@ -5954,18 +5954,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/luvit/luv — fix stray cmake prefix quote ────────────
-  // CMAKE_ARGS has '-DCMAKE_INSTALL_PREFIX="{{prefix}}' (missing closing quote)
-
-  'github.com/luvit/luv': {
-    modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
-        recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
-        )
-      }
-    },
-  },
+  // github.com/luvit/luv duplicate removed — primary override at line ~5152 has more comprehensive fix
 
   // ─── github.com/pressly/sup — fix go mod init missing module name ───
 
