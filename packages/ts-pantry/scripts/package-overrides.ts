@@ -2400,7 +2400,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // multiple files (utils.py, ccompiler.py, etc). Install setuptools and create
           // a sitecustomize.py that activates the distutils compatibility shim for all
           // Python subprocesses (including g-ir-scanner launched by ninja).
-          'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+          'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
           '_GI_PYFIX="/tmp/buildkit-gi-pyfix"; mkdir -p "$_GI_PYFIX"',
           'printf "try:\\n    import _distutils_hack\\n    _distutils_hack.add_shim()\\nexcept Exception:\\n    pass\\n" > "$_GI_PYFIX/sitecustomize.py"',
           'export PYTHONPATH="$_GI_PYFIX:$(python3 -c "import site; print(site.getsitepackages()[0])" 2>/dev/null):${PYTHONPATH:-}"',
@@ -3098,7 +3098,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Install cairo + setuptools (distutils removed in Python 3.12+) from system
         prependScript: [
           'brew install cairo 2>/dev/null || true',
-          'pip3 install setuptools 2>/dev/null || python3 -m pip install setuptools 2>/dev/null || true',
+          'pip3 install "setuptools<78" 2>/dev/null || python3 -m pip install "setuptools<78" 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix cairo)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export CPPFLAGS="-I$(brew --prefix cairo)/include/cairo $CPPFLAGS"',
         ],
@@ -4179,7 +4179,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'modal.com': {
     prependScript: [
       // Ensure setuptools (pkg_resources) is available for metadata generation
-      'python3 -m pip install --break-system-packages setuptools wheel 2>/dev/null || pip3 install --break-system-packages setuptools wheel 2>/dev/null || true',
+      'python3 -m pip install --break-system-packages "setuptools<78" wheel 2>/dev/null || pip3 install --break-system-packages "setuptools<78" wheel 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       // Remove cython.org dep on linux/aarch64 (not in S3)
@@ -4361,7 +4361,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'rucio.cern.ch/rucio-client': {
     prependScript: [
       // Install python build module required for pip wheel building
-      'python3 -m pip install --break-system-packages build setuptools wheel 2>/dev/null || true',
+      'python3 -m pip install --break-system-packages build "setuptools<78" wheel 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       // Remove postgresql.org build dep (not in S3)
@@ -4883,8 +4883,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         prependScript: [
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
-          'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install setuptools 2>/dev/null || true; done',
-          'python3 -m pip install --break-system-packages setuptools 2>/dev/null || pip3 install setuptools 2>/dev/null || true',
+          'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
+          'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
         ],
       },
     },
@@ -5073,7 +5073,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'mypy-lang.org': {
     prependScript: [
       // Ensure setuptools is available for build (global python)
-      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+      'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
       // Create a pip constraints file to pin pathspec<0.12
       // (pathspec>=0.12 removed GitWildMatchPatternError export which mypy references at build time)
       'echo "pathspec<0.12" > /tmp/pip-constraints-mypy.txt',
@@ -5091,7 +5091,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           typeof s === 'string' && s.includes('bkpyvenv stage'))
         if (stageIdx >= 0) {
           recipe.build.script.splice(stageIdx + 1, 0,
-            '{{prefix}}/venv/bin/pip install setuptools')
+            '{{prefix}}/venv/bin/pip install "setuptools<78"')
         }
       }
     },
@@ -5164,10 +5164,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
-        // Fix: set explicit Lua module install directory to prevent CMake from
-        // parsing lua.h #define lines into the path (Lua version detection bug)
-        if (!recipe.build.env.CMAKE_ARGS.some((a: string) => a.includes('LUA_INSTALL_DIR'))) {
-          recipe.build.env.CMAKE_ARGS.push('-DLUA_INSTALL_DIR=lib/lua')
+        // Fix: Lua 5.5 header uses LUA_VERSION_MAJOR_N/MINOR_N format which breaks
+        // cmake's FindLua version regex, causing raw #define text in install paths.
+        // Set explicit version vars and install dirs to bypass broken detection.
+        const extraArgs = [
+          '-DLUA_VERSION_MAJOR=5',
+          '-DLUA_VERSION_MINOR=5',
+          '-DLUA_INSTALL_CMOD_DIR=lib/lua/5.5',
+          '-DLUA_INSTALL_LMOD_DIR=lib/lua/5.5',
+        ]
+        for (const arg of extraArgs) {
+          const key = arg.split('=')[0]
+          if (!recipe.build.env.CMAKE_ARGS.some((a: string) => a.startsWith(key))) {
+            recipe.build.env.CMAKE_ARGS.push(arg)
+          }
         }
       }
     },
@@ -5856,7 +5866,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/npiv/chatblade': {
     prependScript: [
-      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+      'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       // Widen python version (CI has 3.14, recipe wants <3.12)
@@ -5878,12 +5888,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
       }
       // Replace build with manual venv steps — python-venv.sh silently fails
-      // to install setuptools on Python 3.14, causing pkg_resources import error
+      // to install setuptools on Python 3.14. setuptools 78+ removed pkg_resources
+      // which thefuck's setup.py imports. Pin setuptools<78 and use --no-build-isolation
+      // to ensure the venv's setuptools (with pkg_resources) is used during build.
       if (recipe.build) {
         recipe.build.script = [
           'python3 -m venv {{prefix}}/venv',
           '{{prefix}}/venv/bin/python3 -m ensurepip --upgrade',
-          '{{prefix}}/venv/bin/pip install setuptools wheel',
+          '{{prefix}}/venv/bin/pip install --upgrade pip "setuptools<78" wheel',
           '{{prefix}}/venv/bin/pip install --no-build-isolation .',
           'mkdir -p {{prefix}}/bin',
           'printf \'#!/bin/sh\\nSCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"\\nexec "$SCRIPT_DIR/../venv/bin/thefuck" "$@"\\n\' > {{prefix}}/bin/thefuck',
@@ -5897,7 +5909,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/mattrobenolt/jinja2-cli': {
     prependScript: [
-      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+      'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: any) => {
       // Widen python version (CI has 3.14, recipe wants <3.12)

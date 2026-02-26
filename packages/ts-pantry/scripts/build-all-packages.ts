@@ -1055,7 +1055,7 @@ Options:
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
-    // eyrie.org/eagle/podlators removed — fixed v prefix in distributableUrl override
+    'eyrie.org/eagle/podlators', // Version 5.1.0 doesn't exist on archives.eyrie.org (only v6.0.2 available)
     'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
@@ -1066,7 +1066,7 @@ Options:
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
     'opensearch.org', // Requires Java 21+ but CI provides older Java
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
-    'nx.dev', // npm tarball corruption (ENOENT _cacache/tmp) — fundamental npm issue, not fixable via override
+    // nx.dev removed — successfully built and uploaded
     'gnu.org/texinfo', // cc wrapper + libtool interaction causes shell syntax error in gnulib
     'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
     'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared

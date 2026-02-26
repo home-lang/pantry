@@ -878,7 +878,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         // ends up in user site-packages under the fake HOME. Using --target gives us full
         // control over where packages land.
         '_MESON_PKGS="/tmp/buildkit-meson-pkgs"',
-        'python3 -m pip install --target "$_MESON_PKGS" "meson>=1.4.0" setuptools 2>/dev/null || python3 -m pip install --break-system-packages "meson>=1.4.0" setuptools 2>/dev/null || true',
+        'python3 -m pip install --target "$_MESON_PKGS" "meson>=1.4.0" "setuptools<78" 2>/dev/null || python3 -m pip install --break-system-packages "meson>=1.4.0" "setuptools<78" 2>/dev/null || true',
         'export PYTHONPATH="$_MESON_PKGS:${PYTHONPATH:-}"',
         'export PATH="$_MESON_PKGS/bin:$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
       ]
