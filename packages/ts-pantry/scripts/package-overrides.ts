@@ -5869,9 +5869,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/nvbn/thefuck — widen Python version ────────────────────
 
   'github.com/nvbn/thefuck': {
-    prependScript: [
-      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
-    ],
     modifyRecipe: (recipe: any) => {
       // Widen python version (CI has 3.14, recipe wants ~3.11)
       if (recipe.dependencies?.['python.org']) {
@@ -5879,6 +5876,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+      // Replace build with manual venv steps — python-venv.sh silently fails
+      // to install setuptools on Python 3.14, causing pkg_resources import error
+      if (recipe.build) {
+        recipe.build.script = [
+          'python3 -m venv {{prefix}}/venv',
+          '{{prefix}}/venv/bin/python3 -m ensurepip --upgrade',
+          '{{prefix}}/venv/bin/pip install setuptools wheel',
+          '{{prefix}}/venv/bin/pip install --no-build-isolation .',
+          'mkdir -p {{prefix}}/bin',
+          'printf \'#!/bin/sh\\nSCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"\\nexec "$SCRIPT_DIR/../venv/bin/thefuck" "$@"\\n\' > {{prefix}}/bin/thefuck',
+          'chmod +x {{prefix}}/bin/thefuck',
+        ]
       }
     },
   },
