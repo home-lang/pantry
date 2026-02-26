@@ -4262,6 +4262,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
+        // Bypass BoostConfig.cmake (Homebrew boost 1.90 lacks individual component cmake configs).
+        // Use traditional FindBoost module which works with header-only boost_system.
+        if (!recipe.build.env.CMAKE_ARGS.some((a: string) => a.includes('Boost_NO_BOOST_CMAKE'))) {
+          recipe.build.env.CMAKE_ARGS.push('-DBoost_NO_BOOST_CMAKE=ON')
+        }
       }
       // Remove linux gcc/make build deps (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
