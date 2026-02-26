@@ -6072,15 +6072,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3.11<3.15'
       }
-      // Upgrade packaging lib after bkpyvenv stage — Python 3.14 needs packaging>=24.0
-      // for packaging.licenses module used by poetry
+      // Replace poetry install with pip --no-build-isolation to use venv's packaging
+      // Poetry creates isolated build envs with old packaging (missing packaging.licenses)
       if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
+          if (typeof step === 'string' && step.trim() === 'poetry install') {
+            return '{{prefix}}/venv/bin/pip install --no-build-isolation .'
+          }
+          return step
+        })
+        // Also upgrade packaging after bkpyvenv stage
         const stageIdx = recipe.build.script.findIndex(
           (s: any) => typeof s === 'string' && s.includes('bkpyvenv stage'),
         )
         if (stageIdx >= 0) {
           recipe.build.script.splice(stageIdx + 1, 0,
-            '{{prefix}}/venv/bin/pip install --upgrade packaging',
+            '{{prefix}}/venv/bin/pip install --upgrade "packaging>=24" "setuptools<78"',
           )
         }
       }
