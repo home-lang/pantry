@@ -1534,7 +1534,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   // For URLs using version.tag or version.raw, resolve the actual GitHub tag via API
   // This handles leading-zero normalization (e.g. 2026.2.9.0 → v2026.02.09.00)
   const rawDistUrl = typeof recipe.distributable?.url === 'string' ? recipe.distributable.url : ''
-  if (rawDistUrl.includes('version.tag') || rawDistUrl.includes('version.raw')) {
+  const rawDistRef = typeof recipe.distributable?.ref === 'string' ? recipe.distributable.ref : ''
+  if (rawDistUrl.includes('version.tag') || rawDistUrl.includes('version.raw')
+    || rawDistRef.includes('version.tag') || rawDistRef.includes('version.raw')) {
     console.log(`🔍 Resolving GitHub tag for version ${version} (URL uses version.tag/raw)...`)
     const resolved = await resolveGitHubTag(yamlContent, version)
     if (resolved) {
@@ -1583,8 +1585,9 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     } catch (firstError: any) {
       let recovered = false
 
-      // Retry 1: If URL used version.tag and download failed, try alternate tag format
-      if (!recovered && rawUrl.includes('version.tag') && versionTag.startsWith('v')) {
+      // Retry 1: If URL or ref used version.tag and download failed, try alternate tag format
+      const rawRef = typeof recipe.distributable?.ref === 'string' ? recipe.distributable.ref : ''
+      if (!recovered && (rawUrl.includes('version.tag') || rawRef.includes('version.tag')) && versionTag.startsWith('v')) {
         console.log(`⚠️  Download failed with tag ${versionTag}, retrying without v prefix...`)
         const altTag = version
         const altVars = { ...templateVars, 'version.tag': altTag }
