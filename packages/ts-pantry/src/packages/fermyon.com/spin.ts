@@ -3,7 +3,7 @@
  *
  * @domain `fermyon.com/spin`
  * @programs `spin`
- * @version `3.6.1` (13 versions available)
+ * @version `3.6.2` (14 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fermyon.com/spin`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "spin"
  * console.log(pkg.description) // "Spin is the open source developer tool for buil..."
  * console.log(pkg.programs)    // ["spin"]
- * console.log(pkg.versions[0]) // "3.6.1" (latest)
+ * console.log(pkg.versions[0]) // "3.6.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fermyon-com/spin.md
@@ -69,6 +69,7 @@ export const fermyoncomspinPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.6.2',
     '3.6.1',
     '3.6.0',
     '3.5.1',

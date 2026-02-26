@@ -3,7 +3,7 @@
  *
  * @domain `krew.sigs.k8s.io`
  * @programs `kubectl-krew`
- * @version `0.4.5` (2 versions available)
+ * @version `0.5.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install krew.sigs.k8s.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "kubectl-krew"
  * console.log(pkg.description) // "📦 Find and install kubectl plugins"
  * console.log(pkg.programs)    // ["kubectl-krew"]
- * console.log(pkg.versions[0]) // "0.4.5" (latest)
+ * console.log(pkg.versions[0]) // "0.5.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/krew-sigs-k8s-io.md
@@ -75,6 +75,7 @@ export const krewsigsk8sioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.5.0',
     '0.4.5',
     '0.4.4',
   ] as const,

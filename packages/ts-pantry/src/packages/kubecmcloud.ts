@@ -3,7 +3,7 @@
  *
  * @domain `kubecm.cloud`
  * @programs `kubecm`
- * @version `0.34.0` (14 versions available)
+ * @version `0.35.0` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install kubecm.cloud`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "kubecm"
  * console.log(pkg.description) // "Manage your kubeconfig more easily."
  * console.log(pkg.programs)    // ["kubecm"]
- * console.log(pkg.versions[0]) // "0.34.0" (latest)
+ * console.log(pkg.versions[0]) // "0.35.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/kubecm-cloud.md
@@ -68,6 +68,7 @@ export const kubecmcloudPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.35.0',
     '0.34.0',
     '0.33.3',
     '0.33.2',
