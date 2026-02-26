@@ -4256,7 +4256,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install CGAL from brew — S3 cgal.org binary has cmake config files
           // in a non-standard location that cmake can't find via CMAKE_PREFIX_PATH
           'brew install cgal 2>/dev/null || true',
-          'export CMAKE_PREFIX_PATH="$(brew --prefix)/lib/cmake/CGAL:${CMAKE_PREFIX_PATH:-}"',
+          // Force-link boost so cmake can find boost_system component configs
+          'brew link boost --overwrite 2>/dev/null || true',
+          'export CMAKE_PREFIX_PATH="$(brew --prefix)/lib/cmake/CGAL:$(brew --prefix)/lib/cmake:${CMAKE_PREFIX_PATH:-}"',
         ],
       },
     },
@@ -6005,9 +6007,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'openinterpreter.com': {
     modifyRecipe: (recipe: any) => {
-      // Widen python version (CI has 3.14, recipe wants >=3.10<3.12)
+      // Constrain to Python <3.13 — tiktoken dep uses PyO3 v0.20.3 which
+      // only supports up to Python 3.12 (rejects 3.14+ at build time)
       if (recipe.dependencies?.['python.org']) {
-        recipe.dependencies['python.org'] = '>=3.10<3.15'
+        recipe.dependencies['python.org'] = '>=3.10<3.13'
       }
       // Pre-install poetry-core (build backend) and setuptools before venv creation
       if (Array.isArray(recipe.build?.script)) {
