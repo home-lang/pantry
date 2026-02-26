@@ -4258,7 +4258,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'brew install cgal 2>/dev/null || true',
           // Force-link boost so cmake can find boost_system component configs
           'brew link boost --overwrite 2>/dev/null || true',
-          'export CMAKE_PREFIX_PATH="$(brew --prefix)/lib/cmake/CGAL:$(brew --prefix)/lib/cmake:${CMAKE_PREFIX_PATH:-}"',
+          // Explicitly add boost opt path (brew link may fail silently due to formula conflicts)
+          'export CMAKE_PREFIX_PATH="$(brew --prefix boost)/lib/cmake:$(brew --prefix)/lib/cmake/CGAL:$(brew --prefix)/lib/cmake:${CMAKE_PREFIX_PATH:-}"',
         ],
       },
     },
