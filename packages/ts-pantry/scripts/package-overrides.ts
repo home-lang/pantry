@@ -3216,11 +3216,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       linux: {
         prependScript: [
-          // Install libass-dev for subtitle rendering + libvpx-dev so libvpx.so.9
-          // is in /usr/lib/x86_64-linux-gnu/ (system linker path). meson's
-          // "meson --internal exe" step runs the built binary and doesn't reliably
-          // inherit LD_LIBRARY_PATH, and meson overrides LD_RUN_PATH with its own -rpath.
-          'sudo apt-get install -y libass-dev libvpx-dev 2>/dev/null || true',
+          // Install ALL codec/media -dev packages that ffmpeg links against.
+          // meson step 313/314 runs the built mpv binary via "meson --internal exe"
+          // to generate mpv_protocols. This doesn't reliably inherit LD_LIBRARY_PATH,
+          // and meson overrides LD_RUN_PATH with its own -rpath. Installing system
+          // -dev packages puts .so files in /usr/lib/x86_64-linux-gnu/ (always searched).
+          'sudo apt-get install -y libass-dev libvpx-dev libx264-dev libx265-dev libopus-dev libmp3lame-dev libwebp-dev libplacebo-dev 2>/dev/null || true',
         ],
       },
     },
