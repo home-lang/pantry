@@ -6009,6 +6009,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3.10<3.15'
       }
+      // Pre-install poetry-core (build backend) and setuptools before venv creation
+      if (Array.isArray(recipe.build?.script)) {
+        const venvIdx = recipe.build.script.findIndex(
+          (s: any) => typeof s === 'string' && s.includes('python-venv.sh'),
+        )
+        if (venvIdx >= 0) {
+          recipe.build.script.splice(venvIdx, 0,
+            'python3 -m pip install --break-system-packages poetry-core "setuptools<78" wheel 2>/dev/null || true',
+          )
+        }
+      }
     },
   },
 

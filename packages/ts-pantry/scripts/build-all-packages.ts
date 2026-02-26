@@ -665,6 +665,8 @@ Options:
     // sfcgal.org removed — added brew CGAL install override for darwin
     'browser-use.com', // Python 3.12 constraint + setuptools timeout on darwin, linux OK
     'getmonero.org', // cmake security-hardening test failures on darwin ARM64, linux OK
+    'github.com/stub42/pytz', // zic linker failure on darwin ARM64 (symbols not found), linux OK
+    'mergestat.com/mergestat-lite', // vendored zlib C23 incompatibility with Xcode 26.3, linux OK
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
     // laravel.com — fixed: symlink ICU libs from unicode.org into PHP lib dir on darwin
