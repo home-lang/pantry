@@ -3,7 +3,7 @@
  *
  * @domain `unidata.ucar.edu/netcdf`
  * @programs `nc-config`, `nccopy`, `ncdump`, `ncgen`, `ncgen3`
- * @version `4.9.3` (2 versions available)
+ * @version `4.10.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install unidata.ucar.edu/netcdf`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "netcdf"
  * console.log(pkg.description) // "Official GitHub repository for netCDF-C librari..."
  * console.log(pkg.programs)    // ["nc-config", "nccopy", ...]
- * console.log(pkg.versions[0]) // "4.9.3" (latest)
+ * console.log(pkg.versions[0]) // "4.10.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/unidata-ucar-edu/netcdf.md
@@ -87,6 +87,7 @@ export const unidataucaredunetcdfPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.10.0',
     '4.9.3',
     '4.9.2',
   ] as const,
