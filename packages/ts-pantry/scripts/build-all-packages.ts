@@ -1035,6 +1035,24 @@ Options:
     'github.com/sindresorhus/macos-term-size', // codesign verification fails in CI
     'eyrie.org/eagle/podlators', // source tarball 404 — older versions removed from server
     'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
+    // --- Failures from sync run 22422991817 ---
+    'github.com/p7zip-project/p7zip', // Download 404 — release v17.5.0 doesn't exist
+    'github.com/google/re2', // Download 404 — all version tag URLs return 404
+    'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
+    'videolan.org/x265', // Download 404 + cmake CMP0025/CMP0054 OLD no longer supported
+    'snaplet.dev/cli', // better-sqlite3 8.5.0 incompatible with Node.js 24 V8 API changes
+    'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
+    'opensearch.org', // Requires Java 21+ but CI provides older Java
+    'pulumi.io', // Needs `uv` package manager + Go module directory issue
+    'nx.dev', // npm ENOENT: _cacache/tmp path not found during npm install
+    'gnu.org/texinfo', // cc wrapper + libtool interaction causes shell syntax error in gnulib
+    'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
+    'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
+    'sourceforge.net/xmlstar', // Incompatible with libxml2 2.15 API (callback signature changes)
+    'werf.io', // Needs libbtrfs-dev headers (removed btrfs-progs dep but still references btrfs API)
+    'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
+    'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
+    'opendap.org', // configure cannot determine DODS XDR integer sizes
   ])
 
   let platformSkipped = 0

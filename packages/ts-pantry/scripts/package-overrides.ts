@@ -720,21 +720,32 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  'lloyd.github.io/yajl': {
-    // CMAKE prefix quote is handled by generic fix; add CMP0026 policy fix
-    prependScript: [
-      'cmake_policy_file="CMakeLists.txt"',
-      'if [ -f "$cmake_policy_file" ] && ! grep -q "CMP0026" "$cmake_policy_file"; then sed -i.bak \'1s/^/cmake_policy(SET CMP0026 OLD)\\n/\' "$cmake_policy_file" && rm -f "$cmake_policy_file.bak"; fi',
-    ],
-  },
+  // lloyd.github.io/yajl — first entry removed, see second entry below with GET_TARGET_PROPERTY fix
 
   'musepack.net': {
+    env: { LDFLAGS: '-lm' },
     modifyRecipe: (recipe: any) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
+      }
+    },
+  },
+
+  // ─── crates.io/sd — fix virtual workspace manifest path ──────────────
+  'crates.io/sd': {
+    modifyRecipe: (recipe: any) => {
+      // The repo root has a virtual workspace manifest. cargo install --path .
+      // doesn't work — need to point to the actual package member directory.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('cargo install') && step.includes('--path .')) {
+            recipe.build.script[i] = step.replace('--path .', '--path crates/sd')
+          }
+        }
       }
     },
   },
@@ -1138,10 +1149,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['pagure.io/xmlto']) {
         delete recipe.build.dependencies['pagure.io/xmlto']
       }
-      // Add meson args to skip xmlto-dependent doc generation
-      // Note: doc_xml_dtd removed — not a valid option in newer dbus versions
+      // Add meson args to skip xmlto-dependent doc generation + fix systemd install paths
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
-        for (const flag of ['-Ddoxygen_docs=disabled', '-Dxml_docs=disabled']) {
+        for (const flag of [
+          '-Ddoxygen_docs=disabled',
+          '-Dxml_docs=disabled',
+          '-Dsystemd_system_unitdir={{prefix}}/lib/systemd/system',
+          '-Dsystemd_user_unitdir={{prefix}}/lib/systemd/user',
+        ]) {
           if (!recipe.build.env.MESON_ARGS.includes(flag)) {
             recipe.build.env.MESON_ARGS.push(flag)
           }
@@ -1323,6 +1338,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── xkbcommon.org — remove XKeyboardConfig dep, fix meson args ──────────
 
   'xkbcommon.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install xcb-xkb dev headers for x11 support
+          'sudo apt-get install -y libxcb-xkb-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove freedesktop.org/XKeyboardConfig dep (not in S3)
       if (recipe.dependencies?.['freedesktop.org/XKeyboardConfig']) {
@@ -1484,6 +1507,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
         }],
       },
     },
+    modifyRecipe: (recipe: any) => {
+      // metagpt requires Python >=3.9,<3.12 — pin to 3.11.x
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '~3.11'
+      }
+    },
   },
 
   // ─── expo.dev/eas-cli — use corepack to enable yarn 4 ───────────────────
@@ -1553,6 +1582,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── rockdaboot.github.io/libpsl — switch to libidn2 runtime ─────────────
 
   'rockdaboot.github.io/libpsl': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install libunistring and libidn2 dev libs for PSL runtime
+          'sudo apt-get install -y libunistring-dev libidn2-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove unicode.org dep (not in S3) — use libidn2 instead
       if (recipe.dependencies?.['unicode.org']) {
@@ -2246,8 +2283,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         prependScript: [
-          // Ensure ncurses dev libs are available for configure tlib check
-          'sudo apt-get install -y libncursesw5-dev 2>/dev/null || true',
+          // Ensure both ncurses dev libs are available — ncursesw6 for wide-char support
+          'sudo apt-get install -y libncurses-dev libncursesw5-dev 2>/dev/null || true',
         ],
       },
     },
@@ -2258,11 +2295,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a !== '--enable-perlinterp' && a !== '--enable-rubyinterp',
         )
       }
-      // Fix tlib on linux — system ncurses at /usr may not have tinfow, use ncurses
+      // Fix tlib on linux — force ncursesw and provide explicit lib path
       if (Array.isArray(recipe.build?.env?.linux?.ARGS)) {
         recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.map(
-          (a: string) => a === '--with-tlib=tinfow' ? '--with-tlib=ncurses' : a,
+          (a: string) => a === '--with-tlib=tinfow' ? '--with-tlib=ncursesw' : a,
         )
+      }
+      // Remove ncurses S3 dep — use system ncurses
+      if (recipe.dependencies?.['invisible-island.net/ncurses']) {
+        delete recipe.dependencies['invisible-island.net/ncurses']
       }
       // Remove perl.org and ruby-lang.org runtime deps
       if (recipe.dependencies?.['perl.org']) delete recipe.dependencies['perl.org']
@@ -2724,12 +2765,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── tesseract-ocr.github.io — fix prefix quoting ────────────────────
 
   'tesseract-ocr.github.io': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install leptonica dev library required for tesseract
+          'sudo apt-get install -y libleptonica-dev liblept5 2>/dev/null || sudo apt-get install -y libleptonica-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix --prefix and --datarootdir args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(--\w+=)"([^"]+)"$/, '$1$2'),
         )
+      }
+      // Remove leptonica.org dep (not in S3) — use system leptonica
+      if (recipe.dependencies?.['leptonica.org']) {
+        delete recipe.dependencies['leptonica.org']
       }
     },
   },
@@ -2935,9 +2988,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
           a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2').replace(/^(--libdir=)"([^"]+)"$/, '$1$2'),
         )
-        // Add -Dintrospection=false
-        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=false')) {
-          recipe.build.env.MESON_ARGS.push('-Dintrospection=false')
+        // Add -Dintrospection=disabled (must use feature type, not boolean)
+        recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.filter(
+          (a: string) => !a.includes('-Dintrospection='),
+        )
+        if (!recipe.build.env.MESON_ARGS.includes('-Dintrospection=disabled')) {
+          recipe.build.env.MESON_ARGS.push('-Dintrospection=disabled')
         }
       }
     },
@@ -2999,12 +3055,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── jpeg.org/jpegxl — fix build on darwin ───────────────────────────
 
   'jpeg.org/jpegxl': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install LCMS2 dev library required by libjxl
+          'sudo apt-get install -y liblcms2-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Add -DJPEGXL_ENABLE_OPENEXR=OFF to avoid openexr dep issues
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('-DJPEGXL_ENABLE_OPENEXR=OFF')) {
           recipe.build.env.ARGS.push('-DJPEGXL_ENABLE_OPENEXR=OFF')
         }
+      }
+      // Remove littlecms.com dep (not in S3) — use system LCMS2
+      if (recipe.dependencies?.['littlecms.com']) {
+        delete recipe.dependencies['littlecms.com']
       }
     },
   },
@@ -3293,6 +3361,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── python-pillow.org — remove x.org/xcb dep ────────────────────────
 
   'python-pillow.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Ensure AR and RANLIB point to system tools (LLVM ar at /tools/llvm/bin may not exist)
+          'export AR="$(command -v ar)"',
+          'export RANLIB="$(command -v ranlib)"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove x.org/xcb dep (not in S3)
       if (recipe.dependencies?.['x.org/xcb']) {
@@ -3303,6 +3380,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => a !== '-C xcb=enable',
         )
+      }
+      // Remove llvm.org build dep (use system toolchain)
+      if (recipe.build?.dependencies?.linux?.['llvm.org']) {
+        delete recipe.build.dependencies.linux['llvm.org']
       }
     },
   },
@@ -3325,6 +3406,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove goreleaser.com build dep (not in S3)
       if (recipe.build?.dependencies?.['goreleaser.com']) {
         delete recipe.build.dependencies['goreleaser.com']
+      }
+      // Fix: replace `rm -r props` with `rm -rf props` (dir may not exist in newer versions)
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('rm -r props')) {
+            recipe.build.script[i] = step.replace('rm -r props', 'rm -rf props')
+          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('rm -r props')) {
+            step.run = step.run.replace('rm -r props', 'rm -rf props')
+          }
+        }
       }
     },
   },
@@ -3481,7 +3574,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── epsilon-project.sourceforge.io — simple autotools ──────────────
 
   'epsilon-project.sourceforge.io': {
-    // Simple autotools build — no changes needed beyond what's already in CI
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install popt dev library required for epsilon build
+          'sudo apt-get install -y libpopt-dev 2>/dev/null || true',
+        ],
+      },
+    },
   },
 
   // ─── gdal.org — fix stray cmake quote + sed -i BSD + remove llvm dep ─
@@ -3588,9 +3688,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'aws.amazon.com/cli': {
     modifyRecipe: (recipe: any) => {
-      // Widen python version constraint to include 3.12
-      if (recipe.build?.dependencies?.['python.org'] === '>=3.7<3.12') {
-        recipe.build.dependencies['python.org'] = '>=3.7<3.13'
+      // Pin python to 3.11.x — flit_core uses ast.Str which was removed in 3.12
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '~3.11'
       }
     },
   },
@@ -3751,6 +3851,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── modal.com — remove cython dep on linux/aarch64 ──────────────────
 
   'modal.com': {
+    prependScript: [
+      // Ensure setuptools (pkg_resources) is available for metadata generation
+      'python3 -m pip install --break-system-packages setuptools wheel 2>/dev/null || pip3 install --break-system-packages setuptools wheel 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       // Remove cython.org dep on linux/aarch64 (not in S3)
       if (recipe.build?.dependencies?.['linux/aarch64']?.['cython.org']) {
@@ -3839,17 +3943,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove x.org/x11 and x.org/exts deps (not in S3)
       if (recipe.dependencies?.['x.org/x11']) delete recipe.dependencies['x.org/x11']
       if (recipe.dependencies?.['x.org/exts']) delete recipe.dependencies['x.org/exts']
-      // Fix sed -i BSD compat
+      // Fix sed -i BSD compat + make glob patterns resilient to empty matches
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
-              .replace(/sed -i -f /g, 'sed -i.bak -f ')
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+              step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+                .replace(/sed -i -f /g, 'sed -i.bak -f ')
+            }
+            // Make glob-based sed resilient: use bash nullglob or || true
+            if (step.run.includes('sed ') && (step.run.includes('*.sh') || step.run.includes('*/'))) {
+              step.run = 'shopt -s nullglob; ' + step.run + '; shopt -u nullglob'
+            }
           }
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+          if (typeof step === 'string') {
+            let s = step
+            if (s.includes('sed -i') && !s.includes('sed -i.bak')) {
+              s = s.replace(/sed -i /g, 'sed -i.bak ')
+            }
+            if (s.includes('sed ') && (s.includes('*.sh') || s.includes('*/'))) {
+              s = 'shopt -s nullglob; ' + s + '; shopt -u nullglob'
+            }
+            recipe.build.script[i] = s
           }
         }
       }
@@ -3883,6 +3999,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── rucio.cern.ch/rucio-client — remove postgresql dep ──────────────
 
   'rucio.cern.ch/rucio-client': {
+    prependScript: [
+      // Install python build module required for pip wheel building
+      'python3 -m pip install --break-system-packages build setuptools wheel 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       // Remove postgresql.org build dep (not in S3)
       if (recipe.build?.dependencies?.['postgresql.org']) {
@@ -4590,10 +4710,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mypy-lang.org — widen python version constraint ─────────────────
 
   'mypy-lang.org': {
+    prependScript: [
+      // Ensure setuptools is available for build
+      'python3 -m pip install --break-system-packages setuptools pathspec 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
-      // Widen python version constraint to include 3.12
-      if (recipe.build?.dependencies?.['python.org'] === '>=3<3.12') {
-        recipe.build.dependencies['python.org'] = '>=3<3.13'
+      // Widen python version constraint — current CI has 3.14
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3<3.15'
       }
     },
   },
@@ -4665,6 +4789,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
+        // Fix: set explicit Lua module install directory to prevent CMake from
+        // parsing lua.h #define lines into the path (Lua version detection bug)
+        if (!recipe.build.env.CMAKE_ARGS.some((a: string) => a.includes('LUA_INSTALL_DIR'))) {
+          recipe.build.env.CMAKE_ARGS.push('-DLUA_INSTALL_DIR=lib/lua')
+        }
       }
     },
   },
@@ -5211,4 +5340,55 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── gaia-gis.it/fossil/freexl — install minizip on linux ───────────
+
+  'gaia-gis.it/fossil/freexl': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libminizip-dev 2>/dev/null || true',
+        ],
+      },
+      darwin: {
+        prependScript: [
+          'brew install minizip 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix minizip)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: any) => {
+      // Remove zlib.net/minizip dep (not reliably in S3) — use system minizip
+      if (recipe.dependencies?.['zlib.net/minizip']) {
+        delete recipe.dependencies['zlib.net/minizip']
+      }
+    },
+  },
+
+  // ─── github.com/lu-zero/cargo-c — ensure openssl-sys can find headers ─
+
+  'github.com/lu-zero/cargo-c': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libssl-dev pkg-config 2>/dev/null || true',
+          'export OPENSSL_DIR="/usr"',
+          'export OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu"',
+          'export OPENSSL_INCLUDE_DIR="/usr/include"',
+        ],
+      },
+    },
+  },
+
+  // ─── mypy-lang.org — pin python version ─────────────────────────────
+
+  // (override already exists at line ~4592, updating here is not needed)
+
+  // ─── jpeg.org/jpegxl — install LCMS2 on linux ──────────────────────
+
+  // (override already exists — adding LCMS2 install to it below)
+
+  // ─── python-pillow.org — fix LLVM ar path on linux ──────────────────
+
+  // (override already exists — adding AR fix below)
 }
