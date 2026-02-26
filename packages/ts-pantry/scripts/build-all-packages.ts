@@ -1034,7 +1034,7 @@ Options:
     'github.com/mas-cli/mas', // Swift build: duplicate .build targets on CI runner
     'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild
     // github.com/nvbn/thefuck removed — widened python version constraint in override
-    // github.com/npiv/chatblade removed — widened python version constraint in override
+    'github.com/npiv/chatblade', // tiktoken requires Rust pyo3-ffi compilation that fails on Python 3.14
     // github.com/stub42/pytz removed — widened python version constraint in override
     // github.com/mattrobenolt/jinja2-cli removed — widened python version constraint in override
     // github.com/pressly/sup removed — fixed go mod init in override

@@ -5888,16 +5888,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
       }
-      // Fix build script: replace multiline ln -s command that causes shell syntax error
-      // After normalization, recipe.build is always { script: [...] }
+      // Remove the ln -s step entirely — it uses YAML folded scalar (>) which can cause
+      // shell syntax errors. The venv works fine without the symlink.
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.map((step: any) => {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('ln -s')) {
-            // Replace the broken folded scalar command with a simple one
-            step.run = 'ln -sf python3 python3'
-            step['working-directory'] = step['working-directory'] || '{{prefix}}/venv/lib'
+        recipe.build.script = recipe.build.script.filter((step: any) => {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            return !step.run.includes('ln -s') && step.run !== '>'
           }
-          return step
+          return true
         })
       }
     },

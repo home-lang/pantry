@@ -162,7 +162,8 @@ function parseYamlValue(
   blockIndent: number,
   canBeArray: boolean = false,
 ): any {
-  if (rawVal === '|' || rawVal === '|-') {
+  if (rawVal === '|' || rawVal === '|-' || rawVal === '>' || rawVal === '>-') {
+    const isFolded = rawVal.startsWith('>')
     // Block scalar — detect actual content indent from first content line
     // This prevents sibling keys (working-directory:, if:) from being consumed
     let j = currentLineIdx + 1
@@ -181,7 +182,9 @@ function parseYamlValue(
         j++
       } else break
     }
-    return { value: blockLines.join('\n').trim(), _newIndex: j - 1 }
+    // Folded scalars (>) replace newlines with spaces; literal scalars (|) keep newlines
+    const joined = isFolded ? blockLines.join(' ').replace(/  +/g, ' ').trim() : blockLines.join('\n').trim()
+    return { value: joined, _newIndex: j - 1 }
   }
 
   if (rawVal === '' && canBeArray) {
