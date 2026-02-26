@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-26T06:05:25.788Z
+ * Generated on 2026-02-26T08:26:20.420Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1650 total)
+ * List of all known packages (1651 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -767,6 +767,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/oneapi-src/oneTBB',
   'github.com/oobabooga/text-generation-webui',
   'github.com/open-source-parsers/jsoncpp',
+  'github.com/openclaw/openclaw',
   'github.com/opencollab/arpack-ng',
   'github.com/p7zip-project/p7zip',
   'github.com/pantoniou/libfyaml',
