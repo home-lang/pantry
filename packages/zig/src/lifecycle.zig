@@ -94,6 +94,7 @@ pub const ScriptResult = struct {
     exit_code: u8,
     stdout: ?[]const u8,
     stderr: ?[]const u8,
+    duration_ms: u64 = 0,
 
     pub fn deinit(self: *ScriptResult, allocator: std.mem.Allocator) void {
         if (self.stdout) |out| allocator.free(out);
@@ -315,6 +316,8 @@ pub fn executeScript(
         try std.fmt.allocPrint(allocator, "export PATH=\"{s}/{s}/.bin:{s}\" && {s}", .{ options.cwd, options.modules_dir, current_path, script_cmd });
     defer if (!is_windows) allocator.free(wrapped_cmd);
 
+    const timer = std.time.Instant.now() catch null;
+
     const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{
         if (is_windows) "cmd" else "sh",
         if (is_windows) "/C" else "-c",
@@ -330,6 +333,11 @@ pub fn executeScript(
             .stderr = error_msg,
         };
     };
+
+    const duration_ms: u64 = if (timer) |start| blk: {
+        const end = std.time.Instant.now() catch break :blk 0;
+        break :blk end.since(start) / std.time.ns_per_ms;
+    } else 0;
 
     const success = switch (result.term) {
         .exited => |code| code == 0,
@@ -378,6 +386,7 @@ pub fn executeScript(
         .exit_code = exit_code,
         .stdout = stdout,
         .stderr = stderr,
+        .duration_ms = duration_ms,
     };
 }
 

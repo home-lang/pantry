@@ -677,17 +677,29 @@ fn publishSingleToRegistry(
 
             if (script_info.script) |script| {
                 style.print("Running {s} script...\n", .{script_info.name});
-                const result = lifecycle.executeScript(allocator, script_info.name, script, .{
+                var script_result = lifecycle.executeScript(allocator, script_info.name, script, .{
                     .cwd = package_dir,
                 }) catch |err| {
                     const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed: {any}", .{ script_info.name, err });
                     return CommandResult.err(allocator, err_msg);
                 };
-                if (!result.success) {
-                    const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed with exit code {d}", .{ script_info.name, result.exit_code });
+                defer script_result.deinit(allocator);
+                if (script_result.stdout) |out| {
+                    if (out.len > 0) style.print("{s}\n", .{out});
+                }
+                if (script_result.stderr) |err| {
+                    if (err.len > 0) style.print("{s}\n", .{err});
+                }
+                if (!script_result.success) {
+                    const err_msg = try std.fmt.allocPrint(allocator, "Error: {s} script failed with exit code {d}", .{ script_info.name, script_result.exit_code });
                     return CommandResult.err(allocator, err_msg);
                 }
-                style.print("✓ {s} completed\n", .{script_info.name});
+                const duration_ms = script_result.duration_ms;
+                if (duration_ms >= 1000) {
+                    style.print("  ✓ {s} completed {s}{d}s{s}\n", .{ script_info.name, style.dim, duration_ms / 1000, style.reset });
+                } else {
+                    style.print("  ✓ {s} completed {s}{d}ms{s}\n", .{ script_info.name, style.dim, duration_ms, style.reset });
+                }
             }
         }
     }
