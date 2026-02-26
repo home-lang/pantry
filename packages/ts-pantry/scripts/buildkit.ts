@@ -744,6 +744,8 @@ export function generateBuildScript(
   sections.push('      if [ "$_engine" = "poetry" ]; then')
   sections.push('        "$_prefix/venv/bin/pip" install poetry || echo "[buildkit] WARN: poetry install failed" >&2')
   sections.push('      fi')
+  sections.push('      # Add venv bin to PATH so recipe scripts find venv tools (poetry, etc)')
+  sections.push('      export PATH="$_prefix/venv/bin:$PATH"')
   sections.push('      ;;')
   sections.push('    seal)')
   sections.push('      local engine="" prefix=""')
