@@ -394,25 +394,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'vapoursynth.com': { prependScript: [GLIBTOOL_FIX] },
   'github.com/maxmind/libmaxminddb': { prependScript: [GLIBTOOL_FIX] },
   'ferzkopp.net/SDL2_gfx': {
-    prependScript: [
-      GLIBTOOL_FIX,
-      // Linux: force libtoolize to match system libtool version (source tarball has 2.5.4, Ubuntu has 2.4.7)
-      'libtoolize --force --copy 2>/dev/null || true',
-    ],
+    prependScript: [GLIBTOOL_FIX],
+    platforms: {
+      linux: {
+        prependScript: [
+          // Linux: source tarball has libtool 2.5.4 macros but Ubuntu has 2.4.7
+          // Remove old m4 macros so autoreconf -fi (in build script) regenerates with system libtool
+          'rm -f aclocal.m4 configure m4/libtool.m4 m4/lt*.m4 ltmain.sh config.guess config.sub',
+          'libtoolize --force --copy',
+        ],
+      },
+    },
   },
   'midnight-commander.org': {
     prependScript: [GLIBTOOL_FIX],
     modifyRecipe: (recipe: any) => {
-      // Fix broken find/sed in post-install script:
-      // - `find ... -depth 1` is invalid — use `-maxdepth 1`
-      // - `sed -i.bak "s|$PKGX_DIR|..."` fails when $PKGX_DIR is empty
+      // Strip post-install pkgx-specific relocatability fixup:
+      // The find/sed block requires $PKGX_DIR (empty in CI) and uses
+      // `find -depth 1` (invalid on GNU find). We don't need pkgx
+      // relocatability for our S3 binaries.
       if (typeof recipe.build?.script === 'string') {
-        recipe.build.script = recipe.build.script
-          .replace(/-depth 1/g, '-maxdepth 1')
-          .replace(
-            /sed -i\.bak "s\|(\$PKGX_DIR)\|/g,
-            'sed -i.bak "s|${PKGX_DIR:-.}|',
-          )
+        const lines = recipe.build.script.split('\n')
+        const installIdx = lines.findIndex((l: string) => l.trim() === 'make install')
+        if (installIdx >= 0) {
+          recipe.build.script = lines.slice(0, installIdx + 1).join('\n')
+        }
       }
     },
   },
@@ -1708,7 +1714,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/libfuse/libfuse — no-op update-rc.d on linux ──
+  // ─── github.com/libfuse/libfuse — no-op update-rc.d, fix multiarch libdir on linux ──
   'github.com/libfuse/libfuse': {
     platforms: {
       linux: {
@@ -1721,15 +1727,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
+    modifyRecipe: (recipe: any) => {
+      // Force standard lib/ path instead of lib/x86_64-linux-gnu/ (multiarch)
+      // The post-install sed expects fuse3.pc in lib/pkgconfig/
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--libdir=lib')
+      }
+    },
   },
 
   // ─── info-zip.org/zip — skip Debian patches, fix Xcode 26 SDK conflict ──
   'info-zip.org/zip': {
     platforms: {
       darwin: {
-        // Xcode 26 SDK conflicts with K&R-style memset/memcpy/memcmp prototypes
-        // enabled by -DZMEM. Undefine it to use the SDK's proper declarations.
-        env: { LOCAL_ZIP: '-UZMEM' },
+        prependScript: [
+          // Xcode 26 SDK declares memset/memcpy/memcmp with strict types.
+          // zip.h has K&R-style prototypes guarded by #ifdef ZMEM that conflict.
+          // The Makefile auto-detects ZMEM and adds -DZMEM, overriding -UZMEM.
+          // Fix: remove the conflicting prototypes directly from zip.h.
+          "sed -E -i.bak '/char \\*memset|char \\*memcpy|int memcmp/d' zip.h",
+        ],
       },
     },
     modifyRecipe: (recipe: any) => {
@@ -1755,15 +1772,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/google/shaderc — disable copyright check, widen Python ──
   'github.com/google/shaderc': {
-    prependScript: [
-      // Remove copyright check cmake target (fails on pantry-injected python-venv.py)
-      'sed -i.bak "/check.copyright\\|check-copyright/d" CMakeLists.txt 2>/dev/null || true',
-    ],
     modifyRecipe: (recipe: any) => {
       if (recipe.build?.dependencies?.['python.org'] === '~3.12') {
         recipe.build.dependencies['python.org'] = '3'
       }
-      // Also remove copyright check after git-sync-deps populates third_party
+      // Replace check-copyright.py with a no-op after git-sync-deps.
+      // Previous approach (sed to remove cmake lines) caused cmake parse errors
+      // because the add_custom_target spans multiple lines.
       if (Array.isArray(recipe.build?.script)) {
         const syncIdx = recipe.build.script.findIndex((s: any) =>
           typeof s === 'string' && s.includes('git-sync-deps'),
@@ -1772,7 +1787,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           recipe.build.script.splice(
             syncIdx + 1,
             0,
-            'find .. -name CMakeLists.txt -exec sed -i.bak "/check.copyright\\|check-copyright/d" {} \\; 2>/dev/null || true',
+            'printf "import sys\\nsys.exit(0)\\n" > ../utils/check-copyright.py',
           )
         }
       }

@@ -1034,6 +1034,7 @@ Options:
     'github.com/essembeh/gnome-extensions-cli', // git tag v0.11.0 deleted upstream
     'github.com/sindresorhus/macos-term-size', // codesign verification fails in CI
     'eyrie.org/eagle/podlators', // source tarball 404 — older versions removed from server
+    'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
   ])
 
   let platformSkipped = 0
