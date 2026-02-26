@@ -2923,10 +2923,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'poppler.freedesktop.org': {
     platforms: {
+      darwin: {
+        prependScript: [
+          // Install system lcms2 (littlecms.com S3 binary unreliable)
+          'brew install little-cms2 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix little-cms2)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export CMAKE_PREFIX_PATH="$(brew --prefix little-cms2):${CMAKE_PREFIX_PATH:-}"',
+        ],
+      },
       linux: {
         prependScript: [
-          // Install libnss3-dev for PDF signing support (required by cmake)
-          'sudo apt-get install -y libnss3-dev 2>/dev/null || true',
+          // Install libnss3-dev for PDF signing support + liblcms2-dev for color management
+          'sudo apt-get install -y libnss3-dev liblcms2-dev 2>/dev/null || true',
         ],
       },
     },
@@ -2959,6 +2967,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['gnupg.org/gpgme']) delete recipe.dependencies['gnupg.org/gpgme']
       if (recipe.dependencies?.['gnupg.org/libgpg-error']) delete recipe.dependencies['gnupg.org/libgpg-error']
       if (recipe.dependencies?.['gnupg.org/libassuan']) delete recipe.dependencies['gnupg.org/libassuan']
+      // Remove littlecms.com dep — use system lcms2 instead (S3 binary unreliable)
+      if (recipe.dependencies?.['littlecms.com']) delete recipe.dependencies['littlecms.com']
       // Remove linux gcc/libstdcxx runtime deps
       if (recipe.dependencies?.linux?.['gnu.org/gcc/libstdcxx']) delete recipe.dependencies.linux['gnu.org/gcc/libstdcxx']
     },
@@ -5021,22 +5031,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       // Ensure setuptools is available for build
       'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+      // Create a pip constraints file to pin pathspec<0.12
+      // (pathspec>=0.12 removed GitWildMatchPatternError export which mypy references at build time)
+      'echo "pathspec<0.12" > /tmp/pip-constraints-mypy.txt',
+      'export PIP_CONSTRAINT=/tmp/pip-constraints-mypy.txt',
     ],
     modifyRecipe: (recipe: any) => {
       // Widen python version constraint — current CI has 3.14
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
-      }
-      // Inject pathspec<0.12 install into venv BEFORE pip install mypy
-      // (pathspec>=0.12 removed GitWildMatchPatternError export which mypy references)
-      if (Array.isArray(recipe.build?.script)) {
-        const pipIdx = recipe.build.script.findIndex((s: any) =>
-          (typeof s === 'string' && s.includes('pip install .'))
-          || (typeof s === 'object' && s.run && typeof s.run === 'string' && s.run.includes('pip install .')),
-        )
-        if (pipIdx > 0) {
-          recipe.build.script.splice(pipIdx, 0, '${prefix}/venv/bin/pip install "pathspec<0.12"')
-        }
       }
     },
   },
@@ -5701,16 +5704,4 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
   },
-
-  // ─── mypy-lang.org — pin python version ─────────────────────────────
-
-  // (override already exists at line ~4592, updating here is not needed)
-
-  // ─── jpeg.org/jpegxl — install LCMS2 on linux ──────────────────────
-
-  // (override already exists — adding LCMS2 install to it below)
-
-  // ─── python-pillow.org — fix LLVM ar path on linux ──────────────────
-
-  // (override already exists — adding AR fix below)
 }

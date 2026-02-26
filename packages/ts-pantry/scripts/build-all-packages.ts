@@ -1065,7 +1065,7 @@ Options:
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
     'opensearch.org', // Requires Java 21+ but CI provides older Java
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
-    // nx.dev removed — fixed npm cache ENOENT by cleaning cache and using fresh temp dir in override
+    'nx.dev', // npm tarball corruption (ENOENT _cacache/tmp) — fundamental npm issue, not fixable via override
     'gnu.org/texinfo', // cc wrapper + libtool interaction causes shell syntax error in gnulib
     'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
     'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
