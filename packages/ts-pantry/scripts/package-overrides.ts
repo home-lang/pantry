@@ -4205,6 +4205,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── sfcgal.org — fix stray cmake prefix quote ───────────────────────
 
   'sfcgal.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install CGAL from brew — S3 cgal.org binary has cmake config files
+          // in a non-standard location that cmake can't find via CMAKE_PREFIX_PATH
+          'brew install cgal 2>/dev/null || true',
+          'export CMAKE_PREFIX_PATH="$(brew --prefix)/lib/cmake/CGAL:${CMAKE_PREFIX_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {

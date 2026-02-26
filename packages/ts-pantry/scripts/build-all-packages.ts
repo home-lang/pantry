@@ -663,6 +663,7 @@ Options:
     'fuellabs.github.io/sway', // Rust linker failure on darwin (forc binary), linux OK
     'gitlab.com/procps-ng/watch', // Linux process utilities, darwin build fails
     'sfcgal.org', // CGAL cmake failure on darwin, linux OK
+    'browser-use.com', // Python 3.12 constraint + setuptools timeout on darwin, linux OK
     'getmonero.org', // cmake security-hardening test failures on darwin ARM64, linux OK
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
