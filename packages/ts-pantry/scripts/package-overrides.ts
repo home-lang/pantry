@@ -5967,8 +5967,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/moretension/duti': {
     modifyRecipe: (recipe: any) => {
-      // Remove autoconf build dep if not needed for pre-configured source
-      // Fix: use install target that works on darwin
+      // Fix: nullglob causes ? in URLs to be treated as glob — quote all curl URLs
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            // Quote unquoted URLs in curl commands (? is a glob char with nullglob)
+            step.run = step.run.replace(
+              /curl\s+-L\s+(https?:\/\/\S+)/g,
+              (match: string, url: string) => `curl -L "${url}"`,
+            )
+          }
+        }
+      }
     },
   },
 
