@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-25T19:40:43.040Z
+ * Generated on 2026-02-26T06:05:25.788Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1648 total)
+ * List of all known packages (1650 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -757,6 +757,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/nomic-ai/gpt4all',
   'github.com/npiv/chatblade',
   'github.com/npryce/adr-tools',
+  'github.com/nullclaw/nullclaw',
   'github.com/numactl/numactl',
   'github.com/nvbn/thefuck',
   'github.com/nvm-sh/nvm',
@@ -1339,6 +1340,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'permit.io/cedar-agent',
   'php.net',
   'phpmyadmin.net',
+  'pi.dev',
   'pimalaya.org/himalaya',
   'pinniped.dev',
   'pip.pypa.io',
