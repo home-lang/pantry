@@ -652,7 +652,7 @@ export function generateBuildScript(
   // YAML recipes use GNU sed syntax (sed -i 'pattern' file), but macOS BSD sed requires
   // sed -i '' 'pattern' file. Our wrapper auto-translates when gsed isn't available.
   sections.push('# sed wrapper: use GNU sed on macOS + handle empty nullglob gracefully')
-  sections.push('__real_sed="$(command -v gsed 2>/dev/null || command -v sed)"')
+  sections.push('__real_sed="$(command -v gsed 2>/dev/null || { [ -x /opt/homebrew/opt/gnu-sed/libexec/gnubin/sed ] && echo /opt/homebrew/opt/gnu-sed/libexec/gnubin/sed; } || command -v sed)"')
   sections.push('__sed_is_gnu=false')
   sections.push('if "$__real_sed" --version 2>&1 | grep -q GNU; then __sed_is_gnu=true; fi')
   sections.push('sed() {')

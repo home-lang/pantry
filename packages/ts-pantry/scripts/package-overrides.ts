@@ -3930,18 +3930,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── openresty.org — fix sed -i BSD compat ───────────────────────────
 
-  'openresty.org': {
-    platforms: {
-      darwin: {
-        prependScript: [
-          // BSD sed '2i' insert command syntax is incompatible with GNU sed.
-          // Shim gsed (GNU sed from Homebrew) as 'sed' so the recipe's sed commands work.
-          // gsed may not be in PATH if gnu-sed is installed but not linked
-          'GSED="$(command -v gsed 2>/dev/null || echo /opt/homebrew/opt/gnu-sed/libexec/gnubin/sed)"; if [ -x "$GSED" ]; then mkdir -p /tmp/gsed-shim && ln -sf "$GSED" /tmp/gsed-shim/sed && export PATH="/tmp/gsed-shim:$PATH"; fi',
-        ],
-      },
-    },
-  },
+  // openresty.org — no override needed: buildkit sed wrapper now finds gsed in Homebrew opt paths
 
   // ─── opensearch.org — fix sed -i BSD compat ──────────────────────────
 
