@@ -4250,9 +4250,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install CGAL from brew — S3 cgal.org binary has cmake config files
           // in a non-standard location that cmake can't find via CMAKE_PREFIX_PATH
           'brew install cgal 2>/dev/null || true',
-          // Force-link boost so cmake can find boost_system component configs
+          // Force-link boost so cmake can find headers and cmake configs
           'brew link boost --overwrite 2>/dev/null || true',
-          // Explicitly add boost opt path (brew link may fail silently due to formula conflicts)
+          // Homebrew boost 1.90 installs BoostConfig.cmake but NOT individual component
+          // configs (boost_system, etc). Create a minimal header-only config for boost_system.
+          'BOOST_CMAKE_DIR="$(brew --prefix boost)/lib/cmake"; BOOST_VER="$(ls "$BOOST_CMAKE_DIR" 2>/dev/null | grep "^Boost-" | head -1 | sed "s/Boost-//")"; if [ -n "$BOOST_VER" ] && [ ! -f "$BOOST_CMAKE_DIR/boost_system-$BOOST_VER/boost_systemConfig.cmake" ]; then mkdir -p "$BOOST_CMAKE_DIR/boost_system-$BOOST_VER" && echo \'if(NOT TARGET Boost::system)\nadd_library(Boost::system INTERFACE IMPORTED)\nif(TARGET Boost::headers)\nset_target_properties(Boost::system PROPERTIES INTERFACE_LINK_LIBRARIES Boost::headers)\nendif()\nendif()\' > "$BOOST_CMAKE_DIR/boost_system-$BOOST_VER/boost_systemConfig.cmake" && echo \'set(boost_system_FOUND TRUE)\nset(boost_system_VERSION "\'$BOOST_VER\'")\' > "$BOOST_CMAKE_DIR/boost_system-$BOOST_VER/boost_system-config-version.cmake"; fi',
           'export CMAKE_PREFIX_PATH="$(brew --prefix boost)/lib/cmake:$(brew --prefix)/lib/cmake/CGAL:$(brew --prefix)/lib/cmake:${CMAKE_PREFIX_PATH:-}"',
         ],
       },
@@ -4263,11 +4265,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
-        // Bypass BoostConfig.cmake (Homebrew boost 1.90 lacks individual component cmake configs).
-        // Use traditional FindBoost module which works with header-only boost_system.
-        if (!recipe.build.env.CMAKE_ARGS.some((a: string) => a.includes('Boost_NO_BOOST_CMAKE'))) {
-          recipe.build.env.CMAKE_ARGS.push('-DBoost_NO_BOOST_CMAKE=ON')
-        }
+        // boost_system cmake config is created by prependScript on darwin
       }
       // Remove linux gcc/make build deps (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
