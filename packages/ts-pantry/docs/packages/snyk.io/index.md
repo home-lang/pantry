@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 57 versions</summary>
+<summary>Show all 58 versions</summary>
 
+- `1.1303.0`
 - `1.1302.1`, `1.1302.0`
 - `1.1301.2`, `1.1301.1`, `1.1301.0`
 - `1.1300.2`, `1.1300.1`, `1.1300.0`
@@ -53,13 +54,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.1302.1`
+**Latest Version**: `1.1303.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +snyk.io@1.1302.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +snyk.io@1.1303.0 -- $SHELL -i
 ```
 
 ## Dependencies
