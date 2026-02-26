@@ -736,7 +736,7 @@ Options:
     // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
-    // openinterpreter.com removed — widened python version constraint in override
+    'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
     'psycopg.org/psycopg3', // Git-based distributable pulling dev versions
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
