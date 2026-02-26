@@ -1061,8 +1061,8 @@ Options:
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
     'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
-    // videolan.org/x265 removed — fixed cmake CMP0025/CMP0054 policy in override
-    // snaplet.dev/cli removed — pinned Node to v20 LTS in override
+    'videolan.org/x265', // cmake multi-build (10bit/12bit/8bit) directory management + make failure
+    'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
     'opensearch.org', // Requires Java 21+ but CI provides older Java
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
@@ -1082,12 +1082,12 @@ Options:
     'rucio.cern.ch/rucio-client', // Python build module chain failure — empty pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
     'tcl-lang.org', // System Tcl 8.x version conflict with newly built Tcl 9
-    // github.com/luvit/luv removed — fixed stray cmake prefix quote in override
+    'github.com/luvit/luv', // cmake build succeeds but post-build step fails
     'musepack.net', // Duplicate symbol Res_bit in libmpcdec (library internal issue)
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
     // --- Failures from verification builds (2026-02-26) ---
     // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
-    // freedesktop.org/appstream removed — install libfyaml from apt in override
+    'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
     'unidata.ucar.edu/netcdf', // Needs HDF5 libraries (complex dep chain not in S3)
     'lavinmq.com', // Crystal/shards toolchain not available in CI
     'vapoursynth.com', // Needs zimg (not in S3 dep chain)
