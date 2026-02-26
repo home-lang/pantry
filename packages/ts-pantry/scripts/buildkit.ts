@@ -1105,7 +1105,7 @@ for d in dirs:
                             print(f"[cmake-scrub] replacing missing {path} -> {sdklib}", file=sys.stderr)
                             return sdklib` : ''}
                 return path
-            t = re.sub(r'/tmp/buildkit-deps/[^;"\\s]+\\.(?:dylib|so|a|tbd)(?:\\.[0-9]+)*', fix_missing_libs, t)
+            t = re.sub(r'/tmp/buildkit-deps/[^;"\\s]+\\.(?:dylib|so|a|tbd)(?:\\.[0-9]+){0,5}', fix_missing_libs, t)
             if t != orig:
                 open(f, "w").write(t)
                 modified += 1

@@ -4653,8 +4653,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (step.run === 'sed -i -E') {
             step.run = 'sed -i -E'
               + ' -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../..:g"'
-              + ' -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)[.0-9a-z]*/include|/v\\1/include|g\''
-              + ' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)[.0-9a-z]*/lib|/v\\1/lib|g\''
+              + ' -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)[^/]*/include|/v\\1/include|g\''
+              + ' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)[^/]*/lib|/v\\1/lib|g\''
               + ' folly-targets.cmake'
             if (!step['working-directory']) {
               step['working-directory'] = '${{prefix}}/lib/cmake/folly'
@@ -4800,8 +4800,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'object' && (step.run === 'sed -i -E' || step.run === 'sed -i')) {
             step.run = 'sed -i -E'
               + ' -e "s:{{pkgx.prefix}}:\\$\\{_IMPORT_PREFIX\\}/../../..:g"'
-              + ' -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)[.0-9a-z]*/include|/v\\1/include|g\''
-              + ' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)[.0-9a-z]*/lib|/v\\1/lib|g\''
+              + ' -e \'/^  INTERFACE_INCLUDE_DIRECTORIES/ s|/v([0-9]+)[^/]*/include|/v\\1/include|g\''
+              + ' -e \'/^  INTERFACE_LINK_LIBRARIES/ s|/v([0-9]+)[^/]*/lib|/v\\1/lib|g\''
               + ' FBThriftTargets.cmake'
             if (!step['working-directory']) {
               step['working-directory'] = '${{prefix}}/lib/cmake/fbthrift'
