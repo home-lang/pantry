@@ -3936,7 +3936,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // BSD sed '2i' insert command syntax is incompatible with GNU sed.
           // Shim gsed (GNU sed from Homebrew) as 'sed' so the recipe's sed commands work.
-          'if command -v gsed &>/dev/null; then mkdir -p /tmp/gsed-shim && ln -sf "$(command -v gsed)" /tmp/gsed-shim/sed && export PATH="/tmp/gsed-shim:$PATH"; fi',
+          // gsed may not be in PATH if gnu-sed is installed but not linked
+          'GSED="$(command -v gsed 2>/dev/null || echo /opt/homebrew/opt/gnu-sed/libexec/gnubin/sed)"; if [ -x "$GSED" ]; then mkdir -p /tmp/gsed-shim && ln -sf "$GSED" /tmp/gsed-shim/sed && export PATH="/tmp/gsed-shim:$PATH"; fi',
         ],
       },
     },
