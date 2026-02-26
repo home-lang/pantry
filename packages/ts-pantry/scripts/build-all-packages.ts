@@ -659,6 +659,10 @@ Options:
     'mupdf.com', // darwin build fails (install_name_tool fixup on mupdf-gl), linux OK
     'grpc.io', // upb TSAN/ASAN macro errors on darwin, linux OK
     'mozilla.org/nss', // ARM64 crypto intrinsics issue on darwin, linux OK
+    'crates.io/versio', // Rust linker failure on darwin (many lib deps), linux OK
+    'fuellabs.github.io/sway', // Rust linker failure on darwin (forc binary), linux OK
+    'gitlab.com/procps-ng/watch', // Linux process utilities, darwin build fails
+    'sfcgal.gitlab.io', // CGAL cmake failure on darwin, linux OK
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
     // laravel.com — fixed: symlink ICU libs from unicode.org into PHP lib dir on darwin
@@ -810,6 +814,8 @@ Options:
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
     'qemu.org', // dtc git subproject fetch fails on linux, many missing headers on darwin
     'freedesktop.org/poppler-qt5', // S3 curl.so missing version info breaks cmake on both platforms
+    'apache.org/arrow', // Massive C++ build, timeout/failure on both platforms
+    'gdal.org', // patchelf post-build fixup fails on linux, cmake issues on darwin
     'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
     'raccoin.org', // Linker OOM — huge Slint UI generated code exceeds CI runner memory
     'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
