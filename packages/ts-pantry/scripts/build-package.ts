@@ -652,12 +652,15 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
   const headers: Record<string, string> = { Accept: 'application/vnd.github.v3+json' }
   if (token) headers.Authorization = `token ${token}`
 
-  // Normalize a version string: strip leading zeros from each numeric component
-  // and remove trailing .0 components (e.g. 20260107.1 should match 20260107.1.0)
+  // Normalize a version string: strip leading zeros from each purely numeric component
+  // e.g. "17.05" → "17.5", "2025.02.0" → "2025.2.0"
+  // Does NOT truncate components containing non-digit chars (e.g. "2025-11-05" stays as-is)
   function normalizeVersion(v: string): string {
     return v.split('.').map(c => {
-      const n = Number.parseInt(c, 10)
-      return Number.isNaN(n) ? c : String(n)
+      if (/^\d+$/.test(c)) {
+        return String(Number.parseInt(c, 10))
+      }
+      return c
     }).join('.')
   }
 
@@ -697,21 +700,34 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
 
       for (const t of tags) {
         const tagName = t.name
-        // Apply strip pattern to get the raw version
-        let stripped = tagName.replace(stripRegex, '')
 
-        // Apply transform if present (e.g. imagemagick: v.replace('-', '.'))
-        if (transformFn) {
-          try {
-            const transformed = transformFn(stripped)
-            if (transformed !== undefined) stripped = String(transformed)
-          } catch { /* ignore transform errors */ }
+        // Try multiple strip approaches: custom regex, then default /^v/ fallback
+        const stripVariants: string[] = []
+
+        // 1. Apply custom strip pattern
+        const customStripped = tagName.replace(stripRegex, '')
+        stripVariants.push(customStripped)
+
+        // 2. If custom strip didn't change the tag, also try default /^v/ strip
+        if (customStripped === tagName && tagName.startsWith('v')) {
+          stripVariants.push(tagName.replace(/^v/, ''))
         }
 
-        // Normalize the stripped version and compare (handle trailing .0 mismatches)
-        if (versionsMatch(normalizeVersion(stripped), version)) {
-          // rawVersion = the stripped (and possibly transformed) version
-          return { tag: tagName, rawVersion: stripped }
+        for (const stripped0 of stripVariants) {
+          let stripped = stripped0
+          // Apply transform if present (e.g. imagemagick: v.replace('-', '.'))
+          if (transformFn) {
+            try {
+              const transformed = transformFn(stripped)
+              if (transformed !== undefined) stripped = String(transformed)
+            } catch { /* ignore transform errors */ }
+          }
+
+          // Normalize the stripped version and compare (handle trailing .0 mismatches)
+          if (versionsMatch(normalizeVersion(stripped), version)) {
+            // rawVersion = the stripped (and possibly transformed) version
+            return { tag: tagName, rawVersion: stripped }
+          }
         }
       }
     } catch (err: any) {
@@ -894,6 +910,15 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   if (!override) return
 
   console.log(`  Applying durable override for ${domain}`)
+
+  // 0. Normalize recipe.build to object form if it's a string shorthand or array
+  // e.g. `build: python-venv.sh ...` → `build: { script: ['python-venv.sh ...'] }`
+  // e.g. `build: [step1, step2]` → `build: { script: [step1, step2] }`
+  if (typeof recipe.build === 'string') {
+    recipe.build = { script: [recipe.build] }
+  } else if (Array.isArray(recipe.build)) {
+    recipe.build = { script: recipe.build }
+  }
 
   // 1. Override distributable URL
   if (override.distributableUrl) {
@@ -1654,6 +1679,38 @@ async function buildPackage(options: BuildOptions): Promise<void> {
               Object.assign(templateVars, altVars)
               recovered = true
             } catch { /* try next alternative */ }
+          }
+        }
+      }
+
+      // Retry 6: Try zero-padded version components (e.g., 26.2.0 → 26.02.0)
+      // Handles date-based versioning where month is zero-padded (YY.MM.PATCH)
+      if (!recovered) {
+        const parts = version.split('.')
+        if (parts.length >= 2) {
+          for (let i = 1; i < parts.length; i++) {
+            if (recovered) break
+            const part = parts[i]
+            // Only pad single-digit components (1-9) that aren't already padded
+            if (/^[1-9]$/.test(part)) {
+              const paddedParts = [...parts]
+              paddedParts[i] = part.padStart(2, '0')
+              const paddedVersion = paddedParts.join('.')
+              console.log(`⚠️  Download failed, retrying with zero-padded version ${paddedVersion}...`)
+              const altVars = {
+                ...templateVars,
+                'version': paddedVersion,
+                'version.raw': paddedVersion,
+                'version.marketing': `${paddedParts[0]}.${paddedParts[1]}`,
+              }
+              const altUrl = interpolate(rawUrl, altVars)
+              const altRef = recipe.distributable.ref ? interpolate(recipe.distributable.ref, altVars) : undefined
+              try {
+                await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
+                Object.assign(templateVars, altVars)
+                recovered = true
+              } catch { /* try next component */ }
+            }
           }
         }
       }

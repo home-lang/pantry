@@ -1589,11 +1589,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         prependScript: [
-          // Fix npm ENOENT _cacache/tmp by setting TMPDIR to a proper temp dir
-          // and ensuring npm cache is in a known-good location
-          'export TMPDIR=$(mktemp -d)',
-          'export npm_config_cache=$(mktemp -d)',
-          'export npm_config_tmp=$(mktemp -d)',
+          // Fix npm ENOENT _cacache/tmp by using a clean temp/cache dir outside the build tree
+          'export TMPDIR=/tmp/nx-build-tmp-$$',
+          'mkdir -p "$TMPDIR"',
+          'export npm_config_cache=/tmp/nx-npm-cache-$$',
+          'mkdir -p "$npm_config_cache"',
+          // Also clean npm cache to avoid stale tarball corruption
+          'npm cache clean --force 2>/dev/null || true',
         ],
       },
     },
@@ -5061,7 +5063,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'mypy-lang.org': {
     prependScript: [
-      // Ensure setuptools is available for build
+      // Ensure setuptools is available for build (global python)
       'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
       // Create a pip constraints file to pin pathspec<0.12
       // (pathspec>=0.12 removed GitWildMatchPatternError export which mypy references at build time)
@@ -5072,6 +5074,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Widen python version constraint — current CI has 3.14
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+      // Install setuptools inside the venv (Python 3.14 removed it from stdlib)
+      // bkpyvenv creates the venv, then pip install . needs setuptools for wheel building
+      if (Array.isArray(recipe.build?.script)) {
+        const stageIdx = recipe.build.script.findIndex((s: any) =>
+          typeof s === 'string' && s.includes('bkpyvenv stage'))
+        if (stageIdx >= 0) {
+          recipe.build.script.splice(stageIdx + 1, 0,
+            '{{prefix}}/venv/bin/pip install setuptools')
+        }
       }
     },
   },
@@ -5877,8 +5889,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
       }
       // Fix build script: replace multiline ln -s command that causes shell syntax error
-      if (Array.isArray(recipe.build)) {
-        recipe.build = recipe.build.map((step: any) => {
+      // After normalization, recipe.build is always { script: [...] }
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('ln -s')) {
             // Replace the broken folded scalar command with a simple one
             step.run = 'ln -sf python3 python3'
@@ -5913,14 +5926,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/p7zip-project/p7zip — fix version tag format ──────────
-  // Tags: v17.05 (zero-padded minor), metadata has 17.5.0
-
-  'github.com/p7zip-project/p7zip': {
-    // version.tag is resolved by resolveGitHubTag to the actual tag (e.g. "v17.05")
-    // Don't add extra "v" prefix since the tag already includes it
-    distributableUrl: 'https://github.com/p7zip-project/p7zip/archive/refs/tags/{{version.tag}}.tar.gz',
-  },
+  // p7zip: resolveGitHubTag now handles /^v/ fallback to find v17.05 tags
+  // Original URL v{{version.raw}}.tar.gz works with resolved rawVersion
 
   // ─── crates.io/mask — fix Rust raw-dylibs linker issue ─────────────────
 
