@@ -2528,12 +2528,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
       }
-      // Disable introspection and vapi in meson args
+      // Disable introspection, vapi, man pages and docs in meson args
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         recipe.build.env.MESON_ARGS.push(
           '-Dintrospection=false',
           '-Dvapi=false',
           '-Dgtk_doc=false',
+          '-Dmanpage=false',
         )
       }
       // Remove XML_CATALOG_FILES (docbook no longer needed)
@@ -3104,6 +3105,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── wireshark.org — fix stray cmake prefix quote + remove ibr dep ───
 
   'wireshark.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install c-ares from Homebrew (not reliably found via S3 dep tree)
+          'brew install c-ares 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix c-ares)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
@@ -3162,6 +3172,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install libass from Homebrew (not reliably in S3 dep tree)
           'brew install libass 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix libass)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+      linux: {
+        prependScript: [
+          // Install libass-dev for subtitle rendering
+          'sudo apt-get install -y libass-dev 2>/dev/null || true',
         ],
       },
     },
@@ -3240,6 +3256,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gtk.org/gtk4 — disable introspection + remove heavy deps ────────
 
   'gtk.org/gtk4': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install wayland-protocols for wayland-scanner and wayland-client
+          'sudo apt-get install -y wayland-protocols libwayland-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
@@ -4705,8 +4729,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
-          // pywatchman install needs setuptools
-          'pip3 install setuptools 2>/dev/null || python3 -m pip install setuptools 2>/dev/null || true',
+          // pywatchman install needs setuptools (--break-system-packages for newer macOS Python)
+          'python3 -m pip install --break-system-packages setuptools 2>/dev/null || pip3 install setuptools 2>/dev/null || true',
         ],
       },
     },
