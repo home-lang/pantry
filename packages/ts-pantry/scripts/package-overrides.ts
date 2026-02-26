@@ -399,7 +399,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
       linux: {
         prependScript: [
           // Linux: source tarball has libtool 2.5.4 macros but Ubuntu has 2.4.7
-          // Remove old m4 macros so autoreconf -fi (in build script) regenerates with system libtool
+          // Override ACLOCAL_PATH to use system libtool macros (pkgx libtool in
+          // ACLOCAL_PATH has 2.5.4 macros that conflict with system libtool 2.4.7)
+          'export ACLOCAL_PATH="/usr/share/aclocal"',
           'rm -f aclocal.m4 configure m4/libtool.m4 m4/lt*.m4 ltmain.sh config.guess config.sub',
           'libtoolize --force --copy',
         ],
@@ -413,13 +415,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // The find/sed block requires $PKGX_DIR (empty in CI) and uses
       // `find -depth 1` (invalid on GNU find). We don't need pkgx
       // relocatability for our S3 binaries.
-      if (typeof recipe.build?.script === 'string') {
-        const lines = recipe.build.script.split('\n')
-        const installIdx = lines.findIndex((l: string) => l.trim() === 'make install')
-        if (installIdx >= 0) {
-          recipe.build.script = lines.slice(0, installIdx + 1).join('\n')
+      // Note: after prependScript, script is an array (not a string).
+      const scriptArr = Array.isArray(recipe.build?.script)
+        ? recipe.build.script
+        : (typeof recipe.build?.script === 'string' ? [recipe.build.script] : null)
+      if (!scriptArr) return
+      for (let i = 0; i < scriptArr.length; i++) {
+        if (typeof scriptArr[i] === 'string' && scriptArr[i].includes('make install')) {
+          const lines = scriptArr[i].split('\n')
+          const installIdx = lines.findIndex((l: string) => l.trim() === 'make install')
+          if (installIdx >= 0) {
+            scriptArr[i] = lines.slice(0, installIdx + 1).join('\n')
+          }
         }
       }
+      recipe.build.script = scriptArr
     },
   },
 
@@ -1741,11 +1751,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
-          // Xcode 26 SDK declares memset/memcpy/memcmp with strict types.
-          // zip.h has K&R-style prototypes guarded by #ifdef ZMEM that conflict.
-          // The Makefile auto-detects ZMEM and adds -DZMEM, overriding -UZMEM.
-          // Fix: remove the conflicting prototypes directly from zip.h.
-          "sed -E -i.bak '/char \\*memset|char \\*memcpy|int memcmp/d' zip.h",
+          // Xcode 26 SDK conflicts with ZMEM (custom memset/memcpy/memcmp impls).
+          // unix/configure auto-detects and enables -DZMEM, which causes K&R-style
+          // function definitions in fileio.c to conflict with SDK checked builtins.
+          // Fix: strip all ZMEM references from configure to prevent detection.
+          "sed -i.bak '/ZMEM/d' unix/configure",
         ],
       },
     },
@@ -1770,25 +1780,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/google/shaderc — disable copyright check, widen Python ──
+  // ─── github.com/google/shaderc — disable copyright check, widen Python, fix sed -i ──
   'github.com/google/shaderc': {
     modifyRecipe: (recipe: any) => {
       if (recipe.build?.dependencies?.['python.org'] === '~3.12') {
         recipe.build.dependencies['python.org'] = '3'
       }
-      // Replace check-copyright.py with a no-op after git-sync-deps.
-      // Previous approach (sed to remove cmake lines) caused cmake parse errors
-      // because the add_custom_target spans multiple lines.
+      // Disable the copyright check via cmake option (it fails on buildkit-injected files)
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS.push('-DSHADERC_SKIP_COPYRIGHT_CHECK=ON')
+      }
+      // Fix sed -i BSD incompatibility: macOS sed requires extension arg
+      // Change `sed -i 's/...'` to `sed -i.bak 's/...'` (works on both)
       if (Array.isArray(recipe.build?.script)) {
-        const syncIdx = recipe.build.script.findIndex((s: any) =>
-          typeof s === 'string' && s.includes('git-sync-deps'),
-        )
-        if (syncIdx >= 0) {
-          recipe.build.script.splice(
-            syncIdx + 1,
-            0,
-            'printf "import sys\\nsys.exit(0)\\n" > ../utils/check-copyright.py',
-          )
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && /^sed -i /.test(step)) {
+            recipe.build.script[i] = step.replace(/^sed -i /, 'sed -i.bak ')
+          }
         }
       }
     },
