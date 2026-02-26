@@ -5834,6 +5834,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/npiv/chatblade — widen Python version ──────────────────
 
   'github.com/npiv/chatblade': {
+    prependScript: [
+      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       // Widen python version (CI has 3.14, recipe wants <3.12)
       if (recipe.dependencies?.['python.org']) {
@@ -5845,6 +5848,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/nvbn/thefuck — widen Python version ────────────────────
 
   'github.com/nvbn/thefuck': {
+    prependScript: [
+      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       // Widen python version (CI has 3.14, recipe wants ~3.11)
       if (recipe.dependencies?.['python.org']) {
@@ -5859,6 +5865,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/mattrobenolt/jinja2-cli — widen Python version ─────────
 
   'github.com/mattrobenolt/jinja2-cli': {
+    prependScript: [
+      'python3 -m pip install --break-system-packages setuptools 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       // Widen python version (CI has 3.14, recipe wants <3.12)
       if (recipe.dependencies?.['python.org']) {
@@ -5866,6 +5875,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
+      }
+      // Fix build script: replace multiline ln -s command that causes shell syntax error
+      if (Array.isArray(recipe.build)) {
+        recipe.build = recipe.build.map((step: any) => {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('ln -s')) {
+            // Replace the broken folded scalar command with a simple one
+            step.run = 'ln -sf python3 python3'
+            step['working-directory'] = step['working-directory'] || '{{prefix}}/venv/lib'
+          }
+          return step
+        })
       }
     },
   },
@@ -5897,7 +5917,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Tags: v17.05 (zero-padded minor), metadata has 17.5.0
 
   'github.com/p7zip-project/p7zip': {
-    distributableUrl: 'https://github.com/p7zip-project/p7zip/archive/refs/tags/v{{version.tag}}.tar.gz',
+    // version.tag is resolved by resolveGitHubTag to the actual tag (e.g. "v17.05")
+    // Don't add extra "v" prefix since the tag already includes it
+    distributableUrl: 'https://github.com/p7zip-project/p7zip/archive/refs/tags/{{version.tag}}.tar.gz',
   },
 
   // ─── crates.io/mask — fix Rust raw-dylibs linker issue ─────────────────

@@ -722,9 +722,9 @@ Options:
     'cr.yp.to/daemontools', // Archaic build system
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
-    // crates.io/didyoumean removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/didyoumean', // Rust linker failure even with --cap-lints warn
     // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
-    // crates.io/mask removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/mask', // rust-lld: error: cannot open raw-dylibs directory
     'crates.io/pqrs', // arrow-arith/chrono trait ambiguity (quarter() method conflict)
     // crates.io/rust-kanban removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override

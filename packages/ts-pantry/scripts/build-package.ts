@@ -667,7 +667,17 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
     if (tagVersion === targetVersion) return true
     // Strip trailing .0 components from both and compare
     const stripTrailingZeros = (v: string) => v.replace(/(?:\.0)+$/, '')
-    return stripTrailingZeros(tagVersion) === stripTrailingZeros(targetVersion)
+    if (stripTrailingZeros(tagVersion) === stripTrailingZeros(targetVersion)) return true
+    // Handle date-based tags: "2025-11-05" should match "2025.11.5"
+    // Convert dashes to dots in tag version, then normalize (removes leading zeros)
+    if (tagVersion.includes('-')) {
+      const dotted = tagVersion.replace(/-/g, '.')
+      if (versionsMatch(normalizeVersion(dotted), targetVersion)) return true
+    }
+    // Handle zero-padded versions: "17.05" should match "17.5.0"
+    const normalizedTag = normalizeVersion(tagVersion)
+    if (stripTrailingZeros(normalizedTag) === stripTrailingZeros(targetVersion)) return true
+    return false
   }
 
   // Search through paginated tag results (up to 5 pages = 500 tags)
