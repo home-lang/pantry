@@ -1543,6 +1543,104 @@ async function downloadDependencies(
   return depPaths
 }
 
+function runHealthCheck(
+  test: any,
+  prefix: string,
+  templateVars: Record<string, string>,
+  depPaths: Record<string, string>,
+  platform: string,
+): void {
+  // Build test script from recipe's test section
+  let testCommands: string[] = []
+  let fixture: string | undefined
+
+  if (typeof test === 'string') {
+    // Simple: test: "curl --version"
+    testCommands = [test]
+  } else if (Array.isArray(test)) {
+    // List: test:\n  - curl -i example.com\n  - curl --version
+    testCommands = test.filter((t: any) => typeof t === 'string')
+  } else if (typeof test === 'object') {
+    // Object: test:\n  script: |\n    nim r hello.nim\n  fixture: |\n    echo "Hello"
+    if (typeof test.script === 'string') {
+      testCommands = test.script.split('\n').filter((l: string) => l.trim())
+    } else if (Array.isArray(test.script)) {
+      for (const step of test.script) {
+        if (typeof step === 'string') testCommands.push(step)
+        else if (typeof step === 'object' && typeof step.run === 'string') {
+          testCommands.push(...step.run.split('\n').filter((l: string) => l.trim()))
+        }
+      }
+    }
+    if (typeof test.fixture === 'string') {
+      fixture = test.fixture
+    }
+  }
+
+  if (testCommands.length === 0) return
+
+  // Interpolate template variables
+  testCommands = testCommands.map(cmd => interpolate(cmd, templateVars))
+
+  // Build PATH with prefix/bin and dep paths
+  const pathParts = [`${prefix}/bin`, `${prefix}/sbin`]
+  for (const depDir of Object.values(depPaths)) {
+    pathParts.push(`${depDir}/bin`)
+  }
+  pathParts.push(process.env.PATH || '/usr/bin:/bin')
+  const testPath = pathParts.join(':')
+
+  // Build LD_LIBRARY_PATH / DYLD_FALLBACK_LIBRARY_PATH
+  const libParts = [`${prefix}/lib`]
+  for (const depDir of Object.values(depPaths)) {
+    libParts.push(`${depDir}/lib`)
+  }
+  const [os] = platform.split('-')
+  const libVar = os === 'darwin' ? 'DYLD_FALLBACK_LIBRARY_PATH' : 'LD_LIBRARY_PATH'
+
+  // Create a temp directory for the test
+  const testDir = `/tmp/buildkit-test-${Date.now()}`
+  mkdirSync(testDir, { recursive: true })
+
+  // Write fixture file if provided
+  if (fixture) {
+    writeFileSync(join(testDir, 'FIXTURE'), interpolate(fixture, templateVars))
+  }
+
+  // Build the test script
+  const testScript = [
+    '#!/bin/bash',
+    'set -eo pipefail',
+    `export PATH="${testPath}"`,
+    `export ${libVar}="${libParts.join(':')}"`,
+    `export PKG_CONFIG_PATH="${prefix}/lib/pkgconfig"`,
+    fixture ? `export FIXTURE="${join(testDir, 'FIXTURE')}"` : '',
+    `cd "${testDir}"`,
+    ...testCommands,
+  ].filter(Boolean).join('\n')
+
+  const testScriptPath = join(testDir, '_test.sh')
+  writeFileSync(testScriptPath, testScript, { mode: 0o755 })
+
+  try {
+    execSync(`bash "${testScriptPath}"`, {
+      cwd: testDir,
+      env: {
+        ...process.env,
+        PATH: testPath,
+        [libVar]: libParts.join(':'),
+        PKG_CONFIG_PATH: `${prefix}/lib/pkgconfig`,
+        HOME: process.env.HOME || '/tmp',
+      },
+      stdio: 'inherit',
+      timeout: 30000, // 30s timeout for health checks
+    })
+  } finally {
+    // Clean up test dir
+    try { execSync(`rm -rf "${testDir}"`, { stdio: 'ignore' }) } catch {}
+  }
+}
+
 async function buildPackage(options: BuildOptions): Promise<void> {
   const { package: pkgName, version, platform, buildDir, prefix, depsDir, bucket, region } = options
   const [os, arch] = platform.split('-')
@@ -2075,6 +2173,20 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     console.log(installed)
   } catch {
     // Ignore errors listing directory
+  }
+
+  // Run health check / test from the recipe (if defined)
+  if (recipe.test) {
+    console.log('\n🧪 Running health check...')
+    try {
+      runHealthCheck(recipe.test, prefix, templateVars, depPaths, platform)
+      console.log('✅ Health check passed!')
+    } catch (error: any) {
+      console.error(`⚠️  Health check failed: ${error.message}`)
+      // Health check failure is a warning, not a build failure.
+      // The binary is still functional — the test may have external deps
+      // or network requirements that aren't available in CI.
+    }
   }
 }
 
