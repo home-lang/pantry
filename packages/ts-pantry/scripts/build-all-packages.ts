@@ -246,7 +246,10 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
   const pantryDir = join(process.cwd(), 'src', 'pantry')
   const packages: BuildablePackage[] = []
   // Parse target platform for filtering
-  const [targetOs, targetArch] = targetPlatform ? targetPlatform.split('-') : ['', '']
+  // Split on first hyphen only (e.g. "linux-x86-64" → ["linux", "x86-64"])
+  const dashIdx = targetPlatform ? targetPlatform.indexOf('-') : -1
+  const targetOs = dashIdx > 0 ? targetPlatform!.slice(0, dashIdx) : (targetPlatform || '')
+  const targetArch = dashIdx > 0 ? targetPlatform!.slice(dashIdx + 1) : ''
   const targetOsName = targetOs === 'darwin' ? 'darwin' : targetOs === 'linux' ? 'linux' : ''
   const targetArchName = targetArch === 'arm64' ? 'aarch64' : targetArch === 'x86-64' ? 'x86-64' : targetArch === 'x86_64' ? 'x86-64' : ''
 
