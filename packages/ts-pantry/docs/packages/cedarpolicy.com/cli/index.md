@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 48 versions</summary>
+<summary>Show all 49 versions</summary>
 
-- `4.9.0`
+- `4.9.1`, `4.9.0`
 - `4.8.2`, `4.8.1`, `4.8.0`
 - `4.7.1`, `4.7.0`
 - `4.6.2`, `4.6.1`, `4.6.0`
@@ -48,13 +48,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.9.0`
+**Latest Version**: `4.9.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cedarpolicy.com/cli@4.9.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cedarpolicy.com/cli@4.9.1 -- $SHELL -i
 ```
 
 ## Usage Examples
