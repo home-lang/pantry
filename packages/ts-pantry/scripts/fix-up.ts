@@ -143,7 +143,7 @@ function fixMachoRpaths(prefix: string): void {
 
         // Bundle @rpath/ references that point to dep libraries from other build prefixes
         // This happens when a dep (e.g. sqlite) was already fixed up before this package was built,
-        // so its dylib ID is @rpath/libfoo.dylib but the actual file is in /tmp/buildkit-install-*/lib/
+        // so its dylib ID is @rpath/libfoo.dylib but the actual file is in build dirs
         for (const depLine of depLines) {
           const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
           if (!depMatch) continue
@@ -152,9 +152,13 @@ function fixMachoRpaths(prefix: string): void {
           const depName = depPath.replace('@rpath/', '')
           const destPath = join(libDir, depName)
           if (existsSync(destPath)) continue // already bundled
-          // Search for this dylib in /tmp/buildkit-install-* directories
+          // Search in all build directories: /tmp/buildkit-install-*, /tmp/buildkit-deps/, /tmp/buildkit-deps-*
           try {
-            const findResult = execSync(`find /tmp/buildkit-install-* -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
+            const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
+              try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 } catch { return false }
+            })
+            if (searchPaths.length === 0) continue
+            const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
             if (findResult) {
               mkdirSync(libDir, { recursive: true })
               execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
@@ -362,7 +366,7 @@ function consolidateLib64(prefix: string): void {
 }
 
 // Recursively bundle build-path dependency libraries into the package's lib/.
-// When a copied library references other /tmp/buildkit-* paths, copy those too.
+// When a copied library references other /tmp/buildkit-* paths or @rpath/ deps, copy those too.
 function bundleBuildDeps(filePath: string, prefix: string): void {
   const libDir = join(prefix, 'lib')
   try {
@@ -372,22 +376,49 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
       const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
       if (!depMatch) continue
       const depPath = depMatch[1].trim()
-      if (!(depPath.startsWith('/tmp') || depPath.includes('+brewing') || depPath.includes('buildkit'))) continue
-      const depName = basename(depPath)
-      const destPath = join(libDir, depName)
-      if (!existsSync(destPath) && existsSync(depPath)) {
+
+      // Handle absolute build-path references
+      if (depPath.startsWith('/tmp') || depPath.includes('+brewing') || depPath.includes('buildkit')) {
+        const depName = basename(depPath)
+        const destPath = join(libDir, depName)
+        if (!existsSync(destPath) && existsSync(depPath)) {
+          try {
+            execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+            execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+            execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+            try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may already exist */ }
+            bundleBuildDeps(destPath, prefix)
+            try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+          } catch { /* skip */ }
+        }
         try {
-          execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-          execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-          execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-          try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may already exist */ }
-          bundleBuildDeps(destPath, prefix)
-          try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
-        } catch { /* skip */ }
+          execSync(`install_name_tool -change "${depPath}" "@rpath/${depName}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
+        } catch { /* ignore */ }
+        continue
       }
-      try {
-        execSync(`install_name_tool -change "${depPath}" "@rpath/${depName}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-      } catch { /* ignore */ }
+
+      // Handle @rpath/ references to deps from other build prefixes
+      if (depPath.startsWith('@rpath/')) {
+        const depName = depPath.replace('@rpath/', '')
+        const destPath = join(libDir, depName)
+        if (existsSync(destPath)) continue
+        try {
+          const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
+            try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 } catch { return false }
+          })
+          if (searchPaths.length === 0) continue
+          const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
+          if (findResult) {
+            mkdirSync(libDir, { recursive: true })
+            execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+            execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+            execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+            try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
+            bundleBuildDeps(destPath, prefix)
+            try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+          }
+        } catch { /* find failed, skip */ }
+      }
     }
   } catch { /* otool failed, skip */ }
 }
