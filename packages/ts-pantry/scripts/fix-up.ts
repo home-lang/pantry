@@ -432,23 +432,43 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
 // Bundle Homebrew dylibs into the package's lib/ directory for self-containment.
 // When a binary references /opt/homebrew/opt/<name>/lib/<name>.dylib, we copy
 // the dylib into prefix/lib/ and rewrite the reference to @rpath/libname.dylib.
+// Also handles @loader_path/ references (transitive deps like ICU data).
 // Processes transitive Homebrew deps recursively.
-function bundleHomebrewDylibs(filePath: string, prefix: string): void {
+function bundleHomebrewDylibs(filePath: string, prefix: string, sourceDir?: string): void {
   const libDir = join(prefix, 'lib')
 
   try {
     const depOutput = execSync(`otool -L "${filePath}" 2>/dev/null`, { encoding: 'utf-8' })
     const depLines = depOutput.trim().split('\n').slice(1)
 
-    let homebrewCount = 0
     for (const depLine of depLines) {
       const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
       if (!depMatch) continue
       const depPath = depMatch[1].trim()
 
+      // Handle @loader_path/ references — these are sibling libs from the same directory
+      // e.g. ICU's libicuuc references @loader_path/libicudata.78.dylib
+      if (depPath.startsWith('@loader_path/') && sourceDir) {
+        const depName = depPath.replace('@loader_path/', '')
+        const destPath = join(libDir, depName)
+        if (existsSync(destPath)) continue
+        const sourcePath = join(sourceDir, depName)
+        if (!existsSync(sourcePath)) continue
+        try {
+          mkdirSync(libDir, { recursive: true })
+          execSync(`cp -L "${sourcePath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+          try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
+          bundleHomebrewDylibs(destPath, prefix, sourceDir)
+          try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+          console.log(`    Bundled @loader_path dep: ${depName} (from ${sourcePath})`)
+        } catch { /* skip */ }
+        continue
+      }
+
       // Only handle Homebrew paths
       if (!depPath.startsWith('/opt/homebrew/')) continue
-      homebrewCount++
       console.log(`    Bundling Homebrew dylib: ${depPath}`)
 
       const depName = basename(depPath)
@@ -469,8 +489,8 @@ function bundleHomebrewDylibs(filePath: string, prefix: string): void {
             execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
           } catch { /* may already exist */ }
 
-          // Recursively bundle any Homebrew deps of this dylib
-          bundleHomebrewDylibs(destPath, prefix)
+          // Recursively bundle any Homebrew deps of this dylib (pass the source directory)
+          bundleHomebrewDylibs(destPath, prefix, dirname(depPath))
 
           // Re-sign the copied dylib
           try {
