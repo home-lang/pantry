@@ -1,3 +1,1000 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.2...v0.8.3)
+
+### 🚀 Features
+
+- multi-version builds + DynamoDB version request tracking ([f9a9e3c](https://github.com/home-lang/pantry/commit/f9a9e3c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make install directory configurable via pantry.toml modulesDir ([402ac77](https://github.com/home-lang/pantry/commit/402ac77)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add "commit publishing" ([03ed11c](https://github.com/home-lang/pantry/commit/03ed11c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install npm packages to node_modules/ for Node.js compatibility ([339bae6](https://github.com/home-lang/pantry/commit/339bae6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add --github-release flag to publish command ([08edd32](https://github.com/home-lang/pantry/commit/08edd32)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- expand durable override system to 89 packages, fix 28 more broken packages ([a0028d7](https://github.com/home-lang/pantry/commit/a0028d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add GitHub Actions Job Summary for build failures ([1d2a02a](https://github.com/home-lang/pantry/commit/1d2a02a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- use spinlock for Mutex on Zig 0.16 ([8e1923b](https://github.com/home-lang/pantry/commit/8e1923b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- apply lint auto-fixes for prefer-template, quotes, and formatting ([194d390](https://github.com/home-lang/pantry/commit/194d390)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve Zig 0.16 CI build errors ([60291ea](https://github.com/home-lang/pantry/commit/60291ea)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve lint errors in build scripts ([d73e8d8](https://github.com/home-lang/pantry/commit/d73e8d8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- proper toolchain fixes for multi-version failures instead of skipping ([b403373](https://github.com/home-lang/pantry/commit/b403373)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bundle @loader_path transitive deps from Homebrew libraries ([66d8768](https://github.com/home-lang/pantry/commit/66d8768)) _(by Chris <chrisbreuer93@gmail.com>)_
+- multi-version build failures — skip broken old versions, fix overrides ([fcb26dc](https://github.com/home-lang/pantry/commit/fcb26dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- find symlinked dylibs during @rpath dep bundling ([9c5c75e](https://github.com/home-lang/pantry/commit/9c5c75e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- also search Homebrew for @rpath dep bundling ([5b61309](https://github.com/home-lang/pantry/commit/5b61309)) _(by Chris <chrisbreuer93@gmail.com>)_
+- deduplicate package-overrides entries and fix unused param lint error ([0901c15](https://github.com/home-lang/pantry/commit/0901c15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- search /tmp/buildkit-deps for @rpath dep bundling ([2dc738f](https://github.com/home-lang/pantry/commit/2dc738f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bundle @rpath dep libraries from other build prefixes ([3a58bfa](https://github.com/home-lang/pantry/commit/3a58bfa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- only update latestVersion when uploading a newer version ([b3969c0](https://github.com/home-lang/pantry/commit/b3969c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- multi-version summary shows double @version in output ([1b61655](https://github.com/home-lang/pantry/commit/1b61655)) _(by Chris <chrisbreuer93@gmail.com>)_
+- isMachO signed integer overflow — Mach-O detection never matched arm64 ([6fc5e81](https://github.com/home-lang/pantry/commit/6fc5e81)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bundle build-path dep libraries into packages for self-containment ([214237c](https://github.com/home-lang/pantry/commit/214237c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — use CamelCase boost_systemConfigVersion.cmake filename ([e588c47](https://github.com/home-lang/pantry/commit/e588c47)) _(by Chris <chrisbreuer93@gmail.com>)_
+- meilisearch download URLs, MySQL version detection, SQLite array distributable ([dc1242e](https://github.com/home-lang/pantry/commit/dc1242e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — always overwrite boost_system cmake configs ([be4bea8](https://github.com/home-lang/pantry/commit/be4bea8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- JSDoc comment in fix-up.ts prematurely closed by glob path ([bc8f279](https://github.com/home-lang/pantry/commit/bc8f279)) _(by Chris <chrisbreuer93@gmail.com>)_
+- Laravel stack — bundle Homebrew dylibs, support vendored packages, add meilisearch ([ff17ce6](https://github.com/home-lang/pantry/commit/ff17ce6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — use correct PACKAGE_VERSION format in boost_system cmake config ([8dc3033](https://github.com/home-lang/pantry/commit/8dc3033)) _(by Chris <chrisbreuer93@gmail.com>)_
+- buildkit sed wrapper — find gsed in Homebrew opt path when not linked ([1098c1d](https://github.com/home-lang/pantry/commit/1098c1d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — create missing boost_system cmake config for Homebrew boost 1.90 ([2f23303](https://github.com/home-lang/pantry/commit/2f23303)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openresty — find gsed via Homebrew opt path when not linked ([967d48d](https://github.com/home-lang/pantry/commit/967d48d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — bypass BoostConfig.cmake, use FindBoost module instead ([6fd155a](https://github.com/home-lang/pantry/commit/6fd155a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openresty gsed shim for BSD sed compat, nx.dev npm cache fix on darwin ([92d5cc0](https://github.com/home-lang/pantry/commit/92d5cc0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — add brew --prefix boost to CMAKE_PREFIX_PATH directly ([b390dfa](https://github.com/home-lang/pantry/commit/b390dfa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- re-add openinterpreter to knownBrokenDomains — dep resolver ignores Python version constraints ([1bc2ff5](https://github.com/home-lang/pantry/commit/1bc2ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal boost link, openinterpreter python cap, darwin broken list ([199f18f](https://github.com/home-lang/pantry/commit/199f18f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openinterpreter poetry-core build dep, add pytz/mergestat to darwin broken ([df02989](https://github.com/home-lang/pantry/commit/df02989)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gnome-extensions-cli — use pip --no-build-isolation instead of poetry ([2db9bf3](https://github.com/home-lang/pantry/commit/2db9bf3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- quote curl URLs in duti override to prevent nullglob expansion ([8d69549](https://github.com/home-lang/pantry/commit/8d69549)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve version.tag from git ref field for git-based distributable URLs ([7961ec7](https://github.com/home-lang/pantry/commit/7961ec7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- upgrade packaging lib in bkpyvenv for Python 3.14 poetry compat ([e23dd65](https://github.com/home-lang/pantry/commit/e23dd65)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve lint errors — replace unbounded regex quantifiers ([cbf1378](https://github.com/home-lang/pantry/commit/cbf1378)) _(by Chris <chrisbreuer93@gmail.com>)_
+- luv cmake install path — use perl to fix cmake_install.cmake after build ([a28afda](https://github.com/home-lang/pantry/commit/a28afda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make bitcoin.org patchelf steps error-tolerant ([0331f0a](https://github.com/home-lang/pantry/commit/0331f0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- luv cmake Lua 5.5 version detection — patch CMakeLists.txt directly ([0054c0b](https://github.com/home-lang/pantry/commit/0054c0b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add venv bin to PATH in bkpyvenv stage for poetry/engine tools ([09f0d7c](https://github.com/home-lang/pantry/commit/09f0d7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pin setuptools<78 globally (pkg_resources removed in 78+), fix luv cmake version detection ([327fdb7](https://github.com/home-lang/pantry/commit/327fdb7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bkpyvenv stage --engine= flag parsing, poetry support ([6ae7503](https://github.com/home-lang/pantry/commit/6ae7503)) _(by Chris <chrisbreuer93@gmail.com>)_
+- thefuck manual venv build, ensurepip for Python 3.14 venvs ([0f221aa](https://github.com/home-lang/pantry/commit/0f221aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unblock podlators, macos-term-size, mecab-ipadic, luv ([08acce4](https://github.com/home-lang/pantry/commit/08acce4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove duplicate luv override, unblock mecab-ipadic ([b7f9d10](https://github.com/home-lang/pantry/commit/b7f9d10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML folded scalar parser, pip --no-build-isolation fallback, chatblade skip ([ffa9409](https://github.com/home-lang/pantry/commit/ffa9409)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak gauche (underscore tags) and amber (alpha suffix) ([7f3742f](https://github.com/home-lang/pantry/commit/7f3742f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolveGitHubTag fallback, build normalization, date-version matching ([4c9220e](https://github.com/home-lang/pantry/commit/4c9220e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- setuptools for Python 3.14, date-based tag matching, Rust fixes ([0d7b8aa](https://github.com/home-lang/pantry/commit/0d7b8aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak x265, gnome-extensions-cli, sfcgal on darwin ([abcfecb](https://github.com/home-lang/pantry/commit/abcfecb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak luv, sup, appstream, snaplet packages ([5a00dfa](https://github.com/home-lang/pantry/commit/5a00dfa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak 13 packages — URL fixes, Python pins, Rust flags ([fde0ab2](https://github.com/home-lang/pantry/commit/fde0ab2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- poppler skip libpoppler-glib.a static install (GLIB disabled) ([b39ed06](https://github.com/home-lang/pantry/commit/b39ed06)) _(by Chris <chrisbreuer93@gmail.com>)_
+- poppler disable NSS3 cmake flag, remove libnss3-dev ([e8c2921](https://github.com/home-lang/pantry/commit/e8c2921)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal brew CGAL on darwin, browser-use to linuxOnly ([6c6ba53](https://github.com/home-lang/pantry/commit/6c6ba53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- poppler use system lcms2, mypy use PIP_CONSTRAINT for pathspec, nx back to broken ([252c6f8](https://github.com/home-lang/pantry/commit/252c6f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mypy pin pathspec in venv, poppler install libnss3-dev, nx fix TMPDIR ([a708222](https://github.com/home-lang/pantry/commit/a708222)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak mypy, werf, nx, poppler — 4 more packages for S3 ([8c1d42d](https://github.com/home-lang/pantry/commit/8c1d42d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bitcoin.org add -DENABLE_IPC=OFF, move grpc/zookeeper to broken, fix sfcgal domain ([f7260f5](https://github.com/home-lang/pantry/commit/f7260f5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv linux install all ffmpeg codec libs from apt ([6a67994](https://github.com/home-lang/pantry/commit/6a67994)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv linux use system libvpx, wireshark linux use system gnutls/gcrypt ([342325d](https://github.com/home-lang/pantry/commit/342325d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- browser-use.com remove pointless --no-binary reinstall on darwin ([089ef2a](https://github.com/home-lang/pantry/commit/089ef2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv use LD_RUN_PATH, wireshark filter broken cmake template args ([8b4b7a5](https://github.com/home-lang/pantry/commit/8b4b7a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv use LD_LIBRARY_PATH for S3 deps, wireshark disable c-ares ([2397053](https://github.com/home-lang/pantry/commit/2397053)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ninth-pass — mpv vpx, wireshark c-ares/lua, gtk4 wayland, watchman setuptools ([2c459d9](https://github.com/home-lang/pantry/commit/2c459d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- puzzles darwin dummy halibut, zathura darwinOnly ([b61edfe](https://github.com/home-lang/pantry/commit/b61edfe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add remaining failing packages to skip lists ([283289d](https://github.com/home-lang/pantry/commit/283289d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- eighth-pass — mpv libass linux, libsecret manpage, wireshark c-ares, gtk4 wayland ([8cc1c82](https://github.com/home-lang/pantry/commit/8cc1c82)) _(by Chris <chrisbreuer93@gmail.com>)_
+- seventh-pass — libass iconv, protobuf, zathura libmagic, puzzles, flux2 ([52c77b3](https://github.com/home-lang/pantry/commit/52c77b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sixth-pass — mupdf freeglut, mpv libass, qemu iconv, add broken pkgs ([06d234b](https://github.com/home-lang/pantry/commit/06d234b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- tesseract darwin version rename after configure, dbus to linuxOnly ([5140fea](https://github.com/home-lang/pantry/commit/5140fea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fourth-pass corrections for sd, kubebuilder, tesseract, pillow, libpsl, freexl ([525c5fd](https://github.com/home-lang/pantry/commit/525c5fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- third-pass corrections from build results ([7a239f3](https://github.com/home-lang/pantry/commit/7a239f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- second-pass corrections for failing build packages ([e469972](https://github.com/home-lang/pantry/commit/e469972)) _(by Chris <chrisbreuer93@gmail.com>)_
+- batch fixes for 33 failing packages from sync run ([79a7e2d](https://github.com/home-lang/pantry/commit/79a7e2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- zip darwin — add cc wrapper for Xcode 26 C23 strictness ([0892ecb](https://github.com/home-lang/pantry/commit/0892ecb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fourth-pass build fixes for remaining 5 packages ([3be85df](https://github.com/home-lang/pantry/commit/3be85df)) _(by Chris <chrisbreuer93@gmail.com>)_
+- third-pass build fixes for 5 remaining failing packages ([304156e](https://github.com/home-lang/pantry/commit/304156e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- second-pass fixes from build results — shaderc, zip, apko, libxmlb, libproxy ([7b86353](https://github.com/home-lang/pantry/commit/7b86353)) _(by Chris <chrisbreuer93@gmail.com>)_
+- adwaita-icon-theme, libnsl, uv — no-op wrappers and dep fixes ([4507add](https://github.com/home-lang/pantry/commit/4507add)) _(by Chris <chrisbreuer93@gmail.com>)_
+- batch fix 20+ failing packages — libtool, python, build overrides ([4c87869](https://github.com/home-lang/pantry/commit/4c87869)) _(by Chris <chrisbreuer93@gmail.com>)_
+- trezor-agent git wrapper instead of alias (non-interactive bash) ([cf6c71b](https://github.com/home-lang/pantry/commit/cf6c71b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exclude S3 rust-lang.org/cargo from deps — rustc version conflict ([235cafa](https://github.com/home-lang/pantry/commit/235cafa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- merge aom duplicate override, global rust-toolchain removal ([97bb381](https://github.com/home-lang/pantry/commit/97bb381)) _(by Chris <chrisbreuer93@gmail.com>)_
+- global RUSTFLAGS --cap-lints warn, fix air/six/aom/trezor-agent builds ([a15373c](https://github.com/home-lang/pantry/commit/a15373c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- yajl cmake 4.x compatibility — replace GET_TARGET_PROPERTY LOCATION ([651d7ef](https://github.com/home-lang/pantry/commit/651d7ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- activate distutils compatibility shim for g-i on darwin ([4a744aa](https://github.com/home-lang/pantry/commit/4a744aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- yajl cmake_policy CMP0026 removed in cmake 3.20+ ([8686446](https://github.com/home-lang/pantry/commit/8686446)) _(by Chris <chrisbreuer93@gmail.com>)_
+- comment out all distutils.cygwinccompiler lines in g-i utils.py ([6b84ca5](https://github.com/home-lang/pantry/commit/6b84ca5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch distutils import in build dir after meson setup ([db3cc0d](https://github.com/home-lang/pantry/commit/db3cc0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gobject-introspection distutils import on darwin (Python 3.12+) ([74b162d](https://github.com/home-lang/pantry/commit/74b162d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep Homebrew cmake on darwin, pip cmake crashes with Abort trap ([883200b](https://github.com/home-lang/pantry/commit/883200b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- meson setuptools --target install, pre-install rust-src ([645a69e](https://github.com/home-lang/pantry/commit/645a69e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use python3 -m pip for setuptools/meson install on macOS ([42f5eda](https://github.com/home-lang/pantry/commit/42f5eda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cargo wrapper must use system cargo, not S3 cargo ([63828ec](https://github.com/home-lang/pantry/commit/63828ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cargo wrapper mkdir, readline transitive deps, setuptools, pnpm self-install ([e544c4d](https://github.com/home-lang/pantry/commit/e544c4d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- readline LD_LIBRARY_PATH poisoning, meson PATH, cargo HTTP/2, ffmpeg docs ([5b9deff](https://github.com/home-lang/pantry/commit/5b9deff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- qrencode glibtoolize symlink for darwin autogen.sh ([57cd47c](https://github.com/home-lang/pantry/commit/57cd47c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- PyGObject cairo.h, ffmpeg PKG_CONFIG_PATH, macvim Python.h ([766350a](https://github.com/home-lang/pantry/commit/766350a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- PyGObject — replace pycairo=enabled, add cairographics.org dep, disable tests ([d7fcea5](https://github.com/home-lang/pantry/commit/d7fcea5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- disable pycairo in PyGObject (buildkit can't set PYTHONPATH for deps) ([0c9fd77](https://github.com/home-lang/pantry/commit/0c9fd77)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase per-package build timeout from 45 to 60 min ([099b85f](https://github.com/home-lang/pantry/commit/099b85f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- re-enable pycairo in PyGObject (S3 binaries rebuilt correctly) ([3f341d2](https://github.com/home-lang/pantry/commit/3f341d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- disable pycairo in PyGObject (S3 binaries corrupt/missing lib dir) ([6141e70](https://github.com/home-lang/pantry/commit/6141e70)) _(by Chris <chrisbreuer93@gmail.com>)_
+- restrict dylib symlink creation to /tmp/buildkit-deps only ([b3f73fa](https://github.com/home-lang/pantry/commit/b3f73fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- watchman darwin setuptools missing for pywatchman install ([a53b21d](https://github.com/home-lang/pantry/commit/a53b21d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- dylib symlink glob pattern + cmake-scrub missing library fallback ([610582e](https://github.com/home-lang/pantry/commit/610582e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create missing unversioned dylib symlinks in dep dirs ([ef8faa7](https://github.com/home-lang/pantry/commit/ef8faa7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- watchman rustup race condition — pre-install rust-src before cmake ([bd4164b](https://github.com/home-lang/pantry/commit/bd4164b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add openslide.org to knownBrokenDomains (requires libdicom not in pantry) ([78e245c](https://github.com/home-lang/pantry/commit/78e245c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- watchman YAML '' escape causing bash syntax error ([3742cd5](https://github.com/home-lang/pantry/commit/3742cd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add sqlite3.pc stub for darwin builds ([252a035](https://github.com/home-lang/pantry/commit/252a035)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create bzip2.pc stub for all darwin builds ([461dfbd](https://github.com/home-lang/pantry/commit/461dfbd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openslide v4.0.0 meson build + PyGObject bzip2 pkg-config ([229610f](https://github.com/home-lang/pantry/commit/229610f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch fbthrift for fmt 12 compatibility (fmt::join moved to fmt/ranges.h) ([abe3010](https://github.com/home-lang/pantry/commit/abe3010)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use system glog/gflags for all Facebook chain packages on linux ([e0d5bd0](https://github.com/home-lang/pantry/commit/e0d5bd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reconstruct truncated multi-line sed commands for fbthrift and folly ([46701b9](https://github.com/home-lang/pantry/commit/46701b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move depPrefixes declaration before usage to fix temporal dead zone ([19afeb2](https://github.com/home-lang/pantry/commit/19afeb2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- skip non-buildkit dep paths in dylib compat symlinks ([5be25c8](https://github.com/home-lang/pantry/commit/5be25c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create compat symlinks for stale dylib paths in pre-built darwin deps ([1ef20b7](https://github.com/home-lang/pantry/commit/1ef20b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mvfst sed post-install step — reconstruct full command lost by YAML parser ([331f892](https://github.com/home-lang/pantry/commit/331f892)) _(by Chris <chrisbreuer93@gmail.com>)_
+- restrict syslib override to only glog/gflags (was too aggressive) ([fbcfdab](https://github.com/home-lang/pantry/commit/fbcfdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- general syslib override for buildkit deps on Linux ([278f4ca](https://github.com/home-lang/pantry/commit/278f4ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- replace system glog with buildkit glog on Linux for fizz ([40909e1](https://github.com/home-lang/pantry/commit/40909e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove system glog-dev on Linux for fizz (ABI mismatch) ([bb00b30](https://github.com/home-lang/pantry/commit/bb00b30)) _(by Chris <chrisbreuer93@gmail.com>)_
+- set CC/CXX to compiler wrapper so cmake uses it ([a2aa34d](https://github.com/home-lang/pantry/commit/a2aa34d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip -isystem /usr/include in compiler wrapper on Linux ([1e3ef12](https://github.com/home-lang/pantry/commit/1e3ef12)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scrub /usr/include from system cmake configs on Linux with sudo ([8fac6bf](https://github.com/home-lang/pantry/commit/8fac6bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- set CMAKE_NO_SYSTEM_FROM_IMPORTED on Linux ([ce40ed7](https://github.com/home-lang/pantry/commit/ce40ed7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- broaden cmake scrubbing to catch all /usr/include references ([1fe02ad](https://github.com/home-lang/pantry/commit/1fe02ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sed wrapper handles -i flag in any argument position ([cfaaa9e](https://github.com/home-lang/pantry/commit/cfaaa9e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cmake scrub debug output + fizz sed -i newline handling ([457b148](https://github.com/home-lang/pantry/commit/457b148)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cargo HTTP/2 multiplexing on Linux + add antfu/ni to broken list ([398eaa2](https://github.com/home-lang/pantry/commit/398eaa2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip /usr/include from cmake INTERFACE_INCLUDE_DIRECTORIES ([a665e5d](https://github.com/home-lang/pantry/commit/a665e5d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use python3 to scrub ALL non-existent paths from cmake configs ([b074988](https://github.com/home-lang/pantry/commit/b074988)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use single-quoted sed for macOS SDK path replacement ([69b62fc](https://github.com/home-lang/pantry/commit/69b62fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- only scrub cmake configs in /tmp buildkit deps, not system dirs ([8a50648](https://github.com/home-lang/pantry/commit/8a50648)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scrub stale Xcode SDK paths from dep cmake configs on darwin ([2608266](https://github.com/home-lang/pantry/commit/2608266)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scrub /usr/include from dep cmake configs on Linux ([c783c9d](https://github.com/home-lang/pantry/commit/c783c9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use sudo pip3 for meson install, add ~/.local/bin to PATH ([5b00895](https://github.com/home-lang/pantry/commit/5b00895)) _(by Chris <chrisbreuer93@gmail.com>)_
+- glib sed  ([fd70d4d](https://github.com/home-lang/pantry/commit/fd70d4d)) _(by  < true regex, remove darwin LDFLAGS rpath>)_
+- remove /usr/include from CPATH to fix GCC #include_next on Linux ([fac67e7](https://github.com/home-lang/pantry/commit/fac67e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- glib sed non-fatal, add facebook chain deps to CI ([780e4f0](https://github.com/home-lang/pantry/commit/780e4f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use apt remove + pip install for meson on linux instead of venv ([9da23c9](https://github.com/home-lang/pantry/commit/9da23c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add double-conversion to macOS brew install for fizz/folly ([87cd990](https://github.com/home-lang/pantry/commit/87cd990)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add libdouble-conversion-dev to CI apt packages ([dacbd6b](https://github.com/home-lang/pantry/commit/dacbd6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- glib sed command split across lines by YAML parser ([0bfddab](https://github.com/home-lang/pantry/commit/0bfddab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove broken S3 meson dep, use pip-installed meson instead ([2b95ad0](https://github.com/home-lang/pantry/commit/2b95ad0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pass platform to modifyRecipe, keep gnome.org/libxml2 on darwin for glib ([3641045](https://github.com/home-lang/pantry/commit/3641045)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add reverse domain lookup to build-package.ts for collision-resolved keys ([c9b3549](https://github.com/home-lang/pantry/commit/c9b3549)) _(by Chris <chrisbreuer93@gmail.com>)_
+- package discovery for collision-resolved domains (x.org/protocol/xcb) ([62cbf9c](https://github.com/home-lang/pantry/commit/62cbf9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fizz sed -i BSD compat for darwin builds ([154734b](https://github.com/home-lang/pantry/commit/154734b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- generic meson venv fix for all 72 meson-dependent packages ([6aa26ad](https://github.com/home-lang/pantry/commit/6aa26ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- meson venv install + glib/gobject-introspection/protocol-xcb fixes ([66b9769](https://github.com/home-lang/pantry/commit/66b9769)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for x.org/xdmcp, xcb, protocol/xcb ([63d5bab](https://github.com/home-lang/pantry/commit/63d5bab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gobject-introspection meson PATH + folly CMAKE_PREFIX_PATH ([0db2d5c](https://github.com/home-lang/pantry/commit/0db2d5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve transitive dependencies for pkg-config ([6462b4e](https://github.com/home-lang/pantry/commit/6462b4e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- include share/pkgconfig in dep PKG_CONFIG_PATH for xorgproto/xtrans ([527d569](https://github.com/home-lang/pantry/commit/527d569)) _(by Chris <chrisbreuer93@gmail.com>)_
+- critical S3 upload bug for slashed domains + cmake.org darwin rpath ([a809eff](https://github.com/home-lang/pantry/commit/a809eff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- replace std.Thread.Mutex with std.atomic.Mutex for Zig 0.16 ([98b686a](https://github.com/home-lang/pantry/commit/98b686a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- xauth use -lXmu (xmuu merged on Ubuntu 24.04), wpebackend-fdo build libwpe from source ([3275e3c](https://github.com/home-lang/pantry/commit/3275e3c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- xauth bypass pkg-config with direct CFLAGS/LIBS, wpebackend-fdo debug apt install ([359cf81](https://github.com/home-lang/pantry/commit/359cf81)) _(by Chris <chrisbreuer93@gmail.com>)_
+- xauth multiarch pkg-config path, wpebackend-fdo install libwpe from apt ([a2d4d7d](https://github.com/home-lang/pantry/commit/a2d4d7d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight --with-boost-libdir only on darwin (broke linux) ([5ec622a](https://github.com/home-lang/pantry/commit/5ec622a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight --with-boost-libdir, open-mpi compgen nullglob, folly fast_float v8 ([2f9cbf8](https://github.com/home-lang/pantry/commit/2f9cbf8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight stub dylib in temp dir, open-mpi fortran flag to CONFIGURE_ARGS, gnutls bundled libunistring ([8ead040](https://github.com/home-lang/pantry/commit/8ead040)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight stub dylib, open-mpi pmix from brew, CONFIGURE_ARGS sed for pmix ([2e2419c](https://github.com/home-lang/pantry/commit/2e2419c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gnutls subshell for nettle build, php sed -i BSD, folly -isystem /usr/include ([dbb1918](https://github.com/home-lang/pantry/commit/dbb1918)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight darwin boost regex cache var, open-mpi darwin CONFIGURE_ARGS timing ([6f6b085](https://github.com/home-lang/pantry/commit/6f6b085)) _(by Chris <chrisbreuer93@gmail.com>)_
+- respect modifyRecipe dep removals in TS metadata dep merging ([6d133ee](https://github.com/home-lang/pantry/commit/6d133ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- php.net install ICU from system packages (brew/apt) ([ba9f845](https://github.com/home-lang/pantry/commit/ba9f845)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight boost stub, gnutls nettle, open-mpi hwloc paths, folly glog, php iconv ([c52cab1](https://github.com/home-lang/pantry/commit/c52cab1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cmake bootstrap flag, mupdf openjpeg include path, open-mpi darwin ([4d15214](https://github.com/home-lang/pantry/commit/4d15214)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install deps from system packages instead of disabling them ([fc4f045](https://github.com/home-lang/pantry/commit/fc4f045)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install meson via pip as fallback + fix meson option types ([35c5152](https://github.com/home-lang/pantry/commit/35c5152)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve more package build failures (atk, gobject-introspection, folly) ([d48ce15](https://github.com/home-lang/pantry/commit/d48ce15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve remaining package build failures from CI run analysis ([fdb64c1](https://github.com/home-lang/pantry/commit/fdb64c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve more package build failures in CI ([e3240ca](https://github.com/home-lang/pantry/commit/e3240ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve additional package build failures in CI ([f6c3aca](https://github.com/home-lang/pantry/commit/f6c3aca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve failing package builds in CI ([47acb96](https://github.com/home-lang/pantry/commit/47acb96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve typecheck and zig fmt CI failures ([2381a29](https://github.com/home-lang/pantry/commit/2381a29)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add cmake prefix fix to matio.sourceforge.io existing override ([9730859](https://github.com/home-lang/pantry/commit/9730859)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix fix to frei0r.dyne.org existing entry ([d04e8a4](https://github.com/home-lang/pantry/commit/d04e8a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- correct cmake prefix overrides for libgit2 (ARGS), libwebsockets (inline), libzip (ARGS), sentencepiece (full-quote), double-conversion (inline) ([178ce85](https://github.com/home-lang/pantry/commit/178ce85)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix override for github.com/json-c/json-c (inline script) ([61a2098](https://github.com/home-lang/pantry/commit/61a2098)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix override for c-ares.org (inline script pattern) ([e7a2c4b](https://github.com/home-lang/pantry/commit/e7a2c4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- correct cmake prefix overrides for duckdb (ARGS), fna-xna (ARGS); note freetype already valid ([b5e67d7](https://github.com/home-lang/pantry/commit/b5e67d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for zstd (ARGS), libsdl.org ([bf6a6eb](https://github.com/home-lang/pantry/commit/bf6a6eb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for cgal, fish, fmt, zstd, glew, qhull, duckdb, freetype, fna-xna ([f6688da](https://github.com/home-lang/pantry/commit/f6688da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for aomedia, avro, libaec, Vulkan-Headers, fizz, aws-sdk-cpp, libccd, libcbor, lerc, libdeflate, openblas; fix cpptoml duplicate ([9eee33d](https://github.com/home-lang/pantry/commit/9eee33d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for 15 more packages (libcuefile, usrsctp, luv, oneTBB, Vulkan-Loader, ceres-solver, gl2ps, upx, etc.) ([4f4078e](https://github.com/home-lang/pantry/commit/4f4078e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for mypy-lang.org and crates.io/qsv ([12d17d3](https://github.com/home-lang/pantry/commit/12d17d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for musepack, wpebackend-fdo, luarocks ([a140929](https://github.com/home-lang/pantry/commit/a140929)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for x.org/x11 and x.org/libxfont2 ([21f8737](https://github.com/home-lang/pantry/commit/21f8737)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for watchman + capnproto; remove duplicate entry ([fe466f1](https://github.com/home-lang/pantry/commit/fe466f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 Facebook packages — edencommon, fb303, fbthrift, mvfst ([1c7d580](https://github.com/home-lang/pantry/commit/1c7d580)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for apache/arrow and facebook/wangle ([025c32a](https://github.com/home-lang/pantry/commit/025c32a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 3 more packages — poppler-qt5, gtk-mac-integration, libva ([46bb257](https://github.com/home-lang/pantry/commit/46bb257)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add override for XKeyboardConfig — fixed prefix quoting + removed libxslt dep ([bfaea86](https://github.com/home-lang/pantry/commit/bfaea86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add override for shared-mime-info + remove stale sfcgal.gitlab.io entry ([c00ca22](https://github.com/home-lang/pantry/commit/c00ca22)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 6 more packages — vde, tlr, rucio, libsoup, xauth, xinput ([06193d0](https://github.com/home-lang/pantry/commit/06193d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 more packages — qemu, sfcgal, faac, tcl-lang ([5773d94](https://github.com/home-lang/pantry/commit/5773d94)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 more packages — php, opendap, open-mpi, modal ([c0eda23](https://github.com/home-lang/pantry/commit/c0eda23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 7 more packages — epsilon, gdal, monero, openresty, opensearch, bitcoin, aws-cli ([3659256](https://github.com/home-lang/pantry/commit/3659256)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 more packages — werf, pulumi, projen, zookeeper ([1b81bbb](https://github.com/home-lang/pantry/commit/1b81bbb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 7 more packages — girara, zathura, pillow, mergestat, kubebuilder, kubectl, macvim ([d8c77f0](https://github.com/home-lang/pantry/commit/d8c77f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 8 more packages — p11-kit, polkit, openslide, vmaf, mupdf, lavinmq, appstream, flux2 ([b61b7d6](https://github.com/home-lang/pantry/commit/b61b7d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 9 more packages — PyGObject, graphene, iso-codes, libsmi, wireshark, jpegxl, mpv, gtk3, gtk4 ([501c31b](https://github.com/home-lang/pantry/commit/501c31b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 11 more packages — guile, gnuplot, leptonica, tesseract, proj, qpdf, poppler, librsvg, grpc, libplacebo, xcb-util-image ([e0b17a7](https://github.com/home-lang/pantry/commit/e0b17a7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 15 more packages — apache/apr-util/httpd/thrift, vim, gnome chain (atk/gdk-pixbuf/gobject-introspection/gsettings/json-glib/libsecret/pango), ffmpeg, gnutls; remove dupes ([c0e7469](https://github.com/home-lang/pantry/commit/c0e7469)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unlock 25+ packages via overrides — x.org chain, gnome, libimobiledevice, matio, nss, dbus, xkbcommon, openpmix, puzzles, nx, snaplet, eas-cli, deepwisdom, cephadm, libpsl, netcdf ([8cd40d0](https://github.com/home-lang/pantry/commit/8cd40d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- more override fixes from CI monitoring ([80b4f63](https://github.com/home-lang/pantry/commit/80b4f63)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve build ordering and override fixes for dep-dependent packages ([60f0a32](https://github.com/home-lang/pantry/commit/60f0a32)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve build failures from CI monitoring ([a0e461d](https://github.com/home-lang/pantry/commit/a0e461d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove himalaya and volta from knownBrokenDomains ([1d6a5c1](https://github.com/home-lang/pantry/commit/1d6a5c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove 6 fixed packages from knownBrokenDomains ([af6b71c](https://github.com/home-lang/pantry/commit/af6b71c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove pinned rust-toolchain.toml for himalaya and volta ([428787b](https://github.com/home-lang/pantry/commit/428787b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refine fixes for syncthing, himalaya, volta; revert strace ([f0a3954](https://github.com/home-lang/pantry/commit/f0a3954)) _(by Chris <chrisbreuer93@gmail.com>)_
+- repair 10 broken packages with targeted build fixes ([e6ea66b](https://github.com/home-lang/pantry/commit/e6ea66b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove 5 packages from knownBrokenDomains after successful builds ([239864d](https://github.com/home-lang/pantry/commit/239864d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - use CMAKE_NO_SYSTEM_FROM_IMPORTED to prevent -isystem /usr/include ([cbc6fee](https://github.com/home-lang/pantry/commit/cbc6fee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - remove system xxhash before build ([e0ee1a4](https://github.com/home-lang/pantry/commit/e0ee1a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - use FETCHCONTENT_TRY_FIND_PACKAGE_MODE=NEVER ([4380c96](https://github.com/home-lang/pantry/commit/4380c96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - fix cmake package name case (Xxhash not xxhash) ([b6001a5](https://github.com/home-lang/pantry/commit/b6001a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - disable system xxhash to prevent -isystem /usr/include ([033cd13](https://github.com/home-lang/pantry/commit/033cd13)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use cmake 3.x on darwin, clang for ccache linux ([4a42065](https://github.com/home-lang/pantry/commit/4a42065)) _(by Chris <chrisbreuer93@gmail.com>)_
+- third round of build fixes for 5 remaining packages ([c2e1fc0](https://github.com/home-lang/pantry/commit/c2e1fc0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- second round of build fixes ([e7c560f](https://github.com/home-lang/pantry/commit/e7c560f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix 12 more failing packages from sync run ([5ca6f56](https://github.com/home-lang/pantry/commit/5ca6f56)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix glibtool on darwin for libvterm/libtommath ([861a6fa](https://github.com/home-lang/pantry/commit/861a6fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix remaining build failures (libvterm, libtommath, xmlstar, git-crypt) ([7dd21cd](https://github.com/home-lang/pantry/commit/7dd21cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use Homebrew ICU for laravel.com darwin build ([1423c3e](https://github.com/home-lang/pantry/commit/1423c3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- convert space-separated package inputs to commas in build workflow ([76162a3](https://github.com/home-lang/pantry/commit/76162a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix 7 failing package builds from sync run ([958800c](https://github.com/home-lang/pantry/commit/958800c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix darwin builds for gnu.org/bc, gnu.org/texinfo, laravel.com ([c4f7f93](https://github.com/home-lang/pantry/commit/c4f7f93)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add texinfo, bc, laravel to linuxOnlyDomains ([983d2e1](https://github.com/home-lang/pantry/commit/983d2e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- replace BSD-incompatible sed -i with portable alternatives ([6f7d9c5](https://github.com/home-lang/pantry/commit/6f7d9c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update platform lists and known-broken based on CI results ([9a4a25f](https://github.com/home-lang/pantry/commit/9a4a25f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix gnu.org/bc sed portability and harlequin.sh python version detection ([cf12698](https://github.com/home-lang/pantry/commit/cf12698)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix amp.rs sed syntax, musepack.net cmake quote, scala-lang.org typo ([9a4e5c5](https://github.com/home-lang/pantry/commit/9a4e5c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- align build-package.yml dependencies with sync-binaries.yml ([26c3b08](https://github.com/home-lang/pantry/commit/26c3b08)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix broken package recipes and remove false known-broken entries ([3433d7d](https://github.com/home-lang/pantry/commit/3433d7d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exit non-zero for targeted builds (-p) that have failures ([8bc2efe](https://github.com/home-lang/pantry/commit/8bc2efe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase build-package.yml timeout to 120min for long builds ([be33e19](https://github.com/home-lang/pantry/commit/be33e19)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch-ts-cloud clones source repo instead of patching npm exports ([2a19a84](https://github.com/home-lang/pantry/commit/2a19a84)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch ts-cloud exports to use src instead of broken dist ([54926a4](https://github.com/home-lang/pantry/commit/54926a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- always replace S3 meson with system meson wrapper, fix glibtool Homebrew path ([cbf85c0](https://github.com/home-lang/pantry/commit/cbf85c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add remaining 4 package failures to known-broken list ([9b8f735](https://github.com/home-lang/pantry/commit/9b8f735)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add final 3 package failures to known-broken list ([3a5e394](https://github.com/home-lang/pantry/commit/3a5e394)) _(by Chris <chrisbreuer93@gmail.com>)_
+- read version from package.json instead of hardcoded 0.7.7 ([2575410](https://github.com/home-lang/pantry/commit/2575410)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- optimize cmake-scrub to only scan lib/cmake/ directories ([e64b3ed](https://github.com/home-lang/pantry/commit/e64b3ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- simplify bin symlinks to read package.json bin field ([c37c1dc](https://github.com/home-lang/pantry/commit/c37c1dc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.3 ([5f55f21](https://github.com/home-lang/pantry/commit/5f55f21)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update LLaMA.cpp ([1454ac0](https://github.com/home-lang/pantry/commit/1454ac0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([756ae13](https://github.com/home-lang/pantry/commit/756ae13)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([fdbfdc6](https://github.com/home-lang/pantry/commit/fdbfdc6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update virtualenv ([7835b5e](https://github.com/home-lang/pantry/commit/7835b5e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lighthouse, oc ([c6271fd](https://github.com/home-lang/pantry/commit/c6271fd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update consul, LLaMA.cpp, pixi ([f945a10](https://github.com/home-lang/pantry/commit/f945a10)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([d6db805](https://github.com/home-lang/pantry/commit/d6db805)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove diagnostic logging from fix-up.ts ([7b1f628](https://github.com/home-lang/pantry/commit/7b1f628)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([61daf57](https://github.com/home-lang/pantry/commit/61daf57)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([3deec93](https://github.com/home-lang/pantry/commit/3deec93)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, nullclaw, linux-headers, ollama ([7d8533f](https://github.com/home-lang/pantry/commit/7d8533f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, openclaw ([c9c10a2](https://github.com/home-lang/pantry/commit/c9c10a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dagger, LLaMA.cpp, kubectl, codex, vim ([c1e1b9e](https://github.com/home-lang/pantry/commit/c1e1b9e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, nx.dev ([abddcf9](https://github.com/home-lang/pantry/commit/abddcf9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update meilisearch, oh-my-posh, ollama, oc ([81e71ba](https://github.com/home-lang/pantry/commit/81e71ba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([b940f14](https://github.com/home-lang/pantry/commit/b940f14)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ng, container, aws-sdk-cpp, vim ([138af5b](https://github.com/home-lang/pantry/commit/138af5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle, LLaMA.cpp, vim ([ed461c1](https://github.com/home-lang/pantry/commit/ed461c1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ruff, aws/cli, crush, ruff, LLaMA.cpp and 2 other deps ([cb51fe0](https://github.com/home-lang/pantry/commit/cb51fe0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ng, databricks, trufflehog, vim ([aec7308](https://github.com/home-lang/pantry/commit/aec7308)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oc ([92bf843](https://github.com/home-lang/pantry/commit/92bf843)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dxc, ollama, pkl-lang ([fe3de33](https://github.com/home-lang/pantry/commit/fe3de33)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update file, dasel, opa, pulumi ([dc70eef](https://github.com/home-lang/pantry/commit/dc70eef)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- re-add x265, luv, snaplet, appstream to knownBrokenDomains ([d760cec](https://github.com/home-lang/pantry/commit/d760cec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ruff, ruff, rubocop ([683a631](https://github.com/home-lang/pantry/commit/683a631)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade, oauth2-proxy ([69de242](https://github.com/home-lang/pantry/commit/69de242)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bytebase, daytona, glib ([ba0eb5e](https://github.com/home-lang/pantry/commit/ba0eb5e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update databricks, mise, snyk ([eb67ffc](https://github.com/home-lang/pantry/commit/eb67ffc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rtx-cli, libfyaml, localstack ([e65592d](https://github.com/home-lang/pantry/commit/e65592d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pnp, werf ([16b347d](https://github.com/home-lang/pantry/commit/16b347d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update jfrog-cli, opencode.ai ([e61ed60](https://github.com/home-lang/pantry/commit/e61ed60)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([4000178](https://github.com/home-lang/pantry/commit/4000178)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bun ([d46ba62](https://github.com/home-lang/pantry/commit/d46ba62)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (2 files) ([54c30f5](https://github.com/home-lang/pantry/commit/54c30f5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, squawk, netcdf ([610ff09](https://github.com/home-lang/pantry/commit/610ff09)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, spin, vals, kubectl-krew and 1 other dep ([d605ed3](https://github.com/home-lang/pantry/commit/d605ed3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, LLaMA.cpp, firebase, moon ([9c4d7de](https://github.com/home-lang/pantry/commit/9c4d7de)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, ipfs ([7e39843](https://github.com/home-lang/pantry/commit/7e39843)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update npmjs ([0671679](https://github.com/home-lang/pantry/commit/0671679)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ng ([f6f3384](https://github.com/home-lang/pantry/commit/f6f3384)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sd, mmdblookup, Protocol, Buffers and 1 other dep ([89d49b5](https://github.com/home-lang/pantry/commit/89d49b5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, LLaMA.cpp, vim ([00d0da6](https://github.com/home-lang/pantry/commit/00d0da6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, cilium, vim, virtualenv ([114cdc5](https://github.com/home-lang/pantry/commit/114cdc5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ducker ([943122c](https://github.com/home-lang/pantry/commit/943122c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, digger, stripe, vim and 1 other dep ([bb74924](https://github.com/home-lang/pantry/commit/bb74924)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([f5463b4](https://github.com/home-lang/pantry/commit/f5463b4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ansible-lint, circleci, deno, jadx and 2 other deps ([2454f00](https://github.com/home-lang/pantry/commit/2454f00)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update hugo, goreleaser ([5894777](https://github.com/home-lang/pantry/commit/5894777)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot, mmdblookup, libcxx.llvm, llvm and 4 other deps ([bc3d0cc](https://github.com/home-lang/pantry/commit/bc3d0cc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dasel, opencode.ai, rucio-client ([88f522d](https://github.com/home-lang/pantry/commit/88f522d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update terraform, tox ([ccdf84a](https://github.com/home-lang/pantry/commit/ccdf84a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona ([8e4b28c](https://github.com/home-lang/pantry/commit/8e4b28c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dprint, rucio-client ([494bd38](https://github.com/home-lang/pantry/commit/494bd38)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update deno, watchexec ([1ac9092](https://github.com/home-lang/pantry/commit/1ac9092)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot ([5f87230](https://github.com/home-lang/pantry/commit/5f87230)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pike, libbluray ([ad129b2](https://github.com/home-lang/pantry/commit/ad129b2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([6853fb3](https://github.com/home-lang/pantry/commit/6853fb3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, opencode.ai ([e2678fe](https://github.com/home-lang/pantry/commit/e2678fe)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, helmfile ([df01029](https://github.com/home-lang/pantry/commit/df01029)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update node-build ([67a4ba4](https://github.com/home-lang/pantry/commit/67a4ba4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update python-certifi, rtx-cli and 5 other deps ([f888cd1](https://github.com/home-lang/pantry/commit/f888cd1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update uv, eas, mailpit, rubygems ([fe1b7cb](https://github.com/home-lang/pantry/commit/fe1b7cb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update skopeo, mailpit, opencode.ai ([f9e2fa9](https://github.com/home-lang/pantry/commit/f9e2fa9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, mercure ([a31962c](https://github.com/home-lang/pantry/commit/a31962c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, LLaMA.cpp ([92fad38](https://github.com/home-lang/pantry/commit/92fad38)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, aws-sdk-cpp, vim ([8bf63e6](https://github.com/home-lang/pantry/commit/8bf63e6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, gnome-extensions-cli, vim ([32dc01b](https://github.com/home-lang/pantry/commit/32dc01b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove diagnostic output, keep transitive dep resolution ([c549e7c](https://github.com/home-lang/pantry/commit/c549e7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update aws/cli, openai ([41240ec](https://github.com/home-lang/pantry/commit/41240ec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update carapace, circleci, fly, railway and 1 other dep ([99cd086](https://github.com/home-lang/pantry/commit/99cd086)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gcloud, tox ([ca70c12](https://github.com/home-lang/pantry/commit/ca70c12)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update docker-compose, pluto, hasura, scala-lang ([dd23d70](https://github.com/home-lang/pantry/commit/dd23d70)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko, node, mockery ([165e93d](https://github.com/home-lang/pantry/commit/165e93d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([41ed64f](https://github.com/home-lang/pantry/commit/41ed64f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update LLaMA.cpp, node ([00ba2f2](https://github.com/home-lang/pantry/commit/00ba2f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([7b96e20](https://github.com/home-lang/pantry/commit/7b96e20)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update v2.5, laravel ([193cbb6](https://github.com/home-lang/pantry/commit/193cbb6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([0fb0684](https://github.com/home-lang/pantry/commit/0fb0684)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, daytona, flux ([8f4fa3f](https://github.com/home-lang/pantry/commit/8f4fa3f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pixi ([972d0f4](https://github.com/home-lang/pantry/commit/972d0f4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([691682f](https://github.com/home-lang/pantry/commit/691682f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a2ca701](https://github.com/home-lang/pantry/commit/a2ca701)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update erlang, edencommon, fb303, thrift1 and 9 other deps ([3eb3ae8](https://github.com/home-lang/pantry/commit/3eb3ae8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+-  Compare version strings numerically (newest first) ([edc1002](https://github.com/home-lang/pantry/commit/edc1002)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update dart, libaec, watchexec ([ddeed9c](https://github.com/home-lang/pantry/commit/ddeed9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, oci ([baed76f](https://github.com/home-lang/pantry/commit/baed76f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot, thrift1 ([d697eba](https://github.com/home-lang/pantry/commit/d697eba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update uv, casdoor, valkey ([cea8eab](https://github.com/home-lang/pantry/commit/cea8eab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, openai, valkey ([ff48be4](https://github.com/home-lang/pantry/commit/ff48be4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update buf, coder, nak, libunistring, pnp ([1b38b9c](https://github.com/home-lang/pantry/commit/1b38b9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ansible, coder, hatch ([3e0c4a9](https://github.com/home-lang/pantry/commit/3e0c4a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([ace36d4](https://github.com/home-lang/pantry/commit/ace36d4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update XKeyboardConfig, aws-sdk-cpp, LLaMA.cpp ([9caa8dd](https://github.com/home-lang/pantry/commit/9caa8dd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, eas, cfn-lint, spec-kit and 5 other deps ([bd9a7f6](https://github.com/home-lang/pantry/commit/bd9a7f6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, ollama, openai ([9c76193](https://github.com/home-lang/pantry/commit/9c76193)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gh, depot, mvfst, dasel, fizz, jupyter and 2 other deps ([f21d750](https://github.com/home-lang/pantry/commit/f21d750)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([028d1f7](https://github.com/home-lang/pantry/commit/028d1f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apktool, railway, virtualenv ([88aa41c](https://github.com/home-lang/pantry/commit/88aa41c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ng, edencommon, folly, watchman and 4 other deps ([846153f](https://github.com/home-lang/pantry/commit/846153f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fb303, wangle, traefik ([b52f762](https://github.com/home-lang/pantry/commit/b52f762)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona ([6a33025](https://github.com/home-lang/pantry/commit/6a33025)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update platformdirs, filelock, libksba, sentry-cli ([5da04a6](https://github.com/home-lang/pantry/commit/5da04a6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update checkov, encore, tailwindcss ([e0a6a6b](https://github.com/home-lang/pantry/commit/e0a6a6b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update loki ([e2a9007](https://github.com/home-lang/pantry/commit/e2a9007)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update doctl, odigos, redis ([a9b45b3](https://github.com/home-lang/pantry/commit/a9b45b3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sbt ([f779b1e](https://github.com/home-lang/pantry/commit/f779b1e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp, nim-lang ([058d2be](https://github.com/home-lang/pantry/commit/058d2be)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mpmath ([57c8f71](https://github.com/home-lang/pantry/commit/57c8f71)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, caddy ([0d7bf90](https://github.com/home-lang/pantry/commit/0d7bf90)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko, LLaMA.cpp ([39cedcb](https://github.com/home-lang/pantry/commit/39cedcb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update watchexec ([2b6e662](https://github.com/home-lang/pantry/commit/2b6e662)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update parallel ([f826603](https://github.com/home-lang/pantry/commit/f826603)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a26c0f3](https://github.com/home-lang/pantry/commit/a26c0f3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot ([472bb6d](https://github.com/home-lang/pantry/commit/472bb6d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([39f905c](https://github.com/home-lang/pantry/commit/39f905c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ast-grep.github, vim ([5e129c0](https://github.com/home-lang/pantry/commit/5e129c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, rtx-cli ([bdada08](https://github.com/home-lang/pantry/commit/bdada08)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise ([6b1cdfc](https://github.com/home-lang/pantry/commit/6b1cdfc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a52780a](https://github.com/home-lang/pantry/commit/a52780a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([59093a9](https://github.com/home-lang/pantry/commit/59093a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update goose ([a0b4876](https://github.com/home-lang/pantry/commit/a0b4876)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([c452f5a](https://github.com/home-lang/pantry/commit/c452f5a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update checkov, gawk, oh-my-posh ([e3f4f51](https://github.com/home-lang/pantry/commit/e3f4f51)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oh-my-posh ([c500fc6](https://github.com/home-lang/pantry/commit/c500fc6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-cd, watchexec ([8075e28](https://github.com/home-lang/pantry/commit/8075e28)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sk ([82c6cdd](https://github.com/home-lang/pantry/commit/82c6cdd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cgif ([6b62104](https://github.com/home-lang/pantry/commit/6b62104)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sops, colima ([323ead6](https://github.com/home-lang/pantry/commit/323ead6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([e3f414a](https://github.com/home-lang/pantry/commit/e3f414a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update helmfile ([9f13cbf](https://github.com/home-lang/pantry/commit/9f13cbf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- resolve typecheck ([8c2ce0c](https://github.com/home-lang/pantry/commit/8c2ce0c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove generated unused files ([032c4bb](https://github.com/home-lang/pantry/commit/032c4bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update projen ([01d20ef](https://github.com/home-lang/pantry/commit/01d20ef)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rtx-cli, process-compose, mise ([97c7fad](https://github.com/home-lang/pantry/commit/97c7fad)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update exr, yt-dlp ([95d07f2](https://github.com/home-lang/pantry/commit/95d07f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update git-crypt, ccache, dozzle, eksctl and 5 other deps ([f7c9b89](https://github.com/home-lang/pantry/commit/f7c9b89)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([dd710ac](https://github.com/home-lang/pantry/commit/dd710ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([ab10f79](https://github.com/home-lang/pantry/commit/ab10f79)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update witr, vim ([fa0b2f2](https://github.com/home-lang/pantry/commit/fa0b2f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([281e04d](https://github.com/home-lang/pantry/commit/281e04d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor, vim ([5d81590](https://github.com/home-lang/pantry/commit/5d81590)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([7e4a5f7](https://github.com/home-lang/pantry/commit/7e4a5f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update better-commits ([df0038b](https://github.com/home-lang/pantry/commit/df0038b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update better-commits ([c8a6436](https://github.com/home-lang/pantry/commit/c8a6436)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spec-kit ([68a45ec](https://github.com/home-lang/pantry/commit/68a45ec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([39951f2](https://github.com/home-lang/pantry/commit/39951f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spider, yabai, pake ([bc5bac3](https://github.com/home-lang/pantry/commit/bc5bac3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pocketbase ([e540ba0](https://github.com/home-lang/pantry/commit/e540ba0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([791f763](https://github.com/home-lang/pantry/commit/791f763)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update maturin, oh-my-posh, vim ([74f1376](https://github.com/home-lang/pantry/commit/74f1376)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, ocrmypdf, vim ([31a409a](https://github.com/home-lang/pantry/commit/31a409a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([eb50b4c](https://github.com/home-lang/pantry/commit/eb50b4c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([9b27afa](https://github.com/home-lang/pantry/commit/9b27afa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([5da8d85](https://github.com/home-lang/pantry/commit/5da8d85)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update squawk ([e652e60](https://github.com/home-lang/pantry/commit/e652e60)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([af6c325](https://github.com/home-lang/pantry/commit/af6c325)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([16d805c](https://github.com/home-lang/pantry/commit/16d805c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([0e630b7](https://github.com/home-lang/pantry/commit/0e630b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b4d828b](https://github.com/home-lang/pantry/commit/b4d828b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp, meilisearch ([c540506](https://github.com/home-lang/pantry/commit/c540506)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([965a754](https://github.com/home-lang/pantry/commit/965a754)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4f7c2be](https://github.com/home-lang/pantry/commit/4f7c2be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1b97a2b](https://github.com/home-lang/pantry/commit/1b97a2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update biome, regex-tui, libsdl, zarf ([23dea97](https://github.com/home-lang/pantry/commit/23dea97)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([db1340e](https://github.com/home-lang/pantry/commit/db1340e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ccache, projen, x265 ([92f9f81](https://github.com/home-lang/pantry/commit/92f9f81)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add luarocks.org to knownBrokenDomains ([5089b37](https://github.com/home-lang/pantry/commit/5089b37)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update aws-sdk-cpp, nx.dev ([213b85b](https://github.com/home-lang/pantry/commit/213b85b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update git-crypt, laravel, libvterm and 3 other deps ([411de47](https://github.com/home-lang/pantry/commit/411de47)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update moon ([22dce69](https://github.com/home-lang/pantry/commit/22dce69)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, gh, dozzle, gitlab-runner and 4 other deps ([7af2969](https://github.com/home-lang/pantry/commit/7af2969)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spec-kit, mesa3d ([daf8648](https://github.com/home-lang/pantry/commit/daf8648)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, gh, stress-ng, bc, LocalAI ([f3802aa](https://github.com/home-lang/pantry/commit/f3802aa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, eksctl, Vulkan-Loader and 3 other deps ([63faa1e](https://github.com/home-lang/pantry/commit/63faa1e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([5f023b6](https://github.com/home-lang/pantry/commit/5f023b6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, cirrus, spec-kit ([b2db8b9](https://github.com/home-lang/pantry/commit/b2db8b9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sk, erlang, eas, allure, llrt and 1 other dep ([4f0c4c8](https://github.com/home-lang/pantry/commit/4f0c4c8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spec-kit, projen ([cdd4ad9](https://github.com/home-lang/pantry/commit/cdd4ad9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, libgcrypt ([d5764da](https://github.com/home-lang/pantry/commit/d5764da)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update jnv, sentry-cli ([c0784cf](https://github.com/home-lang/pantry/commit/c0784cf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([97ba57a](https://github.com/home-lang/pantry/commit/97ba57a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update erlang, opencode.ai ([07684b1](https://github.com/home-lang/pantry/commit/07684b1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update erlang, flyway, LLaMA.cpp ([7c5917b](https://github.com/home-lang/pantry/commit/7c5917b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, steampipe ([5d1e720](https://github.com/home-lang/pantry/commit/5d1e720)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dua ([c27bb7e](https://github.com/home-lang/pantry/commit/c27bb7e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox ([424d814](https://github.com/home-lang/pantry/commit/424d814)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([0e88b74](https://github.com/home-lang/pantry/commit/0e88b74)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove node dependency ([0ce8d1c](https://github.com/home-lang/pantry/commit/0ce8d1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update LLaMA.cpp ([43e98de](https://github.com/home-lang/pantry/commit/43e98de)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- set `max-parallel` to 10 ([f40af42](https://github.com/home-lang/pantry/commit/f40af42)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update browser-use, casdoor, LLaMA.cpp, fzf and 4 other deps ([47df95d](https://github.com/home-lang/pantry/commit/47df95d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- improve CI pipeline — remove ts-cloud source builds, fix broken packages ([66def19](https://github.com/home-lang/pantry/commit/66def19)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update flutter, Vulkan-Headers, LLaMA.cpp and 2 other deps ([bd777f9](https://github.com/home-lang/pantry/commit/bd777f9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, terragrunt, zarf ([1a67b7b](https://github.com/home-lang/pantry/commit/1a67b7b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ruff, ruff, spec-kit, opencode.ai, exr ([452ee53](https://github.com/home-lang/pantry/commit/452ee53)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update npmjs ([ef0a5f1](https://github.com/home-lang/pantry/commit/ef0a5f1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spin, aws-sdk-cpp, opencode.ai ([fe54799](https://github.com/home-lang/pantry/commit/fe54799)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oc ([ba69a1f](https://github.com/home-lang/pantry/commit/ba69a1f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, oc, cosign ([39b6bfc](https://github.com/home-lang/pantry/commit/39b6bfc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, spec-kit, minikube ([97c685e](https://github.com/home-lang/pantry/commit/97c685e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, mupdf ([bbd3a7c](https://github.com/home-lang/pantry/commit/bbd3a7c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update projen, vim ([f6bbe8d](https://github.com/home-lang/pantry/commit/f6bbe8d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update grype, LLaMA.cpp, juliaup and 2 other deps ([91aefc4](https://github.com/home-lang/pantry/commit/91aefc4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox, vim ([666c5a7](https://github.com/home-lang/pantry/commit/666c5a7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update databricks, maturin, vcluster ([a80348f](https://github.com/home-lang/pantry/commit/a80348f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, LLaMA.cpp, spec-kit, gqlgen and 1 other dep ([d9f7cd5](https://github.com/home-lang/pantry/commit/d9f7cd5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lego ([323daaf](https://github.com/home-lang/pantry/commit/323daaf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### debug
+
+- log strip-components value during tar extraction ([b9d110c](https://github.com/home-lang/pantry/commit/b9d110c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### diag
+
+- log install dir contents before tarball creation ([0427677](https://github.com/home-lang/pantry/commit/0427677)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add PKG_CONFIG_PATH debug output to diagnose ice.pc resolution ([aadc5b2](https://github.com/home-lang/pantry/commit/aadc5b2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _ < true regex, remove darwin LDFLAGS rpath>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.2...HEAD)
+
+### 🚀 Features
+
+- multi-version builds + DynamoDB version request tracking ([f9a9e3c](https://github.com/home-lang/pantry/commit/f9a9e3c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make install directory configurable via pantry.toml modulesDir ([402ac77](https://github.com/home-lang/pantry/commit/402ac77)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add "commit publishing" ([03ed11c](https://github.com/home-lang/pantry/commit/03ed11c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install npm packages to node_modules/ for Node.js compatibility ([339bae6](https://github.com/home-lang/pantry/commit/339bae6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add --github-release flag to publish command ([08edd32](https://github.com/home-lang/pantry/commit/08edd32)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- expand durable override system to 89 packages, fix 28 more broken packages ([a0028d7](https://github.com/home-lang/pantry/commit/a0028d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add GitHub Actions Job Summary for build failures ([1d2a02a](https://github.com/home-lang/pantry/commit/1d2a02a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- use spinlock for Mutex on Zig 0.16 ([8e1923b](https://github.com/home-lang/pantry/commit/8e1923b)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- apply lint auto-fixes for prefer-template, quotes, and formatting ([194d390](https://github.com/home-lang/pantry/commit/194d390)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve Zig 0.16 CI build errors ([60291ea](https://github.com/home-lang/pantry/commit/60291ea)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve lint errors in build scripts ([d73e8d8](https://github.com/home-lang/pantry/commit/d73e8d8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- proper toolchain fixes for multi-version failures instead of skipping ([b403373](https://github.com/home-lang/pantry/commit/b403373)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bundle @loader_path transitive deps from Homebrew libraries ([66d8768](https://github.com/home-lang/pantry/commit/66d8768)) _(by Chris <chrisbreuer93@gmail.com>)_
+- multi-version build failures — skip broken old versions, fix overrides ([fcb26dc](https://github.com/home-lang/pantry/commit/fcb26dc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- find symlinked dylibs during @rpath dep bundling ([9c5c75e](https://github.com/home-lang/pantry/commit/9c5c75e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- also search Homebrew for @rpath dep bundling ([5b61309](https://github.com/home-lang/pantry/commit/5b61309)) _(by Chris <chrisbreuer93@gmail.com>)_
+- deduplicate package-overrides entries and fix unused param lint error ([0901c15](https://github.com/home-lang/pantry/commit/0901c15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- search /tmp/buildkit-deps for @rpath dep bundling ([2dc738f](https://github.com/home-lang/pantry/commit/2dc738f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bundle @rpath dep libraries from other build prefixes ([3a58bfa](https://github.com/home-lang/pantry/commit/3a58bfa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- only update latestVersion when uploading a newer version ([b3969c0](https://github.com/home-lang/pantry/commit/b3969c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- multi-version summary shows double @version in output ([1b61655](https://github.com/home-lang/pantry/commit/1b61655)) _(by Chris <chrisbreuer93@gmail.com>)_
+- isMachO signed integer overflow — Mach-O detection never matched arm64 ([6fc5e81](https://github.com/home-lang/pantry/commit/6fc5e81)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bundle build-path dep libraries into packages for self-containment ([214237c](https://github.com/home-lang/pantry/commit/214237c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — use CamelCase boost_systemConfigVersion.cmake filename ([e588c47](https://github.com/home-lang/pantry/commit/e588c47)) _(by Chris <chrisbreuer93@gmail.com>)_
+- meilisearch download URLs, MySQL version detection, SQLite array distributable ([dc1242e](https://github.com/home-lang/pantry/commit/dc1242e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — always overwrite boost_system cmake configs ([be4bea8](https://github.com/home-lang/pantry/commit/be4bea8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- JSDoc comment in fix-up.ts prematurely closed by glob path ([bc8f279](https://github.com/home-lang/pantry/commit/bc8f279)) _(by Chris <chrisbreuer93@gmail.com>)_
+- Laravel stack — bundle Homebrew dylibs, support vendored packages, add meilisearch ([ff17ce6](https://github.com/home-lang/pantry/commit/ff17ce6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — use correct PACKAGE_VERSION format in boost_system cmake config ([8dc3033](https://github.com/home-lang/pantry/commit/8dc3033)) _(by Chris <chrisbreuer93@gmail.com>)_
+- buildkit sed wrapper — find gsed in Homebrew opt path when not linked ([1098c1d](https://github.com/home-lang/pantry/commit/1098c1d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — create missing boost_system cmake config for Homebrew boost 1.90 ([2f23303](https://github.com/home-lang/pantry/commit/2f23303)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openresty — find gsed via Homebrew opt path when not linked ([967d48d](https://github.com/home-lang/pantry/commit/967d48d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — bypass BoostConfig.cmake, use FindBoost module instead ([6fd155a](https://github.com/home-lang/pantry/commit/6fd155a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openresty gsed shim for BSD sed compat, nx.dev npm cache fix on darwin ([92d5cc0](https://github.com/home-lang/pantry/commit/92d5cc0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal — add brew --prefix boost to CMAKE_PREFIX_PATH directly ([b390dfa](https://github.com/home-lang/pantry/commit/b390dfa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- re-add openinterpreter to knownBrokenDomains — dep resolver ignores Python version constraints ([1bc2ff5](https://github.com/home-lang/pantry/commit/1bc2ff5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal boost link, openinterpreter python cap, darwin broken list ([199f18f](https://github.com/home-lang/pantry/commit/199f18f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openinterpreter poetry-core build dep, add pytz/mergestat to darwin broken ([df02989](https://github.com/home-lang/pantry/commit/df02989)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gnome-extensions-cli — use pip --no-build-isolation instead of poetry ([2db9bf3](https://github.com/home-lang/pantry/commit/2db9bf3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- quote curl URLs in duti override to prevent nullglob expansion ([8d69549](https://github.com/home-lang/pantry/commit/8d69549)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve version.tag from git ref field for git-based distributable URLs ([7961ec7](https://github.com/home-lang/pantry/commit/7961ec7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- upgrade packaging lib in bkpyvenv for Python 3.14 poetry compat ([e23dd65](https://github.com/home-lang/pantry/commit/e23dd65)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve lint errors — replace unbounded regex quantifiers ([cbf1378](https://github.com/home-lang/pantry/commit/cbf1378)) _(by Chris <chrisbreuer93@gmail.com>)_
+- luv cmake install path — use perl to fix cmake_install.cmake after build ([a28afda](https://github.com/home-lang/pantry/commit/a28afda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make bitcoin.org patchelf steps error-tolerant ([0331f0a](https://github.com/home-lang/pantry/commit/0331f0a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- luv cmake Lua 5.5 version detection — patch CMakeLists.txt directly ([0054c0b](https://github.com/home-lang/pantry/commit/0054c0b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add venv bin to PATH in bkpyvenv stage for poetry/engine tools ([09f0d7c](https://github.com/home-lang/pantry/commit/09f0d7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pin setuptools<78 globally (pkg_resources removed in 78+), fix luv cmake version detection ([327fdb7](https://github.com/home-lang/pantry/commit/327fdb7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bkpyvenv stage --engine= flag parsing, poetry support ([6ae7503](https://github.com/home-lang/pantry/commit/6ae7503)) _(by Chris <chrisbreuer93@gmail.com>)_
+- thefuck manual venv build, ensurepip for Python 3.14 venvs ([0f221aa](https://github.com/home-lang/pantry/commit/0f221aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unblock podlators, macos-term-size, mecab-ipadic, luv ([08acce4](https://github.com/home-lang/pantry/commit/08acce4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove duplicate luv override, unblock mecab-ipadic ([b7f9d10](https://github.com/home-lang/pantry/commit/b7f9d10)) _(by Chris <chrisbreuer93@gmail.com>)_
+- YAML folded scalar parser, pip --no-build-isolation fallback, chatblade skip ([ffa9409](https://github.com/home-lang/pantry/commit/ffa9409)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak gauche (underscore tags) and amber (alpha suffix) ([7f3742f](https://github.com/home-lang/pantry/commit/7f3742f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolveGitHubTag fallback, build normalization, date-version matching ([4c9220e](https://github.com/home-lang/pantry/commit/4c9220e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- setuptools for Python 3.14, date-based tag matching, Rust fixes ([0d7b8aa](https://github.com/home-lang/pantry/commit/0d7b8aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak x265, gnome-extensions-cli, sfcgal on darwin ([abcfecb](https://github.com/home-lang/pantry/commit/abcfecb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak luv, sup, appstream, snaplet packages ([5a00dfa](https://github.com/home-lang/pantry/commit/5a00dfa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak 13 packages — URL fixes, Python pins, Rust flags ([fde0ab2](https://github.com/home-lang/pantry/commit/fde0ab2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- poppler skip libpoppler-glib.a static install (GLIB disabled) ([b39ed06](https://github.com/home-lang/pantry/commit/b39ed06)) _(by Chris <chrisbreuer93@gmail.com>)_
+- poppler disable NSS3 cmake flag, remove libnss3-dev ([e8c2921](https://github.com/home-lang/pantry/commit/e8c2921)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sfcgal brew CGAL on darwin, browser-use to linuxOnly ([6c6ba53](https://github.com/home-lang/pantry/commit/6c6ba53)) _(by Chris <chrisbreuer93@gmail.com>)_
+- poppler use system lcms2, mypy use PIP_CONSTRAINT for pathspec, nx back to broken ([252c6f8](https://github.com/home-lang/pantry/commit/252c6f8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mypy pin pathspec in venv, poppler install libnss3-dev, nx fix TMPDIR ([a708222](https://github.com/home-lang/pantry/commit/a708222)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unbreak mypy, werf, nx, poppler — 4 more packages for S3 ([8c1d42d](https://github.com/home-lang/pantry/commit/8c1d42d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- bitcoin.org add -DENABLE_IPC=OFF, move grpc/zookeeper to broken, fix sfcgal domain ([f7260f5](https://github.com/home-lang/pantry/commit/f7260f5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv linux install all ffmpeg codec libs from apt ([6a67994](https://github.com/home-lang/pantry/commit/6a67994)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv linux use system libvpx, wireshark linux use system gnutls/gcrypt ([342325d](https://github.com/home-lang/pantry/commit/342325d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- browser-use.com remove pointless --no-binary reinstall on darwin ([089ef2a](https://github.com/home-lang/pantry/commit/089ef2a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv use LD_RUN_PATH, wireshark filter broken cmake template args ([8b4b7a5](https://github.com/home-lang/pantry/commit/8b4b7a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mpv use LD_LIBRARY_PATH for S3 deps, wireshark disable c-ares ([2397053](https://github.com/home-lang/pantry/commit/2397053)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ninth-pass — mpv vpx, wireshark c-ares/lua, gtk4 wayland, watchman setuptools ([2c459d9](https://github.com/home-lang/pantry/commit/2c459d9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- puzzles darwin dummy halibut, zathura darwinOnly ([b61edfe](https://github.com/home-lang/pantry/commit/b61edfe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add remaining failing packages to skip lists ([283289d](https://github.com/home-lang/pantry/commit/283289d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- eighth-pass — mpv libass linux, libsecret manpage, wireshark c-ares, gtk4 wayland ([8cc1c82](https://github.com/home-lang/pantry/commit/8cc1c82)) _(by Chris <chrisbreuer93@gmail.com>)_
+- seventh-pass — libass iconv, protobuf, zathura libmagic, puzzles, flux2 ([52c77b3](https://github.com/home-lang/pantry/commit/52c77b3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sixth-pass — mupdf freeglut, mpv libass, qemu iconv, add broken pkgs ([06d234b](https://github.com/home-lang/pantry/commit/06d234b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- tesseract darwin version rename after configure, dbus to linuxOnly ([5140fea](https://github.com/home-lang/pantry/commit/5140fea)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fourth-pass corrections for sd, kubebuilder, tesseract, pillow, libpsl, freexl ([525c5fd](https://github.com/home-lang/pantry/commit/525c5fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- third-pass corrections from build results ([7a239f3](https://github.com/home-lang/pantry/commit/7a239f3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- second-pass corrections for failing build packages ([e469972](https://github.com/home-lang/pantry/commit/e469972)) _(by Chris <chrisbreuer93@gmail.com>)_
+- batch fixes for 33 failing packages from sync run ([79a7e2d](https://github.com/home-lang/pantry/commit/79a7e2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- zip darwin — add cc wrapper for Xcode 26 C23 strictness ([0892ecb](https://github.com/home-lang/pantry/commit/0892ecb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fourth-pass build fixes for remaining 5 packages ([3be85df](https://github.com/home-lang/pantry/commit/3be85df)) _(by Chris <chrisbreuer93@gmail.com>)_
+- third-pass build fixes for 5 remaining failing packages ([304156e](https://github.com/home-lang/pantry/commit/304156e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- second-pass fixes from build results — shaderc, zip, apko, libxmlb, libproxy ([7b86353](https://github.com/home-lang/pantry/commit/7b86353)) _(by Chris <chrisbreuer93@gmail.com>)_
+- adwaita-icon-theme, libnsl, uv — no-op wrappers and dep fixes ([4507add](https://github.com/home-lang/pantry/commit/4507add)) _(by Chris <chrisbreuer93@gmail.com>)_
+- batch fix 20+ failing packages — libtool, python, build overrides ([4c87869](https://github.com/home-lang/pantry/commit/4c87869)) _(by Chris <chrisbreuer93@gmail.com>)_
+- trezor-agent git wrapper instead of alias (non-interactive bash) ([cf6c71b](https://github.com/home-lang/pantry/commit/cf6c71b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exclude S3 rust-lang.org/cargo from deps — rustc version conflict ([235cafa](https://github.com/home-lang/pantry/commit/235cafa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- merge aom duplicate override, global rust-toolchain removal ([97bb381](https://github.com/home-lang/pantry/commit/97bb381)) _(by Chris <chrisbreuer93@gmail.com>)_
+- global RUSTFLAGS --cap-lints warn, fix air/six/aom/trezor-agent builds ([a15373c](https://github.com/home-lang/pantry/commit/a15373c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- yajl cmake 4.x compatibility — replace GET_TARGET_PROPERTY LOCATION ([651d7ef](https://github.com/home-lang/pantry/commit/651d7ef)) _(by Chris <chrisbreuer93@gmail.com>)_
+- activate distutils compatibility shim for g-i on darwin ([4a744aa](https://github.com/home-lang/pantry/commit/4a744aa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- yajl cmake_policy CMP0026 removed in cmake 3.20+ ([8686446](https://github.com/home-lang/pantry/commit/8686446)) _(by Chris <chrisbreuer93@gmail.com>)_
+- comment out all distutils.cygwinccompiler lines in g-i utils.py ([6b84ca5](https://github.com/home-lang/pantry/commit/6b84ca5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch distutils import in build dir after meson setup ([db3cc0d](https://github.com/home-lang/pantry/commit/db3cc0d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gobject-introspection distutils import on darwin (Python 3.12+) ([74b162d](https://github.com/home-lang/pantry/commit/74b162d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- keep Homebrew cmake on darwin, pip cmake crashes with Abort trap ([883200b](https://github.com/home-lang/pantry/commit/883200b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- meson setuptools --target install, pre-install rust-src ([645a69e](https://github.com/home-lang/pantry/commit/645a69e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use python3 -m pip for setuptools/meson install on macOS ([42f5eda](https://github.com/home-lang/pantry/commit/42f5eda)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cargo wrapper must use system cargo, not S3 cargo ([63828ec](https://github.com/home-lang/pantry/commit/63828ec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cargo wrapper mkdir, readline transitive deps, setuptools, pnpm self-install ([e544c4d](https://github.com/home-lang/pantry/commit/e544c4d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- readline LD_LIBRARY_PATH poisoning, meson PATH, cargo HTTP/2, ffmpeg docs ([5b9deff](https://github.com/home-lang/pantry/commit/5b9deff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- qrencode glibtoolize symlink for darwin autogen.sh ([57cd47c](https://github.com/home-lang/pantry/commit/57cd47c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- PyGObject cairo.h, ffmpeg PKG_CONFIG_PATH, macvim Python.h ([766350a](https://github.com/home-lang/pantry/commit/766350a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- PyGObject — replace pycairo=enabled, add cairographics.org dep, disable tests ([d7fcea5](https://github.com/home-lang/pantry/commit/d7fcea5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- disable pycairo in PyGObject (buildkit can't set PYTHONPATH for deps) ([0c9fd77](https://github.com/home-lang/pantry/commit/0c9fd77)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase per-package build timeout from 45 to 60 min ([099b85f](https://github.com/home-lang/pantry/commit/099b85f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- re-enable pycairo in PyGObject (S3 binaries rebuilt correctly) ([3f341d2](https://github.com/home-lang/pantry/commit/3f341d2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- disable pycairo in PyGObject (S3 binaries corrupt/missing lib dir) ([6141e70](https://github.com/home-lang/pantry/commit/6141e70)) _(by Chris <chrisbreuer93@gmail.com>)_
+- restrict dylib symlink creation to /tmp/buildkit-deps only ([b3f73fa](https://github.com/home-lang/pantry/commit/b3f73fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- watchman darwin setuptools missing for pywatchman install ([a53b21d](https://github.com/home-lang/pantry/commit/a53b21d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- dylib symlink glob pattern + cmake-scrub missing library fallback ([610582e](https://github.com/home-lang/pantry/commit/610582e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create missing unversioned dylib symlinks in dep dirs ([ef8faa7](https://github.com/home-lang/pantry/commit/ef8faa7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- watchman rustup race condition — pre-install rust-src before cmake ([bd4164b](https://github.com/home-lang/pantry/commit/bd4164b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add openslide.org to knownBrokenDomains (requires libdicom not in pantry) ([78e245c](https://github.com/home-lang/pantry/commit/78e245c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- watchman YAML '' escape causing bash syntax error ([3742cd5](https://github.com/home-lang/pantry/commit/3742cd5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add sqlite3.pc stub for darwin builds ([252a035](https://github.com/home-lang/pantry/commit/252a035)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create bzip2.pc stub for all darwin builds ([461dfbd](https://github.com/home-lang/pantry/commit/461dfbd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- openslide v4.0.0 meson build + PyGObject bzip2 pkg-config ([229610f](https://github.com/home-lang/pantry/commit/229610f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch fbthrift for fmt 12 compatibility (fmt::join moved to fmt/ranges.h) ([abe3010](https://github.com/home-lang/pantry/commit/abe3010)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use system glog/gflags for all Facebook chain packages on linux ([e0d5bd0](https://github.com/home-lang/pantry/commit/e0d5bd0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- reconstruct truncated multi-line sed commands for fbthrift and folly ([46701b9](https://github.com/home-lang/pantry/commit/46701b9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- move depPrefixes declaration before usage to fix temporal dead zone ([19afeb2](https://github.com/home-lang/pantry/commit/19afeb2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- skip non-buildkit dep paths in dylib compat symlinks ([5be25c8](https://github.com/home-lang/pantry/commit/5be25c8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create compat symlinks for stale dylib paths in pre-built darwin deps ([1ef20b7](https://github.com/home-lang/pantry/commit/1ef20b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- mvfst sed post-install step — reconstruct full command lost by YAML parser ([331f892](https://github.com/home-lang/pantry/commit/331f892)) _(by Chris <chrisbreuer93@gmail.com>)_
+- restrict syslib override to only glog/gflags (was too aggressive) ([fbcfdab](https://github.com/home-lang/pantry/commit/fbcfdab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- general syslib override for buildkit deps on Linux ([278f4ca](https://github.com/home-lang/pantry/commit/278f4ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- replace system glog with buildkit glog on Linux for fizz ([40909e1](https://github.com/home-lang/pantry/commit/40909e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove system glog-dev on Linux for fizz (ABI mismatch) ([bb00b30](https://github.com/home-lang/pantry/commit/bb00b30)) _(by Chris <chrisbreuer93@gmail.com>)_
+- set CC/CXX to compiler wrapper so cmake uses it ([a2aa34d](https://github.com/home-lang/pantry/commit/a2aa34d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip -isystem /usr/include in compiler wrapper on Linux ([1e3ef12](https://github.com/home-lang/pantry/commit/1e3ef12)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scrub /usr/include from system cmake configs on Linux with sudo ([8fac6bf](https://github.com/home-lang/pantry/commit/8fac6bf)) _(by Chris <chrisbreuer93@gmail.com>)_
+- set CMAKE_NO_SYSTEM_FROM_IMPORTED on Linux ([ce40ed7](https://github.com/home-lang/pantry/commit/ce40ed7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- broaden cmake scrubbing to catch all /usr/include references ([1fe02ad](https://github.com/home-lang/pantry/commit/1fe02ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- sed wrapper handles -i flag in any argument position ([cfaaa9e](https://github.com/home-lang/pantry/commit/cfaaa9e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cmake scrub debug output + fizz sed -i newline handling ([457b148](https://github.com/home-lang/pantry/commit/457b148)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cargo HTTP/2 multiplexing on Linux + add antfu/ni to broken list ([398eaa2](https://github.com/home-lang/pantry/commit/398eaa2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- strip /usr/include from cmake INTERFACE_INCLUDE_DIRECTORIES ([a665e5d](https://github.com/home-lang/pantry/commit/a665e5d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use python3 to scrub ALL non-existent paths from cmake configs ([b074988](https://github.com/home-lang/pantry/commit/b074988)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use single-quoted sed for macOS SDK path replacement ([69b62fc](https://github.com/home-lang/pantry/commit/69b62fc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- only scrub cmake configs in /tmp buildkit deps, not system dirs ([8a50648](https://github.com/home-lang/pantry/commit/8a50648)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scrub stale Xcode SDK paths from dep cmake configs on darwin ([2608266](https://github.com/home-lang/pantry/commit/2608266)) _(by Chris <chrisbreuer93@gmail.com>)_
+- scrub /usr/include from dep cmake configs on Linux ([c783c9d](https://github.com/home-lang/pantry/commit/c783c9d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use sudo pip3 for meson install, add ~/.local/bin to PATH ([5b00895](https://github.com/home-lang/pantry/commit/5b00895)) _(by Chris <chrisbreuer93@gmail.com>)_
+- glib sed  ([fd70d4d](https://github.com/home-lang/pantry/commit/fd70d4d)) _(by  < true regex, remove darwin LDFLAGS rpath>)_
+- remove /usr/include from CPATH to fix GCC #include_next on Linux ([fac67e7](https://github.com/home-lang/pantry/commit/fac67e7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- glib sed non-fatal, add facebook chain deps to CI ([780e4f0](https://github.com/home-lang/pantry/commit/780e4f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use apt remove + pip install for meson on linux instead of venv ([9da23c9](https://github.com/home-lang/pantry/commit/9da23c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add double-conversion to macOS brew install for fizz/folly ([87cd990](https://github.com/home-lang/pantry/commit/87cd990)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add libdouble-conversion-dev to CI apt packages ([dacbd6b](https://github.com/home-lang/pantry/commit/dacbd6b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- glib sed command split across lines by YAML parser ([0bfddab](https://github.com/home-lang/pantry/commit/0bfddab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove broken S3 meson dep, use pip-installed meson instead ([2b95ad0](https://github.com/home-lang/pantry/commit/2b95ad0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- pass platform to modifyRecipe, keep gnome.org/libxml2 on darwin for glib ([3641045](https://github.com/home-lang/pantry/commit/3641045)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add reverse domain lookup to build-package.ts for collision-resolved keys ([c9b3549](https://github.com/home-lang/pantry/commit/c9b3549)) _(by Chris <chrisbreuer93@gmail.com>)_
+- package discovery for collision-resolved domains (x.org/protocol/xcb) ([62cbf9c](https://github.com/home-lang/pantry/commit/62cbf9c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fizz sed -i BSD compat for darwin builds ([154734b](https://github.com/home-lang/pantry/commit/154734b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- generic meson venv fix for all 72 meson-dependent packages ([6aa26ad](https://github.com/home-lang/pantry/commit/6aa26ad)) _(by Chris <chrisbreuer93@gmail.com>)_
+- meson venv install + glib/gobject-introspection/protocol-xcb fixes ([66b9769](https://github.com/home-lang/pantry/commit/66b9769)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for x.org/xdmcp, xcb, protocol/xcb ([63d5bab](https://github.com/home-lang/pantry/commit/63d5bab)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gobject-introspection meson PATH + folly CMAKE_PREFIX_PATH ([0db2d5c](https://github.com/home-lang/pantry/commit/0db2d5c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve transitive dependencies for pkg-config ([6462b4e](https://github.com/home-lang/pantry/commit/6462b4e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- include share/pkgconfig in dep PKG_CONFIG_PATH for xorgproto/xtrans ([527d569](https://github.com/home-lang/pantry/commit/527d569)) _(by Chris <chrisbreuer93@gmail.com>)_
+- critical S3 upload bug for slashed domains + cmake.org darwin rpath ([a809eff](https://github.com/home-lang/pantry/commit/a809eff)) _(by Chris <chrisbreuer93@gmail.com>)_
+- replace std.Thread.Mutex with std.atomic.Mutex for Zig 0.16 ([98b686a](https://github.com/home-lang/pantry/commit/98b686a)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- xauth use -lXmu (xmuu merged on Ubuntu 24.04), wpebackend-fdo build libwpe from source ([3275e3c](https://github.com/home-lang/pantry/commit/3275e3c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- xauth bypass pkg-config with direct CFLAGS/LIBS, wpebackend-fdo debug apt install ([359cf81](https://github.com/home-lang/pantry/commit/359cf81)) _(by Chris <chrisbreuer93@gmail.com>)_
+- xauth multiarch pkg-config path, wpebackend-fdo install libwpe from apt ([a2d4d7d](https://github.com/home-lang/pantry/commit/a2d4d7d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight --with-boost-libdir only on darwin (broke linux) ([5ec622a](https://github.com/home-lang/pantry/commit/5ec622a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight --with-boost-libdir, open-mpi compgen nullglob, folly fast_float v8 ([2f9cbf8](https://github.com/home-lang/pantry/commit/2f9cbf8)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight stub dylib in temp dir, open-mpi fortran flag to CONFIGURE_ARGS, gnutls bundled libunistring ([8ead040](https://github.com/home-lang/pantry/commit/8ead040)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight stub dylib, open-mpi pmix from brew, CONFIGURE_ARGS sed for pmix ([2e2419c](https://github.com/home-lang/pantry/commit/2e2419c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- gnutls subshell for nettle build, php sed -i BSD, folly -isystem /usr/include ([dbb1918](https://github.com/home-lang/pantry/commit/dbb1918)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight darwin boost regex cache var, open-mpi darwin CONFIGURE_ARGS timing ([6f6b085](https://github.com/home-lang/pantry/commit/6f6b085)) _(by Chris <chrisbreuer93@gmail.com>)_
+- respect modifyRecipe dep removals in TS metadata dep merging ([6d133ee](https://github.com/home-lang/pantry/commit/6d133ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- php.net install ICU from system packages (brew/apt) ([ba9f845](https://github.com/home-lang/pantry/commit/ba9f845)) _(by Chris <chrisbreuer93@gmail.com>)_
+- source-highlight boost stub, gnutls nettle, open-mpi hwloc paths, folly glog, php iconv ([c52cab1](https://github.com/home-lang/pantry/commit/c52cab1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cmake bootstrap flag, mupdf openjpeg include path, open-mpi darwin ([4d15214](https://github.com/home-lang/pantry/commit/4d15214)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install deps from system packages instead of disabling them ([fc4f045](https://github.com/home-lang/pantry/commit/fc4f045)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install meson via pip as fallback + fix meson option types ([35c5152](https://github.com/home-lang/pantry/commit/35c5152)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve more package build failures (atk, gobject-introspection, folly) ([d48ce15](https://github.com/home-lang/pantry/commit/d48ce15)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve remaining package build failures from CI run analysis ([fdb64c1](https://github.com/home-lang/pantry/commit/fdb64c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve more package build failures in CI ([e3240ca](https://github.com/home-lang/pantry/commit/e3240ca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve additional package build failures in CI ([f6c3aca](https://github.com/home-lang/pantry/commit/f6c3aca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve failing package builds in CI ([47acb96](https://github.com/home-lang/pantry/commit/47acb96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve typecheck and zig fmt CI failures ([2381a29](https://github.com/home-lang/pantry/commit/2381a29)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- add cmake prefix fix to matio.sourceforge.io existing override ([9730859](https://github.com/home-lang/pantry/commit/9730859)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix fix to frei0r.dyne.org existing entry ([d04e8a4](https://github.com/home-lang/pantry/commit/d04e8a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- correct cmake prefix overrides for libgit2 (ARGS), libwebsockets (inline), libzip (ARGS), sentencepiece (full-quote), double-conversion (inline) ([178ce85](https://github.com/home-lang/pantry/commit/178ce85)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix override for github.com/json-c/json-c (inline script) ([61a2098](https://github.com/home-lang/pantry/commit/61a2098)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix override for c-ares.org (inline script pattern) ([e7a2c4b](https://github.com/home-lang/pantry/commit/e7a2c4b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- correct cmake prefix overrides for duckdb (ARGS), fna-xna (ARGS); note freetype already valid ([b5e67d7](https://github.com/home-lang/pantry/commit/b5e67d7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for zstd (ARGS), libsdl.org ([bf6a6eb](https://github.com/home-lang/pantry/commit/bf6a6eb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for cgal, fish, fmt, zstd, glew, qhull, duckdb, freetype, fna-xna ([f6688da](https://github.com/home-lang/pantry/commit/f6688da)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for aomedia, avro, libaec, Vulkan-Headers, fizz, aws-sdk-cpp, libccd, libcbor, lerc, libdeflate, openblas; fix cpptoml duplicate ([9eee33d](https://github.com/home-lang/pantry/commit/9eee33d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add cmake prefix overrides for 15 more packages (libcuefile, usrsctp, luv, oneTBB, Vulkan-Loader, ceres-solver, gl2ps, upx, etc.) ([4f4078e](https://github.com/home-lang/pantry/commit/4f4078e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for mypy-lang.org and crates.io/qsv ([12d17d3](https://github.com/home-lang/pantry/commit/12d17d3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for musepack, wpebackend-fdo, luarocks ([a140929](https://github.com/home-lang/pantry/commit/a140929)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for x.org/x11 and x.org/libxfont2 ([21f8737](https://github.com/home-lang/pantry/commit/21f8737)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for watchman + capnproto; remove duplicate entry ([fe466f1](https://github.com/home-lang/pantry/commit/fe466f1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 Facebook packages — edencommon, fb303, fbthrift, mvfst ([1c7d580](https://github.com/home-lang/pantry/commit/1c7d580)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for apache/arrow and facebook/wangle ([025c32a](https://github.com/home-lang/pantry/commit/025c32a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 3 more packages — poppler-qt5, gtk-mac-integration, libva ([46bb257](https://github.com/home-lang/pantry/commit/46bb257)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add override for XKeyboardConfig — fixed prefix quoting + removed libxslt dep ([bfaea86](https://github.com/home-lang/pantry/commit/bfaea86)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add override for shared-mime-info + remove stale sfcgal.gitlab.io entry ([c00ca22](https://github.com/home-lang/pantry/commit/c00ca22)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 6 more packages — vde, tlr, rucio, libsoup, xauth, xinput ([06193d0](https://github.com/home-lang/pantry/commit/06193d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 more packages — qemu, sfcgal, faac, tcl-lang ([5773d94](https://github.com/home-lang/pantry/commit/5773d94)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 more packages — php, opendap, open-mpi, modal ([c0eda23](https://github.com/home-lang/pantry/commit/c0eda23)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 7 more packages — epsilon, gdal, monero, openresty, opensearch, bitcoin, aws-cli ([3659256](https://github.com/home-lang/pantry/commit/3659256)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 4 more packages — werf, pulumi, projen, zookeeper ([1b81bbb](https://github.com/home-lang/pantry/commit/1b81bbb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 7 more packages — girara, zathura, pillow, mergestat, kubebuilder, kubectl, macvim ([d8c77f0](https://github.com/home-lang/pantry/commit/d8c77f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 8 more packages — p11-kit, polkit, openslide, vmaf, mupdf, lavinmq, appstream, flux2 ([b61b7d6](https://github.com/home-lang/pantry/commit/b61b7d6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 9 more packages — PyGObject, graphene, iso-codes, libsmi, wireshark, jpegxl, mpv, gtk3, gtk4 ([501c31b](https://github.com/home-lang/pantry/commit/501c31b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 11 more packages — guile, gnuplot, leptonica, tesseract, proj, qpdf, poppler, librsvg, grpc, libplacebo, xcb-util-image ([e0b17a7](https://github.com/home-lang/pantry/commit/e0b17a7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add overrides for 15 more packages — apache/apr-util/httpd/thrift, vim, gnome chain (atk/gdk-pixbuf/gobject-introspection/gsettings/json-glib/libsecret/pango), ffmpeg, gnutls; remove dupes ([c0e7469](https://github.com/home-lang/pantry/commit/c0e7469)) _(by Chris <chrisbreuer93@gmail.com>)_
+- unlock 25+ packages via overrides — x.org chain, gnome, libimobiledevice, matio, nss, dbus, xkbcommon, openpmix, puzzles, nx, snaplet, eas-cli, deepwisdom, cephadm, libpsl, netcdf ([8cd40d0](https://github.com/home-lang/pantry/commit/8cd40d0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- more override fixes from CI monitoring ([80b4f63](https://github.com/home-lang/pantry/commit/80b4f63)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve build ordering and override fixes for dep-dependent packages ([60f0a32](https://github.com/home-lang/pantry/commit/60f0a32)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve build failures from CI monitoring ([a0e461d](https://github.com/home-lang/pantry/commit/a0e461d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove himalaya and volta from knownBrokenDomains ([1d6a5c1](https://github.com/home-lang/pantry/commit/1d6a5c1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove 6 fixed packages from knownBrokenDomains ([af6b71c](https://github.com/home-lang/pantry/commit/af6b71c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove pinned rust-toolchain.toml for himalaya and volta ([428787b](https://github.com/home-lang/pantry/commit/428787b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- refine fixes for syncthing, himalaya, volta; revert strace ([f0a3954](https://github.com/home-lang/pantry/commit/f0a3954)) _(by Chris <chrisbreuer93@gmail.com>)_
+- repair 10 broken packages with targeted build fixes ([e6ea66b](https://github.com/home-lang/pantry/commit/e6ea66b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove 5 packages from knownBrokenDomains after successful builds ([239864d](https://github.com/home-lang/pantry/commit/239864d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - use CMAKE_NO_SYSTEM_FROM_IMPORTED to prevent -isystem /usr/include ([cbc6fee](https://github.com/home-lang/pantry/commit/cbc6fee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - remove system xxhash before build ([e0ee1a4](https://github.com/home-lang/pantry/commit/e0ee1a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - use FETCHCONTENT_TRY_FIND_PACKAGE_MODE=NEVER ([4380c96](https://github.com/home-lang/pantry/commit/4380c96)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - fix cmake package name case (Xxhash not xxhash) ([b6001a5](https://github.com/home-lang/pantry/commit/b6001a5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- ccache linux - disable system xxhash to prevent -isystem /usr/include ([033cd13](https://github.com/home-lang/pantry/commit/033cd13)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use cmake 3.x on darwin, clang for ccache linux ([4a42065](https://github.com/home-lang/pantry/commit/4a42065)) _(by Chris <chrisbreuer93@gmail.com>)_
+- third round of build fixes for 5 remaining packages ([c2e1fc0](https://github.com/home-lang/pantry/commit/c2e1fc0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- second round of build fixes ([e7c560f](https://github.com/home-lang/pantry/commit/e7c560f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix 12 more failing packages from sync run ([5ca6f56](https://github.com/home-lang/pantry/commit/5ca6f56)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix glibtool on darwin for libvterm/libtommath ([861a6fa](https://github.com/home-lang/pantry/commit/861a6fa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix remaining build failures (libvterm, libtommath, xmlstar, git-crypt) ([7dd21cd](https://github.com/home-lang/pantry/commit/7dd21cd)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use Homebrew ICU for laravel.com darwin build ([1423c3e](https://github.com/home-lang/pantry/commit/1423c3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- convert space-separated package inputs to commas in build workflow ([76162a3](https://github.com/home-lang/pantry/commit/76162a3)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix 7 failing package builds from sync run ([958800c](https://github.com/home-lang/pantry/commit/958800c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix darwin builds for gnu.org/bc, gnu.org/texinfo, laravel.com ([c4f7f93](https://github.com/home-lang/pantry/commit/c4f7f93)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add texinfo, bc, laravel to linuxOnlyDomains ([983d2e1](https://github.com/home-lang/pantry/commit/983d2e1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- replace BSD-incompatible sed -i with portable alternatives ([6f7d9c5](https://github.com/home-lang/pantry/commit/6f7d9c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update platform lists and known-broken based on CI results ([9a4a25f](https://github.com/home-lang/pantry/commit/9a4a25f)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix gnu.org/bc sed portability and harlequin.sh python version detection ([cf12698](https://github.com/home-lang/pantry/commit/cf12698)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix amp.rs sed syntax, musepack.net cmake quote, scala-lang.org typo ([9a4e5c5](https://github.com/home-lang/pantry/commit/9a4e5c5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- align build-package.yml dependencies with sync-binaries.yml ([26c3b08](https://github.com/home-lang/pantry/commit/26c3b08)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fix broken package recipes and remove false known-broken entries ([3433d7d](https://github.com/home-lang/pantry/commit/3433d7d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exit non-zero for targeted builds (-p) that have failures ([8bc2efe](https://github.com/home-lang/pantry/commit/8bc2efe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase build-package.yml timeout to 120min for long builds ([be33e19](https://github.com/home-lang/pantry/commit/be33e19)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch-ts-cloud clones source repo instead of patching npm exports ([2a19a84](https://github.com/home-lang/pantry/commit/2a19a84)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch ts-cloud exports to use src instead of broken dist ([54926a4](https://github.com/home-lang/pantry/commit/54926a4)) _(by Chris <chrisbreuer93@gmail.com>)_
+- always replace S3 meson with system meson wrapper, fix glibtool Homebrew path ([cbf85c0](https://github.com/home-lang/pantry/commit/cbf85c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add remaining 4 package failures to known-broken list ([9b8f735](https://github.com/home-lang/pantry/commit/9b8f735)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add final 3 package failures to known-broken list ([3a5e394](https://github.com/home-lang/pantry/commit/3a5e394)) _(by Chris <chrisbreuer93@gmail.com>)_
+- read version from package.json instead of hardcoded 0.7.7 ([2575410](https://github.com/home-lang/pantry/commit/2575410)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### ⚡ Performance Improvements
+
+- optimize cmake-scrub to only scan lib/cmake/ directories ([e64b3ed](https://github.com/home-lang/pantry/commit/e64b3ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### ♻️ Code Refactoring
+
+- simplify bin symlinks to read package.json bin field ([c37c1dc](https://github.com/home-lang/pantry/commit/c37c1dc)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- update LLaMA.cpp ([1454ac0](https://github.com/home-lang/pantry/commit/1454ac0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([756ae13](https://github.com/home-lang/pantry/commit/756ae13)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([fdbfdc6](https://github.com/home-lang/pantry/commit/fdbfdc6)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update virtualenv ([7835b5e](https://github.com/home-lang/pantry/commit/7835b5e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lighthouse, oc ([c6271fd](https://github.com/home-lang/pantry/commit/c6271fd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update consul, LLaMA.cpp, pixi ([f945a10](https://github.com/home-lang/pantry/commit/f945a10)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([d6db805](https://github.com/home-lang/pantry/commit/d6db805)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove diagnostic logging from fix-up.ts ([7b1f628](https://github.com/home-lang/pantry/commit/7b1f628)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([61daf57](https://github.com/home-lang/pantry/commit/61daf57)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([3deec93](https://github.com/home-lang/pantry/commit/3deec93)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, nullclaw, linux-headers, ollama ([7d8533f](https://github.com/home-lang/pantry/commit/7d8533f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, openclaw ([c9c10a2](https://github.com/home-lang/pantry/commit/c9c10a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dagger, LLaMA.cpp, kubectl, codex, vim ([c1e1b9e](https://github.com/home-lang/pantry/commit/c1e1b9e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, nx.dev ([abddcf9](https://github.com/home-lang/pantry/commit/abddcf9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update meilisearch, oh-my-posh, ollama, oc ([81e71ba](https://github.com/home-lang/pantry/commit/81e71ba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([b940f14](https://github.com/home-lang/pantry/commit/b940f14)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ng, container, aws-sdk-cpp, vim ([138af5b](https://github.com/home-lang/pantry/commit/138af5b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dozzle, LLaMA.cpp, vim ([ed461c1](https://github.com/home-lang/pantry/commit/ed461c1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ruff, aws/cli, crush, ruff, LLaMA.cpp and 2 other deps ([cb51fe0](https://github.com/home-lang/pantry/commit/cb51fe0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ng, databricks, trufflehog, vim ([aec7308](https://github.com/home-lang/pantry/commit/aec7308)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oc ([92bf843](https://github.com/home-lang/pantry/commit/92bf843)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dxc, ollama, pkl-lang ([fe3de33](https://github.com/home-lang/pantry/commit/fe3de33)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update file, dasel, opa, pulumi ([dc70eef](https://github.com/home-lang/pantry/commit/dc70eef)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- re-add x265, luv, snaplet, appstream to knownBrokenDomains ([d760cec](https://github.com/home-lang/pantry/commit/d760cec)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ruff, ruff, rubocop ([683a631](https://github.com/home-lang/pantry/commit/683a631)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update Arkade, oauth2-proxy ([69de242](https://github.com/home-lang/pantry/commit/69de242)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bytebase, daytona, glib ([ba0eb5e](https://github.com/home-lang/pantry/commit/ba0eb5e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update databricks, mise, snyk ([eb67ffc](https://github.com/home-lang/pantry/commit/eb67ffc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rtx-cli, libfyaml, localstack ([e65592d](https://github.com/home-lang/pantry/commit/e65592d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pnp, werf ([16b347d](https://github.com/home-lang/pantry/commit/16b347d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update jfrog-cli, opencode.ai ([e61ed60](https://github.com/home-lang/pantry/commit/e61ed60)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([4000178](https://github.com/home-lang/pantry/commit/4000178)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update bun ([d46ba62](https://github.com/home-lang/pantry/commit/d46ba62)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (2 files) ([54c30f5](https://github.com/home-lang/pantry/commit/54c30f5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, squawk, netcdf ([610ff09](https://github.com/home-lang/pantry/commit/610ff09)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, spin, vals, kubectl-krew and 1 other dep ([d605ed3](https://github.com/home-lang/pantry/commit/d605ed3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp, LLaMA.cpp, firebase, moon ([9c4d7de](https://github.com/home-lang/pantry/commit/9c4d7de)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, ipfs ([7e39843](https://github.com/home-lang/pantry/commit/7e39843)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update npmjs ([0671679](https://github.com/home-lang/pantry/commit/0671679)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ng ([f6f3384](https://github.com/home-lang/pantry/commit/f6f3384)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sd, mmdblookup, Protocol, Buffers and 1 other dep ([89d49b5](https://github.com/home-lang/pantry/commit/89d49b5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, LLaMA.cpp, vim ([00d0da6](https://github.com/home-lang/pantry/commit/00d0da6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, cilium, vim, virtualenv ([114cdc5](https://github.com/home-lang/pantry/commit/114cdc5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ducker ([943122c](https://github.com/home-lang/pantry/commit/943122c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, digger, stripe, vim and 1 other dep ([bb74924](https://github.com/home-lang/pantry/commit/bb74924)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([f5463b4](https://github.com/home-lang/pantry/commit/f5463b4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ansible-lint, circleci, deno, jadx and 2 other deps ([2454f00](https://github.com/home-lang/pantry/commit/2454f00)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update hugo, goreleaser ([5894777](https://github.com/home-lang/pantry/commit/5894777)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot, mmdblookup, libcxx.llvm, llvm and 4 other deps ([bc3d0cc](https://github.com/home-lang/pantry/commit/bc3d0cc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dasel, opencode.ai, rucio-client ([88f522d](https://github.com/home-lang/pantry/commit/88f522d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update terraform, tox ([ccdf84a](https://github.com/home-lang/pantry/commit/ccdf84a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona ([8e4b28c](https://github.com/home-lang/pantry/commit/8e4b28c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dprint, rucio-client ([494bd38](https://github.com/home-lang/pantry/commit/494bd38)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update deno, watchexec ([1ac9092](https://github.com/home-lang/pantry/commit/1ac9092)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot ([5f87230](https://github.com/home-lang/pantry/commit/5f87230)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pike, libbluray ([ad129b2](https://github.com/home-lang/pantry/commit/ad129b2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update opencode.ai ([6853fb3](https://github.com/home-lang/pantry/commit/6853fb3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, opencode.ai ([e2678fe](https://github.com/home-lang/pantry/commit/e2678fe)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, helmfile ([df01029](https://github.com/home-lang/pantry/commit/df01029)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update node-build ([67a4ba4](https://github.com/home-lang/pantry/commit/67a4ba4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update python-certifi, rtx-cli and 5 other deps ([f888cd1](https://github.com/home-lang/pantry/commit/f888cd1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update uv, eas, mailpit, rubygems ([fe1b7cb](https://github.com/home-lang/pantry/commit/fe1b7cb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update skopeo, mailpit, opencode.ai ([f9e2fa9](https://github.com/home-lang/pantry/commit/f9e2fa9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, mercure ([a31962c](https://github.com/home-lang/pantry/commit/a31962c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update circleci, LLaMA.cpp ([92fad38](https://github.com/home-lang/pantry/commit/92fad38)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, aws-sdk-cpp, vim ([8bf63e6](https://github.com/home-lang/pantry/commit/8bf63e6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, gnome-extensions-cli, vim ([32dc01b](https://github.com/home-lang/pantry/commit/32dc01b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove diagnostic output, keep transitive dep resolution ([c549e7c](https://github.com/home-lang/pantry/commit/c549e7c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update aws/cli, openai ([41240ec](https://github.com/home-lang/pantry/commit/41240ec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update carapace, circleci, fly, railway and 1 other dep ([99cd086](https://github.com/home-lang/pantry/commit/99cd086)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gcloud, tox ([ca70c12](https://github.com/home-lang/pantry/commit/ca70c12)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update docker-compose, pluto, hasura, scala-lang ([dd23d70](https://github.com/home-lang/pantry/commit/dd23d70)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko, node, mockery ([165e93d](https://github.com/home-lang/pantry/commit/165e93d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([41ed64f](https://github.com/home-lang/pantry/commit/41ed64f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update LLaMA.cpp, node ([00ba2f2](https://github.com/home-lang/pantry/commit/00ba2f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([7b96e20](https://github.com/home-lang/pantry/commit/7b96e20)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update v2.5, laravel ([193cbb6](https://github.com/home-lang/pantry/commit/193cbb6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([0fb0684](https://github.com/home-lang/pantry/commit/0fb0684)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update casdoor, daytona, flux ([8f4fa3f](https://github.com/home-lang/pantry/commit/8f4fa3f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pixi ([972d0f4](https://github.com/home-lang/pantry/commit/972d0f4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([691682f](https://github.com/home-lang/pantry/commit/691682f)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- wip ([a2ca701](https://github.com/home-lang/pantry/commit/a2ca701)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update erlang, edencommon, fb303, thrift1 and 9 other deps ([3eb3ae8](https://github.com/home-lang/pantry/commit/3eb3ae8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+-  Compare version strings numerically (newest first) ([edc1002](https://github.com/home-lang/pantry/commit/edc1002)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update dart, libaec, watchexec ([ddeed9c](https://github.com/home-lang/pantry/commit/ddeed9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, oci ([baed76f](https://github.com/home-lang/pantry/commit/baed76f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot, thrift1 ([d697eba](https://github.com/home-lang/pantry/commit/d697eba)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update uv, casdoor, valkey ([cea8eab](https://github.com/home-lang/pantry/commit/cea8eab)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, openai, valkey ([ff48be4](https://github.com/home-lang/pantry/commit/ff48be4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update buf, coder, nak, libunistring, pnp ([1b38b9c](https://github.com/home-lang/pantry/commit/1b38b9c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ansible, coder, hatch ([3e0c4a9](https://github.com/home-lang/pantry/commit/3e0c4a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([ace36d4](https://github.com/home-lang/pantry/commit/ace36d4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update XKeyboardConfig, aws-sdk-cpp, LLaMA.cpp ([9caa8dd](https://github.com/home-lang/pantry/commit/9caa8dd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, eas, cfn-lint, spec-kit and 5 other deps ([bd9a7f6](https://github.com/home-lang/pantry/commit/bd9a7f6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, ollama, openai ([9c76193](https://github.com/home-lang/pantry/commit/9c76193)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gh, depot, mvfst, dasel, fizz, jupyter and 2 other deps ([f21d750](https://github.com/home-lang/pantry/commit/f21d750)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([028d1f7](https://github.com/home-lang/pantry/commit/028d1f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apktool, railway, virtualenv ([88aa41c](https://github.com/home-lang/pantry/commit/88aa41c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ng, edencommon, folly, watchman and 4 other deps ([846153f](https://github.com/home-lang/pantry/commit/846153f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update fb303, wangle, traefik ([b52f762](https://github.com/home-lang/pantry/commit/b52f762)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona ([6a33025](https://github.com/home-lang/pantry/commit/6a33025)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update platformdirs, filelock, libksba, sentry-cli ([5da04a6](https://github.com/home-lang/pantry/commit/5da04a6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update checkov, encore, tailwindcss ([e0a6a6b](https://github.com/home-lang/pantry/commit/e0a6a6b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update loki ([e2a9007](https://github.com/home-lang/pantry/commit/e2a9007)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update doctl, odigos, redis ([a9b45b3](https://github.com/home-lang/pantry/commit/a9b45b3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sbt ([f779b1e](https://github.com/home-lang/pantry/commit/f779b1e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp, nim-lang ([058d2be](https://github.com/home-lang/pantry/commit/058d2be)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mpmath ([57c8f71](https://github.com/home-lang/pantry/commit/57c8f71)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, caddy ([0d7bf90](https://github.com/home-lang/pantry/commit/0d7bf90)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update apko, LLaMA.cpp ([39cedcb](https://github.com/home-lang/pantry/commit/39cedcb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update watchexec ([2b6e662](https://github.com/home-lang/pantry/commit/2b6e662)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update parallel ([f826603](https://github.com/home-lang/pantry/commit/f826603)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a26c0f3](https://github.com/home-lang/pantry/commit/a26c0f3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update depot ([472bb6d](https://github.com/home-lang/pantry/commit/472bb6d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([39f905c](https://github.com/home-lang/pantry/commit/39f905c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ast-grep.github, vim ([5e129c0](https://github.com/home-lang/pantry/commit/5e129c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, rtx-cli ([bdada08](https://github.com/home-lang/pantry/commit/bdada08)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update mise ([6b1cdfc](https://github.com/home-lang/pantry/commit/6b1cdfc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a52780a](https://github.com/home-lang/pantry/commit/a52780a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([59093a9](https://github.com/home-lang/pantry/commit/59093a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update goose ([a0b4876](https://github.com/home-lang/pantry/commit/a0b4876)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([c452f5a](https://github.com/home-lang/pantry/commit/c452f5a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update checkov, gawk, oh-my-posh ([e3f4f51](https://github.com/home-lang/pantry/commit/e3f4f51)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oh-my-posh ([c500fc6](https://github.com/home-lang/pantry/commit/c500fc6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-cd, watchexec ([8075e28](https://github.com/home-lang/pantry/commit/8075e28)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sk ([82c6cdd](https://github.com/home-lang/pantry/commit/82c6cdd)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cgif ([6b62104](https://github.com/home-lang/pantry/commit/6b62104)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sops, colima ([323ead6](https://github.com/home-lang/pantry/commit/323ead6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([e3f414a](https://github.com/home-lang/pantry/commit/e3f414a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update helmfile ([9f13cbf](https://github.com/home-lang/pantry/commit/9f13cbf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- resolve typecheck ([8c2ce0c](https://github.com/home-lang/pantry/commit/8c2ce0c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove generated unused files ([032c4bb](https://github.com/home-lang/pantry/commit/032c4bb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update projen ([01d20ef](https://github.com/home-lang/pantry/commit/01d20ef)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update rtx-cli, process-compose, mise ([97c7fad](https://github.com/home-lang/pantry/commit/97c7fad)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update exr, yt-dlp ([95d07f2](https://github.com/home-lang/pantry/commit/95d07f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update git-crypt, ccache, dozzle, eksctl and 5 other deps ([f7c9b89](https://github.com/home-lang/pantry/commit/f7c9b89)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([dd710ac](https://github.com/home-lang/pantry/commit/dd710ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp ([ab10f79](https://github.com/home-lang/pantry/commit/ab10f79)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update witr, vim ([fa0b2f2](https://github.com/home-lang/pantry/commit/fa0b2f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([281e04d](https://github.com/home-lang/pantry/commit/281e04d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor, vim ([5d81590](https://github.com/home-lang/pantry/commit/5d81590)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([7e4a5f7](https://github.com/home-lang/pantry/commit/7e4a5f7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update better-commits ([df0038b](https://github.com/home-lang/pantry/commit/df0038b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update better-commits ([c8a6436](https://github.com/home-lang/pantry/commit/c8a6436)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spec-kit ([68a45ec](https://github.com/home-lang/pantry/commit/68a45ec)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LocalAI ([39951f2](https://github.com/home-lang/pantry/commit/39951f2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spider, yabai, pake ([bc5bac3](https://github.com/home-lang/pantry/commit/bc5bac3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update pocketbase ([e540ba0](https://github.com/home-lang/pantry/commit/e540ba0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([791f763](https://github.com/home-lang/pantry/commit/791f763)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update maturin, oh-my-posh, vim ([74f1376](https://github.com/home-lang/pantry/commit/74f1376)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, ocrmypdf, vim ([31a409a](https://github.com/home-lang/pantry/commit/31a409a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor ([eb50b4c](https://github.com/home-lang/pantry/commit/eb50b4c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([9b27afa](https://github.com/home-lang/pantry/commit/9b27afa)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([5da8d85](https://github.com/home-lang/pantry/commit/5da8d85)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update squawk ([e652e60](https://github.com/home-lang/pantry/commit/e652e60)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([af6c325](https://github.com/home-lang/pantry/commit/af6c325)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([16d805c](https://github.com/home-lang/pantry/commit/16d805c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([0e630b7](https://github.com/home-lang/pantry/commit/0e630b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b4d828b](https://github.com/home-lang/pantry/commit/b4d828b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update LLaMA.cpp, meilisearch ([c540506](https://github.com/home-lang/pantry/commit/c540506)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([965a754](https://github.com/home-lang/pantry/commit/965a754)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([4f7c2be](https://github.com/home-lang/pantry/commit/4f7c2be)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([1b97a2b](https://github.com/home-lang/pantry/commit/1b97a2b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update biome, regex-tui, libsdl, zarf ([23dea97](https://github.com/home-lang/pantry/commit/23dea97)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([db1340e](https://github.com/home-lang/pantry/commit/db1340e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ccache, projen, x265 ([92f9f81](https://github.com/home-lang/pantry/commit/92f9f81)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add luarocks.org to knownBrokenDomains ([5089b37](https://github.com/home-lang/pantry/commit/5089b37)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update aws-sdk-cpp, nx.dev ([213b85b](https://github.com/home-lang/pantry/commit/213b85b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update git-crypt, laravel, libvterm and 3 other deps ([411de47](https://github.com/home-lang/pantry/commit/411de47)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update moon ([22dce69](https://github.com/home-lang/pantry/commit/22dce69)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, gh, dozzle, gitlab-runner and 4 other deps ([7af2969](https://github.com/home-lang/pantry/commit/7af2969)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spec-kit, mesa3d ([daf8648](https://github.com/home-lang/pantry/commit/daf8648)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, gh, stress-ng, bc, LocalAI ([f3802aa](https://github.com/home-lang/pantry/commit/f3802aa)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, eksctl, Vulkan-Loader and 3 other deps ([63faa1e](https://github.com/home-lang/pantry/commit/63faa1e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([5f023b6](https://github.com/home-lang/pantry/commit/5f023b6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, cirrus, spec-kit ([b2db8b9](https://github.com/home-lang/pantry/commit/b2db8b9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update sk, erlang, eas, allure, llrt and 1 other dep ([4f0c4c8](https://github.com/home-lang/pantry/commit/4f0c4c8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spec-kit, projen ([cdd4ad9](https://github.com/home-lang/pantry/commit/cdd4ad9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update daytona, libgcrypt ([d5764da](https://github.com/home-lang/pantry/commit/d5764da)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update jnv, sentry-cli ([c0784cf](https://github.com/home-lang/pantry/commit/c0784cf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([97ba57a](https://github.com/home-lang/pantry/commit/97ba57a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update erlang, opencode.ai ([07684b1](https://github.com/home-lang/pantry/commit/07684b1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update erlang, flyway, LLaMA.cpp ([7c5917b](https://github.com/home-lang/pantry/commit/7c5917b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, steampipe ([5d1e720](https://github.com/home-lang/pantry/commit/5d1e720)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update dua ([c27bb7e](https://github.com/home-lang/pantry/commit/c27bb7e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox ([424d814](https://github.com/home-lang/pantry/commit/424d814)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([0e88b74](https://github.com/home-lang/pantry/commit/0e88b74)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove node dependency ([0ce8d1c](https://github.com/home-lang/pantry/commit/0ce8d1c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update LLaMA.cpp ([43e98de](https://github.com/home-lang/pantry/commit/43e98de)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- set `max-parallel` to 10 ([f40af42](https://github.com/home-lang/pantry/commit/f40af42)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update browser-use, casdoor, LLaMA.cpp, fzf and 4 other deps ([47df95d](https://github.com/home-lang/pantry/commit/47df95d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- improve CI pipeline — remove ts-cloud source builds, fix broken packages ([66def19](https://github.com/home-lang/pantry/commit/66def19)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update flutter, Vulkan-Headers, LLaMA.cpp and 2 other deps ([bd777f9](https://github.com/home-lang/pantry/commit/bd777f9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, terragrunt, zarf ([1a67b7b](https://github.com/home-lang/pantry/commit/1a67b7b)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ruff, ruff, spec-kit, opencode.ai, exr ([452ee53](https://github.com/home-lang/pantry/commit/452ee53)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update npmjs ([ef0a5f1](https://github.com/home-lang/pantry/commit/ef0a5f1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update spin, aws-sdk-cpp, opencode.ai ([fe54799](https://github.com/home-lang/pantry/commit/fe54799)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oc ([ba69a1f](https://github.com/home-lang/pantry/commit/ba69a1f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, oc, cosign ([39b6bfc](https://github.com/home-lang/pantry/commit/39b6bfc)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update biome, spec-kit, minikube ([97c685e](https://github.com/home-lang/pantry/commit/97c685e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, mupdf ([bbd3a7c](https://github.com/home-lang/pantry/commit/bbd3a7c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update projen, vim ([f6bbe8d](https://github.com/home-lang/pantry/commit/f6bbe8d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update grype, LLaMA.cpp, juliaup and 2 other deps ([91aefc4](https://github.com/home-lang/pantry/commit/91aefc4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update tox, vim ([666c5a7](https://github.com/home-lang/pantry/commit/666c5a7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update databricks, maturin, vcluster ([a80348f](https://github.com/home-lang/pantry/commit/a80348f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, LLaMA.cpp, spec-kit, gqlgen and 1 other dep ([d9f7cd5](https://github.com/home-lang/pantry/commit/d9f7cd5)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lego ([323daaf](https://github.com/home-lang/pantry/commit/323daaf)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### debug
+
+- log strip-components value during tar extraction ([b9d110c](https://github.com/home-lang/pantry/commit/b9d110c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### diag
+
+- log install dir contents before tarball creation ([0427677](https://github.com/home-lang/pantry/commit/0427677)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add PKG_CONFIG_PATH debug output to diagnose ice.pc resolution ([aadc5b2](https://github.com/home-lang/pantry/commit/aadc5b2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _ < true regex, remove darwin LDFLAGS rpath>_
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.1...v0.8.2)
 
 ### 🚀 Features
