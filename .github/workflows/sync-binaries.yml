@@ -15,6 +15,11 @@ on:
         required: false
         type: boolean
         default: false
+      multi-version:
+        description: 'Sync all important versions (LTS, major releases)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: sync-binaries
@@ -68,11 +73,16 @@ jobs:
 
           PKGS="${{ github.event.inputs.packages || '' }}"
           FORCE="${{ github.event.inputs.force || 'false' }}"
+          MULTI="${{ github.event.inputs.multi-version || 'false' }}"
 
           ARGS="-b $S3_BUCKET -r $AWS_REGION"
 
           if [ "$FORCE" = "true" ]; then
             ARGS="$ARGS --force"
+          fi
+
+          if [ "$MULTI" = "true" ]; then
+            ARGS="$ARGS --multi-version"
           fi
 
           if [ -n "$PKGS" ]; then

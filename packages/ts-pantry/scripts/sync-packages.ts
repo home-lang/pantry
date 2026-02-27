@@ -30,6 +30,8 @@ interface PackageConfig {
   getLatestVersion: () => Promise<string>
   download: (version: string, platform: string, destDir: string) => Promise<void>
   needsCompile?: boolean
+  /** Returns important versions to keep in sync (e.g. LTS, major releases) */
+  getImportantVersions?: () => Promise<string[]>
 }
 
 interface SyncPlatformInfo {
@@ -153,6 +155,29 @@ const packages: Record<string, PackageConfig> = {
       const lts = data.find(v => v.lts)
       return lts ? lts.version.replace(/^v/, '') : data[0].version.replace(/^v/, '')
     },
+    getImportantVersions: async () => {
+      const response = await fetch('https://nodejs.org/dist/index.json')
+      const data = await response.json() as Array<{
+        version: string
+        lts: boolean | string
+      }>
+      // Get latest version of each active LTS line (18, 20, 22) + current
+      const ltsVersions = new Map<string, string>()
+      for (const entry of data) {
+        const ver = entry.version.replace(/^v/, '')
+        const major = ver.split('.')[0]
+        if (entry.lts && !ltsVersions.has(major)) {
+          ltsVersions.set(major, ver)
+        }
+      }
+      // Also add current (non-LTS) latest
+      if (data[0]) {
+        const current = data[0].version.replace(/^v/, '')
+        const major = current.split('.')[0]
+        if (!ltsVersions.has(major)) ltsVersions.set(major, current)
+      }
+      return [...ltsVersions.values()]
+    },
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
       const nodeArch = arch === 'arm64' ? 'arm64' : 'x64'
@@ -203,6 +228,19 @@ const packages: Record<string, PackageConfig> = {
     name: 'redis',
     needsCompile: true,
     getLatestVersion: () => githubLatestVersion('redis/redis', 'v?'),
+    getImportantVersions: async () => {
+      // Get latest patch of each supported major version (7.x, 8.x)
+      const response = await fetch('https://api.github.com/repos/redis/redis/releases?per_page=100', { headers: githubHeaders() })
+      const data = await response.json() as Array<{ tag_name: string, prerelease: boolean }>
+      const majorVersions = new Map<string, string>()
+      for (const release of data) {
+        if (release.prerelease) continue
+        const ver = release.tag_name.replace(/^v?/, '')
+        const major = ver.split('.')[0]
+        if (!majorVersions.has(major)) majorVersions.set(major, ver)
+      }
+      return [...majorVersions.values()]
+    },
     download: async (version, platform, destDir) => {
       const buildDir = '/tmp/redis-build'
       rmSync(buildDir, { recursive: true, force: true })
@@ -239,6 +277,19 @@ const packages: Record<string, PackageConfig> = {
       if (!current) throw new Error('No current PostgreSQL version found')
       return `${current.major}.${current.latestMinor}`
     },
+    getImportantVersions: async () => {
+      // Get latest patch of each supported major version (14, 15, 16, 17, 18)
+      const response = await fetch('https://www.postgresql.org/versions.json')
+      const data = await response.json() as Array<{
+        major: string
+        latestMinor: number
+        supported?: boolean
+        current?: boolean
+      }>
+      return data
+        .filter(v => v.supported || v.current)
+        .map(v => `${v.major}.${v.latestMinor}`)
+    },
     download: async (version, platform, destDir) => {
       // Compile from source on both macOS and Linux
       const buildDir = '/tmp/postgres-build'
@@ -273,6 +324,19 @@ const packages: Record<string, PackageConfig> = {
       } catch {
         return '9.2.0' // Fallback to a known recent version
       }
+    },
+    getImportantVersions: async () => {
+      // MySQL 8.0.x (LTS) and 9.x (Innovation)
+      const response = await fetch('https://api.github.com/repos/mysql/mysql-server/tags?per_page=100', { headers: githubHeaders() })
+      const data = await response.json() as Array<{ name: string }>
+      const majorVersions = new Map<string, string>()
+      for (const tag of data) {
+        const ver = tag.name.replace(/^mysql-/, '')
+        if (!/^\d+\.\d+\.\d+$/.test(ver)) continue
+        const major = ver.split('.').slice(0, 2).join('.')
+        if (!majorVersions.has(major)) majorVersions.set(major, ver)
+      }
+      return [...majorVersions.values()]
     },
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
@@ -545,6 +609,7 @@ async function main() {
       version: { type: 'string', short: 'v' },
       force: { type: 'boolean', short: 'f', default: false },
       'dry-run': { type: 'boolean', default: false },
+      'multi-version': { type: 'boolean', default: false },
       'list': { type: 'boolean', short: 'l', default: false },
       help: { type: 'boolean', short: 'h' },
     },
@@ -568,6 +633,7 @@ Options:
   -p, --package <name>    Sync specific package only
   -v, --version <ver>     Sync a specific version (instead of latest)
   -f, --force             Re-upload even if exists
+  --multi-version         Sync all important versions (LTS, major releases)
   --dry-run               Show what would be done
   -l, --list              List available packages
   -h, --help              Show this help
@@ -587,6 +653,9 @@ Examples:
 
   # Sync a specific version
   bun scripts/sync-packages.ts -b my-bucket -p nodejs.org -v 22.17.0
+
+  # Sync all important versions (LTS, major releases)
+  bun scripts/sync-packages.ts -b my-bucket --multi-version
 
   # Force re-upload
   bun scripts/sync-packages.ts -b my-bucket -p redis.io --force
@@ -636,12 +705,22 @@ Examples:
 
   console.log(`   Packages: ${packagesToSync.map(([_, c]) => c.name).join(', ')}`)
 
+  const multiVersion = values['multi-version'] || false
+
   if (values['dry-run']) {
     console.log('\n[DRY RUN] Would sync:')
     for (const [key, config] of packagesToSync) {
-      const version = values.version || await config.getLatestVersion()
-      const exists = await checkExistsInS3(config.domain, version, platform, bucket, region)
-      console.log(`  - ${config.domain}@${version} ${exists ? '(already exists)' : '(would upload)'}`)
+      if (multiVersion && config.getImportantVersions) {
+        const versions = await config.getImportantVersions()
+        for (const ver of versions) {
+          const exists = await checkExistsInS3(config.domain, ver, platform, bucket, region)
+          console.log(`  - ${config.domain}@${ver} ${exists ? '(already exists)' : '(would upload)'}`)
+        }
+      } else {
+        const version = values.version || await config.getLatestVersion()
+        const exists = await checkExistsInS3(config.domain, version, platform, bucket, region)
+        console.log(`  - ${config.domain}@${version} ${exists ? '(already exists)' : '(would upload)'}`)
+      }
     }
     process.exit(0)
   }
@@ -650,7 +729,17 @@ Examples:
   const results: Record<string, SyncResult> = {}
 
   for (const [key, config] of packagesToSync) {
-    results[config.domain] = await syncPackage(key, config, bucket, region, values.force || false, values.version)
+    if (multiVersion && config.getImportantVersions && !values.version) {
+      // Multi-version mode: sync all important versions
+      const versions = await config.getImportantVersions()
+      console.log(`\n📋 ${config.name}: syncing ${versions.length} versions: ${versions.join(', ')}`)
+      for (const ver of versions) {
+        const result = await syncPackage(key, config, bucket, region, values.force || false, ver)
+        results[`${config.domain}@${ver}`] = result
+      }
+    } else {
+      results[config.domain] = await syncPackage(key, config, bucket, region, values.force || false, values.version)
+    }
   }
 
   // Summary

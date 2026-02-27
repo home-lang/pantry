@@ -4098,18 +4098,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'php.net': {
     platforms: {
       darwin: {
-        // Install kerberos and ICU from Homebrew (not reliably in S3)
+        // Install kerberos, ICU, and libpq from Homebrew (not reliably in S3)
         prependScript: [
-          'brew install krb5 icu4c 2>/dev/null || true',
-          'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          'export LDFLAGS="-L$(brew --prefix icu4c)/lib $LDFLAGS"',
-          'export CPPFLAGS="-I$(brew --prefix icu4c)/include $CPPFLAGS"',
+          'brew install krb5 icu4c libpq 2>/dev/null || true',
+          'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix libpq)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          'export LDFLAGS="-L$(brew --prefix icu4c)/lib -L$(brew --prefix libpq)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix icu4c)/include -I$(brew --prefix libpq)/include $CPPFLAGS"',
         ],
       },
       linux: {
-        // Install kerberos, ICU, and iconv headers from apt
+        // Install kerberos, ICU, iconv, and libpq headers from apt
         prependScript: [
-          'sudo apt-get install -y libkrb5-dev libicu-dev libc6-dev 2>/dev/null || true',
+          'sudo apt-get install -y libkrb5-dev libicu-dev libc6-dev libpq-dev 2>/dev/null || true',
         ],
       },
     },
@@ -4144,6 +4144,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.match(/^--with-iconv=/) ? '--with-iconv' : a,
         )
+        // Add PDO MySQL (via mysqlnd — no external libmysqlclient needed)
+        if (!recipe.build.env.ARGS.includes('--with-pdo-mysql=mysqlnd')) {
+          recipe.build.env.ARGS.push('--with-pdo-mysql=mysqlnd')
+        }
+        // Add mysqli (via mysqlnd — legacy MySQL extension used by some packages)
+        if (!recipe.build.env.ARGS.includes('--with-mysqli=mysqlnd')) {
+          recipe.build.env.ARGS.push('--with-mysqli=mysqlnd')
+        }
+        // Add PDO PostgreSQL (requires libpq from Homebrew/apt)
+        if (!recipe.build.env.ARGS.includes('--with-pdo-pgsql')) {
+          recipe.build.env.ARGS.push('--with-pdo-pgsql')
+        }
       }
       // Remove gnu.org/gcc/libstdcxx dep (use system libstdc++)
       if (recipe.dependencies?.['gnu.org/gcc/libstdcxx']) {
