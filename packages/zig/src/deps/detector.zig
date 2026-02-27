@@ -9,6 +9,8 @@ pub const DepsFile = struct {
     pub const FileFormat = enum {
         pantry_json, // pantry.json (highest priority)
         pantry_jsonc, // pantry.jsonc
+        pantry_yaml, // pantry.yaml
+        pantry_yml, // pantry.yml
         deps_yaml, // deps.yaml (before TS configs - no runtime needed)
         deps_yml,
         dependencies_yaml,
@@ -43,6 +45,8 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
     const file_names = [_][]const u8{
         "pantry.json", // pantry.json (highest priority)
         "pantry.jsonc", // pantry.jsonc
+        "pantry.yaml", // pantry.yaml
+        "pantry.yml", // pantry.yml
         "deps.yaml", // deps.yaml (before TS configs - pure YAML, no runtime needed)
         "deps.yml",
         "dependencies.yaml",
@@ -109,6 +113,8 @@ pub fn isDepsFile(filename: []const u8) bool {
         "dependencies.yml",
         "pkgx.yaml",
         "pkgx.yml",
+        "pantry.yaml",
+        "pantry.yml",
         "pantry.config.ts",
         "pantry.config.js",
     };
@@ -128,6 +134,8 @@ pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
     // Pantry formats first (highest priority)
     if (std.mem.eql(u8, filename, "pantry.json")) return .pantry_json;
     if (std.mem.eql(u8, filename, "pantry.jsonc")) return .pantry_jsonc;
+    if (std.mem.eql(u8, filename, "pantry.yaml")) return .pantry_yaml;
+    if (std.mem.eql(u8, filename, "pantry.yml")) return .pantry_yml;
     if (std.mem.endsWith(u8, filename, "config/deps.ts")) return .config_deps_ts;
     if (std.mem.eql(u8, filename, "pantry.config.ts")) return .pantry_config_ts;
     if (std.mem.eql(u8, filename, "deps.yaml")) return .deps_yaml;
@@ -212,11 +220,11 @@ pub const DepsAndWorkspaceResult = struct {
 /// This avoids the overhead of two separate realpath + directory traversals.
 pub fn findDepsAndWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !DepsAndWorkspaceResult {
     const dep_file_names = [_][]const u8{
-        "pantry.json",       "pantry.jsonc",     "deps.yaml",      "deps.yml",
-        "dependencies.yaml", "pkgx.yaml",        "config/deps.ts", "pantry.config.ts",
-        "package.json",      "package.jsonc",    "zig.json",       "Cargo.toml",
-        "pyproject.toml",    "requirements.txt", "Gemfile",        "go.mod",
-        "composer.json",
+        "pantry.json",       "pantry.jsonc",     "pantry.yaml",    "pantry.yml",
+        "deps.yaml",         "deps.yml",         "dependencies.yaml", "pkgx.yaml",
+        "config/deps.ts",    "pantry.config.ts", "package.json",   "package.jsonc",
+        "zig.json",          "Cargo.toml",       "pyproject.toml", "requirements.txt",
+        "Gemfile",           "go.mod",           "composer.json",
     };
     const workspace_file_names = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json" };
 

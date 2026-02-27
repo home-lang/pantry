@@ -358,7 +358,7 @@ pub fn inferDependencies(
         .pantry_json, .pantry_jsonc => try parseZigPackageJson(allocator, deps_file.path),
         // TypeScript config files - execute with Bun/Node
         .config_deps_ts, .pantry_config_ts => try parseTsConfigFile(allocator, deps_file.path),
-        .deps_yaml, .deps_yml, .dependencies_yaml, .pkgx_yaml => try parseDepsFile(allocator, deps_file.path),
+        .pantry_yaml, .pantry_yml, .deps_yaml, .deps_yml, .dependencies_yaml, .pkgx_yaml => try parseDepsFile(allocator, deps_file.path),
         // Other package manager formats (fallback)
         .package_json, .package_jsonc, .zig_json => try parseZigPackageJson(allocator, deps_file.path),
         .cargo_toml => try parseCargoToml(allocator, deps_file.path),
@@ -793,12 +793,57 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
         deps.deinit(allocator);
     }
 
-    // Parse both dependencies and devDependencies
+    // Parse dependencies, devDependencies, peerDependencies, and pantry.dependencies
     const dep_sections = [_]struct { key: []const u8, dep_type: DependencyType }{
         .{ .key = "dependencies", .dep_type = .normal },
         .{ .key = "devDependencies", .dep_type = .dev },
         .{ .key = "peerDependencies", .dep_type = .peer },
     };
+
+    // Also check pantry.dependencies section (bun/npm-safe pantry deps)
+    if (parsed.value.object.get("pantry")) |pantry_val| {
+        if (pantry_val == .object) {
+            const pantry_dep_sections = [_]struct { key: []const u8, dep_type: DependencyType }{
+                .{ .key = "dependencies", .dep_type = .normal },
+                .{ .key = "devDependencies", .dep_type = .dev },
+            };
+            for (pantry_dep_sections) |section| {
+                if (pantry_val.object.get(section.key)) |deps_value| {
+                    if (deps_value != .object) continue;
+
+                    var it = deps_value.object.iterator();
+                    while (it.next()) |entry| {
+                        const pkg_name = entry.key_ptr.*;
+                        const pkg_spec = entry.value_ptr.*;
+                        var version: []const u8 = "latest";
+
+                        if (pkg_spec == .string) {
+                            version = pkg_spec.string;
+                        } else if (pkg_spec == .object) {
+                            if (pkg_spec.object.get("version")) |v| {
+                                if (v == .string) version = v.string;
+                            }
+                        }
+
+                        const detection = SourceDetection.fromPackageName(pkg_name);
+                        const full_name = if (!std.mem.eql(u8, detection.source, "auto"))
+                            try allocator.dupe(u8, pkg_name)
+                        else
+                            try std.fmt.allocPrint(allocator, "auto:{s}", .{pkg_name});
+
+                        try deps.append(allocator, .{
+                            .name = full_name,
+                            .version = try allocator.dupe(u8, version),
+                            .global = false,
+                            .dep_type = section.dep_type,
+                            .source = .registry,
+                            .github_ref = null,
+                        });
+                    }
+                }
+            }
+        }
+    }
 
     for (dep_sections) |section| {
         if (parsed.value.object.get(section.key)) |deps_value| {

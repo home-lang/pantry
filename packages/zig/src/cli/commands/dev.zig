@@ -18,7 +18,7 @@ pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
         \\# Dependency file names to check (keep in sync with Zig detector)
         \\__LP_DEP_FILES=(
         \\  "config/deps.ts" "pantry.config.ts" "pantry.config.js" "dependencies.yaml" "dependencies.yml"
-        \\  "deps.yaml" "deps.yml" "pkgx.yaml" "pkgx.yml" "package.json"
+        \\  "pantry.yaml" "pantry.yml" "deps.yaml" "deps.yml" "pkgx.yaml" "pkgx.yml" "package.json"
         \\  "pyproject.toml" "requirements.txt" "Cargo.toml" "go.mod" "Gemfile" "deno.json"
         \\)
         \\

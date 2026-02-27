@@ -62,9 +62,9 @@ pub const ShellCommands = struct {
                         // Dependency file deleted
                         continue;
                     };
-                    defer file.close();
+                    defer file.close(io_helper.io);
 
-                    const stat = try file.stat();
+                    const stat = try file.stat(io_helper.io);
                     const mtime = @divFloor(stat.mtime.toNanoseconds(), std.time.ns_per_s);
 
                     if (mtime != entry.dep_mtime) {
@@ -437,16 +437,30 @@ pub const ShellCommands = struct {
         defer self.allocator.free(new_path);
 
         // Generate shell code
-        return try std.fmt.allocPrint(
-            self.allocator,
-            \\export PANTRY_CURRENT_PROJECT="{s}"
-            \\export PANTRY_ENV_BIN_PATH="{s}"
-            \\export PANTRY_ENV_DIR="{s}"
-            \\PATH="{s}:$PATH"
-            \\export PATH
-        ,
-            .{ project_root, env_bin, env_dir, new_path },
-        );
+        if (has_pantry) {
+            return try std.fmt.allocPrint(
+                self.allocator,
+                \\export PANTRY_CURRENT_PROJECT="{s}"
+                \\export PANTRY_ENV_BIN_PATH="{s}"
+                \\export PANTRY_ENV_DIR="{s}"
+                \\export PANTRY_BIN_PATH="{s}"
+                \\PATH="{s}:$PATH"
+                \\export PATH
+            ,
+                .{ project_root, env_bin, env_dir, pantry_bin, new_path },
+            );
+        } else {
+            return try std.fmt.allocPrint(
+                self.allocator,
+                \\export PANTRY_CURRENT_PROJECT="{s}"
+                \\export PANTRY_ENV_BIN_PATH="{s}"
+                \\export PANTRY_ENV_DIR="{s}"
+                \\PATH="{s}:$PATH"
+                \\export PATH
+            ,
+                .{ project_root, env_bin, env_dir, new_path },
+            );
+        }
     }
 
     /// Get runtime bin paths for the project
@@ -1700,12 +1714,26 @@ pub const ShellCommands = struct {
                 }
             }
 
-            // Wrap command with PATH that includes pantry/.bin so installed tools are available
-            const wrapped_cmd = std.fmt.allocPrint(
-                self.allocator,
-                "export PATH=\"{s}/pantry/.bin:$PATH\"; {s}",
-                .{ project_root, base_cmd },
-            ) catch continue;
+            // Wrap command with PATH that includes pantry/.bin and the pantry binary dir
+            // Also explicitly export HOME (required by Composer and other tools)
+            var self_exe_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const self_exe_dir = blk: {
+                const len = std.process.executableDirPath(io_helper.io, &self_exe_buf) catch break :blk "";
+                break :blk self_exe_buf[0..len];
+            };
+
+            const wrapped_cmd = if (home_dir) |h|
+                std.fmt.allocPrint(
+                    self.allocator,
+                    "export PATH=\"{s}/pantry/.bin:{s}:$PATH\" HOME=\"{s}\"; {s}",
+                    .{ project_root, self_exe_dir, h, base_cmd },
+                ) catch continue
+            else
+                std.fmt.allocPrint(
+                    self.allocator,
+                    "export PATH=\"{s}/pantry/.bin:{s}:$PATH\"; {s}",
+                    .{ project_root, self_exe_dir, base_cmd },
+                ) catch continue;
             defer self.allocator.free(wrapped_cmd);
 
             // Change to project directory for command execution
@@ -1780,6 +1808,8 @@ pub const ShellCommands = struct {
         const dep_files = [_][]const u8{
             "pantry.json",
             "pantry.jsonc",
+            "pantry.yaml",
+            "pantry.yml",
             "deps.yaml",
             "deps.yml",
             "dependencies.yaml",
@@ -1828,6 +1858,8 @@ pub const ShellCommands = struct {
         const dep_files = [_][]const u8{
             "pantry.json",
             "pantry.jsonc",
+            "pantry.yaml",
+            "pantry.yml",
             "deps.yaml",
             "deps.yml",
             "dependencies.yaml",

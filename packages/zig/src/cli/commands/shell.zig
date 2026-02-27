@@ -59,21 +59,21 @@ pub fn shellCodeCommand(allocator: std.mem.Allocator) !CommandResult {
 }
 
 pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
-    const detector = @import("../../deps/detector.zig");
+    const shell_cmds = @import("../../shell/commands.zig");
 
-    const deps_file = (try detector.findDepsFile(allocator, dir)) orelse {
-        return .{ .exit_code = 1 };
-    };
-    defer allocator.free(deps_file.path);
+    var commands = try shell_cmds.ShellCommands.init(allocator);
+    defer commands.deinit();
 
-    const project_hash = lib.string.hashDependencyFile(deps_file.path);
-    const hex = try lib.string.hashToHex(project_hash, allocator);
-    defer allocator.free(hex);
+    const result = try commands.lookup(dir);
 
-    return .{
-        .exit_code = 0,
-        .message = try allocator.dupe(u8, hex),
-    };
+    if (result) |env_info| {
+        return .{
+            .exit_code = 0,
+            .message = env_info,
+        };
+    }
+
+    return .{ .exit_code = 1 };
 }
 
 pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
