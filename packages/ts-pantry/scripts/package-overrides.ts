@@ -6183,9 +6183,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'mariadb.com/server': {
     platforms: ['darwin/aarch64', 'linux/x86-64'],
     prependScript: [
-      // Install bison (required for SQL parser generation)
+      // Install bison >= 2.4 (required for SQL parser generation, macOS ships with 2.3)
       'brew install bison 2>/dev/null || sudo apt-get install -y bison 2>/dev/null || true',
-      'export PATH="$(brew --prefix bison)/bin:$PATH" 2>/dev/null || true',
+      'export PATH="$(brew --prefix bison 2>/dev/null || echo /opt/homebrew/opt/bison)/bin:$PATH"',
     ],
+    modifyRecipe(recipe: any) {
+      // Explicitly tell cmake where to find Homebrew bison (macOS system bison is too old)
+      if (process.platform === 'darwin') {
+        const args = recipe.build?.env?.CMAKE_ARGS
+        if (Array.isArray(args)) {
+          args.push('-DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison')
+        }
+      }
+    },
   },
 }
