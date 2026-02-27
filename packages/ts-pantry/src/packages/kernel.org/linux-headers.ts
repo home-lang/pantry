@@ -2,7 +2,7 @@
  * **linux-headers** - pkgx package
  *
  * @domain `kernel.org/linux-headers`
- * @version `6.19.2` (255 versions available)
+ * @version `6.19.4` (257 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install kernel.org/linux-headers`
@@ -13,7 +13,7 @@
  *
  * const pkg = pantry.kernelorglinuxheaders
  * console.log(pkg.name)        // "linux-headers"
- * console.log(pkg.versions[0]) // "6.19.2" (latest)
+ * console.log(pkg.versions[0]) // "6.19.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/kernel-org/linux-headers.md
@@ -51,8 +51,10 @@ export const kernelorglinuxheadersPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.19.4',
     '6.19.2',
     '6.19.1',
+    '6.18.14',
     '6.18.12',
     '6.18.9',
     '6.18.8',
