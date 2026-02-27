@@ -1243,11 +1243,14 @@ pub fn clockGettimeMonotonic() c.timespec {
 }
 
 /// Mutex wrapper — using std.atomic.Mutex (Zig 0.16+)
+/// std.atomic.Mutex only provides tryLock()/unlock(), so lock() spins.
 pub const Mutex = struct {
     inner: std.atomic.Mutex = .unlocked,
 
     pub fn lock(self: *Mutex) void {
-        self.inner.lock();
+        while (!self.inner.tryLock()) {
+            std.atomic.spinLoopHint();
+        }
     }
 
     pub fn unlock(self: *Mutex) void {

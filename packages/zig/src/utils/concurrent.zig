@@ -69,7 +69,7 @@ pub fn executeConcurrent(
     }
 
     // Use a mutex to protect shared state
-    var mutex: std.atomic.Mutex = .unlocked;
+    var mutex: io_helper.Mutex = .{};
     var next_idx: usize = 0;
     var error_occurred = false;
 
@@ -79,7 +79,7 @@ pub fn executeConcurrent(
             tasks: []const ScriptTask,
             cfg: ConcurrentConfig,
             res: []ScriptResult,
-            mtx: *std.atomic.Mutex,
+            mtx: *io_helper.Mutex,
             idx: *usize,
             had_error: *bool,
         ) void {

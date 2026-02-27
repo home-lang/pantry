@@ -218,7 +218,7 @@ pub const SharedCache = struct {
 /// Global shared cache instance
 pub const GlobalCache = struct {
     var instance: ?SharedCache = null;
-    var mutex: std.atomic.Mutex = .unlocked;
+    var mutex: io_helper.Mutex = .{};
 
     /// Get or initialize global cache
     pub fn get(allocator: std.mem.Allocator) !*SharedCache {
