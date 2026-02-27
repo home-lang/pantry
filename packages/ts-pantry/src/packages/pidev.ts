@@ -2,7 +2,7 @@
  * **pi** - pkgx package
  *
  * @domain `pi.dev`
- * @version `0.55.2` (2 versions available)
+ * @version `0.55.3` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pi.dev`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.pidev
  * console.log(pkg.name)        // "pi"
- * console.log(pkg.versions[0]) // "0.55.2" (latest)
+ * console.log(pkg.versions[0]) // "0.55.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pi-dev.md
@@ -69,6 +69,7 @@ export const pidevPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.55.3',
     '0.55.2',
     '0.55.1',
   ] as const,
