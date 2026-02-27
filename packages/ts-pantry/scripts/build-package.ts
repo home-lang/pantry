@@ -1004,7 +1004,9 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   if (matchedExt) {
     const encodedUrl = url.replace(/ /g, '%20')
     // Save with pkgx naming convention: <domain>-<version>.<ext>
-    const fileName = pkgDomain && pkgVersion ? `${pkgDomain}-${pkgVersion}${matchedExt}` : urlPath.split('/').pop() || `download${matchedExt}`
+    // Replace forward slashes in domain with Unicode division slash (U+2215) to match YAML conventions
+    const safeDomain = pkgDomain ? pkgDomain.replace(/\//g, '\u2215') : ''
+    const fileName = pkgDomain && pkgVersion ? `${safeDomain}-${pkgVersion}${matchedExt}` : urlPath.split('/').pop() || `download${matchedExt}`
     const destFile = join(destDir, fileName)
     console.log(`📦 Saving non-archive file as ${fileName}`)
     execSync(`curl -fSL --connect-timeout 30 --max-time 600 --retry 2 --retry-delay 5 -o "${destFile}" "${encodedUrl}"`, { stdio: 'inherit' })

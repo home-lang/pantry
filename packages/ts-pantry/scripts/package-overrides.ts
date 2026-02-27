@@ -344,6 +344,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'zeromq.org': {
     distributableUrl: 'https://github.com/zeromq/libzmq/releases/download/v{{version}}/zeromq-{{version}}.tar.gz',
+    modifyRecipe: (recipe: any) => {
+      // ZeroMQ 4.3.x has a GCC 13 allocator_traits static assertion failure in CURVE crypto code.
+      // Disable CURVE to work around the upstream bug (fixed in newer libzmq versions).
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        if (!recipe.build.env.CONFIGURE_ARGS.includes('--disable-curve')) {
+          recipe.build.env.CONFIGURE_ARGS.push('--disable-curve')
+        }
+      }
+    },
   },
 
   // ─── Source host changes (non-GNU) ─────────────────────────────────
@@ -6193,6 +6202,38 @@ export const packageOverrides: Record<string, PackageOverride> = {
         const args = recipe.build?.env?.CMAKE_ARGS
         if (Array.isArray(args)) {
           args.push('-DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison')
+        }
+      }
+    },
+  },
+
+  // ─── jbang.dev — fix cp path after strip-components ─────────────────
+  // YAML does cp -r ./jbang-{{version}}/* but strip-components=1 already
+  // removes the top-level dir, so contents are directly in the build dir.
+
+  'jbang.dev': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('cp -r ./jbang-')) {
+            recipe.build.script[i] = step.replace(/cp -r \.\/jbang-\{\{version\}\}\/\*/, 'cp -r ./*')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── people.redhat.com/sgrubb/libcap-ng — disable Python SWIG bindings ──
+  // SWIG 4.0+ removed the %except directive used in capng_swig.i
+
+  'people.redhat.com/sgrubb/libcap-ng': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        for (const flag of ['--without-python', '--without-python3']) {
+          if (!recipe.build.env.CONFIGURE_ARGS.includes(flag)) {
+            recipe.build.env.CONFIGURE_ARGS.push(flag)
+          }
         }
       }
     },
