@@ -247,12 +247,18 @@ function parseYamlValue(
     // Plain multi-line scalar without | or > marker.
     // Per YAML spec, plain scalars fold newlines to spaces (like > folded style).
     // Blank lines in the middle become actual newlines.
-    const blockLines: string[] = []
+    // Detect actual content indent from first non-empty line (like | block scalar handler)
+    // to avoid consuming sibling keys (e.g. working-directory:) at blockIndent level.
     let j = currentLineIdx + 1
+    while (j < lines.length && !lines[j].trim()) j++
+    const actualIndent = j < lines.length ? lines[j].search(/\S/) : blockIndent
+    const effectiveIndent = Math.max(blockIndent, actualIndent)
+    const blockLines: string[] = []
+    j = currentLineIdx + 1
     while (j < lines.length) {
       const bl = lines[j]
       const bli = bl.search(/\S/)
-      if (bl.trim() === '' || bli >= blockIndent) {
+      if (bl.trim() === '' || bli >= effectiveIndent) {
         blockLines.push(bl.trim())
         j++
       } else break
