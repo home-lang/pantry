@@ -161,7 +161,7 @@ function fixMachoRpaths(prefix: string): void {
             if (existsSync('/opt/homebrew/lib')) searchPaths.push('/opt/homebrew/lib')
             if (existsSync('/opt/homebrew/opt')) searchPaths.push('/opt/homebrew/opt')
             if (searchPaths.length === 0) continue
-            const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
+            const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" \\( -type f -o -type l \\) 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
             if (findResult) {
               mkdirSync(libDir, { recursive: true })
               execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
@@ -413,7 +413,7 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
           if (existsSync('/opt/homebrew/lib')) searchPaths.push('/opt/homebrew/lib')
           if (existsSync('/opt/homebrew/opt')) searchPaths.push('/opt/homebrew/opt')
           if (searchPaths.length === 0) continue
-          const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
+          const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" \\( -type f -o -type l \\) 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
           if (findResult) {
             mkdirSync(libDir, { recursive: true })
             execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
