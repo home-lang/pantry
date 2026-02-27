@@ -57,14 +57,11 @@ function fixMachoRpaths(prefix: string): void {
   console.log('  Fixing Mach-O rpaths...')
 
   const dirs = ['bin', 'sbin', 'lib', 'libexec'].filter(d => existsSync(join(prefix, d)))
-  console.log(`  Scanning dirs: ${dirs.join(', ')} under ${prefix}`)
 
   for (const dir of dirs) {
     const dirPath = join(prefix, dir)
     walkFiles(dirPath, (filePath) => {
-      const macho = isMachO(filePath)
-      if (!macho) return
-      console.log(`  Processing Mach-O: ${filePath}`)
+      if (!isMachO(filePath)) return
 
       try {
         // Get full load commands
