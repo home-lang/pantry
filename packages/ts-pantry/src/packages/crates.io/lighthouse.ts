@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/lighthouse`
  * @programs `lighthouse`
- * @version `8.1.0` (23 versions available)
+ * @version `8.1.1` (24 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/lighthouse`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "lighthouse"
  * console.log(pkg.description) // "Ethereum consensus client in Rust"
  * console.log(pkg.programs)    // ["lighthouse"]
- * console.log(pkg.versions[0]) // "8.1.0" (latest)
+ * console.log(pkg.versions[0]) // "8.1.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/lighthouse.md
@@ -76,6 +76,7 @@ export const cratesiolighthousePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.1.1',
     '8.1.0',
     '8.0.1',
     '8.0.0',
