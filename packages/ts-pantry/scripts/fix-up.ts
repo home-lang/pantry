@@ -141,9 +141,9 @@ function fixMachoRpaths(prefix: string): void {
           }
         }
 
-        // Bundle @rpath/ references that point to dep libraries from other build prefixes
-        // This happens when a dep (e.g. sqlite) was already fixed up before this package was built,
-        // so its dylib ID is @rpath/libfoo.dylib but the actual file is in build dirs
+        // Bundle @rpath/ references that point to dep libraries from other build prefixes or Homebrew
+        // This happens when a dep was already fixed up before this package was built,
+        // so its dylib ID is @rpath/libfoo.dylib but the actual file is in build dirs or Homebrew
         for (const depLine of depLines) {
           const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
           if (!depMatch) continue
@@ -152,11 +152,14 @@ function fixMachoRpaths(prefix: string): void {
           const depName = depPath.replace('@rpath/', '')
           const destPath = join(libDir, depName)
           if (existsSync(destPath)) continue // already bundled
-          // Search in all build directories: /tmp/buildkit-install-*, /tmp/buildkit-deps/, /tmp/buildkit-deps-*
+          // Search in build directories and Homebrew
           try {
             const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
               try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 } catch { return false }
             })
+            // Also search Homebrew lib dirs
+            if (existsSync('/opt/homebrew/lib')) searchPaths.push('/opt/homebrew/lib')
+            if (existsSync('/opt/homebrew/opt')) searchPaths.push('/opt/homebrew/opt')
             if (searchPaths.length === 0) continue
             const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
             if (findResult) {
@@ -166,6 +169,7 @@ function fixMachoRpaths(prefix: string): void {
               execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
               try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
               bundleBuildDeps(destPath, prefix)
+              bundleHomebrewDylibs(destPath, prefix)
               try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
               console.log(`    Bundled @rpath dep: ${depName} (from ${findResult})`)
             }
@@ -397,7 +401,7 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
         continue
       }
 
-      // Handle @rpath/ references to deps from other build prefixes
+      // Handle @rpath/ references to deps from other build prefixes or Homebrew
       if (depPath.startsWith('@rpath/')) {
         const depName = depPath.replace('@rpath/', '')
         const destPath = join(libDir, depName)
@@ -406,6 +410,8 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
           const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
             try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 } catch { return false }
           })
+          if (existsSync('/opt/homebrew/lib')) searchPaths.push('/opt/homebrew/lib')
+          if (existsSync('/opt/homebrew/opt')) searchPaths.push('/opt/homebrew/opt')
           if (searchPaths.length === 0) continue
           const findResult = execSync(`find ${searchPaths.join(' ')} -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
           if (findResult) {
