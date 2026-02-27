@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 20 versions</summary>
+<summary>Show all 21 versions</summary>
 
-- `1.22.4`, `1.22.3`, `1.22.2`, `1.22.1`, `1.22.0`
+- `1.22.5`, `1.22.4`, `1.22.3`, `1.22.2`, `1.22.1`, `1.22.0`
 - `1.21.5`, `1.21.4`, `1.21.3`, `1.21.2`, `1.21.1`, `1.21.0`
 - `1.20.6`, `1.20.5`, `1.20.4`, `1.20.3`, `1.20.2`, `1.20.1`, `1.20.0`
 - `1.19.2`, `1.19.1`
 
 </details>
 
-**Latest Version**: `1.22.4`
+**Latest Version**: `1.22.5`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +consul.io@1.22.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +consul.io@1.22.5 -- $SHELL -i
 ```
 
 ## Usage Examples
