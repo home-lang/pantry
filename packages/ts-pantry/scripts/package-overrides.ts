@@ -6179,4 +6179,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'amber-lang.com': {
     distributableUrl: 'https://github.com/Ph0enixKM/Amber/archive/refs/tags/{{version}}-alpha.tar.gz',
   },
+
+  'mariadb.com/server': {
+    platforms: ['darwin/aarch64', 'linux/x86-64'],
+    prependScript: [
+      // Install bison (required for SQL parser generation)
+      'brew install bison 2>/dev/null || sudo apt-get install -y bison 2>/dev/null || true',
+      'export PATH="$(brew --prefix bison)/bin:$PATH" 2>/dev/null || true',
+    ],
+  },
 }
