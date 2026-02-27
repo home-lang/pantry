@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-02-27T18:30:23.640Z
+- **Last Updated**: 2026-02-27T19:24:38.824Z
 
 ## Table of Contents
 
@@ -57,7 +57,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[python.org](./packages/python.org/index.md)** (py) | The Python programming language | python, python&lbrace;&lbrace; version.major &rbrace;&rbrace;, python&lbrace;&lbrace; version.marketing &rbrace;&rbrace; | 3.14.3 (+166) | `pkgx py` |
 | **[ruby-lang.org](./packages/ruby-lang.org/index.md)** (ruby) | Powerful, clean, object-oriented scripting language | erb, irb, rake, ... (+3) | 4.0.1 (+51) | `pkgx ruby` |
 | **[rust-lang.org](./packages/rust-lang.org/index.md)** () | Empowering everyone to build reliable and efficient software. | cargo-clippy, cargo-fmt, clippy-driver, ... (+7) | 1.93.1 (+41) | `pkgx rust` |
-| **[swift.org](./packages/swift.org/index.md)** () | The Swift Programming Language | docc, dsymutil, sourcekit-lsp, ... (+23) | 6.2.3 (+14) | `pkgx swift` |
+| **[swift.org](./packages/swift.org/index.md)** () | The Swift Programming Language | docc, dsymutil, sourcekit-lsp, ... (+23) | 6.2.4 (+15) | `pkgx swift` |
 | **[tinygo.org](./packages/tinygo.org/index.md)** () | Go compiler for small places. Microcontrollers, WebAssembly (WASM/WASI), and command-line tools. ... | tinygo | 0.40.1 (+10) | `pkgx tinygo` |
 | **[ziglang.org](./packages/ziglang.org/index.md)** () | General-purpose programming language and toolchain for maintaining robust, optimal, and reusable ... | zig | 0.15.2 (+9) | `pkgx zig` |
 
@@ -245,7 +245,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.109.5 (+40) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
-| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.68 (+2754) | `pkgx vi` |
+| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.70 (+2756) | `pkgx vi` |
 | **[wezfurlong.org/wezterm](./packages/wezfurlong.org/wezterm/index.md)** () | A GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemente... | wezterm | 2024.2.3 (+0) | `pkgx wezterm` |
 
 ## CLI Tools & Utilities

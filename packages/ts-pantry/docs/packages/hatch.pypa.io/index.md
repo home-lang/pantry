@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 26 versions</summary>
+<summary>Show all 27 versions</summary>
 
-- `1.16.4`, `1.16.3`, `1.16.2`, `1.16.1`, `1.16.0`
+- `1.16.5`, `1.16.4`, `1.16.3`, `1.16.2`, `1.16.1`, `1.16.0`
 - `1.15.1`, `1.15.0`
 - `1.14.2`, `1.14.1`, `1.14.0`
 - `1.13.0`
@@ -40,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.16.4`
+**Latest Version**: `1.16.5`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +hatch.pypa.io@1.16.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +hatch.pypa.io@1.16.5 -- $SHELL -i
 ```
 
 ## Dependencies

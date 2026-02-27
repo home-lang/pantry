@@ -33,20 +33,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 11 versions</summary>
+<summary>Show all 12 versions</summary>
 
+- `6.1.0`
 - `6.0.0`
 - `5.0.10`, `5.0.9`, `5.0.8`, `5.0.7`, `5.0.6`, `5.0.5`, `5.0.4`, `5.0.3`, `5.0.2`, `5.0.1`
 
 </details>
 
-**Latest Version**: `6.0.0`
+**Latest Version**: `6.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +openpmix.github.io@6.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +openpmix.github.io@6.1.0 -- $SHELL -i
 ```
 
 ## Dependencies

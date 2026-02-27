@@ -3,7 +3,7 @@
  *
  * @domain `openpmix.github.io`
  * @programs `palloc`, `pattrs`, `pctrl`, `pevent`, `plookup`, ... (+4 more)
- * @version `6.0.0` (11 versions available)
+ * @version `6.1.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openpmix.github.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "openpmix.github"
  * console.log(pkg.description) // "Process Management Interface for HPC environments"
  * console.log(pkg.programs)    // ["palloc", "pattrs", ...]
- * console.log(pkg.versions[0]) // "6.0.0" (latest)
+ * console.log(pkg.versions[0]) // "6.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/openpmix-github-io.md
@@ -85,6 +85,7 @@ export const openpmixgithubioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.1.0',
     '6.0.0',
     '5.0.10',
     '5.0.9',

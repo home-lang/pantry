@@ -3,7 +3,7 @@
  *
  * @domain `github.com/awslabs/amazon-ecr-credential-helper`
  * @programs `docker-credential-ecr-login`
- * @version `0.11.0` (7 versions available)
+ * @version `0.12.0` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/awslabs/amazon-ecr-credential-helper`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "docker-credential-ecr-login"
  * console.log(pkg.description) // "Automatically gets credentials for Amazon ECR o..."
  * console.log(pkg.programs)    // ["docker-credential-ecr-login"]
- * console.log(pkg.versions[0]) // "0.11.0" (latest)
+ * console.log(pkg.versions[0]) // "0.12.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/awslabs/amazon-ecr-credential-helper.md
@@ -69,6 +69,7 @@ export const amazonecrcredentialhelperPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.12.0',
     '0.11.0',
     '0.10.1',
     '0.10.0',

@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 116 versions</summary>
+<summary>Show all 117 versions</summary>
 
+- `0.165.0`
 - `0.164.3`, `0.164.2`, `0.164.1`, `0.164.0`
 - `0.163.2`, `0.163.1`, `0.163.0`
 - `0.162.0`
@@ -76,13 +77,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.164.3`
+**Latest Version**: `0.165.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/cirruslabs/cirrus-cli@0.164.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/cirruslabs/cirrus-cli@0.165.0 -- $SHELL -i
 ```
 
 ## Usage Examples
