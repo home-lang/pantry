@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 26 versions</summary>
+<summary>Show all 27 versions</summary>
 
-- `1.2026.1`, `1.2026.0`
+- `1.2026.2`, `1.2026.1`, `1.2026.0`
 - `1.2025.10`, `1.2025.9`, `1.2025.8`, `1.2025.7`, `1.2025.6`, `1.2025.5`, `1.2025.4`, `1.2025.3`, `1.2025.2`, `1.2025.1`, `1.2025.0`
 - `1.2024.8`, `1.2024.7`, `1.2024.6`, `1.2024.5`, `1.2024.4`, `1.2024.3`, `1.2024.2`, `1.2024.1`, `1.2024.0`
 - `1.2023.13`, `1.2023.12`, `1.2023.11`, `1.2023.10`
 
 </details>
 
-**Latest Version**: `1.2026.1`
+**Latest Version**: `1.2026.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +plantuml.com@1.2026.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +plantuml.com@1.2026.2 -- $SHELL -i
 ```
 
 ## Dependencies

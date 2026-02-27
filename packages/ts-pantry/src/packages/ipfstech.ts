@@ -3,7 +3,7 @@
  *
  * @domain `ipfs.tech`
  * @programs `ipfs`
- * @version `0.40.0` (35 versions available)
+ * @version `0.40.1` (36 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install ipfs.tech`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "ipfs"
  * console.log(pkg.description) // "Peer-to-peer hypermedia protocol"
  * console.log(pkg.programs)    // ["ipfs"]
- * console.log(pkg.versions[0]) // "0.40.0" (latest)
+ * console.log(pkg.versions[0]) // "0.40.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/ipfs-tech.md
@@ -69,6 +69,7 @@ export const ipfstechPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.40.1',
     '0.40.0',
     '0.39.0',
     '0.38.2',
