@@ -1334,19 +1334,24 @@ Options:
   const skipped = Object.entries(results).filter(([_, r]) => r.status === 'skipped')
   const failed = Object.entries(results).filter(([_, r]) => r.status === 'failed')
 
+  // In multi-version mode, the key already includes @version
+  const formatEntry = multiVersion
+    ? ([key, _r]: [string, BuildResult & { version: string }]) => key
+    : ([domain, r]: [string, BuildResult & { version: string }]) => `${domain}@${r.version}`
+
   if (uploaded.length > 0) {
     console.log(`\nBuilt & Uploaded (${uploaded.length}):`)
-    uploaded.forEach(([domain, r]) => console.log(`   - ${domain}@${r.version}`))
+    uploaded.forEach(e => console.log(`   - ${formatEntry(e)}`))
   }
 
   if (skipped.length > 0) {
     console.log(`\nSkipped — already in S3 (${skipped.length}):`)
-    skipped.forEach(([domain, r]) => console.log(`   - ${domain}@${r.version}`))
+    skipped.forEach(e => console.log(`   - ${formatEntry(e)}`))
   }
 
   if (failed.length > 0) {
     console.log(`\nFailed (${failed.length}):`)
-    failed.forEach(([domain, r]) => console.log(`   - ${domain}@${r.version}: ${r.error}`))
+    failed.forEach(e => console.log(`   - ${formatEntry(e)}: ${e[1].error}`))
   }
 
   const attempted = uploaded.length + failed.length
@@ -1368,11 +1373,11 @@ Options:
     if (failed.length > 0) {
       lines.push(`### Failed Packages`)
       lines.push('')
-      lines.push(`| Package | Version | Error |`)
-      lines.push(`|---------|---------|-------|`)
-      for (const [domain, r] of failed) {
-        const error = (r.error || 'unknown').replace(/\|/g, '\\|').replace(/\n/g, ' ').slice(0, 200)
-        lines.push(`| ${domain} | ${r.version || '?'} | ${error} |`)
+      lines.push(`| Package | Error |`)
+      lines.push(`|---------|-------|`)
+      for (const entry of failed) {
+        const error = (entry[1].error || 'unknown').replace(/\|/g, '\\|').replace(/\n/g, ' ').slice(0, 200)
+        lines.push(`| ${formatEntry(entry)} | ${error} |`)
       }
       lines.push('')
     }
@@ -1380,8 +1385,8 @@ Options:
     if (uploaded.length > 0) {
       lines.push(`<details><summary>Uploaded Packages (${uploaded.length})</summary>`)
       lines.push('')
-      for (const [domain, r] of uploaded) {
-        lines.push(`- ${domain}@${r.version}`)
+      for (const entry of uploaded) {
+        lines.push(`- ${formatEntry(entry)}`)
       }
       lines.push('')
       lines.push(`</details>`)
