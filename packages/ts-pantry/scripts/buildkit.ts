@@ -975,7 +975,7 @@ export function generateBuildScript(
     // symlinks from the stale install-prefix to the actual dep location so dyld resolves them.
     if (osName === 'darwin' && depPrefixes.length > 0) {
       sections.push('# Create compat symlinks for stale /tmp/buildkit-install-* dylib paths')
-      sections.push('for _dep_prefix in ' + depPrefixes.map(p => `"${p}"`).join(' ') + '; do')
+      sections.push(`for _dep_prefix in ${depPrefixes.map(p => `"${p}"`).join(' ')}; do`)
       sections.push('  [ -d "$_dep_prefix" ] || continue')
       sections.push('  case "$_dep_prefix" in /tmp/buildkit-deps/*) ;; *) continue ;; esac')
       sections.push('  _domain_with_ver="${_dep_prefix#/tmp/buildkit-deps/}"')
@@ -1100,7 +1100,7 @@ for d in dirs:
                             return syspath${osName === 'darwin' ? `
                     # On macOS, also check SDK for .tbd stubs
                     if sdk:
-                        tbd_name = libname.replace(".dylib", ".tbd")
+                        tbd_name = libname.replace('.dylib', '.tbd')
                         sdklib = os.path.join(sdk, "usr", "lib", tbd_name)
                         if os.path.exists(sdklib):
                             print(f"[cmake-scrub] replacing missing {path} -> {sdklib}", file=sys.stderr)

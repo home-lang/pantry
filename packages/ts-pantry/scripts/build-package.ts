@@ -235,7 +235,7 @@ function parseYamlValue(
           }
         } else if (bli > blockIndent && !blt.startsWith('- ')) {
           // Continuation of previous item — YAML plain scalar folding (newlines → spaces)
-          if (runArr.length > 0) runArr[runArr.length - 1] += ' ' + blt
+          if (runArr.length > 0) runArr[runArr.length - 1] += ` ${blt}`
           j++
         } else break
       }
@@ -410,7 +410,7 @@ function parseYaml(content: string): Record<string, any> {
               // Strip inline comments (# ...) from continuation lines
               const commentIdx = nextTrimmed.indexOf('  #')
               const cleanLine = commentIdx >= 0 ? nextTrimmed.slice(0, commentIdx).trim() : nextTrimmed
-              fullValue += ' ' + cleanLine
+              fullValue += ` ${cleanLine}`
               i++
             } else {
               break

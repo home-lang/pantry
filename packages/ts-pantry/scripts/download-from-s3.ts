@@ -363,7 +363,10 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
  */
 async function listAvailableVersions(
   pkgName: string,
-  options: { bucket: string; region: string }
+  options: {
+    bucket: string
+    region: string
+  }
 ): Promise<string[]> {
   const s3 = new S3Client(options.region)
   const metadataKey = `binaries/${pkgName}/metadata.json`
@@ -453,7 +456,10 @@ async function installFromConfig(
 /**
  * Auto-start services from config
  */
-function autoStartServices(services: PantryYamlConfig['services']): { started: string[]; failed: string[] } {
+function autoStartServices(services: PantryYamlConfig['services']): {
+  started: string[]
+  failed: string[]
+} {
   const started: string[] = []
   const failed: string[] = []
 
