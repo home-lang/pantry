@@ -4104,6 +4104,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix libpq)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export LDFLAGS="-L$(brew --prefix icu4c)/lib -L$(brew --prefix libpq)/lib -L$(brew --prefix libiconv)/lib $LDFLAGS"',
           'export CPPFLAGS="-I$(brew --prefix icu4c)/include -I$(brew --prefix libpq)/include -I$(brew --prefix libiconv)/include $CPPFLAGS"',
+          'export PATH="$(brew --prefix libpq)/bin:$PATH"',
         ],
       },
       linux: {
@@ -4147,16 +4148,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
             : a,
         )
         // Add PDO MySQL (via mysqlnd — no external libmysqlclient needed)
-        if (!recipe.build.env.ARGS.includes('--with-pdo-mysql=mysqlnd')) {
+        if (!recipe.build.env.ARGS.some((a: string) => a.startsWith('--with-pdo-mysql'))) {
           recipe.build.env.ARGS.push('--with-pdo-mysql=mysqlnd')
         }
         // Add mysqli (via mysqlnd — legacy MySQL extension used by some packages)
-        if (!recipe.build.env.ARGS.includes('--with-mysqli=mysqlnd')) {
+        if (!recipe.build.env.ARGS.some((a: string) => a.startsWith('--with-mysqli'))) {
           recipe.build.env.ARGS.push('--with-mysqli=mysqlnd')
         }
-        // Add PDO PostgreSQL (requires libpq from Homebrew/apt)
-        if (!recipe.build.env.ARGS.includes('--with-pdo-pgsql')) {
-          recipe.build.env.ARGS.push('--with-pdo-pgsql')
+        // Add PDO PostgreSQL — needs explicit libpq path on macOS (Homebrew non-standard location)
+        if (!recipe.build.env.ARGS.some((a: string) => a.startsWith('--with-pdo-pgsql'))) {
+          recipe.build.env.ARGS.push(
+            process.platform === 'darwin'
+              ? '--with-pdo-pgsql=$(brew --prefix libpq)'
+              : '--with-pdo-pgsql',
+          )
         }
       }
       // Remove gnu.org/gcc/libstdcxx dep (use system libstdc++)
