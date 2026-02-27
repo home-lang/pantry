@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 22 versions</summary>
 
-- `2.8.0`
+- `2.8.1`, `2.8.0`
 - `2.7.5`, `2.7.4`, `2.7.3`, `2.7.2`, `2.7.1`, `2.7.0`
 - `2.6.4`, `2.6.3`, `2.6.2`, `2.6.1`, `2.6.0`
 - `2.5.1`, `2.5.0`
@@ -38,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.8.0`
+**Latest Version**: `2.8.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +fluxcd.io/flux2@2.8.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +fluxcd.io/flux2@2.8.1 -- $SHELL -i
 ```
 
 ## Usage Examples

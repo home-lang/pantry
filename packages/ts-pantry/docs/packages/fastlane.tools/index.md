@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 30 versions</summary>
+<summary>Show all 31 versions</summary>
 
-- `2.232.1`, `2.232.0`
+- `2.232.2`, `2.232.1`, `2.232.0`
 - `2.231.1`, `2.231.0`
 - `2.230.0`
 - `2.229.1`, `2.229.0`
@@ -51,13 +51,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.232.1`
+**Latest Version**: `2.232.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +fastlane.tools@2.232.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +fastlane.tools@2.232.2 -- $SHELL -i
 ```
 
 ## Dependencies

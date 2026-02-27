@@ -3,7 +3,7 @@
  *
  * @domain `flywaydb.org`
  * @programs `flyway`
- * @version `12.0.2` (64 versions available)
+ * @version `12.0.3` (65 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install flywaydb.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "flyway"
  * console.log(pkg.description) // "Database version control to control migrations"
  * console.log(pkg.programs)    // ["flyway"]
- * console.log(pkg.versions[0]) // "12.0.2" (latest)
+ * console.log(pkg.versions[0]) // "12.0.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/flywaydb-org.md
@@ -75,6 +75,7 @@ export const flywaydborgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '12.0.3',
     '12.0.2',
     '12.0.1',
     '12.0.0',

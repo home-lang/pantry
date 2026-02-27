@@ -3,7 +3,7 @@
  *
  * @domain `fastlane.tools`
  * @programs `fastlane`
- * @version `2.232.1` (30 versions available)
+ * @version `2.232.2` (31 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fastlane.tools`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fastlane"
  * console.log(pkg.description) // "🚀 The easiest way to automate building and rel..."
  * console.log(pkg.programs)    // ["fastlane"]
- * console.log(pkg.versions[0]) // "2.232.1" (latest)
+ * console.log(pkg.versions[0]) // "2.232.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fastlane-tools.md
@@ -69,6 +69,7 @@ export const fastlanetoolsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.232.2',
     '2.232.1',
     '2.232.0',
     '2.231.1',
