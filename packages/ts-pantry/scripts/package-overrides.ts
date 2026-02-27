@@ -1222,6 +1222,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── freedesktop.org/xdg-user-dirs — fix systemd install path ──────────────
+  // Meson queries system pkg-config for systemduserunitdir which returns /usr/lib/systemd/user
+  // (outside prefix). Patch the build file to use prefix-relative path instead.
+
+  'freedesktop.org/xdg-user-dirs': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Replace the systemd pkg-config query with a prefix-relative fallback
+          // so the service file installs within our prefix, not /usr/lib
+          "sed -i \"s|systemd_dep.get_variable(pkgconfig: 'systemduserunitdir')|get_option('prefix') / 'lib' / 'systemd' / 'user'|\" meson.build 2>/dev/null || true",
+        ],
+      },
+    },
+  },
+
   // ─── x.org/protocol — fix version format in URL ────────────────────────────
   // The YAML uses version.raw but the tarball uses 2-part version (e.g. 2025.1 not 2025.1.0).
   // version.marketing gives "2025.1" for version "2025.1.0" which matches the actual filename.
