@@ -1037,7 +1037,7 @@ export function generateBuildScript(
     // - Xcode SDK paths from different macOS versions
     if (depPrefixes.length > 0) {
       const sdkFixInit = osName === 'darwin'
-        ? `\nsdk = os.popen("xcrun --show-sdk-path 2>/dev/null").read().strip()`
+        ? `\nsdk = os.popen('xcrun --show-sdk-path 2>/dev/null').read().strip()`
         : ''
       const sdkFixLine = osName === 'darwin'
         ? `\n            if sdk: t = re.sub(r'/Applications/Xcode[^;"]*?/SDKs/MacOSX[^;"]*?\\.sdk', sdk, t)`
@@ -1046,9 +1046,9 @@ export function generateBuildScript(
       sections.push(`python3 << 'SCRUB_CMAKE_EOF'`)
       sections.push(`import os, re, sys, glob
 # System include paths that break builds when used with -isystem (GCC #include_next)
-BAD_INCLUDES = {"/usr/include", "/usr/local/include"}
-dirs = [${depPrefixes.map(p => `"${p}"`).join(', ')}]
-print(f"[cmake-scrub] scanning {len(dirs)} dep dirs", file=sys.stderr)
+BAD_INCLUDES = {'/usr/include', '/usr/local/include'}
+dirs = [${depPrefixes.map(p => `'${p}'`).join(', ')}]
+print(f'[cmake-scrub] scanning {len(dirs)} dep dirs', file=sys.stderr)
 modified = 0
 _isdir_cache = {}
 def cached_isdir(p):
@@ -1056,14 +1056,14 @@ def cached_isdir(p):
         _isdir_cache[p] = os.path.isdir(p)
     return _isdir_cache[p]${sdkFixInit}
 for d in dirs:
-    if not d.startswith("/tmp"):
+    if not d.startswith('/tmp'):
         continue
     # Only search lib/cmake/ and share/cmake/ — cmake config files live here, not in bin/include/etc.
     files = []
-    for sub in ("lib/cmake", "share/cmake", "lib64/cmake"):
+    for sub in ('lib/cmake', 'share/cmake', 'lib64/cmake'):
         sub_dir = os.path.join(d, sub)
         if os.path.isdir(sub_dir):
-            files.extend(glob.glob(os.path.join(sub_dir, "**", "*.cmake"), recursive=True))
+            files.extend(glob.glob(os.path.join(sub_dir, '**', '*.cmake'), recursive=True))
     if not files:
         continue
     for f in files:
@@ -1072,17 +1072,17 @@ for d in dirs:
             orig = t
             # 1. Fix semicolon-separated path lists (INTERFACE_INCLUDE_DIRECTORIES, etc.)
             def fix_pathlist(m):
-                paths = m.group(1).split(";")
-                kept = [p for p in paths if not p.strip() or p.strip().startswith("$") or p.strip().startswith("@") or (p.strip() not in BAD_INCLUDES and cached_isdir(p.strip()))]
-                return m.group(0).replace(m.group(1), ";".join(kept))
+                paths = m.group(1).split(';')
+                kept = [p for p in paths if not p.strip() or p.strip().startswith('$') or p.strip().startswith('@') or (p.strip() not in BAD_INCLUDES and cached_isdir(p.strip()))]
+                return m.group(0).replace(m.group(1), ';'.join(kept))
             t = re.sub(r'INTERFACE_INCLUDE_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
             t = re.sub(r'INTERFACE_LINK_DIRECTORIES\\s+"([^"]+)"', fix_pathlist, t)
-            # 2. Fix standalone path assignments (e.g. set(gflags_INCLUDE_DIR "/usr/include"))
+            # 2. Fix standalone path assignments (e.g. set(gflags_INCLUDE_DIR '/usr/include'))
             # These cmake config variables feed into find_package() and end up as -isystem
             for bad in BAD_INCLUDES:
-                # Replace standalone bad path in quotes: "/usr/include" → ""
+                # Replace standalone bad path in quotes: '/usr/include' -> ''
                 t = t.replace(f'"{bad}"', '""')
-                # Remove bad path from semicolon lists: "...;/usr/include;..." → "...;..."
+                # Remove bad path from semicolon lists: '...;/usr/include;...' -> '...;...'
                 t = t.replace(f';{bad};', ';')
                 t = t.replace(f';{bad}"', '"')
                 t = t.replace(f'"{bad};', '"')${sdkFixLine}
@@ -1090,30 +1090,30 @@ for d in dirs:
             # S3-built deps may reference libz.dylib etc. that doesn't exist in the downloaded dep.
             def fix_missing_libs(match):
                 path = match.group(0)
-                if path.startswith("/tmp/buildkit-deps/") and not os.path.exists(path):
+                if path.startswith('/tmp/buildkit-deps/') and not os.path.exists(path):
                     # Try to find the library in system locations
                     libname = os.path.basename(path)
-                    for sysdir in ["/usr/lib", "/usr/local/lib"]:
+                    for sysdir in ['/usr/lib', '/usr/local/lib']:
                         syspath = os.path.join(sysdir, libname)
                         if os.path.exists(syspath):
-                            print(f"[cmake-scrub] replacing missing {path} -> {syspath}", file=sys.stderr)
+                            print(f'[cmake-scrub] replacing missing {path} -> {syspath}', file=sys.stderr)
                             return syspath${osName === 'darwin' ? `
                     # On macOS, also check SDK for .tbd stubs
                     if sdk:
                         tbd_name = libname.replace('.dylib', '.tbd')
-                        sdklib = os.path.join(sdk, "usr", "lib", tbd_name)
+                        sdklib = os.path.join(sdk, 'usr', 'lib', tbd_name)
                         if os.path.exists(sdklib):
-                            print(f"[cmake-scrub] replacing missing {path} -> {sdklib}", file=sys.stderr)
+                            print(f'[cmake-scrub] replacing missing {path} -> {sdklib}', file=sys.stderr)
                             return sdklib` : ''}
                 return path
             t = re.sub(r'/tmp/buildkit-deps/[^;"\\s]+\\.(?:dylib|so|a|tbd)(?:\\.[0-9]+){0,5}', fix_missing_libs, t)
             if t != orig:
-                open(f, "w").write(t)
+                open(f, 'w').write(t)
                 modified += 1
-                print(f"[cmake-scrub] modified: {os.path.relpath(f, d)}", file=sys.stderr)
+                print(f'[cmake-scrub] modified: {os.path.relpath(f, d)}', file=sys.stderr)
         except Exception as e:
-            print(f"[cmake-scrub] ERROR {f}: {e}", file=sys.stderr)
-print(f"[cmake-scrub] done: {modified} files modified", file=sys.stderr)`)
+            print(f'[cmake-scrub] ERROR {f}: {e}', file=sys.stderr)
+print(f'[cmake-scrub] done: {modified} files modified', file=sys.stderr)`)
       sections.push('SCRUB_CMAKE_EOF')
       sections.push('')
     }

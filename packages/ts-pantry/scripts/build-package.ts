@@ -562,16 +562,16 @@ function interpolate(template: string | any, vars: Record<string, string>): stri
     // Handle ${{key}} first (before {{key}} to avoid partial matches)
     .replace(/\$\{\{([^}]+)\}\}/g, (_, key) => {
       const trimmedKey = key.trim()
-      return vars[trimmedKey] ?? '${{' + trimmedKey + '}}'
+      return vars[trimmedKey] ?? `\${{${trimmedKey}}}`
     })
     // Handle {{key}}
     .replace(/\{\{([^}]+)\}\}/g, (_, key) => {
       const trimmedKey = key.trim()
-      return vars[trimmedKey] ?? '{{' + trimmedKey + '}}'
+      return vars[trimmedKey] ?? `{{${trimmedKey}}}`
     })
     // Handle $ENV_VAR style
     .replace(/\$([A-Z_][A-Z0-9_]*)/g, (_, key) => {
-      return process.env[key] ?? vars[key] ?? '$' + key
+      return process.env[key] ?? vars[key] ?? `\$${key}`
     })
 }
 

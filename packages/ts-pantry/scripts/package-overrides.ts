@@ -18,7 +18,11 @@
  *   3. Use modifyRecipe only for complex mutations that can't be expressed declaratively
  */
 
-export type ScriptStep = string | { run: string; 'working-directory'?: string; if?: string }
+export type ScriptStep = string | {
+  run: string
+  'working-directory'?: string
+  if?: string
+}
 
 export interface PackageOverride {
   distributableUrl?: string
@@ -135,8 +139,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('sed -i')) {
             step.run = step.run
-              .replace(/sed -i '/, "sed '")
-              .replace(/' Makefile"/, "' Makefile > Makefile.tmp && mv Makefile.tmp Makefile\"")
+              .replace(/sed -i '/, `sed '`)
+              .replace(/' Makefile"/, `' Makefile > Makefile.tmp && mv Makefile.tmp Makefile"`)
           }
         }
         // Replace unconditional make with platform-conditional
@@ -506,10 +510,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('sed') && step.run.includes('iconv')) {
-            step.run = "perl -ni -e 'print unless /Requires\\.private:.*iconv/' libarchive.pc"
+            step.run = `perl -ni -e 'print unless /Requires\\.private:.*iconv/' libarchive.pc`
           } else if (typeof step === 'string' && step.includes('sed') && step.includes('iconv')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = "perl -ni -e 'print unless /Requires\\.private:.*iconv/' libarchive.pc"
+            recipe.build.script[idx] = `perl -ni -e 'print unless /Requires\\.private:.*iconv/' libarchive.pc`
           }
         }
       }
@@ -523,10 +527,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('sed -i')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i '([^']*)'/g, "perl -pi -e '$1'")
+            recipe.build.script[idx] = step.replace(/sed -i '([^']*)'/g, `perl -pi -e '$1'`)
             recipe.build.script[idx] = recipe.build.script[idx].replace(/sed -i/g, 'perl -pi -e')
           } else if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('sed -i')) {
-            step.run = step.run.replace(/sed -i '([^']*)'/g, "perl -pi -e '$1'")
+            step.run = step.run.replace(/sed -i '([^']*)'/g, `perl -pi -e '$1'`)
             step.run = step.run.replace(/sed -i/g, 'perl -pi -e')
           }
         }
@@ -671,7 +675,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('go-md2man') && !step.run.includes('command -v')) {
-            step.run = 'if command -v go-md2man &>/dev/null; then\n' + step.run + '\nfi'
+            step.run = `if command -v go-md2man &>/dev/null; then\n${step.run}\nfi`
           }
         }
       }
@@ -1255,7 +1259,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/"\$SHELF"\/etc/, '"{{prefix}}/etc"')
-           .replace(/"\$SHELF"\/var/, '"{{prefix}}/var"'),
+            .replace(/"\$SHELF"\/var/, '"{{prefix}}/var"'),
         )
       }
       // Remove python.org build dep (uses ~3.11 constraint, S3 has 3.14+)
@@ -1301,7 +1305,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/"\$SHELF"\/etc/, '"{{prefix}}/etc"')
-           .replace(/"\$SHELF"\/var/, '"{{prefix}}/var"'),
+            .replace(/"\$SHELF"\/var/, '"{{prefix}}/var"'),
         )
       }
     },
@@ -1427,7 +1431,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && step.run.includes('+brewing')) {
-            step.run = step.run.replace(/sed -i '/g, "sed -i.bak '")
+            step.run = step.run.replace(/sed -i '/g, `sed -i.bak '`)
           }
         }
       }
@@ -1442,7 +1446,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && step.run.includes('+brewing')) {
-            step.run = step.run.replace(/sed -i '/g, "sed -i.bak '")
+            step.run = step.run.replace(/sed -i '/g, `sed -i.bak '`)
           }
         }
       }
@@ -1476,7 +1480,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && step.run.includes('PLIST_FORMAT')) {
-            step.run = step.run.replace(/sed -i '/g, "sed -i.bak '")
+            step.run = step.run.replace(/sed -i '/g, `sed -i.bak '`)
           }
         }
       }
@@ -1600,7 +1604,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && step.run.includes('package.json')) {
-            step.run = step.run.replace(/sed -i '/, "sed -i.bak '")
+            step.run = step.run.replace(/sed -i '/, `sed -i.bak '`)
           }
         }
       }
@@ -1644,7 +1648,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('npm install')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step + '\n      --legacy-peer-deps'
+            recipe.build.script[idx] = `${step}\n      --legacy-peer-deps`
           }
         }
       }
@@ -1889,7 +1893,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // breaks all of unix/configure's function detection tests (they set NO_DIR,
           // NO_STRCHR etc. incorrectly). Fix both:
           // 1. Strip ZMEM detection from configure
-          "sed -i.bak '/ZMEM/d' unix/configure",
+          `sed -i.bak '/ZMEM/d' unix/configure`,
           // 2. Create a cc wrapper that suppresses C23 strictness for this 2008 codebase
           'mkdir -p "${TMPDIR:-/tmp}/_zip_cc"',
           'printf \'#!/bin/sh\\nexec /usr/bin/cc -Wno-implicit-function-declaration -Wno-int-conversion -Wno-incompatible-pointer-types "$@"\\n\' > "${TMPDIR:-/tmp}/_zip_cc/cc"',
@@ -1974,7 +1978,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('meson setup')) {
-            recipe.build.script[i] = step + ' -Dintrospection=false'
+            recipe.build.script[i] = `${step} -Dintrospection=false`
           }
         }
       }
@@ -2473,7 +2477,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             // Replace the sed step that uses {{deps.python.org.prefix}} with a generic version
             if (step.run.includes('deps.python.org.prefix')) {
-              step.run = "sed -i.bak 's|env .*/bin/python[23]*|env python3|' g-ir-annotation-tool g-ir-scanner 2>/dev/null || true"
+              step.run = `sed -i.bak 's|env .*/bin/python[23]*|env python3|' g-ir-annotation-tool g-ir-scanner 2>/dev/null || true`
             }
             // Fix sed -i BSD compat in other steps
             if (step.run.includes('sed -i') && step.run.includes('g-ir-scanner')
@@ -4374,7 +4378,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
             }
             // Make glob-based sed resilient: use bash nullglob or || true
             if (step.run.includes('sed ') && (step.run.includes('*.sh') || step.run.includes('*/'))) {
-              step.run = 'shopt -s nullglob; ' + step.run + '; shopt -u nullglob'
+              step.run = `shopt -s nullglob; ${step.run}; shopt -u nullglob`
             }
           }
           if (typeof step === 'string') {
@@ -4383,7 +4387,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
               s = s.replaceAll('sed -i ', 'sed -i.bak ')
             }
             if (s.includes('sed ') && (s.includes('*.sh') || s.includes('*/'))) {
-              s = 'shopt -s nullglob; ' + s + '; shopt -u nullglob'
+              s = `shopt -s nullglob; ${s}; shopt -u nullglob`
             }
             recipe.build.script[i] = s
           }
@@ -4724,10 +4728,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
           // Fix libfolly.pc sed (multi-line truncated to 'sed -i')
           if (step.run === 'sed -i') {
-            step.run = 'sed -i'
-              + " -e 's/-I[^ ]* *//g'"
-              + ' -e \'s:{{pkgx.prefix}}:${prefix}/../../..:g\''
-              + ' libfolly.pc'
+            step.run = `sed -i -e 's/-I[^ ]* *//g' -e 's:{{pkgx.prefix}}:\${prefix}/../../..:g' libfolly.pc`
             if (!step['working-directory']) {
               step['working-directory'] = '${{prefix}}/lib/pkgconfig'
             }
@@ -4988,8 +4989,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'object' && Array.isArray(step.run)) {
             step.run = step.run.map((line: string) => {
               // Fix: newline=''...'' → properly single-quoted bash string
-              if (line.startsWith("newline=''") && line.endsWith("''")) {
-                const inner = line.slice("newline=''".length, -"''".length)
+              if (line.startsWith(`newline=''`) && line.endsWith(`''`)) {
+                const inner = line.slice(`newline=''`.length, -`''`.length)
                 return `newline='${inner}'`
               }
               return line
@@ -5121,8 +5122,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(--prefix=)"([^"]+)"$/, '$1$2')
-           .replace(/^(--sysconfdir=)"([^"]+)"$/, '$1$2')
-           .replace(/^(--rocks-tree=)"([^"]+)"$/, '$1$2'),
+            .replace(/^(--sysconfdir=)"([^"]+)"$/, '$1$2')
+            .replace(/^(--rocks-tree=)"([^"]+)"$/, '$1$2'),
         )
       }
       // Fix sed -i BSD compat
@@ -5494,7 +5495,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2')
-           .replace(/^(-DCMAKE_INSTALL_RPATH=)"([^"]+)"$/, '$1$2'),
+            .replace(/^(-DCMAKE_INSTALL_RPATH=)"([^"]+)"$/, '$1$2'),
         )
       }
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
