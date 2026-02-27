@@ -431,17 +431,17 @@ function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): st
   return validVersions.filter(v => selected.has(v))
 }
 
-// Versions known to be broken for specific packages (e.g., old versions incompatible with current toolchains).
-// These are filtered out in multi-version mode to avoid wasting CI time.
+// Versions with fundamental toolchain incompatibilities that can't be resolved with overrides.
+// S3 dep resolution always picks latestVersion and ignores YAML constraints (e.g., ~3.11).
+// Until version constraint matching is implemented in downloadDependencies(), packages that
+// depend on specific major versions of tools (Python, etc.) cannot build their old versions.
 const knownBrokenVersions = new Map<string, Set<string>>([
-  // Cython 0.29.x is incompatible with Python 3.14 (_PyLong_AsByteArray signature changed)
+  // Cython 0.29.x uses CPython internal _PyLong_AsByteArray which changed from 5 to 6 args in 3.14.
+  // YAML says python.org: ~3.11 but S3 dep resolution ignores this and gives 3.14.
   ['cython.org/libcython', new Set(['0.29.37.1', '0.29.37', '0.29.36', '0.29.35'])],
-  // mkdocs 1.5.x uses distutils which was removed in Python 3.14
+  // mkdocs 1.5.x depends on babel which imports distutils (removed in Python 3.14).
+  // YAML says python.org: '>=3<3.12' but dep resolution ignores this constraint.
   ['mkdocs.org', new Set(['1.5.3', '1.5.2', '1.5.1', '1.5.0'])],
-  // ny <0.2.1 has invalid Cargo.toml (reqwest dep missing version)
-  ['github.com/krzkaczor/ny', new Set(['0.2.0', '0.1.2', '0.1.1', '0.1.0'])],
-  // skim 1.x requires nightly Rust with std::simd APIs that no longer exist
-  ['crates.io/skim', new Set(['1.11.2', '1.11.1', '1.11.0', '1.10.0', '1.9.0', '1.8.0', '1.7.0', '1.6.0', '1.5.0', '1.4.0', '1.3.0'])],
 ])
 
 // --- S3 Helpers ---

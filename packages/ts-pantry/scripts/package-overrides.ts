@@ -572,6 +572,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  'github.com/krzkaczor/ny': {
+    // Old versions (<=0.2.0) have a typo in Cargo.toml: "versoin" instead of "version" for reqwest.
+    // Modern Cargo rejects deps without a version field, so fix the typo before build.
+    prependScript: [
+      'sed -i.bak \'s/versoin/version/g\' Cargo.toml && rm -f Cargo.toml.bak',
+    ],
+  },
+
   'pimalaya.org/himalaya': {
     prependScript: [
       'rm -f rust-toolchain.toml',
@@ -2171,7 +2179,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           } else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
             step.run = step.run.replace(' --features nightly-frizbee', '')
           }
-          // Fix rust-toolchain.toml read — the file may not exist (removed by buildkit or absent in old versions)
+          // Pin nightly toolchain for skim 1.x (>=1.3<2): frizbee crate uses std::simd portable_simd
+          // APIs that were reorganized on nightly-2024-02-06. Pin to a pre-removal nightly.
+          if (typeof step === 'object' && step.if === '>=1.3<2' && typeof step.run === 'string' && step.run.includes('rustup default nightly')) {
+            step.run = 'rustup default nightly-2024-01-15'
+          }
+          // Fix rust-toolchain.toml read for >=2 — the file may not exist (removed by buildkit or absent in old versions)
           if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('rust-toolchain.toml')) {
             step.run = 'if [ -f "$SRCROOT/rust-toolchain.toml" ]; then rustup default "$(sed -n \'s/^channel = "\\(.*\\)".*/\\1/p\' $SRCROOT/rust-toolchain.toml)"; else rustup default stable; fi'
           }
