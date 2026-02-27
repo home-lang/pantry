@@ -452,7 +452,6 @@ function walkFiles(dir: string, callback: (filePath: string) => void): void {
  */
 function isMachO(filePath: string): boolean {
   try {
-    const _fd = Bun.file(filePath)
     // Quick check: read magic bytes
     const buffer = new Uint8Array(4)
     const file = require('node:fs').openSync(filePath, 'r')
@@ -460,7 +459,8 @@ function isMachO(filePath: string): boolean {
     require('node:fs').closeSync(file)
 
     // Mach-O magic: feedface, feedfacf, cafebabe (universal), bebafeca
-    const magic = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]
+    // Use >>> 0 to force unsigned 32-bit (JS << returns signed, causing overflow for 0xcf...)
+    const magic = ((buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]) >>> 0
     return magic === 0xfeedface || magic === 0xfeedfacf
       || magic === 0xcafebabe || magic === 0xbebafeca
       || magic === 0xcffaedfe || magic === 0xcefaedfe
