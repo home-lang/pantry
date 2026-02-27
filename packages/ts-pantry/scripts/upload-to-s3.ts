@@ -123,6 +123,14 @@ async function syncToDynamoDB(pkgName: string, version: string, availableVersion
   }, region)
 }
 
+function isNewerVersion(a: string, b: string): boolean {
+  const [aM, am, ap] = a.split('.').map(Number)
+  const [bM, bm, bp] = b.split('.').map(Number)
+  if ((aM || 0) !== (bM || 0)) return (aM || 0) > (bM || 0)
+  if ((am || 0) !== (bm || 0)) return (am || 0) > (bm || 0)
+  return (ap || 0) > (bp || 0)
+}
+
 export async function uploadToS3(options: UploadOptions): Promise<void> {
   const { package: pkgName, version, artifactsDir, bucket, region } = options
 
@@ -260,7 +268,10 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
     }
   }
 
-  metadata.latestVersion = version
+  // Only update latestVersion if this version is newer
+  if (!metadata.latestVersion || isNewerVersion(version, metadata.latestVersion)) {
+    metadata.latestVersion = version
+  }
   metadata.updatedAt = new Date().toISOString()
 
   // Upload metadata JSON
