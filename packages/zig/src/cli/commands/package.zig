@@ -1023,7 +1023,9 @@ fn publishSingleToNpm(
             }
 
             // Auth issues (401, token exchange failures, etc.) — fall through to token authentication
-            style.print("OIDC authentication not available, falling back to token...\n", .{});
+            style.print("OIDC publish failed. To use OIDC, configure trusted publishing for your package:\n", .{});
+            style.print("  https://www.npmjs.com/package/{s}/access\n\n", .{metadata.name});
+            style.print("Falling back to token authentication...\n", .{});
         }
     }
 
@@ -1115,6 +1117,13 @@ fn publishSingleToNpm(
 
         style.print("\n{d} {s}: {s}/{s}\n", .{ response.status_code, status_text, registry_url, metadata.name });
         style.print(" - {s}\n", .{error_summary});
+
+        // npm returns 404 for invalid or expired tokens — provide a helpful hint
+        if (response.status_code == 404) {
+            style.print("\nHint: npm returns 404 when your auth token is incorrect or has expired.\n", .{});
+            style.print("Verify your token at: https://www.npmjs.com/settings/tokens\n", .{});
+        }
+
         style.print("Registry: {s}\n", .{registry_url});
 
         const err_msg = try std.fmt.allocPrint(
