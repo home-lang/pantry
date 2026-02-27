@@ -2,7 +2,7 @@
  * **crush** - pkgx package
  *
  * @domain `charm.sh/crush`
- * @version `0.46.0` (37 versions available)
+ * @version `0.46.1` (38 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install charm.sh/crush`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.charmshcrush
  * console.log(pkg.name)        // "crush"
- * console.log(pkg.versions[0]) // "0.46.0" (latest)
+ * console.log(pkg.versions[0]) // "0.46.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/charm-sh/crush.md
@@ -58,6 +58,7 @@ export const charmshcrushPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.46.1',
     '0.46.0',
     '0.45.1',
     '0.45.0',
