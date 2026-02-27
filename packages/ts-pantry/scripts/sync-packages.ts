@@ -491,6 +491,156 @@ exec node "$(dirname "$0")/yarn.js" "$@"
     },
   },
 
+  'memcached.org': {
+    domain: 'memcached.org',
+    name: 'memcached',
+    needsCompile: true,
+    getLatestVersion: async () => {
+      const response = await fetch('https://api.github.com/repos/memcached/memcached/releases/latest', { headers: githubHeaders() })
+      if (!response.ok) return '1.6.40'
+      const data = await response.json() as { tag_name: string }
+      return data.tag_name.replace(/^v?/, '')
+    },
+    getImportantVersions: async () => {
+      // Only latest stable matters for memcached (single release line)
+      const response = await fetch('https://api.github.com/repos/memcached/memcached/releases?per_page=10', { headers: githubHeaders() })
+      const data = await response.json() as Array<{ tag_name: string, prerelease: boolean }>
+      const latest = data.find(r => !r.prerelease)
+      return latest ? [latest.tag_name.replace(/^v?/, '')] : ['1.6.40']
+    },
+    download: async (version, platform, destDir) => {
+      const buildDir = '/tmp/memcached-build'
+      rmSync(buildDir, { recursive: true, force: true })
+      mkdirSync(buildDir, { recursive: true })
+
+      const url = `https://memcached.org/files/memcached-${version}.tar.gz`
+      console.log(`   Downloading from ${url}`)
+      execSync(`curl -fSL -o "${buildDir}/memcached.tar.gz" "${url}"`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && tar -xf memcached.tar.gz --strip-components=1`, { stdio: 'pipe' })
+
+      // Install libevent dependency if needed
+      const { os } = detectPlatform()
+      if (os === 'linux') {
+        try { execSync('sudo apt-get install -y libevent-dev 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
+      }
+
+      console.log(`   Compiling Memcached...`)
+      const cpuCount = require('os').cpus().length
+      execSync(`cd "${buildDir}" && ./configure --prefix="${destDir}"`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && make -j${cpuCount}`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && make install`, { stdio: 'inherit' })
+
+      rmSync(buildDir, { recursive: true, force: true })
+    },
+  },
+
+  'typesense.org': {
+    domain: 'typesense.org',
+    name: 'typesense',
+    getLatestVersion: () => githubLatestVersion('typesense/typesense'),
+    getImportantVersions: async () => {
+      // Latest stable only (single active release line)
+      const ver = await githubLatestVersion('typesense/typesense')
+      return [ver]
+    },
+    download: async (version, platform, destDir) => {
+      const { os, arch } = detectPlatform()
+      // Typesense provides: linux-amd64, linux-arm64, darwin-amd64 (no darwin-arm64)
+      let tsArch: string
+      let tsPlatform: string
+      if (os === 'darwin') {
+        // Only x86_64 available for macOS (works via Rosetta on Apple Silicon)
+        tsArch = 'amd64'
+        tsPlatform = 'darwin'
+      } else {
+        tsArch = arch === 'arm64' ? 'arm64' : 'amd64'
+        tsPlatform = 'linux'
+      }
+
+      const url = `https://dl.typesense.org/releases/${version}/typesense-server-${version}-${tsPlatform}-${tsArch}.tar.gz`
+
+      console.log(`   Downloading from ${url}`)
+      execSync(`curl -fSL -o "${destDir}/typesense.tar.gz" "${url}"`, { stdio: 'inherit' })
+      mkdirSync(join(destDir, 'bin'), { recursive: true })
+      execSync(`cd "${destDir}" && tar -xf typesense.tar.gz`, { stdio: 'pipe' })
+      execSync(`rm "${destDir}/typesense.tar.gz"`)
+      // Move binary to bin/
+      execSync(`mv "${destDir}"/typesense-server "${destDir}/bin/" 2>/dev/null || true`)
+    },
+  },
+
+  'min.io': {
+    domain: 'min.io',
+    name: 'minio',
+    getLatestVersion: async () => {
+      // MinIO uses date-based versioning like RELEASE.2026-02-01T00-00-00Z
+      // The download URL always points to latest via "latest"
+      const { os, arch } = detectPlatform()
+      const minioArch = arch === 'arm64' ? 'arm64' : 'amd64'
+      const minioPlatform = os === 'darwin' ? 'darwin' : 'linux'
+      const url = `https://dl.min.io/server/minio/release/${minioPlatform}-${minioArch}/minio.sha256sum`
+      try {
+        const resp = await fetch(url)
+        const text = await resp.text()
+        // SHA256 file often contains the version in filename
+        const match = text.match(/minio\.RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)/)
+        if (match) return match[1]
+      } catch {}
+      return 'latest'
+    },
+    download: async (version, platform, destDir) => {
+      const { os, arch } = detectPlatform()
+      const minioArch = arch === 'arm64' ? 'arm64' : 'amd64'
+      const minioPlatform = os === 'darwin' ? 'darwin' : 'linux'
+
+      // Always download latest release binary
+      const url = `https://dl.min.io/server/minio/release/${minioPlatform}-${minioArch}/minio`
+
+      console.log(`   Downloading from ${url}`)
+      mkdirSync(join(destDir, 'bin'), { recursive: true })
+      execSync(`curl -fSL -o "${destDir}/bin/minio" "${url}"`, { stdio: 'inherit' })
+      chmodSync(join(destDir, 'bin', 'minio'), 0o755)
+    },
+  },
+
+  'valkey.io': {
+    domain: 'valkey.io',
+    name: 'valkey',
+    needsCompile: true,
+    getLatestVersion: () => githubLatestVersion('valkey-io/valkey', 'v?'),
+    getImportantVersions: async () => {
+      // Get latest patch of each major version (7.x, 8.x, 9.x)
+      const response = await fetch('https://api.github.com/repos/valkey-io/valkey/releases?per_page=50', { headers: githubHeaders() })
+      const data = await response.json() as Array<{ tag_name: string, prerelease: boolean }>
+      const majorVersions = new Map<string, string>()
+      for (const release of data) {
+        if (release.prerelease) continue
+        const ver = release.tag_name.replace(/^v?/, '')
+        const major = Number(ver.split('.')[0])
+        if (major < 7) continue
+        if (!majorVersions.has(String(major))) majorVersions.set(String(major), ver)
+      }
+      return [...majorVersions.values()]
+    },
+    download: async (version, platform, destDir) => {
+      const buildDir = '/tmp/valkey-build'
+      rmSync(buildDir, { recursive: true, force: true })
+      mkdirSync(buildDir, { recursive: true })
+
+      const url = `https://github.com/valkey-io/valkey/archive/refs/tags/${version}.tar.gz`
+
+      console.log(`   Downloading from ${url}`)
+      execSync(`curl -fSL -o "${buildDir}/valkey.tar.gz" "${url}"`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && tar -xf valkey.tar.gz --strip-components=1`, { stdio: 'pipe' })
+
+      console.log(`   Compiling Valkey...`)
+      const cpuCount = require('os').cpus().length
+      execSync(`cd "${buildDir}" && make -j${cpuCount} BUILD_TLS=yes PREFIX="${destDir}" install`, { stdio: 'inherit' })
+
+      rmSync(buildDir, { recursive: true, force: true })
+    },
+  },
+
   'python.org': {
     domain: 'python.org',
     name: 'python',
@@ -651,6 +801,7 @@ Options:
 
 Available packages:
   bun.sh, nodejs.org, meilisearch.com, redis.io, postgresql.org, mysql.com,
+  memcached.org, typesense.org, min.io, valkey.io,
   getcomposer.org, pnpm.io, yarnpkg.com, go.dev, deno.land, python.org
 
   Note: php.net should be built separately (use bundle-php.sh)
