@@ -3,7 +3,7 @@
  *
  * @domain `isc.org/bind9`
  * @programs `arpaname`, `delv`, `dig`, `dnssec-cds`, `dnssec-dsfromkey`, ... (+24 more)
- * @version `9.21.18` (37 versions available)
+ * @version `9.21.19` (40 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install isc.org/bind9`
@@ -17,7 +17,7 @@
  * const pkg = pantry.iscorgbind9
  * console.log(pkg.name)        // "bind9"
  * console.log(pkg.programs)    // ["arpaname", "delv", ...]
- * console.log(pkg.versions[0]) // "9.21.18" (latest)
+ * console.log(pkg.versions[0]) // "9.21.19" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/isc-org/bind9.md
@@ -113,6 +113,7 @@ export const iscorgbind9Package = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.21.19',
     '9.21.18',
     '9.21.17',
     '9.21.16',
@@ -127,6 +128,7 @@ export const iscorgbind9Package = {
     '9.21.6',
     '9.21.5',
     '9.21.4',
+    '9.20.20',
     '9.20.19',
     '9.20.18',
     '9.20.17',
@@ -140,6 +142,7 @@ export const iscorgbind9Package = {
     '9.20.8',
     '9.20.7',
     '9.20.6',
+    '9.18.46',
     '9.18.45',
     '9.18.44',
     '9.18.43',

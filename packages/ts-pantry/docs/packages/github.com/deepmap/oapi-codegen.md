@@ -25,8 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
+- `2.6.0`
 - `2.5.1`, `2.5.0`
 - `2.4.1`, `2.4.0`
 - `2.3.0`
@@ -38,13 +39,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `2.5.1`
+**Latest Version**: `2.6.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/deepmap/oapi-codegen@2.5.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/deepmap/oapi-codegen@2.6.0 -- $SHELL -i
 ```
 
 ## Usage Examples

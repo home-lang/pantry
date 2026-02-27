@@ -3,7 +3,7 @@
  *
  * @domain `rebar3.org`
  * @programs `rebar3`
- * @version `3.26.0` (5 versions available)
+ * @version `3.27.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rebar3.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "rebar3"
  * console.log(pkg.description) // "Erlang build tool that makes it easy to compile..."
  * console.log(pkg.programs)    // ["rebar3"]
- * console.log(pkg.versions[0]) // "3.26.0" (latest)
+ * console.log(pkg.versions[0]) // "3.27.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rebar3-org.md
@@ -68,6 +68,7 @@ export const rebar3orgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.27.0',
     '3.26.0',
     '3.25.1',
     '3.25.0',

@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 5 versions</summary>
+<summary>Show all 6 versions</summary>
 
+- `3.27.0`
 - `3.26.0`
 - `3.25.1`, `3.25.0`
 - `3.24.0`
@@ -34,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.26.0`
+**Latest Version**: `3.27.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +rebar3.org@3.26.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +rebar3.org@3.27.0 -- $SHELL -i
 ```
 
 ## Dependencies

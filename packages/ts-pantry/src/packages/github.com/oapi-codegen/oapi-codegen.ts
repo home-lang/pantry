@@ -3,7 +3,7 @@
  *
  * @domain `github.com/oapi-codegen/oapi-codegen`
  * @programs `oapi-codegen`
- * @version `2.5.1` (5 versions available)
+ * @version `2.6.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/oapi-codegen/oapi-codegen`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "oapi-codegen"
  * console.log(pkg.description) // "Generate Go client and server boilerplate from ..."
  * console.log(pkg.programs)    // ["oapi-codegen"]
- * console.log(pkg.versions[0]) // "2.5.1" (latest)
+ * console.log(pkg.versions[0]) // "2.6.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/oapi-codegen/oapi-codegen.md
@@ -67,6 +67,7 @@ export const oapicodegenPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.6.0',
     '2.5.1',
     '2.5.0',
     '2.4.1',
