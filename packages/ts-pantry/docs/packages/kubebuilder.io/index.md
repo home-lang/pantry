@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 27 versions</summary>
+<summary>Show all 28 versions</summary>
 
+- `4.13.0`
 - `4.12.0`
 - `4.11.1`, `4.11.0`
 - `4.10.1`, `4.10.0`
@@ -47,13 +48,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.12.0`
+**Latest Version**: `4.13.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +kubebuilder.io@4.12.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +kubebuilder.io@4.13.0 -- $SHELL -i
 ```
 
 ## Usage Examples
