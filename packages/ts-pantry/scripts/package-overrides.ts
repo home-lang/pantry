@@ -6238,4 +6238,75 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── kotlinlang.org — fix working-directory after strip-components ───
+  // The zip has kotlinc/ as top-level which gets stripped. The YAML then
+  // tries to cd into kotlinc/ which no longer exists. Remove working-directory.
+
+  'kotlinlang.org': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.['working-directory'] === 'kotlinc') {
+        delete recipe.build['working-directory']
+      }
+    },
+  },
+
+  // ─── crates.io/git-delta — remove --locked for newer Rust compat ────
+  // time crate v0.3.31 has a type inference issue with Rust 1.93+.
+  // Removing --locked lets cargo resolve a compatible time version.
+
+  'crates.io/git-delta': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('--locked')) {
+            recipe.build.script[i] = step.replace(' --locked', '')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── tuist.io/xcbeautify — cap swift-tools-version at 5.10 ──────────
+  // Swift 6 enables strict concurrency by default which breaks older sources.
+  // Cap the tools version at 5.10 to avoid MutableGlobalVariable errors.
+
+  'tuist.io/xcbeautify': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          // Replace the sed that rewrites swift-tools-version to system version
+          // with a fixed version that avoids Swift 6 strict concurrency
+          if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('swift-tools-version')) {
+            step.run = step.run.replace(
+              /sed -i "s\/swift-tools-version:.*\/swift-tools-version:\$SWIFT_VERSION\/"/,
+              'sed -i "s/swift-tools-version:.*/swift-tools-version:5.10/" ',
+            )
+          } else if (typeof step === 'object' && Array.isArray(step.run)) {
+            for (let j = 0; j < step.run.length; j++) {
+              if (typeof step.run[j] === 'string' && step.run[j].includes('swift-tools-version')) {
+                step.run[j] = 'sed -i "s/swift-tools-version:.*/swift-tools-version:5.10/" Package.swift'
+              }
+            }
+          }
+        }
+      }
+    },
+  },
+
+  // ─── rhash.sourceforge.net — disable gettext on macOS ───────────────
+  // Homebrew gettext is keg-only; configure finds it but linker can't find libintl.
+
+  'rhash.sourceforge.net': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Disable gettext to avoid libintl linkage issues on macOS
+          "sed -i '' 's/\\(HAVE_GETTEXT=\\)1/\\10/' configure 2>/dev/null || true",
+        ],
+      },
+    },
+  },
 }
