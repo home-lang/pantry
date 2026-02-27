@@ -347,9 +347,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
     modifyRecipe: (recipe: any) => {
       // ZeroMQ 4.3.x has a GCC 13 allocator_traits static assertion failure in CURVE crypto code.
       // Disable CURVE to work around the upstream bug (fixed in newer libzmq versions).
-      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
-        if (!recipe.build.env.CONFIGURE_ARGS.includes('--disable-curve')) {
-          recipe.build.env.CONFIGURE_ARGS.push('--disable-curve')
+      // The zeromq YAML uses `ARGS` (not `CONFIGURE_ARGS`) for ./configure flags.
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        if (!recipe.build.env.ARGS.includes('--disable-curve')) {
+          recipe.build.env.ARGS.push('--disable-curve')
         }
       }
     },
@@ -6321,13 +6322,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Homebrew gettext is keg-only; configure finds it but linker can't find libintl.
 
   'rhash.sourceforge.net': {
-    platforms: {
-      darwin: {
-        prependScript: [
-          // Disable gettext to avoid libintl linkage issues on macOS
-          "sed -i '' 's/\\(HAVE_GETTEXT=\\)1/\\10/' configure 2>/dev/null || true",
-        ],
-      },
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('./configure')) {
+            recipe.build.script[i] = step.replace('./configure', './configure --disable-gettext')
+          }
+        }
+      }
     },
   },
 }
