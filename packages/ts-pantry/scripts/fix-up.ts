@@ -141,6 +141,33 @@ function fixMachoRpaths(prefix: string): void {
           }
         }
 
+        // Bundle @rpath/ references that point to dep libraries from other build prefixes
+        // This happens when a dep (e.g. sqlite) was already fixed up before this package was built,
+        // so its dylib ID is @rpath/libfoo.dylib but the actual file is in /tmp/buildkit-install-*/lib/
+        for (const depLine of depLines) {
+          const depMatch = depLine.trim().match(/^(.+?)\s+\(/)
+          if (!depMatch) continue
+          const depPath = depMatch[1].trim()
+          if (!depPath.startsWith('@rpath/')) continue
+          const depName = depPath.replace('@rpath/', '')
+          const destPath = join(libDir, depName)
+          if (existsSync(destPath)) continue // already bundled
+          // Search for this dylib in /tmp/buildkit-install-* directories
+          try {
+            const findResult = execSync(`find /tmp/buildkit-install-* -name "${depName}" -type f 2>/dev/null | head -1`, { encoding: 'utf-8' }).trim()
+            if (findResult) {
+              mkdirSync(libDir, { recursive: true })
+              execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+              execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+              execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
+              try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
+              bundleBuildDeps(destPath, prefix)
+              try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+              console.log(`    Bundled @rpath dep: ${depName} (from ${findResult})`)
+            }
+          } catch { /* find failed, skip */ }
+        }
+
         // Bundle Homebrew dylibs into the package for full self-containment
         // Without this, binaries fail on systems without the same Homebrew packages
         bundleHomebrewDylibs(filePath, prefix)
