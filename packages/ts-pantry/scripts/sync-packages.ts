@@ -161,13 +161,14 @@ const packages: Record<string, PackageConfig> = {
         version: string
         lts: boolean | string
       }>
-      // Get latest version of each active LTS line (18, 20, 22) + current
+      // Get latest version of each recent LTS line (>= 18) + current
       const ltsVersions = new Map<string, string>()
       for (const entry of data) {
         const ver = entry.version.replace(/^v/, '')
-        const major = ver.split('.')[0]
-        if (entry.lts && !ltsVersions.has(major)) {
-          ltsVersions.set(major, ver)
+        const major = Number(ver.split('.')[0])
+        if (major < 18) continue // Skip EOL versions
+        if (entry.lts && !ltsVersions.has(String(major))) {
+          ltsVersions.set(String(major), ver)
         }
       }
       // Also add current (non-LTS) latest
@@ -236,8 +237,9 @@ const packages: Record<string, PackageConfig> = {
       for (const release of data) {
         if (release.prerelease) continue
         const ver = release.tag_name.replace(/^v?/, '')
-        const major = ver.split('.')[0]
-        if (!majorVersions.has(major)) majorVersions.set(major, ver)
+        const major = Number(ver.split('.')[0])
+        if (major < 7) continue // Skip EOL versions
+        if (!majorVersions.has(String(major))) majorVersions.set(String(major), ver)
       }
       return [...majorVersions.values()]
     },
@@ -326,17 +328,26 @@ const packages: Record<string, PackageConfig> = {
       }
     },
     getImportantVersions: async () => {
-      // MySQL 8.0.x (LTS) and 9.x (Innovation)
+      // MySQL tags are mysql-cluster-X.Y.Z format, parse accordingly
+      // Keep: 8.0.x (LTS), 8.4.x (LTS), latest 9.x (Innovation)
       const response = await fetch('https://api.github.com/repos/mysql/mysql-server/tags?per_page=100', { headers: githubHeaders() })
       const data = await response.json() as Array<{ name: string }>
-      const majorVersions = new Map<string, string>()
+      const importantLines = new Set(['8.0', '8.4']) // LTS lines
+      const versions = new Map<string, string>()
+      let latestNine: string | null = null
       for (const tag of data) {
-        const ver = tag.name.replace(/^mysql-/, '')
-        if (!/^\d+\.\d+\.\d+$/.test(ver)) continue
-        const major = ver.split('.').slice(0, 2).join('.')
-        if (!majorVersions.has(major)) majorVersions.set(major, ver)
+        const match = tag.name.match(/^mysql-(?:cluster-)?(\d+\.\d+\.\d+)$/)
+        if (!match) continue
+        const ver = match[1]
+        const minor = ver.split('.').slice(0, 2).join('.')
+        if (importantLines.has(minor) && !versions.has(minor)) {
+          versions.set(minor, ver)
+        }
+        if (ver.startsWith('9.') && !latestNine) latestNine = ver
       }
-      return [...majorVersions.values()]
+      const result = [...versions.values()]
+      if (latestNine) result.unshift(latestNine)
+      return result
     },
     download: async (version, platform, destDir) => {
       const { os, arch } = detectPlatform()
