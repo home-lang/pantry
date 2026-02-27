@@ -4098,12 +4098,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'php.net': {
     platforms: {
       darwin: {
-        // Install kerberos, ICU, and libpq from Homebrew (not reliably in S3)
+        // Install kerberos, ICU, libpq, and libiconv from Homebrew (not reliably in S3)
         prependScript: [
-          'brew install krb5 icu4c libpq 2>/dev/null || true',
+          'brew install krb5 icu4c libpq libiconv 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix krb5)/lib/pkgconfig:$(brew --prefix icu4c)/lib/pkgconfig:$(brew --prefix libpq)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
-          'export LDFLAGS="-L$(brew --prefix icu4c)/lib -L$(brew --prefix libpq)/lib $LDFLAGS"',
-          'export CPPFLAGS="-I$(brew --prefix icu4c)/include -I$(brew --prefix libpq)/include $CPPFLAGS"',
+          'export LDFLAGS="-L$(brew --prefix icu4c)/lib -L$(brew --prefix libpq)/lib -L$(brew --prefix libiconv)/lib $LDFLAGS"',
+          'export CPPFLAGS="-I$(brew --prefix icu4c)/include -I$(brew --prefix libpq)/include -I$(brew --prefix libiconv)/include $CPPFLAGS"',
         ],
       },
       linux: {
@@ -4139,10 +4139,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['gnu.org/libiconv']) {
         delete recipe.dependencies['gnu.org/libiconv']
       }
-      // Fix --with-iconv: on linux glibc provides iconv in libc, so use autodetection
+      // Fix --with-iconv: on linux glibc provides iconv, on darwin use Homebrew libiconv
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
-          a.match(/^--with-iconv=/) ? '--with-iconv' : a,
+          a.match(/^--with-iconv=/)
+            ? (process.platform === 'darwin' ? '--with-iconv=$(brew --prefix libiconv)' : '--with-iconv')
+            : a,
         )
         // Add PDO MySQL (via mysqlnd — no external libmysqlclient needed)
         if (!recipe.build.env.ARGS.includes('--with-pdo-mysql=mysqlnd')) {
