@@ -1608,6 +1608,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'snaplet.dev/cli': {
     modifyRecipe: (recipe: any) => {
+      // Pin Node to v20 LTS — better-sqlite3 8.5.0 incompatible with Node.js 24 V8 API
+      if (recipe.build?.dependencies?.['nodejs.org']) {
+        recipe.build.dependencies['nodejs.org'] = '~20'
+      }
+      if (recipe.dependencies?.['nodejs.org']) {
+        recipe.dependencies['nodejs.org'] = '~20'
+      }
+      // npm install with legacy peer deps
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('npm install')) {
@@ -3520,6 +3528,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/appstream — fix sed -i BSD + disable heavy deps ─
 
   'freedesktop.org/appstream': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libfyaml-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in docbook xsl path fix
       if (Array.isArray(recipe.build?.script)) {
@@ -3541,6 +3556,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       ]
       for (const dep of heavyDeps) {
         if (recipe.build?.dependencies?.[dep]) delete recipe.build.dependencies[dep]
+      }
+      // Remove libfyaml dep (installed via apt instead)
+      if (recipe.dependencies?.['github.com/pantoniou/libfyaml']) {
+        delete recipe.dependencies['github.com/pantoniou/libfyaml']
       }
       // Remove systemd.io linux dep
       if (recipe.dependencies?.linux?.['systemd.io']) {
@@ -5963,7 +5982,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
             // Quote unquoted URLs in curl commands (? is a glob char with nullglob)
             step.run = step.run.replace(
               /curl\s+-L\s+(https?:\/\/\S+)/g,
-              (match: string, url: string) => `curl -L "${url}"`,
+              (_match: string, url: string) => `curl -L "${url}"`,
             )
           }
         }
@@ -5974,21 +5993,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // p7zip: resolveGitHubTag now handles /^v/ fallback to find v17.05 tags
   // Original URL v{{version.raw}}.tar.gz works with resolved rawVersion
 
-  // ─── crates.io/mask — fix Rust raw-dylibs linker issue ─────────────────
-
-  'crates.io/mask': {
-    env: {
-      RUSTFLAGS: '--cap-lints warn',
-    },
-  },
-
-  // ─── crates.io/didyoumean — force newer indicatif ──────────────────────
-
-  'crates.io/didyoumean': {
-    env: {
-      RUSTFLAGS: '--cap-lints warn',
-    },
-  },
+  // crates.io/mask and crates.io/didyoumean overrides already defined above
 
   // ─── openinterpreter.com — widen Python version ────────────────────────
 
@@ -6030,40 +6035,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── freedesktop.org/appstream — install libfyaml from apt ──────────
-
-  'freedesktop.org/appstream': {
-    platforms: {
-      linux: {
-        prependScript: [
-          'sudo apt-get install -y libfyaml-dev 2>/dev/null || true',
-        ],
-      },
-    },
-    modifyRecipe: (recipe: any) => {
-      // Remove deps not available in S3
-      if (recipe.dependencies?.['github.com/pantoniou/libfyaml']) {
-        delete recipe.dependencies['github.com/pantoniou/libfyaml']
-      }
-      if (recipe.dependencies?.linux?.['systemd.io']) {
-        delete recipe.dependencies.linux['systemd.io']
-      }
-    },
-  },
-
-  // ─── snaplet.dev/cli — pin Node to v20 LTS ──────────────────────────
-  // better-sqlite3 8.5.0 incompatible with Node.js 24 V8 API
-
-  'snaplet.dev/cli': {
-    modifyRecipe: (recipe: any) => {
-      if (recipe.build?.dependencies?.['nodejs.org']) {
-        recipe.build.dependencies['nodejs.org'] = '~20'
-      }
-      if (recipe.dependencies?.['nodejs.org']) {
-        recipe.dependencies['nodejs.org'] = '~20'
-      }
-    },
-  },
+  // freedesktop.org/appstream and snaplet.dev/cli overrides already defined above
 
   // ─── gnome-extensions-cli — widen Python version ─────────────────────
   // Recipe requires ~3.11 but CI has Python 3.14
