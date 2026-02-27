@@ -25,6 +25,7 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * Analytics endpoints:
  * GET  /analytics/{name}          - Get package download stats
  * GET  /analytics/{name}/timeline - Get download timeline (last 30 days)
+ * GET  /analytics/{name}/requested-versions - Get most-requested missing versions
  * GET  /analytics/top             - Get top downloaded packages
  * GET  /analytics/{category}/{period} - Category analytics (install, install-on-request, build-error)
  * GET  /api/analytics/{category}/{period}.json - Category analytics (JSON API)
@@ -227,6 +228,12 @@ export function createServer(
             if (rest && !rest.includes('/') && req.method === 'GET') {
               const metadata = await registry.getPackage(packageName, rest)
               if (!metadata) {
+                // Track this missing version request asynchronously
+                analyticsStorage.trackMissingVersion(
+                  packageName,
+                  rest,
+                  req.headers.get('user-agent') || undefined,
+                ).catch(() => {}) // fire-and-forget
                 return Response.json(
                   { error: 'Package version not found' },
                   { status: 404, headers: corsHeaders },
@@ -273,6 +280,7 @@ export function createServer(
     console.log('  POST /publish                   - Publish package')
     console.log('  GET  /analytics/{name}          - Package download stats')
     console.log('  GET  /analytics/{name}/timeline - Download timeline')
+    console.log('  GET  /analytics/{name}/requested-versions - Most-requested missing versions')
     console.log('  GET  /analytics/top             - Top downloaded packages')
     console.log('  GET  /analytics/{category}/{30d,90d,365d} - Category analytics')
     console.log('  GET  /api/analytics/{category}/{period}.json - Category analytics (JSON API)')
@@ -327,6 +335,14 @@ async function handleAnalytics(
     const limit = Number.parseInt(url.searchParams.get('limit') || '10', 10)
     const packages = await analytics.getTopPackages(limit)
     return Response.json({ packages }, { headers: corsHeaders })
+  }
+
+  // GET /analytics/{name}/requested-versions
+  if (path.endsWith('/requested-versions')) {
+    const packageName = decodeURIComponent(path.replace('/requested-versions', ''))
+    const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+    const requests = await analytics.getMissingVersionRequests(packageName, limit)
+    return Response.json({ packageName, requests }, { headers: corsHeaders })
   }
 
   // GET /analytics/{name}/timeline

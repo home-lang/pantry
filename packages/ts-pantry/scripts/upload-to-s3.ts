@@ -104,7 +104,7 @@ async function dynamoRequest(action: string, params: Record<string, unknown>, re
   return response.json()
 }
 
-async function syncToDynamoDB(pkgName: string, version: string, region: string): Promise<void> {
+async function syncToDynamoDB(pkgName: string, version: string, availableVersions: string[], region: string): Promise<void> {
   const safeName = pkgName.replace(/[^a-zA-Z0-9.-]/g, '-')
 
   await dynamoRequest('UpdateItem', {
@@ -112,12 +112,13 @@ async function syncToDynamoDB(pkgName: string, version: string, region: string):
     Key: {
       packageName: { S: pkgName },
     },
-    UpdateExpression: 'SET latestVersion = :v, s3Path = :s, safeName = :sn, updatedAt = :u',
+    UpdateExpression: 'SET latestVersion = :v, s3Path = :s, safeName = :sn, updatedAt = :u, availableVersions = :av',
     ExpressionAttributeValues: {
       ':v': { S: version },
       ':s': { S: `binaries/${pkgName}/metadata.json` },
       ':sn': { S: safeName },
       ':u': { S: new Date().toISOString() },
+      ':av': { L: availableVersions.map(v => ({ S: v })) },
     },
   }, region)
 }
@@ -274,8 +275,13 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
   // Sync to DynamoDB so the Zig CLI can discover this package
   console.log(`\n📊 Syncing to DynamoDB registry...`)
   try {
-    await syncToDynamoDB(pkgName, version, region)
-    console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE})`)
+    const availableVersions = Object.keys(metadata.versions).sort((a, b) => {
+      const [aM, am, ap] = a.split('.').map(Number)
+      const [bM, bm, bp] = b.split('.').map(Number)
+      return bM - aM || bm - am || (bp || 0) - (ap || 0)
+    })
+    await syncToDynamoDB(pkgName, metadata.latestVersion, availableVersions, region)
+    console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE}) — ${availableVersions.length} versions`)
   } catch (error: any) {
     console.log(`   ⚠ DynamoDB sync failed (non-fatal): ${error.message}`)
   }

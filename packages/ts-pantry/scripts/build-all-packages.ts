@@ -17,6 +17,8 @@
  *   --platform <platform>    Override platform detection
  *   -p, --package <domains>  Comma-separated specific packages to build
  *   -f, --force              Re-upload even if exists in S3
+ *   --multi-version          Build multiple important versions per package
+ *   --max-versions <N>       Max versions per package (default: 5)
  *   --count-only             Just print total buildable package count and exit
  *   --list                   List all buildable packages
  *   --dry-run                Show what would be built
@@ -361,6 +363,73 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
   return packages
 }
 
+// --- Version Selection ---
+
+/**
+ * Select important versions to build for a package.
+ * Strategy:
+ * 1. Always include latest version
+ * 2. Include latest patch of each major version (e.g., 3.x, 2.x, 1.x)
+ * 3. Include latest patch of each minor version within current major
+ * 4. Cap at maxVersions total
+ * 5. Skip sentinel versions (999.999.999, 0.0.0)
+ */
+function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): string[] {
+  const validVersions = pkg.versions.filter(v => v !== '999.999.999' && v !== '0.0.0')
+  if (validVersions.length === 0) return []
+  if (validVersions.length <= maxVersions) return validVersions
+
+  const selected = new Set<string>()
+
+  // Always include latest
+  const latest = pkg.latestVersion !== '999.999.999' && pkg.latestVersion !== '0.0.0'
+    ? pkg.latestVersion
+    : validVersions[0]
+  selected.add(latest)
+
+  // Parse versions into components
+  const parsed = validVersions.map(v => {
+    const parts = v.split('.').map(Number)
+    return { raw: v, major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 }
+  })
+
+  // Group by major version — pick latest from each major
+  const byMajor = new Map<number, typeof parsed[0]>()
+  for (const v of parsed) {
+    const existing = byMajor.get(v.major)
+    if (!existing || v.minor > existing.minor || (v.minor === existing.minor && v.patch > existing.patch)) {
+      byMajor.set(v.major, v)
+    }
+  }
+  // Add latest of each major (sorted by major descending)
+  const majors = Array.from(byMajor.entries()).sort((a, b) => b[0] - a[0])
+  for (const [, v] of majors) {
+    if (selected.size >= maxVersions) break
+    selected.add(v.raw)
+  }
+
+  // If still room, add latest patch of each minor within the current major
+  if (selected.size < maxVersions) {
+    const currentMajor = parsed[0]?.major ?? 0
+    const byMinor = new Map<number, typeof parsed[0]>()
+    for (const v of parsed) {
+      if (v.major !== currentMajor) continue
+      const existing = byMinor.get(v.minor)
+      if (!existing || v.patch > existing.patch) {
+        byMinor.set(v.minor, v)
+      }
+    }
+    const minors = Array.from(byMinor.entries()).sort((a, b) => b[0] - a[0])
+    for (const [, v] of minors) {
+      if (selected.size >= maxVersions) break
+      selected.add(v.raw)
+    }
+  }
+
+  // Sort selected versions newest-first (same order as pkg.versions)
+  return validVersions.filter(v => selected.has(v))
+}
+
 // --- S3 Helpers ---
 
 async function checkExistsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
@@ -574,6 +643,8 @@ async function main() {
       platform: { type: 'string' },
       package: { type: 'string', short: 'p' },
       force: { type: 'boolean', short: 'f', default: false },
+      'multi-version': { type: 'boolean', default: false },
+      'max-versions': { type: 'string', default: '5' },
       'count-only': { type: 'boolean', default: false },
       list: { type: 'boolean', short: 'l', default: false },
       'dry-run': { type: 'boolean', default: false },
@@ -600,6 +671,8 @@ Options:
   --platform <platform>    Override platform (e.g., darwin-arm64)
   -p, --package <domains>  Comma-separated specific packages
   -f, --force              Re-upload even if exists
+  --multi-version          Build multiple important versions per package
+  --max-versions <N>       Max versions per package (default: 5, requires --multi-version)
   --count-only             Print total buildable count and exit
   -l, --list               List all buildable packages
   --dry-run                Show what would be built
@@ -1166,6 +1239,8 @@ Options:
   const platform = values.platform || detectedPlatform
   const batchSize = parseInt(values['batch-size'] || '50', 10)
   const force = values.force || false
+  const multiVersion = values['multi-version'] || false
+  const maxVersions = parseInt(values['max-versions'] || '5', 10)
 
   // Filter by specific packages if provided
   if (values.package) {
@@ -1194,12 +1269,24 @@ Options:
   console.log(`   Bucket: ${bucket}`)
   console.log(`   Region: ${region}`)
   console.log(`   Force: ${force}`)
+  if (multiVersion) {
+    console.log(`   Multi-version: up to ${maxVersions} versions per package`)
+  }
 
   if (values['dry-run']) {
     console.log('\n[DRY RUN] Would build:')
     for (const pkg of packagesToBuild) {
-      const exists = await checkExistsInS3(pkg.domain, pkg.latestVersion, platform, bucket, region)
-      console.log(`  - ${pkg.domain}@${pkg.latestVersion} ${exists ? '(already in S3)' : '(would build)'}`)
+      if (multiVersion) {
+        const versions = selectImportantVersions(pkg, maxVersions)
+        console.log(`  - ${pkg.domain}:`)
+        for (const v of versions) {
+          const exists = await checkExistsInS3(pkg.domain, v, platform, bucket, region)
+          console.log(`      @${v} ${exists ? '(already in S3)' : '(would build)'}`)
+        }
+      } else {
+        const exists = await checkExistsInS3(pkg.domain, pkg.latestVersion, platform, bucket, region)
+        console.log(`  - ${pkg.domain}@${pkg.latestVersion} ${exists ? '(already in S3)' : '(would build)'}`)
+      }
     }
     process.exit(0)
   }
@@ -1216,8 +1303,26 @@ Options:
       console.log(`\n⏱️  Batch time budget exceeded (${Math.round(elapsed / 60000)} min elapsed). Skipping remaining ${remaining} packages.`)
       break
     }
-    const result = await buildAndUpload(pkg, bucket, region, platform, force)
-    results[pkg.domain] = { ...result, version: pkg.latestVersion }
+
+    if (multiVersion) {
+      // Multi-version mode: build multiple important versions per package
+      const versions = selectImportantVersions(pkg, maxVersions)
+      console.log(`\n📦 ${pkg.domain}: building ${versions.length} versions [${versions.join(', ')}]`)
+
+      for (const ver of versions) {
+        const elapsed2 = Date.now() - batchStartTime
+        if (elapsed2 > BATCH_TIME_BUDGET_MS) break
+
+        // Create a modified package with this specific version as target
+        const versionPkg = { ...pkg, latestVersion: ver }
+        const result = await buildAndUpload(versionPkg, bucket, region, platform, force)
+        const key = `${pkg.domain}@${ver}`
+        results[key] = { ...result, version: ver }
+      }
+    } else {
+      const result = await buildAndUpload(pkg, bucket, region, platform, force)
+      results[pkg.domain] = { ...result, version: pkg.latestVersion }
+    }
   }
 
   // Summary

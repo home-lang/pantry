@@ -3,6 +3,7 @@
  * Track package downloads and provide statistics
  */
 
+import type { MissingVersionRequest } from './types'
 import { DynamoDBClient } from './storage/dynamodb-client'
 
 export type AnalyticsCategory = 'install' | 'install_on_request' | 'build_error'
@@ -52,6 +53,8 @@ export interface InstallAnalyticsResult {
 export interface AnalyticsStorage {
   trackDownload(event: DownloadEvent): Promise<void>
   trackEvent(event: AnalyticsEvent): Promise<void>
+  trackMissingVersion(packageName: string, version: string, userAgent?: string): Promise<void>
+  getMissingVersionRequests(packageName: string, limit?: number): Promise<MissingVersionRequest[]>
   getPackageStats(packageName: string): Promise<PackageStats | null>
   getTopPackages(limit?: number): Promise<Array<{ name: string, downloads: number }>>
   getDownloadTimeline(packageName: string, days?: number): Promise<Array<{ date: string, count: number }>>
@@ -377,6 +380,57 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
     return buildInstallAnalyticsResult(aggregated, startDate, endDate, category)
   }
 
+  async trackMissingVersion(packageName: string, version: string, _userAgent?: string): Promise<void> {
+    const now = new Date()
+    const ttl = Math.floor(now.getTime() / 1000) + 90 * 24 * 60 * 60 // 90 days TTL
+
+    // Atomic increment on a per-package/per-version counter
+    await this.db.updateItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `VERSION_REQUEST#${packageName}` },
+        SK: { S: `VERSION#${version}` },
+      },
+      UpdateExpression: 'SET requestCount = if_not_exists(requestCount, :zero) + :one, lastRequestedAt = :ts, packageName = :name, version = :ver, #t = :ttl',
+      ExpressionAttributeNames: {
+        '#t': 'ttl',
+      },
+      ExpressionAttributeValues: {
+        ':zero': { N: '0' },
+        ':one': { N: '1' },
+        ':ts': { S: now.toISOString() },
+        ':name': { S: packageName },
+        ':ver': { S: version },
+        ':ttl': { N: String(ttl) },
+      },
+    })
+  }
+
+  async getMissingVersionRequests(packageName: string, limit = 20): Promise<MissingVersionRequest[]> {
+    const result = await this.db.query({
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :prefix)',
+      ExpressionAttributeValues: {
+        ':pk': { S: `VERSION_REQUEST#${packageName}` },
+        ':prefix': { S: 'VERSION#' },
+      },
+    })
+
+    const requests: MissingVersionRequest[] = result.Items.map((item) => {
+      const data = DynamoDBClient.unmarshal(item)
+      return {
+        packageName: data.packageName,
+        version: data.version,
+        requestCount: data.requestCount || 0,
+        lastRequestedAt: data.lastRequestedAt || '',
+      }
+    })
+
+    // Sort by request count descending
+    requests.sort((a, b) => b.requestCount - a.requestCount)
+    return requests.slice(0, limit)
+  }
+
   async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
     return this.getCategoryAnalytics('install', days)
   }
@@ -390,6 +444,7 @@ export class InMemoryAnalytics implements AnalyticsStorage {
   private packageStats: Map<string, { total: number, versions: Record<string, number>, lastDownload?: string }> = new Map()
   private dailyStats: Map<string, Map<string, number>> = new Map() // date -> package -> count
   private categoryDailyStats: Map<string, Map<string, number>> = new Map() // "{category}:{date}" -> package -> count
+  private missingVersionRequests: Map<string, MissingVersionRequest> = new Map()
 
   async trackEvent(event: AnalyticsEvent): Promise<void> {
     const date = event.timestamp.split('T')[0]
@@ -498,6 +553,33 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     }
 
     return buildInstallAnalyticsResult(aggregated, startDate, endDate, category)
+  }
+
+  async trackMissingVersion(packageName: string, version: string, _userAgent?: string): Promise<void> {
+    const key = `${packageName}@${version}`
+    const existing = this.missingVersionRequests.get(key)
+    if (existing) {
+      existing.requestCount++
+      existing.lastRequestedAt = new Date().toISOString()
+    } else {
+      this.missingVersionRequests.set(key, {
+        packageName,
+        version,
+        requestCount: 1,
+        lastRequestedAt: new Date().toISOString(),
+      })
+    }
+  }
+
+  async getMissingVersionRequests(packageName: string, limit = 20): Promise<MissingVersionRequest[]> {
+    const results: MissingVersionRequest[] = []
+    for (const [, req] of this.missingVersionRequests) {
+      if (req.packageName === packageName) {
+        results.push(req)
+      }
+    }
+    results.sort((a, b) => b.requestCount - a.requestCount)
+    return results.slice(0, limit)
   }
 
   async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {

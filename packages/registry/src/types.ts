@@ -122,6 +122,16 @@ export interface CommitPublishSummary {
 }
 
 /**
+ * A request for a version that doesn't exist in the registry
+ */
+export interface MissingVersionRequest {
+  packageName: string
+  version: string
+  requestCount: number
+  lastRequestedAt: string
+}
+
+/**
  * Storage interface for tarball storage
  */
 export interface TarballStorage {
