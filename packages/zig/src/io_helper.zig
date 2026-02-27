@@ -1242,9 +1242,9 @@ pub fn clockGettimeMonotonic() c.timespec {
     return ts;
 }
 
-/// Mutex wrapper — using std.Thread.Mutex (Zig 0.16+)
+/// Mutex wrapper — using std.atomic.Mutex (Zig 0.16+)
 pub const Mutex = struct {
-    inner: std.Thread.Mutex = .{},
+    inner: std.atomic.Mutex = .unlocked,
 
     pub fn lock(self: *Mutex) void {
         self.inner.lock();

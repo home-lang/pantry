@@ -316,7 +316,7 @@ pub fn executeScript(
         try std.fmt.allocPrint(allocator, "export PATH=\"{s}/{s}/.bin:{s}\" && {s}", .{ options.cwd, options.modules_dir, current_path, script_cmd });
     defer if (!is_windows) allocator.free(wrapped_cmd);
 
-    const timer = std.time.Instant.now() catch null;
+    const timer_start = io_helper.getMilliTimestamp();
 
     const result = io_helper.childRunWithOptions(allocator, &[_][]const u8{
         if (is_windows) "cmd" else "sh",
@@ -334,10 +334,8 @@ pub fn executeScript(
         };
     };
 
-    const duration_ms: u64 = if (timer) |start| blk: {
-        const end = std.time.Instant.now() catch break :blk 0;
-        break :blk end.since(start) / std.time.ns_per_ms;
-    } else 0;
+    const timer_end = io_helper.getMilliTimestamp();
+    const duration_ms: u64 = @intCast(@max(0, timer_end - timer_start));
 
     const success = switch (result.term) {
         .exited => |code| code == 0,
