@@ -1241,7 +1241,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -1492,7 +1492,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -1747,11 +1747,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -2384,11 +2384,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -2757,10 +2757,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
           } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -3900,7 +3900,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
             step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -3961,7 +3961,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4014,13 +4014,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
               .replace(/sed -i -e /g, 'sed -i.bak -e ')
               .replace(/sed -i -f /g, 'sed -i.bak -f ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
               .replace(/sed -i -e /g, 'sed -i.bak -e ')
           }
         }
@@ -4116,10 +4116,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4220,11 +4220,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string') {
             if (step.includes('sed -i') && !step.includes('sed -i.bak')) {
-              recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+              recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
             }
             // Make install *.mod conditional — fails when no Fortran modules exist.
             // Note: buildkit sets nullglob, so ls with empty glob = ls with no args = success.
@@ -4286,7 +4286,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4369,7 +4369,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-              step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+              step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
                 .replace(/sed -i -f /g, 'sed -i.bak -f ')
             }
             // Make glob-based sed resilient: use bash nullglob or || true
@@ -4380,7 +4380,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'string') {
             let s = step
             if (s.includes('sed -i') && !s.includes('sed -i.bak')) {
-              s = s.replace(/sed -i /g, 'sed -i.bak ')
+              s = s.replaceAll('sed -i ', 'sed -i.bak ')
             }
             if (s.includes('sed ') && (s.includes('*.sh') || s.includes('*/'))) {
               s = 'shopt -s nullglob; ' + s + '; shopt -u nullglob'
@@ -4619,11 +4619,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4769,11 +4769,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            recipe.build.script[i] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4872,11 +4872,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Fix other sed -i BSD compat (single-line seds that parsed correctly)
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i ') && !step.run.includes('sed -i.bak ')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i ') && !step.includes('sed -i.bak ')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4997,11 +4997,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -5097,7 +5097,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
               .replace(/sed -i -f /g, 'sed -i.bak -f ')
           }
         }
@@ -5632,11 +5632,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replace(/sed -i /g, 'sed -i.bak ')
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /g, 'sed -i.bak ')
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
