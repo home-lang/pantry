@@ -220,11 +220,11 @@ pub const DepsAndWorkspaceResult = struct {
 /// This avoids the overhead of two separate realpath + directory traversals.
 pub fn findDepsAndWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const u8) !DepsAndWorkspaceResult {
     const dep_file_names = [_][]const u8{
-        "pantry.json",       "pantry.jsonc",     "pantry.yaml",    "pantry.yml",
-        "deps.yaml",         "deps.yml",         "dependencies.yaml", "pkgx.yaml",
-        "config/deps.ts",    "pantry.config.ts", "package.json",   "package.jsonc",
-        "zig.json",          "Cargo.toml",       "pyproject.toml", "requirements.txt",
-        "Gemfile",           "go.mod",           "composer.json",
+        "pantry.json",    "pantry.jsonc",     "pantry.yaml",       "pantry.yml",
+        "deps.yaml",      "deps.yml",         "dependencies.yaml", "pkgx.yaml",
+        "config/deps.ts", "pantry.config.ts", "package.json",      "package.jsonc",
+        "zig.json",       "Cargo.toml",       "pyproject.toml",    "requirements.txt",
+        "Gemfile",        "go.mod",           "composer.json",
     };
     const workspace_file_names = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json" };
 
