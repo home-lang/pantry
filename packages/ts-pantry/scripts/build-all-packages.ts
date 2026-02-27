@@ -108,7 +108,9 @@ function parseYaml(content: string): Record<string, any> {
           }
           currentObj.push(itemObj)
         } else {
-          currentObj.push(value)
+          // Strip inline comments from simple array values (e.g. "darwin/aarch64 # comment")
+          const commentIdx = value.indexOf(' #')
+          currentObj.push(commentIdx >= 0 ? value.slice(0, commentIdx).trim() : value)
         }
       }
       continue

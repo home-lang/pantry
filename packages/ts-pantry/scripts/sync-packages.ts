@@ -518,15 +518,20 @@ exec node "$(dirname "$0")/yarn.js" "$@"
       execSync(`curl -fSL -o "${buildDir}/memcached.tar.gz" "${url}"`, { stdio: 'inherit' })
       execSync(`cd "${buildDir}" && tar -xf memcached.tar.gz --strip-components=1`, { stdio: 'pipe' })
 
-      // Install libevent dependency if needed
+      // Install libevent dependency
       const { os } = detectPlatform()
       if (os === 'linux') {
         try { execSync('sudo apt-get install -y libevent-dev 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
+      } else {
+        try { execSync('brew install libevent 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
       }
 
       console.log(`   Compiling Memcached...`)
       const cpuCount = require('os').cpus().length
-      execSync(`cd "${buildDir}" && ./configure --prefix="${destDir}"`, { stdio: 'inherit' })
+      const configureFlags = os === 'darwin'
+        ? `--prefix="${destDir}" --with-libevent=$(brew --prefix libevent)`
+        : `--prefix="${destDir}"`
+      execSync(`cd "${buildDir}" && ./configure ${configureFlags}`, { stdio: 'inherit' })
       execSync(`cd "${buildDir}" && make -j${cpuCount}`, { stdio: 'inherit' })
       execSync(`cd "${buildDir}" && make install`, { stdio: 'inherit' })
 

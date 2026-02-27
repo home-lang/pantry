@@ -1652,7 +1652,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
     // Resolve transitive dependencies: deps of our deps that are needed for pkg-config
     // (e.g., xmu → xt → ice: xt.pc has Requires: ice, so ice must also be available)
-    const resolvedDomains = new Set(allDepDomains)
+    const resolvedDomains = new Set(depByDomain.keys())
     for (let depth = 0; depth < 3; depth++) {
       const transitiveDeps: string[] = []
       for (const domain of resolvedDomains) {
