@@ -244,18 +244,32 @@ function parseYamlValue(
   }
 
   if (rawVal === '') {
-    // Multi-line block without | marker
+    // Plain multi-line scalar without | or > marker.
+    // Per YAML spec, plain scalars fold newlines to spaces (like > folded style).
+    // Blank lines in the middle become actual newlines.
     const blockLines: string[] = []
     let j = currentLineIdx + 1
     while (j < lines.length) {
       const bl = lines[j]
       const bli = bl.search(/\S/)
       if (bl.trim() === '' || bli >= blockIndent) {
-        blockLines.push(bl.slice(blockIndent) || '')
+        blockLines.push(bl.trim())
         j++
       } else break
     }
-    const joined = blockLines.join('\n').trim()
+    // Fold: non-blank lines join with space, blank lines become newlines
+    const parts: string[] = []
+    let current = ''
+    for (const bl of blockLines) {
+      if (bl === '') {
+        if (current) { parts.push(current); current = '' }
+        parts.push('')
+      } else {
+        current = current ? `${current} ${bl}` : bl
+      }
+    }
+    if (current) parts.push(current)
+    const joined = parts.join('\n').trim()
     if (joined) return { value: joined, _newIndex: j - 1 }
     return ''
   }
