@@ -1458,6 +1458,9 @@ async function downloadDependencies(
 
       // No constraint or no match — use latest
       if (!resolved) {
+        if (constraint) {
+          console.log(`   ⚠ ${domain}: no version in S3 satisfies constraint "${constraint}" — falling back to latest`)
+        }
         const version = metadata.latestVersion
         const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
         if (platformInfo) {

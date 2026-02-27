@@ -760,17 +760,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── crates.io/sd — fix virtual workspace manifest path ──────────────
   'crates.io/sd': {
     modifyRecipe: (recipe: any) => {
-      // The repo root has a virtual workspace manifest. cargo install --path .
-      // doesn't work — use --path sd-cli to install from the sd-cli workspace member.
-      // Handle script as string (YAML scalar) or array
+      // sd >= 1.0.0 has a virtual workspace manifest with sd-cli/ subdirectory.
+      // Older versions (0.x) have Cargo.toml at root. Try sd-cli first, fall back to root.
       if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--path .')) {
-        recipe.build.script = recipe.build.script.replace('--path .', '--path sd-cli')
+        recipe.build.script = recipe.build.script.replace(
+          'cargo install --locked --path .',
+          'if [ -d sd-cli ]; then cargo install --locked --path sd-cli; else cargo install --locked --path .; fi',
+        )
       }
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('cargo install') && step.includes('--path .')) {
-            recipe.build.script[i] = step.replace('--path .', '--path sd-cli')
+            recipe.build.script[i] = step.replace(
+              'cargo install --locked --path .',
+              'if [ -d sd-cli ]; then cargo install --locked --path sd-cli; else cargo install --locked --path .; fi',
+            ).replace(' --root ', ' --root ')
           }
         }
       }
@@ -6270,6 +6275,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = step.replace(' --locked', '')
           }
         }
+      }
+    },
+  },
+
+  // ─── crates.io/topgrade — same time crate issue as git-delta ────────
+
+  'crates.io/topgrade': {
+    modifyRecipe: (recipe: any) => {
+      if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--locked')) {
+        recipe.build.script = recipe.build.script.replace(' --locked', '')
       }
     },
   },
