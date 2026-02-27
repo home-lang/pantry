@@ -6197,12 +6197,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'export PATH="$(brew --prefix bison 2>/dev/null || echo /opt/homebrew/opt/bison)/bin:$PATH"',
     ],
     modifyRecipe(recipe: any) {
-      // Explicitly tell cmake where to find Homebrew bison (macOS system bison is too old)
-      if (process.platform === 'darwin') {
-        const args = recipe.build?.env?.CMAKE_ARGS
-        if (Array.isArray(args)) {
+      const args = recipe.build?.env?.CMAKE_ARGS
+      if (Array.isArray(args)) {
+        // Disable mroonga (groonga text search) — headers incompatible with modern Xcode SDK
+        args.push('-DPLUGIN_MROONGA=NO')
+        if (process.platform === 'darwin') {
+          // Explicitly tell cmake where to find Homebrew bison (macOS system bison is too old)
           args.push('-DBISON_EXECUTABLE=/opt/homebrew/opt/bison/bin/bison')
         }
+      }
+      // Remove groonga dep since mroonga is disabled
+      if (recipe.build?.dependencies) {
+        delete recipe.build.dependencies['groonga.org']
       }
     },
   },
