@@ -832,6 +832,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── Complex build script fixes ────────────────────────────────────
 
+  'babashka.org': {
+    modifyRecipe: (recipe: any, platform?: string) => {
+      if (platform !== 'linux-x86-64') return
+      // On Linux, LD_LIBRARY_PATH from S3 deps (e.g. old curl.se/7.86.0) overrides system curl,
+      // causing "undefined symbol: curl_global_trace" errors. Unset it for the curl download.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('curl -L')) {
+            recipe.build.script[i] = step.replace('curl -L', 'env LD_LIBRARY_PATH= curl -L')
+          }
+        }
+      }
+    },
+  },
+
   'agwa.name/git-crypt': {
     modifyRecipe: (recipe: any) => {
       // Remove docbook dependencies (we build without man pages)
@@ -2122,17 +2138,42 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  'crates.io/skim': {
+  'crates.io/tabiew': {
     env: { RUSTFLAGS: '--cap-lints warn' },
     modifyRecipe: (recipe: any) => {
-      // Remove --features nightly-frizbee (feature removed in newer versions)
+      // Remove polars/nightly feature — the YAML recipe sets POLARS="--features 'polars/nightly'" for <0.12,
+      // but older versions (0.8.x-0.11.x) don't actually have that feature in their Cargo.toml
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run) {
+            const runs = Array.isArray(step.run) ? step.run : [step.run]
+            for (let j = 0; j < runs.length; j++) {
+              if (typeof runs[j] === 'string' && runs[j].includes('polars/nightly')) {
+                runs[j] = runs[j].replace(/POLARS="[^"]*"/, 'POLARS=""')
+              }
+            }
+          }
+        }
+      }
+    },
+  },
+
+  'crates.io/skim': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          // Remove --features nightly-frizbee (feature removed in newer versions)
           if (typeof step === 'string' && step.includes('nightly-frizbee')) {
             recipe.build.script[i] = step.replace(' --features nightly-frizbee', '')
           } else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
             step.run = step.run.replace(' --features nightly-frizbee', '')
+          }
+          // Fix rust-toolchain.toml read — the file may not exist (removed by buildkit or absent in old versions)
+          if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('rust-toolchain.toml')) {
+            step.run = 'if [ -f "$SRCROOT/rust-toolchain.toml" ]; then rustup default "$(sed -n \'s/^channel = "\\(.*\\)".*/\\1/p\' $SRCROOT/rust-toolchain.toml)"; else rustup default stable; fi'
           }
         }
       }

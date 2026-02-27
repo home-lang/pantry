@@ -375,7 +375,8 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
  * 5. Skip sentinel versions (999.999.999, 0.0.0)
  */
 function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): string[] {
-  const validVersions = pkg.versions.filter(v => v !== '999.999.999' && v !== '0.0.0')
+  const brokenSet = knownBrokenVersions.get(pkg.domain)
+  const validVersions = pkg.versions.filter(v => v !== '999.999.999' && v !== '0.0.0' && !brokenSet?.has(v))
   if (validVersions.length === 0) return []
   if (validVersions.length <= maxVersions) return validVersions
 
@@ -429,6 +430,19 @@ function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): st
   // Sort selected versions newest-first (same order as pkg.versions)
   return validVersions.filter(v => selected.has(v))
 }
+
+// Versions known to be broken for specific packages (e.g., old versions incompatible with current toolchains).
+// These are filtered out in multi-version mode to avoid wasting CI time.
+const knownBrokenVersions = new Map<string, Set<string>>([
+  // Cython 0.29.x is incompatible with Python 3.14 (_PyLong_AsByteArray signature changed)
+  ['cython.org/libcython', new Set(['0.29.37.1', '0.29.37', '0.29.36', '0.29.35'])],
+  // mkdocs 1.5.x uses distutils which was removed in Python 3.14
+  ['mkdocs.org', new Set(['1.5.3', '1.5.2', '1.5.1', '1.5.0'])],
+  // ny <0.2.1 has invalid Cargo.toml (reqwest dep missing version)
+  ['github.com/krzkaczor/ny', new Set(['0.2.0', '0.1.2', '0.1.1', '0.1.0'])],
+  // skim 1.x requires nightly Rust with std::simd APIs that no longer exist
+  ['crates.io/skim', new Set(['1.11.2', '1.11.1', '1.11.0', '1.10.0', '1.9.0', '1.8.0', '1.7.0', '1.6.0', '1.5.0', '1.4.0', '1.3.0'])],
+])
 
 // --- S3 Helpers ---
 

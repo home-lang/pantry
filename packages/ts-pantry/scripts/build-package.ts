@@ -993,7 +993,7 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   console.log(`📥 Downloading source from ${url}`)
 
   // Handle non-archive single files (.jar, .war, .bin, etc.) — save directly, don't extract
-  const nonArchiveExts = ['.jar', '.war', '.bin', '.exe', '.AppImage', '.whl', '.gem']
+  const nonArchiveExts = ['.jar', '.war', '.bin', '.exe', '.AppImage', '.whl', '.gem', '.phar']
   let urlPath: string
   try {
     urlPath = new URL(url.replace(/ /g, '%20')).pathname
