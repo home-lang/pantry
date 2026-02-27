@@ -898,7 +898,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('pip install') && step.includes('[')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = '"{{prefix}}/venv/bin/pip install \'.[postgres,mysql,odbc,sqlite]\'"'
+            recipe.build.script[idx] = '{{prefix}}/venv/bin/pip install ".[postgres,mysql,odbc,sqlite]"'
           }
           // Fix pyodbc dynamic find
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
@@ -2174,24 +2174,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'crates.io/skim': {
     env: { RUSTFLAGS: '--cap-lints warn' },
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.script)) {
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
-          // Remove --features nightly-frizbee (feature removed in newer versions)
-          if (typeof step === 'string' && step.includes('nightly-frizbee')) {
-            recipe.build.script[i] = step.replace(' --features nightly-frizbee', '')
-          } else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
-            step.run = step.run.replace(' --features nightly-frizbee', '')
-          }
-          // Pin nightly toolchain for skim 1.x (>=1.3<2): frizbee crate uses std::simd portable_simd
-          // APIs that were reorganized on nightly-2024-02-06. Pin to a pre-removal nightly.
-          if (typeof step === 'object' && step.if === '>=1.3<2' && typeof step.run === 'string' && step.run.includes('rustup default nightly')) {
-            step.run = 'rustup default nightly-2024-01-15'
-          }
-          // Fix rust-toolchain.toml read for >=2 — the file may not exist (removed by buildkit or absent in old versions)
-          if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('rust-toolchain.toml')) {
-            step.run = 'if [ -f "$SRCROOT/rust-toolchain.toml" ]; then rustup default "$(sed -n \'s/^channel = "\\(.*\\)".*/\\1/p\' $SRCROOT/rust-toolchain.toml)"; else rustup default stable; fi'
-          }
+      if (!Array.isArray(recipe.build?.script)) return
+      for (let i = 0; i < recipe.build.script.length; i++) {
+        const step = recipe.build.script[i]
+        // Remove --features nightly-frizbee (feature removed in newer versions)
+        if (typeof step === 'string' && step.includes('nightly-frizbee')) {
+          recipe.build.script[i] = step.replace(' --features nightly-frizbee', '')
+        } else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
+          step.run = step.run.replace(' --features nightly-frizbee', '')
+        }
+        // Pin nightly toolchain for skim 1.x (>=1.3<2): frizbee uses old std::simd APIs
+        if (typeof step === 'object' && step.if === '>=1.3<2' && typeof step.run === 'string' && step.run.includes('rustup default nightly')) {
+          step.run = 'rustup default nightly-2024-01-15'
+        }
+        // Pin nightly for skim >=2<3.5 — frizbee <0.8.2 uses std::simd (nightly-only).
+        // Buildkit removes rust-toolchain.toml, so we can't read the pinned channel.
+        // Use nightly (latest) since these versions just need any nightly with portable_simd.
+        if (typeof step === 'object' && step.if === '>=2' && typeof step.run === 'string' && step.run.includes('rust-toolchain.toml')) {
+          step.run = 'rustup default nightly'
         }
       }
     },
@@ -4464,6 +4464,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove postgresql.org build dep (not in S3)
       if (recipe.build?.dependencies?.['postgresql.org']) {
         delete recipe.build.dependencies['postgresql.org']
+      }
+      // Quote brackets in pip install to prevent nullglob expansion
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('pip install') && step.run.includes('rucio[')) {
+            step.run = step.run.replace(/rucio\[([^\]]+)\]/, '"rucio[$1]"')
+          }
+        }
       }
     },
   },

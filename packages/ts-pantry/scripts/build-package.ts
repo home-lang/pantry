@@ -1170,15 +1170,18 @@ function extractYamlDeps(depsObj: any, platform: string): string[] {
       // Only include deps from matching platform
       const [condOs] = key.split('/')
       if (condOs === osName && typeof value === 'object' && value !== null) {
-        for (const [subKey] of Object.entries(value)) {
+        for (const [subKey, subVal] of Object.entries(value)) {
           if (subKey.includes('.') || subKey.includes('/')) {
-            deps.push(subKey)
+            // Include version constraint (e.g., "python.org: ~3.11" → "python.org ~3.11")
+            const constraint = typeof subVal === 'string' ? subVal.trim() : ''
+            deps.push(constraint && constraint !== '*' ? `${subKey} ${constraint}` : subKey)
           }
         }
       }
     } else if (key.includes('.') || key.includes('/')) {
-      // Regular dependency domain
-      deps.push(key)
+      // Regular dependency domain — include constraint from value
+      const constraint = typeof value === 'string' ? value.trim() : ''
+      deps.push(constraint && constraint !== '*' ? `${key} ${constraint}` : key)
     }
   }
   return deps
@@ -1196,6 +1199,143 @@ function parseDep(dep: string): string {
   // Remove comments
   domain = domain.replace(/#.*$/, '').trim()
   return domain
+}
+
+// Extract version constraint from dependency string (e.g., "python.org: ~3.11" → "~3.11")
+function parseDepConstraint(dep: string): string | null {
+  let spec = dep
+  // Remove platform prefix
+  if (spec.includes(':') && /^(darwin|linux):/i.test(spec)) {
+    spec = spec.split(':').slice(1).join(':')
+  }
+  // Remove comments
+  spec = spec.replace(/#.*$/, '').trim()
+  // Extract constraint: everything after the domain that starts with a version operator
+  const match = spec.match(/([\^~<>=@]+.*)$/)
+  if (!match) return null
+  let constraint = match[1].trim()
+  // Strip wrapping quotes
+  if ((constraint.startsWith('"') && constraint.endsWith('"')) ||
+      (constraint.startsWith("'") && constraint.endsWith("'"))) {
+    constraint = constraint.slice(1, -1)
+  }
+  // "*" means any version
+  if (constraint === '*') return null
+  return constraint
+}
+
+// Parse a semver string into components
+function parseSemver(v: string): { major: number; minor: number; patch: number } {
+  const parts = v.split('.').map(Number)
+  return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 }
+}
+
+// Check if a version satisfies a constraint (supports ~, ^, >=, <, ranges)
+function versionSatisfies(version: string, constraint: string): boolean {
+  const v = parseSemver(version)
+
+  // Handle compound constraints like ">=3<3.12" or ">=1.70<2"
+  // Split on boundaries between operators and version numbers
+  const parts: string[] = []
+  let remaining = constraint
+  while (remaining) {
+    const m = remaining.match(/^([~^]?\d[\d.]*)(.*)$/) || remaining.match(/^([<>=]+\d[\d.]*)(.*)$/)
+    if (m) {
+      parts.push(m[1])
+      remaining = m[2]
+    } else {
+      break
+    }
+  }
+  if (parts.length === 0) {
+    // Try as a single constraint
+    parts.push(constraint)
+  }
+
+  for (const part of parts) {
+    if (!checkSingleConstraint(v, part)) return false
+  }
+  return true
+}
+
+function checkSingleConstraint(
+  v: { major: number; minor: number; patch: number },
+  constraint: string,
+): boolean {
+  // ~3.11 means >=3.11.0 <3.12.0 (tilde: patch-level changes)
+  if (constraint.startsWith('~')) {
+    const c = parseSemver(constraint.slice(1))
+    if (v.major !== c.major) return false
+    if (v.minor < c.minor) return false
+    if (constraint.slice(1).split('.').length <= 2) {
+      // ~3.11 → >=3.11, <4.0 (only major.minor specified)
+      return v.major === c.major && v.minor >= c.minor
+    }
+    // ~3.11.2 → >=3.11.2, <3.12.0
+    return v.minor === c.minor ? v.patch >= c.patch : v.minor > c.minor
+  }
+
+  // ^3.11 means >=3.11.0 <4.0.0 (caret: minor-level changes)
+  if (constraint.startsWith('^')) {
+    const c = parseSemver(constraint.slice(1))
+    if (v.major !== c.major) return false
+    if (v.minor < c.minor) return false
+    if (v.minor === c.minor && v.patch < c.patch) return false
+    return true
+  }
+
+  // >=3.12
+  if (constraint.startsWith('>=')) {
+    const c = parseSemver(constraint.slice(2))
+    if (v.major > c.major) return true
+    if (v.major < c.major) return false
+    if (v.minor > c.minor) return true
+    if (v.minor < c.minor) return false
+    return v.patch >= c.patch
+  }
+
+  // <3.12
+  if (constraint.startsWith('<')) {
+    const c = parseSemver(constraint.slice(1))
+    if (v.major < c.major) return true
+    if (v.major > c.major) return false
+    if (v.minor < c.minor) return true
+    return false
+  }
+
+  // Plain version: exact major.minor match (e.g., "3.11" means 3.11.x)
+  const c = parseSemver(constraint)
+  const numParts = constraint.split('.').length
+  if (numParts === 1) return v.major === c.major
+  if (numParts === 2) return v.major === c.major && v.minor === c.minor
+  return v.major === c.major && v.minor === c.minor && v.patch === c.patch
+}
+
+// Find the best available version that satisfies a constraint
+function findBestVersion(
+  availableVersions: string[],
+  constraint: string | null,
+  latestVersion: string,
+): string {
+  // No constraint or "*" → use latest
+  if (!constraint) return latestVersion
+
+  // Sort versions descending (newest first)
+  const sorted = [...availableVersions].sort((a, b) => {
+    const va = parseSemver(a)
+    const vb = parseSemver(b)
+    if (va.major !== vb.major) return vb.major - va.major
+    if (va.minor !== vb.minor) return vb.minor - va.minor
+    return vb.patch - va.patch
+  })
+
+  // Find the newest version that satisfies the constraint
+  for (const v of sorted) {
+    if (versionSatisfies(v, constraint)) return v
+  }
+
+  // No matching version found — fall back to latest
+  return latestVersion
 }
 
 // Download dependencies from S3
@@ -1241,73 +1381,96 @@ async function downloadDependencies(
         continue
       }
 
-      const version = metadata.latestVersion
-      const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
+      // Resolve version using YAML constraint (e.g., "python.org: ~3.11" → pick 3.11.x)
+      const constraint = parseDepConstraint(dep)
+      const availableVersions = Object.keys(metadata.versions || {})
 
-      if (!platformInfo) {
+      // Helper: download and register a dep version
+      const downloadAndRegisterDep = (depVersion: string, info: any): boolean => {
+        const depInstallDir = join(depsDir, domain, depVersion)
+        mkdirSync(depInstallDir, { recursive: true })
+        const tarballPath = join(depInstallDir, 'package.tar.gz')
+        const dlUrl = `https://${bucket}.s3.${region}.amazonaws.com/${info.tarball}`
+        try {
+          try {
+            execSync(`aws s3 cp "s3://${bucket}/${info.tarball}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
+          } catch {
+            execSync(`curl -fsSL -o "${tarballPath}" "${dlUrl}"`, { stdio: 'pipe' })
+          }
+          execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
+          execSync(`rm "${tarballPath}"`)
+        } catch {
+          return false
+        }
+        // Fix pkg-config files
+        for (const pcSubdir of ['lib/pkgconfig', 'share/pkgconfig']) {
+          const pcDir = join(depInstallDir, pcSubdir)
+          if (existsSync(pcDir)) {
+            try {
+              for (const pcFile of readdirSync(pcDir).filter(f => f.endsWith('.pc'))) {
+                const pcPath = join(pcDir, pcFile)
+                const content = readFileSync(pcPath, 'utf-8')
+                const replaced = content.replace(/\/tmp\/buildkit-install-[^\s/]+(\/[^\s]*)?/g, (match) => {
+                  const afterPrefix = match.replace(/^\/tmp\/buildkit-install-[^\s/]+/, '')
+                  return depInstallDir + afterPrefix
+                })
+                if (replaced !== content) writeFileSync(pcPath, replaced)
+              }
+            } catch { /* ignore */ }
+          }
+        }
+        // Register paths and version template variables
+        depPaths[domain] = depInstallDir
+        depPaths[`deps.${domain}.prefix`] = depInstallDir
+        const vParts = depVersion.split('.')
+        depPaths[`deps.${domain}.version`] = depVersion
+        depPaths[`deps.${domain}.version.major`] = vParts[0] || '0'
+        depPaths[`deps.${domain}.version.minor`] = vParts[1] || '0'
+        depPaths[`deps.${domain}.version.patch`] = vParts[2] || '0'
+        depPaths[`deps.${domain}.version.marketing`] = `${vParts[0] || '0'}.${vParts[1] || '0'}`
+        return true
+      }
+
+      // Find best version matching constraint, with binary for this platform
+      const sortedVersions = availableVersions.sort((a, b) => {
+        const va = parseSemver(a), vb = parseSemver(b)
+        return vb.major - va.major || vb.minor - va.minor || vb.patch - va.patch
+      })
+
+      let resolved = false
+      // Try constrained versions first (newest matching)
+      if (constraint) {
+        for (const v of sortedVersions) {
+          if (!versionSatisfies(v, constraint)) continue
+          const info = metadata.versions?.[v]?.platforms?.[platform]
+          if (!info) continue
+          if (v !== metadata.latestVersion) {
+            console.log(`   - ${domain}: constraint "${constraint}" → ${v} (latest: ${metadata.latestVersion})`)
+          } else {
+            console.log(`   - ${domain}@${v}`)
+          }
+          resolved = downloadAndRegisterDep(v, info)
+          break
+        }
+      }
+
+      // No constraint or no match — use latest
+      if (!resolved) {
+        const version = metadata.latestVersion
+        const platformInfo = metadata.versions?.[version]?.platforms?.[platform]
+        if (platformInfo) {
+          console.log(`   - ${domain}@${version}`)
+          resolved = downloadAndRegisterDep(version, platformInfo)
+        }
+      }
+
+      if (!resolved) {
         const fallbackPrefix = findSystemPrefix(domain)
-        console.log(`   - ${domain}@${version}: no binary for ${platform}, falling back to system path → ${fallbackPrefix}`)
+        console.log(`   - ${domain}: no binary for ${platform}, system path → ${fallbackPrefix}`)
         depPaths[domain] = fallbackPrefix
         depPaths[`deps.${domain}.prefix`] = fallbackPrefix
         continue
       }
-
-      // Download and extract
-      const depInstallDir = join(depsDir, domain, version)
-      mkdirSync(depInstallDir, { recursive: true })
-
-      console.log(`   - ${domain}@${version}`)
-
-      const tarballPath = join(depInstallDir, 'package.tar.gz')
-
-      // Use curl to download binary data from S3 (s3.getObject returns string which corrupts binaries)
-      const s3Url = `https://${bucket}.s3.${region}.amazonaws.com/${platformInfo.tarball}`
-      try {
-        // Try AWS CLI first (available on GitHub runners, handles auth properly)
-        execSync(`aws s3 cp "s3://${bucket}/${platformInfo.tarball}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
-      } catch {
-        // Fallback: try direct HTTP (works if bucket allows public reads)
-        execSync(`curl -fsSL -o "${tarballPath}" "${s3Url}"`, { stdio: 'pipe' })
-      }
-
-      // Use tar -xf (auto-detect format) instead of -xzf (gzip only)
-      execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
-      execSync(`rm "${tarballPath}"`)
-
-      // Fix pkg-config files in downloaded deps — replace hardcoded build-time prefixes
-      // with the actual dep install path so pkg-config works correctly
-      for (const pcSubdir of ['lib/pkgconfig', 'share/pkgconfig']) {
-        const pcDir = join(depInstallDir, pcSubdir)
-        if (existsSync(pcDir)) {
-          try {
-            const pcFiles = readdirSync(pcDir).filter(f => f.endsWith('.pc'))
-            for (const pcFile of pcFiles) {
-              const pcPath = join(pcDir, pcFile)
-              const content = readFileSync(pcPath, 'utf-8')
-              // Replace any hardcoded /tmp/buildkit-install-* prefix with actual dep path
-              const replaced = content.replace(/\/tmp\/buildkit-install-[^\s/]+(\/[^\s]*)?/g, (match) => {
-                // Extract the relative path part after the prefix
-                const afterPrefix = match.replace(/^\/tmp\/buildkit-install-[^\s/]+/, '')
-                return depInstallDir + afterPrefix
-              })
-              if (replaced !== content) {
-                writeFileSync(pcPath, replaced)
-              }
-            }
-          } catch { /* ignore pkg-config fix errors */ }
-        }
-      }
-
-      depPaths[domain] = depInstallDir
-      depPaths[`deps.${domain}.prefix`] = depInstallDir
-      // Add version-related template variables for this dependency
-      const depV = String(version)
-      const depVParts = depV.split('.')
-      depPaths[`deps.${domain}.version`] = depV
-      depPaths[`deps.${domain}.version.major`] = depVParts[0] || '0'
-      depPaths[`deps.${domain}.version.minor`] = depVParts[1] || '0'
-      depPaths[`deps.${domain}.version.patch`] = depVParts[2] || '0'
-      depPaths[`deps.${domain}.version.marketing`] = `${depVParts[0] || '0'}.${depVParts[1] || '0'}`
 
       // Fix meson: the S3 meson binary is often a shell script with a broken venv
       // shebang that gets interpreted by Python instead of shell, causing:
@@ -1317,7 +1480,7 @@ async function downloadDependencies(
       // but fail during actual builds when PATH resolves differently).
       if (domain === 'mesonbuild.com') {
         try {
-          const mesonBin = join(depInstallDir, 'bin', 'meson')
+          const mesonBin = join(depPaths[domain], 'bin', 'meson')
           if (existsSync(mesonBin)) {
             // Check if system meson exists (installed via apt/brew in CI)
             let systemMeson = ''
@@ -1347,7 +1510,7 @@ async function downloadDependencies(
               if (mesonContent.includes('SCRIPT_DIR=') || mesonContent.includes('exec ')) {
                 // Shell wrapper from bkpyvenv seal — the venv Python path is stale.
                 // Create a new wrapper that uses system python3 with the venv's site-packages.
-                const venvDir = join(depInstallDir, 'venv')
+                const venvDir = join(depPaths[domain], 'venv')
                 const _siteGlob = join(venvDir, 'lib', 'python*', 'site-packages')
                 writeFileSync(mesonBin, [
                   '#!/bin/sh',
@@ -1471,16 +1634,20 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   if (bucket && region && depsDir) {
     // Merge TS metadata deps + YAML deps (deduplicate by domain)
     // Filter out deps that were explicitly removed by modifyRecipe overrides
+    // YAML deps with constraints take priority over TS deps without constraints
     const tsDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
-    const allDepDomains = new Set<string>()
-    const allDeps: string[] = []
-    for (const dep of [...tsDeps, ...yamlBuildDeps, ...yamlRuntimeDeps]) {
+    const depByDomain = new Map<string, string>()
+    // First pass: add TS deps
+    for (const dep of tsDeps) {
       const domain = parseDep(dep)
-      if (!allDepDomains.has(domain) && !removedDeps.has(domain)) {
-        allDepDomains.add(domain)
-        allDeps.push(dep)
-      }
+      if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
     }
+    // Second pass: YAML deps override (they have version constraints)
+    for (const dep of [...yamlBuildDeps, ...yamlRuntimeDeps]) {
+      const domain = parseDep(dep)
+      if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
+    }
+    const allDeps = Array.from(depByDomain.values())
     depPaths = await downloadDependencies(allDeps, depsDir, platform, bucket, region)
 
     // Resolve transitive dependencies: deps of our deps that are needed for pkg-config
