@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 112 versions</summary>
+<summary>Show all 113 versions</summary>
 
+- `0.20.0`
 - `0.19.11`, `0.19.10`, `0.19.9`, `0.19.8`, `0.19.7`, `0.19.6`, `0.19.5`, `0.19.4`, `0.19.3`, `0.19.2`, `0.19.1`, `0.19.0`
 - `0.18.19`, `0.18.18`, `0.18.17`, `0.18.16`, `0.18.15`, `0.18.14`, `0.18.13`, `0.18.12`, `0.18.11`, `0.18.10`, `0.18.9`, `0.18.8`, `0.18.7`, `0.18.6`, `0.18.5`, `0.18.4`, `0.18.3`, `0.18.2`, `0.18.1`, `0.18.0`
 - `0.17.2`, `0.17.1`, `0.17.0`
@@ -46,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.19.11`
+**Latest Version**: `0.20.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dagger.io@0.19.11 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dagger.io@0.20.0 -- $SHELL -i
 ```
 
 ## Usage Examples
