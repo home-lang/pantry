@@ -6265,7 +6265,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'mercure.rocks': {
     // Recipe says linux-only but it's a Go binary that builds fine on darwin
-    platforms: ['darwin/aarch64', 'linux/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
   },
 
   'jbang.dev': {

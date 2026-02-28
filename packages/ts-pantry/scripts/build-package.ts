@@ -571,7 +571,12 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     }
   }
 
-  // 5. Apply modifyRecipe callback for complex mutations
+  // 5. Override recipe platforms if supportedPlatforms is specified
+  if (override.supportedPlatforms) {
+    recipe.platforms = override.supportedPlatforms
+  }
+
+  // 6. Apply modifyRecipe callback for complex mutations
   if (override.modifyRecipe) {
     override.modifyRecipe(recipe, platform)
   }

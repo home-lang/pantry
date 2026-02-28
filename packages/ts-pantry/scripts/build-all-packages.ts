@@ -129,9 +129,9 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
           const content = readFileSync(yamlPath, 'utf-8')
           const recipe = parseYaml(content)
 
-          // Check platform compatibility (override platforms take precedence over recipe)
+          // Check platform compatibility (override supportedPlatforms take precedence over recipe)
           const override = packageOverrides[domain]
-          const recipePlatforms = override?.platforms ?? recipe.platforms
+          const recipePlatforms = override?.supportedPlatforms ?? recipe.platforms
           if (targetOsName && recipePlatforms) {
             const platforms = Array.isArray(recipePlatforms) ? recipePlatforms : [String(recipePlatforms)]
             const isCompatible = platforms.some((p: string) => {
