@@ -487,8 +487,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'sfcgal.org': ['<2.0.0'],
   // doxygen 1.12.0 fails on darwin; 1.13.2+ works
   'doxygen.nl': ['<1.13.0'],
-  // graphviz old versions fail on linux; 10.0.1+ works on darwin
-  'graphviz.org': ['<10.0.0'],
+  // graphviz ALL tested versions fail on linux (10.0.1–13.1.2); works on darwin only
+  'graphviz.org': ['<14.0.0'],
   // kubectl old versions fail; 1.34.5+ works on both
   'kubernetes.io/kubectl': ['<1.34.0'],
   // faad2 old versions fail on darwin; 2.11.1 works on both
@@ -497,10 +497,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnome.org/gdk-pixbuf': ['<2.43.0'],
   // theora 1.1.1 fails; 1.2.0 works on both
   'theora.org': ['<1.2.0'],
-  // edencommon old versions fail on darwin; 2026.2.23.0 works
-  'facebook.com/edencommon': ['<2026.0.0'],
-  // mvfst old versions fail on darwin; 2026.2.23.0 works
-  'facebook.com/mvfst': ['<2026.0.0'],
+  // edencommon old versions fail on darwin; 2026.2.23.0 works (2026.1.26.0 also fails)
+  'facebook.com/edencommon': ['<2026.2.0'],
+  // mvfst old versions fail on darwin; 2026.2.23.0 works (2026.1.26.0 also fails)
+  'facebook.com/mvfst': ['<2026.2.0'],
   // harfbuzz old versions fail; 12.3.2 works on both
   'harfbuzz.org': ['<12.0.0'],
   // glib old version fails on darwin; 2.87.2+ works
@@ -511,6 +511,16 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'elementsproject.org': ['<23.2.0'],
   // procps-ng watch old versions fail; 4.0.6 works
   'gitlab.com/procps-ng/watch': ['<4.0.6'],
+  // HDF5 old versions fail to download (404); latest works
+  'hdfgroup.org': ['2.0.0', '1.14.1'],
+  // fbthrift old versions fail on darwin (cmake stdlib); same as edencommon/mvfst
+  'facebook.com/fbthrift': ['<2026.2.0'],
+  // gtk4 linker errors on darwin; fails on darwin, works on linux
+  'gtk.org/gtk4': ['<4.19.0'],
+  // libvips GIR generation fails on darwin for all tested versions
+  'libvips.org': ['<8.18.0'],
+  // MariaDB server: extremely slow build (~60min each), times out CI
+  'mariadb.com/server': ['*'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
