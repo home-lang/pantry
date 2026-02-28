@@ -144,4 +144,5 @@ jobs:
       - name: Continuous Releases
         run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
         env:
-          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
