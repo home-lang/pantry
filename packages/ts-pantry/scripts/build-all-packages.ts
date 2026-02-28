@@ -289,6 +289,71 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/realm/SwiftLint': ['0.59.1'],
   // utfcpp 3.2.5: old cmake issues. 4.9.0: tag doesn't exist
   'github.com/nemtrif/utfcpp': ['3.2.5', '4.9.0'],
+  // Gradle sourceCompatibility error in old version; 1.5.4/1.5.5 build fine
+  'github.com/skylot/jadx': ['1.4.7'],
+  // gnupg pinentry 1.2.1 requires old libassuan API; 1.3.0+ builds fine
+  'gnupg.org/pinentry': ['1.2.1'],
+  // Old samtools versions fail on linux (hts_version symbol mismatch with htslib 1.23);
+  // already built on darwin. Latest 1.23.0 works on both platforms.
+  'htslib.org/samtools': ['1.19.2', '1.20.0', '1.21.0', '1.22.1'],
+  // rav1e 0.6.6/0.7.1 missing libiconv on darwin; already built on linux.
+  // 0.8.1 (latest) builds on both platforms.
+  'github.com/xiph/rav1e': ['0.6.6', '0.7.1'],
+  // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error);
+  // lychee 0.15.1 (latest) builds fine
+  'lychee.cli.rs': ['0.14.1', '0.14.2', '0.14.3', '0.15.0'],
+  // pip requirements.txt missing trailing newline causes merged line; 3.8.1+ builds fine
+  'localstack.cloud/cli': ['2.3.2'],
+  // Old autotools configure script; 2.15.0+ builds fine.
+  // 2.12.0 already built on linux, fails on darwin.
+  'littlecms.com': ['2.12.0'],
+  // Requires python.org >=3<3.12 but only 3.14 available in S3.
+  // Versions 1.15.0, 1.17.1, 1.18.2, 1.19.1 already in S3.
+  'mypy-lang.org': ['1.16.1'],
+  // libiconv linking failure on darwin (libgit2-sys/onig-sys); built on linux.
+  // Latest versions of each package work on both platforms.
+  'crates.io/git-delta': ['0.16.5', '0.17.0'],
+  'crates.io/bat': ['0.22.1', '0.23.0', '0.24.0', '0.25.0'],
+  'crates.io/broot': ['1.26.0', '1.51.0', '1.52.0', '1.53.0', '1.54.0'],
+  'github.com/peltoche/lsd': ['1.0.0', '1.1.5'],
+  // TryLockError API change in newer Rust; latest 0.10.0 works
+  'crates.io/git-branchless': ['0.7.1', '0.8.0', '0.9.0'],
+  // npm cache corruption on old version; 1.18.3+ works
+  'github.com/Everduin94/better-commits': ['1.17.1'],
+  // Linux linker flags (-z, -soname) on macOS; 1.15.2+ works on both
+  'webmproject.org/libvpx': ['1.13.1', '1.14.1'],
+  // Old cmake bootstrap failure on darwin; already built on linux.
+  // 3.27.6 fails on linux. 4.0.6+ works on both.
+  'cmake.org': ['3.27.6', '3.31.11'],
+  // Header-only library fails on linux; 1.0.0/1.0.1 fail on both
+  'glm.g-truc.net': ['0.9.9.8', '1.0.0', '1.0.1'],
+  // Old GMP configure error; 6.3.0 works on both
+  'gnu.org/gmp': ['6.2.1'],
+  // Go module incompatibility; latest 1.1.4 works
+  'go.dev/govulncheck': ['1.0.4'],
+  // Old Go build failure; 2.11.2+ works
+  'goreleaser.com': ['1.26.2'],
+  // Old wails Go build failure; 2.9.3+ works
+  'wails.io': ['2.8.2'],
+  // Old flywaydb Java failure; 11.20.3+ works
+  'flywaydb.org': ['10.22.0'],
+  // Old cedar-agent Rust build failure; 0.2.0+ works
+  'permit.io/cedar-agent': ['0.1.3', '0.1.4'],
+  // Old himalaya Rust build failure; 1.2.0 works
+  'pimalaya.org/himalaya': ['0.8.4', '0.9.0', '1.0.0', '1.1.0'],
+  // Very old brewkit version; 1.16.0+ works
+  'pkgx.sh/brewkit': ['0.55.8'],
+  // Tarball 404 / old version build failure
+  'priver.dev/geni': ['0.0.11', '2023.12.27'],
+  'github.com/yashs662/rust_kanban': ['0.9.7'],
+  // Tarball 404 for croc 10.4.0
+  'schollz.com/croc': ['10.4.0'],
+  // Old capnproto C++ build fails on linux; 1.3.0 works on both
+  'capnproto.org': ['1.2.0'],
+  // Old protobuf-c versions; 1.5.2 works on both
+  'github.com/protobuf-c/protobuf-c': ['1.5.0', '1.5.1'],
+  // Old vanna.ai Python build failure; 2.0.2 works on both
+  'vanna.ai': ['0.7.9'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
