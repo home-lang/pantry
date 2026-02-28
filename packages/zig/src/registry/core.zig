@@ -99,7 +99,7 @@ pub const RegistryConfig = struct {
     pub fn pantry(allocator: std.mem.Allocator) !RegistryConfig {
         return RegistryConfig{
             .type = .pantry,
-            .url = try allocator.dupe(u8, "https://registry.stacksjs.org"),
+            .url = try allocator.dupe(u8, "https://registry.stacksjs.com"),
             .auth = .none,
             .priority = 1,
             .name = try allocator.dupe(u8, "pantry"),

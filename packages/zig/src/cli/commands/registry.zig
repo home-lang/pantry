@@ -19,7 +19,7 @@ const install = lib.install;
 const lifecycle = lib.lifecycle;
 
 /// Default Pantry registry URL
-const PANTRY_REGISTRY_URL = "https://registry.stacksjs.org";
+const PANTRY_REGISTRY_URL = "https://registry.stacksjs.com";
 
 /// Search for packages in the registry
 pub fn searchCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {

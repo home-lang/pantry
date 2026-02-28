@@ -18,7 +18,7 @@ const registry_commands = @import("registry.zig");
 const CommandResult = common.CommandResult;
 
 /// Default Pantry registry URL
-const PANTRY_REGISTRY_URL = "https://registry.stacksjs.org";
+const PANTRY_REGISTRY_URL = "https://registry.stacksjs.com";
 
 pub const PublishCommitOptions = struct {
     registry: []const u8 = PANTRY_REGISTRY_URL,

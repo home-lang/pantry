@@ -797,7 +797,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const access = ctx.getOption("access") orelse "public";
     const tag = ctx.getOption("tag") orelse "latest";
-    const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.org";
+    const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.com";
     const token = ctx.getOption("token");
     const dry_run = ctx.hasOption("dry-run");
     const use_npm = ctx.hasOption("npm");
@@ -853,7 +853,7 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
 fn publishCommitAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
-    const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.org";
+    const registry = ctx.getOption("registry") orelse "https://registry.stacksjs.com";
     const token = ctx.getOption("token");
     const dry_run = ctx.hasOption("dry-run");
     const compact = ctx.hasOption("compact");
@@ -3047,7 +3047,7 @@ pub fn main() !void {
     _ = try publish_cmd.addOption(pub_tag_opt);
 
     const pub_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
-        .withDefault("https://registry.stacksjs.org");
+        .withDefault("https://registry.stacksjs.com");
     _ = try publish_cmd.addOption(pub_registry_opt);
 
     const pub_token_opt = cli.Option.init("token", "token", "Authentication token", .string);
@@ -3077,7 +3077,7 @@ pub fn main() !void {
     var publish_commit_cmd = try cli.BaseCommand.init(allocator, "publish:commit", "Publish packages from current git commit (like pkg-pr-new)");
 
     const pc_registry_opt = cli.Option.init("registry", "registry", "Registry URL", .string)
-        .withDefault("https://registry.stacksjs.org");
+        .withDefault("https://registry.stacksjs.com");
     _ = try publish_commit_cmd.addOption(pc_registry_opt);
 
     const pc_token_opt = cli.Option.init("token", "token", "Authentication token", .string);

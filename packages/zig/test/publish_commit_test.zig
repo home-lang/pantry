@@ -60,14 +60,14 @@ test "commit S3 key format is correct" {
 test "commit install URL format is correct" {
     const allocator = testing.allocator;
 
-    const registry = "https://registry.stacksjs.org";
+    const registry = "https://registry.stacksjs.com";
     const sha = "abc1234";
     const name = "@stacksjs/actions";
 
     const url = try std.fmt.allocPrint(allocator, "{s}/commits/{s}/{s}/tarball", .{ registry, sha, name });
     defer allocator.free(url);
 
-    try testing.expectEqualStrings("https://registry.stacksjs.org/commits/abc1234/@stacksjs/actions/tarball", url);
+    try testing.expectEqualStrings("https://registry.stacksjs.com/commits/abc1234/@stacksjs/actions/tarball", url);
 }
 
 // ============================================================================
