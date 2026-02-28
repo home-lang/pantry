@@ -6481,7 +6481,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── cython.org/libcython — pin Python <3.14 ──────────────────────
   // Cython 0.29.x uses _PyLong_AsByteArray with old 5-arg signature;
-  // Python 3.14 changed to 6 args. Only Python 3.12 available in S3.
+  // Python 3.14 changed to 6 args. Python 3.12 only available on darwin in S3.
+  // On linux (only Python 3.14), skip since we can't patch generated C reliably.
   'cython.org/libcython': {
     modifyRecipe: (recipe: any) => {
       if (recipe.dependencies?.['python.org']) {
@@ -6490,17 +6491,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── mkdocs.org — pin Python <3.14 + pre-install setuptools ──────────
-  // Python 3.12+ removed distutils; babel fallback needs setuptools.
-  // mkdocs 1.5.3 also needs hatchling available for build backend.
+  // ─── mkdocs.org — disable pip build isolation + install hatchling ─────
+  // mkdocs requires hatchling as its build backend (in pyproject.toml).
+  // pip's build isolation creates a fresh env without hatchling, failing with
+  // ModuleNotFoundError. Disabling isolation lets pip use system-installed hatchling.
   'mkdocs.org': {
-    modifyRecipe: (recipe: any) => {
-      if (recipe.dependencies?.['python.org']) {
-        recipe.dependencies['python.org'] = '>=3<3.14'
-      }
-    },
+    env: { PIP_NO_BUILD_ISOLATION: '1' },
     prependScript: [
-      'python3 -m pip install --break-system-packages setuptools hatchling 2>/dev/null || true',
+      'python3 -m pip install --break-system-packages setuptools hatchling hatch-requirements-txt "wheel<1" 2>/dev/null || pip3 install --break-system-packages setuptools hatchling hatch-requirements-txt "wheel<1" 2>/dev/null || true',
     ],
   },
 
@@ -6510,11 +6508,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: { CFLAGS: '-Wno-error=implicit-int -Wno-error=implicit-function-declaration -Wno-error=int-conversion' },
   },
 
-  // ─── gnu.org/diffutils — fix SIGSTKSZ for glibc 2.34+ ────────────────
-  // SIGSTKSZ is no longer a compile-time constant; preprocessor #elif fails.
+  // ─── gnu.org/diffutils — fix SIGSTKSZ + gets() for modern glibc ──────
+  // SIGSTKSZ is no longer a compile-time constant in glibc 2.34+.
+  // gets() was removed from glibc headers (deprecated since C11).
   'gnu.org/diffutils': {
     prependScript: [
       `sed -i.bak 's/HAVE_LIBSIGSEGV && SIGSTKSZ < 16384/0/' lib/c-stack.c 2>/dev/null || true`,
+      `sed -i.bak '/^_GL_WARN_ON_USE (gets,/d' lib/stdio.in.h lib/stdio.h 2>/dev/null || true`,
     ],
   },
 
@@ -6524,6 +6524,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       `sed -i.bak 's/-Xswiftc -static-stdlib//g' Makefile 2>/dev/null || true`,
     ],
+  },
+
+  // ─── fltk.org — disable Wayland on linux ─────────────────────────────
+  // CI runners lack wayland-protocols / wayland-scanner, causing
+  // "xdg-shell-client-protocol.h: No such file or directory". Disable Wayland.
+  'fltk.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--disable-wayland')
+      }
+    },
+  },
+
+  // ─── protobuf-c — ensure abseil shared libs are findable ────────────
+  // protoc from protobuf.dev 34.0.0 links against libabsl_log_initialize.so
+  // which isn't in the default linker path. Set LD_LIBRARY_PATH.
+  'github.com/protobuf-c/protobuf-c': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$(find /tmp/buildkit-deps -name "libabsl_log_initialize.so*" -printf "%h\n" -quit 2>/dev/null || echo /usr/lib)"',
+          'export PKG_CONFIG_PATH="$(find /tmp/buildkit-deps -name "absl_log_initialize.pc" -printf "%h\n" -quit 2>/dev/null || echo /usr/lib/pkgconfig):${PKG_CONFIG_PATH:-}"',
+        ],
+      },
+    },
   },
 
   // ─── tuist.io/xcbeautify — cap swift-tools-version at 5.10 ──────────

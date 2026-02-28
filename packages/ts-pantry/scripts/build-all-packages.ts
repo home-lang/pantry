@@ -232,7 +232,34 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
 // --- Version Selection ---
 
 // Versions with fundamental toolchain incompatibilities that can't be resolved with overrides.
-// S3 dep resolution always picks latestVersion and ignores YAML constraints (e.g., ~3.11).
+// These are skipped during multi-version builds because they fail deterministically.
+// Key: package domain, Value: array of version specs to skip
+//   - Exact version: '14.0.1' — skips that specific version
+//   - '*' — skips ALL versions (package can't be built with current S3 deps)
+const SKIP_VERSIONS: Record<string, string[]> = {
+  // clap_mangen 0.2.31 uses private get_display_order() from clap_builder 4.6.0
+  'crates.io/topgrade': ['14.0.1'],
+  // nix crate restructured API — Pid, SigSet, Signal moved from their module paths
+  'just.systems': ['1.42.4'],
+  // gnu.org/diffutils 3.2.0: gets() removed from glibc 2.32+ and SIGSTKSZ non-constant
+  'gnu.org/diffutils': ['3.2.0'],
+  // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;
+  // spin's build.rs hardcodes wasm32-wasi which can't be fixed via overrides
+  'fermyon.com/spin': ['*'],
+  // Go 1.26 has stricter constant expression handling that breaks vendored tokeninternal;
+  // also build exceeds timeout. Only Go 1.26 is available in S3.
+  'cuelang.org': ['0.11.2', '0.12.1'],
+  // gvisor build constraints exclude all Go files under Go 1.26 (gohacks package)
+  'fly.io': ['0.0.559'],
+  'github.com/containers/gvisor-tap-vsock': ['0.6.2'],
+}
+
+function isVersionSkipped(domain: string, version: string): boolean {
+  const specs = SKIP_VERSIONS[domain]
+  if (!specs) return false
+  return specs.includes(version) || specs.includes('*')
+}
+
 /**
  * Select important versions to build for a package.
  * Strategy:
@@ -241,9 +268,12 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
  * 3. Include latest patch of each minor version within current major
  * 4. Cap at maxVersions total
  * 5. Skip sentinel versions (999.999.999, 0.0.0)
+ * 6. Skip fundamentally unbuildable versions (SKIP_VERSIONS)
  */
 function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): string[] {
-  const validVersions = pkg.versions.filter(v => v !== '999.999.999' && v !== '0.0.0')
+  const validVersions = pkg.versions.filter(v =>
+    v !== '999.999.999' && v !== '0.0.0' && !isVersionSkipped(pkg.domain, v)
+  )
   if (validVersions.length === 0) return []
   if (validVersions.length <= maxVersions) return validVersions
 
