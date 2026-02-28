@@ -3,7 +3,7 @@
  *
  * @domain `sing-box.app`
  * @programs `sing-box`
- * @version `1.12.23` (77 versions available)
+ * @version `1.13.0` (78 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install sing-box.app`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "sing-box"
  * console.log(pkg.description) // "The universal proxy platform"
  * console.log(pkg.programs)    // ["sing-box"]
- * console.log(pkg.versions[0]) // "1.12.23" (latest)
+ * console.log(pkg.versions[0]) // "1.13.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/sing-box-app.md
@@ -68,6 +68,7 @@ export const singboxappPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.13.0',
     '1.12.23',
     '1.12.22',
     '1.12.21',
