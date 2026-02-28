@@ -400,6 +400,12 @@ async function buildAndUpload(
   console.log(`📦 ${name} (${domain}) v${version}`)
   console.log(`${'─'.repeat(60)}`)
 
+  // Skip versions with known fundamental toolchain incompatibilities
+  if (isVersionSkipped(domain, version)) {
+    console.log(`   ⚠️  Version ${version} skipped (known incompatibility)`)
+    return { status: 'skipped' }
+  }
+
   // Skip sentinel/placeholder versions
   if (version === '999.999.999' || version === '0.0.0') {
     // Try to find a real version
