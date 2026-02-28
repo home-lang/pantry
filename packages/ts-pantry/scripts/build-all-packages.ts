@@ -32,6 +32,7 @@ import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
 import { S3Client } from '@stacksjs/ts-cloud/aws'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
+import { packageOverrides } from './package-overrides.ts'
 
 // Import package metadata
 const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
@@ -128,9 +129,11 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
           const content = readFileSync(yamlPath, 'utf-8')
           const recipe = parseYaml(content)
 
-          // Check platform compatibility
-          if (targetOsName && recipe.platforms) {
-            const platforms = Array.isArray(recipe.platforms) ? recipe.platforms : [String(recipe.platforms)]
+          // Check platform compatibility (override platforms take precedence over recipe)
+          const override = packageOverrides[domain]
+          const recipePlatforms = override?.platforms ?? recipe.platforms
+          if (targetOsName && recipePlatforms) {
+            const platforms = Array.isArray(recipePlatforms) ? recipePlatforms : [String(recipePlatforms)]
             const isCompatible = platforms.some((p: string) => {
               const ps = String(p).trim()
               if (ps === targetOsName) return true
