@@ -6174,9 +6174,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/moretension/duti — fix make install on darwin ──────────
 
   'github.com/moretension/duti': {
-    // Fix: configure produces empty -mmacosx-version-min= on darwin24+.
-    // Set MACOSX_DEPLOYMENT_TARGET so configure picks it up correctly.
-    env: { MACOSX_DEPLOYMENT_TARGET: '11.0' },
+    // Fix: configure produces empty -mmacosx-version-min= and wrong -arch i386/x86_64 on darwin24+.
+    // Override CFLAGS/LDFLAGS to force correct arm64 arch and deployment target.
+    env: {
+      MACOSX_DEPLOYMENT_TARGET: '11.0',
+      CFLAGS: '-arch arm64 -mmacosx-version-min=11.0',
+      LDFLAGS: '-arch arm64 -mmacosx-version-min=11.0',
+    },
     modifyRecipe: (recipe: any) => {
       // Fix: nullglob causes ? in URLs to be treated as glob — quote all curl URLs
       if (Array.isArray(recipe.build?.script)) {
@@ -6191,15 +6195,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
         }
         // Fix: GitHub archive tarballs don't include pre-generated configure.
         // autoreconf generates a configure with shell syntax errors on newer autoconf.
-        // Keep autoreconf but run configure with explicit /bin/bash and patch darwin24+ support.
         for (let i = 0; i < recipe.build.script.length; i++) {
           if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('autoreconf')) {
             recipe.build.script[i] = 'autoreconf -fi'
           }
           if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('./configure')) {
-            // Patch configure for darwin24+ support, then run with /bin/bash to avoid syntax errors
+            // Patch configure for darwin24+, strip arch/version flags from CFLAGS inside configure
+            // (let our env CFLAGS override instead), then run with /bin/bash
             recipe.build.script[i] = [
               `sed -i.bak '/is not a supported system/s/as_fn_error[^;]*/: # accept unknown darwin version/' configure`,
+              `sed -i.bak 's/-arch i386 -arch x86_64//g; s/-mmacosx-version-min=[^ ]*//' configure`,
               `/bin/bash ./configure $ARGS`,
             ].join(' && ')
           }

@@ -255,11 +255,11 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old flyctl versions use old gvisor which is incompatible with Go 1.26.
   'fly.io': ['0.0.558', '0.0.559', '0.2.127'],
   'github.com/containers/gvisor-tap-vsock': ['0.6.1', '0.6.2'],
-  // frizbee crate restructured (E0405/E0425/E0432) — newer skim versions work
-  'crates.io/skim': ['2.0.2', '1.11.2'],
+  // frizbee crate restructured (E0405/E0425/E0432) + edition2024 issues — newer skim versions work
+  'crates.io/skim': ['2.0.2', '2.0.1', '1.11.2', '1.11.1'],
   // Cython 0.29.x uses _PyLong_AsByteArray(5 args) — Python 3.14 needs 6 args.
   // Only Python 3.14 available on linux. Newer Cython 3.x already in S3.
-  'cython.org/libcython': ['0.29.37.1'],
+  'cython.org/libcython': ['0.29.37', '0.29.37.1'],
   // Python 3.14 removed distutils; mkdocs 1.5.3 depends on babel→distutils.
   // mkdocs 1.6+ already in S3 and works fine.
   'mkdocs.org': ['1.5.3'],
@@ -354,6 +354,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/protobuf-c/protobuf-c': ['1.5.0', '1.5.1'],
   // Old vanna.ai Python build failure; 2.0.2 works on both
   'vanna.ai': ['0.7.9'],
+  // Old zlib tarballs removed from server (404)
+  'zlib.net': ['1.2.12', '1.2.13', '1.3.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
