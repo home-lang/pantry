@@ -367,8 +367,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
   'github.com/TomWright/dasel': ['3.1.5'],
-  // 11.1.3 requires bpf-linker for mitmproxy-linux-ebpf on linux; 10.4.2 & 12.x work
-  'mitmproxy.org': ['11.1.3'],
+  // 11.1.x requires bpf-linker for mitmproxy-linux-ebpf on linux; 10.4.2 & 12.x work
+  'mitmproxy.org': ['11.1.2', '11.1.3'],
   // Old Rust build failures; 0.12.2+ works on linux, 0.10.1+ works on darwin
   'prql-lang.org': ['<0.12.0'],
   // Old scryer-prolog fails on darwin; 0.10.0 works on both
@@ -395,14 +395,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnu.org/inetutils': ['<2.7.0'],
   // bc 1.7.1 fails on linux; 1.8.0+ works on both
   'gnu.org/bc': ['<1.8.0'],
-  // Old spotify_player Rust build failure; 0.21.3+ works on darwin, 0.19.1+ on linux
-  'crates.io/spotify_player': ['<0.21.0'],
-  // mockgen 0.5.2 fails on darwin; 0.3.0, 0.4.0, 0.6.0 all work
-  'go.uber.org/mock/mockgen': ['0.5.2'],
+  // spotify_player Xcode 26.3 IOKit/CoreGraphics errors on darwin; 0.22.0+ works
+  'crates.io/spotify_player': ['<0.22.0'],
+  // mockgen 0.5.x fails (Go x/tools tokeninternal); 0.4.0 and 0.6.0 work
+  'go.uber.org/mock/mockgen': ['<0.6.0'],
   // Old hurl.dev Rust build fails on darwin; 7.0.0+ works
   'hurl.dev': ['<7.0.0'],
-  // Old convco Rust libiconv on darwin; 0.6.2 works on both
-  'convco.github.io': ['<0.6.0'],
+  // convco Rust libiconv on darwin; 0.6.2+ works on both
+  'convco.github.io': ['<0.6.2'],
   // gifsicle 1.95.0 fails on linux; 1.96.0 works
   'lcdf.org/gifsicle': ['1.95.0'],
   // Old whisper versions fail (Python/pip issues); only latest works
@@ -415,8 +415,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'xtls.github.io': ['<24.0.0'],
   // git-crypt 0.7.0 fails on linux; 0.8.0 works
   'agwa.name/git-crypt': ['<0.8.0'],
-  // fselect 0.8.12 fails on darwin; 0.9.2 works on both
-  'crates.io/fselect': ['<0.9.0'],
+  // fselect libiconv linker error on darwin; 0.10.0+ works on both
+  'crates.io/fselect': ['<0.10.0'],
   // silicon 0.5.2 fails; 0.5.1 and 0.5.3 work
   'crates.io/silicon': ['0.5.2'],
   // Old cryptography.io Python/Rust build fails; 43.0.3+ works
@@ -427,8 +427,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/oneapi-src/oneTBB': ['<2022.4.0'],
   // Old nushell Rust build fails on darwin; 0.108.0+ works
   'nushell.sh': ['<0.108.0'],
-  // Old duckdb cmake fails on darwin; 1.1.3+ works on both
-  'duckdb.org': ['<1.0.0'],
+  // Old duckdb cmake fails on darwin; 1.1.3+ works on both (1.0.0 also fails)
+  'duckdb.org': ['<1.1.0'],
   // Old pakku fails on darwin; 0.4.2+ works on both
   'github.com/mycreepy/pakku': ['<0.4.0'],
   // Old z3 cmake fails on darwin; 4.13.4+ works on both
@@ -521,6 +521,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'libvips.org': ['<8.18.0'],
   // MariaDB server: extremely slow build (~60min each), times out CI
   'mariadb.com/server': ['*'],
+  // starship old versions fail on darwin (Xcode 26.3 IOKit/CoreGraphics); 1.24.0+ works
+  'starship.rs': ['<1.24.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
