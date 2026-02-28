@@ -214,7 +214,7 @@ fn discoverNpmBinaries(
 
 /// Discover binaries in a package directory
 /// First checks for npm package structure (lib/node_modules/*/bin/*)
-/// Falls back to standard pkgx bin/ directory
+/// Falls back to standard bin/ and sbin/ directories
 pub fn discoverBinaries(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
@@ -226,17 +226,6 @@ pub fn discoverBinaries(
     }
     defer allocator.free(npm_bins);
 
-    // Fall back to standard bin directory
-    const bin_dir = try std.fmt.allocPrint(allocator, "{s}/bin", .{package_dir});
-    defer allocator.free(bin_dir);
-
-    // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-    var dir = io_helper.openDirForIteration(bin_dir) catch {
-        // No bin directory
-        return try allocator.alloc(BinaryInfo, 0);
-    };
-    defer dir.close();
-
     var binaries = try std.ArrayList(BinaryInfo).initCapacity(allocator, 8);
     errdefer {
         for (binaries.items) |*bin| {
@@ -245,29 +234,39 @@ pub fn discoverBinaries(
         binaries.deinit(allocator);
     }
 
-    var it = dir.iterate();
-    while (it.next() catch null) |entry| {
-        if (entry.kind == .file or entry.kind == .sym_link) {
-            const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name });
-            errdefer allocator.free(full_path);
+    // Scan both bin/ and sbin/ directories (e.g. RabbitMQ uses sbin/)
+    const bin_dirs = [_][]const u8{ "bin", "sbin" };
+    for (bin_dirs) |subdir| {
+        const scan_dir = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, subdir });
+        defer allocator.free(scan_dir);
 
-            // Check if executable - try io_helper stat first, fall back to
-            // treating all files in bin/ as executables (mode may be 0 on
-            // some platforms where the Io layer doesn't expose permissions)
-            const stat = io_helper.statFile(full_path) catch {
-                allocator.free(full_path);
-                continue;
-            };
-            const is_executable = if (stat.mode != 0)
-                (stat.mode & 0o111) != 0
-            else
-                true; // In bin/ directory, assume executable if mode unavailable
+        var dir = io_helper.openDirForIteration(scan_dir) catch continue;
+        defer dir.close();
 
-            if (is_executable) {
-                try binaries.append(allocator, .{
-                    .name = try allocator.dupe(u8, entry.name),
-                    .path = full_path,
-                });
+        var it = dir.iterate();
+        while (it.next() catch null) |entry| {
+            if (entry.kind == .file or entry.kind == .sym_link) {
+                const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ scan_dir, entry.name });
+                errdefer allocator.free(full_path);
+
+                // Check if executable - try io_helper stat first, fall back to
+                // treating all files in bin/ as executables (mode may be 0 on
+                // some platforms where the Io layer doesn't expose permissions)
+                const stat = io_helper.statFile(full_path) catch {
+                    allocator.free(full_path);
+                    continue;
+                };
+                const is_executable = if (stat.mode != 0)
+                    (stat.mode & 0o111) != 0
+                else
+                    true; // In bin/sbin directory, assume executable if mode unavailable
+
+                if (is_executable) {
+                    try binaries.append(allocator, .{
+                        .name = try allocator.dupe(u8, entry.name),
+                        .path = full_path,
+                    });
+                }
             }
         }
     }
