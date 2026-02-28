@@ -141,17 +141,18 @@ jobs:
       - name: Build pantry CLI
         run: cd packages/zig && zig build
 
-      - name: Verify AWS credentials
-        run: aws sts get-caller-identity
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+      - name: Configure AWS credentials
+        run: |
+          mkdir -p ~/.aws
+          cat > ~/.aws/credentials << EOC
+          [default]
+          aws_access_key_id = ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key = ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          EOC
+          cat > ~/.aws/config << EOC
+          [default]
+          region = us-east-1
+          EOC
 
       - name: Continuous Releases
         run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
-        env:
-          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
