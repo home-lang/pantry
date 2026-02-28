@@ -5862,16 +5862,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── c-ares.org — fix inline cmake prefix quote in script string ─────
+  // ─── c-ares.org — fix cmake prefix quote + broken dnsinfo.h download ──
 
   'c-ares.org': {
     modifyRecipe: (recipe: any) => {
-      // cmake prefix is inline in a script string, not in env array
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
+          // Fix inline cmake prefix quote in script string
           if (typeof step === 'string' && step.includes('INSTALL_PREFIX="{{prefix}}"')) {
             recipe.build.script[i] = step.replace(/(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"/, '$1$2')
+          }
+          // Remove broken Apple dnsinfo.h curl download (returns 404 HTML)
+          if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('dnsinfo.h')) {
+            recipe.build.script[i] = 'rm -f src/lib/thirdparty/apple/dnsinfo.h 2>/dev/null || true'
           }
         }
       }
@@ -6434,25 +6438,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
             // Replace individual cp with copying from glm/ subdirectory
             recipe.build.script[i] = step
               .replace("cp -a detail ext gtc gtx simd *.hpp", "cp -a glm/detail glm/ext glm/gtc glm/gtx glm/simd glm/*.hpp")
-          }
-        }
-      }
-    },
-  },
-
-  // ─── c-ares.org — skip broken Apple dnsinfo.h download ────────────────
-  // The Apple open source URL for dnsinfo.h returns a 404 HTML page.
-  // Remove the broken download step and delete any stale dnsinfo.h so cmake
-  // correctly detects the header as missing and disables macOS DNS config.
-  'c-ares.org': {
-    modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.script)) {
-        // Replace the broken Apple dnsinfo.h curl download with a cleanup step.
-        // Without dnsinfo.h, cmake detects it as missing and disables macOS DNS config.
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
-          if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('dnsinfo.h')) {
-            recipe.build.script[i] = 'rm -f src/lib/thirdparty/apple/dnsinfo.h 2>/dev/null || true'
           }
         }
       }
