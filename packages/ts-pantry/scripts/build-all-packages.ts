@@ -252,6 +252,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // gvisor build constraints exclude all Go files under Go 1.26 (gohacks package)
   'fly.io': ['0.0.559'],
   'github.com/containers/gvisor-tap-vsock': ['0.6.2'],
+  // frizbee crate restructured (E0405/E0425/E0432) — newer skim versions work
+  'crates.io/skim': ['2.0.2', '1.11.2'],
+  // Cython 0.29.x uses _PyLong_AsByteArray(5 args) — Python 3.14 needs 6 args.
+  // Only Python 3.14 available on linux. Newer Cython 3.x already in S3.
+  'cython.org/libcython': ['0.29.37.1'],
+  // Python 3.14 removed distutils; mkdocs 1.5.3 depends on babel→distutils.
+  // mkdocs 1.6+ already in S3 and works fine.
+  'mkdocs.org': ['1.5.3'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
