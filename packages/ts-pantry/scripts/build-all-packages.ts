@@ -239,8 +239,10 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
 const SKIP_VERSIONS: Record<string, string[]> = {
   // clap_mangen 0.2.31 uses private get_display_order() from clap_builder 4.6.0
   'crates.io/topgrade': ['14.0.1'],
-  // nix crate restructured API — Pid, SigSet, Signal moved from their module paths
-  'just.systems': ['1.42.4'],
+  // nix crate restructured API — Pid, SigSet, Signal, sigaction moved/feature-gated
+  'just.systems': ['1.42.3', '1.42.4'],
+  // Old time crate v0.3.30 incompatible with newer rustc (type annotations needed)
+  'gleam.run': ['0.34.1'],
   // gnu.org/diffutils 3.2.0: gets() removed from glibc 2.32+ and SIGSTKSZ non-constant
   'gnu.org/diffutils': ['3.2.0'],
   // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;

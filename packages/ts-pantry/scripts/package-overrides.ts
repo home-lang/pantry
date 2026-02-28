@@ -6540,17 +6540,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── protobuf-c — ensure abseil shared libs are findable ────────────
-  // protoc from protobuf.dev 34.0.0 links against libabsl_log_initialize.so
-  // which isn't in the default linker path. Set LD_LIBRARY_PATH.
+  // ─── protobuf-c — fix abseil ABI mismatch ────────────────────────────
+  // protobuf.dev 34.0.0 was compiled against abseil 20260107 (ABI version 2601).
+  // The YAML pins abseil.io: ^20250127 which selects 20250127.2.0 (ABI 2501).
+  // Override abseil constraint to match what protobuf was actually built with.
   'github.com/protobuf-c/protobuf-c': {
-    platforms: {
-      linux: {
-        prependScript: [
-          'export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}:$(find /tmp/buildkit-deps -name "libabsl_log_initialize.so*" -printf "%h\n" -quit 2>/dev/null || echo /usr/lib)"',
-          'export PKG_CONFIG_PATH="$(find /tmp/buildkit-deps -name "absl_log_initialize.pc" -printf "%h\n" -quit 2>/dev/null || echo /usr/lib/pkgconfig):${PKG_CONFIG_PATH:-}"',
-        ],
-      },
+    modifyRecipe: (recipe: any) => {
+      if (recipe.dependencies?.['abseil.io']) {
+        recipe.dependencies['abseil.io'] = '>=20260107'
+      }
     },
   },
 
