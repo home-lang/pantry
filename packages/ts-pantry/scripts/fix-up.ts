@@ -78,8 +78,10 @@ function fixMachoRpaths(prefix: string): void {
           }
         }
 
-        // Add relative rpath if not already present
-        const relRpath = dir === 'lib' ? '@loader_path' : '@loader_path/../lib'
+        // Add relative rpath pointing from this binary's directory to prefix/lib
+        const fileDir = dirname(filePath)
+        const relToLib = relative(fileDir, join(prefix, 'lib'))
+        const relRpath = relToLib === '' ? '@loader_path' : `@loader_path/${relToLib}`
         const existingRpaths = [...otoolOutput.matchAll(/path\s+(.+?)\s+\(offset/g)].map(m => m[1])
         if (!existingRpaths.includes(relRpath)) {
           try {
