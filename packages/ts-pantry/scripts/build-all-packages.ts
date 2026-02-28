@@ -1010,7 +1010,7 @@ Options:
     'videolan.org/x265', // cmake multi-build (10bit/12bit/8bit) directory management + make failure
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
-    'opensearch.org', // Requires Java 21+ but CI provides older Java
+    // opensearch.org removed — openjdk.org override now downloads pre-built Temurin JDK
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
     // nx.dev removed — successfully built and uploaded
     'gnu.org/texinfo', // cc wrapper + libtool interaction causes shell syntax error in gnulib

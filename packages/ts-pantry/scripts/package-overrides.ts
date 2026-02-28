@@ -4042,7 +4042,49 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // openresty.org — no override needed: buildkit sed wrapper now finds gsed in Homebrew opt paths
 
-  // ─── opensearch.org — fix sed -i BSD compat ──────────────────────────
+  // ─── openjdk.org — download pre-built Adoptium Temurin binaries ──────
+  // Building OpenJDK from source requires 30+ deps and 60+ min compile time.
+  // Instead, download pre-built Adoptium Temurin JDK binaries which are identical
+  // in functionality and much faster/more reliable.
+
+  'openjdk.org': {
+    modifyRecipe: (recipe: any) => {
+      // Strip all source dependencies — we download pre-built binaries
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        // Replace the build script with a simple Temurin download
+        recipe.build.script = [
+          [
+            '# Download pre-built Adoptium Temurin JDK',
+            'MAJOR=$(echo "{{version}}" | cut -d. -f1)',
+            'VERSION_TAG="{{version.tag}}"',
+            'VERSION_SAFE=$(echo "{{version.raw}}" | sed "s/+/_/g")',
+            '',
+            'if test "{{hw.platform}}" = "darwin"; then',
+            '  ARCH="{{hw.arch}}"',
+            '  test "$ARCH" = "aarch64" || ARCH="x64"',
+            '  OS="mac"',
+            '  STRIP=3',
+            'else',
+            '  ARCH="{{hw.arch}}"',
+            '  test "$ARCH" = "x86-64" && ARCH="x64"',
+            '  OS="linux"',
+            '  STRIP=1',
+            'fi',
+            '',
+            'URL="https://github.com/adoptium/temurin${MAJOR}-binaries/releases/download/jdk-${VERSION_TAG}/OpenJDK${MAJOR}U-jdk_${ARCH}_${OS}_hotspot_${VERSION_SAFE}.tar.gz"',
+            'echo "Downloading: $URL"',
+            'curl -fSL "$URL" | tar xz --strip-components=$STRIP -C "{{prefix}}"',
+          ].join('\n'),
+        ]
+        // Clear build env vars that reference deps
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── opensearch.org — fix sed -i BSD compat + set JAVA_HOME ──────────
 
   'opensearch.org': {
     modifyRecipe: (recipe: any) => {
