@@ -240,26 +240,26 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // clap_mangen 0.2.31 uses private get_display_order() from clap_builder 4.6.0
   'crates.io/topgrade': ['14.0.1'],
   // nix crate restructured API — Pid, SigSet, Signal, sigaction moved/feature-gated
-  'just.systems': ['1.42.3', '1.42.4'],
+  'just.systems': ['<1.43.0'],
   // Old time crate v0.3.30 incompatible with newer rustc (type annotations needed)
-  'gleam.run': ['0.34.1'],
+  'gleam.run': ['<1.0.0'],
   // gnu.org/diffutils 3.2.0: gets() removed from glibc 2.32+ and SIGSTKSZ non-constant
   'gnu.org/diffutils': ['3.2.0'],
   // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;
   // spin's build.rs hardcodes wasm32-wasi which can't be fixed via overrides
   'fermyon.com/spin': ['*'],
   // Go 1.26 breaks vendored tokeninternal + linker/timeout issues.
-  // Only Go 1.26 is available in S3. Newer versions (0.13+) already in S3.
-  'cuelang.org': ['0.10.1', '0.11.0', '0.11.1', '0.11.2', '0.12.0', '0.12.1'],
+  // Only Go 1.26 is available in S3. All versions below 0.13 fail.
+  'cuelang.org': ['<0.13.0'],
   // gvisor build constraints exclude all Go files under Go 1.26 (gohacks package).
   // Old flyctl versions use old gvisor which is incompatible with Go 1.26.
-  'fly.io': ['0.0.558', '0.0.559', '0.2.127'],
-  'github.com/containers/gvisor-tap-vsock': ['0.6.1', '0.6.2'],
+  'fly.io': ['<0.3.0'],
+  'github.com/containers/gvisor-tap-vsock': ['<0.7.0'],
   // frizbee crate restructured (E0405/E0425/E0432) + edition2024 issues — newer skim versions work
-  'crates.io/skim': ['2.0.2', '2.0.1', '1.11.2', '1.11.1'],
+  'crates.io/skim': ['<3.0.0'],
   // Cython 0.29.x uses _PyLong_AsByteArray(5 args) — Python 3.14 needs 6 args.
   // Only Python 3.14 available on linux. Newer Cython 3.x already in S3.
-  'cython.org/libcython': ['0.29.37', '0.29.37.1'],
+  'cython.org/libcython': ['<3.0.0'],
   // Python 3.14 removed distutils; mkdocs 1.5.3 depends on babel→distutils.
   // mkdocs 1.6+ already in S3 and works fine.
   'mkdocs.org': ['1.5.3'],
@@ -301,7 +301,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/xiph/rav1e': ['0.6.6', '0.7.1'],
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error);
   // lychee 0.15.1 (latest) builds fine
-  'lychee.cli.rs': ['0.14.1', '0.14.2', '0.14.3', '0.15.0'],
+  'lychee.cli.rs': ['<0.15.1'],
   // pip requirements.txt missing trailing newline causes merged line; 3.8.1+ builds fine
   'localstack.cloud/cli': ['2.3.2'],
   // Old autotools configure script; 2.15.0+ builds fine.
@@ -312,12 +312,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'mypy-lang.org': ['1.16.1'],
   // libiconv linking failure on darwin (libgit2-sys/onig-sys); built on linux.
   // Latest versions of each package work on both platforms.
-  'crates.io/git-delta': ['0.16.4', '0.16.5', '0.17.0'],
-  'crates.io/bat': ['0.22.1', '0.23.0', '0.24.0', '0.25.0'],
-  'crates.io/broot': ['1.26.0', '1.51.0', '1.52.0', '1.53.0', '1.54.0'],
-  'github.com/peltoche/lsd': ['1.0.0', '1.1.5'],
+  'crates.io/git-delta': ['<0.18.0'],
+  'crates.io/bat': ['<0.26.0'],
+  'crates.io/broot': ['<1.55.0'],
+  'github.com/peltoche/lsd': ['<1.2.0'],
   // TryLockError API change in newer Rust; latest 0.10.0 works
-  'crates.io/git-branchless': ['0.7.1', '0.8.0', '0.9.0'],
+  'crates.io/git-branchless': ['<0.10.0'],
   // npm cache corruption on old version; 1.18.3+ works
   'github.com/Everduin94/better-commits': ['1.17.1'],
   // Linux linker flags (-z, -soname) on macOS; 1.15.2+ works on both
@@ -329,18 +329,18 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'glm.g-truc.net': ['0.9.9.8', '1.0.0', '1.0.1'],
   // Old GMP configure error; 6.3.0 works on both
   'gnu.org/gmp': ['6.2.1'],
-  // Go module incompatibility; latest 1.1.4 works
-  'go.dev/govulncheck': ['1.0.4'],
+  // Go module incompatibility; 1.1.0+ works
+  'go.dev/govulncheck': ['<1.1.0'],
   // Old Go build failure; 2.11.2+ works
-  'goreleaser.com': ['1.26.2'],
+  'goreleaser.com': ['<2.0.0'],
   // Old wails Go build failure; 2.9.3+ works
   'wails.io': ['2.8.2'],
   // Old flywaydb Java failure; 11.20.3+ works
   'flywaydb.org': ['10.22.0'],
   // Old cedar-agent Rust build failure; 0.2.0+ works
-  'permit.io/cedar-agent': ['0.1.3', '0.1.4'],
+  'permit.io/cedar-agent': ['<0.2.0'],
   // Old himalaya Rust build failure; 1.2.0 works
-  'pimalaya.org/himalaya': ['0.8.4', '0.9.0', '1.0.0', '1.1.0'],
+  'pimalaya.org/himalaya': ['<1.2.0'],
   // Very old brewkit version; 1.16.0+ works
   'pkgx.sh/brewkit': ['0.55.8'],
   // Tarball 404 / old version build failure
@@ -370,7 +370,27 @@ const SKIP_VERSIONS: Record<string, string[]> = {
 function isVersionSkipped(domain: string, version: string): boolean {
   const specs = SKIP_VERSIONS[domain]
   if (!specs) return false
-  return specs.includes(version) || specs.includes('*')
+  if (specs.includes(version) || specs.includes('*')) return true
+  // Support version range specs: '<X.Y.Z' skips all versions below threshold
+  for (const spec of specs) {
+    if (spec.startsWith('<')) {
+      const threshold = spec.slice(1)
+      if (compareVersions(version, threshold) < 0) return true
+    }
+  }
+  return false
+}
+
+/** Compare semver-like version strings. Returns <0 if a<b, 0 if a==b, >0 if a>b */
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number)
+  const pb = b.split('.').map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const na = pa[i] || 0
+    const nb = pb[i] || 0
+    if (na !== nb) return na - nb
+  }
+  return 0
 }
 
 /**
