@@ -330,7 +330,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old GMP configure error; 6.3.0 works on both
   'gnu.org/gmp': ['<6.3.0'],
   // Go module incompatibility; 1.1.0+ works
-  'go.dev/govulncheck': ['<1.1.0'],
+  'go.dev/govulncheck': ['<1.1.4'],
   // Old Go build failure; 2.11.2+ works
   'goreleaser.com': ['<2.0.0'],
   // Old wails Go build failure; 2.9.3+ works
