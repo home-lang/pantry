@@ -437,8 +437,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'glaros.dtc.umn.edu/metis': ['5.2.1.1'],
   // Old SPIRV-Tools cmake fails; 2025.5.0+ works
   'khronos.org/SPIRV-Tools': ['<2025.0.0'],
-  // Old rtx-cli Rust build fails; 2024.12.24+ works
-  'crates.io/rtx-cli': ['<2024.0.0'],
+  // Old rtx-cli Rust build fails on darwin; 2025.12.13+ works on both
+  'crates.io/rtx-cli': ['<2025.0.0'],
   // Old termusic Rust build fails; 0.12.1 (latest) works
   'crates.io/termusic': ['<0.12.0'],
   // Old eas-cli npm build fails; 18.0.4+ works
@@ -457,6 +457,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'squawkhq.com': ['<1.0.0'],
   // Old wasmer Rust build fails on linux; 7.0.1 works on both
   'wasmer.io': ['<7.0.0'],
+  // Old mise Rust build fails on darwin; 2025.12.13+ works on both
+  'mise.jdx.dev': ['<2025.0.0'],
+  // Old gitui Rust libiconv fails on linux; 0.26.3+ works
+  'crates.io/gitui': ['<0.26.0'],
+  // Old dxc cmake fails; 1.8.2505.1+ works on both
+  'microsoft.com/dxc': ['<1.8.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
