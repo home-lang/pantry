@@ -4049,8 +4049,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'openjdk.org': {
     modifyRecipe: (recipe: any) => {
-      // Strip all source dependencies — we download pre-built binaries
+      // Strip all source dependencies and distributable — we download pre-built binaries
       recipe.dependencies = {}
+      recipe.distributable = null // skip source download (build script fetches pre-built binary)
       if (recipe.build) {
         recipe.build.dependencies = {}
         // Replace the build script: use Adoptium API to find the latest Temurin
