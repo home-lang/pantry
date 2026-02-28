@@ -409,6 +409,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'openai.com/whisper': ['<20250625.0.0'],
   // Old operator-sdk Go build failure; 1.39.2+ works
   'operatorframework.io/operator-sdk': ['<1.39.0'],
+  // Old tailcall Rust build fails; only 1.6.14 (latest) works
+  'tailcall.run': ['<1.6.0'],
+  // Old version format (1.x) incompatible; date-based versions (24.x+) work
+  'xtls.github.io': ['<24.0.0'],
+  // git-crypt 0.7.0 fails on linux; 0.8.0 works
+  'agwa.name/git-crypt': ['<0.8.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
