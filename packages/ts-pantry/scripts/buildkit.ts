@@ -36,6 +36,8 @@ export interface PackageRecipe {
   }
   versions?: any
   provides?: string[] | Record<string, string[]>
+  platforms?: string[]
+  test?: any
 }
 
 /**
