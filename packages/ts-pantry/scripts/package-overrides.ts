@@ -33,6 +33,8 @@ export interface PackageOverride {
     linux?: Omit<PackageOverride, 'platforms' | 'modifyRecipe'>
     darwin?: Omit<PackageOverride, 'platforms' | 'modifyRecipe'>
   }
+  /** Override the recipe's supported platforms (e.g. ['darwin/aarch64', 'linux/x86-64']) */
+  supportedPlatforms?: string[]
   modifyRecipe?: (recipe: any, platform?: string) => void
 }
 
@@ -6211,7 +6213,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'mariadb.com/server': {
-    platforms: ['darwin/aarch64', 'linux/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
     prependScript: [
       // Install bison >= 2.4 (required for SQL parser generation, macOS ships with 2.3)
       'brew install bison 2>/dev/null || sudo apt-get install -y bison 2>/dev/null || true',

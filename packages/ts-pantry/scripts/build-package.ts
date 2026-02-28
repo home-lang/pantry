@@ -1391,8 +1391,17 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // For URLs using version.tag or version.raw, resolve the actual GitHub tag via API
   // This handles leading-zero normalization (e.g. 2026.2.9.0 → v2026.02.09.00)
-  const rawDistUrl = typeof recipe.distributable?.url === 'string' ? recipe.distributable.url : ''
+  let rawDistUrl = typeof recipe.distributable?.url === 'string' ? recipe.distributable.url : ''
   const rawDistRef = typeof recipe.distributable?.ref === 'string' ? recipe.distributable.ref : ''
+  // Also check array distributable entries for version.tag usage
+  if (!rawDistUrl && Array.isArray(recipe.distributable)) {
+    for (const entry of recipe.distributable) {
+      if (entry?.url && typeof entry.url === 'string') {
+        rawDistUrl = entry.url
+        break
+      }
+    }
+  }
   if (rawDistUrl.includes('version.tag') || rawDistUrl.includes('version.raw')
     || rawDistRef.includes('version.tag') || rawDistRef.includes('version.raw')) {
     console.log(`🔍 Resolving GitHub tag for version ${version} (URL uses version.tag/raw)...`)
