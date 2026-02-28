@@ -313,7 +313,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'mypy-lang.org': ['1.16.1'],
   // libiconv linking failure on darwin (libgit2-sys/onig-sys); built on linux.
   // Latest versions of each package work on both platforms.
-  'crates.io/git-delta': ['<0.18.0'],
+  'crates.io/git-delta': ['<0.18.2'],
   'crates.io/bat': ['<0.26.0'],
   'crates.io/broot': ['<1.55.0'],
   'github.com/peltoche/lsd': ['<1.2.0'],
