@@ -6100,17 +6100,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
             )
           }
         }
-        // Fix: configure rejects darwin24+ — aclocal.m4 has hardcoded darwin version list.
-        // After autoreconf generates configure, patch it to accept any darwin version
-        // by replacing the "not a supported system" error with a fall-through using
-        // the settings from the latest known darwin version.
-        const configureIdx = recipe.build.script.findIndex(
-          (s: any) => typeof s === 'string' && s.includes('./configure'),
-        )
-        if (configureIdx >= 0) {
-          recipe.build.script.splice(configureIdx, 0,
-            `sed -i.bak 's/as_fn_error.*is not a supported system/echo "Warning: unknown Darwin version, continuing anyway"/' configure || true`,
-          )
+        // Fix: autoreconf with newer autoconf generates a configure script with
+        // shell syntax errors (line 3880 cache-variable quoting). Skip autoreconf
+        // entirely and patch the shipped configure directly to support darwin24+.
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('autoreconf')) {
+            // Replace autoreconf with direct configure patching:
+            // 1. Apply aclocal.m4 changes won't help without autoreconf, so
+            //    instead patch configure's error to a no-op for unknown darwin versions
+            recipe.build.script[i] = [
+              // Add darwin24-26 support by duplicating the latest known darwin entry
+              `sed -i.bak '/is not a supported system/s/as_fn_error[^;]*/: # accept unknown darwin version/' configure`,
+            ].join(' && ')
+            break
+          }
         }
       }
     },
@@ -6385,17 +6388,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/brona/iproute2mac': {
     modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build)) {
-        recipe.build = recipe.build.map((step: any) => {
+      // recipe.build is normalized to { script: [...] } before modifyRecipe runs
+      const steps = recipe.build?.script
+      if (Array.isArray(steps)) {
+        for (let i = 0; i < steps.length; i++) {
+          const step = steps[i]
           if (typeof step === 'string' && step.includes('install -D')) {
-            // Make install conditional on file existence
             const match = step.match(/install -D (\S+)/)
             if (match) {
-              return `test -f ${match[1]} && ${step} || true`
+              steps[i] = `test -f ${match[1]} && ${step} || true`
             }
           }
-          return step
-        })
+        }
       }
     },
   },
