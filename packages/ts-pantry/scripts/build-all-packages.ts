@@ -321,8 +321,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'crates.io/git-branchless': ['<0.10.0'],
   // npm cache corruption on old version; 1.18.3+ works
   'github.com/Everduin94/better-commits': ['1.17.1'],
-  // Linux linker flags (-z, -soname) on macOS; 1.15.2+ works on both
-  'webmproject.org/libvpx': ['<1.15.0'],
+  // Linux linker flags (-z, -soname) on macOS; 1.15.1+ works on both
+  'webmproject.org/libvpx': ['<1.15.1'],
   // Old cmake bootstrap failure on darwin; 4.0.6+ works on both
   'cmake.org': ['<4.0.0'],
   // Header-only library fails on linux for all versions; built on darwin only
