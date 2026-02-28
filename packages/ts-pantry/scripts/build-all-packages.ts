@@ -453,6 +453,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'pkgx.sh': ['<2.0.0'],
   // Old pycairo fails on linux; 1.27.0+ works on both
   'cairographics.org/pycairo': ['<1.27.0'],
+  // Old squawkhq Rust build fails; 1.6.1+ works
+  'squawkhq.com': ['<1.0.0'],
+  // Old wasmer Rust build fails on linux; 7.0.1 works on both
+  'wasmer.io': ['<7.0.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
