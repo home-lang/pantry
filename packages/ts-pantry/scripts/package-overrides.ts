@@ -4053,29 +4053,32 @@ export const packageOverrides: Record<string, PackageOverride> = {
       recipe.dependencies = {}
       if (recipe.build) {
         recipe.build.dependencies = {}
-        // Replace the build script with a simple Temurin download
+        // Replace the build script: use Adoptium API to find the latest Temurin
+        // release for the requested major version, then download it.
+        // This avoids version mismatches between OpenJDK repo tags and Temurin releases.
         recipe.build.script = [
           [
-            '# Download pre-built Adoptium Temurin JDK',
+            '# Download pre-built Adoptium Temurin JDK via API',
             'MAJOR=$(echo "{{version}}" | cut -d. -f1)',
-            'VERSION_TAG="{{version.tag}}"',
-            'VERSION_SAFE=$(echo "{{version.raw}}" | sed "s/+/_/g")',
             '',
             'if test "{{hw.platform}}" = "darwin"; then',
-            '  ARCH="{{hw.arch}}"',
-            '  test "$ARCH" = "aarch64" || ARCH="x64"',
-            '  OS="mac"',
+            '  API_ARCH="{{hw.arch}}"',
+            '  test "$API_ARCH" = "aarch64" || API_ARCH="x64"',
+            '  API_OS="mac"',
             '  STRIP=3',
             'else',
-            '  ARCH="{{hw.arch}}"',
-            '  test "$ARCH" = "x86-64" && ARCH="x64"',
-            '  OS="linux"',
+            '  API_ARCH="{{hw.arch}}"',
+            '  test "$API_ARCH" = "x86-64" && API_ARCH="x64"',
+            '  API_OS="linux"',
             '  STRIP=1',
             'fi',
             '',
-            'URL="https://github.com/adoptium/temurin${MAJOR}-binaries/releases/download/jdk-${VERSION_TAG}/OpenJDK${MAJOR}U-jdk_${ARCH}_${OS}_hotspot_${VERSION_SAFE}.tar.gz"',
-            'echo "Downloading: $URL"',
-            'curl -fSL "$URL" | tar xz --strip-components=$STRIP -C "{{prefix}}"',
+            '# Query Adoptium API for the latest GA release binary URL',
+            'API_URL="https://api.adoptium.net/v3/binary/latest/${MAJOR}/ga/${API_OS}/${API_ARCH}/jdk/hotspot/normal/eclipse"',
+            'echo "Fetching from Adoptium API: $API_URL"',
+            'curl -fSL -o temurin-jdk.tar.gz "$API_URL"',
+            'tar xzf temurin-jdk.tar.gz --strip-components=$STRIP -C "{{prefix}}"',
+            'rm -f temurin-jdk.tar.gz',
           ].join('\n'),
         ]
         // Clear build env vars that reference deps
