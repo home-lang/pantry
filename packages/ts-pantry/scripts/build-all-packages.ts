@@ -365,6 +365,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Non-existent tags (404)
   'github.com/sharkdp/hyperfine': ['0.17.0'],
   'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
+  // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
+  'github.com/TomWright/dasel': ['3.1.5'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
