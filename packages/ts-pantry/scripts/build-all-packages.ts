@@ -477,6 +477,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'openmp.llvm.org': ['<21.0.0'],
   // All versions fail (no working builds in S3)
   'opensuse.org/libsolv': ['*'],
+  // Monero: extremely slow build (~60min each), times out CI. Linux-only.
+  'getmonero.org': ['*'],
+  // fontconfig 2.16+ meson build regression; 2.15.0 works
+  'freedesktop.org/fontconfig': ['2.16.2', '2.17.1'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
