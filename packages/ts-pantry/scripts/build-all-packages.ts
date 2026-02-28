@@ -425,6 +425,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'freedesktop.org/xdg-user-dirs': ['<0.19.0'],
   // oneTBB builds only on darwin; all versions fail on linux (cmake/threading)
   'github.com/oneapi-src/oneTBB': ['<2022.4.0'],
+  // Old nushell Rust build fails on darwin; 0.108.0+ works
+  'nushell.sh': ['<0.108.0'],
+  // Old duckdb cmake fails on darwin; 1.1.3+ works on both
+  'duckdb.org': ['<1.0.0'],
+  // Old pakku fails on darwin; 0.4.2+ works on both
+  'github.com/mycreepy/pakku': ['<0.4.0'],
+  // Old z3 cmake fails on darwin; 4.13.4+ works on both
+  'github.com/Z3Prover/z3': ['<4.13.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
