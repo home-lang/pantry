@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/groff`
  * @programs `addftinfo`, `afmtodit`, `chem`, `eqn`, `eqn2graph`, ... (+34 more)
- * @version `1.23.0` (1 versions available)
+ * @version `1.24.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/groff`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "groff"
  * console.log(pkg.description) // "GNU troff text-formatting system"
  * console.log(pkg.programs)    // ["addftinfo", "afmtodit", ...]
- * console.log(pkg.versions[0]) // "1.23.0" (latest)
+ * console.log(pkg.versions[0]) // "1.24.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/groff.md
@@ -123,6 +123,7 @@ export const gnuorggroffPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.24.0',
     '1.23.0',
   ] as const,
   aliases: [] as const,

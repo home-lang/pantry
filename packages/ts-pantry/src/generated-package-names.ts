@@ -4134,7 +4134,7 @@ export interface GeneratedPackageVersions {
   'gnu.org/gmp': '6.3.0' | '6.2.1'
   'gnu.org/gperf': '3.3.0' | '3.2.1' | '3.2.0' | '3.1.0'
   'gnu.org/grep': '3.12.0' | '3.11.0' | '3.8.0'
-  'gnu.org/groff': '1.23.0'
+  'gnu.org/groff': '1.24.0' | '1.23.0'
   'gnu.org/guile': '3.0.11' | '3.0.10' | '3.0.9'
   'gnu.org/help2man': '1.49.3'
   'gnu.org/inetutils': '2.7.0' | '2.6.0' | '2.5.0' | '2.4.0'
