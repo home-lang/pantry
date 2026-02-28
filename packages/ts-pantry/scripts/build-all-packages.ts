@@ -279,6 +279,16 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'sqlc.dev': ['1.27.0', '1.28.0'],
   // pygit2 C API mismatch with newer libgit2 (git_error_set renamed)
   'github.com/canonical/charmcraft': ['3.5.3', '4.0.1'],
+  // Go x/tools v0.25.0 tokeninternal incompatible with Go 1.26 (constant expression error)
+  'github.com/maxbrunsfeld/counterfeiter': ['6.8.1', '6.9.0'],
+  'github.com/gotestyourself/gotestsum': ['1.11.0'],
+  // Rust linker failure on darwin with old versions (newer versions succeed)
+  'crates.io/joshuto': ['0.9.8'],
+  'crates.io/rucola-notes': ['0.6.0', '0.7.0'],
+  // Swift is macOS-only; old versions fail on linux
+  'github.com/realm/SwiftLint': ['0.59.1'],
+  // utfcpp 3.2.5: old cmake issues. 4.9.0: tag doesn't exist
+  'github.com/nemtrif/utfcpp': ['3.2.5', '4.9.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {

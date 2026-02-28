@@ -6553,6 +6553,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── tuist.io/xcbeautify — cap swift-tools-version at 5.10 ──────────
+  // ─── github.com/realm/SwiftLint — restrict to darwin only ────────────
+  // Swift is not available on Linux CI runners; SwiftLint is macOS-only.
+  'github.com/realm/SwiftLint': {
+    supportedPlatforms: ['darwin-arm64'],
+  },
+
   // ─── schollz.com/croc — remove -asan from Linux ARGS ─────────────────
   // The Go -asan flag requires gcc/clang recognized by Go's sanitizer check.
   // Buildkit's CC wrapper isn't recognized, causing "C compiler is not gcc or clang".
