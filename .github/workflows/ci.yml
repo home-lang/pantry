@@ -141,6 +141,13 @@ jobs:
       - name: Build pantry CLI
         run: cd packages/zig && zig build
 
+      - name: Verify AWS credentials
+        run: aws sts get-caller-identity
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
       - name: Continuous Releases
         run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
         env:
