@@ -4095,6 +4095,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── kafka.apache.org — resolve symlinks in dirname $0 for .bin/ compat ──
+  'kafka.apache.org': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build && Array.isArray(recipe.build.script)) {
+        // After the rsync copies everything to prefix, patch kafka-run-class.sh
+        // to resolve symlinks so it works when called from .bin/ symlinks
+        recipe.build.script.push(
+          'sed -i.bak \'s|base_dir=$(dirname $0)/..|base_dir=$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")/..|g\' "{{prefix}}/bin/kafka-run-class.sh" && rm -f "{{prefix}}/bin/kafka-run-class.sh.bak"',
+        )
+      }
+    },
+  },
+
   // ─── opensearch.org — fix sed -i BSD compat + set JAVA_HOME ──────────
 
   'opensearch.org': {
@@ -4114,6 +4127,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
               .replace(/sed -i -e /g, 'sed -i.bak -e ')
           }
         }
+        // Patch opensearch-env to auto-discover JAVA_HOME from java on PATH
+        // when neither OPENSEARCH_JAVA_HOME nor JAVA_HOME is set
+        recipe.build.script.push(
+          'sed -i.bak \'1a\\\n'
+          + '# Auto-discover JAVA_HOME from java on PATH if not explicitly set\\\n'
+          + 'if [ -z "$OPENSEARCH_JAVA_HOME" ] && [ -z "$JAVA_HOME" ]; then\\\n'
+          + '  _java_bin=$(command -v java 2>/dev/null)\\\n'
+          + '  if [ -n "$_java_bin" ]; then\\\n'
+          + '    _java_real=$(readlink -f "$_java_bin" 2>/dev/null || echo "$_java_bin")\\\n'
+          + '    export JAVA_HOME=$(cd "$(dirname "$_java_real")/.." && pwd)\\\n'
+          + '  fi\\\n'
+          + '  unset _java_bin _java_real\\\n'
+          + 'fi\' "{{prefix}}/bin/opensearch-env" && rm -f "{{prefix}}/bin/opensearch-env.bak"',
+        )
       }
     },
   },
