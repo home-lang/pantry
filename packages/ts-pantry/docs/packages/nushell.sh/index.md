@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 55 versions</summary>
+<summary>Show all 56 versions</summary>
 
+- `0.111.0`
 - `0.110.0`
 - `0.109.1`, `0.109.0`
 - `0.108.0`
@@ -69,13 +70,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.110.0`
+**Latest Version**: `0.111.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +nushell.sh@0.110.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +nushell.sh@0.111.0 -- $SHELL -i
 ```
 
 ## Dependencies
