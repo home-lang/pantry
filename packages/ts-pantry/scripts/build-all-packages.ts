@@ -265,26 +265,26 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'mkdocs.org': ['1.5.3'],
   // Old ko.build 0.16.0 fails with Go 1.26. Newer versions already in S3.
   'ko.build': ['0.16.0'],
-  // lxml 4.9.4 C extension incompatible with Python 3.14 API changes.
-  'lxml.de': ['4.9.4'],
-  // mac-notification-sys crate fails with Xcode 26.3 RC ("could not build module 'Darwin'").
-  'moonrepo.dev/moon': ['1.41.8'],
-  // setuptools_scm generates post-release version from git state, breaking wheel name.
-  'mercurial-scm.org': ['7.0.3'],
+  // lxml 4.x C extension incompatible with Python 3.14 API changes; 5.4.0+ works
+  'lxml.de': ['<5.0.0'],
+  // mac-notification-sys crate fails with Xcode 26.3 ("could not build module 'Darwin'"); 2.0.1+ works
+  'moonrepo.dev/moon': ['<2.0.0'],
+  // setuptools_scm generates post-release version from git state; 7.0.x all fail, 6.9.x and 7.1.x work
+  'mercurial-scm.org': ['7.0.0', '7.0.1', '7.0.2', '7.0.3'],
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error)
-  'rust-lang.org/rustup': ['1.27.0'],
-  // Go 1.26 broke net.errNoSuchInterface symbol used by sing's control package
-  'sing-box.app': ['1.9.7'],
+  'rust-lang.org/rustup': ['<1.28.0'],
+  // Go 1.26 broke net.errNoSuchInterface in 1.9.x; 1.8.x and 1.10.x+ work
+  'sing-box.app': ['1.9.0', '1.9.1', '1.9.2', '1.9.3', '1.9.4', '1.9.5', '1.9.6', '1.9.7'],
   // Xcode 26.3 SDK declares strchrnul, conflicting with pg_query_go's static version
-  'sqlc.dev': ['1.27.0', '1.28.0'],
+  'sqlc.dev': ['<1.29.0'],
   // pygit2 C API mismatch with newer libgit2 (git_error_set renamed)
-  'github.com/canonical/charmcraft': ['3.5.3', '4.0.1'],
+  'github.com/canonical/charmcraft': ['<5.0.0'],
   // Go x/tools v0.25.0 tokeninternal incompatible with Go 1.26 (constant expression error)
-  'github.com/maxbrunsfeld/counterfeiter': ['6.8.1', '6.9.0'],
-  'github.com/gotestyourself/gotestsum': ['1.11.0'],
+  'github.com/maxbrunsfeld/counterfeiter': ['<7.0.0'],
+  'github.com/gotestyourself/gotestsum': ['<1.12.0'],
   // Rust linker failure on darwin with old versions (newer versions succeed)
-  'crates.io/joshuto': ['0.9.8'],
-  'crates.io/rucola-notes': ['0.6.0', '0.7.0'],
+  'crates.io/joshuto': ['<1.0.0'],
+  'crates.io/rucola-notes': ['<1.0.0'],
   // Swift is macOS-only; old versions fail on linux
   'github.com/realm/SwiftLint': ['0.59.1'],
   // utfcpp 3.2.5: old cmake issues. 4.9.0: tag doesn't exist
@@ -293,12 +293,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/skylot/jadx': ['1.4.7'],
   // gnupg pinentry 1.2.1 requires old libassuan API; 1.3.0+ builds fine
   'gnupg.org/pinentry': ['1.2.1'],
-  // Old samtools versions fail on linux (hts_version symbol mismatch with htslib 1.23);
-  // already built on darwin. Latest 1.23.0 works on both platforms.
-  'htslib.org/samtools': ['1.19.2', '1.20.0', '1.21.0', '1.22.1'],
-  // rav1e 0.6.6/0.7.1 missing libiconv on darwin; already built on linux.
-  // 0.8.1 (latest) builds on both platforms.
-  'github.com/xiph/rav1e': ['0.6.6', '0.7.1'],
+  // Old samtools fail on linux (hts_version symbol mismatch); 1.23.0 works on both
+  'htslib.org/samtools': ['<1.23.0'],
+  // rav1e old versions missing libiconv on darwin; 0.8.1+ works on both
+  'github.com/xiph/rav1e': ['<0.8.0'],
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error);
   // lychee 0.15.1 (latest) builds fine
   'lychee.cli.rs': ['<0.15.1'],
@@ -321,45 +319,44 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // npm cache corruption on old version; 1.18.3+ works
   'github.com/Everduin94/better-commits': ['1.17.1'],
   // Linux linker flags (-z, -soname) on macOS; 1.15.2+ works on both
-  'webmproject.org/libvpx': ['1.13.1', '1.14.1'],
-  // Old cmake bootstrap failure on darwin; already built on linux.
-  // 3.27.6 fails on linux. 4.0.6+ works on both.
-  'cmake.org': ['3.27.6', '3.31.11'],
-  // Header-only library fails on linux; 1.0.0/1.0.1 fail on both
-  'glm.g-truc.net': ['0.9.9.8', '1.0.0', '1.0.1'],
+  'webmproject.org/libvpx': ['<1.15.0'],
+  // Old cmake bootstrap failure on darwin; 4.0.6+ works on both
+  'cmake.org': ['<4.0.0'],
+  // Header-only library fails on linux for all versions; built on darwin only
+  'glm.g-truc.net': ['*'],
   // Old GMP configure error; 6.3.0 works on both
-  'gnu.org/gmp': ['6.2.1'],
+  'gnu.org/gmp': ['<6.3.0'],
   // Go module incompatibility; 1.1.0+ works
   'go.dev/govulncheck': ['<1.1.0'],
   // Old Go build failure; 2.11.2+ works
   'goreleaser.com': ['<2.0.0'],
   // Old wails Go build failure; 2.9.3+ works
-  'wails.io': ['2.8.2'],
+  'wails.io': ['<2.9.0'],
   // Old flywaydb Java failure; 11.20.3+ works
-  'flywaydb.org': ['10.22.0'],
+  'flywaydb.org': ['<11.0.0'],
   // Old cedar-agent Rust build failure; 0.2.0+ works
   'permit.io/cedar-agent': ['<0.2.0'],
   // Old himalaya Rust build failure; 1.2.0 works
   'pimalaya.org/himalaya': ['<1.2.0'],
-  // Very old brewkit version; 1.16.0+ works
-  'pkgx.sh/brewkit': ['0.55.8'],
-  // Tarball 404 / old version build failure
-  'priver.dev/geni': ['0.0.11', '2023.12.27'],
+  // Very old brewkit versions; 1.16.0+ works
+  'pkgx.sh/brewkit': ['<1.0.0'],
+  // Old geni versions fail or 404; 1.1.9+ works
+  'priver.dev/geni': ['<1.0.0', '2023.12.27'],
   'github.com/yashs662/rust_kanban': ['0.9.7'],
   // Tarball 404 for croc 10.4.0
   'schollz.com/croc': ['10.4.0'],
   // Old capnproto C++ build fails on linux; 1.3.0 works on both
-  'capnproto.org': ['1.2.0'],
+  'capnproto.org': ['<1.3.0'],
   // Old protobuf-c versions; 1.5.2 works on both
-  'github.com/protobuf-c/protobuf-c': ['1.5.0', '1.5.1'],
+  'github.com/protobuf-c/protobuf-c': ['<1.5.2'],
   // Old vanna.ai Python build failure; 2.0.2 works on both
-  'vanna.ai': ['0.7.9'],
-  // Old zlib tarballs removed from server (404)
-  'zlib.net': ['1.2.12', '1.2.13', '1.3', '1.3.0'],
+  'vanna.ai': ['<2.0.0'],
+  // Old zlib tarballs removed from server (404); 1.3.1+ works
+  'zlib.net': ['<1.3.1'],
   // Old Apache APR releases removed from mirrors (404)
-  'apache.org/apr': ['1.7.2', '1.7.3', '1.7.4', '1.7.5'],
+  'apache.org/apr': ['<1.7.6'],
   // Old libsodium releases removed from download server (404)
-  'libsodium.org': ['1.0.17', '1.0.18'],
+  'libsodium.org': ['<1.0.19'],
   // Non-existent version (latest nasm is 2.x)
   'nasm.us': ['3.0.0'],
   // Non-existent tags (404)
