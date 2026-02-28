@@ -263,6 +263,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Python 3.14 removed distutils; mkdocs 1.5.3 depends on babel→distutils.
   // mkdocs 1.6+ already in S3 and works fine.
   'mkdocs.org': ['1.5.3'],
+  // Old ko.build 0.16.0 fails with Go 1.26. Newer versions already in S3.
+  'ko.build': ['0.16.0'],
+  // lxml 4.9.4 C extension incompatible with Python 3.14 API changes.
+  'lxml.de': ['4.9.4'],
+  // mac-notification-sys crate fails with Xcode 26.3 RC ("could not build module 'Darwin'").
+  'moonrepo.dev/moon': ['1.41.8'],
+  // setuptools_scm generates post-release version from git state, breaking wheel name.
+  'mercurial-scm.org': ['7.0.3'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
