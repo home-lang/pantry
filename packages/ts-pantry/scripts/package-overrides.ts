@@ -6152,19 +6152,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
             )
           }
         }
-        // Fix: autoreconf with newer autoconf generates a configure script with
-        // shell syntax errors (line 3880 cache-variable quoting). Skip autoreconf
-        // entirely and patch the shipped configure directly to support darwin24+.
+        // Fix: GitHub archive tarballs don't include pre-generated configure.
+        // autoreconf generates a configure with shell syntax errors on newer autoconf.
+        // Keep autoreconf but run configure with explicit /bin/bash and patch darwin24+ support.
         for (let i = 0; i < recipe.build.script.length; i++) {
           if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('autoreconf')) {
-            // Replace autoreconf with direct configure patching:
-            // 1. Apply aclocal.m4 changes won't help without autoreconf, so
-            //    instead patch configure's error to a no-op for unknown darwin versions
+            recipe.build.script[i] = 'autoreconf -fi'
+          }
+          if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('./configure')) {
+            // Patch configure for darwin24+ support, then run with /bin/bash to avoid syntax errors
             recipe.build.script[i] = [
-              // Add darwin24-26 support by duplicating the latest known darwin entry
               `sed -i.bak '/is not a supported system/s/as_fn_error[^;]*/: # accept unknown darwin version/' configure`,
+              `/bin/bash ./configure $ARGS`,
             ].join(' && ')
-            break
           }
         }
       }
@@ -6439,6 +6439,71 @@ export const packageOverrides: Record<string, PackageOverride> = {
             // Replace individual cp with copying from glm/ subdirectory
             recipe.build.script[i] = step
               .replace("cp -a detail ext gtc gtx simd *.hpp", "cp -a glm/detail glm/ext glm/gtc glm/gtx glm/simd glm/*.hpp")
+          }
+        }
+      }
+    },
+  },
+
+  // ─── cython.org/libcython — pin Python <3.14 ──────────────────────
+  // Cython 0.29.x uses _PyLong_AsByteArray with old 5-arg signature;
+  // Python 3.14 changed to 6 args. Only Python 3.12 available in S3.
+  'cython.org/libcython': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3.11<3.14'
+      }
+    },
+  },
+
+  // ─── mkdocs.org — pin Python <3.14 + pre-install setuptools ──────────
+  // Python 3.12+ removed distutils; babel fallback needs setuptools.
+  // mkdocs 1.5.3 also needs hatchling available for build backend.
+  'mkdocs.org': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3<3.14'
+      }
+    },
+    prependScript: [
+      'python3 -m pip install --break-system-packages setuptools hatchling 2>/dev/null || true',
+    ],
+  },
+
+  // ─── catb.org/wumpus — fix K&R C compilation on modern clang ──────────
+  // Old C code uses main(argc, argv) without int type specifier.
+  'catb.org/wumpus': {
+    env: { CFLAGS: '-Wno-error=implicit-int -Wno-error=implicit-function-declaration -Wno-error=int-conversion' },
+  },
+
+  // ─── gnu.org/diffutils — fix SIGSTKSZ for glibc 2.34+ ────────────────
+  // SIGSTKSZ is no longer a compile-time constant; preprocessor #elif fails.
+  'gnu.org/diffutils': {
+    prependScript: [
+      `sed -i.bak 's/HAVE_LIBSIGSEGV && SIGSTKSZ < 16384/0/' lib/c-stack.c 2>/dev/null || true`,
+    ],
+  },
+
+  // ─── github.com/Carthage/Carthage — remove -static-stdlib ────────────
+  // Swift 6 removed -static-stdlib on Apple platforms (runtime is in the OS).
+  'github.com/Carthage/Carthage': {
+    prependScript: [
+      `sed -i.bak 's/-Xswiftc -static-stdlib//g' Makefile 2>/dev/null || true`,
+    ],
+  },
+
+  // ─── crates.io/skim — use --locked to pin compatible frizbee version ──
+  // v3.4.0: frizbee 0.8.2 made simd module private; --locked pins to 0.8.1
+  // Older versions have nightly Rust API issues that are harder to fix.
+  'crates.io/skim': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          // Add --locked to cargo install for versions that use nightly-frizbee feature
+          if (typeof step === 'object' && typeof step.run === 'string'
+            && step.run.includes('cargo install') && !step.run.includes('--locked')) {
+            step.run = step.run.replace('cargo install', 'cargo install --locked')
           }
         }
       }
