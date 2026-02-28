@@ -3,7 +3,7 @@
  *
  * @domain `aux4.io`
  * @programs `aux4`
- * @version `5.1.11` (17 versions available)
+ * @version `5.1.12` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install aux4.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "aux4"
  * console.log(pkg.description) // "elevate your imagination"
  * console.log(pkg.programs)    // ["aux4"]
- * console.log(pkg.versions[0]) // "5.1.11" (latest)
+ * console.log(pkg.versions[0]) // "5.1.12" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/aux4-io.md
@@ -68,6 +68,7 @@ export const aux4ioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.1.12',
     '5.1.11',
     '5.1.10',
     '5.1.9',
