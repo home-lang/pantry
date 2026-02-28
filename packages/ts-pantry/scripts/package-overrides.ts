@@ -6174,6 +6174,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/moretension/duti — fix make install on darwin ──────────
 
   'github.com/moretension/duti': {
+    // Fix: configure produces empty -mmacosx-version-min= on darwin24+.
+    // Set MACOSX_DEPLOYMENT_TARGET so configure picks it up correctly.
+    env: { MACOSX_DEPLOYMENT_TARGET: '11.0' },
     modifyRecipe: (recipe: any) => {
       // Fix: nullglob causes ? in URLs to be treated as glob — quote all curl URLs
       if (Array.isArray(recipe.build?.script)) {
