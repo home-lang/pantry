@@ -31,6 +31,7 @@ pub fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8
 }
 
 /// Create symlink for a package binary (with explicit binary path)
+/// If a symlink already exists from a different package, it is preserved (first-installed wins).
 pub fn createBinarySymlinkFromPath(
     allocator: std.mem.Allocator,
     bin_name: []const u8,
@@ -62,7 +63,13 @@ pub fn createBinarySymlinkFromPath(
         return error.BinDirCreationFailed;
     };
 
-    // Remove existing symlink if present
+    // Check if symlink already exists from a different package — don't overwrite
+    if (symlinkOwnedByDifferentPackage(allocator, symlink_path, bin_path)) {
+        style.print("  ~ Skipped {s} (already provided by another package)\n", .{bin_name});
+        return;
+    }
+
+    // Remove existing symlink if present (same package or stale)
     io_helper.deleteFile(symlink_path) catch {};
 
     // Create symlink (cross-platform)
@@ -72,6 +79,39 @@ pub fn createBinarySymlinkFromPath(
     };
 
     style.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, bin_path });
+}
+
+/// Check if an existing symlink points to a different package than the one we're installing.
+/// Returns true if a valid symlink exists AND its target is from a different package directory.
+fn symlinkOwnedByDifferentPackage(
+    allocator: std.mem.Allocator,
+    symlink_path: []const u8,
+    new_target: []const u8,
+) bool {
+    // Read the existing symlink target
+    const existing_target = io_helper.readLinkAlloc(allocator, symlink_path) catch return false;
+    defer allocator.free(existing_target);
+
+    // Extract the package directory from paths (everything up to /bin/ or /sbin/)
+    const existing_pkg = extractPackageDir(existing_target) orelse return false;
+    const new_pkg = extractPackageDir(new_target) orelse return false;
+
+    // If they're from different package directories, the existing one takes precedence
+    return !std.mem.eql(u8, existing_pkg, new_pkg);
+}
+
+/// Extract the package directory portion from a binary path.
+/// e.g. ".../packages/redis.io/v8.6.1/bin/redis-server" → ".../packages/redis.io/v8.6.1"
+/// e.g. ".../packages/valkey.io/v9.0.3/sbin/valkey-server" → ".../packages/valkey.io/v9.0.3"
+fn extractPackageDir(path: []const u8) ?[]const u8 {
+    // Look for /bin/ or /sbin/ suffix and return everything before it
+    if (std.mem.lastIndexOf(u8, path, "/bin/")) |idx| {
+        return path[0..idx];
+    }
+    if (std.mem.lastIndexOf(u8, path, "/sbin/")) |idx| {
+        return path[0..idx];
+    }
+    return null;
 }
 
 /// Create symlink for a package binary (legacy - builds path from package info)
@@ -352,6 +392,12 @@ pub fn removePackageSymlinks(
             .{ bin_dir, bin_info.name },
         );
         defer allocator.free(symlink_path);
+
+        // Only remove symlinks that actually point to this package
+        // (another package may have claimed this binary name)
+        if (symlinkOwnedByDifferentPackage(allocator, symlink_path, bin_info.path)) {
+            continue; // Symlink belongs to a different package — leave it
+        }
 
         io_helper.deleteFile(symlink_path) catch |err| {
             style.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });

@@ -694,30 +694,65 @@ fn makeExecutable(path: []const u8) void {
     _ = std.c.chmod(&path_buf, 0o755);
 }
 
-/// Fallback: scan bin/ directory for non-npm packages (Pantry registry, GitHub, etc.)
+/// Fallback: scan bin/ and sbin/ directories for non-npm packages (Pantry registry, GitHub, etc.)
+/// If a symlink already exists from a different package, it is preserved (first-installed wins).
 fn scanBinDirectory(allocator: std.mem.Allocator, package_path: []const u8, bin_link_dir: []const u8, verbose: bool) !void {
-    const pkg_bin_dir = try std.fs.path.join(allocator, &[_][]const u8{ package_path, "bin" });
-    defer allocator.free(pkg_bin_dir);
+    const subdirs = [_][]const u8{ "bin", "sbin" };
+    for (subdirs) |subdir| {
+        const pkg_bin_dir = try std.fs.path.join(allocator, &[_][]const u8{ package_path, subdir });
+        defer allocator.free(pkg_bin_dir);
 
-    var dir = io_helper.openDirAbsoluteForIteration(pkg_bin_dir) catch return;
-    defer dir.close();
+        var dir = io_helper.openDirAbsoluteForIteration(pkg_bin_dir) catch continue;
+        defer dir.close();
 
-    var iter = dir.iterate();
-    while (iter.next() catch null) |entry| {
-        if (entry.kind != .file and entry.kind != .sym_link) continue;
-        if (std.mem.indexOfScalar(u8, entry.name, '/') != null or std.mem.eql(u8, entry.name, "..")) continue;
+        var iter = dir.iterate();
+        while (iter.next() catch null) |entry| {
+            if (entry.kind != .file and entry.kind != .sym_link) continue;
+            if (std.mem.indexOfScalar(u8, entry.name, '/') != null or std.mem.eql(u8, entry.name, "..")) continue;
 
-        const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ pkg_bin_dir, entry.name });
-        defer allocator.free(bin_src);
-        const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, entry.name });
-        defer allocator.free(bin_dst);
+            const bin_src = try std.fs.path.join(allocator, &[_][]const u8{ pkg_bin_dir, entry.name });
+            defer allocator.free(bin_src);
+            const bin_dst = try std.fs.path.join(allocator, &[_][]const u8{ bin_link_dir, entry.name });
+            defer allocator.free(bin_dst);
 
-        makeExecutable(bin_src);
-        io_helper.deleteFile(bin_dst) catch {};
-        io_helper.symLink(bin_src, bin_dst) catch |err| {
-            if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ bin_dst, err });
-        };
+            // Don't overwrite symlinks from a different package (first-installed wins)
+            if (symlinkFromDifferentPackage(allocator, bin_dst, package_path)) {
+                if (verbose) style.print("    ~ Skipped {s} (already provided by another package)\n", .{entry.name});
+                continue;
+            }
+
+            makeExecutable(bin_src);
+            io_helper.deleteFile(bin_dst) catch {};
+            io_helper.symLink(bin_src, bin_dst) catch |err| {
+                if (verbose) style.print("    Warning: Failed to create symlink {s}: {}\n", .{ bin_dst, err });
+            };
+        }
     }
+}
+
+/// Check if an existing symlink at `link_path` points to a binary from a different package
+/// than the one at `current_package_path`. Returns true if the symlink exists and belongs
+/// to a different package directory.
+fn symlinkFromDifferentPackage(allocator: std.mem.Allocator, link_path: []const u8, current_package_path: []const u8) bool {
+    const existing_target = io_helper.readLinkAlloc(allocator, link_path) catch return false;
+    defer allocator.free(existing_target);
+
+    // Extract package directory: strip trailing /bin/<name> or /sbin/<name>
+    const existing_pkg = extractPkgDir(existing_target) orelse return false;
+    const current_pkg = extractPkgDir(current_package_path) orelse current_package_path;
+
+    return !std.mem.eql(u8, existing_pkg, current_pkg);
+}
+
+/// Extract the package directory from a path by stripping /bin/... or /sbin/... suffix.
+/// e.g. "/path/to/pantry/redis.io/v8.6.1/bin/redis-server" → "/path/to/pantry/redis.io/v8.6.1"
+fn extractPkgDir(path: []const u8) ?[]const u8 {
+    if (std.mem.lastIndexOf(u8, path, "/bin/")) |idx| return path[0..idx];
+    if (std.mem.lastIndexOf(u8, path, "/sbin/")) |idx| return path[0..idx];
+    // Also handle paths ending with /bin or /sbin (no trailing filename)
+    if (std.mem.endsWith(u8, path, "/bin")) return path[0 .. path.len - 4];
+    if (std.mem.endsWith(u8, path, "/sbin")) return path[0 .. path.len - 5];
+    return null;
 }
 
 /// Update package.json with a new dependency
