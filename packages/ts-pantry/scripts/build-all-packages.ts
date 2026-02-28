@@ -415,6 +415,16 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'xtls.github.io': ['<24.0.0'],
   // git-crypt 0.7.0 fails on linux; 0.8.0 works
   'agwa.name/git-crypt': ['<0.8.0'],
+  // fselect 0.8.12 fails on darwin; 0.9.2 works on both
+  'crates.io/fselect': ['<0.9.0'],
+  // silicon 0.5.2 fails; 0.5.1 and 0.5.3 work
+  'crates.io/silicon': ['0.5.2'],
+  // Old cryptography.io Python/Rust build fails; 43.0.3+ works
+  'cryptography.io': ['<43.0.0'],
+  // xdg-user-dirs 0.18.0 fails on linux; 0.19.0 works
+  'freedesktop.org/xdg-user-dirs': ['<0.19.0'],
+  // oneTBB builds only on darwin; all versions fail on linux (cmake/threading)
+  'github.com/oneapi-src/oneTBB': ['<2022.4.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
