@@ -2226,6 +2226,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         if (typeof step === 'object' && step.if === '>=2' && typeof step.run === 'string' && step.run.includes('rust-toolchain.toml')) {
           step.run = 'rustup default nightly'
         }
+        // Add --locked to cargo install for versions that use nightly-frizbee feature
+        if (typeof step === 'object' && typeof step.run === 'string'
+          && step.run.includes('cargo install') && !step.run.includes('--locked')) {
+          step.run = step.run.replace('cargo install', 'cargo install --locked')
+        }
       }
     },
   },
@@ -6490,24 +6495,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       `sed -i.bak 's/-Xswiftc -static-stdlib//g' Makefile 2>/dev/null || true`,
     ],
-  },
-
-  // ─── crates.io/skim — use --locked to pin compatible frizbee version ──
-  // v3.4.0: frizbee 0.8.2 made simd module private; --locked pins to 0.8.1
-  // Older versions have nightly Rust API issues that are harder to fix.
-  'crates.io/skim': {
-    modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.script)) {
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
-          // Add --locked to cargo install for versions that use nightly-frizbee feature
-          if (typeof step === 'object' && typeof step.run === 'string'
-            && step.run.includes('cargo install') && !step.run.includes('--locked')) {
-            step.run = step.run.replace('cargo install', 'cargo install --locked')
-          }
-        }
-      }
-    },
   },
 
   // ─── tuist.io/xcbeautify — cap swift-tools-version at 5.10 ──────────
