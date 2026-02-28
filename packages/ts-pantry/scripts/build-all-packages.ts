@@ -246,12 +246,13 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;
   // spin's build.rs hardcodes wasm32-wasi which can't be fixed via overrides
   'fermyon.com/spin': ['*'],
-  // Go 1.26 has stricter constant expression handling that breaks vendored tokeninternal;
-  // also build exceeds timeout. Only Go 1.26 is available in S3.
-  'cuelang.org': ['0.11.2', '0.12.1'],
-  // gvisor build constraints exclude all Go files under Go 1.26 (gohacks package)
-  'fly.io': ['0.0.559'],
-  'github.com/containers/gvisor-tap-vsock': ['0.6.2'],
+  // Go 1.26 breaks vendored tokeninternal + linker/timeout issues.
+  // Only Go 1.26 is available in S3. Newer versions (0.13+) already in S3.
+  'cuelang.org': ['0.11.1', '0.11.2', '0.12.0', '0.12.1'],
+  // gvisor build constraints exclude all Go files under Go 1.26 (gohacks package).
+  // Old flyctl versions use old gvisor which is incompatible with Go 1.26.
+  'fly.io': ['0.0.558', '0.0.559', '0.2.127'],
+  'github.com/containers/gvisor-tap-vsock': ['0.6.1', '0.6.2'],
   // frizbee crate restructured (E0405/E0425/E0432) — newer skim versions work
   'crates.io/skim': ['2.0.2', '1.11.2'],
   // Cython 0.29.x uses _PyLong_AsByteArray(5 args) — Python 3.14 needs 6 args.
