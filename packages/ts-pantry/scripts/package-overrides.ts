@@ -4089,6 +4089,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ]
         // Clear build env vars that reference deps
         recipe.build.env = {}
+        // Skip all binary fix-ups — pre-built Temurin binaries are already relocatable
+        recipe.build.skip = ['fix-machos', 'fix-patchelf']
       }
     },
   },
