@@ -250,7 +250,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'fermyon.com/spin': ['*'],
   // Go 1.26 breaks vendored tokeninternal + linker/timeout issues.
   // Only Go 1.26 is available in S3. Newer versions (0.13+) already in S3.
-  'cuelang.org': ['0.11.1', '0.11.2', '0.12.0', '0.12.1'],
+  'cuelang.org': ['0.10.1', '0.11.0', '0.11.1', '0.11.2', '0.12.0', '0.12.1'],
   // gvisor build constraints exclude all Go files under Go 1.26 (gohacks package).
   // Old flyctl versions use old gvisor which is incompatible with Go 1.26.
   'fly.io': ['0.0.558', '0.0.559', '0.2.127'],
@@ -312,7 +312,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'mypy-lang.org': ['1.16.1'],
   // libiconv linking failure on darwin (libgit2-sys/onig-sys); built on linux.
   // Latest versions of each package work on both platforms.
-  'crates.io/git-delta': ['0.16.5', '0.17.0'],
+  'crates.io/git-delta': ['0.16.4', '0.16.5', '0.17.0'],
   'crates.io/bat': ['0.22.1', '0.23.0', '0.24.0', '0.25.0'],
   'crates.io/broot': ['1.26.0', '1.51.0', '1.52.0', '1.53.0', '1.54.0'],
   'github.com/peltoche/lsd': ['1.0.0', '1.1.5'],
@@ -355,7 +355,16 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old vanna.ai Python build failure; 2.0.2 works on both
   'vanna.ai': ['0.7.9'],
   // Old zlib tarballs removed from server (404)
-  'zlib.net': ['1.2.12', '1.2.13', '1.3.0'],
+  'zlib.net': ['1.2.12', '1.2.13', '1.3', '1.3.0'],
+  // Old Apache APR releases removed from mirrors (404)
+  'apache.org/apr': ['1.7.2', '1.7.3', '1.7.4', '1.7.5'],
+  // Old libsodium releases removed from download server (404)
+  'libsodium.org': ['1.0.17', '1.0.18'],
+  // Non-existent version (latest nasm is 2.x)
+  'nasm.us': ['3.0.0'],
+  // Non-existent tags (404)
+  'github.com/sharkdp/hyperfine': ['0.17.0'],
+  'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
