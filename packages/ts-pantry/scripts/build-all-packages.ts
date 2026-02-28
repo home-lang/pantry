@@ -435,20 +435,20 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/Z3Prover/z3': ['<4.13.0'],
   // metis 5.2.1.1 fails (old cmake); 5.1.0.3+ and 5.2.1.2 work
   'glaros.dtc.umn.edu/metis': ['5.2.1.1'],
-  // Old SPIRV-Tools cmake fails; 2025.5.0+ works
-  'khronos.org/SPIRV-Tools': ['<2025.0.0'],
+  // SPIRV-Tools cmake fails; 2025.2.0+ works
+  'khronos.org/SPIRV-Tools': ['<2025.2.0'],
   // Old rtx-cli Rust build fails on darwin; 2025.12.13+ works on both
   'crates.io/rtx-cli': ['<2025.0.0'],
-  // Old termusic Rust build fails; 0.12.1 (latest) works
-  'crates.io/termusic': ['<0.12.0'],
-  // Old eas-cli npm build fails; 18.0.4+ works
-  'expo.dev/eas-cli': ['<18.0.0'],
+  // termusic Rust build fails (missing libprotoc); 0.13.0+ works
+  'crates.io/termusic': ['<0.13.0'],
+  // eas-cli npm/yarn build fails; 18.1.0+ works
+  'expo.dev/eas-cli': ['<18.1.0'],
   // Old kubebuilder Go build fails; 4.10.1+ works
   'kubebuilder.io': ['<4.10.0'],
   // Old luarocks configure fails; 3.13.0 (latest) works
   'luarocks.org': ['<3.13.0'],
-  // Old libxml2 cmake fails on darwin; 2.15.1 works on both
-  'gnome.org/libxml2': ['<2.15.0'],
+  // libxml2 cmake fails on darwin; 2.15.1+ works on both (2.15.0 also fails)
+  'gnome.org/libxml2': ['<2.16.0'],
   // pkgx.sh 1.x fails; 2.5.0+ works on both
   'pkgx.sh': ['<2.0.0'],
   // Old pycairo fails on linux; 1.27.0+ works on both
@@ -459,14 +459,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'wasmer.io': ['<7.0.0'],
   // Old mise Rust build fails on darwin; 2025.12.13+ works on both
   'mise.jdx.dev': ['<2025.0.0'],
-  // Old gitui Rust libiconv fails on linux; 0.26.3+ works
-  'crates.io/gitui': ['<0.26.0'],
+  // gitui Rust build fails on darwin; 0.27.0+ works (0.26.3 also fails)
+  'crates.io/gitui': ['<0.27.0'],
   // Old dxc cmake fails; 1.8.2505.1+ works on both
   'microsoft.com/dxc': ['<1.8.0'],
   // Old gobject-introspection meson fails; 1.82.0+ works
   'gnome.org/gobject-introspection': ['<1.82.0'],
-  // Old binutils configure fails; 2.43.1+ works
-  'gnu.org/binutils': ['<2.43.0'],
+  // binutils: 2.44.0 download 404, 2.43.1/2.45.1 fail on darwin; widen range
+  'gnu.org/binutils': ['<2.46.0'],
   // All versions fail (no working builds in S3)
   'imageflow.io/imageflow_tool': ['*'],
   // Old lftp fails; 4.9.3 works on both
@@ -479,12 +479,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'opensuse.org/libsolv': ['*'],
   // Monero: extremely slow build (~60min each), times out CI. Linux-only.
   'getmonero.org': ['*'],
-  // fontconfig 2.16+ meson build regression; 2.15.0 works
-  'freedesktop.org/fontconfig': ['2.16.2', '2.17.1'],
-  // opus-codec old versions fail on darwin; 1.6.1 works
-  'opus-codec.org': ['<1.6.0'],
-  // sfcgal old cmake fails; 2.0.0+ works
-  'sfcgal.org': ['<2.0.0'],
+  // fontconfig 2.16+ meson build regression + 2.17.0 download 404; 2.15.0 works
+  'freedesktop.org/fontconfig': ['2.16.2', '2.17.0', '2.17.1'],
+  // opus-codec old versions fail on darwin; 1.6.1+ works (1.6.0 also fails)
+  'opus-codec.org': ['<1.6.1'],
+  // sfcgal cmake fails on linux; 2.2.0+ works (2.0.0/2.1.0 also fail)
+  'sfcgal.org': ['<2.2.0'],
   // doxygen 1.12.0 fails on darwin; 1.13.2+ works
   'doxygen.nl': ['<1.13.0'],
   // graphviz ALL tested versions fail on linux (10.0.1–13.1.2); works on darwin only
@@ -523,6 +523,22 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'mariadb.com/server': ['*'],
   // starship old versions fail on darwin (Xcode 26.3 IOKit/CoreGraphics); 1.24.0+ works
   'starship.rs': ['<1.24.0'],
+  // cargo-c 0.9.32 fails on darwin; 0.10.0+ works
+  'github.com/lu-zero/cargo-c': ['<0.10.0'],
+  // jnv 0.2.3 fails on darwin; 0.3.0+ works
+  'crates.io/jnv': ['<0.3.0'],
+  // versio old versions fail on linux; 0.9.0+ works
+  'crates.io/versio': ['<0.9.0'],
+  // zellij old versions fail on linux; 0.41.0+ works
+  'crates.io/zellij': ['<0.41.0'],
+  // p11-kit 0.24.1 fails on linux; 0.25.0+ works
+  'freedesktop.org/p11-kit': ['<0.25.0'],
+  // libheif 1.19.8 fails on darwin; 1.20.0+ works
+  'github.com/strukturag/libheif': ['<1.20.0'],
+  // gnuplot 5.4.10 fails on both platforms; 6.0.0+ works
+  'gnuplot.info': ['<6.0.0'],
+  // tdnf 3.6.3 fails on linux; 3.7.0+ works
+  'github.com/vmware/tdnf': ['<3.7.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
