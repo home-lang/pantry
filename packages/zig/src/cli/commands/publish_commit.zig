@@ -129,23 +129,44 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
         return .{ .exit_code = 0 };
     }
 
-    // Check for authentication
+    // Check for authentication (ensure env vars are non-empty, not just set)
     const aws_key = io_helper.getenv("AWS_ACCESS_KEY_ID");
-    const has_aws_creds = aws_key != null or awsCredentialsFileExists();
+    const has_aws_creds = (aws_key != null and aws_key.?.len > 0) or awsCredentialsFileExists();
 
-    var token: ?[]const u8 = options.token;
+    var token: ?[]const u8 = if (options.token) |t| (if (t.len > 0) t else null) else null;
     var token_owned = false;
     if (token == null) {
         token = io_helper.getEnvVarOwned(allocator, "PANTRY_REGISTRY_TOKEN") catch null;
-        if (token != null) token_owned = true;
+        if (token) |t| {
+            if (t.len == 0) {
+                allocator.free(t);
+                token = null;
+            } else {
+                token_owned = true;
+            }
+        }
     }
     if (token == null) {
         token = io_helper.getEnvVarOwned(allocator, "PANTRY_TOKEN") catch null;
-        if (token != null) token_owned = true;
+        if (token) |t| {
+            if (t.len == 0) {
+                allocator.free(t);
+                token = null;
+            } else {
+                token_owned = true;
+            }
+        }
     }
     if (token == null) {
         token = registry_commands.readPantryToken(allocator) catch null;
-        if (token != null) token_owned = true;
+        if (token) |t| {
+            if (t.len == 0) {
+                allocator.free(t);
+                token = null;
+            } else {
+                token_owned = true;
+            }
+        }
     }
     defer if (token_owned and token != null) allocator.free(token.?);
 
