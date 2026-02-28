@@ -287,8 +287,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'crates.io/rucola-notes': ['<1.0.0'],
   // Swift is macOS-only; old versions fail on linux
   'github.com/realm/SwiftLint': ['0.59.1'],
-  // utfcpp 3.2.5: old cmake issues. 4.9.0: tag doesn't exist
-  'github.com/nemtrif/utfcpp': ['3.2.5', '4.9.0'],
+  // utfcpp 3.x: old cmake issues. 4.9.0: tag doesn't exist. Only 4.0.9 works.
+  'github.com/nemtrif/utfcpp': ['<4.0.0', '4.9.0'],
   // duti configure broken on darwin24+: wrong -isysroot path, empty -mmacosx-version-min=,
   // wrong -arch i386/x86_64 flags. Only version 1.5.4 exists, too many configure issues.
   'github.com/moretension/duti': ['*'],
@@ -298,8 +298,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnupg.org/pinentry': ['1.2.1'],
   // Old samtools fail on linux (hts_version symbol mismatch); 1.23.0 works on both
   'htslib.org/samtools': ['<1.23.0'],
-  // rav1e old versions missing libiconv on darwin; 0.8.1+ works on both
-  'github.com/xiph/rav1e': ['<0.8.0'],
+  // rav1e old versions missing libiconv on darwin; 0.8.1 works on both
+  'github.com/xiph/rav1e': ['<0.8.1'],
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error);
   // lychee 0.15.1 (latest) builds fine
   'lychee.cli.rs': ['<0.15.1'],
