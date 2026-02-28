@@ -391,8 +391,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/gabime/spdlog': ['<1.15.0'],
   // All versions fail (not installable via current recipe)
   'github.com/mamba-org/micro': ['*'],
-  // inetutils 2.5.0 fails on darwin; 2.4.0, 2.6.0, 2.7.0 work
-  'gnu.org/inetutils': ['2.5.0'],
+  // inetutils < 2.7.0 fail on linux; 2.4.0/2.6.0 darwin-only, 2.5.0 fails everywhere
+  'gnu.org/inetutils': ['<2.7.0'],
+  // bc 1.7.1 fails on linux; 1.8.0+ works on both
+  'gnu.org/bc': ['<1.8.0'],
   // Old spotify_player Rust build failure; 0.19.1+ works
   'crates.io/spotify_player': ['<0.19.0'],
   // mockgen 0.5.2 fails on darwin; 0.3.0, 0.4.0, 0.6.0 all work
