@@ -395,12 +395,20 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnu.org/inetutils': ['<2.7.0'],
   // bc 1.7.1 fails on linux; 1.8.0+ works on both
   'gnu.org/bc': ['<1.8.0'],
-  // Old spotify_player Rust build failure; 0.19.1+ works
-  'crates.io/spotify_player': ['<0.19.0'],
+  // Old spotify_player Rust build failure; 0.21.3+ works on darwin, 0.19.1+ on linux
+  'crates.io/spotify_player': ['<0.21.0'],
   // mockgen 0.5.2 fails on darwin; 0.3.0, 0.4.0, 0.6.0 all work
   'go.uber.org/mock/mockgen': ['0.5.2'],
   // Old hurl.dev Rust build fails on darwin; 7.0.0+ works
   'hurl.dev': ['<7.0.0'],
+  // Old convco Rust libiconv on darwin; 0.6.2 works on both
+  'convco.github.io': ['<0.6.0'],
+  // gifsicle 1.95.0 fails on linux; 1.96.0 works
+  'lcdf.org/gifsicle': ['1.95.0'],
+  // Old whisper versions fail (Python/pip issues); only latest works
+  'openai.com/whisper': ['<20250625.0.0'],
+  // Old operator-sdk Go build failure; 1.39.2+ works
+  'operatorframework.io/operator-sdk': ['<1.39.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
