@@ -481,6 +481,36 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'getmonero.org': ['*'],
   // fontconfig 2.16+ meson build regression; 2.15.0 works
   'freedesktop.org/fontconfig': ['2.16.2', '2.17.1'],
+  // opus-codec old versions fail on darwin; 1.6.1 works
+  'opus-codec.org': ['<1.6.0'],
+  // sfcgal old cmake fails; 2.0.0+ works
+  'sfcgal.org': ['<2.0.0'],
+  // doxygen 1.12.0 fails on darwin; 1.13.2+ works
+  'doxygen.nl': ['<1.13.0'],
+  // graphviz old versions fail on linux; 10.0.1+ works on darwin
+  'graphviz.org': ['<10.0.0'],
+  // kubectl old versions fail; 1.34.5+ works on both
+  'kubernetes.io/kubectl': ['<1.34.0'],
+  // faad2 old versions fail on darwin; 2.11.1 works on both
+  'sourceforge.net/faad2': ['<2.11.1'],
+  // gdk-pixbuf old version fails; 2.43.5+ works
+  'gnome.org/gdk-pixbuf': ['<2.43.0'],
+  // theora 1.1.1 fails; 1.2.0 works on both
+  'theora.org': ['<1.2.0'],
+  // edencommon old versions fail on darwin; 2026.2.23.0 works
+  'facebook.com/edencommon': ['<2026.0.0'],
+  // mvfst old versions fail on darwin; 2026.2.23.0 works
+  'facebook.com/mvfst': ['<2026.0.0'],
+  // harfbuzz old versions fail; 12.3.2 works on both
+  'harfbuzz.org': ['<12.0.0'],
+  // glib old version fails on darwin; 2.87.2+ works
+  'gnome.org/glib': ['<2.87.0'],
+  // dozzle old versions fail; 10.0.4+ works on both
+  'dozzle.dev': ['<10.0.0'],
+  // elementsproject old version fails; 23.2.7+ works
+  'elementsproject.org': ['<23.2.0'],
+  // procps-ng watch old versions fail; 4.0.6 works
+  'gitlab.com/procps-ng/watch': ['<4.0.6'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
