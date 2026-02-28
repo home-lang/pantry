@@ -6333,4 +6333,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── iproute2mac — older versions have fewer files ─────────────────
+  // v1.4.x only has src/ip.py; src/iproute2mac.py and src/bridge.py were added later.
+
+  'github.com/brona/iproute2mac': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build)) {
+        recipe.build = recipe.build.map((step: any) => {
+          if (typeof step === 'string' && step.includes('install -D')) {
+            // Make install conditional on file existence
+            const match = step.match(/install -D (\S+)/)
+            if (match) {
+              return `test -f ${match[1]} && ${step} || true`
+            }
+          }
+          return step
+        })
+      }
+    },
+  },
 }
