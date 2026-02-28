@@ -6369,6 +6369,51 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── convco.github.io — same time crate issue as git-delta ─────────
+  'convco.github.io': {
+    modifyRecipe: (recipe: any) => {
+      if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--locked')) {
+        recipe.build.script = recipe.build.script.replace(' --locked', '')
+      }
+    },
+  },
+
+  // ─── glm.g-truc.net — fix cp paths after zip extraction ──────────────
+  // The zip extracts with a glm/ subdirectory, so headers are in glm/ not .
+  'glm.g-truc.net': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('cp -a detail')) {
+            // Replace individual cp with copying from glm/ subdirectory
+            recipe.build.script[i] = step
+              .replace("cp -a detail ext gtc gtx simd *.hpp", "cp -a glm/detail glm/ext glm/gtc glm/gtx glm/simd glm/*.hpp")
+          }
+        }
+      }
+    },
+  },
+
+  // ─── c-ares.org — skip broken Apple dnsinfo.h download ────────────────
+  // The Apple open source URL for dnsinfo.h returns a 404 HTML page.
+  // Remove the broken download step and delete any stale dnsinfo.h so cmake
+  // correctly detects the header as missing and disables macOS DNS config.
+  'c-ares.org': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        // Replace the broken Apple dnsinfo.h curl download with a cleanup step.
+        // Without dnsinfo.h, cmake detects it as missing and disables macOS DNS config.
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('dnsinfo.h')) {
+            recipe.build.script[i] = 'rm -f src/lib/thirdparty/apple/dnsinfo.h 2>/dev/null || true'
+          }
+        }
+      }
+    },
+  },
+
   // ─── tuist.io/xcbeautify — cap swift-tools-version at 5.10 ──────────
   // Swift 6 enables strict concurrency by default which breaks older sources.
   // Cap the tools version at 5.10 to avoid MutableGlobalVariable errors.
