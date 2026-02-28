@@ -271,6 +271,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'moonrepo.dev/moon': ['1.41.8'],
   // setuptools_scm generates post-release version from git state, breaking wheel name.
   'mercurial-scm.org': ['7.0.3'],
+  // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error)
+  'rust-lang.org/rustup': ['1.27.0'],
+  // Go 1.26 broke net.errNoSuchInterface symbol used by sing's control package
+  'sing-box.app': ['1.9.7'],
+  // Xcode 26.3 SDK declares strchrnul, conflicting with pg_query_go's static version
+  'sqlc.dev': ['1.27.0', '1.28.0'],
+  // pygit2 C API mismatch with newer libgit2 (git_error_set renamed)
+  'github.com/canonical/charmcraft': ['3.5.3', '4.0.1'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {

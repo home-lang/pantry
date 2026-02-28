@@ -6553,6 +6553,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── tuist.io/xcbeautify — cap swift-tools-version at 5.10 ──────────
+  // ─── schollz.com/croc — remove -asan from Linux ARGS ─────────────────
+  // The Go -asan flag requires gcc/clang recognized by Go's sanitizer check.
+  // Buildkit's CC wrapper isn't recognized, causing "C compiler is not gcc or clang".
+  'schollz.com/croc': {
+    modifyRecipe: (recipe: any) => {
+      if (recipe.build?.env?.linux?.ARGS) {
+        recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.filter(
+          (a: string) => a !== '-asan',
+        )
+      }
+    },
+  },
+
   // Swift 6 enables strict concurrency by default which breaks older sources.
   // Cap the tools version at 5.10 to avoid MutableGlobalVariable errors.
 
