@@ -6238,6 +6238,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // YAML does cp -r ./jbang-{{version}}/* but strip-components=1 already
   // removes the top-level dir, so contents are directly in the build dir.
 
+  'erlang.org': {
+    // Erlang wrapper scripts (erl, escript, etc.) use $0 to find dyn_erl for relocation.
+    // Through symlink chains (.bin/erl → bin/erl → lib/erlang/bin/erl), $0 stays as the
+    // outermost path, so dyn_erl can't be found and it falls back to hardcoded build paths.
+    // Fix: resolve $0 through symlinks so dirname gives the real script location.
+    modifyRecipe: (recipe: any) => {
+      if (!recipe.build) return
+      const script = Array.isArray(recipe.build.script) ? recipe.build.script : (recipe.build.script ? [recipe.build.script] : [])
+      script.push(
+        [
+          '# Fix Erlang scripts to resolve symlinks in $0 (enables dyn_erl relocation)',
+          'for f in "$1"/lib/erlang/bin/erl "$1"/lib/erlang/bin/erlc "$1"/lib/erlang/bin/escript "$1"/lib/erlang/bin/ct_run "$1"/lib/erlang/bin/dialyzer "$1"/lib/erlang/bin/typer; do',
+          '  [ -f "$f" ] || continue',
+          '  [ -L "$f" ] && continue',
+          '  __real_sed -i.bak \'s#^prog="$0"#prog="$(readlink -f "$0" 2>/dev/null || echo "$0")"#g\' "$f"',
+          '  rm -f "${f}.bak"',
+          'done',
+        ].join('\n'),
+      )
+      recipe.build.script = script
+    },
+  },
+
   'mercure.rocks': {
     // Recipe says linux-only but it's a Go binary that builds fine on darwin
     platforms: ['darwin/aarch64', 'linux/x86-64'],
