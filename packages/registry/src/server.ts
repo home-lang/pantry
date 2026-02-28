@@ -696,6 +696,6 @@ if (import.meta.main) {
 
   console.log('\nEnvironment:')
   console.log(`  S3_BUCKET: ${process.env.S3_BUCKET || 'local'}`)
-  console.log(`  DYNAMODB_TABLE: ${process.env.DYNAMODB_TABLE || 'local'}`)
+  console.log(`  DYNAMODB_TABLE: ${process.env.DYNAMODB_TABLE || 'pantry-registry'}`)
   console.log(`  BASE_URL: ${process.env.BASE_URL || `http://localhost:${port}`}`)
 }

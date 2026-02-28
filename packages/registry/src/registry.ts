@@ -321,7 +321,7 @@ export function createProductionRegistry(config: {
  */
 export function createRegistryFromEnv(): Registry {
   const s3Bucket = process.env.S3_BUCKET || 'local'
-  const dynamoTable = process.env.DYNAMODB_TABLE || 'local'
+  const dynamoTable = process.env.DYNAMODB_TABLE || 'pantry-registry'
   const baseUrl = process.env.BASE_URL || 'http://localhost:3000'
   const region = process.env.AWS_REGION || 'us-east-1'
   const npmFallback = process.env.NPM_FALLBACK !== 'false'

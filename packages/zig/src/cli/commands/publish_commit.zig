@@ -631,7 +631,7 @@ fn updateCommitDynamoDB(
     repo_url: ?[]const u8,
     version: ?[]const u8,
 ) !void {
-    const table_name = io_helper.getenv("PANTRY_DYNAMODB_TABLE") orelse "pantry-packages";
+    const table_name = io_helper.getenv("PANTRY_DYNAMODB_TABLE") orelse "pantry-registry";
 
     // Get timestamp
     var timestamp_buf: [24]u8 = undefined;
