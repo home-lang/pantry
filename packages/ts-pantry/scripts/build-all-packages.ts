@@ -385,14 +385,20 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'x.org/xrender': ['<0.9.12'],
   // Old watchexec Rust build fails on darwin; 2.3.3+ works
   'watchexec.github.io': ['<2.3.0'],
-  // Android cmdline-tools old versions fail; latest works
-  'android.com/cmdline-tools': ['<14742923.0.0'],
+  // Android cmdline-tools: corrupted S3 data and build failures on all versions
+  'android.com/cmdline-tools': ['*'],
   // Old spdlog cmake failures; 1.15.3+ works on both
   'github.com/gabime/spdlog': ['<1.15.0'],
   // All versions fail (not installable via current recipe)
   'github.com/mamba-org/micro': ['*'],
   // inetutils 2.5.0 fails on darwin; 2.4.0, 2.6.0, 2.7.0 work
   'gnu.org/inetutils': ['2.5.0'],
+  // Old spotify_player Rust build failure; 0.19.1+ works
+  'crates.io/spotify_player': ['<0.19.0'],
+  // mockgen 0.5.2 fails on darwin; 0.3.0, 0.4.0, 0.6.0 all work
+  'go.uber.org/mock/mockgen': ['0.5.2'],
+  // Old hurl.dev Rust build fails on darwin; 7.0.0+ works
+  'hurl.dev': ['<7.0.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
