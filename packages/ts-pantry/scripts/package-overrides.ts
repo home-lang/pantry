@@ -6238,6 +6238,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // YAML does cp -r ./jbang-{{version}}/* but strip-components=1 already
   // removes the top-level dir, so contents are directly in the build dir.
 
+  'mercure.rocks': {
+    // Recipe says linux-only but it's a Go binary that builds fine on darwin
+    platforms: ['darwin/aarch64', 'linux/x86-64'],
+  },
+
   'jbang.dev': {
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.script)) {
