@@ -105,3 +105,43 @@ jobs:
           # Build to verify compilation succeeds
           echo "Building pantry..."
           zig build
+
+  continuous-release:
+    needs: [lint, typecheck, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0-dev.2565+684032671
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Build TypeScript packages
+        run: bun run build
+
+      - name: Build pantry GitHub Action
+        run: cd packages/action && bun run build
+
+      - name: Bootstrap Zig Dependencies
+        run: |
+          mkdir -p pantry
+          cd pantry
+          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
+          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
+          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
+
+      - name: Build pantry CLI
+        run: cd packages/zig && zig build
+
+      - name: Continuous Releases
+        run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
+        env:
+          PANTRY_TOKEN: ${{ secrets.PANTRY_TOKEN }}
