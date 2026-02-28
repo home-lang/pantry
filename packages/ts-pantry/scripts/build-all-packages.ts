@@ -310,7 +310,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'littlecms.com': ['2.12.0'],
   // Requires python.org >=3<3.12 but only 3.14 available in S3.
   // Versions 1.15.0, 1.17.1, 1.18.2, 1.19.1 already in S3.
-  'mypy-lang.org': ['1.16.1'],
+  'mypy-lang.org': ['1.16.0', '1.16.1'],
   // libiconv linking failure on darwin (libgit2-sys/onig-sys); built on linux.
   // Latest versions of each package work on both platforms.
   'crates.io/git-delta': ['<0.18.2'],
@@ -367,6 +367,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
   'github.com/TomWright/dasel': ['3.1.5'],
+  // 11.1.3 requires bpf-linker for mitmproxy-linux-ebpf on linux; 10.4.2 & 12.x work
+  'mitmproxy.org': ['11.1.3'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
