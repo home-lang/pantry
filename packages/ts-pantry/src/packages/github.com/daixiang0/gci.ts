@@ -3,7 +3,7 @@
  *
  * @domain `github.com/daixiang0/gci`
  * @programs `gci`
- * @version `0.13.7` (14 versions available)
+ * @version `0.14.0` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/daixiang0/gci`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "gci"
  * console.log(pkg.description) // "GCI, a tool that control golang package import ..."
  * console.log(pkg.programs)    // ["gci"]
- * console.log(pkg.versions[0]) // "0.13.7" (latest)
+ * console.log(pkg.versions[0]) // "0.14.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/daixiang0/gci.md
@@ -67,6 +67,7 @@ export const gciPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.14.0',
     '0.13.7',
     '0.13.6',
     '0.13.5',

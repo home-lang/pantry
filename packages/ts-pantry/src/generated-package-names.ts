@@ -3780,7 +3780,7 @@ export interface GeneratedPackageVersions {
   'github.com/Cyan4973/xxHash': '0.8.3' | '0.8.2' | '0.8.1'
   'github.com/Cyfrin/safe-tx-hashes-util': '0.1.4' | '0.1.3'
   'github.com/DaanDeMeyer/reproc': '14.2.5' | '14.2.4'
-  'github.com/daixiang0/gci': '0.13.7' | '0.13.6' | '0.13.5' | '0.13.4' | '0.13.3' | '0.13.2' | '0.13.1' | '0.13.0' | '0.12.3' | '0.12.2' | '0.12.1' | '0.12.0' | '0.11.2' | '0.11.1'
+  'github.com/daixiang0/gci': '0.14.0' | '0.13.7' | '0.13.6' | '0.13.5' | '0.13.4' | '0.13.3' | '0.13.2' | '0.13.1' | '0.13.0' | '0.12.3' | '0.12.2' | '0.12.1' | '0.12.0' | '0.11.2' | '0.11.1'
   'github.com/danfis/libccd': '2.1.0'
   'github.com/darthsim/overmind': '2.5.1' | '2.5.0' | '2.4.0'
   'github.com/dateutil/dateutil': '2.9.0' | '2.8.2'
