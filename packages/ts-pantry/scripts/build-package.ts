@@ -1429,6 +1429,12 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     ...depPaths, // Add dependency paths for template interpolation
   }
 
+  // Normalize bare-string distributable to object form
+  // Some YAML files have `distributable: https://...` (bare string) instead of `distributable: { url: "..." }`
+  if (typeof recipe.distributable === 'string') {
+    recipe.distributable = { url: recipe.distributable }
+  }
+
   // Download source
   if (Array.isArray(recipe.distributable)) {
     // Array-format distributable (e.g. sqlite.org) — try each URL until one works
