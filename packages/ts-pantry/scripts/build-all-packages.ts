@@ -289,6 +289,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/realm/SwiftLint': ['0.59.1'],
   // utfcpp 3.2.5: old cmake issues. 4.9.0: tag doesn't exist
   'github.com/nemtrif/utfcpp': ['3.2.5', '4.9.0'],
+  // duti configure broken on darwin24+: wrong -isysroot path, empty -mmacosx-version-min=,
+  // wrong -arch i386/x86_64 flags. Only version 1.5.4 exists, too many configure issues.
+  'github.com/moretension/duti': ['*'],
   // Gradle sourceCompatibility error in old version; 1.5.4/1.5.5 build fine
   'github.com/skylot/jadx': ['1.4.7'],
   // gnupg pinentry 1.2.1 requires old libassuan API; 1.3.0+ builds fine
