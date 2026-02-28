@@ -281,7 +281,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/canonical/charmcraft': ['<5.0.0'],
   // Go x/tools v0.25.0 tokeninternal incompatible with Go 1.26 (constant expression error)
   'github.com/maxbrunsfeld/counterfeiter': ['<7.0.0'],
-  'github.com/gotestyourself/gotestsum': ['<1.12.0'],
+  'github.com/gotestyourself/gotestsum': ['<1.12.3'],
   // Rust linker failure on darwin with old versions (newer versions succeed)
   'crates.io/joshuto': ['<1.0.0'],
   'crates.io/rucola-notes': ['<1.0.0'],
