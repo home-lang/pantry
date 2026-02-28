@@ -501,8 +501,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'facebook.com/edencommon': ['<2026.2.0'],
   // mvfst old versions fail on darwin; 2026.2.23.0 works (2026.1.26.0 also fails)
   'facebook.com/mvfst': ['<2026.2.0'],
-  // harfbuzz old versions fail; 12.3.2 works on both
-  'harfbuzz.org': ['<12.0.0'],
+  // harfbuzz old versions fail (giscanner missing on linux); 12.3.2 works on both
+  'harfbuzz.org': ['<12.3.0'],
   // glib old version fails on darwin; 2.87.2+ works
   'gnome.org/glib': ['<2.87.0'],
   // dozzle old versions fail; 10.0.4+ works on both
@@ -539,6 +539,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnuplot.info': ['<6.0.0'],
   // tdnf 3.6.3 fails on linux; 3.7.0+ works
   'github.com/vmware/tdnf': ['<3.7.0'],
+  // elizaOS: massive Node.js monorepo (2659 pnpm packages), causes runner timeout
+  'elizaOS.github.io': ['*'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
