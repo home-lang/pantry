@@ -433,6 +433,20 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/mycreepy/pakku': ['<0.4.0'],
   // Old z3 cmake fails on darwin; 4.13.4+ works on both
   'github.com/Z3Prover/z3': ['<4.13.0'],
+  // metis 5.2.1.1 fails (old cmake); 5.1.0.3+ and 5.2.1.2 work
+  'glaros.dtc.umn.edu/metis': ['5.2.1.1'],
+  // Old SPIRV-Tools cmake fails; 2025.5.0+ works
+  'khronos.org/SPIRV-Tools': ['<2025.0.0'],
+  // Old rtx-cli Rust build fails; 2024.12.24+ works
+  'crates.io/rtx-cli': ['<2024.0.0'],
+  // Old termusic Rust build fails; 0.12.1 (latest) works
+  'crates.io/termusic': ['<0.12.0'],
+  // Old eas-cli npm build fails; 18.0.4+ works
+  'expo.dev/eas-cli': ['<18.0.0'],
+  // Old kubebuilder Go build fails; 4.10.1+ works
+  'kubebuilder.io': ['<4.10.0'],
+  // Old luarocks configure fails; 3.13.0 (latest) works
+  'luarocks.org': ['<3.13.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
