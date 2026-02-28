@@ -453,8 +453,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'pkgx.sh': ['<2.0.0'],
   // Old pycairo fails on linux; 1.27.0+ works on both
   'cairographics.org/pycairo': ['<1.27.0'],
-  // Old squawkhq Rust build fails; 1.6.1+ works
-  'squawkhq.com': ['<1.0.0'],
+  // Old squawkhq Rust build fails on darwin; 2.40.1+ works on both
+  'squawkhq.com': ['<2.0.0'],
   // Old wasmer Rust build fails on linux; 7.0.1 works on both
   'wasmer.io': ['<7.0.0'],
   // Old mise Rust build fails on darwin; 2025.12.13+ works on both
@@ -463,6 +463,20 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'crates.io/gitui': ['<0.26.0'],
   // Old dxc cmake fails; 1.8.2505.1+ works on both
   'microsoft.com/dxc': ['<1.8.0'],
+  // Old gobject-introspection meson fails; 1.82.0+ works
+  'gnome.org/gobject-introspection': ['<1.82.0'],
+  // Old binutils configure fails; 2.43.1+ works
+  'gnu.org/binutils': ['<2.43.0'],
+  // All versions fail (no working builds in S3)
+  'imageflow.io/imageflow_tool': ['*'],
+  // Old lftp fails; 4.9.3 works on both
+  'lftp.yar.ru': ['<4.9.3'],
+  // Old neovim cmake fails; 0.10.4+ works
+  'neovim.io': ['<0.10.0'],
+  // Old openmp cmake/LLVM version fails; 21.1.8 works
+  'openmp.llvm.org': ['<21.0.0'],
+  // All versions fail (no working builds in S3)
+  'opensuse.org/libsolv': ['*'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
