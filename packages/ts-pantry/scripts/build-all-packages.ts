@@ -369,6 +369,24 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/TomWright/dasel': ['3.1.5'],
   // 11.1.3 requires bpf-linker for mitmproxy-linux-ebpf on linux; 10.4.2 & 12.x work
   'mitmproxy.org': ['11.1.3'],
+  // Old Rust build failures; 0.12.2+ works on linux, 0.10.1+ works on darwin
+  'prql-lang.org': ['0.11.4'],
+  // Old scryer-prolog fails on darwin; 0.10.0 works on both
+  'scryer.pl': ['0.9.4'],
+  // Old sentry-cli fails on darwin (Rust libiconv); 3.2.0+ works on both
+  'sentry.io': ['<3.2.0'],
+  // Old typst fails (Rust build); 0.12.0+ works on both
+  'typst.app': ['<0.12.0'],
+  // Old ICU build fails; 74.2.0+ works (latest 4 majors in S3)
+  'unicode.org': ['<74.0.0'],
+  // Old xcb-proto fails (missing dep); 1.15.2+ works
+  'x.org/protocol/xcb': ['<1.15.2'],
+  // Old xrender fails; 0.9.12 (latest) works
+  'x.org/xrender': ['<0.9.12'],
+  // Old watchexec Rust build fails on darwin; 2.3.3+ works
+  'watchexec.github.io': ['<2.3.0'],
+  // Android cmdline-tools old versions fail; latest works
+  'android.com/cmdline-tools': ['<14742923.0.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
