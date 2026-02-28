@@ -1391,6 +1391,17 @@ SYSLIB_OVERRIDE_EOF`)
   sections.push('export GOTOOLCHAIN=auto')
   sections.push('')
 
+  // Set JAVA_HOME from openjdk.org dep if available (must come AFTER dep paths)
+  const openjdkPrefix = depPaths['deps.openjdk.org.prefix']
+  if (openjdkPrefix) {
+    sections.push('# Set JAVA_HOME from openjdk.org dependency')
+    sections.push(`if [ -d "${openjdkPrefix}" ]; then`)
+    sections.push(`  export JAVA_HOME="${openjdkPrefix}"`)
+    sections.push(`  export PATH="$JAVA_HOME/bin:$PATH"`)
+    sections.push('fi')
+    sections.push('')
+  }
+
   // Working directory — always cd to buildDir first, then to any subdirectory
   sections.push(`cd "${buildDir}"`)
   const wd = recipe.build?.['working-directory']
