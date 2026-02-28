@@ -1583,11 +1583,8 @@ pub const Installer = struct {
         const project_pkg_dir = try self.getProjectPackageDir(project_root, domain, spec.version);
         errdefer self.allocator.free(project_pkg_dir);
 
-        // Check if already installed in project (lightweight access check)
-        const already_installed = !options.force and blk: {
-            io_helper.accessAbsolute(project_pkg_dir, .{}) catch break :blk false;
-            break :blk true;
-        };
+        // Check if already installed in project (verify actual package structure, not just dir existence)
+        const already_installed = !options.force and self.hasPackageStructure(project_pkg_dir);
 
         if (already_installed) {
             // Already in pantry - free unused S3 URL, create symlinks and return
@@ -2449,6 +2446,17 @@ pub const Installer = struct {
             if (entry.kind == .directory) {
                 // Recursively copy directory
                 try self.copyDirectoryStructure(src_path, dst_path);
+            } else if (entry.kind == .sym_link) {
+                // Recreate symlink — read the target and create a new symlink at dest
+                const link_target = io_helper.readLinkAlloc(self.allocator, src_path) catch continue;
+                defer self.allocator.free(link_target);
+                io_helper.symLink(link_target, dst_path) catch |err| switch (err) {
+                    error.PathAlreadyExists => {
+                        io_helper.deleteFile(dst_path) catch {};
+                        io_helper.symLink(link_target, dst_path) catch {};
+                    },
+                    else => {},
+                };
             } else {
                 // Copy file using io_helper wrapper
                 try io_helper.copyFile(src_path, dst_path);
