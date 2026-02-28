@@ -6254,7 +6254,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'for f in "{{prefix}}"/lib/erlang/bin/erl "{{prefix}}"/lib/erlang/bin/erlc "{{prefix}}"/lib/erlang/bin/escript "{{prefix}}"/lib/erlang/bin/ct_run "{{prefix}}"/lib/erlang/bin/dialyzer "{{prefix}}"/lib/erlang/bin/typer; do',
           '  [ -f "$f" ] || continue',
           '  [ -L "$f" ] && continue',
-          '  __real_sed -i.bak \'s#^prog="$0"#prog="$(readlink -f "$0" 2>/dev/null || echo "$0")"#g\' "$f"',
+          '  sed -i.bak \'s#^prog="$0"#prog="$(readlink -f "$0" 2>/dev/null || echo "$0")"#g\' "$f"',
           '  rm -f "${f}.bak"',
           'done',
         ].join('\n'),
