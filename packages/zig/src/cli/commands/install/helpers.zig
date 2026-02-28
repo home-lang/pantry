@@ -502,12 +502,14 @@ pub fn installSinglePackage(
         .quiet = true,
     }) catch |err| {
         // Provide recovery suggestions on error
+        const context_msg = try std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ lookup_name, dep.version });
+        defer allocator.free(context_msg);
         const suggestion = try recovery_mod.RecoverySuggestion.suggest(
             allocator,
             err,
-            try std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ lookup_name, dep.version }),
+            context_msg,
         );
-        defer if (suggestion.message.len > 0) allocator.free(suggestion.message);
+        // Note: don't free suggestion.message — it's either a static string or context_msg (freed above)
 
         // Always print suggestions for package not found (even in quiet mode)
         const is_package_not_found = switch (err) {
