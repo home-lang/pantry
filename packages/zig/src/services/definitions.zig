@@ -61,6 +61,105 @@ pub const ServiceStatus = enum {
     }
 };
 
+/// Resolve JAVA_HOME by finding the java binary through pantry install locations
+/// and walking up to the JDK root. Returns null if not found.
+fn resolveJavaHome(allocator: std.mem.Allocator, project_root: ?[]const u8, home: ?[]const u8) !?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+
+    // Check project-local openjdk.org installation
+    if (project_root) |pr| {
+        const openjdk_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/openjdk.org", .{pr});
+        defer allocator.free(openjdk_dir);
+        if (io_helper.accessAbsolute(openjdk_dir, .{})) |_| {
+            // Find version subdirectory (e.g. v21.0.8.7)
+            var dir = io_helper.openDirAbsoluteForIteration(openjdk_dir) catch return null;
+            defer dir.close();
+            var iter = dir.iterate();
+            while (try iter.next()) |entry| {
+                if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
+                    const java_home = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ openjdk_dir, entry.name });
+                    return java_home;
+                }
+            }
+        } else |_| {}
+    }
+
+    // Check global pantry
+    if (home) |h| {
+        const global_openjdk = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/packages/openjdk.org", .{h});
+        defer allocator.free(global_openjdk);
+        if (io_helper.accessAbsolute(global_openjdk, .{})) |_| {
+            var dir = io_helper.openDirAbsoluteForIteration(global_openjdk) catch return null;
+            defer dir.close();
+            var iter = dir.iterate();
+            while (try iter.next()) |entry| {
+                if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
+                    const java_home = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ global_openjdk, entry.name });
+                    return java_home;
+                }
+            }
+        } else |_| {}
+    }
+
+    return null;
+}
+
+/// Resolve the pantry .bin directory PATH for service environments
+/// This ensures services can find dependency binaries (java, erlang, etc.)
+fn resolveServicePath(allocator: std.mem.Allocator, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
+    const system_path = "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+
+    if (project_root != null and home != null) {
+        return try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}/.pantry/global/bin:{s}", .{ project_root.?, home.?, system_path });
+    } else if (project_root) |pr| {
+        return try std.fmt.allocPrint(allocator, "{s}/pantry/.bin:{s}", .{ pr, system_path });
+    } else if (home) |h| {
+        return try std.fmt.allocPrint(allocator, "{s}/.pantry/global/bin:{s}", .{ h, system_path });
+    } else {
+        return try allocator.dupe(u8, system_path);
+    }
+}
+
+/// Resolve a package's installation root directory (e.g. pantry/kafka.apache.org/v4.2.0)
+/// Searches project-local pantry/ then global ~/.pantry/global/packages/
+fn resolvePackageHome(allocator: std.mem.Allocator, package_domain: []const u8, project_root: ?[]const u8, home: ?[]const u8) !?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+
+    // Check project-local installation
+    if (project_root) |pr| {
+        const pkg_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/{s}", .{ pr, package_domain });
+        defer allocator.free(pkg_dir);
+        if (io_helper.accessAbsolute(pkg_dir, .{})) |_| {
+            var dir = io_helper.openDirAbsoluteForIteration(pkg_dir) catch return null;
+            defer dir.close();
+            var iter = dir.iterate();
+            while (try iter.next()) |entry| {
+                if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
+                    return try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pkg_dir, entry.name });
+                }
+            }
+        } else |_| {}
+    }
+
+    // Check global pantry
+    if (home) |h| {
+        const global_pkg = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/packages/{s}", .{ h, package_domain });
+        defer allocator.free(global_pkg);
+        if (io_helper.accessAbsolute(global_pkg, .{})) |_| {
+            var dir = io_helper.openDirAbsoluteForIteration(global_pkg) catch return null;
+            defer dir.close();
+            var iter = dir.iterate();
+            while (try iter.next()) |entry| {
+                if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
+                    return try std.fmt.allocPrint(allocator, "{s}/{s}", .{ global_pkg, entry.name });
+                }
+            }
+        } else |_| {}
+    }
+
+    return null;
+}
+
 /// Resolve a service binary path by searching pantry install locations
 /// Tries: project-local pantry/.bin, global ~/.pantry/global/bin, then falls back to bare name
 fn resolveServiceBinary(allocator: std.mem.Allocator, binary_name: []const u8, project_root: ?[]const u8, home: ?[]const u8) ![]const u8 {
@@ -381,13 +480,66 @@ pub const Services = struct {
 
     /// Apache Kafka service
     pub fn kafka(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return kafkaWithContext(allocator, port, null);
+    }
+
+    /// Apache Kafka service with project context for resolving binary/Java paths
+    pub fn kafkaWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
         var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("KAFKA_HEAP_OPTS", try allocator.dupe(u8, "-Xmx1G -Xms1G"));
+
+        // Resolve JAVA_HOME from pantry-installed openjdk
+        const java_home = try resolveJavaHome(allocator, project_root, home);
+        if (java_home) |jh| {
+            try env_vars.put("JAVA_HOME", jh);
+        }
+
+        // Resolve PATH to include pantry .bin (for java binary)
+        const svc_path = try resolveServicePath(allocator, project_root, home);
+        try env_vars.put("PATH", svc_path);
+
+        // Resolve Kafka installation directory for config and binary paths
+        const kafka_home = try resolvePackageHome(allocator, "kafka.apache.org", project_root, home);
+        const kafka_bin = try resolveServiceBinary(allocator, "kafka-server-start.sh", project_root, home);
+
+        // KRaft mode (Kafka 4.x): write a startup script that auto-formats storage if needed
+        const controller_port = port + 1; // e.g. 9093 when port is 9092
+        const start_cmd = if (kafka_home) |kh| blk: {
+            // Write startup script to pantry logs dir
+            const script_dir = if (home) |h|
+                try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/scripts", .{h})
+            else
+                try allocator.dupe(u8, "/tmp");
+            defer allocator.free(script_dir);
+            io_helper.makePath(script_dir) catch {};
+
+            const script_path = try std.fmt.allocPrint(allocator, "{s}/kafka-start.sh", .{script_dir});
+            const script_content = try std.fmt.allocPrint(allocator, "#!/bin/bash\nset -e\nif [ ! -f /tmp/kraft-combined-logs/meta.properties ]; then\n  KAFKA_CLUSTER_ID=$({s}/bin/kafka-storage.sh random-uuid)\n  {s}/bin/kafka-storage.sh format --standalone --config {s}/config/server.properties --cluster-id \"$KAFKA_CLUSTER_ID\" 2>/dev/null || true\nfi\nexec {s} {s}/config/server.properties --override listeners=PLAINTEXT://localhost:{d},CONTROLLER://localhost:{d} --override advertised.listeners=PLAINTEXT://localhost:{d}\n", .{ kh, kh, kh, kafka_bin, kh, port, controller_port, port });
+            defer allocator.free(script_content);
+
+            // Write the script file
+            const script_file = io_helper.createFile(script_path, .{}) catch {
+                // Fall back to direct command without auto-format
+                allocator.free(script_path);
+                break :blk try std.fmt.allocPrint(allocator, "{s} {s}/config/server.properties --override listeners=PLAINTEXT://localhost:{d},CONTROLLER://localhost:{d} --override advertised.listeners=PLAINTEXT://localhost:{d}", .{ kafka_bin, kh, port, controller_port, port });
+            };
+            io_helper.writeAllToFile(script_file, script_content) catch {};
+            io_helper.closeFile(script_file);
+
+            break :blk try std.fmt.allocPrint(allocator, "/bin/bash {s}", .{script_path});
+        } else
+            try std.fmt.allocPrint(allocator, "{s} config/server.properties --override listeners=PLAINTEXT://localhost:{d},CONTROLLER://localhost:{d} --override advertised.listeners=PLAINTEXT://localhost:{d}", .{ kafka_bin, port, controller_port, port });
+        allocator.free(kafka_bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "kafka"),
             .display_name = try allocator.dupe(u8, "Apache Kafka"),
             .description = try allocator.dupe(u8, "Distributed event streaming platform"),
-            .start_command = try std.fmt.allocPrint(allocator, "kafka-server-start.sh config/server.properties --override listeners=PLAINTEXT://localhost:{d}", .{port}),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
@@ -397,13 +549,36 @@ pub const Services = struct {
 
     /// RabbitMQ service
     pub fn rabbitmq(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return rabbitmqWithContext(allocator, port, null);
+    }
+
+    /// RabbitMQ service with project context for resolving binary/Erlang paths
+    pub fn rabbitmqWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
         var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("RABBITMQ_NODE_PORT", try std.fmt.allocPrint(allocator, "{d}", .{port}));
+        try env_vars.put("RABBITMQ_NODENAME", try allocator.dupe(u8, "rabbit@localhost"));
+
+        // Resolve PATH to include pantry .bin (for erlang/escript binaries)
+        const svc_path = try resolveServicePath(allocator, project_root, home);
+        try env_vars.put("PATH", svc_path);
+
+        // Resolve RabbitMQ installation directory
+        const rabbitmq_home = try resolvePackageHome(allocator, "rabbitmq.com", project_root, home);
+        if (rabbitmq_home) |rh| {
+            try env_vars.put("RABBITMQ_HOME", rh);
+        }
+
+        const rabbitmq_bin = try resolveServiceBinary(allocator, "rabbitmq-server", project_root, home);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "rabbitmq"),
             .display_name = try allocator.dupe(u8, "RabbitMQ"),
             .description = try allocator.dupe(u8, "Message broker"),
-            .start_command = try allocator.dupe(u8, "rabbitmq-server"),
+            .start_command = rabbitmq_bin,
             .env_vars = env_vars,
             .port = port,
             .auto_start = false,
@@ -733,13 +908,43 @@ pub const Services = struct {
 
     /// OpenSearch service (Elasticsearch fork)
     pub fn opensearch(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        return opensearchWithContext(allocator, port, null);
+    }
+
+    /// OpenSearch service with project context for resolving binary/Java paths
+    pub fn opensearchWithContext(allocator: std.mem.Allocator, port: u16, project_root: ?[]const u8) !ServiceConfig {
+        const io_helper = @import("../io_helper.zig");
+        const home = io_helper.getEnvVarOwned(allocator, "HOME") catch null;
+        defer if (home) |h| allocator.free(h);
+
         var env_vars = std.StringHashMap([]const u8).init(allocator);
         try env_vars.put("OPENSEARCH_JAVA_OPTS", try allocator.dupe(u8, "-Xms512m -Xmx512m"));
+
+        // Resolve JAVA_HOME from pantry-installed openjdk
+        const java_home = try resolveJavaHome(allocator, project_root, home);
+        if (java_home) |jh| {
+            try env_vars.put("OPENSEARCH_JAVA_HOME", jh);
+        }
+
+        // Resolve PATH to include pantry .bin (for java binary)
+        const svc_path = try resolveServicePath(allocator, project_root, home);
+        try env_vars.put("PATH", svc_path);
+
+        // Resolve OpenSearch installation directory
+        const opensearch_home = try resolvePackageHome(allocator, "opensearch.org", project_root, home);
+        if (opensearch_home) |oh| {
+            try env_vars.put("OPENSEARCH_HOME", oh);
+        }
+
+        const opensearch_bin = try resolveServiceBinary(allocator, "opensearch", project_root, home);
+        const start_cmd = try std.fmt.allocPrint(allocator, "{s} -Ehttp.port={d}", .{ opensearch_bin, port });
+        allocator.free(opensearch_bin);
+
         return ServiceConfig{
             .name = try allocator.dupe(u8, "opensearch"),
             .display_name = try allocator.dupe(u8, "OpenSearch"),
             .description = try allocator.dupe(u8, "Search and analytics suite"),
-            .start_command = try std.fmt.allocPrint(allocator, "opensearch -Ehttp.port={d}", .{port}),
+            .start_command = start_cmd,
             .env_vars = env_vars,
             .port = port,
             .health_check = try std.fmt.allocPrint(allocator, "curl -sf http://127.0.0.1:{d}/_cluster/health", .{port}),

@@ -701,7 +701,7 @@ pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_
     } else if (std.mem.eql(u8, name, "meilisearch")) {
         return try Services.meilisearchWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "opensearch")) {
-        return try Services.opensearch(allocator, port);
+        return try Services.opensearchWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "couchdb")) {
         return try Services.couchdb(allocator, port);
     } else if (std.mem.eql(u8, name, "cassandra")) {
@@ -731,9 +731,9 @@ pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_
     }
     // Message Queues
     else if (std.mem.eql(u8, name, "kafka")) {
-        return try Services.kafka(allocator, port);
+        return try Services.kafkaWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "rabbitmq")) {
-        return try Services.rabbitmq(allocator, port);
+        return try Services.rabbitmqWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "pulsar")) {
         return try Services.pulsar(allocator, port);
     } else if (std.mem.eql(u8, name, "nats")) {
@@ -872,7 +872,7 @@ pub fn getServiceConfigWithPort(allocator: std.mem.Allocator, name: []const u8, 
     } else if (std.mem.eql(u8, name, "memcached")) {
         return try Services.memcached(allocator, port);
     } else if (std.mem.eql(u8, name, "opensearch")) {
-        return try Services.opensearch(allocator, port);
+        return try Services.opensearchWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "couchdb")) {
         return try Services.couchdb(allocator, port);
     } else if (std.mem.eql(u8, name, "cassandra")) {
@@ -894,9 +894,9 @@ pub fn getServiceConfigWithPort(allocator: std.mem.Allocator, name: []const u8, 
     } else if (std.mem.eql(u8, name, "valkey")) {
         return try Services.valkey(allocator, port);
     } else if (std.mem.eql(u8, name, "kafka")) {
-        return try Services.kafka(allocator, port);
+        return try Services.kafkaWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "rabbitmq")) {
-        return try Services.rabbitmq(allocator, port);
+        return try Services.rabbitmqWithContext(allocator, port, project_root);
     } else if (std.mem.eql(u8, name, "pulsar")) {
         return try Services.pulsar(allocator, port);
     } else if (std.mem.eql(u8, name, "nats")) {
