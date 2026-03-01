@@ -2397,15 +2397,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
     modifyRecipe: (recipe: any) => {
-      // Patch io_uring.c — newer kernel headers renamed/removed reserved fields:
-      //   io_sqring_offsets: resv2 removed (merged into resv1)
+      // Patch io_uring.c — newer kernel headers renamed/removed struct fields:
+      //   io_sqring_offsets: resv1/resv2 renamed
       //   io_uring_probe_op: resv1 renamed to resv
-      // These are just debug-printing of padding fields.
-      // Remove the entire if-blocks for resv1/resv2 to avoid kernel header compat issues.
-      // Use perl -0777 for multi-line regex to cleanly remove if-blocks + preceding tprint.
+      //   io_uring_buf_reg: pad renamed to flags
+      // Remove all if-blocks and CHECK_TYPE_SIZE for these fields.
+      // Use perl -0777 for multi-line regex to cleanly remove code blocks.
       const patchCmd = "find . -name io_uring.c -exec perl -0777 -i -pe '"
-        + 's/\\n[\\t ]*tprint_struct_next\\(\\);\\n[\\t ]*if \\(p->resv[12]?\\) \\{[^}]*\\}//gs;'
-        + "s/\\n[\\t ]*if \\(p->resv[12]?\\) \\{[^}]*\\}//gs;"
+        // Remove tprint_struct_next() + if (p->resv...) { ... } blocks
+        + 's/\\n[\\t ]*tprint_struct_next\\(\\);\\n[\\t ]*if \\([a-z_]*(?:\\.|->) *(?:resv[12]?|pad)\\) \\{[^}]*\\}//gs;'
+        // Remove standalone if (p->resv...) { ... } or if (arg.pad) { ... } blocks
+        + 's/\\n[\\t ]*if \\([a-z_]*(?:\\.|->) *(?:resv[12]?|pad)\\) \\{[^}]*\\}//gs;'
+        // Remove entire lines containing CHECK_TYPE_SIZE and .pad
+        + 's/.*CHECK_TYPE_SIZE.*\\.pad.*\\n//g;'
         + "' {} \\;"
       if (typeof recipe.build?.script === 'string') {
         recipe.build.script = patchCmd + '\n' + recipe.build.script
