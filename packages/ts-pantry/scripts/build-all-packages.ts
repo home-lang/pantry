@@ -521,8 +521,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'libvips.org': ['<8.18.0'],
   // MariaDB server: extremely slow build (~60min each), times out CI
   'mariadb.com/server': ['*'],
-  // starship old versions fail on darwin (Xcode 26.3 IOKit/CoreGraphics); 1.24.0+ works
-  'starship.rs': ['<1.24.0'],
+  // starship fails on darwin (Xcode 26.3 mac-notification-sys); 1.25.0+ works
+  'starship.rs': ['<1.25.0'],
   // cargo-c 0.9.32 fails on darwin; 0.10.0+ works
   'github.com/lu-zero/cargo-c': ['<0.10.0'],
   // jnv 0.2.3 fails on darwin; 0.3.0+ works
@@ -535,8 +535,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'freedesktop.org/p11-kit': ['<0.25.0'],
   // libheif 1.19.8 fails on darwin; 1.20.0+ works
   'github.com/strukturag/libheif': ['<1.20.0'],
-  // gnuplot 5.4.10 fails on both platforms; 6.0.0+ works
-  'gnuplot.info': ['<6.0.0'],
+  // gnuplot all versions fail (compiler check on linux, libiconv on darwin)
+  'gnuplot.info': ['*'],
   // tdnf 3.6.3 fails on linux; 3.7.0+ works
   'github.com/vmware/tdnf': ['<3.7.0'],
   // elizaOS: massive Node.js monorepo (2659 pnpm packages), causes runner timeout
@@ -557,6 +557,18 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'apache.org/thrift': ['<0.21.0'],
   // gnu groff 1.24.0 download failure (ftpmirror.gnu.org)
   'gnu.org/groff': ['1.24.0'],
+  // curlie goreleaser config v0 vs v2 mismatch; latest works
+  'curlie.io': ['<1.8.0'],
+  // mbedtls old releases removed from GitHub (404)
+  'tls.mbed.org': ['<3.6.0'],
+  // nx 20.11.0 npm tarball missing (404)
+  'nrwl.io/nx': ['20.11.0'],
+  // iso-codes old Debian pool URLs broken (404)
+  'debian.org/iso-codes': ['<4.20.0'],
+  // openexr 3.2.126 phantom version (tag doesn't exist)
+  'github.com/AcademySoftwareFoundation/openexr': ['3.2.126'],
+  // putty download URL template broken for versioned tarballs
+  'the.earth.li/putty': ['*'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
