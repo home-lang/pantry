@@ -1102,7 +1102,7 @@ Options:
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    // strace.io removed — added --disable-io-uring to configure args
+    'strace.io', // v6.2.0 incompatible with modern kernel headers (io_uring struct renames, caps.rsv size)
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
