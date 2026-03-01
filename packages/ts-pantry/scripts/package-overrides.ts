@@ -6239,9 +6239,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
             }
           }
         }
-        // Activate venv before make install-bin so $(PYTHON) uses venv python
+        // Activate venv before make install-bin so $(PYTHON) uses venv python.
+        // Also patch pyproject.toml: mercurial's license field is ambiguous
+        // (matches both old-style {text:...} and new-style expression), causing
+        // setuptools to error with "must be valid exactly by one definition".
+        // Removing the license field from [project] avoids this validation.
         if (typeof step === 'string' && step.includes('make install-bin')) {
-          recipe.build.script[i] = 'source ~/.venv/bin/activate && PYTHON=$HOME/.venv/bin/python3 make install-bin PREFIX={{prefix}}'
+          recipe.build.script[i] = [
+            'source ~/.venv/bin/activate',
+            'sed -i \'/^license\\b/d\' pyproject.toml',
+            'PYTHON=$HOME/.venv/bin/python3 make install-bin PREFIX={{prefix}}',
+          ].join(' && ')
         }
       }
     },
