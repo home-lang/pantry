@@ -2390,11 +2390,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── strace.io — fix btrfs static assertions ────────────────────────
+  // ─── strace.io — fix btrfs static assertions + io_uring kernel header compat ────
 
   'strace.io': {
     env: {
       CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
+    },
+    modifyRecipe: (recipe: any) => {
+      // Disable io_uring support — newer kernel headers removed resv2 field from io_uring_sqe
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--disable-io-uring')
+      }
     },
   },
 
@@ -7123,5 +7129,57 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/saagarjha/unxip': {
     supportedPlatforms: ['darwin/aarch64'],
+  },
+
+  // ─── freedesktop.org/mesa-glu — use system OpenGL on linux ─────────
+
+  'freedesktop.org/mesa-glu': {
+    supportedPlatforms: ['linux/x86-64'],
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libgl-dev libglx-dev libegl-dev 2>/dev/null || true',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: any) => {
+      // Remove mesa3d.org dep — use system OpenGL headers from apt
+      if (recipe.dependencies?.['mesa3d.org']) {
+        delete recipe.dependencies['mesa3d.org']
+      }
+    },
+  },
+
+  // ─── itstool.org — use system Python + libxml2 bindings on linux ───
+
+  'itstool.org': {
+    supportedPlatforms: ['linux/x86-64'],
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y python3 python3-libxml2 libxml2-dev 2>/dev/null || true',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: any) => {
+      // Remove pantry python.org dep — use system python3 with matching libxml2 bindings
+      if (recipe.dependencies?.['python.org']) {
+        delete recipe.dependencies['python.org']
+      }
+      // Remove gnome.org/libxml2 dep — use system libxml2
+      if (recipe.dependencies?.['gnome.org/libxml2']) {
+        delete recipe.dependencies['gnome.org/libxml2']
+      }
+    },
+  },
+
+  // ─── kornel.ski/dssim — isolate rustup to prevent nightly corruption ─
+
+  'kornel.ski/dssim': {
+    prependScript: [
+      'export RUSTUP_HOME=/tmp/dssim-rustup',
+      'export CARGO_HOME=/tmp/dssim-cargo',
+      'mkdir -p "$RUSTUP_HOME" "$CARGO_HOME"',
+    ],
   },
 }

@@ -1058,7 +1058,7 @@ Options:
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
     // taku910.github.io/mecab-ipadic removed — mecab now in S3
-    'itstool.org', // Needs Python libxml2 bindings matching exact Python version
+    // itstool.org removed — use system python3-libxml2 on linux, supportedPlatforms linux-only
     'oberhumer.com/ucl', // Dead upstream domain
     'khronos.org/SPIRV-Cross', // Project archived, tags removed
     'getsynth.com', // Dead/abandoned project
@@ -1101,7 +1101,7 @@ Options:
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    'strace.io', // strace 6.2.0 incompatible with newer kernel headers (io_uring.c resv2 member removed)
+    // strace.io removed — added --disable-io-uring to configure args
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
@@ -1111,7 +1111,7 @@ Options:
     // brxken128.github.io/dexios removed — added --cap-lints warn RUSTFLAGS override
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
-    'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup — needs isolated RUSTUP_HOME
+    // kornel.ski/dssim removed — isolated RUSTUP_HOME/CARGO_HOME prevents nightly corruption
     // khanacademy.org/genqlient removed — added go get x/tools@latest before build
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
     // elixir-lang.org removed — builds successfully on both platforms
@@ -1237,7 +1237,7 @@ Options:
     // ffmpeg.org removed — disabled SDL2 dep in override
     // fluxcd.io/flux2 removed — removed kustomize dep in override
     // freedesktop.org/appstream removed — disabled heavy deps + fixed sed -i BSD in override
-    'freedesktop.org/mesa-glu', // Build failure on darwin (OpenGL dep)
+    // freedesktop.org/mesa-glu removed — use system libgl-dev on linux, supportedPlatforms linux-only
     // freedesktop.org/p11-kit removed — fixed trust-paths template in override
     // freedesktop.org/polkit removed — disabled introspection + fixed prefix in override
     // freedesktop.org/poppler-qt5 removed — fixed cmake prefix + disabled qt5/introspection in override
