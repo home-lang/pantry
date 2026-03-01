@@ -52,11 +52,18 @@ pub fn extractServices(allocator: std.mem.Allocator, config: anytype) !?[]Servic
         services_list.deinit(allocator);
     }
 
-    // Iterate over all service entries
+    // Iterate over all service entries, skipping metadata keys
     var it = services_obj.iterator();
     while (it.next()) |entry| {
         const service_name = entry.key_ptr.*;
         const service_value = entry.value_ptr.*;
+
+        // Skip reserved metadata keys that are not service names
+        if (std.mem.eql(u8, service_name, "enabled") or
+            std.mem.eql(u8, service_name, "database") or
+            std.mem.eql(u8, service_name, "autoStart") or
+            std.mem.eql(u8, service_name, "custom"))
+            continue;
 
         // Service value can be:
         // 1. Boolean: true/false for auto-start
