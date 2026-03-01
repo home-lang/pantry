@@ -406,7 +406,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'sass-lang.com/libsass': { prependScript: [GLIBTOOL_FIX] },
   'sass-lang.com/sassc': { prependScript: [GLIBTOOL_FIX] },
   'zlib.net/minizip': { prependScript: [GLIBTOOL_FIX] },
-  'github.com/sekrit-twc/zimg': { prependScript: [GLIBTOOL_FIX] },
+  // github.com/sekrit-twc/zimg — moved to end of file (merged with prefix fix)
   'github.com/xiph/speexdsp': { prependScript: [GLIBTOOL_FIX] },
   'vapoursynth.com': { prependScript: [GLIBTOOL_FIX] },
   'github.com/maxmind/libmaxminddb': { prependScript: [GLIBTOOL_FIX] },
@@ -850,19 +850,35 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'sourceforge.net/xmlstar': {
     env: {
-      CFLAGS: '$CFLAGS -I{{deps.gnome.org/libxml2.prefix}}/include/libxml2 -Wno-error=incompatible-pointer-types',
-      CPPFLAGS: '-I{{deps.gnome.org/libxml2.prefix}}/include/libxml2',
+      CFLAGS: '$CFLAGS -Wno-error=incompatible-pointer-types',
     },
-    // Patch source for libxml2 2.15 API changes (xmlStructuredErrorFunc signature)
-    prependScript: [
-      'sed -i.bak \'s/xmlStructuredErrorFunc/xmlStructuredErrorHandler/g\' src/*.c src/*.h 2>/dev/null || true',
-      'sed -i.bak \'s/xmlErrorPtr/const xmlError */g\' src/*.c src/*.h 2>/dev/null || true',
-    ],
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Use system libxml2/libxslt from Homebrew (older version without 2.15 API breakage)
+          'brew install libxml2 libxslt 2>/dev/null || true',
+          'export CFLAGS="$CFLAGS -I$(brew --prefix libxml2)/include/libxml2"',
+          'export CPPFLAGS="-I$(brew --prefix libxml2)/include/libxml2 $CPPFLAGS"',
+          'export LDFLAGS="-L$(brew --prefix libxml2)/lib -L$(brew --prefix libxslt)/lib $LDFLAGS"',
+          'export PKG_CONFIG_PATH="$(brew --prefix libxml2)/lib/pkgconfig:$(brew --prefix libxslt)/lib/pkgconfig:$PKG_CONFIG_PATH"',
+        ],
+      },
+      linux: {
+        prependScript: [
+          // Use system libxml2/libxslt from apt (Ubuntu 22.04 has 2.9.x which is compatible)
+          'sudo apt-get install -y libxml2-dev libxslt1-dev 2>/dev/null || true',
+          'export CFLAGS="$CFLAGS -I/usr/include/libxml2"',
+          'export CPPFLAGS="-I/usr/include/libxml2 $CPPFLAGS"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Add gnome.org/libxml2 runtime dependency
-      if (recipe.dependencies) {
-        recipe.dependencies['gnome.org/libxml2'] = '^2'
-      }
+      // Remove S3 libxml2/libxslt deps — use system-installed versions instead
+      // S3 has libxml2 2.15 with incompatible API changes
+      if (recipe.dependencies?.['gnome.org/libxml2']) delete recipe.dependencies['gnome.org/libxml2']
+      if (recipe.dependencies?.['gnome.org/libxslt']) delete recipe.dependencies['gnome.org/libxslt']
+      if (recipe.build?.dependencies?.['gnome.org/libxml2']) delete recipe.build.dependencies['gnome.org/libxml2']
+      if (recipe.build?.dependencies?.['gnome.org/libxslt']) delete recipe.build.dependencies['gnome.org/libxslt']
     },
   },
 
@@ -2289,7 +2305,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'sourceforge.net/libtirpc': {
     prependScript: [GLIBTOOL_FIX],
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install system kerberos headers (instead of relying on kerberos.org from S3)
+          'sudo apt-get install -y libkrb5-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
+      // Remove kerberos.org dep — use system-installed kerberos instead
+      if (recipe.dependencies?.['kerberos.org']) {
+        delete recipe.dependencies['kerberos.org']
+      }
       // Remove llvm.org and LD=ld.lld on Linux (causes libtool failures)
       if (recipe.build?.dependencies?.linux) {
         delete recipe.build.dependencies.linux['llvm.org']
@@ -2300,10 +2328,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Add --enable-shared to ARGS to force shared library creation
       if (recipe.build?.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
         recipe.build.env.ARGS.push('--enable-shared')
-      }
-      // Ensure standard make is used
-      if (recipe.build?.dependencies?.linux?.['gnu.org/make']) {
-        // keep it
       }
     },
   },
@@ -2786,12 +2810,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Install bdw-gc from Homebrew since S3 binary may not have proper pkg-config
           'brew install bdw-gc libunistring 2>/dev/null || true',
+          // Bypass buildkit cc wrapper — libtool confuses it during scmconfig.h generation
+          'export CC=$(command -v gcc || echo /usr/bin/cc)',
+          'export CXX=$(command -v g++ || echo /usr/bin/c++)',
         ],
       },
       linux: {
         prependScript: [
           // Install libunistring and libgc from apt since S3 binaries may be missing
           'sudo apt-get install -y libgc-dev libunistring-dev 2>/dev/null || true',
+          // Bypass buildkit cc wrapper — libtool confuses it during scmconfig.h generation
+          'export CC=/usr/bin/gcc',
+          'export CXX=/usr/bin/g++',
         ],
       },
     },
@@ -6899,6 +6929,37 @@ export const packageOverrides: Record<string, PackageOverride> = {
             }
           }
         }
+      }
+    },
+  },
+
+  // ─── ntp.org — fix sed -i BSD compat ──────────────────────────────────
+
+  'ntp.org': {
+    modifyRecipe: (recipe: any) => {
+      // Fix sed -i BSD compat in ntpdc/nl.pl perl shebang fixup
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── zimg — fix cmake prefix quoting ──────────────────────────────────
+
+  'github.com/sekrit-twc/zimg': {
+    prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: any) => {
+      // Fix stray cmake prefix quoting
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '--prefix="{{prefix}}"' ? '--prefix={{prefix}}' : a,
+        )
       }
     },
   },

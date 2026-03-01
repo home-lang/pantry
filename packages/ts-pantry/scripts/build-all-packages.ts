@@ -1071,7 +1071,7 @@ Options:
     'tea.xyz', // Needs deno task compile (no distributable source)
     'sdkman.io', // Shell script distribution, not compilable
     'spacetimedb.com', // Hardcoded beta tag, no version discovery
-    'ntp.org', // Complex version format embedded in path (ntp-4.2.8p17)
+    // ntp.org removed — fixed sed -i BSD compat in override
     'jbig2dec.com', // Single hardcoded version, buried in ghostpdl releases
     'videolan.org/x264', // Version includes git hash, Debian mirror URL
     'github.com/mamba-org/mamba', // Hardcoded version, FIXME in recipe
@@ -1386,9 +1386,9 @@ Options:
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
     // nx.dev removed — successfully built and uploaded
     // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
-    'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
-    'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
-    'sourceforge.net/xmlstar', // libxml2 2.15 API changes too extensive (callback sig rewrite needed)
+    // gnu.org/guile removed — added CC/CXX bypass to avoid libtool/cc wrapper conflict
+    // sourceforge.net/libtirpc removed — removed kerberos.org dep, use system krb5
+    // sourceforge.net/xmlstar removed — use system libxml2/libxslt instead of S3 2.15
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
@@ -1408,7 +1408,7 @@ Options:
     'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
     'unidata.ucar.edu/netcdf', // cmake build fails even with HDF5 disabled
     'lavinmq.com', // Crystal/shards toolchain not available in CI
-    'vapoursynth.com', // Needs zimg (not in S3 dep chain)
+    'vapoursynth.com', // Needs python.org ~3.11 (S3 has 3.14) + zimg dep
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)
     // imagemagick.org removed — fixed version tag format + removed broken deps in override
   ])
