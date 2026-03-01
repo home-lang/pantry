@@ -1395,14 +1395,14 @@ Options:
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
-    'opendap.org', // configure XDR size detection fails even with cache vars
+    // opendap.org removed — moved ac_cv_sizeof cache vars from ARGS to env exports
     'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
     'modal.com', // grpcio-tools 1.59.2 fails to compile with current Python/compilers
     'rucio.cern.ch/rucio-client', // Python build module chain failure — empty pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
-    'tcl-lang.org', // System Tcl 8.x version conflict with newly built Tcl 9
+    // tcl-lang.org removed — apt-get remove system tcl8.6-dev to prevent version conflict
     // github.com/luvit/luv removed — fixed stray cmake prefix quote + LUA_INSTALL_DIR override
     // musepack.net removed — added --allow-multiple-definition to cmake linker flags
     'tcl-lang.org/expect', // SourceForge download mirror unreachable

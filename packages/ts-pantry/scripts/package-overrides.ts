@@ -4371,6 +4371,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'sudo apt-get install -y libtirpc-dev 2>/dev/null || true',
           'export CPPFLAGS="-I/usr/include/tirpc $CPPFLAGS"',
           'export LDFLAGS="-ltirpc $LDFLAGS"',
+          // Autoconf cache vars for XDR integer sizes — must be env vars, NOT configure args
+          'export ac_cv_sizeof_long=8',
+          'export ac_cv_sizeof_int=4',
+          'export ac_cv_sizeof_short=2',
         ],
       },
     },
@@ -4382,13 +4386,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove linux util-linux dep
       if (recipe.dependencies?.linux?.['github.com/util-linux/util-linux']) {
         delete recipe.dependencies.linux['github.com/util-linux/util-linux']
-      }
-      // Provide autoconf cache variables for XDR integer sizes
-      // (configure can't run test binaries in our build environment)
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS.push('ac_cv_sizeof_long=8')
-        recipe.build.env.ARGS.push('ac_cv_sizeof_int=4')
-        recipe.build.env.ARGS.push('ac_cv_sizeof_short=2')
       }
     },
   },
@@ -4589,6 +4586,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── tcl-lang.org — remove x.org/x11 dep + fix sed -i BSD ───────────
 
   'tcl-lang.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Remove system Tcl 8.x dev packages to prevent version conflict with Tcl 9 build
+          'sudo apt-get remove -y tcl-dev tcl8.6-dev tk-dev tk8.6-dev 2>/dev/null || true',
+          'sudo apt-get autoremove -y 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove x.org/x11 and x.org/exts deps (not in S3)
       if (recipe.dependencies?.['x.org/x11']) delete recipe.dependencies['x.org/x11']
