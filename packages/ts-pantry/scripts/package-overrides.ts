@@ -7122,6 +7122,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/saagarjha/unxip — arm64-only binary ────────────────
 
   'github.com/saagarjha/unxip': {
-    supportedPlatforms: ['darwin-aarch64'],
+    supportedPlatforms: ['darwin/aarch64'],
   },
 }
