@@ -6205,9 +6205,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mercurial-scm.org — fix setuptools_scm version for tarball builds ───
   // setuptools_scm can't determine version from tarball (no .git dir), causing
   // post-release version strings. SETUPTOOLS_SCM_PRETEND_VERSION forces correct version.
-  // On Linux CI with Python 3.14, python3 -m venv creates a venv WITHOUT its own pip,
-  // falling back to system pip 24.0 which lacks packaging.licenses support.
-  // Fix: ensurepip + pip upgrade gives the venv its own modern pip.
+  // On Linux CI with Python 3.14, system pip 24.0 at /usr/lib/python3/dist-packages/pip
+  // takes precedence over venv pip even when running venv's python. System pip's subprocess
+  // can't find packaging.licenses. Fix: use setuptools<77 which doesn't require it.
 
   'mercurial-scm.org': {
     env: {
@@ -6217,10 +6217,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (!recipe.build?.script) return
       for (let i = 0; i < recipe.build.script.length; i++) {
         const step = recipe.build.script[i]
-        // Find the run block that creates the venv and enhance it:
-        // - ensurepip ensures pip is installed IN the venv (not system pip)
-        // - pip upgrade gets modern pip that supports packaging.licenses
-        // - install packaging>=24.2 for Python 3.14 license expression parsing
+        // Pin setuptools<77 to avoid packaging.licenses requirement.
+        // On Linux CI, system pip 24.0 shadows venv pip and its subprocess
+        // can't find packaging.licenses even when installed in the venv.
+        // setuptools<77 doesn't validate license expressions, sidestepping the issue.
         if (step?.run && Array.isArray(step.run)) {
           const hasVenv = step.run.some((cmd: string) => cmd.includes('venv'))
           if (hasVenv) {
@@ -6228,15 +6228,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
               run: [
                 'python -m venv ~/.venv',
                 'source ~/.venv/bin/activate',
-                'python -m ensurepip --upgrade',
-                'pip install --upgrade pip',
-                'pip install "setuptools>=78" "packaging>=24.2" setuptools_scm wheel',
+                'pip install "setuptools>=70,<77" setuptools_scm wheel',
               ],
             }
           }
         }
         // Activate venv before make install-bin so $(PYTHON) uses venv python
-        // whose pip can find packaging.licenses
         if (typeof step === 'string' && step.includes('make install-bin')) {
           recipe.build.script[i] = 'source ~/.venv/bin/activate && PYTHON=$HOME/.venv/bin/python3 make install-bin PREFIX={{prefix}}'
         }
