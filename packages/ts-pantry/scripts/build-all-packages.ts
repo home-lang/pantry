@@ -487,8 +487,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'sfcgal.org': ['<2.2.0'],
   // doxygen 1.12.0 fails on darwin; 1.13.2+ works
   'doxygen.nl': ['<1.13.0'],
-  // graphviz ALL tested versions fail on linux (10.0.1–13.1.2); works on darwin only
-  'graphviz.org': ['<14.0.0'],
+  // graphviz ALL tested versions fail on linux (fontconfig API mismatch); darwin only
+  'graphviz.org': ['*'],
   // kubectl old versions fail; 1.34.5+ works on both
   'kubernetes.io/kubectl': ['<1.34.0'],
   // faad2 old versions fail on darwin; 2.11.1 works on both
@@ -499,12 +499,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'theora.org': ['<1.2.0'],
   // edencommon old versions fail on darwin; 2026.2.23.0 works (2026.1.26.0 also fails)
   'facebook.com/edencommon': ['<2026.2.0'],
-  // mvfst old versions fail on darwin; 2026.2.23.0 works (2026.1.26.0 also fails)
-  'facebook.com/mvfst': ['<2026.2.0'],
+  // mvfst fails on both platforms (fizz API mismatch); needs version-matched deps
+  'facebook.com/mvfst': ['*'],
   // harfbuzz old versions fail (giscanner missing on linux); 12.3.2 works on both
   'harfbuzz.org': ['<12.3.0'],
-  // glib old version fails on darwin; 2.87.2+ works
-  'gnome.org/glib': ['<2.87.0'],
+  // glib fails on both platforms (darwin build errors, linux msgfmt/libxml2); 2.88.0+ works
+  'gnome.org/glib': ['<2.88.0'],
   // dozzle old versions fail; 10.0.4+ works on both
   'dozzle.dev': ['<10.0.0'],
   // elementsproject old version fails; 23.2.7+ works
@@ -513,8 +513,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gitlab.com/procps-ng/watch': ['<4.0.6'],
   // HDF5 old versions fail to download (404); latest works
   'hdfgroup.org': ['2.0.0', '1.14.1'],
-  // fbthrift old versions fail on darwin (cmake stdlib); same as edencommon/mvfst
-  'facebook.com/fbthrift': ['<2026.2.0'],
+  // fbthrift old versions fail on darwin (glog header incompatibility); 2026.2.16.0 works
+  'facebook.com/fbthrift': ['<2026.2.16.0'],
   // gtk4 linker errors on darwin; fails on darwin, works on linux
   'gtk.org/gtk4': ['<4.19.0'],
   // libvips GIR generation fails on darwin for all tested versions
@@ -541,6 +541,22 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/vmware/tdnf': ['<3.7.0'],
   // elizaOS: massive Node.js monorepo (2659 pnpm packages), causes runner timeout
   'elizaOS.github.io': ['*'],
+  // PHP 7.4 is EOL and incompatible with libxml2 2.15.x API changes
+  'php.net': ['<8.0.0'],
+  // opencode.ai: native module resolution fails (parcel watcher darwin, husky linux)
+  'opencode.ai': ['*'],
+  // openresty: mercurial Python library path issue on darwin; 502 on linux
+  'openresty.org': ['*'],
+  // opensearch older versions fail (nmslib cmake unrecognized compiler)
+  'opensearch.org': ['<3.3.0'],
+  // ceres-solver 2.1.0 requires Eigen ~3.3 but only 5.0.1 available
+  'ceres-solver.org': ['<2.2.0'],
+  // ctags 6.2.0 missing libiconv on darwin; 6.3.0+ works
+  'ctags.io': ['<6.3.0'],
+  // apache thrift download failures (mirror issues)
+  'apache.org/thrift': ['<0.21.0'],
+  // gnu groff 1.24.0 download failure (ftpmirror.gnu.org)
+  'gnu.org/groff': ['1.24.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
