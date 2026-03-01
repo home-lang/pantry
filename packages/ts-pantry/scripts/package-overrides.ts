@@ -4564,12 +4564,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => a !== '--enable-vde',
         )
-        // Skip dtc git subproject fetch (fails in CI sandbox)
+        // Disable problematic optional features
         recipe.build.env.ARGS.push('--disable-slirp')
+        recipe.build.env.ARGS.push('--disable-capstone')
       }
       // Remove slirp dep (not reliably available)
       if (recipe.dependencies?.['freedesktop.org/slirp']) {
         delete recipe.dependencies['freedesktop.org/slirp']
+      }
+      // Remove capstone dep (cc wrapper breaks linking)
+      if (recipe.dependencies?.['capstone.dev'] || recipe.dependencies?.['capstone-engine.org']) {
+        delete recipe.dependencies['capstone.dev']
+        delete recipe.dependencies['capstone-engine.org']
       }
       // Remove libssh dep on darwin (headers missing in CI)
       if (recipe.dependencies?.['libssh.org']) {
