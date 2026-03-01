@@ -502,7 +502,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnome.org/glib': ['<2.88.0'],
   // dozzle old versions fail; 10.0.4+ works on both
   'dozzle.dev': ['<10.0.0'],
-  // elementsproject — FIXED via GLIBTOOL_FIX override in package-overrides.ts
+  // elementsproject 22.x needs Boost::System library (header-only in Boost 1.90+)
+  'elementsproject.org': ['<23.0.0'],
   // procps-ng watch old versions fail; 4.0.6 works
   'gitlab.com/procps-ng/watch': ['<4.0.6'],
   // HDF5 old versions fail to download (404); latest works

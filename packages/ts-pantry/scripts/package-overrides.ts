@@ -2939,6 +2939,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
         ],
       },
+      linux: {
+        prependScript: [
+          // libgd was built with libiconv — link it on linux too
+          'ICONV_DIR=$(find /tmp/buildkit-deps -path "*/gnu.org/libiconv/*/lib" -type d 2>/dev/null | head -1)',
+          'if [ -n "$ICONV_DIR" ]; then',
+          '  export LDFLAGS="-L$ICONV_DIR ${LDFLAGS:-}"',
+          '  export CPPFLAGS="-I$(dirname $ICONV_DIR)/include ${CPPFLAGS:-}"',
+          'fi',
+        ],
+      },
     },
     modifyRecipe: (recipe: any) => {
       // Remove linux-only libavif dep (not in S3)
@@ -6804,24 +6814,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── harfbuzz.org — fix giscanner distutils + PYTHONPATH on linux ──────
+  // ─── harfbuzz.org — disable introspection (g-ir-scanner incompatible with Python 3.12+) ──
 
   'harfbuzz.org': {
-    platforms: {
-      linux: {
-        prependScript: [
-          // Python 3.12+ removed distutils; install setuptools to provide it
-          'python3 -m pip install --break-system-packages setuptools 2>/dev/null || pip install setuptools 2>/dev/null || true',
-          // gobject-introspection's giscanner module needs to be on PYTHONPATH
-          'GI_PREFIX=$(dirname $(dirname $(which g-ir-scanner 2>/dev/null || echo /tmp/buildkit-deps/gnome.org/gobject-introspection/1.86.0/bin/g-ir-scanner)) 2>/dev/null)',
-          'if [ -d "$GI_PREFIX" ]; then',
-          '  GI_PYDIR=$(find "$GI_PREFIX/lib" -name "giscanner" -type d 2>/dev/null | head -1)',
-          '  if [ -n "$GI_PYDIR" ]; then',
-          '    export PYTHONPATH="$(dirname "$GI_PYDIR"):${PYTHONPATH:-}"',
-          '  fi',
-          'fi',
-        ],
-      },
+    modifyRecipe: (recipe: any) => {
+      // Disable gobject-introspection — the S3 g-ir-scanner was built against
+      // an older Python and imports distutils (removed in 3.12+) / has ABI mismatch
+      if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
+        delete recipe.build.dependencies['gnome.org/gobject-introspection']
+      }
+      // Add meson flag to disable introspection
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('-Dintrospection=disabled')
+      }
     },
   },
 }
