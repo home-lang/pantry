@@ -1393,7 +1393,7 @@ Options:
     'sourceforge.net/libtirpc', // cc wrapper confuses libtool — shared lib .so not produced (only .a)
     // sourceforge.net/xmlstar removed — use system libxml2/libxslt instead of S3 2.15
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
-    'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
+    // github.com/aws/aws-sdk-cpp removed — replaced crypto_LIBRARY with OPENSSL_ROOT_DIR, widened openssl constraint
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
     // opendap.org removed — moved ac_cv_sizeof cache vars from ARGS to env exports
     'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
@@ -1409,7 +1409,7 @@ Options:
     // --- Failures from verification builds (2026-02-26) ---
     // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
     'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
-    'unidata.ucar.edu/netcdf', // cmake build fails even with HDF5 disabled
+    // unidata.ucar.edu/netcdf removed — fixed sed -E -i pattern + removed HDF5 cmake fixup step
     'lavinmq.com', // Crystal/shards toolchain not available in CI
     'vapoursynth.com', // Needs python.org ~3.11 (S3 has 3.14) + zimg dep
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)

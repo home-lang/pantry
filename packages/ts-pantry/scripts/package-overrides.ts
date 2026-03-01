@@ -5769,9 +5769,28 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'github.com/aws/aws-sdk-cpp': {
     modifyRecipe: (recipe: any) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
+        // Fix cmake prefix quote
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
+        // Replace non-standard crypto_INCLUDE_DIR with OPENSSL_ROOT_DIR
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
+          !a.startsWith('-Dcrypto_INCLUDE_DIR='),
+        )
+        recipe.build.env.ARGS.push('-DOPENSSL_ROOT_DIR={{deps.openssl.org.prefix}}')
+        recipe.build.env.ARGS.push('-DOPENSSL_USE_STATIC_LIBS=FALSE')
+      }
+      // Remove non-standard crypto_LIBRARY from platform-specific ARGS
+      for (const plat of ['linux', 'darwin']) {
+        if (Array.isArray(recipe.build?.env?.[plat]?.ARGS)) {
+          recipe.build.env[plat].ARGS = recipe.build.env[plat].ARGS.filter((a: string) =>
+            !a.startsWith('-Dcrypto_LIBRARY='),
+          )
+        }
+      }
+      // Widen openssl constraint to allow OpenSSL 3.x from S3
+      if (recipe.dependencies?.['openssl.org']) {
+        recipe.dependencies['openssl.org'] = '*'
       }
     },
   },
@@ -6915,15 +6934,33 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS.push('-DENABLE_NETCDF_4=OFF')
       }
       // Fix sed -i (BSD requires suffix) in cmake fixup steps
+      // Must handle: string runs, array runs, and sed -E -i -f patterns
+      const fixSedInPlace = (s: string): string => {
+        if (s.includes('sed -i') && !s.includes('sed -i.bak')) {
+          s = s.replaceAll('sed -i ', 'sed -i.bak ')
+        }
+        if (s.includes('sed -E -i') && !s.includes('sed -E -i.bak')) {
+          s = s.replaceAll('sed -E -i ', 'sed -E -i.bak ')
+        }
+        return s
+      }
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
-          }
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string') {
+            recipe.build.script[i] = fixSedInPlace(step)
+          } else if (typeof step === 'object' && step.run) {
+            if (typeof step.run === 'string') {
+              step.run = fixSedInPlace(step.run)
+            } else if (Array.isArray(step.run)) {
+              step.run = step.run.map((s: string) => typeof s === 'string' ? fixSedInPlace(s) : s)
+            }
+            // Remove cmake fixup step that references HDF5 libs (HDF5 is disabled)
+            const runText = Array.isArray(step.run) ? step.run.join(' ') : String(step.run)
+            if (runText.includes('hdf5') || runText.includes('HDF5')) {
+              recipe.build.script.splice(i, 1)
+              i--
+            }
           }
         }
       }
