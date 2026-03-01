@@ -587,8 +587,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // gnome.org/librsvg: pango pkg-config path broken on darwin; latest works on linux
   'gnome.org/librsvg': ['<2.61.0'],
   // isc.org/bind9 — FIXED via --without-lmdb override in package-overrides.ts
-  // imagemagick old versions: ltdl linkage on darwin; 7.1.1.44+ works on both
-  'imagemagick.org': ['<7.1.1.40'],
+  // imagemagick old versions: ltdl + jpeg12/16 linkage on darwin; only latest works reliably
+  'imagemagick.org': ['<7.1.2.14'],
   // kaspa-miner: all versions fail on linux (Rust/GPU build issues)
   'crates.io/kaspa-miner': ['*'],
   // freetds: old versions fail on linux; latest works
