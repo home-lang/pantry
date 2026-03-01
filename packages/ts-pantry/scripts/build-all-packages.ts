@@ -386,8 +386,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/gabime/spdlog': ['<1.15.0'],
   // All versions fail (not installable via current recipe)
   'github.com/mamba-org/micro': ['*'],
-  // inetutils 2.5.0 fails everywhere; 2.4.0/2.6.0 work on darwin, 2.7.0+ works on both
-  'gnu.org/inetutils': ['2.5.0'],
+  // inetutils 2.4.0/2.5.0 fail on linux; 2.6.0 works on darwin, 2.7.0+ works on both
+  'gnu.org/inetutils': ['2.4.0', '2.5.0'],
   // bc 1.7.1 fails on linux; 1.8.0+ works on both
   'gnu.org/bc': ['<1.8.0'],
   // spotify_player Xcode 26.3 IOKit/CoreGraphics errors on darwin; 0.22.0+ works
@@ -604,11 +604,23 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // xmlstar 1.6.1 fails on darwin; only version
   'sourceforge.net/xmlstar': ['*'],
   // mitmproxy 11.1.3 bpf-linker failure on linux; 11.1.2 and 12.0+ work
-  'mitmproxy.org': ['11.1.3'],
+  'mitmproxy.org': ['11.1.2', '11.1.3'],
   // littlecms 2.12.0 fails on darwin; 2.16.0+ works
   'littlecms.com': ['<2.16.0'],
   // facebook watchman old versions fail (glog ABI); already in darwinOnlyDomains
   'facebook.com/watchman': ['<2026.2.16.0'],
+  // kornel.ski/dssim 3.2.3: ahash 0.7.6 uses removed Rust stdsimd feature; 3.4.0+ works
+  'kornel.ski/dssim': ['<3.3.0'],
+  // modal.com 1.2.6: Python <3.14 upper bound; 1.3.0+ raises it
+  'modal.com': ['<1.3.0'],
+  // rucio-client: Python 3.14 incompatibility (pyo3/pydantic-core + old deps); 39.0+ works
+  'rucio.cern.ch/rucio-client': ['<39.0.0'],
+  // qemu — FIXED via distlib install override in package-overrides.ts
+  // freetds — FIXED via libiconv override in package-overrides.ts
+  // gnu.org/inetutils 2.4.0 already skipped above (2.5.0)
+  // pwmt.org/zathura already in darwinOnlyDomains
+  // angular.dev: npm cache ENOENT on darwin — transient CI issue, skip affected versions
+  'angular.dev': ['<21.0.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {

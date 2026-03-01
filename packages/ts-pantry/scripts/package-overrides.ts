@@ -7303,4 +7303,28 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
   },
+
+  // ─── qemu.org — install distlib for Python 3.14 mkvenv ────────────────
+
+  'qemu.org': {
+    prependScript: [
+      // QEMU's configure runs mkvenv which needs distlib; not pre-installed with Python 3.14
+      'pip3 install distlib 2>/dev/null || python3 -m pip install distlib 2>/dev/null || true',
+    ],
+  },
+
+  // ─── freetds.org — fix libiconv linkage on darwin ──────────────────────
+
+  'freetds.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // FreeTDS uses iconv for charset conversion; needs explicit -liconv on macOS
+          'brew install libiconv 2>/dev/null || true',
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib -liconv ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
+        ],
+      },
+    },
+  },
 }
