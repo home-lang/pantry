@@ -1348,7 +1348,7 @@ Options:
     // crates.io/qsv removed — removed linux wayland dep in override
     // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
     'github.com/safe-waters/docker-lock', // Repository deleted (404)
-    'github.com/aristocratos/btop', // Needs GCC 14+ for C++23 std::ranges::to (CI has GCC 13)
+    // github.com/aristocratos/btop removed — darwin-only (Xcode clang supports C++23)
     'github.com/snowplow/factotum', // Ancient traitobject crate incompatible with modern Rust
     'github.com/withered-magic/starpls', // Bazel build fails in CI
     'github.com/hadolint/hadolint', // Haskell/Cabal build — GHC/Stack not available in CI

@@ -7257,4 +7257,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── github.com/aristocratos/btop — darwin-only (system clang has C++23) ─
+
+  'github.com/aristocratos/btop': {
+    supportedPlatforms: ['darwin/aarch64'],
+    modifyRecipe: (recipe: any) => {
+      // Remove linux-specific deps — we only build on darwin where system clang supports C++23
+      if (recipe.dependencies?.linux) {
+        delete recipe.dependencies.linux
+      }
+      if (recipe.build?.dependencies?.linux) {
+        delete recipe.build.dependencies.linux
+      }
+    },
+  },
 }
