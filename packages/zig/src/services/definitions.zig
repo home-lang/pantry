@@ -555,8 +555,7 @@ pub const Services = struct {
             io_helper.closeFile(script_file);
 
             break :blk try std.fmt.allocPrint(allocator, "/bin/bash {s}", .{script_path});
-        } else
-            try std.fmt.allocPrint(allocator, "{s} config/server.properties --override listeners=PLAINTEXT://localhost:{d},CONTROLLER://localhost:{d} --override advertised.listeners=PLAINTEXT://localhost:{d}", .{ kafka_bin, port, controller_port, port });
+        } else try std.fmt.allocPrint(allocator, "{s} config/server.properties --override listeners=PLAINTEXT://localhost:{d},CONTROLLER://localhost:{d} --override advertised.listeners=PLAINTEXT://localhost:{d}", .{ kafka_bin, port, controller_port, port });
         allocator.free(kafka_bin);
 
         return ServiceConfig{
