@@ -1381,7 +1381,7 @@ Options:
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
-    // github.com/saagarjha/unxip removed — restricted to darwin-aarch64 (arm64-only binary)
+    'github.com/saagarjha/unxip', // Release tag format mismatch (v3.3 not v3.3.0) — download 404
     // videolan.org/x265 removed — patched CMakeLists.txt to use CMP0025/CMP0054 NEW policy
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     // ceph.com/cephadm removed — replaced sed shebang patching with python3 -m zipapp
@@ -1402,7 +1402,7 @@ Options:
     // modal.com removed — upgraded grpcio-tools pin from 1.59.2 to >=1.68.0 for Python 3.13+ compat
     // rucio.cern.ch/rucio-client removed — stripped C-extension extras from pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
-    // tcl-lang.org removed — apt-get remove system tcl8.6-dev to prevent version conflict
+    'tcl-lang.org', // Complex 6-component build — tcltls/itk4 steps fail even after removing system Tcl 8.x
     // github.com/luvit/luv removed — fixed stray cmake prefix quote + LUA_INSTALL_DIR override
     // musepack.net removed — added --allow-multiple-definition to cmake linker flags
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
