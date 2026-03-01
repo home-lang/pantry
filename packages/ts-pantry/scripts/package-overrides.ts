@@ -6963,4 +6963,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── crates.io/kaspa-miner — suppress Rust lint warnings ─────────────
+
+  'crates.io/kaspa-miner': {
+    env: { RUSTFLAGS: '--cap-lints warn' },
+  },
+
+  // ─── cr.yp.to/daemontools — remove gcc dep on darwin ──────────────────
+
+  'cr.yp.to/daemontools': {
+    modifyRecipe: (recipe: any) => {
+      // Remove gnu.org/gcc dep — darwin uses xcrun (system cc), linux doesn't need explicit gcc
+      if (recipe.build?.dependencies?.['gnu.org/gcc']) {
+        delete recipe.build.dependencies['gnu.org/gcc']
+      }
+      // Remove linux kernel-headers dep (available on CI runners)
+      if (recipe.build?.dependencies?.linux?.['kernel.org/linux-headers']) {
+        delete recipe.build.dependencies.linux['kernel.org/linux-headers']
+      }
+    },
+  },
 }

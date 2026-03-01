@@ -1037,7 +1037,7 @@ Options:
     'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
     'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
-    'cr.yp.to/daemontools', // Archaic build system
+    // cr.yp.to/daemontools removed — removed gcc dep, use xcrun on darwin
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
     'crates.io/didyoumean', // Rust linker failure even with --cap-lints warn
@@ -1218,7 +1218,7 @@ Options:
     // aws.amazon.com/cli removed — widened python version constraint in override
     // bitcoin.org removed — removed capnproto/gcc deps in override
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
-    'crates.io/kaspa-miner', // Rust compilation failure
+    // crates.io/kaspa-miner removed — added --cap-lints warn RUSTFLAGS override
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
     // crates.io/qsv removed — built successfully on linux
     // debian.org/iso-codes removed — fixed prefix quoting in override
