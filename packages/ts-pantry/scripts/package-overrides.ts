@@ -2925,11 +2925,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       linux: {
         prependScript: [
-          // libgd was built with libiconv — link it on linux too
+          // libgd was built with libiconv — link it on linux too.
+          // GNU libiconv headers redefine iconv_open → libiconv_open, so
+          // configure's AC_SEARCH_LIBS finds glibc's iconv_open but the
+          // compiled objects need the prefixed symbols from -liconv.
           'ICONV_DIR=$(find /tmp/buildkit-deps -path "*/gnu.org/libiconv/*/lib" -type d 2>/dev/null | head -1)',
           'if [ -n "$ICONV_DIR" ]; then',
           '  export LDFLAGS="-L$ICONV_DIR ${LDFLAGS:-}"',
           '  export CPPFLAGS="-I$(dirname $ICONV_DIR)/include ${CPPFLAGS:-}"',
+          '  export LIBS="-liconv ${LIBS:-}"',
           'fi',
         ],
       },
