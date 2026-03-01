@@ -2397,10 +2397,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
     modifyRecipe: (recipe: any) => {
-      // Patch io_uring.c — newer kernel headers renamed resv2 field in io_sqring_offsets
-      // The source file is in src/io_uring.c (make runs from src/ subdir)
-      // Use find to patch it wherever it is in the source tree
-      const sedCmd = 'find . -name io_uring.c -exec sed -i.bak "s/resv2/resv1/g" {} \\;'
+      // Patch io_uring.c — newer kernel headers renamed struct fields:
+      //   io_sqring_offsets.resv2 → resv1
+      //   io_uring_probe_op.resv1 → resv
+      // Order matters: first change resv1→resv, THEN resv2→resv1
+      // This prevents the second sed from creating new resv1 refs that the first would catch
+      const sedCmd = [
+        'find . -name io_uring.c -exec sed -i.bak "s/\\bresv1\\b/resv/g" {} \\;',
+        'find . -name io_uring.c -exec sed -i.bak "s/\\bresv2\\b/resv1/g" {} \\;',
+      ].join('\n')
       if (typeof recipe.build?.script === 'string') {
         recipe.build.script = sedCmd + '\n' + recipe.build.script
       } else if (Array.isArray(recipe.build?.script)) {
