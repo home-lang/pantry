@@ -434,8 +434,32 @@ pub const Services = struct {
         // Ensure data directory exists
         io_helper.makePath(data_dir) catch {};
 
+        // Check if data VERSION file exists and differs from binary version
+        // If so, add --experimental-dumpless-upgrade to auto-migrate
+        var needs_upgrade = false;
+        const version_path = try std.fmt.allocPrint(allocator, "{s}/VERSION", .{data_dir});
+        defer allocator.free(version_path);
+        if (io_helper.readFileAlloc(allocator, version_path, 64)) |version_content| {
+            defer allocator.free(version_content);
+            const data_version = std.mem.trim(u8, version_content, " \t\r\n");
+            // Get binary version from resolved package path
+            const meili_home = try resolvePackageHome(allocator, "meilisearch.com", project_root, home);
+            if (meili_home) |mh| {
+                defer allocator.free(mh);
+                // Package home is like .../meilisearch.com/v1.36.0 — extract version after 'v'
+                const basename = std.fs.path.basename(mh);
+                const binary_version = if (basename.len > 1 and basename[0] == 'v') basename[1..] else basename;
+                if (!std.mem.eql(u8, data_version, binary_version)) {
+                    needs_upgrade = true;
+                }
+            }
+        } else |_| {} // No VERSION file = fresh install, no upgrade needed
+
         const meili_bin = try resolveServiceBinary(allocator, "meilisearch", project_root, home);
-        const start_cmd = try std.fmt.allocPrint(allocator, "{s} --http-addr 127.0.0.1:{d} --db-path {s} --no-analytics", .{ meili_bin, port, data_dir });
+        const start_cmd = if (needs_upgrade)
+            try std.fmt.allocPrint(allocator, "{s} --http-addr 127.0.0.1:{d} --db-path {s} --no-analytics --experimental-dumpless-upgrade", .{ meili_bin, port, data_dir })
+        else
+            try std.fmt.allocPrint(allocator, "{s} --http-addr 127.0.0.1:{d} --db-path {s} --no-analytics", .{ meili_bin, port, data_dir });
         allocator.free(meili_bin);
 
         // Set working directory to data dir so launchd doesn't use / (read-only on macOS)

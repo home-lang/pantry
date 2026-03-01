@@ -313,6 +313,11 @@ pub fn startCommandWithContext(allocator: std.mem.Allocator, args: []const []con
 
 /// Start a single service (no group resolution — avoids recursive error set)
 fn startSingleService(allocator: std.mem.Allocator, service_name: []const u8, project_root: ?[]const u8) !CommandResult {
+    // For PostgreSQL, ensure data directory is initialized and version-compatible
+    if (std.mem.eql(u8, service_name, "postgres") or std.mem.eql(u8, service_name, "postgresql")) {
+        ensurePostgresDataDir(allocator, project_root);
+    }
+
     // Initialize service manager
     var manager = ServiceManager.init(allocator);
     defer manager.deinit();
@@ -1546,6 +1551,146 @@ pub fn snapshotListCommand(allocator: std.mem.Allocator, args: []const []const u
 // ============================================================================
 // Project Hash Utility
 // ============================================================================
+
+/// Ensure PostgreSQL data directory is initialized and version-compatible.
+/// If major version mismatch detected, backs up old data and re-initializes.
+fn ensurePostgresDataDir(allocator: std.mem.Allocator, project_root: ?[]const u8) void {
+    const io_helper = @import("../../io_helper.zig");
+
+    const home = io_helper.getEnvVarOwned(allocator, "HOME") catch return;
+    defer allocator.free(home);
+
+    const pgdata = std.fmt.allocPrint(allocator, "{s}/.local/share/pantry/data/postgres", .{home}) catch return;
+    defer allocator.free(pgdata);
+
+    // Check if PGDATA exists
+    io_helper.accessAbsolute(pgdata, .{}) catch {
+        // PGDATA doesn't exist — create and init
+        io_helper.makePath(pgdata) catch return;
+        style.print("  📀 Initializing PostgreSQL data directory...\n", .{});
+        runInitdb(allocator, pgdata, project_root);
+        return;
+    };
+
+    // Read PG_VERSION
+    const pg_version_path = std.fmt.allocPrint(allocator, "{s}/PG_VERSION", .{pgdata}) catch return;
+    defer allocator.free(pg_version_path);
+
+    const pg_version_content = io_helper.readFileAlloc(allocator, pg_version_path, 64) catch {
+        // Directory exists but not initialized
+        style.print("  📀 Initializing PostgreSQL data directory...\n", .{});
+        runInitdb(allocator, pgdata, project_root);
+        return;
+    };
+    defer allocator.free(pg_version_content);
+
+    const data_version = std.mem.trim(u8, pg_version_content, " \t\r\n");
+    if (data_version.len == 0) return;
+
+    // Get current postgres binary version
+    var pg_bin_path: []const u8 = "postgres";
+    var pg_bin_allocated = false;
+    defer if (pg_bin_allocated) allocator.free(pg_bin_path);
+
+    if (project_root) |pr| {
+        const local = std.fmt.allocPrint(allocator, "{s}/pantry/.bin/postgres", .{pr}) catch return;
+        if (blk: {
+            io_helper.accessAbsolute(local, .{}) catch break :blk false;
+            break :blk true;
+        }) {
+            pg_bin_path = local;
+            pg_bin_allocated = true;
+        } else {
+            allocator.free(local);
+        }
+    }
+
+    const version_result = io_helper.childRun(allocator, &[_][]const u8{
+        pg_bin_path, "--version",
+    }) catch return;
+    defer allocator.free(version_result.stdout);
+    defer allocator.free(version_result.stderr);
+
+    if (version_result.term != .exited or version_result.term.exited != 0) return;
+
+    // Parse "postgres (PostgreSQL) 18.3" → extract major version "18"
+    const binary_major = blk: {
+        const output = std.mem.trim(u8, version_result.stdout, " \t\r\n");
+        var last_space: usize = 0;
+        for (output, 0..) |c, i| {
+            if (c == ' ') last_space = i;
+        }
+        const ver_str = output[last_space + 1 ..];
+        for (ver_str, 0..) |c, i| {
+            if (c == '.') break :blk ver_str[0..i];
+        }
+        break :blk ver_str;
+    };
+
+    if (!std.mem.eql(u8, data_version, binary_major)) {
+        style.print("  ⚠️  PostgreSQL version mismatch: data is v{s}, binary is v{s}\n", .{ data_version, binary_major });
+        style.print("  📀 Backing up old data and re-initializing...\n", .{});
+
+        const backup_path = std.fmt.allocPrint(allocator, "{s}.bak.v{s}", .{ pgdata, data_version }) catch return;
+        defer allocator.free(backup_path);
+
+        io_helper.deleteTree(backup_path) catch {};
+
+        const rename_cmd = std.fmt.allocPrint(allocator, "mv {s} {s}", .{ pgdata, backup_path }) catch return;
+        defer allocator.free(rename_cmd);
+        const rename_result = io_helper.childRun(allocator, &[_][]const u8{
+            "sh", "-c", rename_cmd,
+        }) catch return;
+        allocator.free(rename_result.stdout);
+        allocator.free(rename_result.stderr);
+
+        if (rename_result.term != .exited or rename_result.term.exited != 0) {
+            style.print("  ✗ Failed to backup old data directory\n", .{});
+            return;
+        }
+
+        io_helper.makePath(pgdata) catch return;
+        style.print("  📀 Initializing fresh PostgreSQL v{s} data directory...\n", .{binary_major});
+        runInitdb(allocator, pgdata, project_root);
+        style.print("  💾 Old v{s} data backed up to {s}\n", .{ data_version, backup_path });
+    }
+}
+
+fn runInitdb(allocator: std.mem.Allocator, pgdata: []const u8, project_root: ?[]const u8) void {
+    const io_helper = @import("../../io_helper.zig");
+
+    var initdb_path: []const u8 = "initdb";
+    var initdb_allocated = false;
+    defer if (initdb_allocated) allocator.free(initdb_path);
+
+    if (project_root) |pr| {
+        const local = std.fmt.allocPrint(allocator, "{s}/pantry/.bin/initdb", .{pr}) catch return;
+        if (blk: {
+            io_helper.accessAbsolute(local, .{}) catch break :blk false;
+            break :blk true;
+        }) {
+            initdb_path = local;
+            initdb_allocated = true;
+        } else {
+            allocator.free(local);
+        }
+    }
+
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        initdb_path, "-D", pgdata, "--no-locale", "--encoding=UTF8",
+    }) catch |err| {
+        style.print("  ⚠️  initdb failed: {s}\n", .{@errorName(err)});
+        return;
+    };
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term == .exited and result.term.exited == 0) {
+        style.print("  ✓ PostgreSQL data directory initialized\n", .{});
+    } else {
+        style.print("  ⚠️  initdb failed (exit {d})\n", .{if (result.term == .exited) result.term.exited else 0});
+    }
+}
 
 /// Compute a simple FNV-1a hash of a path and return first 8 hex chars
 pub fn computeProjectHash(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {

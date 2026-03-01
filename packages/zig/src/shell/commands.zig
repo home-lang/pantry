@@ -1412,75 +1412,190 @@ pub const ShellCommands = struct {
         const pg_version_path = try std.fmt.allocPrint(self.allocator, "{s}/PG_VERSION", .{pgdata});
         defer self.allocator.free(pg_version_path);
 
-        io_helper.accessAbsolute(pg_version_path, .{}) catch {
-            // Directory exists but not initialized
+        const pg_version_content = io_helper.readFileAlloc(self.allocator, pg_version_path, 64) catch {
+            // Directory exists but not initialized — run initdb
             style.print("  📀 Initializing PostgreSQL data directory...\n", .{});
-
-            var initdb_path: []const u8 = "initdb";
-            var initdb_allocated = false;
-            defer if (initdb_allocated) self.allocator.free(initdb_path);
-
-            if (project_root) |pr| {
-                const local = try std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/initdb", .{pr});
-                io_helper.accessAbsolute(local, .{}) catch {
-                    self.allocator.free(local);
-                    return;
-                };
-                initdb_path = local;
-                initdb_allocated = true;
-            }
-
-            const result = io_helper.childRun(self.allocator, &[_][]const u8{
-                initdb_path, "-D", pgdata, "--no-locale", "--encoding=UTF8",
-            }) catch return;
-            defer self.allocator.free(result.stdout);
-            defer self.allocator.free(result.stderr);
-
-            if (result.term == .exited and result.term.exited == 0) {
-                style.print("  ✓ PostgreSQL data directory initialized\n", .{});
-            }
+            try self.runInitdb(pgdata, project_root);
+            return;
         };
+        defer self.allocator.free(pg_version_content);
+
+        // PG_VERSION exists — check if it matches current binary's major version
+        const data_version = std.mem.trim(u8, pg_version_content, " \t\r\n");
+        if (data_version.len == 0) return;
+
+        // Get current postgres binary version
+        var pg_bin_path: []const u8 = "postgres";
+        var pg_bin_allocated = false;
+        defer if (pg_bin_allocated) self.allocator.free(pg_bin_path);
+
+        if (project_root) |pr| {
+            const local = try std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/postgres", .{pr});
+            if (blk: {
+                io_helper.accessAbsolute(local, .{}) catch break :blk false;
+                break :blk true;
+            }) {
+                pg_bin_path = local;
+                pg_bin_allocated = true;
+            } else {
+                self.allocator.free(local);
+            }
+        }
+
+        const version_result = io_helper.childRun(self.allocator, &[_][]const u8{
+            pg_bin_path, "--version",
+        }) catch return;
+        defer self.allocator.free(version_result.stdout);
+        defer self.allocator.free(version_result.stderr);
+
+        if (version_result.term != .exited or version_result.term.exited != 0) return;
+
+        // Parse "postgres (PostgreSQL) 18.3" → extract major version "18"
+        const binary_major = blk: {
+            const output = std.mem.trim(u8, version_result.stdout, " \t\r\n");
+            // Find last space, then take the version number
+            var last_space: usize = 0;
+            for (output, 0..) |c, i| {
+                if (c == ' ') last_space = i;
+            }
+            const ver_str = output[last_space + 1 ..];
+            // Take characters before first dot
+            for (ver_str, 0..) |c, i| {
+                if (c == '.') break :blk ver_str[0..i];
+            }
+            break :blk ver_str;
+        };
+
+        if (!std.mem.eql(u8, data_version, binary_major)) {
+            // Major version mismatch — backup old data and re-init
+            style.print("  ⚠️  PostgreSQL version mismatch: data is v{s}, binary is v{s}\n", .{ data_version, binary_major });
+            style.print("  📀 Backing up old data and re-initializing...\n", .{});
+
+            const backup_path = try std.fmt.allocPrint(self.allocator, "{s}.bak.v{s}", .{ pgdata, data_version });
+            defer self.allocator.free(backup_path);
+
+            // Remove any existing backup with same name
+            io_helper.deleteTree(backup_path) catch {};
+
+            // Rename current data dir to backup
+            const rename_cmd = try std.fmt.allocPrint(self.allocator, "mv {s} {s}", .{ pgdata, backup_path });
+            defer self.allocator.free(rename_cmd);
+            const rename_result = io_helper.childRun(self.allocator, &[_][]const u8{
+                "sh", "-c", rename_cmd,
+            }) catch return;
+            self.allocator.free(rename_result.stdout);
+            self.allocator.free(rename_result.stderr);
+
+            if (rename_result.term != .exited or rename_result.term.exited != 0) {
+                style.print("  ✗ Failed to backup old data directory\n", .{});
+                return;
+            }
+
+            // Create fresh data dir and init
+            io_helper.makePath(pgdata) catch return;
+            style.print("  📀 Initializing fresh PostgreSQL v{s} data directory...\n", .{binary_major});
+            try self.runInitdb(pgdata, project_root);
+            style.print("  💾 Old v{s} data backed up to {s}\n", .{ data_version, backup_path });
+        }
     }
 
-    /// Auto-create database based on .env file if postgres is a dependency
+    /// Run initdb to initialize a PostgreSQL data directory
+    fn runInitdb(self: *ShellCommands, pgdata: []const u8, project_root: ?[]const u8) !void {
+        var initdb_path: []const u8 = "initdb";
+        var initdb_allocated = false;
+        defer if (initdb_allocated) self.allocator.free(initdb_path);
+
+        if (project_root) |pr| {
+            const local = try std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/initdb", .{pr});
+            if (blk: {
+                io_helper.accessAbsolute(local, .{}) catch break :blk false;
+                break :blk true;
+            }) {
+                initdb_path = local;
+                initdb_allocated = true;
+            } else {
+                self.allocator.free(local);
+            }
+        }
+
+        const result = io_helper.childRun(self.allocator, &[_][]const u8{
+            initdb_path, "-D", pgdata, "--no-locale", "--encoding=UTF8",
+        }) catch |err| {
+            style.print("  ⚠️  initdb failed: {s}\n", .{@errorName(err)});
+            return;
+        };
+        defer self.allocator.free(result.stdout);
+        defer self.allocator.free(result.stderr);
+
+        if (result.term == .exited and result.term.exited == 0) {
+            style.print("  ✓ PostgreSQL data directory initialized\n", .{});
+        } else {
+            style.print("  ⚠️  initdb failed (exit {d})\n", .{if (result.term == .exited) result.term.exited else 0});
+            if (result.stderr.len > 0) {
+                style.print("    {s}\n", .{result.stderr[0..@min(result.stderr.len, 200)]});
+            }
+        }
+    }
+
+    /// Auto-create database based on pantry.config.ts services.database or .env file
     fn autoCreateDatabase(self: *ShellCommands, project_root: []const u8) !void {
-        // Check if .env exists in project root
-        const env_path = try std.fs.path.join(self.allocator, &[_][]const u8{
-            project_root, ".env",
-        });
-        defer self.allocator.free(env_path);
-
-        const env_content = io_helper.readFileAlloc(self.allocator, env_path, 1 * 1024 * 1024) catch return;
-        defer self.allocator.free(env_content);
-
-        // Parse DB_CONNECTION, DB_DATABASE, DB_HOST, DB_PORT, DB_USERNAME from .env
+        // Try pantry.config.ts services.database first, then fall back to .env
         var db_connection: ?[]const u8 = null;
         var db_database: ?[]const u8 = null;
         var db_host: []const u8 = "127.0.0.1";
         var db_port: []const u8 = "5432";
         var db_username: ?[]const u8 = null;
+        var from_config = false;
 
-        var line_iter = std.mem.splitScalar(u8, env_content, '\n');
-        while (line_iter.next()) |line| {
-            const trimmed = std.mem.trim(u8, line, " \t\r");
-            if (trimmed.len == 0 or trimmed[0] == '#') continue;
-
-            if (std.mem.startsWith(u8, trimmed, "DB_CONNECTION=")) {
-                db_connection = std.mem.trim(u8, trimmed["DB_CONNECTION=".len..], " \t\r\"'");
-            } else if (std.mem.startsWith(u8, trimmed, "DB_DATABASE=")) {
-                db_database = std.mem.trim(u8, trimmed["DB_DATABASE=".len..], " \t\r\"'");
-            } else if (std.mem.startsWith(u8, trimmed, "DB_HOST=")) {
-                db_host = std.mem.trim(u8, trimmed["DB_HOST=".len..], " \t\r\"'");
-            } else if (std.mem.startsWith(u8, trimmed, "DB_PORT=")) {
-                db_port = std.mem.trim(u8, trimmed["DB_PORT=".len..], " \t\r\"'");
-            } else if (std.mem.startsWith(u8, trimmed, "DB_USERNAME=")) {
-                db_username = std.mem.trim(u8, trimmed["DB_USERNAME=".len..], " \t\r\"'");
+        // Source 1: pantry.config.ts services.database
+        const db_config = self.loadDatabaseConfig(project_root) catch null;
+        if (db_config) |cfg| {
+            if (cfg.connection) |c| {
+                db_connection = c;
+                from_config = true;
             }
+            if (cfg.database) |d| db_database = d;
+            if (cfg.host) |h| db_host = h;
+            if (cfg.port_str) |p| db_port = p;
+            if (cfg.username) |u| db_username = u;
+        }
+
+        // Source 2: .env file (fills in any gaps not set by config)
+        const env_path = try std.fs.path.join(self.allocator, &[_][]const u8{
+            project_root, ".env",
+        });
+        defer self.allocator.free(env_path);
+
+        if (io_helper.readFileAlloc(self.allocator, env_path, 1 * 1024 * 1024)) |env_content| {
+            defer self.allocator.free(env_content);
+
+            var line_iter = std.mem.splitScalar(u8, env_content, '\n');
+            while (line_iter.next()) |line| {
+                const trimmed = std.mem.trim(u8, line, " \t\r");
+                if (trimmed.len == 0 or trimmed[0] == '#') continue;
+
+                if (db_connection == null and std.mem.startsWith(u8, trimmed, "DB_CONNECTION=")) {
+                    db_connection = std.mem.trim(u8, trimmed["DB_CONNECTION=".len..], " \t\r\"'");
+                } else if (db_database == null and std.mem.startsWith(u8, trimmed, "DB_DATABASE=")) {
+                    db_database = std.mem.trim(u8, trimmed["DB_DATABASE=".len..], " \t\r\"'");
+                } else if (!from_config and std.mem.startsWith(u8, trimmed, "DB_HOST=")) {
+                    db_host = std.mem.trim(u8, trimmed["DB_HOST=".len..], " \t\r\"'");
+                } else if (!from_config and std.mem.startsWith(u8, trimmed, "DB_PORT=")) {
+                    db_port = std.mem.trim(u8, trimmed["DB_PORT=".len..], " \t\r\"'");
+                } else if (db_username == null and std.mem.startsWith(u8, trimmed, "DB_USERNAME=")) {
+                    db_username = std.mem.trim(u8, trimmed["DB_USERNAME=".len..], " \t\r\"'");
+                }
+            }
+        } else |_| {
+            // No .env file — only proceed if config provided values
+            if (!from_config) return;
         }
 
         // Only handle PostgreSQL for now
         const connection = db_connection orelse return;
-        if (!std.mem.eql(u8, connection, "pgsql") and !std.mem.eql(u8, connection, "postgres")) return;
+        if (!std.mem.eql(u8, connection, "pgsql") and
+            !std.mem.eql(u8, connection, "postgres") and
+            !std.mem.eql(u8, connection, "postgresql")) return;
 
         const database = db_database orelse return;
         if (database.len == 0) return;
@@ -1528,6 +1643,161 @@ pub const ShellCommands = struct {
                 style.print("    {s}\n", .{create.stderr[0..@min(create.stderr.len, 200)]});
             }
         }
+    }
+
+    /// Database configuration from pantry.config.ts services.database
+    const DatabaseConfig = struct {
+        connection: ?[]const u8 = null,
+        database: ?[]const u8 = null,
+        username: ?[]const u8 = null,
+        host: ?[]const u8 = null,
+        port_str: ?[]const u8 = null,
+    };
+
+    /// Load database config from pantry.config.ts services.database section
+    fn loadDatabaseConfig(self: *ShellCommands, project_root: []const u8) !?DatabaseConfig {
+        const config_names = [_][]const u8{
+            "pantry.config.ts",
+            "pantry.config.js",
+            ".pantry.config.ts",
+            ".pantry.config.js",
+        };
+
+        var config_path: ?[]const u8 = null;
+        defer if (config_path) |p| self.allocator.free(p);
+
+        for (config_names) |name| {
+            const candidate = std.fs.path.join(self.allocator, &[_][]const u8{
+                project_root, name,
+            }) catch continue;
+
+            io_helper.accessAbsolute(candidate, .{}) catch {
+                self.allocator.free(candidate);
+                continue;
+            };
+
+            config_path = candidate;
+            break;
+        }
+
+        const cfg_path = config_path orelse return null;
+
+        // Try to execute with bun or node to get JSON output
+        const runtime_paths = [_][]const u8{
+            "/opt/homebrew/bin/bun",
+            "/usr/local/bin/bun",
+            "/opt/homebrew/bin/node",
+            "/usr/local/bin/node",
+        };
+
+        // Also try project-local bun
+        const local_bun = std.fmt.allocPrint(self.allocator, "{s}/pantry/.bin/bun", .{project_root}) catch null;
+        defer if (local_bun) |lb| self.allocator.free(lb);
+
+        var json_output: ?[]const u8 = null;
+        defer if (json_output) |j| self.allocator.free(j);
+
+        // Try project-local bun first
+        if (local_bun) |lb| {
+            if (blk: {
+                io_helper.accessAbsolute(lb, .{}) catch break :blk false;
+                break :blk true;
+            }) {
+                const wrapper = std.fmt.allocPrint(
+                    self.allocator,
+                    "import c from '{s}'; console.log(JSON.stringify(c.default || c));",
+                    .{cfg_path},
+                ) catch return null;
+                defer self.allocator.free(wrapper);
+
+                const result = io_helper.childRun(
+                    self.allocator,
+                    &[_][]const u8{ lb, "-e", wrapper },
+                ) catch return null;
+                defer self.allocator.free(result.stderr);
+
+                if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
+                    json_output = result.stdout;
+                } else {
+                    self.allocator.free(result.stdout);
+                }
+            }
+        }
+
+        // Try system runtimes
+        if (json_output == null) {
+            for (runtime_paths) |runtime| {
+                if (!(blk: {
+                    io_helper.accessAbsolute(runtime, .{}) catch break :blk false;
+                    break :blk true;
+                })) continue;
+
+                const wrapper = std.fmt.allocPrint(
+                    self.allocator,
+                    "import c from '{s}'; console.log(JSON.stringify(c.default || c));",
+                    .{cfg_path},
+                ) catch continue;
+                defer self.allocator.free(wrapper);
+
+                const result = io_helper.childRun(
+                    self.allocator,
+                    &[_][]const u8{ runtime, "-e", wrapper },
+                ) catch continue;
+                defer self.allocator.free(result.stderr);
+
+                if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
+                    json_output = result.stdout;
+                    break;
+                }
+                self.allocator.free(result.stdout);
+            }
+        }
+
+        const json_str = json_output orelse return null;
+
+        // Parse JSON and extract services.database
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, json_str, .{}) catch return null;
+        defer parsed.deinit();
+
+        const root = parsed.value;
+        if (root != .object) return null;
+
+        const services = root.object.get("services") orelse return null;
+        if (services != .object) return null;
+
+        const database = services.object.get("database") orelse return null;
+        if (database != .object) return null;
+
+        var config = DatabaseConfig{};
+        const db_obj = database.object;
+
+        if (db_obj.get("connection")) |v| {
+            if (v == .string) config.connection = v.string;
+        }
+        if (db_obj.get("name")) |v| {
+            if (v == .string) config.database = v.string;
+        }
+        if (db_obj.get("username")) |v| {
+            if (v == .string) config.username = v.string;
+        }
+        if (db_obj.get("password")) |_| {
+            // Acknowledged but not used in createdb command (uses trust auth)
+        }
+        if (db_obj.get("host")) |v| {
+            if (v == .string) config.host = v.string;
+        }
+        if (db_obj.get("port")) |v| {
+            if (v == .integer) {
+                config.port_str = std.fmt.allocPrint(self.allocator, "{d}", .{v.integer}) catch null;
+            } else if (v == .string) {
+                config.port_str = v.string;
+            }
+        }
+        if (db_obj.get("authMethod")) |_| {
+            // Acknowledged but PostgreSQL auth is controlled by pg_hba.conf
+        }
+
+        return config;
     }
 
     /// Execute postSetup commands from pantry.config.ts / pantry.config.js
