@@ -3,7 +3,7 @@
  *
  * @domain `notroj.github.io/neon`
  * @programs `neon-config`
- * @version `0.36.0` (7 versions available)
+ * @version `0.37.0` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install notroj.github.io/neon`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "neon-config"
  * console.log(pkg.description) // "neon - an HTTP/1.1 and WebDAV client library wi..."
  * console.log(pkg.programs)    // ["neon-config"]
- * console.log(pkg.versions[0]) // "0.36.0" (latest)
+ * console.log(pkg.versions[0]) // "0.37.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/notroj-github-io/neon.md
@@ -76,6 +76,7 @@ export const notrojgithubioneonPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.37.0',
     '0.36.0',
     '0.35.0',
     '0.34.2',
