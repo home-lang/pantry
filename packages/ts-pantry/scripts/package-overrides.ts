@@ -975,20 +975,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'videolan.org/x265': {
+    // Patch CMakeLists.txt: cmake 4.x rejects cmake_policy(SET CMP0025 OLD) and CMP0054 OLD.
+    // Changing OLD→NEW in the source is the only fix (POLICY_DEFAULT is overridden by explicit set).
+    prependScript: [
+      'find . -name CMakeLists.txt -exec sed -i.bak \'s/cmake_policy(SET CMP0025 OLD)/cmake_policy(SET CMP0025 NEW)/g; s/cmake_policy(SET CMP0054 OLD)/cmake_policy(SET CMP0054 NEW)/g\' {} +',
+    ],
     modifyRecipe: (recipe: any) => {
       // Move nasm.us dependency to linux-only (assembly disabled on darwin)
       if (recipe.build?.dependencies?.['nasm.us']) {
         delete recipe.build.dependencies['nasm.us']
         if (!recipe.build.dependencies.linux) recipe.build.dependencies.linux = {}
         recipe.build.dependencies.linux['nasm.us'] = '*'
-      }
-      // Fix cmake CMP0025/CMP0054 OLD policy (no longer supported in cmake 3.31+)
-      // Add policy flags to ARGS_DEFAULT
-      if (Array.isArray(recipe.build?.env?.ARGS_DEFAULT)) {
-        recipe.build.env.ARGS_DEFAULT.push(
-          '-DCMAKE_POLICY_DEFAULT_CMP0025=NEW',
-          '-DCMAKE_POLICY_DEFAULT_CMP0054=NEW',
-        )
       }
       // Add -DENABLE_ASSEMBLY=OFF on darwin to all cmake invocations
       if (Array.isArray(recipe.build?.script)) {
@@ -2384,7 +2381,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'strace.io': {
     env: {
-      CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=0 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
+      CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
   },
 

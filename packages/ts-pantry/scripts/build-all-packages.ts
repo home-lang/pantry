@@ -1077,7 +1077,7 @@ Options:
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
     'wez.github.io/wezterm', // Source tarball download fails
-    'invisible-island.net/dialog', // Complex version format with date suffix
+
     'jetporch.com', // Dead project, GitHub repo/tags removed
     'libsdl.org/SDL_image', // SDL3 version resolved but URL uses SDL2_image naming
     'gource.io', // GitHub releases removed/restructured
@@ -1092,7 +1092,7 @@ Options:
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    'strace.io', // btrfs xlat static assertion: generated headers bypass CFLAGS, can't fix with -D flags
+    // strace.io removed — fixed BTRFS_EXTENT_REF_V0_KEY value from 0 to 180
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
@@ -1105,8 +1105,8 @@ Options:
     'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup
     // khanacademy.org/genqlient removed — added go get x/tools@latest before build
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
-    'elixir-lang.org', // Erlang dep has hardcoded build-time paths (erlexec not found)
-    'elixir-lang.org/otp-27', // Same erlang relocatability issue
+    // elixir-lang.org removed — builds successfully on both platforms
+    // elixir-lang.org/otp-27 removed — builds successfully on both platforms
     // pimalaya.org/himalaya removed — removed pinned rust-toolchain.toml, using stable Rust
     'plakar.io', // cockroachdb/swiss requires Go runtime internals not in Go 1.26
     'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
@@ -1373,13 +1373,13 @@ Options:
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
     'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
-    'videolan.org/x265', // cmake multi-build (10bit/12bit/8bit) directory management + make failure
+    // videolan.org/x265 removed — patched CMakeLists.txt to use CMP0025/CMP0054 NEW policy
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
     // opensearch.org removed — openjdk.org override now downloads pre-built Temurin JDK
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
     // nx.dev removed — successfully built and uploaded
-    'gnu.org/texinfo', // cc wrapper + libtool interaction causes shell syntax error in gnulib
+    // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
     'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
     'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
     'sourceforge.net/xmlstar', // Incompatible with libxml2 2.15 API (callback signature changes)
