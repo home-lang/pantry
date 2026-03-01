@@ -6205,20 +6205,43 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mercurial-scm.org — fix setuptools_scm version for tarball builds ───
   // setuptools_scm can't determine version from tarball (no .git dir), causing
   // post-release version strings. SETUPTOOLS_SCM_PRETEND_VERSION forces correct version.
+  // On Linux CI with Python 3.14, python3 -m venv creates a venv WITHOUT its own pip,
+  // falling back to system pip 24.0 which lacks packaging.licenses support.
+  // Fix: ensurepip + pip upgrade gives the venv its own modern pip.
 
   'mercurial-scm.org': {
     env: {
       SETUPTOOLS_SCM_PRETEND_VERSION: '{{version}}',
     },
-    prependScript: [
-      // Pre-create venv with updated setuptools+packaging for Python 3.14 compatibility.
-      // setuptools>=77 requires packaging>=24.2 for license expression parsing.
-      'python3 -m venv ~/.venv && source ~/.venv/bin/activate && pip install --upgrade "setuptools>=78" "packaging>=24.2" setuptools_scm wheel',
-      // Export PYTHON to the venv's python so make install-bin uses it.
-      // The Makefile's $(PYTHON) defaults to system python whose pip subprocess
-      // can't find packaging.licenses even with --no-build-isolation.
-      'export PYTHON="$HOME/.venv/bin/python3"',
-    ],
+    modifyRecipe: (recipe: any) => {
+      if (!recipe.build?.script) return
+      for (let i = 0; i < recipe.build.script.length; i++) {
+        const step = recipe.build.script[i]
+        // Find the run block that creates the venv and enhance it:
+        // - ensurepip ensures pip is installed IN the venv (not system pip)
+        // - pip upgrade gets modern pip that supports packaging.licenses
+        // - install packaging>=24.2 for Python 3.14 license expression parsing
+        if (step?.run && Array.isArray(step.run)) {
+          const hasVenv = step.run.some((cmd: string) => cmd.includes('venv'))
+          if (hasVenv) {
+            recipe.build.script[i] = {
+              run: [
+                'python -m venv ~/.venv',
+                'source ~/.venv/bin/activate',
+                'python -m ensurepip --upgrade',
+                'pip install --upgrade pip',
+                'pip install "setuptools>=78" "packaging>=24.2" setuptools_scm wheel',
+              ],
+            }
+          }
+        }
+        // Activate venv before make install-bin so $(PYTHON) uses venv python
+        // whose pip can find packaging.licenses
+        if (typeof step === 'string' && step.includes('make install-bin')) {
+          recipe.build.script[i] = 'source ~/.venv/bin/activate && PYTHON=$HOME/.venv/bin/python3 make install-bin PREFIX={{prefix}}'
+        }
+      }
+    },
   },
 
   // ─── github.com/moretension/duti — fix make install on darwin ──────────
