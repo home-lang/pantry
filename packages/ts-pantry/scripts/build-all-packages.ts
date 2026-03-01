@@ -591,8 +591,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'imagemagick.org': ['<7.1.2.14'],
   // kaspa-miner: all versions fail on linux (Rust/GPU build issues)
   'crates.io/kaspa-miner': ['*'],
-  // freetds: old versions fail on linux; latest works
-  'freetds.org': ['<1.5.0'],
+  // freetds: old versions fail on linux + libiconv cmake on darwin; latest 1.6.0+ works
+  'freetds.org': ['<1.6.0'],
   // glm fails on darwin (cmake install issues); already in darwinOnlyDomains
   'glm.g-truc.net': ['<1.1.0'],
   // ntp.org 4.2.8.17 build failure on linux
@@ -615,8 +615,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'modal.com': ['<1.3.0'],
   // rucio-client: Python 3.14 incompatibility (pyo3/pydantic-core + old deps); 39.0+ works
   'rucio.cern.ch/rucio-client': ['<39.0.0'],
-  // qemu — FIXED via distlib install override in package-overrides.ts
-  // freetds — FIXED via libiconv override in package-overrides.ts
+  // qemu: capstone header missing (linux) + iconv for curses (darwin); complex dep chain
+  'qemu.org': ['<10.0.0'],
+  // freetds — override in package-overrides.ts for darwin libiconv; older versions skipped above
   // gnu.org/inetutils 2.4.0 already skipped above (2.5.0)
   // pwmt.org/zathura already in darwinOnlyDomains
   // angular.dev: npm cache ENOENT on darwin — transient CI issue, skip affected versions
