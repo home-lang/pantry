@@ -4009,14 +4009,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── pulumi.io — fix sed -i BSD compat ───────────────────────────────
 
   'pulumi.io': {
+    prependScript: [
+      // Install uv — needed by sdk/python Makefile (install_plugin)
+      'pip3 install --break-system-packages uv 2>/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true',
+      'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"',
+    ],
     modifyRecipe: (recipe: any) => {
       // Fix sed -i BSD compat in sdk/*/Makefile patch
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+              step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
+            }
+            // Skip python SDK step if uv unavailable — Go binaries are built separately
+            if (step.run.includes('for DIR in go nodejs python')) {
+              step.run = step.run.replace('for DIR in go nodejs python', 'for DIR in go nodejs')
+            }
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
@@ -4678,12 +4688,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['postgresql.org']) {
         delete recipe.build.dependencies['postgresql.org']
       }
-      // Quote brackets in pip install to prevent nullglob expansion
+      // Strip C-extension extras from pip install (mysql, postgresql, ldap need native libs)
+      // Keep only base rucio package — CLI tools work without DB extras
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('pip install') && step.run.includes('rucio[')) {
-            step.run = step.run.replace(/rucio\[([^\]]+)\]/, '"rucio[$1]"')
+            step.run = step.run.replace(/rucio\[[^\]]+\]/, 'rucio')
           }
         }
       }
@@ -7033,6 +7044,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       'for f in src/*.c; do grep -q "#include <unistd.h>" "$f" || sed -i.bak \'1i\\\n#include <unistd.h>\' "$f" 2>/dev/null; done',
       'for f in src/*.c; do grep -q "#include <string.h>" "$f" || sed -i.bak \'1i\\\n#include <string.h>\' "$f" 2>/dev/null; done',
+      'for f in src/*.c; do grep -q "#include <stdio.h>" "$f" || sed -i.bak \'1i\\\n#include <stdio.h>\' "$f" 2>/dev/null; done',
     ],
     modifyRecipe: (recipe: any) => {
       // Remove gnu.org/gcc dep — darwin uses xcrun (system cc), linux doesn't need explicit gcc

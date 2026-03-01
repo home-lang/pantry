@@ -1386,7 +1386,7 @@ Options:
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     // ceph.com/cephadm removed — replaced sed shebang patching with python3 -m zipapp
     // opensearch.org removed — openjdk.org override now downloads pre-built Temurin JDK
-    'pulumi.io', // Needs `uv` package manager + Go module directory issue
+    // pulumi.io removed — installed uv + skipped python SDK step (Go binaries built separately)
     // nx.dev removed — successfully built and uploaded
     // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
     'gnu.org/guile', // scmconfig.h circular dep — even with bootstrap cp and CC bypass, still fails
@@ -1400,7 +1400,7 @@ Options:
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
     'modal.com', // grpcio-tools 1.59.2 fails to compile with current Python/compilers
-    'rucio.cern.ch/rucio-client', // Python build module chain failure — empty pip install
+    // rucio.cern.ch/rucio-client removed — stripped C-extension extras from pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
     // tcl-lang.org removed — apt-get remove system tcl8.6-dev to prevent version conflict
     // github.com/luvit/luv removed — fixed stray cmake prefix quote + LUA_INSTALL_DIR override
