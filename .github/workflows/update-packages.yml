@@ -339,3 +339,46 @@ jobs:
             echo "No package changes to sync"
           fi
         timeout-minutes: 5
+
+      - name: Trigger builds for updated packages
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # Extract domain names from changed package files
+          CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/packages/ 2>/dev/null)
+          if [ -z "$CHANGED" ]; then
+            echo "No package changes to build"
+            exit 0
+          fi
+
+          # Extract domain from each changed .ts file (grep the `domain:` field)
+          DOMAINS=""
+          while IFS= read -r filepath; do
+            [ -z "$filepath" ] && continue
+            [ -f "$filepath" ] || continue
+            # Skip non-package files (aliases.ts, generated-package-names.ts, etc.)
+            case "$filepath" in
+              */aliases.ts|*/generated-package-names.ts|*/index.ts) continue ;;
+            esac
+            # Extract domain from the file's `domain:` field
+            DOMAIN=$(grep -m 1 "domain:" "$filepath" 2>/dev/null | sed "s/.*domain: '//" | sed "s/' as const.*//" | tr -d ' \n\r')
+            [ -z "$DOMAIN" ] && continue
+            if [ -z "$DOMAINS" ]; then
+              DOMAINS="$DOMAIN"
+            else
+              DOMAINS="$DOMAINS,$DOMAIN"
+            fi
+          done <<< "$CHANGED"
+
+          if [ -z "$DOMAINS" ]; then
+            echo "No valid package domains extracted"
+            exit 0
+          fi
+
+          echo "Triggering build for: $DOMAINS"
+          gh workflow run build-package.yml \
+            -f packages="$DOMAINS" \
+            -f force=false
+          echo "Build workflow triggered successfully"
+        timeout-minutes: 2
