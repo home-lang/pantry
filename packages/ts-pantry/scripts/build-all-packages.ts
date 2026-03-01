@@ -495,14 +495,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'facebook.com/edencommon': ['<2026.2.0'],
   // mvfst fails on both platforms (fizz API mismatch); needs version-matched deps
   'facebook.com/mvfst': ['*'],
-  // harfbuzz old versions fail (giscanner missing on linux); 12.3.2 works on both
-  'harfbuzz.org': ['<12.3.0'],
+  // harfbuzz fails (giscanner on linux, HDF5 dep 404); 12.3.2+ works on darwin only
+  'harfbuzz.org': ['<12.3.2'],
   // glib fails on both platforms (darwin build errors, linux msgfmt/libxml2); 2.88.0+ works
   'gnome.org/glib': ['<2.88.0'],
   // dozzle old versions fail; 10.0.4+ works on both
   'dozzle.dev': ['<10.0.0'],
-  // elementsproject old version fails; 23.2.7+ works
-  'elementsproject.org': ['<23.2.0'],
+  // elementsproject fails (autoreconf/libtool); all tested versions fail on darwin
+  'elementsproject.org': ['*'],
   // procps-ng watch old versions fail; 4.0.6 works
   'gitlab.com/procps-ng/watch': ['<4.0.6'],
   // HDF5 old versions fail to download (404); latest works
@@ -535,8 +535,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/vmware/tdnf': ['<3.7.0'],
   // elizaOS: massive Node.js monorepo (2659 pnpm packages), causes runner timeout
   'elizaOS.github.io': ['*'],
-  // PHP 7.4 is EOL and incompatible with libxml2 2.15.x API changes
-  'php.net': ['<8.0.0'],
+  // PHP 7.4/8.1 EOL, incompatible with libxml2 2.15.x / ICU4C C++17; 8.2+ works
+  'php.net': ['<8.2.0'],
   // opencode.ai: native module resolution fails (parcel watcher darwin, husky linux)
   'opencode.ai': ['*'],
   // openresty: mercurial Python library path issue on darwin; 502 on linux
@@ -562,6 +562,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // openexr 3.2.126 phantom version (tag doesn't exist)
   'github.com/AcademySoftwareFoundation/openexr': ['3.2.126'],
   // putty — FIXED via override (URL used 'latest' instead of version, wrong domain key)
+  // libass autoreconf/libtool fails on darwin; all tested versions
+  'github.com/libass/libass': ['<0.18.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
