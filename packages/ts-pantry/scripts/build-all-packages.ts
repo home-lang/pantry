@@ -998,6 +998,7 @@ Options:
     'glm.g-truc.net', // Header-only library, cmake/install fails on linux, works on darwin
     'graphviz.org', // fontconfig API mismatch on linux, builds fine on darwin with Homebrew deps
     'ntp.org', // MD5Init/MD5Update deprecated in OpenSSL 3.x on linux, builds fine on darwin
+    'crates.io/kaspa-miner', // protobuf.dev S3 version mismatch on linux, builds on darwin
     'crates.io/mask', // rust-lld raw-dylibs issue on linux, builds fine on darwin
     'dns.lookup.dog', // openssl-sys build failure on linux, builds fine on darwin
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
@@ -1219,7 +1220,7 @@ Options:
     // aws.amazon.com/cli removed — widened python version constraint in override
     // bitcoin.org removed — removed capnproto/gcc deps in override
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
-    'crates.io/kaspa-miner', // protobuf.dev S3 version (34) mismatches recipe pin (25), libprotoc.so not loadable
+    // crates.io/kaspa-miner removed — builds on darwin (linux: protobuf.dev S3 version mismatch)
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
     // crates.io/qsv removed — built successfully on linux
     // debian.org/iso-codes removed — fixed prefix quoting in override

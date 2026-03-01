@@ -6996,6 +6996,27 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux?.['kernel.org/linux-headers']) {
         delete recipe.build.dependencies.linux['kernel.org/linux-headers']
       }
+      // Fix: buildkit doesn't handle `if: darwin` / `if: linux` platform conditionals on compile steps.
+      // Replace the two conditional compile steps with a single unconditional platform-aware step.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = recipe.build.script.length - 1; i >= 0; i--) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('package/compile')) {
+            recipe.build.script.splice(i, 1)
+          }
+        }
+        // Insert unconditional compile step before mkdir
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('mkdir -p')) {
+            recipe.build.script.splice(i, 0,
+              'if [ "$(uname)" = "Darwin" ]; then xcrun package/compile; else package/compile; fi',
+            )
+            break
+          }
+        }
+      }
     },
   },
 }
