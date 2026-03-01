@@ -1606,13 +1606,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'chiark.greenend.org.uk/putty': {
     distributableUrl: 'https://the.earth.li/~sgtatham/putty/{{version.marketing}}/putty-{{version.marketing}}.tar.gz',
-    prependScript: [
-      // Create dummy halibut binary (only used for man page generation)
-      'mkdir -p /tmp/fake-bin && printf "#!/bin/bash\\nexit 0\\n" > /tmp/fake-bin/halibut && chmod +x /tmp/fake-bin/halibut',
-      'export PATH="/tmp/fake-bin:$PATH"',
-    ],
     modifyRecipe: (recipe: any) => {
-      // Remove halibut dep (not available in S3, only needed for docs)
+      // Remove halibut dep (not available in S3, only needed for docs).
+      // Without halibut in PATH, cmake's find_program(HALIBUT) returns NOT FOUND
+      // and doc generation is skipped entirely — no man pages to install.
       if (recipe.build?.dependencies?.['chiark.greenend.org.uk/halibut']) {
         delete recipe.build.dependencies['chiark.greenend.org.uk/halibut']
       }
@@ -6213,18 +6210,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: {
       SETUPTOOLS_SCM_PRETEND_VERSION: '{{version}}',
     },
+    prependScript: [
+      // Pre-create venv and upgrade setuptools+packaging for Python 3.14 compatibility.
+      // Python 3.14 requires packaging>=24.2 for license expression parsing in setuptools.
+      // The recipe creates the same venv, so this just ensures newer packages are installed.
+      'python3 -m venv ~/.venv && source ~/.venv/bin/activate && pip install --upgrade "setuptools>=78" "packaging>=24.2" setuptools_scm wheel',
+    ],
   },
 
   // ─── github.com/moretension/duti — fix make install on darwin ──────────
 
   'github.com/moretension/duti': {
     // Fix: configure produces empty -mmacosx-version-min= and wrong -arch i386/x86_64 on darwin24+.
+    // Also produces broken -isysroot path (missing SDK name) causing CoreFoundation.h not found.
     // Override CFLAGS/LDFLAGS to force correct arm64 arch and deployment target.
     env: {
       MACOSX_DEPLOYMENT_TARGET: '11.0',
       CFLAGS: '-arch arm64 -mmacosx-version-min=11.0',
       LDFLAGS: '-arch arm64 -mmacosx-version-min=11.0',
     },
+    prependScript: [
+      // Set SDKROOT so clang can find system headers (CoreFoundation/CoreFoundation.h)
+      // even when configure produces a broken -isysroot path
+      'export SDKROOT="$(xcrun --show-sdk-path 2>/dev/null)"',
+    ],
     modifyRecipe: (recipe: any) => {
       // Fix: nullglob causes ? in URLs to be treated as glob — quote all curl URLs
       if (Array.isArray(recipe.build?.script)) {
@@ -6244,16 +6253,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = 'autoreconf -fi'
           }
           if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('./configure')) {
-            // Patch configure for darwin24+, strip arch/version flags from CFLAGS inside configure
-            // (let our env CFLAGS override instead), then run with /bin/bash
+            // Patch configure for darwin24+: strip arch/version flags AND broken -isysroot
+            // from CFLAGS inside configure (let our env CFLAGS/SDKROOT override instead)
             recipe.build.script[i] = [
               `sed -i.bak '/is not a supported system/s/as_fn_error[^;]*/: # accept unknown darwin version/' configure`,
-              `sed -i.bak 's/-arch i386 -arch x86_64//g; s/-mmacosx-version-min=[^ ]*//' configure`,
+              `sed -i.bak 's/-arch i386 -arch x86_64//g; s/-mmacosx-version-min=[^ ]*//g; s/-isysroot [^ ]*//g' configure`,
               `/bin/bash ./configure $ARGS`,
             ].join(' && ')
           }
         }
       }
+    },
+  },
+
+  // ─── gnu.org/inetutils — fix libtinfo linking on linux ───────────────
+  // On linux, ncurses is split into libtinfo + libncursesw. The recipe uses
+  // LDFLAGS=-ltinfo which gets placed before object files in link commands.
+  // GNU ld with --as-needed discards it. LIBS is appended after objects.
+
+  'gnu.org/inetutils': {
+    platforms: {
+      linux: {
+        env: {
+          LIBS: '-ltinfo',
+        },
+      },
     },
   },
 
