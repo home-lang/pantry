@@ -2951,9 +2951,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // (attempt to assign to const variable 'w' at line 2546)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('--without-lua')
+        // Fix readline: remove broken template arg, let configure find it automatically
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => !a.includes('deps.gnu.org/readline'),
+        )
       }
       // Remove lua.org dep since we disabled it
       if (recipe.dependencies?.['lua.org']) delete recipe.dependencies['lua.org']
+      // Remove readline dep — use system readline instead
+      if (recipe.dependencies?.['gnu.org/readline']) delete recipe.dependencies['gnu.org/readline']
     },
   },
 
@@ -6736,13 +6742,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── elementsproject.org — fix autoreconf/libtool on darwin ────────────
+  // ─── elementsproject.org — fix autoreconf/libtool on darwin + BDB ──────
 
   'elementsproject.org': {
     prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: any) => {
+      // v22.x requires BDB headers we don't have — disable BDB wallet
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('--without-bdb')
+      }
+    },
   },
 
-  // ─── ctags.io — link libiconv on darwin ────────────────────────────────
+  // ─── ctags.io — fix docutils rst2man + libiconv ─────────────────────────
 
   'ctags.io': {
     platforms: {
@@ -6754,30 +6766,46 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-  },
-
-  // ─── curlie.io — skip husky postinstall on linux ───────────────────────
-
-  'curlie.io': {
     modifyRecipe: (recipe: any) => {
-      // Replace goreleaser-based install with direct go install
-      if (Array.isArray(recipe.build?.script)) {
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
-          if (typeof step === 'string' && step.includes('goreleaser')) {
-            recipe.build.script[i] = 'go build -o {{prefix}}/bin/curlie .'
-          }
-        }
+      // Remove docutils dep (broken venv wrapper for rst2man in S3)
+      // ctags builds fine without man pages
+      if (recipe.build?.dependencies?.['docutils.org']) {
+        delete recipe.build.dependencies['docutils.org']
+      }
+      // Add --disable-man flag to skip man page generation
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('RST2MAN=true')
       }
     },
   },
 
-  // ─── harfbuzz.org — fix giscanner PYTHONPATH on linux ──────────────────
+  // ─── curlie.io — bypass goreleaser (config v0 vs v2 mismatch) ──────────
+
+  'curlie.io': {
+    modifyRecipe: (recipe: any) => {
+      // Replace goreleaser + install with direct go build
+      // goreleaser config version mismatch causes older versions to fail
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = [
+          'mkdir -p {{prefix}}/bin',
+          'go build -ldflags="-s -w" -o {{prefix}}/bin/curlie .',
+        ]
+      }
+      // Remove goreleaser dependency since we don't use it
+      if (recipe.build?.dependencies?.['goreleaser.com']) {
+        delete recipe.build.dependencies['goreleaser.com']
+      }
+    },
+  },
+
+  // ─── harfbuzz.org — fix giscanner distutils + PYTHONPATH on linux ──────
 
   'harfbuzz.org': {
     platforms: {
       linux: {
         prependScript: [
+          // Python 3.12+ removed distutils; install setuptools to provide it
+          'python3 -m pip install --break-system-packages setuptools 2>/dev/null || pip install setuptools 2>/dev/null || true',
           // gobject-introspection's giscanner module needs to be on PYTHONPATH
           'GI_PREFIX=$(dirname $(dirname $(which g-ir-scanner 2>/dev/null || echo /tmp/buildkit-deps/gnome.org/gobject-introspection/1.86.0/bin/g-ir-scanner)) 2>/dev/null)',
           'if [ -d "$GI_PREFIX" ]; then',
