@@ -25,8 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 26 versions</summary>
+<summary>Show all 27 versions</summary>
 
+- `26.3.0`
 - `26.2.0`
 - `26.1.0`
 - `25.12.0`
@@ -56,13 +57,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `26.2.0`
+**Latest Version**: `26.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +fna-xna.github.io@26.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +fna-xna.github.io@26.3.0 -- $SHELL -i
 ```
 
 ## Dependencies
