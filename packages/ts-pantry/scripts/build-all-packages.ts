@@ -603,8 +603,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'rpm.org/rpm': ['<6.1.0'],
   // xmlstar 1.6.1 fails on darwin; only version
   'sourceforge.net/xmlstar': ['*'],
-  // mitmproxy 11.1.3 bpf-linker failure on linux; 11.1.2 and 12.0+ work
-  'mitmproxy.org': ['11.1.2', '11.1.3'],
+  // mitmproxy 11.1.x bpf-linker failure on linux; 12.0+ works
+  'mitmproxy.org': ['11.1.1', '11.1.2', '11.1.3'],
   // littlecms 2.12.0 fails on darwin; 2.16.0+ works
   'littlecms.com': ['<2.16.0'],
   // facebook watchman old versions fail (glog ABI); already in darwinOnlyDomains
@@ -615,8 +615,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'modal.com': ['<1.3.0'],
   // rucio-client: Python 3.14 incompatibility (pyo3/pydantic-core + old deps); 39.0+ works
   'rucio.cern.ch/rucio-client': ['<39.0.0'],
-  // qemu: capstone header missing (linux) + iconv for curses (darwin); complex dep chain
-  'qemu.org': ['<10.0.0'],
+  // qemu: capstone header missing (linux) + iconv for curses (darwin); only 10.1+ works
+  'qemu.org': ['<10.1.0'],
   // freetds — override in package-overrides.ts for darwin libiconv; older versions skipped above
   // gnu.org/inetutils 2.4.0 already skipped above (2.5.0)
   // pwmt.org/zathura already in darwinOnlyDomains
