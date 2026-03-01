@@ -2935,6 +2935,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnuplot.info — remove libavif dep (not in S3) ───────────────────
 
   'gnuplot.info': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // libiconv is keg-only on macOS — link it explicitly
+          'brew install libiconv 2>/dev/null || true',
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
       // Remove linux-only libavif dep (not in S3)
       if (recipe.dependencies?.linux?.['github.com/AOMediaCodec/libavif']) {
@@ -3446,6 +3456,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/libass/libass — link libiconv on darwin ────────────────
 
   'github.com/libass/libass': {
+    prependScript: [GLIBTOOL_FIX],
     platforms: {
       darwin: {
         prependScript: [
@@ -6671,6 +6682,61 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
+    },
+  },
+
+  // ─── elementsproject.org — fix autoreconf/libtool on darwin ────────────
+
+  'elementsproject.org': {
+    prependScript: [GLIBTOOL_FIX],
+  },
+
+  // ─── ctags.io — link libiconv on darwin ────────────────────────────────
+
+  'ctags.io': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'brew install libiconv 2>/dev/null || true',
+          'export LDFLAGS="-L$(brew --prefix libiconv)/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$(brew --prefix libiconv)/include ${CPPFLAGS:-}"',
+        ],
+      },
+    },
+  },
+
+  // ─── curlie.io — skip husky postinstall on linux ───────────────────────
+
+  'curlie.io': {
+    modifyRecipe: (recipe: any) => {
+      // Replace goreleaser-based install with direct go install
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('goreleaser')) {
+            recipe.build.script[i] = 'go build -o {{prefix}}/bin/curlie .'
+          }
+        }
+      }
+    },
+  },
+
+  // ─── harfbuzz.org — fix giscanner PYTHONPATH on linux ──────────────────
+
+  'harfbuzz.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // gobject-introspection's giscanner module needs to be on PYTHONPATH
+          'GI_PREFIX=$(dirname $(dirname $(which g-ir-scanner 2>/dev/null || echo /tmp/buildkit-deps/gnome.org/gobject-introspection/1.86.0/bin/g-ir-scanner)) 2>/dev/null)',
+          'if [ -d "$GI_PREFIX" ]; then',
+          '  GI_PYDIR=$(find "$GI_PREFIX/lib" -name "giscanner" -type d 2>/dev/null | head -1)',
+          '  if [ -n "$GI_PYDIR" ]; then',
+          '    export PYTHONPATH="$(dirname "$GI_PYDIR"):${PYTHONPATH:-}"',
+          '  fi',
+          'fi',
+        ],
+      },
     },
   },
 }

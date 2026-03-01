@@ -495,14 +495,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'facebook.com/edencommon': ['<2026.2.0'],
   // mvfst fails on both platforms (fizz API mismatch); needs version-matched deps
   'facebook.com/mvfst': ['*'],
-  // harfbuzz fails (giscanner on linux, HDF5 dep 404); 12.3.2+ works on darwin only
-  'harfbuzz.org': ['<12.3.2'],
+  // harfbuzz — FIXED via PYTHONPATH override for giscanner on linux
+  // Keep <12.0.0 for old versions that fail for other reasons
+  'harfbuzz.org': ['<12.0.0'],
   // glib fails on both platforms (darwin build errors, linux msgfmt/libxml2); 2.88.0+ works
   'gnome.org/glib': ['<2.88.0'],
   // dozzle old versions fail; 10.0.4+ works on both
   'dozzle.dev': ['<10.0.0'],
-  // elementsproject fails (autoreconf/libtool); all tested versions fail on darwin
-  'elementsproject.org': ['*'],
+  // elementsproject — FIXED via GLIBTOOL_FIX override in package-overrides.ts
   // procps-ng watch old versions fail; 4.0.6 works
   'gitlab.com/procps-ng/watch': ['<4.0.6'],
   // HDF5 old versions fail to download (404); latest works
@@ -529,8 +529,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'freedesktop.org/p11-kit': ['<0.25.0'],
   // libheif 1.19.8 fails on darwin; 1.20.0+ works
   'github.com/strukturag/libheif': ['<1.20.0'],
-  // gnuplot all versions fail (compiler check on linux, libiconv on darwin)
-  'gnuplot.info': ['*'],
+  // gnuplot — FIXED via libiconv override in package-overrides.ts
   // tdnf 3.6.3 fails on linux; 3.7.0+ works
   'github.com/vmware/tdnf': ['<3.7.0'],
   // elizaOS: massive Node.js monorepo (2659 pnpm packages), causes runner timeout
@@ -545,14 +544,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'opensearch.org': ['<3.3.0'],
   // ceres-solver 2.1.0 requires Eigen ~3.3 but only 5.0.1 available
   'ceres-solver.org': ['<2.2.0'],
-  // ctags 6.2.0 missing libiconv on darwin; 6.3.0+ works
-  'ctags.io': ['<6.3.0'],
+  // ctags — FIXED via libiconv override in package-overrides.ts
   // apache thrift download failures (mirror issues)
   'apache.org/thrift': ['<0.21.0'],
   // gnu groff 1.24.0 download failure (ftpmirror.gnu.org)
   'gnu.org/groff': ['1.24.0'],
-  // curlie goreleaser config v0 vs v2 mismatch; latest works
-  'curlie.io': ['<1.8.0'],
+  // curlie — FIXED via go build override in package-overrides.ts
   // mbedtls old releases removed from GitHub (404)
   'tls.mbed.org': ['<3.6.0'],
   // nx 20.11.0 npm tarball missing (404)
@@ -562,8 +559,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // openexr 3.2.126 phantom version (tag doesn't exist)
   'github.com/AcademySoftwareFoundation/openexr': ['3.2.126'],
   // putty — FIXED via override (URL used 'latest' instead of version, wrong domain key)
-  // libass autoreconf/libtool fails on darwin; all tested versions
-  'github.com/libass/libass': ['<0.18.0'],
+  // libass — FIXED via GLIBTOOL_FIX + libiconv override in package-overrides.ts
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
