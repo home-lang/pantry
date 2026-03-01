@@ -6211,12 +6211,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       SETUPTOOLS_SCM_PRETEND_VERSION: '{{version}}',
     },
     prependScript: [
-      // Install packaging>=24.2 system-wide for Python 3.14 license expression support.
-      // make install-bin uses $(PYTHON) which resolves to system python, not venv python.
-      // The system python needs packaging with licenses module for setuptools to work.
-      'python3 -m pip install --break-system-packages "packaging>=24.2" "setuptools>=78" 2>/dev/null || true',
-      // Also pre-create venv with updated packages for the recipe's venv steps
+      // Pre-create venv with updated setuptools+packaging for Python 3.14 compatibility.
+      // setuptools>=77 requires packaging>=24.2 for license expression parsing.
       'python3 -m venv ~/.venv && source ~/.venv/bin/activate && pip install --upgrade "setuptools>=78" "packaging>=24.2" setuptools_scm wheel',
+      // Export PYTHON to the venv's python so make install-bin uses it.
+      // The Makefile's $(PYTHON) defaults to system python whose pip subprocess
+      // can't find packaging.licenses even with --no-build-isolation.
+      'export PYTHON="$HOME/.venv/bin/python3"',
     ],
   },
 
