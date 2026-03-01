@@ -6987,6 +6987,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── cr.yp.to/daemontools — remove gcc dep on darwin ──────────────────
 
   'cr.yp.to/daemontools': {
+    prependScript: [
+      'for f in src/*.c; do grep -q "#include <unistd.h>" "$f" || sed -i.bak \'1i\\\n#include <unistd.h>\' "$f" 2>/dev/null; done',
+      'for f in src/*.c; do grep -q "#include <string.h>" "$f" || sed -i.bak \'1i\\\n#include <string.h>\' "$f" 2>/dev/null; done',
+    ],
     modifyRecipe: (recipe: any) => {
       // Remove gnu.org/gcc dep — darwin uses xcrun (system cc), linux doesn't need explicit gcc
       if (recipe.build?.dependencies?.['gnu.org/gcc']) {

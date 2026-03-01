@@ -977,6 +977,7 @@ Options:
     'mergestat.com/mergestat-lite', // vendored zlib C23 incompatibility with Xcode 26.3, linux OK
     'practical-scheme.net/gauche', // dlopen failure + -version flag incompatibility with Xcode clang, linux OK
     'open-mpi.org', // Compilation timeout on darwin CI runners (huge C codebase), linux OK
+    'sourceforge.net/xmlstar', // Homebrew libxml2 2.14+ has API breakage (SAX callbacks), linux apt 2.9.x works
     // gnu.org/texinfo — fixed: rewrote perl shebang fix as robust for-loop
     // gnu.org/bc — fixed: MAKEINFO=true on darwin skips info pages
     // laravel.com — fixed: symlink ICU libs from unicode.org into PHP lib dir on darwin
