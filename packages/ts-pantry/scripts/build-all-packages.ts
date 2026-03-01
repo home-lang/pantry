@@ -243,8 +243,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'just.systems': ['<1.43.0'],
   // Old time crate v0.3.30 incompatible with newer rustc (type annotations needed)
   'gleam.run': ['<1.0.0'],
-  // gnu.org/diffutils 3.2.0: gets() removed from glibc 2.32+ and SIGSTKSZ non-constant
-  'gnu.org/diffutils': ['3.2.0'],
+  // gnu.org/diffutils 3.2.0: gets() removed from glibc 2.32+ — FIXED via override
+  // (prependScript patches c-stack.c SIGSTKSZ and stdio.h gets() warning)
   // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;
   // spin's build.rs hardcodes wasm32-wasi which can't be fixed via overrides
   'fermyon.com/spin': ['*'],
@@ -269,8 +269,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'lxml.de': ['<5.0.0'],
   // mac-notification-sys crate fails with Xcode 26.3 ("could not build module 'Darwin'"); 2.0.1+ works
   'moonrepo.dev/moon': ['<2.0.0'],
-  // setuptools_scm generates post-release version from git state; 7.0.x all fail, 6.9.x and 7.1.x work
-  'mercurial-scm.org': ['7.0.0', '7.0.1', '7.0.2', '7.0.3'],
+  // setuptools_scm generates post-release version from git state — FIXED via override
+  // (SETUPTOOLS_SCM_PRETEND_VERSION forces correct version for 7.0.x tarball builds)
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error)
   'rust-lang.org/rustup': ['<1.28.0'],
   // Go 1.26 broke net.errNoSuchInterface in 1.9.x; 1.8.x and 1.10.x+ work
@@ -289,9 +289,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/realm/SwiftLint': ['0.59.1'],
   // utfcpp 3.x: old cmake issues. 4.9.0: tag doesn't exist. Only 4.0.9 works.
   'github.com/nemtrif/utfcpp': ['<4.0.0', '4.9.0'],
-  // duti configure broken on darwin24+: wrong -isysroot path, empty -mmacosx-version-min=,
-  // wrong -arch i386/x86_64 flags. Only version 1.5.4 exists, too many configure issues.
-  'github.com/moretension/duti': ['*'],
+  // duti configure broken on darwin24+ — FIXED via override
+  // (env CFLAGS/LDFLAGS override + configure patching for arm64)
   // Gradle sourceCompatibility error in old version; 1.5.4/1.5.5 build fine
   'github.com/skylot/jadx': ['1.4.7'],
   // gnupg pinentry 1.2.1 requires old libassuan API; 1.3.0+ builds fine
@@ -305,9 +304,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'lychee.cli.rs': ['<0.15.1'],
   // pip requirements.txt missing trailing newline causes merged line; 3.8.1+ builds fine
   'localstack.cloud/cli': ['2.3.2'],
-  // Old autotools configure script; 2.15.0+ builds fine.
-  // 2.12.0 already built on linux, fails on darwin.
-  'littlecms.com': ['2.12.0'],
+  // littlecms.com 2.12.0 — REMOVED: already built on linux (in S3), darwin failure is harmless
   // Requires python.org >=3<3.12 but only 3.14 available in S3.
   // Versions 1.15.0, 1.17.1, 1.18.2, 1.19.1 already in S3.
   'mypy-lang.org': ['1.16.0', '1.16.1'],
@@ -325,8 +322,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'webmproject.org/libvpx': ['<1.15.1'],
   // Old cmake bootstrap failure on darwin; 4.0.6+ works on both
   'cmake.org': ['<4.0.0'],
-  // Header-only library fails on linux for all versions; built on darwin only
-  'glm.g-truc.net': ['*'],
+  // glm.g-truc.net — MOVED to darwinOnlyDomains (fails linux, works darwin)
   // Old GMP configure error; 6.3.0 works on both
   'gnu.org/gmp': ['<6.3.0'],
   // Go module incompatibility; 1.1.0+ works
@@ -367,8 +363,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
   'github.com/TomWright/dasel': ['3.1.5'],
-  // 11.1.x requires bpf-linker for mitmproxy-linux-ebpf on linux; 10.4.2 & 12.x work
-  'mitmproxy.org': ['11.1.2', '11.1.3'],
+  // mitmproxy.org 11.1.x — REMOVED: bpf-linker issue is linux-only, darwin builds should work
   // Old Rust build failures; 0.12.2+ works on linux, 0.10.1+ works on darwin
   'prql-lang.org': ['<0.12.0'],
   // Old scryer-prolog fails on darwin; 0.10.0 works on both
@@ -391,14 +386,14 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/gabime/spdlog': ['<1.15.0'],
   // All versions fail (not installable via current recipe)
   'github.com/mamba-org/micro': ['*'],
-  // inetutils < 2.7.0 fail on linux; 2.4.0/2.6.0 darwin-only, 2.5.0 fails everywhere
-  'gnu.org/inetutils': ['<2.7.0'],
+  // inetutils 2.5.0 fails everywhere; 2.4.0/2.6.0 work on darwin, 2.7.0+ works on both
+  'gnu.org/inetutils': ['2.5.0'],
   // bc 1.7.1 fails on linux; 1.8.0+ works on both
   'gnu.org/bc': ['<1.8.0'],
   // spotify_player Xcode 26.3 IOKit/CoreGraphics errors on darwin; 0.22.0+ works
   'crates.io/spotify_player': ['<0.22.0'],
-  // mockgen 0.5.x fails (Go x/tools tokeninternal); 0.4.0 and 0.6.0 work
-  'go.uber.org/mock/mockgen': ['<0.6.0'],
+  // mockgen 0.5.x fails (Go x/tools tokeninternal); 0.3.0, 0.4.0, and 0.6.0 work
+  'go.uber.org/mock/mockgen': ['0.5.0', '0.5.1', '0.5.2'],
   // Old hurl.dev Rust build fails on darwin; 7.0.0+ works
   'hurl.dev': ['<7.0.0'],
   // convco Rust libiconv on darwin; 0.6.2+ works on both
@@ -487,8 +482,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'sfcgal.org': ['<2.2.0'],
   // doxygen 1.12.0 fails on darwin; 1.13.2+ works
   'doxygen.nl': ['<1.13.0'],
-  // graphviz ALL tested versions fail on linux (fontconfig API mismatch); darwin only
-  'graphviz.org': ['*'],
+  // graphviz.org — MOVED to darwinOnlyDomains (fontconfig API mismatch on linux, works darwin)
   // kubectl old versions fail; 1.34.5+ works on both
   'kubernetes.io/kubectl': ['<1.34.0'],
   // faad2 old versions fail on darwin; 2.11.1 works on both
@@ -567,8 +561,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'debian.org/iso-codes': ['<4.20.0'],
   // openexr 3.2.126 phantom version (tag doesn't exist)
   'github.com/AcademySoftwareFoundation/openexr': ['3.2.126'],
-  // putty download URL template broken for versioned tarballs
-  'the.earth.li/putty': ['*'],
+  // putty — FIXED via override (URL used 'latest' instead of version, wrong domain key)
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
@@ -1002,6 +995,8 @@ Options:
     'proj.org', // S3 curl.so missing version info breaks cmake on linux, darwin OK
     'pwmt.org/zathura', // gnutls/nettle ABI mismatch breaks HTTPS git on linux, darwin OK
     'facebook.com/watchman', // glog ABI mismatch in S3 wangle/fizz on linux, darwin OK
+    'glm.g-truc.net', // Header-only library, cmake/install fails on linux, works on darwin
+    'graphviz.org', // fontconfig API mismatch on linux, builds fine on darwin with Homebrew deps
   ])
 
   // Packages needing specialized toolchains not available in CI

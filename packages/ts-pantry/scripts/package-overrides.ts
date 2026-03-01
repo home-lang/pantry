@@ -1600,6 +1600,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── chiark.greenend.org.uk/putty — fix distributable URL + remove halibut dep ─
+  // Upstream URL uses 'latest' in path which only works for the current version.
+  // Also remove halibut dep (only used for docs, not available in S3).
+
+  'chiark.greenend.org.uk/putty': {
+    distributableUrl: 'https://the.earth.li/~sgtatham/putty/{{version.marketing}}/putty-{{version.marketing}}.tar.gz',
+    prependScript: [
+      // Create dummy halibut binary (only used for man page generation)
+      'mkdir -p /tmp/fake-bin && printf "#!/bin/bash\\nexit 0\\n" > /tmp/fake-bin/halibut && chmod +x /tmp/fake-bin/halibut',
+      'export PATH="/tmp/fake-bin:$PATH"',
+    ],
+    modifyRecipe: (recipe: any) => {
+      // Remove halibut dep (not available in S3, only needed for docs)
+      if (recipe.build?.dependencies?.['chiark.greenend.org.uk/halibut']) {
+        delete recipe.build.dependencies['chiark.greenend.org.uk/halibut']
+      }
+      // Remove perl dep (not reliably in S3, only needed for build scripts)
+      if (recipe.build?.dependencies?.['perl.org']) {
+        delete recipe.build.dependencies['perl.org']
+      }
+    },
+  },
+
   // ─── deepwisdom.ai — linux: patch out faiss_cpu requirement ──────────────
 
   'deepwisdom.ai': {
@@ -6168,6 +6191,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
       }
+    },
+  },
+
+  // ─── mercurial-scm.org — fix setuptools_scm version for tarball builds ───
+  // setuptools_scm can't determine version from tarball (no .git dir), causing
+  // post-release version strings. SETUPTOOLS_SCM_PRETEND_VERSION forces correct version.
+
+  'mercurial-scm.org': {
+    env: {
+      SETUPTOOLS_SCM_PRETEND_VERSION: '{{version}}',
     },
   },
 
