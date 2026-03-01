@@ -971,6 +971,7 @@ Options:
     'gitlab.com/procps-ng/watch', // Linux process utilities, darwin build fails
     // sfcgal.org removed — added brew CGAL install override for darwin
     'browser-use.com', // Python 3.12 constraint + setuptools timeout on darwin, linux OK
+    'openslide.org', // libdicom symbols generation fails on darwin (code 127), linux OK
     'getmonero.org', // cmake security-hardening test failures on darwin ARM64, linux OK
     'github.com/stub42/pytz', // zic linker failure on darwin ARM64 (symbols not found), linux OK
     'mergestat.com/mergestat-lite', // vendored zlib C23 incompatibility with Xcode 26.3, linux OK
@@ -999,6 +1000,7 @@ Options:
     'crates.io/mask', // rust-lld raw-dylibs issue on linux, builds fine on darwin
     'dns.lookup.dog', // openssl-sys build failure on linux, builds fine on darwin
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
+    'musepack.net', // duplicate symbols on linux, builds fine on darwin
   ])
 
   // Packages needing specialized toolchains not available in CI
@@ -1362,7 +1364,7 @@ Options:
     'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
     'github.com/glauth/glauth', // PAM plugin API mismatch — needs upstream code fix
     'github.com/shaka-project/shaka-packager', // Complex git submodule + ninja build failures
-    // github.com/libkml/libkml removed — added BOOST_BIND_GLOBAL_PLACEHOLDERS + Wno-error CXXFLAGS
+    'github.com/libkml/libkml', // minizip ints.h header not found + Boost compat issues
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
@@ -1386,11 +1388,11 @@ Options:
     // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
     'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
     'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
-    // sourceforge.net/xmlstar removed — added libxml2 2.15 API compat patches in prependScript
+    'sourceforge.net/xmlstar', // libxml2 2.15 API changes too extensive (callback sig rewrite needed)
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
-    // opendap.org removed — added autoconf cache vars for XDR sizes + system libtirpc
+    'opendap.org', // configure XDR size detection fails even with cache vars
     'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
@@ -1404,7 +1406,7 @@ Options:
     // --- Failures from verification builds (2026-02-26) ---
     // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
     'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
-    // unidata.ucar.edu/netcdf removed — disabled HDF5 + netcdf4, build with classic format only
+    'unidata.ucar.edu/netcdf', // cmake build fails even with HDF5 disabled
     'lavinmq.com', // Crystal/shards toolchain not available in CI
     'vapoursynth.com', // Needs zimg (not in S3 dep chain)
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)

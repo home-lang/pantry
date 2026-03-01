@@ -6883,19 +6883,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
+          if (typeof step !== 'object' || !step.run) continue
           // Replace the complex sed-based shebang patching with python3 -m zipapp
           // which handles shebang length correctly regardless of prefix path length
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('shebang')) {
+          // step.run can be a string or an array of strings
+          const runText = Array.isArray(step.run) ? step.run.join('\n') : String(step.run)
+          if (runText.includes('shebang')) {
             recipe.build.script[i] = {
               run: 'python3 -m zipapp --python "/usr/bin/env python3" cephadm -o cephadm.new && mv cephadm.new cephadm && chmod +x cephadm',
               'working-directory': step['working-directory'],
             }
-          }
-          // Also fix sed -i BSD compat in any remaining sed steps
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replace(/sed -i "/g, 'sed -i.bak "')
           }
         }
       }
