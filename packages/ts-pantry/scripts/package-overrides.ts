@@ -6211,9 +6211,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       SETUPTOOLS_SCM_PRETEND_VERSION: '{{version}}',
     },
     prependScript: [
-      // Pre-create venv and upgrade setuptools+packaging for Python 3.14 compatibility.
-      // Python 3.14 requires packaging>=24.2 for license expression parsing in setuptools.
-      // The recipe creates the same venv, so this just ensures newer packages are installed.
+      // Install packaging>=24.2 system-wide for Python 3.14 license expression support.
+      // make install-bin uses $(PYTHON) which resolves to system python, not venv python.
+      // The system python needs packaging with licenses module for setuptools to work.
+      'python3 -m pip install --break-system-packages "packaging>=24.2" "setuptools>=78" 2>/dev/null || true',
+      // Also pre-create venv with updated packages for the recipe's venv steps
       'python3 -m venv ~/.venv && source ~/.venv/bin/activate && pip install --upgrade "setuptools>=78" "packaging>=24.2" setuptools_scm wheel',
     ],
   },
@@ -6253,12 +6255,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = 'autoreconf -fi'
           }
           if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('./configure')) {
-            // Patch configure for darwin24+: strip arch/version flags AND broken -isysroot
-            // from CFLAGS inside configure (let our env CFLAGS/SDKROOT override instead)
+            // Patch configure for darwin24+: strip arch/version flags from configure source,
+            // run configure, then strip broken -isysroot and empty -mmacosx-version-min=
+            // from generated Makefiles (configure generates these at runtime, not from source)
             recipe.build.script[i] = [
               `sed -i.bak '/is not a supported system/s/as_fn_error[^;]*/: # accept unknown darwin version/' configure`,
-              `sed -i.bak 's/-arch i386 -arch x86_64//g; s/-mmacosx-version-min=[^ ]*//g; s/-isysroot [^ ]*//g' configure`,
+              `sed -i.bak 's/-arch i386 -arch x86_64//g' configure`,
               `/bin/bash ./configure $ARGS`,
+              // Fix generated Makefiles: strip broken -isysroot (points to SDKs dir, not SDK)
+              // and empty -mmacosx-version-min= (our env CFLAGS provide correct values)
+              `find . -name Makefile -exec sed -i.bak 's/-isysroot [^ ]*//g; s/-mmacosx-version-min=[^ ]*//g' {} +`,
             ].join(' && ')
           }
         }
