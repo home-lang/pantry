@@ -2,7 +2,7 @@
  * **filelock** - A platform-independent file lock for Python.
  *
  * @domain `github.com/tox-dev/filelock`
- * @version `3.24.4` (30 versions available)
+ * @version `3.25.0` (31 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/tox-dev/filelock`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcomtoxdevfilelock
  * console.log(pkg.name)        // "filelock"
  * console.log(pkg.description) // "A platform-independent file lock for Python."
- * console.log(pkg.versions[0]) // "3.24.4" (latest)
+ * console.log(pkg.versions[0]) // "3.25.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/tox-dev/filelock.md
@@ -60,6 +60,7 @@ export const filelockPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.25.0',
     '3.24.4',
     '3.24.3',
     '3.24.2',
