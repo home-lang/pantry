@@ -7091,4 +7091,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── coder.com/code-server — install native module dev headers ──────
+
+  'coder.com/code-server': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Native Node modules (spdlog, keytar) need dev headers at build time
+          'sudo apt-get install -y libsecret-1-dev libx11-dev libxkbfile-dev libkrb5-dev 2>/dev/null || true',
+        ],
+      },
+    },
+  },
+
+  // ─── github.com/saagarjha/unxip — arm64-only binary ────────────────
+
+  'github.com/saagarjha/unxip': {
+    supportedPlatforms: ['darwin-aarch64'],
+  },
 }

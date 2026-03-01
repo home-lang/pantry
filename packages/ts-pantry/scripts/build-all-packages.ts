@@ -1039,7 +1039,7 @@ Options:
     'argoproj.github.io/workflows', // Massive Go compilation (>60 min), exceeds per-package timeout
     'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
-    'coder.com/code-server', // Node.js native module C++ compilation fragile in CI
+    // coder.com/code-server removed — install native module dev headers (libsecret, x11, etc)
     // cr.yp.to/daemontools removed — removed gcc dep, use xcrun on darwin
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
@@ -1381,7 +1381,7 @@ Options:
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
-    'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
+    // github.com/saagarjha/unxip removed — restricted to darwin-aarch64 (arm64-only binary)
     // videolan.org/x265 removed — patched CMakeLists.txt to use CMP0025/CMP0054 NEW policy
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     // ceph.com/cephadm removed — replaced sed shebang patching with python3 -m zipapp
