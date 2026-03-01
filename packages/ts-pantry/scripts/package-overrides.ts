@@ -7269,4 +7269,38 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── isc.org/bind9 — disable LMDB (not available in CI) ──────────────
+
+  'isc.org/bind9': {
+    modifyRecipe: (recipe: any) => {
+      // Remove LMDB dependency — not reliably available in CI
+      if (recipe.dependencies?.['openldap.org/liblmdb']) {
+        delete recipe.dependencies['openldap.org/liblmdb']
+      }
+      // Remove --with-lmdb from configure ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => !a.includes('lmdb'),
+        )
+        recipe.build.env.ARGS.push('--without-lmdb')
+      }
+    },
+  },
+
+  // ─── imagemagick.org — fix libltdl linkage on darwin ──────────────────
+
+  'imagemagick.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // gnu.org/libtool provides libltdl but it may not be in the default search path
+          'LTDL_DIR=$(find /tmp/buildkit-deps -path "*/gnu.org/libtool/*/lib" -type d 2>/dev/null | head -1)',
+          'if [ -n "$LTDL_DIR" ]; then',
+          '  export LDFLAGS="-L$LTDL_DIR ${LDFLAGS:-}"',
+          'fi',
+        ],
+      },
+    },
+  },
 }

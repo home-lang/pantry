@@ -364,16 +364,16 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
   'github.com/TomWright/dasel': ['3.1.5'],
   // mitmproxy.org 11.1.x — REMOVED: bpf-linker issue is linux-only, darwin builds should work
-  // Old Rust build failures; 0.12.2+ works on linux, 0.10.1+ works on darwin
-  'prql-lang.org': ['<0.12.0'],
+  // Old Rust build failures; 0.12.2 also fails on darwin; 0.13.0+ works
+  'prql-lang.org': ['<0.13.0'],
   // Old scryer-prolog fails on darwin; 0.10.0 works on both
   'scryer.pl': ['0.9.4'],
   // Old sentry-cli fails on darwin (Rust libiconv); 3.2.0+ works on both
   'sentry.io': ['<3.2.0'],
   // Old typst fails (Rust build); 0.12.0+ works on both
   'typst.app': ['<0.12.0'],
-  // Old ICU build fails; 74.2.0+ works. 78.2.0 is phantom (404).
-  'unicode.org': ['<74.0.0', '78.2.0'],
+  // Old ICU build fails; 74.2.0+ works. 78.1.0/78.2.0 are phantom/broken.
+  'unicode.org': ['<74.0.0', '78.1.0', '78.2.0'],
   // Old xcb-proto fails (missing dep); 1.15.2+ works
   'x.org/protocol/xcb': ['<1.15.2'],
   // Old xrender fails; 0.9.12 (latest) works
@@ -491,8 +491,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnome.org/gdk-pixbuf': ['<2.43.0'],
   // theora 1.1.1 fails; 1.2.0 works on both
   'theora.org': ['<1.2.0'],
-  // edencommon old versions fail on darwin; 2026.2.23.0 works (2026.1.26.0 also fails)
-  'facebook.com/edencommon': ['<2026.2.0'],
+  // edencommon old versions fail on darwin (2026.2.2.0, 2026.2.9.0 also fail); 2026.2.23.0 works
+  'facebook.com/edencommon': ['<2026.2.16.0'],
   // mvfst fails on both platforms (fizz API mismatch); needs version-matched deps
   'facebook.com/mvfst': ['*'],
   // harfbuzz — FIXED via PYTHONPATH override for giscanner on linux
@@ -543,8 +543,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'openresty.org': ['*'],
   // opensearch older versions fail (nmslib cmake unrecognized compiler)
   'opensearch.org': ['<3.3.0'],
-  // ceres-solver 2.1.0 requires Eigen ~3.3 but only 5.0.1 available
-  'ceres-solver.org': ['<2.2.0'],
+  // ceres-solver <=2.2.0 requires Eigen ~3.3 but only 5.0.1 available
+  'ceres-solver.org': ['<2.3.0'],
   // ctags — FIXED via libiconv override in package-overrides.ts
   // apache thrift download failures (mirror issues)
   'apache.org/thrift': ['<0.21.0'],
@@ -561,6 +561,54 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/AcademySoftwareFoundation/openexr': ['3.2.126'],
   // putty — FIXED via override (URL used 'latest' instead of version, wrong domain key)
   // libass — FIXED via GLIBTOOL_FIX + libiconv override in package-overrides.ts
+  // Elixir 1.15-1.17 require OTP <=27 but only OTP 28 is in S3; 1.18.3+ works
+  'elixir-lang.org': ['<1.18.0'],
+  // mpv 0.38-0.40 use FF_PROFILE_* (renamed to AV_PROFILE_* in FFmpeg 8.0); 0.41.0+ works
+  'mpv.io': ['<0.41.0'],
+  // Facebook C++ stack: wangle/fb303/fizz all require version-locked deps (folly/glog/fizz).
+  // Only latest matching versions work; older versions have cross-library API mismatch.
+  'facebook.com/wangle': ['*'],
+  'facebook.com/fb303': ['<2026.2.16.0'],
+  'github.com/facebookincubator/fizz': ['<2026.2.16.0'],
+  // bitcoin.org: Boost 1.90 in S3 missing version.hpp — all versions fail on darwin
+  'bitcoin.org': ['*'],
+  // localai.io: curl ABI mismatch (linux) + gRPC cmake (darwin); complex dep issues
+  'localai.io': ['*'],
+  // libsoup: meson/vala build fails on linux (glib-networking/TLS issues)
+  'libsoup.org': ['*'],
+  // gnu.org/guile: POLLIN undeclared on darwin + scmconfig.h race on linux
+  'gnu.org/guile': ['*'],
+  // libtirpc: buildkit cc wrapper doesn't handle libtool -version-info flag on linux
+  'sourceforge.net/libtirpc': ['*'],
+  // augeas.net: build failure on both platforms (libtool/autoconf issues)
+  'augeas.net': ['*'],
+  // cairographics.org 1.16.0: build regression; 1.18.4 already works
+  'cairographics.org': ['<1.18.0'],
+  // gnome.org/librsvg: pango pkg-config path broken on darwin; latest works on linux
+  'gnome.org/librsvg': ['<2.61.0'],
+  // isc.org/bind9 — FIXED via --without-lmdb override in package-overrides.ts
+  // imagemagick old versions: ltdl linkage on darwin; 7.1.1.44+ works on both
+  'imagemagick.org': ['<7.1.1.40'],
+  // kaspa-miner: all versions fail on linux (Rust/GPU build issues)
+  'crates.io/kaspa-miner': ['*'],
+  // freetds: old versions fail on linux; latest works
+  'freetds.org': ['<1.5.0'],
+  // glm fails on darwin (cmake install issues); already in darwinOnlyDomains
+  'glm.g-truc.net': ['<1.1.0'],
+  // ntp.org 4.2.8.17 build failure on linux
+  'ntp.org': ['<4.2.9'],
+  // openslide 3.4.1 fails on linux; 4.0.0+ works
+  'openslide.org': ['<4.0.0'],
+  // rpm.org 6.0.1 fails on linux (missing deps); 6.1.0+ works
+  'rpm.org/rpm': ['<6.1.0'],
+  // xmlstar 1.6.1 fails on darwin; only version
+  'sourceforge.net/xmlstar': ['*'],
+  // mitmproxy 11.1.3 bpf-linker failure on linux; 11.1.2 and 12.0+ work
+  'mitmproxy.org': ['11.1.3'],
+  // littlecms 2.12.0 fails on darwin; 2.16.0+ works
+  'littlecms.com': ['<2.16.0'],
+  // facebook watchman old versions fail (glog ABI); already in darwinOnlyDomains
+  'facebook.com/watchman': ['<2026.2.16.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
