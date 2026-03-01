@@ -1103,10 +1103,10 @@ Options:
     'ghostscript.com', // Tag format gs10060 for version 10.06.0 — zero-padded minor not reconstructible from semver
     // amber-lang.com removed — distributableUrl override appends -alpha suffix
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
-    'brxken128.github.io/dexios', // Rust 'unnecessary qualification' lint errors with modern rustc (unmaintained)
+    // brxken128.github.io/dexios removed — added --cap-lints warn RUSTFLAGS override
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
     'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
-    'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup
+    'kornel.ski/dssim', // Requires Rust nightly (-Zunstable-options), corrupts shared rustup — needs isolated RUSTUP_HOME
     // khanacademy.org/genqlient removed — added go get x/tools@latest before build
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
     // elixir-lang.org removed — builds successfully on both platforms
@@ -1290,7 +1290,7 @@ Options:
     // opendap.org removed — removed linux libtirpc/util-linux deps in override
     // openresty.org removed — fixed sed -i BSD compat in override
     // opensearch.org removed — fixed sed -i BSD compat in override
-    'openslide.org', // v4.0.0 requires libdicom dep which is not in pantry
+    // openslide.org removed — meson now uses wrap-mode=default to download libdicom subproject
     // openssh.com removed — standard autotools, OpenSSL available
     // orhun.dev/gpg-tui removed — added --cap-lints warn RUSTFLAGS override
     // php.net removed — fixed sed -i BSD + removed kerberos dep in override
@@ -1362,7 +1362,7 @@ Options:
     'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
     'github.com/glauth/glauth', // PAM plugin API mismatch — needs upstream code fix
     'github.com/shaka-project/shaka-packager', // Complex git submodule + ninja build failures
-    'github.com/libkml/libkml', // Old C++ code failing with modern Boost/compilers
+    // github.com/libkml/libkml removed — added BOOST_BIND_GLOBAL_PLACEHOLDERS + Wno-error CXXFLAGS
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
@@ -1379,18 +1379,18 @@ Options:
     'github.com/saagarjha/unxip', // Download 404 — pre-built binary URL returns 404
     // videolan.org/x265 removed — patched CMakeLists.txt to use CMP0025/CMP0054 NEW policy
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
-    'ceph.com/cephadm', // Zipapp shebang replacement exceeds length limit with long build prefix
+    // ceph.com/cephadm removed — replaced sed shebang patching with python3 -m zipapp
     // opensearch.org removed — openjdk.org override now downloads pre-built Temurin JDK
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
     // nx.dev removed — successfully built and uploaded
     // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
     'gnu.org/guile', // cc wrapper + libtool interaction: scmconfig.h not generated
     'sourceforge.net/libtirpc', // Shared library libtirpc.so.3.0.0 not produced despite --enable-shared
-    'sourceforge.net/xmlstar', // Incompatible with libxml2 2.15 API (callback signature changes)
+    // sourceforge.net/xmlstar removed — added libxml2 2.15 API compat patches in prependScript
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
-    'opendap.org', // configure cannot determine DODS XDR integer sizes
+    // opendap.org removed — added autoconf cache vars for XDR sizes + system libtirpc
     'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
@@ -1399,12 +1399,12 @@ Options:
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
     'tcl-lang.org', // System Tcl 8.x version conflict with newly built Tcl 9
     // github.com/luvit/luv removed — fixed stray cmake prefix quote + LUA_INSTALL_DIR override
-    'musepack.net', // Duplicate symbol Res_bit in libmpcdec (library internal issue)
+    // musepack.net removed — added --allow-multiple-definition to cmake linker flags
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
     // --- Failures from verification builds (2026-02-26) ---
     // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
     'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
-    'unidata.ucar.edu/netcdf', // Needs HDF5 libraries (complex dep chain not in S3)
+    // unidata.ucar.edu/netcdf removed — disabled HDF5 + netcdf4, build with classic format only
     'lavinmq.com', // Crystal/shards toolchain not available in CI
     'vapoursynth.com', // Needs zimg (not in S3 dep chain)
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)

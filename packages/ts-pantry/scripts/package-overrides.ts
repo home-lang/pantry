@@ -317,8 +317,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         )
       }
       // v4.0.0+ switched from autotools to meson — replace build script
+      // Use --wrap-mode=default (not nofallback) so meson downloads libdicom subproject
       recipe.build.script = [
-        'meson setup build --prefix="$PREFIX" --libdir="$PREFIX/lib" --buildtype=release --wrap-mode=nofallback',
+        'meson setup build --prefix="$PREFIX" --libdir="$PREFIX/lib" --buildtype=release',
         'meson compile -C build --verbose',
         'meson install -C build',
       ]
@@ -753,9 +754,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
-        // Add -lm to linker flags for math library (pow, log10)
-        recipe.build.env.CMAKE_ARGS.push('-DCMAKE_EXE_LINKER_FLAGS=-lm')
-        recipe.build.env.CMAKE_ARGS.push('-DCMAKE_SHARED_LINKER_FLAGS=-lm')
+        // Add -lm and --allow-multiple-definition to linker flags
+        // Duplicate symbols Res_bit, __Cc, __Dc in libmpcdec are defined in multiple TUs
+        recipe.build.env.CMAKE_ARGS.push('-DCMAKE_EXE_LINKER_FLAGS=-lm -Wl,--allow-multiple-definition')
+        recipe.build.env.CMAKE_ARGS.push('-DCMAKE_SHARED_LINKER_FLAGS=-lm -Wl,--allow-multiple-definition')
       }
     },
   },
@@ -848,9 +850,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'sourceforge.net/xmlstar': {
     env: {
-      CFLAGS: '$CFLAGS -I{{deps.gnome.org/libxml2.prefix}}/include/libxml2',
+      CFLAGS: '$CFLAGS -I{{deps.gnome.org/libxml2.prefix}}/include/libxml2 -Wno-error=incompatible-pointer-types',
       CPPFLAGS: '-I{{deps.gnome.org/libxml2.prefix}}/include/libxml2',
     },
+    // Patch source for libxml2 2.15 API changes (xmlStructuredErrorFunc signature)
+    prependScript: [
+      'sed -i.bak \'s/xmlStructuredErrorFunc/xmlStructuredErrorHandler/g\' src/*.c src/*.h 2>/dev/null || true',
+      'sed -i.bak \'s/xmlErrorPtr/const xmlError */g\' src/*.c src/*.h 2>/dev/null || true',
+    ],
     modifyRecipe: (recipe: any) => {
       // Add gnome.org/libxml2 runtime dependency
       if (recipe.dependencies) {
@@ -1706,20 +1713,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── ceph.com/cephadm — fix sed -i BSD ───────────────────────────────────
-
-  'ceph.com/cephadm': {
-    modifyRecipe: (recipe: any) => {
-      if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && step.run.includes('shebang')) {
-            step.run = step.run.replace(/sed -i "/g, 'sed -i.bak "')
-          }
-        }
-      }
-    },
-  },
+  // ceph.com/cephadm — moved to end of file (merged with zipapp shebang fix)
 
   // ─── rockdaboot.github.io/libpsl — switch to libidn2 runtime ─────────────
 
@@ -1793,25 +1787,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── unidata.ucar.edu/netcdf — fix sed -i BSD ────────────────────────────
-
-  'unidata.ucar.edu/netcdf': {
-    modifyRecipe: (recipe: any) => {
-      // Fix sed -i (BSD requires suffix) in cmake fixup steps
-      if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
-          }
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
-          }
-        }
-      }
-    },
-  },
+  // unidata.ucar.edu/netcdf — moved to end of file (merged with HDF5 disable)
 
   // ─── github.com/cosmtrek/air — skip Makefile check target (needs git repo) ──
   'github.com/cosmtrek/air': {
@@ -4332,14 +4308,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── opendap.org — remove linux libtirpc dep ─────────────────────────
 
   'opendap.org': {
+    platforms: {
+      linux: {
+        // Install libtirpc from system to provide rpc/rpc.h headers
+        prependScript: [
+          'sudo apt-get install -y libtirpc-dev 2>/dev/null || true',
+          'export CPPFLAGS="-I/usr/include/tirpc $CPPFLAGS"',
+          'export LDFLAGS="-ltirpc $LDFLAGS"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: any) => {
-      // Remove linux sourceforge.net/libtirpc dep (not in S3)
+      // Remove linux sourceforge.net/libtirpc dep (not in S3, use system one)
       if (recipe.dependencies?.linux?.['sourceforge.net/libtirpc']) {
         delete recipe.dependencies.linux['sourceforge.net/libtirpc']
       }
       // Remove linux util-linux dep
       if (recipe.dependencies?.linux?.['github.com/util-linux/util-linux']) {
         delete recipe.dependencies.linux['github.com/util-linux/util-linux']
+      }
+      // Provide autoconf cache variables for XDR integer sizes
+      // (configure can't run test binaries in our build environment)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('ac_cv_sizeof_long=8')
+        recipe.build.env.ARGS.push('ac_cv_sizeof_int=4')
+        recipe.build.env.ARGS.push('ac_cv_sizeof_short=2')
       }
     },
   },
@@ -6826,6 +6819,77 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Add meson flag to disable introspection
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('-Dintrospection=disabled')
+      }
+    },
+  },
+
+  // ─── brxken128.github.io/dexios — fix Rust lint errors ────────────────
+
+  'brxken128.github.io/dexios': {
+    env: {
+      RUSTFLAGS: '--cap-lints warn',
+    },
+  },
+
+  // ─── github.com/libkml/libkml — fix Boost bind deprecation ────────────
+
+  'github.com/libkml/libkml': {
+    env: {
+      CXXFLAGS: '$CXXFLAGS -std=c++14 -Wno-error -DBOOST_BIND_GLOBAL_PLACEHOLDERS',
+    },
+  },
+
+  // ─── unidata.ucar.edu/netcdf — disable HDF5 (not in S3) ──────────────
+
+  'unidata.ucar.edu/netcdf': {
+    modifyRecipe: (recipe: any) => {
+      // Remove HDF5 dep — not in S3 dep chain. Build with classic format only.
+      if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
+        delete recipe.dependencies['hdfgroup.org/HDF5']
+      }
+      // Add -DENABLE_HDF5=OFF to cmake ARGS
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('-DENABLE_HDF5=OFF')
+        recipe.build.env.ARGS.push('-DENABLE_NETCDF_4=OFF')
+      }
+      // Fix sed -i (BSD requires suffix) in cmake fixup steps
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
+          }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            const idx = recipe.build.script.indexOf(step)
+            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
+          }
+        }
+      }
+    },
+  },
+
+  // ─── ceph.com/cephadm — fix shebang replacement ──────────────────────
+
+  'ceph.com/cephadm': {
+    modifyRecipe: (recipe: any) => {
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          // Replace the complex sed-based shebang patching with python3 -m zipapp
+          // which handles shebang length correctly regardless of prefix path length
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('shebang')) {
+            recipe.build.script[i] = {
+              run: 'python3 -m zipapp --python "/usr/bin/env python3" cephadm -o cephadm.new && mv cephadm.new cephadm && chmod +x cephadm',
+              'working-directory': step['working-directory'],
+            }
+          }
+          // Also fix sed -i BSD compat in any remaining sed steps
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+            step.run = step.run.replace(/sed -i "/g, 'sed -i.bak "')
+          }
+        }
       }
     },
   },
