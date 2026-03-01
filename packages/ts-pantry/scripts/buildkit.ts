@@ -19,25 +19,83 @@ export interface Token {
   to: string
 }
 
-// Parsed YAML recipe types
+// ── Parsed YAML recipe types ──────────────────────────────────────────
+
+/** Inline prop content — either a string or object with content/extname */
+export type RecipePropValue = string | { content?: string; contents?: string; extname?: string }
+
+/** A single step in a build/test script — either a bare command string or a structured object */
+export type RecipeScriptStep = string | {
+  run: string | string[]
+  'working-directory'?: string
+  if?: string
+  'if:'?: string
+  prop?: RecipePropValue
+  fixture?: string | { extname: string; content: string }
+}
+
+/** Source distributable configuration */
+export interface RecipeDistributable {
+  url: string
+  'strip-components'?: number
+  ref?: string
+}
+
+/**
+ * Dependencies map — domain → version constraint string.
+ * May contain platform sub-objects (linux/darwin) whose values are also dependency maps.
+ * Uses Record<string, any> because YAML produces mixed domain-keys and platform-keys.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RecipeDependencyMap = Record<string, any>
+
+/**
+ * Build environment variables — variable names → string or string array values.
+ * May contain platform sub-objects (linux/darwin/aarch64/x86-64) whose values are also env maps.
+ * Uses Record<string, any> because YAML produces mixed variable-keys and platform-keys.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RecipeBuildEnv = Record<string, any>
+
+/** Build configuration (after normalization from string/array shorthand) */
+export interface RecipeBuildConfig {
+  dependencies?: RecipeDependencyMap
+  script?: string | RecipeScriptStep[]
+  env?: RecipeBuildEnv
+  'working-directory'?: string
+  skip?: string | string[]
+}
+
+/** Test configuration */
+export type RecipeTest = string | string[] | {
+  script?: string | string[] | RecipeScriptStep[]
+  fixture?: string | { extname: string; content: string }
+  dependencies?: RecipeDependencyMap
+  env?: RecipeBuildEnv
+}
+
+/**
+ * Raw YAML recipe — build may be string/array shorthand or object form.
+ * Use this for generateBuildScript and initial YAML parsing.
+ */
 export interface PackageRecipe {
-  distributable?: {
-    url: string
-    'strip-components'?: number
-    ref?: string
-  }
-  dependencies?: Record<string, any>
-  build?: {
-    dependencies?: Record<string, any>
-    script?: any // string | array of strings/objects
-    env?: Record<string, any>
-    'working-directory'?: string
-    skip?: string | string[]
-  }
-  versions?: any
+  distributable?: RecipeDistributable
+  dependencies?: RecipeDependencyMap
+  build?: RecipeBuildConfig | string | RecipeScriptStep[]
+  versions?: { github?: string; strip?: string | RegExp; [key: string]: unknown }
   provides?: string[] | Record<string, string[]>
   platforms?: string[]
-  test?: any
+  test?: RecipeTest
+  companions?: RecipeDependencyMap
+  warnings?: string[]
+}
+
+/**
+ * Normalized recipe — build is always object form (after applyRecipeOverrides normalization).
+ * Use this for modifyRecipe callbacks where build has been normalized.
+ */
+export interface NormalizedRecipe extends Omit<PackageRecipe, 'build'> {
+  build?: RecipeBuildConfig
 }
 
 /**
@@ -333,7 +391,7 @@ export function expandEnv(
   return lines.join('\n')
 }
 
-function transformEnvValue(value: any, tokens: Token[]): string {
+function transformEnvValue(value: string | number | boolean | null | undefined, tokens: Token[]): string {
   if (typeof value === 'boolean') return value ? '1' : '0'
   if (value === undefined || value === null) return '0'
   if (typeof value === 'number') return String(value)
@@ -346,7 +404,7 @@ function transformEnvValue(value: any, tokens: Token[]): string {
  * Based on brewkit's getScript() in usePantry.getScript.ts
  */
 export function processScript(
-  scriptNode: any,
+  scriptNode: string | RecipeScriptStep[],
   tokens: Token[],
   platform: string,
   version: string,
@@ -368,7 +426,7 @@ export function processScript(
     }
 
     if (typeof item === 'object' && item !== null) {
-      // Check condition
+      // Check condition (YAML may use `if` or `if:` key)
       const condition = item.if || item['if:']
       if (condition && !evaluateCondition(String(condition), platform, version)) {
         continue
@@ -405,11 +463,12 @@ export function processScript(
 
       // Handle prop (inline content written to temp file)
       if (item.prop) {
+        const prop = item.prop
         const propContent = applyTokens(
-          typeof item.prop === 'string' ? item.prop : String(item.prop.content || item.prop.contents || ''),
+          typeof prop === 'string' ? prop : String(prop.content || prop.contents || ''),
           tokens,
         )
-        const extname = item.prop?.extname ? `.${item.prop.extname.replace(/^\./, '')}` : ''
+        const extname = (typeof prop === 'object' && prop.extname) ? `.${prop.extname.replace(/^\./, '')}` : ''
         // Single-quoted heredoc (<<'EOF') prevents bash variable expansion,
         // so we do NOT need to escape $ — content is written literally.
         // Only escape backslashes that aren't already part of an escape sequence.
@@ -451,6 +510,12 @@ export function generateBuildScript(
   const [os, arch] = platform.split('-')
   const osName = os === 'darwin' ? 'darwin' : 'linux'
   const archName = arch === 'arm64' ? 'aarch64' : 'x86-64'
+
+  // Narrow build to object form (or undefined) for property access throughout this function
+  const build: RecipeBuildConfig | undefined =
+    recipe.build && typeof recipe.build === 'object' && !Array.isArray(recipe.build)
+      ? recipe.build
+      : undefined
 
   const sections: string[] = []
 
@@ -511,9 +576,9 @@ export function generateBuildScript(
   sections.push('')
 
   // Environment from YAML recipe (overrides defaults above)
-  if (recipe.build?.env) {
+  if (build?.env) {
     sections.push('# Environment from recipe')
-    sections.push(expandEnv(recipe.build.env, platform, tokens))
+    sections.push(expandEnv(build.env, platform, tokens))
     sections.push('')
   }
 
@@ -585,7 +650,7 @@ export function generateBuildScript(
   sections.push('')
 
   // Go toolchain — set default GOPATH only if recipe didn't already set it
-  const recipeEnv = recipe.build?.env ? platformReduce(recipe.build.env, platform) : {}
+  const recipeEnv = build?.env ? platformReduce(build.env, platform) : {}
   sections.push('# Go toolchain (GOPATH default; GOROOT set after deps)')
   if (!recipeEnv.GOPATH) {
     sections.push('export GOPATH="$REAL_HOME/go"')
@@ -1404,7 +1469,7 @@ SYSLIB_OVERRIDE_EOF`)
 
   // Working directory — always cd to buildDir first, then to any subdirectory
   sections.push(`cd "${buildDir}"`)
-  const wd = recipe.build?.['working-directory']
+  const wd = build?.['working-directory']
   if (wd) {
     const expandedWd = applyTokens(wd, tokens)
     // Use a variable to avoid running shell expansions (e.g. $(mktemp -d)) twice
@@ -1507,7 +1572,9 @@ SYSLIB_OVERRIDE_EOF`)
  * Get skip list from recipe
  */
 export function getSkips(recipe: PackageRecipe): string[] {
-  const skip = recipe.build?.skip
+  const build = recipe.build
+  if (!build || typeof build === 'string' || Array.isArray(build)) return []
+  const skip = build.skip
   if (!skip) return []
   if (typeof skip === 'string') return [skip]
   if (Array.isArray(skip)) return skip

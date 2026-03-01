@@ -18,6 +18,8 @@
  *   3. Use modifyRecipe only for complex mutations that can't be expressed declaratively
  */
 
+import type { NormalizedRecipe, RecipeScriptStep } from './buildkit'
+
 export type ScriptStep = string | {
   run: string
   'working-directory'?: string
@@ -35,7 +37,7 @@ export interface PackageOverride {
   }
   /** Override the recipe's supported platforms (e.g. ['darwin/aarch64', 'linux/x86-64']) */
   supportedPlatforms?: string[]
-  modifyRecipe?: (recipe: any, platform?: string) => void
+  modifyRecipe?: (recipe: NormalizedRecipe, platform?: string) => void
 }
 
 // ── Shared script patterns ─────────────────────────────────────────────
@@ -60,7 +62,7 @@ const GLIBTOOL_FIX: ScriptStep = {
 
 // ── Helper to replace a script step containing a pattern ───────────────
 
-function replaceScriptStep(recipe: any, match: string, newRun: string): void {
+function replaceScriptStep(recipe: NormalizedRecipe, match: string, newRun: string): void {
   if (!Array.isArray(recipe.build?.script)) return
   for (const step of recipe.build.script) {
     if (typeof step === 'string' && step.includes(match)) {
@@ -110,7 +112,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove boost.org S3 dep — use system-installed boost instead
       if (recipe.dependencies?.['boost.org']) {
         delete recipe.dependencies['boost.org']
@@ -129,7 +131,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'gnu.org/bc': {
     // GNU bc uses zero-padded minor versions (1.07.1) but semver normalizes them (1.7.1)
     distributableUrl: 'https://ftpmirror.gnu.org/gnu/bc/bc-{{version.major}}.0{{version.minor}}.{{version.patch}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Move texinfo dependency to linux-only (not needed on darwin)
       if (recipe.build?.dependencies?.['gnu.org/texinfo']) {
         delete recipe.build.dependencies['gnu.org/texinfo']
@@ -146,7 +148,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
         // Replace unconditional make with platform-conditional
-        const makeIdx = recipe.build.script.findIndex((s: any) =>
+        const makeIdx = recipe.build.script.findIndex((s: RecipeScriptStep) =>
           typeof s === 'string' && s.includes('make') && s.includes('install') && !s.includes('configure'))
         if (makeIdx >= 0) {
           recipe.build.script.splice(makeIdx, 1,
@@ -159,7 +161,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'gnu.org/texinfo': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace sed -i with perl for portability
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -208,7 +210,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove S3 libpsl dep — use system-installed libpsl instead
       if (recipe.dependencies?.['rockdaboot.github.io/libpsl']) {
         delete recipe.dependencies['rockdaboot.github.io/libpsl']
@@ -231,14 +233,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'gnu.org/ed': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix in-script curl URL from ftp.gnu.org to ftpmirror
       if (recipe.build?.script) {
         const fixFtpUrls = (s: string) => s.replace(/ftp\.gnu\.org/g, 'ftpmirror.gnu.org')
         if (typeof recipe.build.script === 'string') {
           recipe.build.script = fixFtpUrls(recipe.build.script)
         } else if (Array.isArray(recipe.build.script)) {
-          recipe.build.script = recipe.build.script.map((step: any) => {
+          recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
             if (typeof step === 'string') return fixFtpUrls(step)
             if (typeof step === 'object' && typeof step.run === 'string') {
               step.run = fixFtpUrls(step.run)
@@ -251,14 +253,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'aspell.net': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix in-script curl URL from ftp.gnu.org to ftpmirror
       if (recipe.build?.script) {
         const fixFtpUrls = (s: string) => s.replace(/ftp\.gnu\.org/g, 'ftpmirror.gnu.org')
         if (typeof recipe.build.script === 'string') {
           recipe.build.script = fixFtpUrls(recipe.build.script)
         } else if (Array.isArray(recipe.build.script)) {
-          recipe.build.script = recipe.build.script.map((step: any) => {
+          recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
             if (typeof step === 'string') return fixFtpUrls(step)
             if (typeof step === 'object' && typeof step.run === 'string') {
               step.run = fixFtpUrls(step.run)
@@ -278,7 +280,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/skystrife/cpptoml': {
     distributableUrl: 'https://github.com/skystrife/cpptoml/archive/v{{version}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -309,7 +311,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'openslide.org': {
     distributableUrl: 'https://github.com/openslide/openslide/releases/download/v{{version}}/openslide-{{version}}.tar.xz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -318,14 +320,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       // v4.0.0+ switched from autotools to meson — replace build script
       // Use --wrap-mode=default (not nofallback) so meson downloads libdicom subproject
-      recipe.build.script = [
+      recipe.build!.script = [
         'meson setup build --prefix="$PREFIX" --libdir="$PREFIX/lib" --buildtype=release',
         'meson compile -C build --verbose',
         'meson install -C build',
       ]
-      if (!recipe.build.dependencies) recipe.build.dependencies = {}
-      recipe.build.dependencies['mesonbuild.com'] = '*'
-      recipe.build.dependencies['ninja-build.org'] = '*'
+      if (!recipe.build!.dependencies) recipe.build!.dependencies = {}
+      recipe.build!.dependencies['mesonbuild.com'] = '*'
+      recipe.build!.dependencies['ninja-build.org'] = '*'
     },
   },
 
@@ -347,7 +349,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'zeromq.org': {
     distributableUrl: 'https://github.com/zeromq/libzmq/releases/download/v{{version}}/zeromq-{{version}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // ZeroMQ 4.3.x has a GCC 13 allocator_traits static assertion failure in CURVE crypto code.
       // Disable CURVE to work around the upstream bug (fixed in newer libzmq versions).
       // The zeromq YAML uses `ARGS` (not `CONFIGURE_ARGS`) for ./configure flags.
@@ -363,7 +365,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'frei0r.dyne.org': {
     distributableUrl: 'https://github.com/dyne/frei0r/archive/refs/tags/v{{version}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -378,7 +380,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'rclone.org': {
     distributableUrl: 'https://github.com/rclone/rclone/archive/v{{version}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove darwin-only curl/patch dependencies (patch no longer needed)
       if (recipe.build?.dependencies?.darwin) {
         delete recipe.build.dependencies.darwin['curl.se']
@@ -386,7 +388,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       // Remove the patch step and -tags cmount from ARGS
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('patch -p1')) return false
           return true
         })
@@ -427,7 +429,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
   'midnight-commander.org': {
     prependScript: [GLIBTOOL_FIX],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Strip post-install pkgx-specific relocatability fixup:
       // The find/sed block requires $PKGX_DIR (empty in CI) and uses
       // `find -depth 1` (invalid on GNU find). We don't need pkgx
@@ -438,22 +440,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
         : (typeof recipe.build?.script === 'string' ? [recipe.build.script] : null)
       if (!scriptArr) return
       for (let i = 0; i < scriptArr.length; i++) {
-        if (typeof scriptArr[i] === 'string' && scriptArr[i].includes('make install')) {
-          const lines = scriptArr[i].split('\n')
+        const step = scriptArr[i]
+        if (typeof step === 'string' && step.includes('make install')) {
+          const lines = step.split('\n')
           const installIdx = lines.findIndex((l: string) => l.trim() === 'make install')
           if (installIdx >= 0) {
             scriptArr[i] = lines.slice(0, installIdx + 1).join('\n')
           }
         }
       }
-      recipe.build.script = scriptArr
+      recipe.build!.script = scriptArr
     },
   },
 
   // ─── sed portability fixes ─────────────────────────────────────────
 
   'amp.rs': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace sed -i -f with redirect-and-move (BSD compat)
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -479,7 +482,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'laravel.com': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace sed -i with perl -pi -e for portability
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -518,7 +521,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'libarchive.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace sed -i with perl for removing Requires.private iconv line
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -534,7 +537,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'swagger.io/swagger-codegen': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace sed -i with perl -pi -e in pom.xml patching
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -552,7 +555,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'quickwit.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed for cross-platform: BSD sed requires suffix arg after -i
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -581,7 +584,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         },
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove AR: llvm-ar on linux
       if (recipe.build?.env?.linux?.AR) {
         delete recipe.build.env.linux.AR
@@ -602,7 +605,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'rm -f rust-toolchain.toml',
       'rustup default stable',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['rust-lang.org']) {
         recipe.build.dependencies['rust-lang.org'] = '>=1.85'
       }
@@ -624,10 +627,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'maturin.rs': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove -Znext-lockfile-bump flag (not needed, causes issues)
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('Znext-lockfile-bump')) return false
           return true
@@ -663,7 +666,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'eksctl.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove build deps that we don't have (counterfeiter, go-bindata, ifacemaker, mockery)
       const deps = recipe.build?.dependencies
       if (deps) {
@@ -682,7 +685,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'docker.com/cli': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Wrap man page generation in go-md2man availability check
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -699,7 +702,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'ccache.dev': {
     // Remove -DENABLE_IPO=TRUE from CMAKE_ARGS (generic fix handles quote)
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove llvm.org linux build dependency
       if (recipe.build?.dependencies?.linux) {
         delete recipe.build.dependencies.linux['llvm.org']
@@ -736,7 +739,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── Env var / configure arg fixes ─────────────────────────────────
 
   'capnproto.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('-DBUILD_TESTING=OFF')) {
           recipe.build.env.ARGS.push('-DBUILD_TESTING=OFF')
@@ -748,7 +751,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // lloyd.github.io/yajl — first entry removed, see second entry below with GET_TARGET_PROPERTY fix
 
   'musepack.net': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -764,7 +767,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── crates.io/sd — fix virtual workspace manifest path ──────────────
   'crates.io/sd': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // sd >= 1.0.0 has a virtual workspace manifest with sd-cli/ subdirectory.
       // Older versions (0.x) have Cargo.toml at root. Try sd-cli first, fall back to root.
       // Must include --root in both branches of the if/else to avoid bash syntax error.
@@ -791,7 +794,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: { env: { CXXFLAGS: '-std=c++14' } },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove --enable-stl from ARGS (broken on modern compilers)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => a !== '--enable-stl')
@@ -815,14 +818,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove unicode.org dep from S3 — use system ICU instead
       if (recipe.dependencies?.['unicode.org']) delete recipe.dependencies['unicode.org']
     },
   },
 
   'openprinting.github.io/cups': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('--sysconfdir="{{prefix}}/etc"')) {
           recipe.build.env.ARGS.push('--sysconfdir="{{prefix}}/etc"', '--localstatedir="{{prefix}}/var"')
@@ -832,7 +835,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'linux-pam.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         const args = recipe.build.env.MESON_ARGS
         if (!args.includes('--localstatedir={{prefix}}/var')) {
@@ -872,7 +875,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove S3 libxml2/libxslt deps — use system-installed versions instead
       // S3 has libxml2 2.15 with incompatible API changes
       if (recipe.dependencies?.['gnome.org/libxml2']) delete recipe.dependencies['gnome.org/libxml2']
@@ -889,7 +892,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── Complex build script fixes ────────────────────────────────────
 
   'babashka.org': {
-    modifyRecipe: (recipe: any, platform?: string) => {
+    modifyRecipe: (recipe: NormalizedRecipe, platform?: string) => {
       if (platform !== 'linux-x86-64') return
       // On Linux, LD_LIBRARY_PATH from S3 deps (e.g. old curl.se/7.86.0) overrides system curl,
       // causing "undefined symbol: curl_global_trace" errors. Unset it for the curl download.
@@ -905,7 +908,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'agwa.name/git-crypt': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove docbook dependencies (we build without man pages)
       const deps = recipe.build?.dependencies
       if (deps) {
@@ -919,7 +922,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       // Change ENABLE_MAN=yes to ENABLE_MAN=no and remove sed docbook step
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'string' && step.includes('docbook')) return false
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('docbook')) return false
           return true
@@ -937,7 +940,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'harlequin.sh': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('pip install') && step.includes('[')) {
@@ -960,10 +963,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'gstreamer.freedesktop.org/orc': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace single meson call with platform-conditional calls (darwin needs pip3 meson fix)
       if (Array.isArray(recipe.build?.script)) {
-        const mesonIdx = recipe.build.script.findIndex((step: any) => {
+        const mesonIdx = recipe.build.script.findIndex((step: RecipeScriptStep) => {
           if (typeof step === 'string') return step.includes('meson') && step.includes('$ARGS') && step.includes('..')
           if (typeof step === 'object' && step.run) {
             const run = typeof step.run === 'string' ? step.run : ''
@@ -1008,7 +1011,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       'find .. -name CMakeLists.txt -exec sed -i.bak \'/cmake_policy.*OLD/d\' {} +',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Move nasm.us dependency to linux-only (assembly disabled on darwin)
       if (recipe.build?.dependencies?.['nasm.us']) {
         delete recipe.build.dependencies['nasm.us']
@@ -1033,7 +1036,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'jemalloc.net': {
     // Rename 'version' file to avoid C++ #include <version> collision on modern Xcode
     prependScript: ['if [ -f version ]; then mv version VERSION.jemalloc; fi'],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix working-directory for the sed command
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -1047,7 +1050,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'invisible-island.net/ncurses': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix all ln -s to ln -sf to avoid failure when symlinks already exist
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -1067,7 +1070,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'python.org/typing_extensions': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove flit.pypa.io build dependency
       if (recipe.build?.dependencies) {
         delete recipe.build.dependencies['flit.pypa.io']
@@ -1084,7 +1087,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'libsoup.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Add patchelf as linux build dep
       if (recipe.build?.dependencies) {
         if (!recipe.build.dependencies.linux) recipe.build.dependencies.linux = {}
@@ -1132,7 +1135,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'gnupg.org/libgcrypt': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['gnupg.org/libgpg-error']) {
         recipe.build.dependencies['gnupg.org/libgpg-error'] = '^1.51'
       }
@@ -1156,7 +1159,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/libxml2 — sed -i BSD fix + remove --with-python on darwin ──
 
   'gnome.org/libxml2': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i (BSD requires suffix) in the xml2-config rewrite step
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -1180,7 +1183,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/glib — disable introspection, fix sed -i BSD ─────────────
 
   'gnome.org/glib': {
-    modifyRecipe: (recipe: any, platform?: string) => {
+    modifyRecipe: (recipe: NormalizedRecipe, platform?: string) => {
       // Remove gobject-introspection build dep (circular dep chain)
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -1239,7 +1242,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // pagure.io/xmlto is linux-only (BSD getopt incompatibility on macOS)
       if (recipe.build?.dependencies?.['pagure.io/xmlto']) {
         delete recipe.build.dependencies['pagure.io/xmlto']
@@ -1296,7 +1299,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── x.org/xdmcp — fix sed -i BSD compat ──────────────────────────────
   'x.org/xdmcp': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat: the build script does `sed -i 's/...' *.la`
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -1312,7 +1315,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── x.org/xcb — fix $SHELF variable references ──────────────────────────
   'x.org/xcb': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix $SHELF in ARGS array (same pattern as x.org/ice)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -1330,12 +1333,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── x.org/protocol/xcb — relax python version + fix module path ─────────
   'x.org/protocol/xcb': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Relax python version constraint (S3 has 3.14, YAML wants ~3.11)
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '3'
       }
-      if (recipe.test?.dependencies?.['python.org']) {
+      if (recipe.test && typeof recipe.test === 'object' && !Array.isArray(recipe.test) && recipe.test.dependencies?.['python.org']) {
         recipe.test.dependencies['python.org'] = '3'
       }
       // After make install, create python3.11 compat symlink for the hardcoded
@@ -1359,7 +1362,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/ice — fix $SHELF variable references ──────────────────────────
 
   'x.org/ice': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/"\$SHELF"\/etc/, '"{{prefix}}/etc"')
@@ -1372,7 +1375,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/sm — fix $SHELF variable references ───────────────────────────
 
   'x.org/sm': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -1393,7 +1396,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/xt — fix $SHELF variable references ───────────────────────────
 
   'x.org/xt': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -1416,7 +1419,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/xmu — fix $SHELF variable references ──────────────────────────
 
   'x.org/xmu': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (typeof recipe.build?.script === 'string') {
         recipe.build.script = recipe.build.script
           .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
@@ -1437,7 +1440,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/xaw — fix $SHELF variable references ──────────────────────────
 
   'x.org/xaw': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (typeof recipe.build?.script === 'string') {
         recipe.build.script = recipe.build.script
           .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
@@ -1464,7 +1467,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove freedesktop.org/XKeyboardConfig dep (not in S3)
       if (recipe.dependencies?.['freedesktop.org/XKeyboardConfig']) {
         delete recipe.dependencies['freedesktop.org/XKeyboardConfig']
@@ -1484,7 +1487,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── libimobiledevice.org/libplist — fix sed -i BSD ─────────────────────
 
   'libimobiledevice.org/libplist': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
@@ -1499,7 +1502,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── libimobiledevice.org/libusbmuxd — fix sed -i BSD ───────────────────
 
   'libimobiledevice.org/libusbmuxd': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
@@ -1521,7 +1524,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'libimobiledevice.org/libtatsu': {
     prependScript: [GLIBTOOL_FIX],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove rockdaboot.github.io/libpsl dep (not in S3)
       if (recipe.dependencies?.['rockdaboot.github.io/libpsl']) {
         delete recipe.dependencies['rockdaboot.github.io/libpsl']
@@ -1533,7 +1536,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'libimobiledevice.org': {
     prependScript: [GLIBTOOL_FIX],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
@@ -1548,7 +1551,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mozilla.org/nss — fix sed -i BSD + use system clang on darwin ───────
 
   'mozilla.org/nss': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i (BSD requires suffix)
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -1571,7 +1574,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── openpmix.github.io — remove --with-sge (SGE not in CI) ─────────────
 
   'openpmix.github.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => a !== '--with-sge')
       }
@@ -1581,7 +1584,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── developers.yubico.com/libfido2 — remove systemd.io dep ─────────────
 
   'developers.yubico.com/libfido2': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // systemd.io is broken — use system libudev instead
       if (recipe.dependencies?.linux?.['systemd.io']) {
         delete recipe.dependencies.linux['systemd.io']
@@ -1605,7 +1608,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove chiark.greenend.org.uk/halibut dep (not available in CI)
       if (recipe.build?.dependencies?.['chiark.greenend.org.uk/halibut']) {
         delete recipe.build.dependencies['chiark.greenend.org.uk/halibut']
@@ -1631,7 +1634,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'chiark.greenend.org.uk/putty': {
     distributableUrl: 'https://the.earth.li/~sgtatham/putty/{{version.marketing}}/putty-{{version.marketing}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove halibut dep (not available in S3, only needed for docs).
       // Without halibut in PATH, cmake's find_program(HALIBUT) returns NOT FOUND
       // and doc generation is skipped entirely — no man pages to install.
@@ -1659,7 +1662,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         }],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // metagpt requires Python >=3.9,<3.12 — pin to 3.11.x
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '~3.11'
@@ -1676,7 +1679,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         'corepack prepare yarn@stable --activate 2>/dev/null || true',
       ].join('\n'),
     }],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in the version bump step
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -1701,7 +1704,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Also clean npm cache to avoid stale tarball corruption
       'npm cache clean --force 2>/dev/null || true',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('--legacy-peer-deps')) {
           recipe.build.env.ARGS.push('--legacy-peer-deps')
@@ -1713,7 +1716,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── snaplet.dev/cli — npm install with legacy peer deps ─────────────────
 
   'snaplet.dev/cli': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Pin Node to v20 LTS — better-sqlite3 8.5.0 incompatible with Node.js 24 V8 API
       if (recipe.build?.dependencies?.['nodejs.org']) {
         recipe.build.dependencies['nodejs.org'] = '~20'
@@ -1755,7 +1758,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove unicode.org dep (not in S3) — use libidn2 instead
       if (recipe.dependencies?.['unicode.org']) {
         delete recipe.dependencies['unicode.org']
@@ -1789,7 +1792,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove S3 HDF5 dep — use system-installed HDF5 instead
       if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
         delete recipe.dependencies['hdfgroup.org/HDF5']
@@ -1811,7 +1814,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/cosmtrek/air — skip Makefile check target (needs git repo) ──
   'github.com/cosmtrek/air': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // The Makefile's `build` target depends on `check` which runs `git diff --cached`
       // and `golangci-lint`. In our tarball build env there's no .git dir, so it fails.
       // Replace `make build` with direct `go build`.
@@ -1828,7 +1831,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/benjaminp/six — use pip instead of distutils setup.py ──
   'github.com/benjaminp/six': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // setup.py imports distutils which was removed in Python 3.12+.
       // Replace with pip install which uses setuptools backend.
       if (Array.isArray(recipe.build?.script)) {
@@ -1853,7 +1856,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'chmod +x "${TMPDIR:-/tmp}/_git_wrapper/git"',
       'export PATH="${TMPDIR:-/tmp}/_git_wrapper:$PATH"',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gnutls.org from deps if present (system gnutls is compatible)
       if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
       if (recipe.build?.dependencies?.['gnutls.org']) delete recipe.build.dependencies['gnutls.org']
@@ -1864,7 +1867,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/mikefarah/yq — remove pandoc dep, skip man page generation ──
   'github.com/mikefarah/yq': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['pandoc.org']) {
         delete recipe.build.dependencies['pandoc.org']
       }
@@ -1884,10 +1887,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/rrthomas/libpaper — skip `make check` (test failures in CI) ──
   'github.com/rrthomas/libpaper': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script = recipe.build.script.filter(
-          (s: any) => typeof s !== 'string' || s !== 'make check',
+          (s: RecipeScriptStep) => typeof s !== 'string' || s !== 'make check',
         )
       }
     },
@@ -1895,7 +1898,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/Diniboy1123/usque — fix goreleaser output path glob ──
   'github.com/Diniboy1123/usque': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // goreleaser creates dirs like dist/usque_darwin_arm64_v8.0/ — glob doesn't match
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -1921,7 +1924,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Force standard lib/ path instead of lib/x86_64-linux-gnu/ (multiarch)
       // The post-install sed expects fuse3.pc in lib/pkgconfig/
       if (Array.isArray(recipe.build?.env?.ARGS)) {
@@ -1949,9 +1952,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'string' && step.startsWith('patch -p1')) return false
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('wget')) return false
           return true
@@ -1972,7 +1975,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/google/shaderc — disable copyright check, widen Python, fix sed -i ──
   'github.com/google/shaderc': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['python.org'] === '~3.12') {
         recipe.build.dependencies['python.org'] = '3'
       }
@@ -1995,7 +1998,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── libproxy.github.io/libproxy — disable introspection/vala ──
   'libproxy.github.io/libproxy': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
       }
@@ -2013,7 +2016,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/hughsie/libxmlb — disable introspection/vala ──
   'github.com/hughsie/libxmlb': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
       }
@@ -2035,7 +2038,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/sindresorhus/macos-term-size — repo renamed, asset renamed ──
   'github.com/sindresorhus/macos-term-size': {
     distributableUrl: 'https://github.com/sindresorhus/macos-terminal-size/releases/download/v{{version}}/terminal-size.zip',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace build steps: skip codesign check (fails in CI), use renamed binary
       if (recipe.build) {
         recipe.build.script = [
@@ -2054,14 +2057,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/chainguard-dev/apko — disable CGO, fix BSD install -D ──
   'github.com/chainguard-dev/apko': {
     env: { CGO_ENABLED: '0' },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['cmake.org']) {
         delete recipe.build.dependencies['cmake.org']
       }
       // BSD install doesn't support -D (create directories) — add mkdir before install
       if (Array.isArray(recipe.build?.script)) {
         const installIdx = recipe.build.script.findIndex(
-          (s: any) => typeof s === 'string' && s === 'make install',
+          (s: RecipeScriptStep) => typeof s === 'string' && s === 'make install',
         )
         if (installIdx >= 0) {
           recipe.build.script.splice(installIdx, 0, 'mkdir -p "$DESTDIR$BINDIR"')
@@ -2079,7 +2082,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'chmod +x "${TMPDIR:-/tmp}/_icon_fix/gtk4-update-icon-cache"',
       'export PATH="${TMPDIR:-/tmp}/_icon_fix:$PATH"',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gtk4 build dep — we provide a no-op icon cache updater
       if (recipe.build?.dependencies?.['gtk.org/gtk4']) {
         delete recipe.build.dependencies['gtk.org/gtk4']
@@ -2098,7 +2101,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'export CPPFLAGS="${CPPFLAGS:-} $TIRPC_CFLAGS"',
       'export LDFLAGS="${LDFLAGS:-} $TIRPC_LIBS"',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove sourceforge.net/libtirpc dep — use system-installed libtirpc
       if (recipe.dependencies?.['sourceforge.net/libtirpc']) {
         delete recipe.dependencies['sourceforge.net/libtirpc']
@@ -2109,7 +2112,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── astral.sh/uv — ensure RUSTFLAGS and cmake compat ──
   'astral.sh/uv': {
     env: { RUSTFLAGS: '--cap-lints warn' },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen cmake constraint to include 4.x
       if (recipe.build?.dependencies?.['cmake.org'] === '^3.28') {
         recipe.build.dependencies['cmake.org'] = '>=3.28'
@@ -2198,7 +2201,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'orhun.dev/gpg-tui': {
     env: { RUSTFLAGS: '--cap-lints warn' },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Add gnupg.org/gpgme as dependency (needed for gpgme-sys crate)
       if (!recipe.dependencies) recipe.dependencies = {}
       recipe.dependencies['gnupg.org/gpgme'] = '*'
@@ -2207,7 +2210,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'crates.io/tabiew': {
     env: { RUSTFLAGS: '--cap-lints warn' },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove polars/nightly feature — the YAML recipe sets POLARS="--features 'polars/nightly'" for <0.12,
       // but older versions (0.8.x-0.11.x) don't actually have that feature in their Cargo.toml
       if (Array.isArray(recipe.build?.script)) {
@@ -2228,7 +2231,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'crates.io/skim': {
     env: { RUSTFLAGS: '--cap-lints warn' },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (!Array.isArray(recipe.build?.script)) return
       for (let i = 0; i < recipe.build.script.length; i++) {
         const step = recipe.build.script[i]
@@ -2268,7 +2271,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace hw.concurrency with 1 to prevent OOM during LTO link phase
       // Use regex to handle both {{hw.concurrency}} and {{ hw.concurrency }} (with spaces)
       const hwConcurrencyRe = /\{\{\s*hw\.concurrency\s*\}\}/g
@@ -2317,7 +2320,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove kerberos.org dep — use system-installed kerberos instead
       if (recipe.dependencies?.['kerberos.org']) {
         delete recipe.dependencies['kerberos.org']
@@ -2382,7 +2385,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: {
       CFLAGS: '-Wno-error=implicit-function-declaration',
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Add json-c as a build dependency (needed for json.h)
       if (!recipe.build) recipe.build = {}
       if (!recipe.build.dependencies) recipe.build.dependencies = {}
@@ -2397,7 +2400,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── microbrew.org/md5sha1sum — fix OpenSSL paths ────────────────────
 
   'microbrew.org/md5sha1sum': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix OpenSSL include/lib paths for multiarch Linux
       if (recipe.build?.env) {
         recipe.build.env.SSLINCPATH = '{{deps.openssl.org.prefix}}/include'
@@ -2412,7 +2415,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── doxygen.nl — fix build on darwin ───────────────────────────────
 
   'doxygen.nl': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove llvm.org dep on linux (use system compiler)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
@@ -2427,7 +2430,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/apr-util — fix --with-apr path quoting ──────────────
 
   'apache.org/apr-util': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --with-apr arg: remove extra quotes around path (causes "not found" error)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) => {
@@ -2446,7 +2449,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/httpd — fix sed -i BSD compat ────────────────────────
 
   'apache.org/httpd': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat (macOS requires suffix)
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -2466,7 +2469,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/thrift — fix darwin build ────────────────────────────
 
   'apache.org/thrift': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove duplicate --prefix arg
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         const seen = new Set<string>()
@@ -2491,7 +2494,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove perl/ruby interpreters (complex deps) — keep python/lua/ncurses
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
@@ -2533,7 +2536,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any, platform?: string) => {
+    modifyRecipe: (recipe: NormalizedRecipe, platform?: string) => {
       // Fix sed -i BSD compat and replace python dep template references
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -2577,7 +2580,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/atk — disable gobject-introspection build dep ─────────
 
   'gnome.org/atk': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep (not in S3 yet)
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -2593,7 +2596,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/json-glib — fix sed -i BSD + disable introspection ────
 
   'gnome.org/json-glib': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in json-scanner.c patch
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -2623,7 +2626,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/gdk-pixbuf — remove shared-mime-info dep ─────────────
 
   'gnome.org/gdk-pixbuf': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove freedesktop.org/shared-mime-info dep (not in S3)
       if (recipe.dependencies?.['freedesktop.org/shared-mime-info']) {
         delete recipe.dependencies['freedesktop.org/shared-mime-info']
@@ -2644,7 +2647,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/pango — disable introspection ─────────────────────────
 
   'gnome.org/pango': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -2661,7 +2664,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/gsettings-desktop-schemas — disable introspection ─────
 
   'gnome.org/gsettings-desktop-schemas': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -2677,7 +2680,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/libsecret — remove heavy build deps ───────────────────
 
   'gnome.org/libsecret': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection, vala, libxslt, docbook build deps
       const heavyDeps = [
         'gnome.org/gobject-introspection',
@@ -2728,7 +2731,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove libsdl.org dep (not needed for headless CI builds)
       if (recipe.dependencies?.['libsdl.org']) {
         delete recipe.dependencies['libsdl.org']
@@ -2772,7 +2775,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove S3 p11-kit dep — use system-installed p11-kit instead
       if (recipe.dependencies?.['freedesktop.org/p11-kit']) {
         delete recipe.dependencies['freedesktop.org/p11-kit']
@@ -2825,7 +2828,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in guile-config and guild fixup steps
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -2890,7 +2893,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove ghostscript.com dep (in knownBrokenDomains — tag format unresolvable)
       if (recipe.dependencies?.['ghostscript.com']) delete recipe.dependencies['ghostscript.com']
       // Remove netpbm dep (not essential for groff core functionality)
@@ -2938,16 +2941,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove S3 gnutls dep — use system-installed gnutls instead
       if (recipe.dependencies?.['gnutls.org']) delete recipe.dependencies['gnutls.org']
       // Remove texinfo build dep — use system-installed texinfo
       if (recipe.dependencies?.['gnu.org/texinfo']) delete recipe.dependencies['gnu.org/texinfo']
       // Tell configure that posix_spawn_file_actions_addchdir is not available
       // (avoids runtime symbol lookup failure on some macOS versions)
-      if (!recipe.build.env.darwin) recipe.build.env.darwin = {}
-      if (!recipe.build.env.darwin.CFLAGS) recipe.build.env.darwin.CFLAGS = ''
-      recipe.build.env.darwin.ac_cv_func_posix_spawn_file_actions_addchdir = 'no'
+      if (!recipe.build!.env!.darwin) recipe.build!.env!.darwin = {}
+      if (!recipe.build!.env!.darwin.CFLAGS) recipe.build!.env!.darwin.CFLAGS = ''
+      recipe.build!.env!.darwin.ac_cv_func_posix_spawn_file_actions_addchdir = 'no'
     },
   },
 
@@ -2978,7 +2981,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux-only libavif dep (not in S3)
       if (recipe.dependencies?.linux?.['github.com/AOMediaCodec/libavif']) {
         delete recipe.dependencies.linux['github.com/AOMediaCodec/libavif']
@@ -3002,7 +3005,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── leptonica.org — fix prefix quoting ──────────────────────────────
 
   'leptonica.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -3030,7 +3033,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and --datarootdir args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -3047,7 +3050,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['gnome.org/pango']) delete recipe.dependencies['gnome.org/pango']
       // Strip the post-build wget steps for trained data (wget URL may be empty if $res vars aren't set)
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('wget') && step.run.includes('traineddata')) {
             return false
@@ -3064,7 +3067,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // C++20 <version> header shadowing by the local ./version file.
         // The ./version file is read by autogen.sh/configure for libtool version info,
         // so it must exist during those steps.
-        const configureIdx = recipe.build.script.findIndex((step: any) =>
+        const configureIdx = recipe.build.script.findIndex((step: RecipeScriptStep) =>
           typeof step === 'string' && step.includes('./configure'),
         )
         if (configureIdx >= 0 && configureIdx < recipe.build.script.length - 1) {
@@ -3079,7 +3082,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── proj.org — fix sha256sum on darwin (use shasum -a 256) ──────────
 
   'proj.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace sha256sum with shasum -a 256 for darwin compat
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -3098,7 +3101,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── qpdf.sourceforge.io — remove gnutls dep (use openssl) ──────────
 
   'qpdf.sourceforge.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gnutls.org dep — qpdf can use openssl instead
       if (recipe.dependencies?.['gnutls.org']) {
         delete recipe.dependencies['gnutls.org']
@@ -3129,7 +3132,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -3168,7 +3171,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Fix static lib install: GLIB is disabled so libpoppler-glib.a doesn't get built.
       // Replace the install command that references it with one that only copies the libs that exist.
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.map((step: any) => {
+        recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
           if (typeof step === 'string' && step.includes('libpoppler-glib.a')) {
             // Replace with: install only libpoppler.a and libpoppler-cpp.a (skip glib)
             return step.replace(/ build_static\/glib\/libpoppler-glib\.a/, '')
@@ -3186,7 +3189,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'rm -f rust-toolchain.toml',
       'rustup default stable',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -3209,7 +3212,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── grpc.io — fix cmake prefix quoting ──────────────────────────────
 
   'grpc.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.COMMON_ARGS)) {
         recipe.build.env.COMMON_ARGS = recipe.build.env.COMMON_ARGS.map((a: string) =>
@@ -3228,7 +3231,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── videolan.org/libplacebo — remove linux gcc dep ──────────────────
 
   'videolan.org/libplacebo': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -3239,7 +3242,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/xcb-util-image — fix prefix quoting ────────────
 
   'freedesktop.org/xcb-util-image': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
@@ -3282,7 +3285,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
@@ -3309,7 +3312,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── ebassi.github.io/graphene — disable gobject-introspection ───────
 
   'ebassi.github.io/graphene': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -3333,7 +3336,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── debian.org/iso-codes — fix prefix quoting ───────────────────────
 
   'debian.org/iso-codes': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes in CONFIGURE_ARGS
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
@@ -3346,7 +3349,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── ibr.cs.tu-bs.de/libsmi — fix prefix quoting ─────────────────────
 
   'ibr.cs.tu-bs.de/libsmi': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -3376,7 +3379,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -3433,7 +3436,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Add -DJPEGXL_ENABLE_OPENEXR=OFF to avoid openexr dep issues
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         if (!recipe.build.env.ARGS.includes('-DJPEGXL_ENABLE_OPENEXR=OFF')) {
@@ -3469,7 +3472,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove vapoursynth.com dep (not in S3 yet)
       if (recipe.dependencies?.['vapoursynth.com']) {
         delete recipe.dependencies['vapoursynth.com']
@@ -3511,7 +3514,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gtk.org/gtk3 — disable introspection + remove heavy deps ────────
 
   'gtk.org/gtk3': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -3553,7 +3556,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -3577,7 +3580,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/p11-kit — fix trust-paths template ─────────────
 
   'freedesktop.org/p11-kit': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix trust_paths: add .prefix suffix to ca-certs dep reference
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
@@ -3592,7 +3595,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/polkit — disable introspection + fix prefix ─────
 
   'freedesktop.org/polkit': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gobject-introspection dep (now in S3 but complex)
       if (recipe.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.dependencies['gnome.org/gobject-introspection']
@@ -3613,7 +3616,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── netflix.com/vmaf — fix meson prefix quoting ─────────────────────
 
   'netflix.com/vmaf': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix inline meson --prefix (in script string, not env)
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -3648,7 +3651,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -3681,7 +3684,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── lavinmq.com — fix sed -i BSD compat ─────────────────────────────
 
   'lavinmq.com': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in darwin Makefile patch
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -3704,7 +3707,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in docbook xsl path fix
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -3759,7 +3762,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'go install sigs.k8s.io/kustomize/kustomize/v5@latest 2>/dev/null || true',
       'export PATH="$HOME/go/bin:$PATH"',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove kubernetes.io/kustomize build dep (use go-installed instead)
       if (recipe.build?.dependencies?.['kubernetes.io/kustomize']) {
         delete recipe.build.dependencies['kubernetes.io/kustomize']
@@ -3789,7 +3792,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in girara_warn rename
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -3824,7 +3827,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove x.org/xcb dep (not in S3)
       if (recipe.dependencies?.['x.org/xcb']) {
         delete recipe.dependencies['x.org/xcb']
@@ -3849,7 +3852,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── mergestat.com/mergestat-lite — fix Go build ─────────────────────
 
   'mergestat.com/mergestat-lite': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove python.org build dep (not needed for Go build)
       if (recipe.build?.dependencies?.['python.org']) {
         delete recipe.build.dependencies['python.org']
@@ -3860,7 +3863,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── kubebuilder.io — remove goreleaser dep ──────────────────────────
 
   'kubebuilder.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove goreleaser.com build dep (not in S3)
       if (recipe.build?.dependencies?.['goreleaser.com']) {
         delete recipe.build.dependencies['goreleaser.com']
@@ -3898,7 +3901,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── kubernetes.io/kubectl — fix make build ───────────────────────────
 
   'kubernetes.io/kubectl': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove rsync.samba.org build dep (not in S3)
       if (recipe.build?.dependencies?.['rsync.samba.org']) {
         delete recipe.build.dependencies['rsync.samba.org']
@@ -3926,7 +3929,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove S3 deps — use system-installed packages instead
       if (recipe.dependencies?.['nlnetlabs.nl/ldns']) delete recipe.dependencies['nlnetlabs.nl/ldns']
       if (recipe.dependencies?.['developers.yubico.com/libfido2']) delete recipe.dependencies['developers.yubico.com/libfido2']
@@ -3939,7 +3942,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── macvim.org — remove perl/ruby interp deps ───────────────────────
 
   'macvim.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove perl/ruby/python3 interp flags (complex deps, Python.h missing on CI)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) =>
@@ -3961,7 +3964,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Also check for versioned python dep
       for (const key of Object.keys(recipe.dependencies || {})) {
         if (key.startsWith('python.org')) {
-          delete recipe.dependencies[key]
+          delete recipe.dependencies![key]
         }
       }
     },
@@ -3970,7 +3973,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── werf.io — remove linux btrfs-progs dep ──────────────────────────
 
   'werf.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove btrfs-progs dep (not in S3, optional for linux build)
       if (recipe.build?.dependencies?.linux?.['github.com/kdave/btrfs-progs']) {
         delete recipe.build.dependencies.linux['github.com/kdave/btrfs-progs']
@@ -4010,7 +4013,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'pip3 install --break-system-packages uv 2>/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh 2>/dev/null || true',
       'export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in sdk/*/Makefile patch
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -4035,7 +4038,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── projen.io — remove maven dep ────────────────────────────────────
 
   'projen.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove maven.apache.org build dep (not in S3)
       if (recipe.build?.dependencies?.['maven.apache.org']) {
         delete recipe.build.dependencies['maven.apache.org']
@@ -4046,7 +4049,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/zookeeper — remove cppunit dep ───────────────────────
 
   'apache.org/zookeeper': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove freedesktop.org/cppunit build dep (not in S3)
       if (recipe.build?.dependencies?.['freedesktop.org/cppunit']) {
         delete recipe.build.dependencies['freedesktop.org/cppunit']
@@ -4074,7 +4077,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gdal.org — fix stray cmake quote + sed -i BSD + remove llvm dep ─
 
   'gdal.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -4118,7 +4121,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux llvm.org build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
@@ -4136,10 +4139,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // in functionality and much faster/more reliable.
 
   'openjdk.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Strip all source dependencies and distributable — we download pre-built binaries
       recipe.dependencies = {}
-      recipe.distributable = null // skip source download (build script fetches pre-built binary)
+      recipe.distributable = undefined // skip source download (build script fetches pre-built binary)
       if (recipe.build) {
         recipe.build.dependencies = {}
         // Replace the build script: use Adoptium API to find the latest Temurin
@@ -4180,7 +4183,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── kafka.apache.org — resolve symlinks in dirname $0 for .bin/ compat ──
   'kafka.apache.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build && Array.isArray(recipe.build.script)) {
         // After the rsync copies everything to prefix, patch kafka-run-class.sh
         // to resolve symlinks so it works when called from .bin/ symlinks
@@ -4194,7 +4197,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── opensearch.org — fix sed -i BSD compat + set JAVA_HOME ──────────
 
   'opensearch.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in multiple steps
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -4234,9 +4237,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // and causes a build timeout from infinite setuptools copy loops.
 
   'browser-use.com': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             return !step.run.includes('--no-binary')
           }
@@ -4249,7 +4252,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── bitcoin.org — remove linux llvm/gcc dep ─────────────────────────
 
   'bitcoin.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -4266,7 +4269,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Make patchelf steps error-tolerant — sqlite.org dep may use system path
       // where the binary doesn't reference the full /usr/lib/libsqlite3.so path
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.map((step: any) => {
+        recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
           if (typeof step === 'object' && Array.isArray(step.run)) {
             step.run = step.run.map((cmd: string) =>
               typeof cmd === 'string' && cmd.includes('patchelf') ? `${cmd} || true` : cmd,
@@ -4281,7 +4284,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── aws.amazon.com/cli — fix python version constraint ──────────────
 
   'aws.amazon.com/cli': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Pin python to 3.11.x — flit_core uses ast.Str which was removed in 3.12
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '~3.11'
@@ -4310,7 +4313,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in php-config/phpize fixup steps
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -4384,7 +4387,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux sourceforge.net/libtirpc dep (not in S3, use system one)
       if (recipe.dependencies?.linux?.['sourceforge.net/libtirpc']) {
         delete recipe.dependencies.linux['sourceforge.net/libtirpc']
@@ -4441,7 +4444,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and other args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
@@ -4493,7 +4496,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Ensure setuptools (pkg_resources) is available for metadata generation
       'python3 -m pip install --break-system-packages "setuptools<78" wheel 2>/dev/null || pip3 install --break-system-packages "setuptools<78" wheel 2>/dev/null || true',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove cython.org dep on linux/aarch64 (not in S3)
       if (recipe.build?.dependencies?.['linux/aarch64']?.['cython.org']) {
         delete recipe.build.dependencies['linux/aarch64']['cython.org']
@@ -4517,6 +4520,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── qemu.org — fix prefix quoting + sed -i BSD + remove vde dep ────
 
   'qemu.org': {
+    prependScript: [
+      // QEMU's configure runs mkvenv which needs distlib; not pre-installed with Python 3.14
+      'pip3 install distlib 2>/dev/null || python3 -m pip install distlib 2>/dev/null || true',
+    ],
     platforms: {
       darwin: {
         prependScript: [
@@ -4527,7 +4534,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -4536,14 +4543,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
       // Fix sed -i BSD compat in meson.build patch
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
+        const qemuScript = recipe.build.script
+        for (let si = 0; si < qemuScript.length; si++) {
+          const step = qemuScript[si]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
             step.run = step.run.replace(/sed -i /, 'sed -i.bak ')
           }
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
+            qemuScript[si] = step.replaceAll('sed -i ', 'sed -i.bak ')
           }
         }
       }
@@ -4595,7 +4603,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -4616,7 +4624,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── sourceforge.net/faac — fix prefix quoting + remove gcc dep ──────
 
   'sourceforge.net/faac': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and --libdir args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
@@ -4645,7 +4653,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove x.org/x11 and x.org/exts deps (not in S3)
       if (recipe.dependencies?.['x.org/x11']) delete recipe.dependencies['x.org/x11']
       if (recipe.dependencies?.['x.org/exts']) delete recipe.dependencies['x.org/exts']
@@ -4681,7 +4689,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── virtualsquare.org/vde — fix prefix quoting ──────────────────────
 
   'virtualsquare.org/vde': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -4708,7 +4716,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove protobuf.dev build dep (use system protoc instead)
       if (recipe.build?.dependencies?.['protobuf.dev']) {
         delete recipe.build.dependencies['protobuf.dev']
@@ -4723,7 +4731,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Install python build module required for pip wheel building
       'python3 -m pip install --break-system-packages build "setuptools<78" wheel 2>/dev/null || true',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove postgresql.org build dep (not in S3)
       if (recipe.build?.dependencies?.['postgresql.org']) {
         delete recipe.build.dependencies['postgresql.org']
@@ -4754,7 +4762,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and other args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         recipe.build.env.CONFIGURE_ARGS = recipe.build.env.CONFIGURE_ARGS.map((a: string) =>
@@ -4774,7 +4782,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/xinput — fix prefix quoting ───────────────────────────────
 
   'x.org/xinput': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix arg: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -4787,7 +4795,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/shared-mime-info — fix meson prefix quoting ─────
 
   'freedesktop.org/shared-mime-info': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix inline meson --prefix (in script string, not env)
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -4804,7 +4812,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/XKeyboardConfig — fix prefix quoting ───────────
 
   'freedesktop.org/XKeyboardConfig': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and --libdir args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
@@ -4821,7 +4829,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── freedesktop.org/poppler-qt5 — fix cmake prefix + disable qt5/introspection ─
 
   'freedesktop.org/poppler-qt5': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -4865,7 +4873,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gnome.org/gtk-mac-integration-gtk3 — disable introspection ──────
 
   'gnome.org/gtk-mac-integration-gtk3': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Disable introspection in configure args
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -4885,7 +4893,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── intel.com/libva — remove x.org/x11 dep chain ────────────────────
 
   'intel.com/libva': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove x.org/x11 and related deps (not in S3)
       const x11Deps = ['x.org/x11', 'x.org/exts', 'x.org/xfixes']
       for (const dep of x11Deps) {
@@ -4903,7 +4911,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/arrow — fix stray cmake prefix + sed -i BSD + remove llvm ─
 
   'apache.org/arrow': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX (missing closing quote)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -4978,7 +4986,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gnu.org/gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -5033,7 +5041,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/wangle — remove linux gcc dep ───────────────────────
 
   'facebook.com/wangle': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gnu.org/gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -5056,7 +5064,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -5095,7 +5103,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -5136,7 +5144,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -5196,7 +5204,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/mvfst — fix stray cmake prefix + sed -i BSD + remove gcc ─
 
   'facebook.com/mvfst': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
@@ -5255,7 +5263,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
       if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
@@ -5268,7 +5276,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Pre-install rust-src to prevent race condition when parallel cmake jobs
       // both try to rustup component add rust-src simultaneously
       if (Array.isArray(recipe.build?.script)) {
-        const cmakeIdx = recipe.build.script.findIndex((s: any) =>
+        const cmakeIdx = recipe.build.script.findIndex((s: RecipeScriptStep) =>
           typeof s === 'string' && s.includes('cmake -S'))
         if (cmakeIdx >= 0) {
           recipe.build.script.splice(cmakeIdx, 0, 'rustup component add rust-src 2>/dev/null || true')
@@ -5322,7 +5330,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── x.org/x11 — fix prefix quoting ─────────────────────────────────
 
   'x.org/x11': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and other args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -5342,7 +5350,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── wpewebkit.org/libwpe — remove mesa3d.org + gcc deps (use system) ─────
 
   'wpewebkit.org/libwpe': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove mesa3d.org dep (use system EGL/mesa headers)
       if (recipe.dependencies?.['mesa3d.org']) {
         delete recipe.dependencies['mesa3d.org']
@@ -5378,7 +5386,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and --libdir args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         recipe.build.env.MESON_ARGS = recipe.build.env.MESON_ARGS.map((a: string) =>
@@ -5409,7 +5417,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── luarocks.org — fix prefix quoting + sed -i BSD + remove info-zip dep ─
 
   'luarocks.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix --prefix and other args: remove extra quotes
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -5446,7 +5454,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'echo "pathspec<0.12" > /tmp/pip-constraints-mypy.txt',
       'export PIP_CONSTRAINT=/tmp/pip-constraints-mypy.txt',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen python version constraint — current CI has 3.14
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3<3.15'
@@ -5454,7 +5462,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Install setuptools inside the venv (Python 3.14 removed it from stdlib)
       // bkpyvenv creates the venv, then pip install . needs setuptools for wheel building
       if (Array.isArray(recipe.build?.script)) {
-        const stageIdx = recipe.build.script.findIndex((s: any) =>
+        const stageIdx = recipe.build.script.findIndex((s: RecipeScriptStep) =>
           typeof s === 'string' && s.includes('bkpyvenv stage'))
         if (stageIdx >= 0) {
           recipe.build.script.splice(stageIdx + 1, 0,
@@ -5467,7 +5475,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── crates.io/qsv — remove linux wayland dep ────────────────────────
 
   'crates.io/qsv': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux wayland dep (not in S3)
       if (recipe.dependencies?.linux?.['wayland.freedesktop.org']) {
         delete recipe.dependencies.linux['wayland.freedesktop.org']
@@ -5484,7 +5492,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── musepack.net/libcuefile — fix stray cmake prefix quote + remove gcc dep ─
 
   'musepack.net/libcuefile': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5499,7 +5507,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── musepack.net/libreplaygain — fix stray cmake prefix quote ────────
 
   'musepack.net/libreplaygain': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5511,7 +5519,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/sctplab/usrsctp — fix stray cmake prefix quote + remove gcc ─
 
   'github.com/sctplab/usrsctp': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5526,7 +5534,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/luvit/luv — fix stray cmake prefix quote ─────────────
 
   'github.com/luvit/luv': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5537,7 +5545,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // text in the version variables, breaking install paths. After each cmake configure,
       // fix the generated cmake_install.cmake to use the correct path.
       if (Array.isArray(recipe.build?.script)) {
-        const newScript: any[] = []
+        const newScript: RecipeScriptStep[] = []
         for (const step of recipe.build.script) {
           newScript.push(step)
           const stepStr = typeof step === 'string' ? step : ''
@@ -5558,7 +5566,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/oneapi-src/oneTBB — fix stray cmake prefix quote ─────
 
   'github.com/oneapi-src/oneTBB': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5570,7 +5578,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/KhronosGroup/Vulkan-Loader — fix stray cmake prefix + remove wayland ─
 
   'github.com/KhronosGroup/Vulkan-Loader': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5586,7 +5594,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── ceres-solver.org — fix stray cmake prefix quote + remove gcc dep ─
 
   'ceres-solver.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5601,7 +5609,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── geuz.org/gl2ps — fix stray cmake prefix quote + remove freeglut dep ─
 
   'geuz.org/gl2ps': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5617,7 +5625,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── upx.github.io — fix stray cmake prefix quote + remove ucl dep ───
 
   'upx.github.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5633,7 +5641,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/fastfloat/fast_float — fix stray cmake prefix quote ──
 
   'github.com/fastfloat/fast_float': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5645,7 +5653,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── assimp.org — fix stray cmake prefix quote ───────────────────────
 
   'assimp.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5657,7 +5665,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── libgit2.org — fix cmake prefix quote (uses ARGS not CMAKE_ARGS) ──
 
   'libgit2.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5669,7 +5677,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── libwebsockets.org — fix inline cmake prefix quote in script string ──
 
   'libwebsockets.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // cmake prefix is inline in script string, not in env array
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -5685,7 +5693,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── libzip.org — fix cmake prefix quote (uses ARGS not CMAKE_ARGS) ───
 
   'libzip.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5697,7 +5705,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── google.com/sentencepiece — fix cmake prefix quote (full quotes) ────
 
   'google.com/sentencepiece': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5709,7 +5717,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── google.com/double-conversion — fix inline cmake prefix quote in script ─
 
   'google.com/double-conversion': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // cmake prefix is inline in script string, not in env array
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -5727,7 +5735,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'aomedia.googlesource.com/aom': {
     // googlesource.com +archive tarballs have no top-level directory
     stripComponents: 0,
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5739,7 +5747,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/avro — fix stray cmake prefix quote + remove gcc dep ─
 
   'apache.org/avro': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5754,7 +5762,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── dkrz.de/libaec — fix cmake prefix quote (both ARGS and CMAKE_ARGS) ─
 
   'dkrz.de/libaec': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5771,7 +5779,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/KhronosGroup/Vulkan-Headers — fix cmake prefix quote + remove llvm test dep ─
 
   'github.com/KhronosGroup/Vulkan-Headers': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5783,7 +5791,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/facebookincubator/fizz — fix cmake prefix quote + remove gcc dep ─
 
   'github.com/facebookincubator/fizz': {
-    modifyRecipe: (recipe: any, platform?: string) => {
+    modifyRecipe: (recipe: NormalizedRecipe, platform?: string) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2')
@@ -5818,7 +5826,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/aws/aws-sdk-cpp — fix cmake prefix quote ─────────────
 
   'github.com/aws/aws-sdk-cpp': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         // Fix cmake prefix quote
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -5849,7 +5857,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/danfis/libccd — fix cmake prefix quote ───────────────
 
   'github.com/danfis/libccd': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5861,7 +5869,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/PJK/libcbor — fix cmake prefix quote ────────────────
 
   'github.com/PJK/libcbor': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5873,7 +5881,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/Esri/lerc — fix cmake prefix quote ───────────────────
 
   'github.com/Esri/lerc': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5885,7 +5893,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/ebiggers/libdeflate — fix cmake prefix quote ─────────
 
   'github.com/ebiggers/libdeflate': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5897,7 +5905,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── openblas.net — fix cmake prefix quote ───────────────────────────
 
   'openblas.net': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5909,7 +5917,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── cgal.org — fix stray cmake prefix quote + remove qt5/gcc deps ──
 
   'cgal.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -5933,7 +5941,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── fishshell.com — fix cmake prefix quote + sed -i BSD ─────────────
 
   'fishshell.com': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5958,7 +5966,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── fmt.dev — fix cmake prefix quote ────────────────────────────────
 
   'fmt.dev': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5970,7 +5978,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/zstd — fix cmake prefix quote ───────────────────────
 
   'facebook.com/zstd': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5982,7 +5990,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── libsdl.org — fix cmake prefix quote + remove linux X11 deps ─────
 
   'libsdl.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -5999,7 +6007,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── glew.sourceforge.io — fix cmake prefix quote ────────────────────
 
   'glew.sourceforge.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // cmake prefix is inline in script string, not in env array
       // Fix via script step patching
       if (Array.isArray(recipe.build?.script)) {
@@ -6016,7 +6024,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── qhull.org — fix cmake prefix quote ──────────────────────────────
 
   'qhull.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -6028,7 +6036,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── duckdb.org — fix cmake prefix quote (uses ARGS not CMAKE_ARGS) ──
 
   'duckdb.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
@@ -6043,7 +6051,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── fna-xna.github.io — fix stray cmake prefix quote (uses ARGS) ────
 
   'fna-xna.github.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -6055,7 +6063,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/json-c/json-c — fix inline cmake prefix quote in script ─
 
   'github.com/json-c/json-c': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -6070,7 +6078,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── c-ares.org — fix cmake prefix quote + broken dnsinfo.h download ──
 
   'c-ares.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -6105,7 +6113,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         }],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove llvm.org dep on linux (use system compiler)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
@@ -6140,7 +6148,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove zlib.net/minizip dep (not reliably in S3) — use system minizip
       if (recipe.dependencies?.['zlib.net/minizip']) {
         delete recipe.dependencies['zlib.net/minizip']
@@ -6168,7 +6176,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Many deps not in S3 — use system libs where possible
 
   'imagemagick.org': {
-    modifyRecipe: (recipe: any) => {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // gnu.org/libtool provides libltdl but it may not be in the default search path
+          'LTDL_DIR=$(find /tmp/buildkit-deps -path "*/gnu.org/libtool/*/lib" -type d 2>/dev/null | head -1)',
+          'if [ -n "$LTDL_DIR" ]; then',
+          '  export LDFLAGS="-L$LTDL_DIR ${LDFLAGS:-}"',
+          'fi',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix the distributable URL: version 7.1.2.13 maps to tag 7.1.2-13
       // Replace last dot with hyphen in the URL
       if (recipe.distributable?.url) {
@@ -6230,7 +6249,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Version: 2025.11.5, tag: 2025-11-05 (dots→hyphens, zero-pad day/month)
 
   'github.com/google/re2': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // The resolveGitHubTag should handle this, but if not, we can override
       // Remove linux gcc dep if present
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
@@ -6243,7 +6262,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'hdfgroup.org/HDF5': {
     distributableUrl: 'https://github.com/HDFGroup/hdf5/releases/download/hdf5_{{version}}/hdf5-{{version}}.tar.gz',
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gcc dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -6263,7 +6282,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen python version (CI has 3.14, recipe wants <3.12)
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3<3.15'
@@ -6274,7 +6293,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/nvbn/thefuck — widen Python version ────────────────────
 
   'github.com/nvbn/thefuck': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen python version (CI has 3.14, recipe wants ~3.11)
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3<3.15'
@@ -6306,7 +6325,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen python version (CI has 3.14, recipe wants <3.12)
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3<3.15'
@@ -6317,7 +6336,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove the ln -s step entirely — it uses YAML folded scalar (>) which can cause
       // shell syntax errors. The venv works fine without the symlink.
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: any) => {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
           if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             return !step.run.includes('ln -s') && step.run !== '>'
           }
@@ -6330,7 +6349,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/stub42/pytz — widen Python version ─────────────────────
 
   'github.com/stub42/pytz': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen python version (CI has 3.14, recipe wants ~3.12)
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3<3.15'
@@ -6352,18 +6371,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: {
       SETUPTOOLS_SCM_PRETEND_VERSION: '{{version}}',
     },
-    modifyRecipe: (recipe: any) => {
-      if (!recipe.build?.script) return
-      for (let i = 0; i < recipe.build.script.length; i++) {
-        const step = recipe.build.script[i]
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      if (!recipe.build?.script || !Array.isArray(recipe.build.script)) return
+      const scriptArr = recipe.build.script
+      for (let i = 0; i < scriptArr.length; i++) {
+        const step = scriptArr[i]
         // Pin setuptools<77 to avoid packaging.licenses requirement.
         // On Linux CI, system pip 24.0 shadows venv pip and its subprocess
         // can't find packaging.licenses even when installed in the venv.
         // setuptools<77 doesn't validate license expressions, sidestepping the issue.
-        if (step?.run && Array.isArray(step.run)) {
+        if (typeof step === 'object' && step.run && Array.isArray(step.run)) {
           const hasVenv = step.run.some((cmd: string) => cmd.includes('venv'))
           if (hasVenv) {
-            recipe.build.script[i] = {
+            scriptArr[i] = {
               run: [
                 'python -m venv ~/.venv',
                 'source ~/.venv/bin/activate',
@@ -6378,7 +6398,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // setuptools to error with "must be valid exactly by one definition".
         // Removing the license field from [project] avoids this validation.
         if (typeof step === 'string' && step.includes('make install-bin')) {
-          recipe.build.script[i] = [
+          scriptArr[i] = [
             'source ~/.venv/bin/activate',
             'sed -i \'/^license\\b/d\' pyproject.toml',
             'PYTHON=$HOME/.venv/bin/python3 make install-bin PREFIX={{prefix}}',
@@ -6404,7 +6424,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // even when configure produces a broken -isysroot path
       'export SDKROOT="$(xcrun --show-sdk-path 2>/dev/null)"',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix: nullglob causes ? in URLs to be treated as glob — quote all curl URLs
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -6418,15 +6438,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
         }
         // Fix: GitHub archive tarballs don't include pre-generated configure.
         // autoreconf generates a configure with shell syntax errors on newer autoconf.
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('autoreconf')) {
-            recipe.build.script[i] = 'autoreconf -fi'
+        const scriptArr = recipe.build.script
+        for (let i = 0; i < scriptArr.length; i++) {
+          const s = scriptArr[i]
+          if (typeof s === 'string' && s.includes('autoreconf')) {
+            scriptArr[i] = 'autoreconf -fi'
           }
-          if (typeof recipe.build.script[i] === 'string' && recipe.build.script[i].includes('./configure')) {
+          if (typeof s === 'string' && s.includes('./configure')) {
             // Patch configure for darwin24+: strip arch/version flags from configure source,
             // run configure, then strip broken -isysroot and empty -mmacosx-version-min=
             // from generated Makefiles (configure generates these at runtime, not from source)
-            recipe.build.script[i] = [
+            scriptArr[i] = [
               `sed -i.bak '/is not a supported system/s/as_fn_error[^;]*/: # accept unknown darwin version/' configure`,
               `sed -i.bak 's/-arch i386 -arch x86_64//g' configure`,
               `/bin/bash ./configure $ARGS`,
@@ -6463,7 +6485,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── openinterpreter.com — widen Python version ────────────────────────
 
   'openinterpreter.com': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Constrain to Python <3.13 — tiktoken dep uses PyO3 v0.20.3 which
       // only supports up to Python 3.12 (rejects 3.14+ at build time)
       if (recipe.dependencies?.['python.org']) {
@@ -6472,7 +6494,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Pre-install poetry-core (build backend) and setuptools before venv creation
       if (Array.isArray(recipe.build?.script)) {
         const venvIdx = recipe.build.script.findIndex(
-          (s: any) => typeof s === 'string' && s.includes('python-venv.sh'),
+          (s: RecipeScriptStep) => typeof s === 'string' && s.includes('python-venv.sh'),
         )
         if (venvIdx >= 0) {
           recipe.build.script.splice(venvIdx, 0,
@@ -6488,9 +6510,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/pressly/sup — fix go mod init missing module name ───
 
   'github.com/pressly/sup': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.map((step: any) => {
+        recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
           if (typeof step === 'string' && step.includes('go mod init')) {
             return step.replace('go mod init', 'go mod init github.com/pressly/sup')
           }
@@ -6506,14 +6528,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Recipe requires ~3.11 but CI has Python 3.14
 
   'github.com/essembeh/gnome-extensions-cli': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3.11<3.15'
       }
       // Replace poetry install with pip --no-build-isolation to use venv's packaging
       // Poetry creates isolated build envs with old packaging (missing packaging.licenses)
       if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.map((step: any) => {
+        recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
           if (typeof step === 'string' && step.trim() === 'poetry install') {
             return '{{prefix}}/venv/bin/pip install --no-build-isolation .'
           }
@@ -6521,7 +6543,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         })
         // Also upgrade packaging after bkpyvenv stage
         const stageIdx = recipe.build.script.findIndex(
-          (s: any) => typeof s === 'string' && s.includes('bkpyvenv stage'),
+          (s: RecipeScriptStep) => typeof s === 'string' && s.includes('bkpyvenv stage'),
         )
         if (stageIdx >= 0) {
           recipe.build.script.splice(stageIdx + 1, 0,
@@ -6553,7 +6575,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'brew install bison 2>/dev/null || sudo apt-get install -y bison 2>/dev/null || true',
       'export PATH="$(brew --prefix bison 2>/dev/null || echo /opt/homebrew/opt/bison)/bin:$PATH"',
     ],
-    modifyRecipe(recipe: any) {
+    modifyRecipe(recipe: NormalizedRecipe) {
       const args = recipe.build?.env?.CMAKE_ARGS
       if (Array.isArray(args)) {
         // Disable mroonga (groonga text search) — headers incompatible with modern Xcode SDK
@@ -6579,7 +6601,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     // Through symlink chains (.bin/erl → bin/erl → lib/erlang/bin/erl), $0 stays as the
     // outermost path, so dyn_erl can't be found and it falls back to hardcoded build paths.
     // Fix: resolve $0 through symlinks so dirname gives the real script location.
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (!recipe.build) return
       const script = Array.isArray(recipe.build.script) ? recipe.build.script : (recipe.build.script ? [recipe.build.script] : [])
       script.push(
@@ -6603,7 +6625,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'jbang.dev': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -6619,7 +6641,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // SWIG 4.0+ removed the %except directive used in capng_swig.i
 
   'people.redhat.com/sgrubb/libcap-ng': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
         for (const flag of ['--without-python', '--without-python3']) {
           if (!recipe.build.env.CONFIGURE_ARGS.includes(flag)) {
@@ -6635,7 +6657,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // tries to cd into kotlinc/ which no longer exists. Remove working-directory.
 
   'kotlinlang.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.['working-directory'] === 'kotlinc') {
         delete recipe.build['working-directory']
       }
@@ -6647,7 +6669,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Removing --locked lets cargo resolve a compatible time version.
 
   'crates.io/git-delta': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // time crate v0.3.31 has a type inference issue with Rust 1.93+.
       // Removing --locked lets cargo resolve a compatible time version.
       if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--locked')) {
@@ -6668,7 +6690,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // without --locked fails (clap_mangen 0.2.31 vs clap_builder 4.4.18 API mismatch).
   // Only latest versions (15+) build correctly. Skip old versions.
   'crates.io/topgrade': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Keep --locked for newer versions that have compatible lockfiles
       // Old versions (14.x) will fail either way — this is an upstream issue
       if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--locked')) {
@@ -6686,7 +6708,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Go 1.26 has stricter constant expression handling that breaks the vendored
   // tokeninternal package in cuelang v0.11-0.12.
   'cuelang.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['go.dev']) {
         recipe.build.dependencies['go.dev'] = '>=1.18<1.25'
       }
@@ -6696,7 +6718,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── gvisor-tap-vsock — pin Go <1.25 for old versions ────────────────
   // Go 1.26 build constraints exclude vendored gvisor/pkg/gohacks files.
   'github.com/containers/gvisor-tap-vsock': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['go.dev']) {
         recipe.build.dependencies['go.dev'] = '>=1.18<1.25'
       }
@@ -6705,7 +6727,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── convco.github.io — same time crate issue as git-delta ─────────
   'convco.github.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--locked')) {
         recipe.build.script = recipe.build.script.replace(' --locked', '')
       }
@@ -6715,7 +6737,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── glm.g-truc.net — fix cp paths after zip extraction ──────────────
   // The zip extracts with a glm/ subdirectory, so headers are in glm/ not .
   'glm.g-truc.net': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -6734,7 +6756,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Python 3.14 changed to 6 args. Python 3.12 only available on darwin in S3.
   // On linux (only Python 3.14), skip since we can't patch generated C reliably.
   'cython.org/libcython': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3.11<3.14'
       }
@@ -6780,7 +6802,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // CI runners lack wayland-protocols / wayland-scanner, causing
   // "xdg-shell-client-protocol.h: No such file or directory". Disable Wayland.
   'fltk.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('--disable-wayland')
       }
@@ -6792,7 +6814,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // The YAML pins abseil.io: ^20250127 which selects 20250127.2.0 (ABI 2501).
   // Override abseil constraint to match what protobuf was actually built with.
   'github.com/protobuf-c/protobuf-c': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.dependencies?.['abseil.io']) {
         recipe.dependencies['abseil.io'] = '>=20260107'
       }
@@ -6810,7 +6832,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // The Go -asan flag requires gcc/clang recognized by Go's sanitizer check.
   // Buildkit's CC wrapper isn't recognized, causing "C compiler is not gcc or clang".
   'schollz.com/croc': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.env?.linux?.ARGS) {
         recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.filter(
           (a: string) => a !== '-asan',
@@ -6823,7 +6845,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Cap the tools version at 5.10 to avoid MutableGlobalVariable errors.
 
   'tuist.io/xcbeautify': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -6850,7 +6872,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Homebrew gettext is keg-only; configure finds it but linker can't find libintl.
 
   'rhash.sourceforge.net': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -6866,7 +6888,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // v1.4.x only has src/ip.py; src/iproute2mac.py and src/bridge.py were added later.
 
   'github.com/brona/iproute2mac': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // recipe.build is normalized to { script: [...] } before modifyRecipe runs
       const steps = recipe.build?.script
       if (Array.isArray(steps)) {
@@ -6887,7 +6909,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'elementsproject.org': {
     prependScript: [GLIBTOOL_FIX],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // v22.x requires BDB headers we don't have — disable BDB wallet
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('--without-bdb')
@@ -6907,7 +6929,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove docutils dep (broken venv wrapper for rst2man in S3)
       // ctags builds fine without man pages
       if (recipe.build?.dependencies?.['docutils.org']) {
@@ -6923,7 +6945,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── curlie.io — bypass goreleaser (config v0 vs v2 mismatch) ──────────
 
   'curlie.io': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace goreleaser + install with direct go build
       // goreleaser config version mismatch causes older versions to fail
       if (Array.isArray(recipe.build?.script)) {
@@ -6942,7 +6964,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── harfbuzz.org — disable introspection (g-ir-scanner incompatible with Python 3.12+) ──
 
   'harfbuzz.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Disable gobject-introspection — the S3 g-ir-scanner was built against
       // an older Python and imports distutils (removed in 3.12+) / has ABI mismatch
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
@@ -6974,7 +6996,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── unidata.ucar.edu/netcdf — disable HDF5 (not in S3) ──────────────
 
   'unidata.ucar.edu/netcdf': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove HDF5 dep — not in S3 dep chain. Build with classic format only.
       if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
         delete recipe.dependencies['hdfgroup.org/HDF5']
@@ -7021,7 +7043,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── ceph.com/cephadm — fix shebang replacement ──────────────────────
 
   'ceph.com/cephadm': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -7044,7 +7066,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── ntp.org — fix sed -i BSD compat ──────────────────────────────────
 
   'ntp.org': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in ntpdc/nl.pl perl shebang fixup
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -7062,7 +7084,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/sekrit-twc/zimg': {
     prependScript: [GLIBTOOL_FIX],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray cmake prefix quoting
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
@@ -7086,7 +7108,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'for f in src/*.c; do grep -q "#include <string.h>" "$f" || sed -i.bak \'1i\\\n#include <string.h>\' "$f" 2>/dev/null; done',
       'for f in src/*.c; do grep -q "#include <stdio.h>" "$f" || sed -i.bak \'1i\\\n#include <stdio.h>\' "$f" 2>/dev/null; done',
     ],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gnu.org/gcc dep — darwin uses xcrun (system cc), linux doesn't need explicit gcc
       if (recipe.build?.dependencies?.['gnu.org/gcc']) {
         delete recipe.build.dependencies['gnu.org/gcc']
@@ -7149,7 +7171,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove mesa3d.org dep — use system OpenGL headers from apt
       if (recipe.dependencies?.['mesa3d.org']) {
         delete recipe.dependencies['mesa3d.org']
@@ -7168,7 +7190,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove pantry python.org dep — use system python3 with matching libxml2 bindings
       if (recipe.dependencies?.['python.org']) {
         delete recipe.dependencies['python.org']
@@ -7201,7 +7223,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove mesa3d.org dep — use system OpenGL from apt
       if (recipe.dependencies?.['mesa3d.org']) {
         delete recipe.dependencies['mesa3d.org']
@@ -7244,7 +7266,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── angular.dev — remove --build-from-source for prebuilt binaries ─
 
   'angular.dev': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove --build-from-source — use prebuilt native modules instead
       // Native module compilation fails on both platforms with Node 25
       if (Array.isArray(recipe.build?.env?.ARGS)) {
@@ -7259,7 +7281,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/aristocratos/btop': {
     supportedPlatforms: ['darwin/aarch64'],
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux-specific deps — we only build on darwin where system clang supports C++23
       if (recipe.dependencies?.linux) {
         delete recipe.dependencies.linux
@@ -7273,7 +7295,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── isc.org/bind9 — disable LMDB (not available in CI) ──────────────
 
   'isc.org/bind9': {
-    modifyRecipe: (recipe: any) => {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove LMDB dependency — not reliably available in CI
       if (recipe.dependencies?.['openldap.org/liblmdb']) {
         delete recipe.dependencies['openldap.org/liblmdb']
@@ -7286,31 +7308,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS.push('--without-lmdb')
       }
     },
-  },
-
-  // ─── imagemagick.org — fix libltdl linkage on darwin ──────────────────
-
-  'imagemagick.org': {
-    platforms: {
-      darwin: {
-        prependScript: [
-          // gnu.org/libtool provides libltdl but it may not be in the default search path
-          'LTDL_DIR=$(find /tmp/buildkit-deps -path "*/gnu.org/libtool/*/lib" -type d 2>/dev/null | head -1)',
-          'if [ -n "$LTDL_DIR" ]; then',
-          '  export LDFLAGS="-L$LTDL_DIR ${LDFLAGS:-}"',
-          'fi',
-        ],
-      },
-    },
-  },
-
-  // ─── qemu.org — install distlib for Python 3.14 mkvenv ────────────────
-
-  'qemu.org': {
-    prependScript: [
-      // QEMU's configure runs mkvenv which needs distlib; not pre-installed with Python 3.14
-      'pip3 install distlib 2>/dev/null || python3 -m pip install distlib 2>/dev/null || true',
-    ],
   },
 
   // ─── freetds.org — fix libiconv linkage on darwin ──────────────────────

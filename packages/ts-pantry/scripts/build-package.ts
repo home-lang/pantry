@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSy
 import { execSync, spawn } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
-import { generateBuildScript, getSkips, type PackageRecipe } from './buildkit.ts'
+import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
 import { packageOverrides, type ScriptStep } from './package-overrides.ts'
 
@@ -321,8 +321,8 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
           }
         }
       }
-    } catch (err: any) {
-      console.log(`⚠️  GitHub API error for ${repo}: ${err.message}`)
+    } catch (err: unknown) {
+      console.log(`⚠️  GitHub API error for ${repo}: ${(err as Error).message}`)
       return null
     }
   }
@@ -343,8 +343,8 @@ function getBuildOverrides(pkgName: string): BuildOverrides | null {
   try {
     const content = readFileSync(overridesPath, 'utf-8')
     return JSON.parse(content)
-  } catch (error: any) {
-    console.log(`Warning: Failed to parse build-overrides.json for ${pkgName}: ${error.message}`)
+  } catch (error: unknown) {
+    console.log(`Warning: Failed to parse build-overrides.json for ${pkgName}: ${(error as Error).message}`)
     return null
   }
 }
@@ -358,6 +358,15 @@ function getBuildOverrides(pkgName: string): BuildOverrides | null {
  */
 function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: string): void {
   const [os] = platform.split('-')
+
+  // Normalize recipe.build to object form up front so all code below can access .env/.dependencies/.script safely
+  if (typeof recipe.build === 'string') {
+    recipe.build = { script: [recipe.build] }
+  } else if (Array.isArray(recipe.build)) {
+    recipe.build = { script: recipe.build }
+  }
+  // After normalization, build is RecipeBuildConfig | undefined — cast for type narrowing
+  const normalizedRecipe = recipe as NormalizedRecipe
 
   // ── Generic fixes (apply to all packages) ──────────────────────────
 
@@ -377,7 +386,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   }
 
   // Fix stray quote in CMAKE_INSTALL_PREFIX (upstream YAML typo in several packages)
-  if (recipe.build?.env) {
+  if (normalizedRecipe.build?.env) {
     const fixCmakePrefix = (envObj: Record<string, any>) => {
       if (Array.isArray(envObj.CMAKE_ARGS)) {
         envObj.CMAKE_ARGS = envObj.CMAKE_ARGS.map((arg: string) =>
@@ -387,15 +396,15 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         )
       }
     }
-    fixCmakePrefix(recipe.build.env)
-    if (recipe.build.env.linux) fixCmakePrefix(recipe.build.env.linux)
-    if (recipe.build.env.darwin) fixCmakePrefix(recipe.build.env.darwin)
+    fixCmakePrefix(normalizedRecipe.build.env)
+    if (normalizedRecipe.build.env.linux) fixCmakePrefix(normalizedRecipe.build.env.linux)
+    if (normalizedRecipe.build.env.darwin) fixCmakePrefix(normalizedRecipe.build.env.darwin)
   }
 
   // Fix stray quotes in autotools --prefix/--sysconfdir/--libdir args
   // YAML uses --prefix="{{prefix}}" but after env expansion the quotes become literal,
   // causing configure to set prefix to "/tmp/..." (with quotes in the path)
-  if (recipe.build?.env) {
+  if (normalizedRecipe.build?.env) {
     const fixAutotoolsQuotes = (envObj: Record<string, any>) => {
       if (Array.isArray(envObj.ARGS)) {
         envObj.ARGS = envObj.ARGS.map((arg: string) =>
@@ -413,15 +422,15 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         )
       }
     }
-    fixAutotoolsQuotes(recipe.build.env)
-    if (recipe.build.env.linux) fixAutotoolsQuotes(recipe.build.env.linux)
-    if (recipe.build.env.darwin) fixAutotoolsQuotes(recipe.build.env.darwin)
+    fixAutotoolsQuotes(normalizedRecipe.build.env)
+    if (normalizedRecipe.build.env.linux) fixAutotoolsQuotes(normalizedRecipe.build.env.linux)
+    if (normalizedRecipe.build.env.darwin) fixAutotoolsQuotes(normalizedRecipe.build.env.darwin)
   }
 
   // cmake.org from S3 has broken rpaths on macOS (needs libcurl.4.dylib at build-time path).
   // Use Homebrew cmake (4.x) instead, which is pre-installed on CI runners.
-  if (os === 'darwin' && recipe.build?.dependencies?.['cmake.org']) {
-    delete recipe.build.dependencies['cmake.org']
+  if (os === 'darwin' && normalizedRecipe.build?.dependencies?.['cmake.org']) {
+    delete normalizedRecipe.build.dependencies['cmake.org']
   }
 
   // gnu.org/readline from S3 breaks system tools on Linux. S3 readline's libreadline.so.8
@@ -429,11 +438,11 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   // LD_LIBRARY_PATH and can't resolve the UP/BC termcap symbols. System readline (from
   // libreadline-dev) works fine since it's properly linked against system ncurses/tinfo.
   if (os === 'linux') {
-    if (recipe.dependencies?.['gnu.org/readline']) {
-      delete recipe.dependencies['gnu.org/readline']
+    if (normalizedRecipe.dependencies?.['gnu.org/readline']) {
+      delete normalizedRecipe.dependencies['gnu.org/readline']
     }
-    if (recipe.build?.dependencies?.['gnu.org/readline']) {
-      delete recipe.build.dependencies['gnu.org/readline']
+    if (normalizedRecipe.build?.dependencies?.['gnu.org/readline']) {
+      delete normalizedRecipe.build.dependencies['gnu.org/readline']
     }
   }
 
@@ -444,10 +453,10 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   // Fix: remove S3 dep and force-install fresh meson via pip system-wide.
   // Note: python3 venv doesn't work on Debian/Ubuntu because their patched Python
   // includes /usr/lib/python3/dist-packages even in venvs, making the old meson win.
-  if (recipe.build?.dependencies?.['mesonbuild.com']) {
-    delete recipe.build.dependencies['mesonbuild.com']
-    if (!recipe.build.script) recipe.build.script = []
-    const existing = recipe.build.script
+  if (normalizedRecipe.build?.dependencies?.['mesonbuild.com']) {
+    delete normalizedRecipe.build.dependencies['mesonbuild.com']
+    if (!normalizedRecipe.build.script) normalizedRecipe.build.script = []
+    const existing = normalizedRecipe.build.script
     const existingArray = Array.isArray(existing) ? existing : [existing]
     const mesonFixLines = os === 'linux'
       ? [
@@ -470,7 +479,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         'export PYTHONPATH="$_MESON_PKGS:${PYTHONPATH:-}"',
         'export PATH="$_MESON_PKGS/bin:$(python3 -m site --user-base 2>/dev/null)/bin:/usr/local/bin:$PATH"',
       ]
-    recipe.build.script = [
+    normalizedRecipe.build.script = [
       ...mesonFixLines,
       'hash -r 2>/dev/null || true',
       'echo "[buildkit] meson=$(which meson 2>/dev/null || echo NOT_FOUND) version=$(meson --version 2>/dev/null || echo UNKNOWN)" >&2',
@@ -482,8 +491,8 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
 
   // x.org/x11: disable local-transport on Linux (sys/stropts.h removed in glibc 2.38+)
   if (domain === 'x.org/x11' && os === 'linux') {
-    if (recipe.build?.env) {
-      const env = recipe.build.env
+    if (normalizedRecipe.build?.env) {
+      const env = normalizedRecipe.build.env
       if (Array.isArray(env.ARGS)) {
         env.ARGS.push('--disable-local-transport')
       } else {
@@ -502,14 +511,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
 
   console.log(`  Applying durable override for ${domain}`)
 
-  // 0. Normalize recipe.build to object form if it's a string shorthand or array
-  // e.g. `build: python-venv.sh ...` → `build: { script: ['python-venv.sh ...'] }`
-  // e.g. `build: [step1, step2]` → `build: { script: [step1, step2] }`
-  if (typeof recipe.build === 'string') {
-    recipe.build = { script: [recipe.build] }
-  } else if (Array.isArray(recipe.build)) {
-    recipe.build = { script: recipe.build }
-  }
+  // (normalization already done at top of function)
 
   // 1. Override distributable URL
   if (override.distributableUrl) {
@@ -520,21 +522,21 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     recipe.distributable['strip-components'] = override.stripComponents
   }
 
-  // 2. Merge top-level env overrides into recipe.build.env
+  // 2. Merge top-level env overrides into normalizedRecipe.build.env
   if (override.env) {
-    if (!recipe.build) recipe.build = {}
-    if (!recipe.build.env) recipe.build.env = {}
+    if (!normalizedRecipe.build) normalizedRecipe.build = {}
+    if (!normalizedRecipe.build.env) normalizedRecipe.build.env = {}
     for (const [key, value] of Object.entries(override.env)) {
-      recipe.build.env[key] = value
+      normalizedRecipe.build.env[key] = value
     }
   }
 
   // 3. Prepend script steps (run before existing build script)
   if (override.prependScript && override.prependScript.length > 0) {
-    if (!recipe.build) recipe.build = {}
-    const existing = recipe.build.script
+    if (!normalizedRecipe.build) normalizedRecipe.build = {}
+    const existing = normalizedRecipe.build.script
     const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
-    recipe.build.script = [...override.prependScript as any[], ...existingArray]
+    normalizedRecipe.build.script = [...override.prependScript as RecipeScriptStep[], ...existingArray]
   }
 
   // 4. Apply platform-specific overrides
@@ -545,40 +547,40 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   if (platformOverride) {
     // Platform distributable URL
     if (platformOverride.distributableUrl) {
-      if (!recipe.distributable) recipe.distributable = { url: '' }
-      recipe.distributable.url = platformOverride.distributableUrl
+      if (!normalizedRecipe.distributable) normalizedRecipe.distributable = { url: '' }
+      normalizedRecipe.distributable.url = platformOverride.distributableUrl
     }
-    if (platformOverride.stripComponents !== undefined && recipe.distributable) {
-      recipe.distributable['strip-components'] = platformOverride.stripComponents
+    if (platformOverride.stripComponents !== undefined && normalizedRecipe.distributable) {
+      normalizedRecipe.distributable['strip-components'] = platformOverride.stripComponents
     }
 
-    // Platform env → merged into recipe.build.env.<os> section
+    // Platform env → merged into normalizedRecipe.build.env.<os> section
     if (platformOverride.env) {
-      if (!recipe.build) recipe.build = {}
-      if (!recipe.build.env) recipe.build.env = {}
-      if (!recipe.build.env[os]) recipe.build.env[os] = {}
+      if (!normalizedRecipe.build) normalizedRecipe.build = {}
+      if (!normalizedRecipe.build.env) normalizedRecipe.build.env = {}
+      if (!normalizedRecipe.build.env[os]) normalizedRecipe.build.env[os] = {}
       for (const [key, value] of Object.entries(platformOverride.env)) {
-        recipe.build.env[os][key] = value
+        normalizedRecipe.build.env[os][key] = value
       }
     }
 
     // Platform prependScript
     if (platformOverride.prependScript && platformOverride.prependScript.length > 0) {
-      if (!recipe.build) recipe.build = {}
-      const existing = recipe.build.script
+      if (!normalizedRecipe.build) normalizedRecipe.build = {}
+      const existing = normalizedRecipe.build.script
       const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
-      recipe.build.script = [...platformOverride.prependScript as any[], ...existingArray]
+      normalizedRecipe.build.script = [...platformOverride.prependScript as RecipeScriptStep[], ...existingArray]
     }
   }
 
   // 5. Override recipe platforms if supportedPlatforms is specified
   if (override.supportedPlatforms) {
-    recipe.platforms = override.supportedPlatforms
+    normalizedRecipe.platforms = override.supportedPlatforms
   }
 
   // 6. Apply modifyRecipe callback for complex mutations
   if (override.modifyRecipe) {
-    override.modifyRecipe(recipe, platform)
+    override.modifyRecipe(normalizedRecipe, platform)
   }
 }
 
@@ -618,7 +620,7 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
       // If shallow clone with ref fails, try full clone + checkout
       try {
         execSync(`git clone "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
-      } catch (cloneError: any) {
+      } catch (cloneError: unknown) {
         const err = new Error(`DOWNLOAD_FAILED: Failed to clone ${gitUrl}`) as any
         err._downloadFailure = true
         throw err
@@ -649,7 +651,7 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
     // --max-time 600: abort if download takes >10 minutes (SourceForge can be very slow)
     // --retry 2 --retry-delay 5: retry on transient failures
     execSync(`curl -fSL --connect-timeout 30 --max-time 600 --retry 2 --retry-delay 5 -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
-  } catch (curlError: any) {
+  } catch (curlError: unknown) {
     const err = new Error(`DOWNLOAD_FAILED: Failed to download ${url}`) as any
     err._downloadFailure = true
     throw err
@@ -713,7 +715,7 @@ function runCommand(cmd: string, cwd: string, env: Record<string, string>): void
       stdio: 'inherit',
       shell: '/bin/bash',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`❌ Command failed: ${cmd}`)
     throw error
   }
@@ -1128,13 +1130,13 @@ async function downloadDependencies(
               }
             }
           }
-        } catch (e: any) {
-          console.log(`   - Warning: Could not fix meson: ${e.message}`)
+        } catch (e: unknown) {
+          console.log(`   - Warning: Could not fix meson: ${(e as Error).message}`)
         }
       }
 
-    } catch (error: any) {
-      console.log(`   - ${domain}: failed (${error.message})`)
+    } catch (error: unknown) {
+      console.log(`   - ${domain}: failed (${(error as Error).message})`)
     }
   }
 
@@ -1142,7 +1144,7 @@ async function downloadDependencies(
 }
 
 function runHealthCheck(
-  test: any,
+  test: RecipeTest,
   prefix: string,
   templateVars: Record<string, string>,
   depPaths: Record<string, string>,
@@ -1157,7 +1159,7 @@ function runHealthCheck(
     testCommands = [test]
   } else if (Array.isArray(test)) {
     // List: test:\n  - curl -i example.com\n  - curl --version
-    testCommands = test.filter((t: any) => typeof t === 'string')
+    testCommands = test.filter((t: RecipeScriptStep) => typeof t === 'string') as string[]
   } else if (typeof test === 'object') {
     // Object: test:\n  script: |\n    nim r hello.nim\n  fixture: |\n    echo "Hello"
     if (typeof test.script === 'string') {
@@ -1286,17 +1288,25 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   const yamlContent = readFileSync(pantryPath, 'utf-8')
   const recipe = parseYaml(yamlContent) as PackageRecipe
 
+  // Helper to safely get build deps from the (possibly union-typed) build field
+  const getBuildDeps = (r: PackageRecipe) => {
+    const b = r.build
+    return (b && typeof b === 'object' && !Array.isArray(b)) ? b.dependencies : undefined
+  }
+
   // Capture dep domains BEFORE overrides to detect removals
   const preOverrideRuntimeDeps = new Set(extractYamlDeps(recipe.dependencies, platform).map(d => parseDep(d)))
-  const preOverrideBuildDeps = new Set(extractYamlDeps(recipe.build?.dependencies, platform).map(d => parseDep(d)))
+  const preOverrideBuildDeps = new Set(extractYamlDeps(getBuildDeps(recipe), platform).map(d => parseDep(d)))
 
   // Apply buildkit-level recipe overrides that survive pantry YAML regeneration.
   // These fix platform-specific issues in upstream recipes without modifying the YAML files.
   applyRecipeOverrides(recipe, pkgName, platform)
+  // After applyRecipeOverrides, build is normalized to RecipeBuildConfig | undefined
+  const normalizedRecipe = recipe as NormalizedRecipe
 
   // Compute deps removed by modifyRecipe overrides
-  const postOverrideRuntimeDeps = new Set(extractYamlDeps(recipe.dependencies, platform).map(d => parseDep(d)))
-  const postOverrideBuildDeps = new Set(extractYamlDeps(recipe.build?.dependencies, platform).map(d => parseDep(d)))
+  const postOverrideRuntimeDeps = new Set(extractYamlDeps(normalizedRecipe.dependencies, platform).map(d => parseDep(d)))
+  const postOverrideBuildDeps = new Set(extractYamlDeps(normalizedRecipe.build?.dependencies, platform).map(d => parseDep(d)))
   const removedDeps = new Set<string>()
   for (const d of preOverrideRuntimeDeps) if (!postOverrideRuntimeDeps.has(d)) removedDeps.add(d)
   for (const d of preOverrideBuildDeps) if (!postOverrideBuildDeps.has(d)) removedDeps.add(d)
@@ -1319,7 +1329,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   console.log(`\nBuild recipe: ${pantryPath}`)
 
   // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
-  const yamlBuildDeps = extractYamlDeps(recipe.build?.dependencies, platform)
+  const yamlBuildDeps = extractYamlDeps(normalizedRecipe.build?.dependencies, platform)
   const yamlRuntimeDeps = extractYamlDeps(recipe.dependencies, platform)
   if (yamlBuildDeps.length > 0) {
     console.log(`\nYAML build dependencies: ${yamlBuildDeps.join(', ')}`)
@@ -1482,7 +1492,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
     try {
       await downloadSource(sourceUrl, buildDir, stripComponents, ref, pkgName, version)
-    } catch (firstError: any) {
+    } catch (firstError: unknown) {
       let recovered = false
 
       // Retry 1: If URL or ref used version.tag and download failed, try alternate tag format
@@ -1640,8 +1650,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   }
 
   // Process env section
-  if (recipe.build?.env) {
-    const env = recipe.build.env
+  if (normalizedRecipe.build?.env) {
+    const env = normalizedRecipe.build.env
 
     // Process ARGS
     let args: string[] = []
@@ -1740,7 +1750,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       stdio: 'inherit',
       shell: '/bin/bash',
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ Build script failed')
     // Dump config.log if it exists (key for diagnosing "C compiler cannot create executables")
     const configLog = join(buildDir, 'config.log')
@@ -1794,8 +1804,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     try {
       runHealthCheck(recipe.test, prefix, templateVars, depPaths, platform)
       console.log('✅ Health check passed!')
-    } catch (error: any) {
-      console.error(`⚠️  Health check failed: ${error.message}`)
+    } catch (error: unknown) {
+      console.error(`⚠️  Health check failed: ${(error as Error).message}`)
       // Health check failure is a warning, not a build failure.
       // The binary is still functional — the test may have external deps
       // or network requirements that aren't available in CI.
@@ -1838,11 +1848,12 @@ async function main() {
   })
 }
 
-main().catch((error) => {
-  console.error('❌ Build failed:', error.message)
+main().catch((error: unknown) => {
+  const err = error as Error & { _downloadFailure?: boolean }
+  console.error('❌ Build failed:', err.message)
   // Exit code 42 = download failure (source 404/unavailable) — signals version fallback should try older versions
   // Exit code 1 = build/other failure — no point trying older versions
-  if (error._downloadFailure) {
+  if (err._downloadFailure) {
     process.exit(42)
   }
   process.exit(1)
