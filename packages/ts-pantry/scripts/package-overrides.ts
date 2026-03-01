@@ -2396,12 +2396,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: {
       CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
-    modifyRecipe: (recipe: any) => {
-      // Disable io_uring support — newer kernel headers removed resv2 field from io_uring_sqe
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS.push('--disable-io-uring')
-      }
-    },
+    prependScript: [
+      // Patch io_uring.c — newer kernel headers renamed resv2 field in io_sqring_offsets
+      'sed -i.bak "s/resv2/resv1/g" io_uring.c 2>/dev/null || true',
+    ],
   },
 
   // ─── microbrew.org/md5sha1sum — fix OpenSSL paths ────────────────────
