@@ -995,6 +995,9 @@ Options:
     'facebook.com/watchman', // glog ABI mismatch in S3 wangle/fizz on linux, darwin OK
     'glm.g-truc.net', // Header-only library, cmake/install fails on linux, works on darwin
     'graphviz.org', // fontconfig API mismatch on linux, builds fine on darwin with Homebrew deps
+    'crates.io/mask', // rust-lld raw-dylibs issue on linux, builds fine on darwin
+    'dns.lookup.dog', // openssl-sys build failure on linux, builds fine on darwin
+    'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
   ])
 
   // Packages needing specialized toolchains not available in CI
@@ -1036,7 +1039,7 @@ Options:
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
     'crates.io/didyoumean', // Rust linker failure even with --cap-lints warn
     // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
-    'crates.io/mask', // rust-lld: error: cannot open raw-dylibs directory
+    // crates.io/mask removed — builds on darwin
     'crates.io/pqrs', // arrow-arith/chrono trait ambiguity (quarter() method conflict)
     // crates.io/rust-kanban removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override
@@ -1092,7 +1095,7 @@ Options:
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    // strace.io removed — fixed BTRFS_EXTENT_REF_V0_KEY value from 0 to 180
+    'strace.io', // strace 6.2.0 incompatible with newer kernel headers (io_uring.c resv2 member removed)
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
@@ -1114,7 +1117,7 @@ Options:
     'projectdiscovery.io/nuclei', // bytedance/sonic requires newer Go runtime internals
     'iroh.computer', // curve25519-dalek pre-release incompatible with digest crate
     // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
-    'dns.lookup.dog', // old openssl-sys v0.9.58 macro bug, project abandoned
+    // dns.lookup.dog removed — builds on darwin
     // microsoft.com/code-cli removed — built successfully on darwin
     'fluentci.io', // Uses deno compile, fragile in CI
     // fna-xna.github.io removed — SDL2 dev packages now in CI

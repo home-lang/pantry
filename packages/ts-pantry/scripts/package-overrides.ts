@@ -976,9 +976,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'videolan.org/x265': {
     // Patch CMakeLists.txt: cmake 4.x rejects cmake_policy(SET CMP0025 OLD) and CMP0054 OLD.
-    // Changing OLD→NEW in the source is the only fix (POLICY_DEFAULT is overridden by explicit set).
+    // Delete the cmake_policy lines — cmake 4.x defaults to NEW for these policies.
+    // Note: prependScript runs from buildDir/8bit/ (global working-directory), so use ../ to reach source.
     prependScript: [
-      'find . -name CMakeLists.txt -exec sed -i.bak \'s/cmake_policy(SET CMP0025 OLD)/cmake_policy(SET CMP0025 NEW)/g; s/cmake_policy(SET CMP0054 OLD)/cmake_policy(SET CMP0054 NEW)/g\' {} +',
+      'find .. -name CMakeLists.txt -exec sed -i.bak \'/cmake_policy.*CMP002[54]/d\' {} +',
     ],
     modifyRecipe: (recipe: any) => {
       // Move nasm.us dependency to linux-only (assembly disabled on darwin)
