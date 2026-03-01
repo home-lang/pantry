@@ -4397,6 +4397,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.linux?.['github.com/util-linux/util-linux']) {
         delete recipe.dependencies.linux['github.com/util-linux/util-linux']
       }
+      // Remove dap-config PKGX_DIR sed fixup — $PKGX_DIR is empty in our build env,
+      // causing "no previous regular expression" error
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = recipe.build.script.length - 1; i >= 0; i--) {
+          const step = recipe.build.script[i]
+          const text = typeof step === 'string' ? step : (typeof step === 'object' && step.run ? String(step.run) : '')
+          if (text.includes('PKGX_DIR') && text.includes('dap-config')) {
+            recipe.build.script.splice(i, 1)
+          }
+        }
+      }
     },
   },
 
@@ -4612,9 +4623,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       linux: {
         prependScript: [
-          // Remove system Tcl 8.x dev packages to prevent version conflict with Tcl 9 build
-          'sudo apt-get remove -y tcl-dev tcl8.6-dev tk-dev tk8.6-dev 2>/dev/null || true',
+          // Remove system Tcl 8.x entirely to prevent version conflict with Tcl 9 build
+          // Must remove both -dev and runtime packages so /usr/bin/tclsh8.6 is gone
+          'sudo apt-get remove -y tcl tcl-dev tcl8.6 tcl8.6-dev tk tk-dev tk8.6 tk8.6-dev 2>/dev/null || true',
           'sudo apt-get autoremove -y 2>/dev/null || true',
+          // Remove any remaining tclsh symlinks/binaries
+          'sudo rm -f /usr/bin/tclsh /usr/bin/tclsh8.6 2>/dev/null || true',
         ],
       },
     },
