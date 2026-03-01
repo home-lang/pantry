@@ -2398,11 +2398,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
     modifyRecipe: (recipe: any) => {
       // Patch io_uring.c — newer kernel headers renamed resv2 field in io_sqring_offsets
-      // Insert sed BEFORE the configure/make step in the script
+      // The source file is in src/io_uring.c (make runs from src/ subdir)
+      // Use find to patch it wherever it is in the source tree
+      const sedCmd = 'find . -name io_uring.c -exec sed -i.bak "s/resv2/resv1/g" {} \\;'
       if (typeof recipe.build?.script === 'string') {
-        recipe.build.script = 'sed -i.bak "s/resv2/resv1/g" io_uring.c 2>/dev/null || true\n' + recipe.build.script
+        recipe.build.script = sedCmd + '\n' + recipe.build.script
       } else if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script.unshift('sed -i.bak "s/resv2/resv1/g" io_uring.c 2>/dev/null || true')
+        recipe.build.script.unshift(sedCmd)
       }
     },
   },
@@ -4572,6 +4574,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Disable problematic optional features
         recipe.build.env.ARGS.push('--disable-slirp')
         recipe.build.env.ARGS.push('--disable-capstone')
+        recipe.build.env.ARGS.push('--disable-libssh')
       }
       // Remove slirp dep (not reliably available)
       if (recipe.dependencies?.['freedesktop.org/slirp']) {
