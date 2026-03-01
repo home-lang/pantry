@@ -1139,7 +1139,7 @@ Options:
     // pcre.org removed — URL override to use GitHub releases instead of SourceForge
     // digitalocean.com/doctl removed — built successfully on both platforms
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
-    'qemu.org', // dtc git subproject fetch fails on linux, many missing headers on darwin
+    // qemu.org removed — disabled slirp/libssh deps, fixed configure flags
     'freedesktop.org/poppler-qt5', // S3 curl.so missing version info breaks cmake on both platforms
     'apache.org/arrow', // Massive C++ build, timeout/failure on both platforms
     'gdal.org', // patchelf post-build fixup fails on linux, cmake issues on darwin
@@ -1151,7 +1151,7 @@ Options:
     // x.org/xmu removed — fixed $SHELF variable references in script
     // x.org/xt removed — fixed $SHELF variable references in script
     // swagger.io/swagger-codegen removed — built successfully on linux
-    'angular.dev', // npm build failure on both platforms (native module compilation)
+    // angular.dev removed — removed --build-from-source npm flag
     // capnproto.org removed — already has clean cmake prefix, existing override entry covers it
     // cmake.org removed — reduced parallel jobs to prevent race condition
     // sourceforge.net/libtirpc — shared lib linking, needs kerberos.org in S3
@@ -1244,7 +1244,7 @@ Options:
     // freedesktop.org/shared-mime-info removed — fixed meson prefix quoting in override
     // freedesktop.org/vdpau removed — built successfully on linux
     // freedesktop.org/XKeyboardConfig removed — fixed prefix quoting + removed libxslt dep in override
-    'freeglut.sourceforge.io', // Build failure on darwin (OpenGL dep)
+    // freeglut.sourceforge.io removed — linux-only with system GL/X11, supportedPlatforms override
     // gdal.org removed — fixed cmake prefix quote + sed -i BSD + removed llvm dep in override
     // geoff.greer.fm/ag — needs pcre.org in S3, build pcre.org first
     // getmonero.org removed — removed linux llvm dep in override

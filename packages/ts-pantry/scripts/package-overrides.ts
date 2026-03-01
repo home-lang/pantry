@@ -4561,11 +4561,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['virtualsquare.org/vde']) {
         delete recipe.dependencies['virtualsquare.org/vde']
       }
-      // Remove --enable-vde from ARGS
+      // Remove --enable-vde from ARGS and add --disable-slirp
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => a !== '--enable-vde',
         )
+        // Skip dtc git subproject fetch (fails in CI sandbox)
+        recipe.build.env.ARGS.push('--disable-slirp')
+      }
+      // Remove slirp dep (not reliably available)
+      if (recipe.dependencies?.['freedesktop.org/slirp']) {
+        delete recipe.dependencies['freedesktop.org/slirp']
+      }
+      // Remove libssh dep on darwin (headers missing in CI)
+      if (recipe.dependencies?.['libssh.org']) {
+        delete recipe.dependencies['libssh.org']
       }
     },
   },
@@ -7181,5 +7191,70 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'export CARGO_HOME=/tmp/dssim-cargo',
       'mkdir -p "$RUSTUP_HOME" "$CARGO_HOME"',
     ],
+  },
+
+  // ─── freeglut.sourceforge.io — use system OpenGL/X11 on linux ──────
+
+  'freeglut.sourceforge.io': {
+    supportedPlatforms: ['linux/x86-64'],
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libgl-dev libglu1-mesa-dev libxi-dev libxrandr-dev libxxf86vm-dev libxinput-dev 2>/dev/null || true',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: any) => {
+      // Remove mesa3d.org dep — use system OpenGL from apt
+      if (recipe.dependencies?.['mesa3d.org']) {
+        delete recipe.dependencies['mesa3d.org']
+      }
+      // Remove X11 deps — use system X11 from apt
+      const depsToRemove = [
+        'x.org/x11', 'x.org/xi', 'x.org/xrandr', 'x.org/xxf86vm',
+      ]
+      for (const dep of depsToRemove) {
+        if (recipe.dependencies?.[dep]) {
+          delete recipe.dependencies[dep]
+        }
+      }
+      // Remove linux-specific deps that reference mesa
+      if (recipe.dependencies?.linux?.['freedesktop.org/mesa-glu']) {
+        delete recipe.dependencies.linux['freedesktop.org/mesa-glu']
+      }
+      if (recipe.dependencies?.linux?.['x.org/xinput']) {
+        delete recipe.dependencies.linux['x.org/xinput']
+      }
+      // Remove cmake ARGS referencing mesa3d prefix — let cmake find system GL
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => !a.includes('mesa3d.org'),
+        )
+      }
+      if (Array.isArray(recipe.build?.env?.linux?.ARGS)) {
+        recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.filter(
+          (a: string) => !a.includes('mesa3d.org'),
+        )
+      }
+      if (Array.isArray(recipe.build?.env?.darwin?.ARGS)) {
+        recipe.build.env.darwin.ARGS = recipe.build.env.darwin.ARGS.filter(
+          (a: string) => !a.includes('mesa3d.org'),
+        )
+      }
+    },
+  },
+
+  // ─── angular.dev — remove --build-from-source for prebuilt binaries ─
+
+  'angular.dev': {
+    modifyRecipe: (recipe: any) => {
+      // Remove --build-from-source — use prebuilt native modules instead
+      // Native module compilation fails on both platforms with Node 25
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--build-from-source',
+        )
+      }
+    },
   },
 }
