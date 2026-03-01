@@ -1399,7 +1399,7 @@ Options:
     'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
-    'modal.com', // grpcio-tools 1.59.2 fails to compile with current Python/compilers
+    // modal.com removed — upgraded grpcio-tools pin from 1.59.2 to >=1.68.0 for Python 3.13+ compat
     // rucio.cern.ch/rucio-client removed — stripped C-extension extras from pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
     // tcl-lang.org removed — apt-get remove system tcl8.6-dev to prevent version conflict

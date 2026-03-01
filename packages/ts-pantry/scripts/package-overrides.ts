@@ -4491,6 +4491,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['linux/aarch64']?.['cython.org']) {
         delete recipe.build.dependencies['linux/aarch64']['cython.org']
       }
+      // Upgrade grpcio-tools pin: 1.59.2 fails with Python 3.13+ (missing distutils, C++ compat)
+      if (Array.isArray(recipe.build?.script)) {
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && Array.isArray(step.run)) {
+            step.run = step.run.map((line: string) =>
+              typeof line === 'string'
+                ? line.replace('grpcio-tools==1.59.2', 'grpcio-tools>=1.68.0')
+                      .replace('grpclib==0.4.7', 'grpclib')
+                : line,
+            )
+          }
+        }
+      }
     },
   },
 
