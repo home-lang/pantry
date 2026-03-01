@@ -2069,13 +2069,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── github.com/thkukuk/libnsl — ensure libtirpc headers found ──
   'github.com/thkukuk/libnsl': {
+    supportedPlatforms: ['linux/x86-64', 'linux/aarch64'],
     prependScript: [
-      // libtirpc headers are in a tirpc/ subdirectory — add to CPPFLAGS
+      // Install system libtirpc-dev (not in S3) and add headers to CPPFLAGS
+      'sudo apt-get install -y libtirpc-dev 2>/dev/null || true',
       'TIRPC_CFLAGS=$(pkg-config --cflags libtirpc 2>/dev/null || echo "")',
       'TIRPC_LIBS=$(pkg-config --libs libtirpc 2>/dev/null || echo "")',
       'export CPPFLAGS="${CPPFLAGS:-} $TIRPC_CFLAGS"',
       'export LDFLAGS="${LDFLAGS:-} $TIRPC_LIBS"',
     ],
+    modifyRecipe: (recipe: any) => {
+      // Remove sourceforge.net/libtirpc dep — use system-installed libtirpc
+      if (recipe.dependencies?.['sourceforge.net/libtirpc']) {
+        delete recipe.dependencies['sourceforge.net/libtirpc']
+      }
+    },
   },
 
   // ─── astral.sh/uv — ensure RUSTFLAGS and cmake compat ──

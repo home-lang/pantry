@@ -1372,7 +1372,7 @@ Options:
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
     'eyrie.org/eagle/podlators', // Version 5.1.0 doesn't exist on archives.eyrie.org (only v6.0.2 available)
-    'github.com/thkukuk/libnsl', // libtirpc not in S3 — rpc/rpc.h not found
+    // github.com/thkukuk/libnsl removed — added system libtirpc-dev install + linux-only supportedPlatforms
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
