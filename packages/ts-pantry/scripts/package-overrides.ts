@@ -2397,19 +2397,20 @@ export const packageOverrides: Record<string, PackageOverride> = {
       CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
     modifyRecipe: (recipe: any) => {
-      // Patch io_uring.c — newer kernel headers renamed struct fields:
-      //   io_sqring_offsets.resv2 → resv1
-      //   io_uring_probe_op.resv1 → resv
-      // Order matters: first change resv1→resv, THEN resv2→resv1
-      // This prevents the second sed from creating new resv1 refs that the first would catch
-      const sedCmd = [
-        'find . -name io_uring.c -exec sed -i.bak "s/\\bresv1\\b/resv/g" {} \\;',
-        'find . -name io_uring.c -exec sed -i.bak "s/\\bresv2\\b/resv1/g" {} \\;',
-      ].join('\n')
+      // Patch io_uring.c — newer kernel headers renamed/removed reserved fields:
+      //   io_sqring_offsets: resv2 removed (merged into resv1)
+      //   io_uring_probe_op: resv1 renamed to resv
+      // These are just debug-printing of padding fields.
+      // Remove the entire if-blocks for resv1/resv2 to avoid kernel header compat issues.
+      // Use perl -0777 for multi-line regex to cleanly remove if-blocks + preceding tprint.
+      const patchCmd = "find . -name io_uring.c -exec perl -0777 -i -pe '"
+        + 's/\\n[\\t ]*tprint_struct_next\\(\\);\\n[\\t ]*if \\(p->resv[12]?\\) \\{[^}]*\\}//gs;'
+        + "s/\\n[\\t ]*if \\(p->resv[12]?\\) \\{[^}]*\\}//gs;"
+        + "' {} \\;"
       if (typeof recipe.build?.script === 'string') {
-        recipe.build.script = sedCmd + '\n' + recipe.build.script
+        recipe.build.script = patchCmd + '\n' + recipe.build.script
       } else if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script.unshift(sedCmd)
+        recipe.build.script.unshift(patchCmd)
       }
     },
   },
