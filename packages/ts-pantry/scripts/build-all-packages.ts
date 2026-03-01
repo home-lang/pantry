@@ -997,6 +997,7 @@ Options:
     'facebook.com/watchman', // glog ABI mismatch in S3 wangle/fizz on linux, darwin OK
     'glm.g-truc.net', // Header-only library, cmake/install fails on linux, works on darwin
     'graphviz.org', // fontconfig API mismatch on linux, builds fine on darwin with Homebrew deps
+    'ntp.org', // MD5Init/MD5Update deprecated in OpenSSL 3.x on linux, builds fine on darwin
     'crates.io/mask', // rust-lld raw-dylibs issue on linux, builds fine on darwin
     'dns.lookup.dog', // openssl-sys build failure on linux, builds fine on darwin
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
@@ -1071,7 +1072,7 @@ Options:
     'tea.xyz', // Needs deno task compile (no distributable source)
     'sdkman.io', // Shell script distribution, not compilable
     'spacetimedb.com', // Hardcoded beta tag, no version discovery
-    // ntp.org removed — fixed sed -i BSD compat in override
+    // ntp.org removed — builds on darwin (linux fails: MD5Init/MD5Update deprecated in OpenSSL 3)
     'jbig2dec.com', // Single hardcoded version, buried in ghostpdl releases
     'videolan.org/x264', // Version includes git hash, Debian mirror URL
     'github.com/mamba-org/mamba', // Hardcoded version, FIXME in recipe
@@ -1218,7 +1219,7 @@ Options:
     // aws.amazon.com/cli removed — widened python version constraint in override
     // bitcoin.org removed — removed capnproto/gcc deps in override
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
-    // crates.io/kaspa-miner removed — added --cap-lints warn RUSTFLAGS override
+    'crates.io/kaspa-miner', // protobuf.dev S3 version (34) mismatches recipe pin (25), libprotoc.so not loadable
     'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
     // crates.io/qsv removed — built successfully on linux
     // debian.org/iso-codes removed — fixed prefix quoting in override
@@ -1386,8 +1387,8 @@ Options:
     'pulumi.io', // Needs `uv` package manager + Go module directory issue
     // nx.dev removed — successfully built and uploaded
     // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
-    // gnu.org/guile removed — added CC/CXX bypass to avoid libtool/cc wrapper conflict
-    // sourceforge.net/libtirpc removed — removed kerberos.org dep, use system krb5
+    'gnu.org/guile', // scmconfig.h circular dep — even with bootstrap cp and CC bypass, still fails
+    'sourceforge.net/libtirpc', // cc wrapper confuses libtool — shared lib .so not produced (only .a)
     // sourceforge.net/xmlstar removed — use system libxml2/libxslt instead of S3 2.15
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cmake target_link_libraries error with AWS::crypto
