@@ -2396,10 +2396,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: {
       CFLAGS: '-Wno-error -DBTRFS_LABEL_SIZE=256 -DBTRFS_EXTENT_REF_V0_KEY=180 -DBTRFS_SHARED_BLOCK_REF_KEY=182',
     },
-    prependScript: [
+    modifyRecipe: (recipe: any) => {
       // Patch io_uring.c — newer kernel headers renamed resv2 field in io_sqring_offsets
-      'sed -i.bak "s/resv2/resv1/g" io_uring.c 2>/dev/null || true',
-    ],
+      // Insert sed BEFORE the configure/make step in the script
+      if (typeof recipe.build?.script === 'string') {
+        recipe.build.script = 'sed -i.bak "s/resv2/resv1/g" io_uring.c 2>/dev/null || true\n' + recipe.build.script
+      } else if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script.unshift('sed -i.bak "s/resv2/resv1/g" io_uring.c 2>/dev/null || true')
+      }
+    },
   },
 
   // ─── microbrew.org/md5sha1sum — fix OpenSSL paths ────────────────────

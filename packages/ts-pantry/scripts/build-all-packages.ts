@@ -991,6 +991,7 @@ Options:
     'github.com/mxcl/swift-sh', 'github.com/kiliankoe/swift-outdated',
     'github.com/a7ex/xcresultparser', 'github.com/create-dmg/create-dmg',
     'portaudio.com',
+    'angular.dev', // npm enoent on linux, builds fine on darwin with prebuilt modules
     'gnupg.org/libgcrypt', // Linux system libgpg-error too old (needs >= 1.56), builds fine on darwin
     'microsoft.com/code-cli', // OpenSSL linking issues on Linux, builds fine on darwin
     'proj.org', // S3 curl.so missing version info breaks cmake on linux, darwin OK
