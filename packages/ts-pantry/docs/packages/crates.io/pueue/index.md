@@ -26,21 +26,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 7 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `4.0.2`, `4.0.1`, `4.0.0`
+- `4.0.3`, `4.0.2`, `4.0.1`, `4.0.0`
 - `3.4.1`, `3.4.0`
 - `3.3.3`, `3.3.2`
 
 </details>
 
-**Latest Version**: `4.0.2`
+**Latest Version**: `4.0.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/pueue@4.0.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/pueue@4.0.3 -- $SHELL -i
 ```
 
 ## Usage Examples
