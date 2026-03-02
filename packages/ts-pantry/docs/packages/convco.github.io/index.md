@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
-- `0.6.2`, `0.6.1`, `0.6.0`
+- `0.6.3`, `0.6.2`, `0.6.1`, `0.6.0`
 - `0.5.2`, `0.5.1`, `0.5.0`
 - `0.4.3`, `0.4.2`, `0.4.1`
 
 </details>
 
-**Latest Version**: `0.6.2`
+**Latest Version**: `0.6.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +convco.github.io@0.6.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +convco.github.io@0.6.3 -- $SHELL -i
 ```
 
 ## Usage Examples
