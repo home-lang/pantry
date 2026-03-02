@@ -2,7 +2,7 @@
  * **freetype** - pkgx package
  *
  * @domain `freetype.org`
- * @version `2.14.1` (6 versions available)
+ * @version `2.14.2` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install freetype.org`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.freetypeorg
  * console.log(pkg.name)        // "freetype"
- * console.log(pkg.versions[0]) // "2.14.1" (latest)
+ * console.log(pkg.versions[0]) // "2.14.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/freetype-org.md
@@ -67,6 +67,7 @@ export const freetypeorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.14.2',
     '2.14.1',
     '2.14.0',
     '2.13.3',

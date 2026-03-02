@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/sigrs`
  * @programs `sig`
- * @version `0.2.1` (7 versions available)
+ * @version `0.3.0` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/sigrs`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "sig"
  * console.log(pkg.description) // "Interactive grep (for streaming)"
  * console.log(pkg.programs)    // ["sig"]
- * console.log(pkg.versions[0]) // "0.2.1" (latest)
+ * console.log(pkg.versions[0]) // "0.3.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/sigrs.md
@@ -60,6 +60,7 @@ export const cratesiosigrsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.0',
     '0.2.1',
     '0.2.0',
     '0.1.4',

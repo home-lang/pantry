@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 37 versions</summary>
+<summary>Show all 38 versions</summary>
 
-- `1.49.1`, `1.49.0`
+- `1.49.2`, `1.49.1`, `1.49.0`
 - `1.48.0`
 - `1.47.1`
 - `1.46.2`, `1.46.1`, `1.46.0`
@@ -46,13 +46,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.49.1`
+**Latest Version**: `1.49.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +authzed.com/spicedb@1.49.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +authzed.com/spicedb@1.49.2 -- $SHELL -i
 ```
 
 ## Usage Examples
