@@ -707,27 +707,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.linux) {
         delete recipe.build.dependencies.linux['llvm.org']
       }
-      // Remove -DENABLE_IPO=TRUE
+      // Remove -DENABLE_IPO=TRUE and add -DBUILD_TESTING=OFF (Doctest not available)
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.filter(
           (a: string) => a !== '-DENABLE_IPO=TRUE',
         )
-        // Disable FetchContent downloads — use bundled or system xxhash/hiredis/fmt
-        // Newer ccache tries to download xxhash from GitHub which fails in CI
-        recipe.build.env.CMAKE_ARGS.push('-DFETCHCONTENT_FULLY_DISCONNECTED=ON')
+        recipe.build.env.CMAKE_ARGS.push('-DBUILD_TESTING=OFF')
       }
     },
     platforms: {
       darwin: {
         prependScript: [
-          // Pre-install xxhash so cmake finds it locally (avoids FetchContent download)
+          // Pre-install xxhash so cmake finds it locally (avoids FetchContent download flake)
           'brew install xxhash 2>/dev/null || true',
         ],
       },
       linux: {
-        prependScript: [
-          'sudo rm -f /usr/include/xxhash.h /usr/lib/x86_64-linux-gnu/libxxhash.* /usr/lib/x86_64-linux-gnu/pkgconfig/libxxhash.pc 2>/dev/null || true',
-        ],
+        // Don't delete system xxhash — ccache needs it. The old override was removing
+        // xxhash to avoid version conflicts, but that breaks newer ccache builds.
         env: {
           CMAKE_ARGS: [
             '-DCMAKE_INSTALL_PREFIX={{prefix}}',
@@ -2281,12 +2278,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
-          // Remove curl.se dep dir to avoid broken include paths — cmake's bundled curl works fine
+          // Remove curl.se dep dir — its cmake config files contain unresolved {{deps.curl.se.prefix}} placeholders
           'rm -rf /tmp/buildkit-deps/curl.se 2>/dev/null || true',
         ],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Force cmake to use its bundled curl (--no-system-curl) on all platforms.
+      // The curl.se S3 package has broken cmake config with unresolved template vars.
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
+          (a: string) => a !== '--system-curl',
+        )
+        if (!recipe.build.env.ARGS.includes('--no-system-curl')) {
+          recipe.build.env.ARGS.push('--no-system-curl')
+        }
+      }
       // Replace hw.concurrency with 1 to prevent OOM during LTO link phase
       // Use regex to handle both {{hw.concurrency}} and {{ hw.concurrency }} (with spaces)
       const hwConcurrencyRe = /\{\{\s*hw\.concurrency\s*\}\}/g
@@ -6916,7 +6923,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // (linux override already exists above at line ~703)
 
   // ─── github.com/google/re2 — fix abseil linking on darwin ──────────
-  // re2 finds abseil headers but not shared libraries; add LDFLAGS for abseil
+  // The Makefile-based `make common-install` step tries to build libre2.dylib but
+  // doesn't know how to link abseil. Skip it and use cmake for everything.
   'github.com/google/re2': {
     platforms: {
       darwin: {
@@ -6928,6 +6936,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'fi',
         ],
       },
+    },
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Remove the `make common-install` Makefile step that fails due to abseil linking.
+      // cmake builds install pkg-config files too, so the Makefile step is redundant.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: string | Record<string, unknown>) => {
+          if (typeof step === 'string' && step.includes('make common-install')) return false
+          return true
+        })
+      }
     },
   },
 
