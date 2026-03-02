@@ -4281,30 +4281,39 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── aws.amazon.com/cli — fix python version constraint ──────────────
+  // ─── aws.amazon.com/cli — use official pre-built binaries ──────────────
 
   'aws.amazon.com/cli': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // aws-cli's bundled flit_core uses ast.Str which was removed in Python 3.12.
-      // S3 only has Python 3.14, so pinning to ~3.11 can't work.
-      // Fix: inject flit_core upgrade after venv creation, then use --no-build-isolation
-      // so pip uses the modern flit_core instead of the bundled old one.
-      if (Array.isArray(recipe.build?.script)) {
-        const newScript: (string | RecipeScriptStep)[] = []
-        for (const step of recipe.build.script) {
-          newScript.push(step)
-          if (typeof step === 'string' && step.includes('bkpyvenv stage')) {
-            // Install modern flit_core (>=3.9) compatible with Python 3.14
-            newScript.push('${{prefix}}/venv/bin/pip install "flit_core>=3.9" "wheel" "setuptools>=64" 2>/dev/null || true')
-          }
-        }
-        // Replace pip install . with --no-build-isolation to use our modern flit_core
-        recipe.build.script = newScript.map((step: string | RecipeScriptStep) => {
-          if (typeof step === 'string' && step.includes('pip install .') && !step.includes('--no-build-isolation')) {
-            return step.replace('pip install .', 'pip install --no-build-isolation .')
-          }
-          return step
-        })
+      // aws-cli deps (ruamel.yaml.clib<=0.2.12) use ast.Str removed in Python 3.14.
+      // S3 only has Python 3.14 so building from source is impossible.
+      // AWS provides official pre-built binaries that bundle Python + all deps.
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.platform}}" = "darwin"; then',
+            '  curl -fSL "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o awscli.pkg',
+            '  pkgutil --expand-full awscli.pkg awscli-expanded',
+            '  mkdir -p "{{prefix}}/bin"',
+            '  cp -R awscli-expanded/aws-cli.pkg/Payload/usr/local/aws-cli "{{prefix}}/aws-cli"',
+            '  ln -sf "../aws-cli/v2/current/bin/aws" "{{prefix}}/bin/aws"',
+            '  ln -sf "../aws-cli/v2/current/bin/aws_completer" "{{prefix}}/bin/aws_completer"',
+            'else',
+            '  if test "{{hw.arch}}" = "aarch64"; then ARCH="aarch64"',
+            '  else ARCH="x86_64"; fi',
+            '  curl -fSL "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o awscli.zip',
+            '  unzip -q awscli.zip',
+            '  mkdir -p "{{prefix}}/bin"',
+            '  cp -R aws/dist "{{prefix}}/aws-cli"',
+            '  ln -sf "../aws-cli/aws" "{{prefix}}/bin/aws"',
+            '  ln -sf "../aws-cli/aws_completer" "{{prefix}}/bin/aws_completer"',
+            'fi',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
       }
     },
   },
