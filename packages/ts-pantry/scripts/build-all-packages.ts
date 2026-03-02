@@ -1103,7 +1103,7 @@ Options:
     'argoproj.github.io/workflows', // Massive Go compilation (>60 min), exceeds per-package timeout
     'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
-    'coder.com/code-server', // Requires Node 22 but S3 has Node 25 (dep resolver ignores semver)
+    // coder.com/code-server removed — switched to pre-built release tarballs
     // cr.yp.to/daemontools removed — removed gcc dep, use xcrun on darwin
     'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
@@ -1146,7 +1146,7 @@ Options:
     'github.com/siderolabs/conform', // Alpha version format in tag
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
     'microsoft.com/markitdown', // Version tags don't exist on GitHub
-    'snyk.io', // Binary distribution, no compilable source
+    // snyk.io removed — switched to pre-built binary download from GitHub
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
     'wez.github.io/wezterm', // Source tarball download fails
@@ -1160,7 +1160,7 @@ Options:
     'pipenv.pypa.io', // Version 3000.0.0 tag doesn't exist on GitHub
     'riverbankcomputing.com/pyqt-builder', // Server returns empty reply
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
-    'surrealdb.com', // Old release tags removed from GitHub
+    // surrealdb.com removed — switched to pre-built binaries from GitHub
     // nasm.us removed — switched version discovery to GitHub releases
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
@@ -1460,7 +1460,7 @@ Options:
     'github.com/aws/aws-sdk-cpp', // cc wrapper breaks stdlib.h include path (fatal error: stdlib.h: No such file or directory)
     'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
     // opendap.org removed — moved ac_cv_sizeof cache vars from ARGS to env exports
-    'aws.amazon.com/cli', // flit_core uses ast.Str removed in Python 3.12, S3 only has Python 3.14
+    // aws.amazon.com/cli removed — upgraded flit_core + --no-build-isolation for Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
     'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
     // modal.com removed — upgraded grpcio-tools pin from 1.59.2 to >=1.68.0 for Python 3.13+ compat

@@ -4285,9 +4285,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'aws.amazon.com/cli': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Pin python to 3.11.x — flit_core uses ast.Str which was removed in 3.12
-      if (recipe.build?.dependencies?.['python.org']) {
-        recipe.build.dependencies['python.org'] = '~3.11'
+      // aws-cli's bundled flit_core uses ast.Str which was removed in Python 3.12.
+      // S3 only has Python 3.14, so pinning to ~3.11 can't work.
+      // Fix: inject flit_core upgrade after venv creation, then use --no-build-isolation
+      // so pip uses the modern flit_core instead of the bundled old one.
+      if (Array.isArray(recipe.build?.script)) {
+        const newScript: (string | RecipeScriptStep)[] = []
+        for (const step of recipe.build.script) {
+          newScript.push(step)
+          if (typeof step === 'string' && step.includes('bkpyvenv stage')) {
+            // Install modern flit_core (>=3.9) compatible with Python 3.14
+            newScript.push('${{prefix}}/venv/bin/pip install "flit_core>=3.9" "wheel" "setuptools>=64" 2>/dev/null || true')
+          }
+        }
+        // Replace pip install . with --no-build-isolation to use our modern flit_core
+        recipe.build.script = newScript.map((step: string | RecipeScriptStep) => {
+          if (typeof step === 'string' && step.includes('pip install .') && !step.includes('--no-build-isolation')) {
+            return step.replace('pip install .', 'pip install --no-build-isolation .')
+          }
+          return step
+        })
       }
     },
   },
@@ -7141,19 +7158,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── coder.com/code-server — install native module dev headers ──────
-
-  'coder.com/code-server': {
-    platforms: {
-      linux: {
-        prependScript: [
-          // Native Node modules (spdlog, keytar) need dev headers at build time
-          'sudo apt-get install -y libsecret-1-dev libx11-dev libxkbfile-dev libkrb5-dev 2>/dev/null || true',
-        ],
-      },
-    },
-  },
-
   // ─── github.com/saagarjha/unxip — arm64-only binary ────────────────
 
   'github.com/saagarjha/unxip': {
@@ -7338,6 +7342,90 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = 'export GOFLAGS="-buildmode=pie"'
           }
         }
+      }
+    },
+  },
+
+  // ─── snyk.io — use pre-built standalone binaries from GitHub ─────────
+  'snyk.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Snyk CLI publishes self-contained pre-built binaries on GitHub releases.
+      // Building from npm source fails with ENOENT cacache race conditions.
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.platform}}" = "darwin"; then',
+            '  if test "{{hw.arch}}" = "aarch64"; then BINARY_NAME="snyk-macos-arm64"',
+            '  else BINARY_NAME="snyk-macos"; fi',
+            'else',
+            '  if test "{{hw.arch}}" = "aarch64"; then BINARY_NAME="snyk-linux-arm64"',
+            '  else BINARY_NAME="snyk-linux"; fi',
+            'fi',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/snyk" "https://github.com/snyk/cli/releases/download/v{{version}}/${BINARY_NAME}"',
+            'chmod +x "{{prefix}}/bin/snyk"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── coder.com/code-server — use pre-built release tarballs ─────────
+  'coder.com/code-server': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // code-server publishes fully self-contained pre-built tarballs on GitHub.
+      // Building from npm fails due to Node version mismatch (requires 22, S3 has 25).
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.platform}}" = "darwin"; then',
+            '  if test "{{hw.arch}}" = "aarch64"; then SUFFIX="macos-arm64"',
+            '  else SUFFIX="macos-amd64"; fi',
+            'else',
+            '  if test "{{hw.arch}}" = "aarch64"; then SUFFIX="linux-arm64"',
+            '  else SUFFIX="linux-amd64"; fi',
+            'fi',
+            'URL="https://github.com/coder/code-server/releases/download/v{{version}}/code-server-{{version}}-${SUFFIX}.tar.gz"',
+            'echo "Downloading code-server from: $URL"',
+            'curl -fSL "$URL" | tar -xz --strip-components=1 -C "{{prefix}}"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── surrealdb.com — use pre-built binaries from GitHub ─────────────
+  'surrealdb.com': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // SurrealDB provides pre-built binaries. Building from source requires Rust
+      // and takes very long. Also fixes phantom version issue (2023.9.1 doesn't exist).
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.platform}}" = "darwin"; then',
+            '  if test "{{hw.arch}}" = "aarch64"; then SUFFIX="darwin-arm64"',
+            '  else SUFFIX="darwin-amd64"; fi',
+            'else',
+            '  if test "{{hw.arch}}" = "aarch64"; then SUFFIX="linux-arm64"',
+            '  else SUFFIX="linux-amd64"; fi',
+            'fi',
+            'URL="https://github.com/surrealdb/surrealdb/releases/download/v{{version}}/surreal-v{{version}}.${SUFFIX}.tgz"',
+            'echo "Downloading SurrealDB from: $URL"',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL "$URL" | tar -xz -C "{{prefix}}/bin"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
       }
     },
   },

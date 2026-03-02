@@ -808,7 +808,8 @@ function parseDepConstraint(dep: string): string | null {
   // Remove comments
   spec = spec.replace(/#.*$/, '').trim()
   // Extract constraint: everything after the domain that starts with a version operator
-  const match = spec.match(/([\^~<>=@]+.*)$/)
+  // Also handle bare version numbers like "nodejs.org 22" or "python.org 3.11"
+  const match = spec.match(/([\^~<>=@]+.*)$/) || spec.match(/\s(\d[\d.]*)$/)
   if (!match) return null
   let constraint = match[1].trim()
   // Strip wrapping quotes
