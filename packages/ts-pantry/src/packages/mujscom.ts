@@ -3,7 +3,7 @@
  *
  * @domain `mujs.com`
  * @programs `mujs`, `mujs-pp`
- * @version `1.3.8` (6 versions available)
+ * @version `1.3.9` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mujs.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mujs"
  * console.log(pkg.description) // "An embeddable Javascript interpreter in C."
  * console.log(pkg.programs)    // ["mujs", "mujs-pp"]
- * console.log(pkg.versions[0]) // "1.3.8" (latest)
+ * console.log(pkg.versions[0]) // "1.3.9" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/mujs-com.md
@@ -81,6 +81,7 @@ export const mujscomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.3.9',
     '1.3.8',
     '1.3.7',
     '1.3.6',
