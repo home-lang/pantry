@@ -1423,8 +1423,19 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       }
     }
   }
+  // Also check if build scripts use version.tag (vendored packages like tart.run)
+  const buildScriptsUseVersionTag = (() => {
+    const scripts = normalizedRecipe.build?.script
+    if (!scripts || !Array.isArray(scripts)) return false
+    return scripts.some((s: string | RecipeScriptStep) => {
+      const run = typeof s === 'string' ? s : (typeof s === 'object' && 'run' in s ? s.run : '')
+      const text = typeof run === 'string' ? run : Array.isArray(run) ? run.join(' ') : ''
+      return text.includes('version.tag') || text.includes('version.raw')
+    })
+  })()
   if (rawDistUrl.includes('version.tag') || rawDistUrl.includes('version.raw')
-    || rawDistRef.includes('version.tag') || rawDistRef.includes('version.raw')) {
+    || rawDistRef.includes('version.tag') || rawDistRef.includes('version.raw')
+    || buildScriptsUseVersionTag) {
     console.log(`🔍 Resolving GitHub tag for version ${version} (URL uses version.tag/raw)...`)
     const resolved = await resolveGitHubTag(yamlContent, version)
     if (resolved) {
