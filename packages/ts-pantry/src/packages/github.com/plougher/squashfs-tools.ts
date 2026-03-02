@@ -3,7 +3,7 @@
  *
  * @domain `github.com/plougher/squashfs-tools`
  * @programs `mksquashfs`, `unsquashfs`, `sqfscat`, `sqfstar`
- * @version `4.7.4` (6 versions available)
+ * @version `4.7.5` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/plougher/squashfs-tools`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "SquashFS-Tools"
  * console.log(pkg.description) // "tools to create and extract Squashfs filesystems"
  * console.log(pkg.programs)    // ["mksquashfs", "unsquashfs", ...]
- * console.log(pkg.versions[0]) // "4.7.4" (latest)
+ * console.log(pkg.versions[0]) // "4.7.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/plougher/squashfs-tools.md
@@ -82,6 +82,7 @@ export const squashfstoolsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.7.5',
     '4.7.4',
     '4.7.3',
     '4.7.2',
