@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 13 versions</summary>
+<summary>Show all 14 versions</summary>
 
+- `9.8.0`
 - `9.7.1`, `9.7.0`
 - `9.6.2`, `9.6.1`, `9.6.0`
 - `9.5.1`, `9.5.0`
@@ -36,13 +37,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `9.7.1`
+**Latest Version**: `9.8.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +proj.org@9.7.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +proj.org@9.8.0 -- $SHELL -i
 ```
 
 ## Dependencies
