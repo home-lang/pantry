@@ -2,7 +2,7 @@
  * **folly** - An open-source C++ library developed and used at Facebook.
  *
  * @domain `facebook.com/folly`
- * @version `2026.2.23.0` (142 versions available)
+ * @version `2026.3.2.0` (143 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install facebook.com/folly`
@@ -16,7 +16,7 @@
  * const pkg = pantry.facebookcomfolly
  * console.log(pkg.name)        // "folly"
  * console.log(pkg.description) // "An open-source C++ library developed and used a..."
- * console.log(pkg.versions[0]) // "2026.2.23.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/facebook-com/folly.md
@@ -88,6 +88,7 @@ export const facebookcomfollyPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.2.0',
     '2026.2.23.0',
     '2026.2.16.0',
     '2026.2.9.0',

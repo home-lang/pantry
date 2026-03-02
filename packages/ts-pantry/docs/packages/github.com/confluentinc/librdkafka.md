@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
-- `2.13.0`
+- `2.13.2`, `2.13.0`
 - `2.12.1`, `2.12.0`
 - `2.11.1`, `2.11.0`
 - `2.10.1`, `2.10.0`
@@ -41,13 +41,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `2.13.0`
+**Latest Version**: `2.13.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/confluentinc/librdkafka@2.13.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/confluentinc/librdkafka@2.13.2 -- $SHELL -i
 ```
 
 ## Dependencies

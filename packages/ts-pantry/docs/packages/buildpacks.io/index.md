@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 18 versions</summary>
+<summary>Show all 19 versions</summary>
 
-- `0.40.0`
+- `0.40.1`, `0.40.0`
 - `0.39.1`, `0.39.0`
 - `0.38.2`, `0.38.1`, `0.38.0`
 - `0.37.0`
@@ -38,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.40.0`
+**Latest Version**: `0.40.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +buildpacks.io@0.40.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +buildpacks.io@0.40.1 -- $SHELL -i
 ```
 
 ## Usage Examples
