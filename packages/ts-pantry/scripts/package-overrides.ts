@@ -7324,4 +7324,21 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
   },
+
+  // ─── ipfs.tech — create missing ldflags.diff for linux -buildmode=pie ──
+  'ipfs.tech': {
+    modifyRecipe: (recipe) => {
+      // The recipe references props/ldflags.diff which doesn't exist even upstream.
+      // Replace the patch step with an inline GOFLAGS export for -buildmode=pie.
+      // See: https://github.com/docker-library/golang/issues/402#issuecomment-982204575
+      if (recipe.build && typeof recipe.build === 'object' && !Array.isArray(recipe.build) && Array.isArray(recipe.build.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && 'run' in step && typeof step.run === 'string' && step.run.includes('ldflags.diff')) {
+            recipe.build.script[i] = 'export GOFLAGS="-buildmode=pie"'
+          }
+        }
+      }
+    },
+  },
 }

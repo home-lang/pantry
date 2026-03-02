@@ -1390,12 +1390,18 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   mkdirSync(buildDir, { recursive: true })
   mkdirSync(prefix, { recursive: true })
 
-  // Copy props directory if it exists (patches, proxy scripts, etc.)
-  const propsDir = join(dirname(pantryPath), 'props')
-  if (existsSync(propsDir)) {
-    const destProps = join(buildDir, 'props')
-    execSync(`cp -a "${propsDir}" "${destProps}"`, { stdio: 'pipe' })
-    console.log(`📋 Copied props/ directory to build dir`)
+  // Copy props to build dir: sibling files of package.yml become buildDir/props/
+  // This mirrors pkgx's brewkit behavior where the package directory is rsynced into props/
+  const packageDir = dirname(pantryPath)
+  const destProps = join(buildDir, 'props')
+  const siblings = readdirSync(packageDir).filter(f => f !== 'package.yml')
+  if (siblings.length > 0) {
+    mkdirSync(destProps, { recursive: true })
+    for (const entry of siblings) {
+      const srcPath = join(packageDir, entry)
+      execSync(`cp -a "${srcPath}" "${destProps}/"`, { stdio: 'pipe' })
+    }
+    console.log(`📋 Copied ${siblings.length} props files to build dir: ${siblings.join(', ')}`)
   }
 
   // Determine version.tag from the versions.strip pattern in YAML

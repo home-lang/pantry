@@ -853,11 +853,80 @@ cli
         console.log('Warning: No projects directory found in extracted pantry')
       }
 
-      // Clean up temporary directories and files
+      // Clean up pantry.tgz temp files
       fs.unlinkSync(tempPath)
       if (fs.existsSync(tempExtractDir)) {
         fs.rmSync(tempExtractDir, { recursive: true, force: true })
       }
+
+      // Download props files (patches, wrapper scripts, configs) from the pkgx/pantry GitHub repo
+      // The pantry.tgz only contains package.yml files, but ~73 packages reference
+      // sibling files via props/ in their build scripts (pkgx's brewkit rsyncs the
+      // package directory into buildDir/props/)
+      console.log('\nDownloading props files from pkgx/pantry GitHub repo...')
+      const ghArchiveUrl = 'https://github.com/pkgxdev/pantry/archive/refs/heads/main.tar.gz'
+      const ghResponse = await fetch(ghArchiveUrl)
+      if (ghResponse.ok) {
+        const ghBuffer = await ghResponse.arrayBuffer()
+        const ghTempPath = path.join(process.cwd(), 'pantry-gh.tar.gz')
+        const ghExtractDir = path.join(process.cwd(), 'temp-pantry-gh')
+
+        fs.writeFileSync(ghTempPath, new Uint8Array(ghBuffer))
+        console.log(`Downloaded GitHub archive: ${(ghBuffer.byteLength / 1024 / 1024).toFixed(1)} MB`)
+
+        if (fs.existsSync(ghExtractDir)) {
+          fs.rmSync(ghExtractDir, { recursive: true, force: true })
+        }
+        fs.mkdirSync(ghExtractDir, { recursive: true })
+
+        const ghTar = spawn('tar', ['-xzf', ghTempPath, '-C', ghExtractDir, '--strip-components=1'], {
+          stdio: 'inherit',
+        })
+        await new Promise((resolve, reject) => {
+          ghTar.on('close', (code) => code === 0 ? resolve(code) : reject(new Error(`tar failed: ${code}`)))
+          ghTar.on('error', reject)
+        })
+
+        // Copy non-package.yml files (patches, scripts, configs) from GitHub projects/
+        const ghProjectsDir = path.join(ghExtractDir, 'projects')
+        if (fs.existsSync(ghProjectsDir)) {
+          let propsAdded = 0
+          let propsUpdated = 0
+
+          const copyProps = (srcDir: string, destDir: string) => {
+            if (!fs.existsSync(srcDir)) return
+            for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
+              const srcPath = path.join(srcDir, entry.name)
+              const destPath = path.join(destDir, entry.name)
+              if (entry.isDirectory()) {
+                // Recurse into subdirectories (e.g. gnu.org/gcc/)
+                copyProps(srcPath, destPath)
+              } else if (entry.name !== 'package.yml') {
+                // Copy non-package.yml files (patches, scripts, etc.)
+                fs.mkdirSync(destDir, { recursive: true })
+                fs.copyFileSync(srcPath, destPath)
+                if (fs.existsSync(destPath)) {
+                  propsUpdated++
+                } else {
+                  propsAdded++
+                }
+              }
+            }
+          }
+
+          copyProps(ghProjectsDir, pantryDirPath)
+          console.log(`Props files: ${propsAdded + propsUpdated} synced (${propsAdded} new, ${propsUpdated} updated)`)
+        }
+
+        // Clean up GitHub archive temp files
+        fs.unlinkSync(ghTempPath)
+        if (fs.existsSync(ghExtractDir)) {
+          fs.rmSync(ghExtractDir, { recursive: true, force: true })
+        }
+      } else {
+        console.log(`Warning: Could not download GitHub archive (${ghResponse.status}), props files will be missing`)
+      }
+
       console.log('Cleaned up temporary files')
 
       // Count final projects
