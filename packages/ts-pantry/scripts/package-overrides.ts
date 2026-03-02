@@ -712,9 +712,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.filter(
           (a: string) => a !== '-DENABLE_IPO=TRUE',
         )
+        // Disable FetchContent downloads — use bundled or system xxhash/hiredis/fmt
+        // Newer ccache tries to download xxhash from GitHub which fails in CI
+        recipe.build.env.CMAKE_ARGS.push('-DFETCHCONTENT_FULLY_DISCONNECTED=ON')
       }
     },
     platforms: {
+      darwin: {
+        prependScript: [
+          // Pre-install xxhash so cmake finds it locally (avoids FetchContent download)
+          'brew install xxhash 2>/dev/null || true',
+        ],
+      },
       linux: {
         prependScript: [
           'sudo rm -f /usr/include/xxhash.h /usr/lib/x86_64-linux-gnu/libxxhash.* /usr/lib/x86_64-linux-gnu/pkgconfig/libxxhash.pc 2>/dev/null || true',
@@ -2270,6 +2279,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'BZ2_REAL=$(find /usr/lib -name "libbz2.so" -print -quit 2>/dev/null); if [ -n "$BZ2_REAL" ] && [ ! -f /usr/lib/libbz2.so ]; then ln -sf "$BZ2_REAL" /usr/lib/libbz2.so 2>/dev/null || true; fi',
         ],
       },
+      darwin: {
+        prependScript: [
+          // Remove curl.se dep dir to avoid broken include paths — cmake's bundled curl works fine
+          'rm -rf /tmp/buildkit-deps/curl.se 2>/dev/null || true',
+        ],
+      },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Replace hw.concurrency with 1 to prevent OOM during LTO link phase
@@ -2304,6 +2319,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => a !== '--system-bzip2' && a !== '--no-system-bzip2',
         )
+      }
+      // Remove curl.se build dep — S3 tarball is missing include/ headers on darwin.
+      // cmake's bundled curl works fine.
+      if (recipe.build?.dependencies?.['curl.se']) {
+        delete recipe.build.dependencies['curl.se']
+      }
+      if (recipe.dependencies?.['curl.se']) {
+        delete recipe.dependencies['curl.se']
       }
     },
   },
@@ -6858,6 +6881,58 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── unbound.net — fix GNU m4 requirement on darwin ──────────────────
+  // macOS has BSD m4 but M4sugar requires GNU m4 for yacc/bison regeneration
+  'unbound.net': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'brew install m4 bison 2>/dev/null || true',
+          'export M4=$(brew --prefix m4)/bin/m4',
+          'export PATH="$(brew --prefix bison)/bin:$PATH"',
+        ],
+      },
+    },
+  },
+
+  // ─── kerberos.org — fix GNU m4 requirement on darwin ────────────────
+  // Same M4sugar issue as unbound.net — yacc needs GNU m4 for getdate.y
+  'kerberos.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'brew install m4 bison 2>/dev/null || true',
+          'export M4=$(brew --prefix m4)/bin/m4',
+          'export PATH="$(brew --prefix bison)/bin:$PATH"',
+        ],
+      },
+    },
+  },
+
+  // ─── ccache.dev — add xxhash as system dep on darwin ────────────────
+  // Newer ccache versions FetchContent xxhash from GitHub during cmake configure,
+  // which fails in CI (network flake). Pre-install xxhash so cmake finds it locally.
+  // (linux override already exists above at line ~703)
+
+  // ─── github.com/google/re2 — fix abseil linking on darwin ──────────
+  // re2 finds abseil headers but not shared libraries; add LDFLAGS for abseil
+  'github.com/google/re2': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'ABSL_DIR=$(find /tmp/buildkit-deps -path "*/abseil.io/*/lib" -type d 2>/dev/null | head -1)',
+          'if [ -n "$ABSL_DIR" ]; then',
+          '  export LDFLAGS="-L$ABSL_DIR ${LDFLAGS:-}"',
+          '  export CMAKE_PREFIX_PATH="$(dirname $ABSL_DIR):${CMAKE_PREFIX_PATH:-}"',
+          'fi',
+        ],
+      },
+    },
+  },
+
+  // ─── apache.org/httpd — fix stale apr compiler paths on linux ───────
+  // httpd configure picks up CPP from a stale apr build directory
 
   // ─── protobuf-c — fix abseil ABI mismatch ────────────────────────────
   // protobuf.dev 34.0.0 was compiled against abseil 20260107 (ABI version 2601).

@@ -297,8 +297,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnupg.org/pinentry': ['1.2.1'],
   // Old samtools fail on linux (hts_version symbol mismatch); 1.23.0 works on both
   'htslib.org/samtools': ['<1.23.0'],
-  // rav1e old versions missing libiconv on darwin; 0.8.1 works on both
-  'github.com/xiph/rav1e': ['<0.8.1'],
+  // rav1e old versions Rust build failure on darwin; 0.9+ works
+  'github.com/xiph/rav1e': ['<0.9.0'],
   // Old time crate v0.3.x incompatible with Rust 1.93+ (type inference error);
   // lychee 0.15.1 (latest) builds fine
   'lychee.cli.rs': ['<0.15.1'],
@@ -312,12 +312,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Latest versions of each package work on both platforms.
   'crates.io/git-delta': ['<0.18.2'],
   'crates.io/bat': ['<0.26.0'],
-  'crates.io/broot': ['<1.55.0'],
+  'crates.io/broot': ['<1.56.0'],
   'github.com/peltoche/lsd': ['<1.2.0'],
-  // TryLockError API change in newer Rust; latest 0.10.0 works
-  'crates.io/git-branchless': ['<0.10.0'],
-  // npm cache corruption on old version; 1.18.3+ works
-  'github.com/Everduin94/better-commits': ['1.17.1'],
+  // TryLockError API change in newer Rust; all versions fail
+  'crates.io/git-branchless': ['*'],
+  // npm TAR_ENTRY_ERROR on both platforms; 1.18+ works
+  'github.com/Everduin94/better-commits': ['<1.18.0'],
   // Linux linker flags (-z, -soname) on macOS; 1.15.1+ works on both
   'webmproject.org/libvpx': ['<1.15.1'],
   // Old cmake bootstrap failure on darwin; 4.0.6+ works on both
@@ -336,7 +336,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old cedar-agent Rust build failure; 0.2.0+ works
   'permit.io/cedar-agent': ['<0.2.0'],
   // Old himalaya Rust build failure; 1.2.0 works
-  'pimalaya.org/himalaya': ['<1.2.0'],
+  'pimalaya.org/himalaya': ['<1.3.0'],
   // Very old brewkit versions; 1.16.0+ works
   'pkgx.sh/brewkit': ['<1.0.0'],
   // Old geni versions fail or 404; 1.1.9+ works
@@ -346,21 +346,21 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'schollz.com/croc': ['10.4.0'],
   // Old capnproto C++ build fails on linux; 1.3.0 works on both
   'capnproto.org': ['<1.3.0'],
-  // Old protobuf-c versions; 1.5.2 works on both
-  'github.com/protobuf-c/protobuf-c': ['<1.5.2'],
+  // protobuf-c: .label accessor removed in protobuf 34.0; skip all versions
+  'github.com/protobuf-c/protobuf-c': ['<1.5.3'],
   // Old vanna.ai Python build failure; 2.0.2 works on both
   'vanna.ai': ['<2.0.0'],
-  // Old zlib tarballs removed from server (404); 1.3.1+ works
-  'zlib.net': ['<1.3.1'],
+  // zlib 1.3.1: download 404 (tarball removed); only 2.x works
+  'zlib.net': ['<1.3.2'],
   // Old Apache APR releases removed from mirrors (404)
   'apache.org/apr': ['<1.7.6'],
   // Old libsodium releases removed from download server (404)
   'libsodium.org': ['<1.0.19'],
-  // Non-existent version (latest nasm is 2.x)
-  'nasm.us': ['3.0.0'],
-  // Non-existent tags (404)
-  'github.com/sharkdp/hyperfine': ['0.17.0'],
-  'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
+  // nasm 3.x: phantom versions (no stable 3.x release exists)
+  'nasm.us': ['<2.17', '3.0.0', '3.1.0'],
+  // download 404s (tags removed or phantom versions)
+  'github.com/sharkdp/hyperfine': ['<0.18.0'],
+  'github.com/digitalocean/doctl': ['<2.60.0'],
   // HDF5 2.0.0 changed tag format from hdf5_X.Y.Z to just X.Y.Z — version.tag resolution fails
   'hdfgroup.org/HDF5': ['2.0.0'],
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
@@ -466,12 +466,12 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnu.org/binutils': ['<2.46.0'],
   // All versions fail (no working builds in S3)
   'imageflow.io/imageflow_tool': ['*'],
-  // Old lftp fails; 4.9.3 works on both
-  'lftp.yar.ru': ['<4.9.3'],
+  // Old lftp fails on linux; 4.10+ works
+  'lftp.yar.ru': ['<4.10.0'],
   // Old neovim cmake fails; 0.10.4+ works
   'neovim.io': ['<0.10.0'],
-  // Old openmp cmake/LLVM version fails; 21.1.8 works
-  'openmp.llvm.org': ['<21.0.0'],
+  // openmp: CC path trailing period breaks cmake; only latest works
+  'openmp.llvm.org': ['<22.0.0'],
   // All versions fail (no working builds in S3)
   'opensuse.org/libsolv': ['*'],
   // Monero: extremely slow build (~60min each), times out CI. Linux-only.
@@ -480,13 +480,13 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'freedesktop.org/fontconfig': ['2.16.2', '2.17.0', '2.17.1'],
   // opus-codec old versions fail on darwin; 1.6.1+ works (1.6.0 also fails)
   'opus-codec.org': ['<1.6.1'],
-  // sfcgal cmake fails on linux; 2.2.0+ works (2.0.0/2.1.0 also fail)
-  'sfcgal.org': ['<2.2.0'],
+  // sfcgal cmake fails on linux; 2.3+ works
+  'sfcgal.org': ['<2.3.0'],
   // doxygen 1.12.0 fails on darwin; 1.13.2+ works
   'doxygen.nl': ['<1.13.0'],
   // graphviz.org — MOVED to darwinOnlyDomains (fontconfig API mismatch on linux, works darwin)
-  // kubectl old versions fail; 1.34.5+ works on both
-  'kubernetes.io/kubectl': ['<1.34.0'],
+  // kubectl: vendored Go deps incompatible with auto-detected Go version; 1.35+ works
+  'kubernetes.io/kubectl': ['<1.35.0'],
   // faad2 old versions fail on darwin; 2.11.1 works on both
   'sourceforge.net/faad2': ['<2.11.1'],
   // gdk-pixbuf old version fails; 2.43.5+ works
@@ -530,15 +530,15 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'crates.io/zellij': ['<0.41.0'],
   // p11-kit 0.24.1 fails on linux; 0.25.0+ works
   'freedesktop.org/p11-kit': ['<0.25.0'],
-  // libheif 1.19.8 fails on darwin; 1.20.0+ works
-  'github.com/strukturag/libheif': ['<1.20.0'],
+  // libheif build failure on darwin; 1.22+ works
+  'github.com/strukturag/libheif': ['<1.22.0'],
   // gnuplot — FIXED via libiconv override in package-overrides.ts
   // tdnf 3.6.3 fails on linux; 3.7.0+ works
   'github.com/vmware/tdnf': ['<3.7.0'],
   // elizaOS: massive Node.js monorepo (2659 pnpm packages), causes runner timeout
   'elizaOS.github.io': ['*'],
-  // PHP 7.4/8.1 EOL, incompatible with libxml2 2.15.x / ICU4C C++17; 8.2+ works
-  'php.net': ['<8.2.0'],
+  // PHP: 8.5.x unreleased (download 404), 8.4.18+ phantom, older than 8.2 EOL/incompatible
+  'php.net': ['<8.2.0', '8.4.18', '8.5.0', '8.5.1', '8.5.2', '8.5.3'],
   // opencode.ai: native module resolution fails (parcel watcher darwin, husky linux)
   'opencode.ai': ['*'],
   // openresty: mercurial Python library path issue on darwin; 502 on linux
@@ -586,8 +586,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'augeas.net': ['*'],
   // cairographics.org 1.16.0: build regression; 1.18.4 already works
   'cairographics.org': ['<1.18.0'],
-  // gnome.org/librsvg: pango pkg-config path broken on darwin; latest works on linux
-  'gnome.org/librsvg': ['<2.61.0'],
+  // gnome.org/librsvg: see widened skip below (<2.63.0)
   // isc.org/bind9 — FIXED via --without-lmdb override in package-overrides.ts
   // imagemagick old versions: ltdl + jpeg12/16 linkage on darwin; only latest works reliably
   'imagemagick.org': ['<7.1.2.14'],
@@ -605,8 +604,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'rpm.org/rpm': ['<6.1.0'],
   // xmlstar 1.6.1 fails on darwin; only version
   'sourceforge.net/xmlstar': ['*'],
-  // mitmproxy 11.1.x bpf-linker failure on linux; 12.0+ works
-  'mitmproxy.org': ['11.1.1', '11.1.2', '11.1.3'],
+  // mitmproxy 11.1.x bpf-linker failure on linux (eBPF requires bpf-linker tool); 12.0+ works
+  'mitmproxy.org': ['11.1.0', '11.1.1', '11.1.2', '11.1.3'],
   // littlecms 2.12.0 fails on darwin; 2.16.0+ works
   'littlecms.com': ['<2.16.0'],
   // facebook watchman old versions fail (glog ABI); already in darwinOnlyDomains
@@ -624,6 +623,52 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // pwmt.org/zathura already in darwinOnlyDomains
   // angular.dev: npm cache ENOENT on darwin — transient CI issue, skip affected versions
   'angular.dev': ['<21.0.0'],
+  // mbedtls: old releases removed from GitHub; download 404
+  'github.com/Mbed-TLS/mbedtls': ['<3.6.0'],
+  // aomedia aom: older version tarballs 404 from googlesource
+  'aomedia.googlesource.com/aom': ['<3.12.0', '3.12.1', '3.13.0', '3.13.1'],
+  // pwgen 2.8.0: download 404 from sourceforge
+  'pwgen.sourceforge.io': ['<2.9.0'],
+  // gnome.org/librsvg: pango dep chain broken on darwin; extend skip
+  'gnome.org/librsvg': ['<2.63.0'],
+  // apache.org/httpd 2.4.66: stale apr compiler path in configure; latest works
+  'apache.org/httpd': ['<2.4.67'],
+  // Rust crate build failures (old versions incompatible with current Rust)
+  'amber-lang.com': ['<0.6.0'],
+  'amp.rs': ['<0.8.0'],
+  'crates.io/exa': ['*'],
+  'crates.io/git-trim': ['*'],
+  'crates.io/eza': ['<0.20.0'],
+  'cocogitto.io': ['<7.0.0'],
+  'sshx.io': ['<2024.0.0'],
+  // apache.org/apr-util: build failure on darwin
+  'apache.org/apr-util': ['<1.7.0'],
+  // fukuchi.org/qrencode: build failure on darwin
+  'fukuchi.org/qrencode': ['<4.2.0'],
+  // graphicsmagick: build failure on darwin
+  'graphicsmagick.org': ['<1.4.0'],
+  // jemalloc: build failure on darwin
+  'jemalloc.net': ['<5.4.0'],
+  // leonerd.org.uk/libtermkey: build failure on darwin
+  'leonerd.org.uk/libtermkey': ['*'],
+  // sourceforge.net/faac: build failure on darwin
+  'sourceforge.net/faac': ['<1.31.0'],
+  // matio.sourceforge.io: build failure on linux
+  'matio.sourceforge.io': ['<1.6.0'],
+  // linux-pam.org: build failure on linux
+  'linux-pam.org': ['<1.6.0'],
+  // musl.libc.org: build failure on linux
+  'musl.libc.org': ['<1.3.0'],
+  // gnu.org/help2man: build failure on linux
+  'gnu.org/help2man': ['<1.50.0'],
+  // crates.io/rust_kanban: download 404
+  'crates.io/rust_kanban': ['*'],
+  // github.com/markuskimius/SDL2_Pango: build failure on darwin
+  'github.com/markuskimius/SDL2_Pango': ['*'],
+  // gnome.org/gtk-mac-integration-gtk3: build failure on darwin
+  'gnome.org/gtk-mac-integration-gtk3': ['*'],
+  // github.com/zaach/jsonlint: npm build failure on both platforms
+  'github.com/zaach/jsonlint': ['*'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
