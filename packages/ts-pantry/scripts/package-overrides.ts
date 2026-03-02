@@ -2286,13 +2286,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Force cmake to use its bundled curl (--no-system-curl) on all platforms.
       // The curl.se S3 package has broken cmake config with unresolved template vars.
+      // Remove --system-curl from bootstrap ARGS — the curl.se S3 package has broken
+      // CURLConfig.cmake with unresolved {{deps}} template vars. Use bundled curl instead.
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.filter(
           (a: string) => a !== '--system-curl',
         )
-        if (!recipe.build.env.ARGS.includes('--no-system-curl')) {
-          recipe.build.env.ARGS.push('--no-system-curl')
-        }
+      }
+      // Remove CURL_LIBRARY and CURL_INCLUDE_DIR from platform ARGS (they reference
+      // {{deps.curl.se.prefix}} which won't resolve after we remove curl.se dep)
+      if (Array.isArray(recipe.build?.env?.darwin?.ARGS)) {
+        recipe.build.env.darwin.ARGS = recipe.build.env.darwin.ARGS.filter(
+          (a: string) => !a.includes('CURL_LIBRARY') && !a.includes('CURL_INCLUDE_DIR'),
+        )
+      }
+      if (Array.isArray(recipe.build?.env?.linux?.ARGS)) {
+        recipe.build.env.linux.ARGS = recipe.build.env.linux.ARGS.filter(
+          (a: string) => !a.includes('CURL_LIBRARY') && !a.includes('CURL_INCLUDE_DIR'),
+        )
       }
       // Replace hw.concurrency with 1 to prevent OOM during LTO link phase
       // Use regex to handle both {{hw.concurrency}} and {{ hw.concurrency }} (with spaces)
@@ -6922,9 +6933,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // which fails in CI (network flake). Pre-install xxhash so cmake finds it locally.
   // (linux override already exists above at line ~703)
 
-  // ─── github.com/google/re2 — fix abseil linking on darwin ──────────
-  // The Makefile-based `make common-install` step tries to build libre2.dylib but
-  // doesn't know how to link abseil. Skip it and use cmake for everything.
+  // ─── github.com/google/re2 — fix abseil ABI mismatch + Makefile linking ──
+  // The YAML pins abseil.io: ^20250127 which pulls 20250127.x from S3, but brew
+  // installs 20260107 headers. Compiled objects reference lts_20260107 symbols.
+  // Fix: widen abseil constraint + remove the Makefile step that fails linking.
   'github.com/google/re2': {
     platforms: {
       darwin: {
@@ -6938,6 +6950,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Widen abseil constraint to pick up 20260107+ from S3 (matches brew headers)
+      if (recipe.dependencies?.['abseil.io']) {
+        recipe.dependencies['abseil.io'] = '>=20260107'
+      }
       // Remove the `make common-install` Makefile step that fails due to abseil linking.
       // cmake builds install pkg-config files too, so the Makefile step is redundant.
       if (Array.isArray(recipe.build?.script)) {
