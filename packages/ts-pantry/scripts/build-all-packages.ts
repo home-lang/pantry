@@ -361,6 +361,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Non-existent tags (404)
   'github.com/sharkdp/hyperfine': ['0.17.0'],
   'github.com/digitalocean/doctl': ['2.59.2', '2.59.3'],
+  // HDF5 2.0.0 changed tag format from hdf5_X.Y.Z to just X.Y.Z — version.tag resolution fails
+  'hdfgroup.org/HDF5': ['2.0.0'],
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
   'github.com/TomWright/dasel': ['3.1.5'],
   // mitmproxy.org 11.1.x — REMOVED: bpf-linker issue is linux-only, darwin builds should work
