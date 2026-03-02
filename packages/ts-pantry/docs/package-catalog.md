@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-02T20:26:54.198Z
+- **Last Updated**: 2026-03-02T21:10:41.679Z
 
 ## Table of Contents
 
@@ -124,7 +124,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[consul.io](./packages/consul.io/index.md)** () | Consul is a distributed, highly available, and data center aware solution to connect and configur... | consul | 1.22.5 (+20) | `pkgx consul` |
 | **[docker.com/compose](./packages/docker.com/compose/index.md)** () | Define and run multi-container applications with Docker | docker-compose | 5.1.0 (+69) | `pkgx docker-compose` |
 | **[fluxcd.io/flux2](./packages/fluxcd.io/flux2/index.md)** () | Open and extensible continuous delivery solution for Kubernetes. Powered by GitOps Toolkit. | flux | 2.8.1 (+21) | `pkgx flux` |
-| **[github.com/aws-cloudformation/cfn-lint](./packages/github.com/aws-cloudformation/cfn-lint.md)** () | Validate CloudFormation templates against the CloudFormation spec | cfn-lint | 1.45.0 (+171) | `pkgx cfn-lint` |
+| **[github.com/aws-cloudformation/cfn-lint](./packages/github.com/aws-cloudformation/cfn-lint.md)** () | Validate CloudFormation templates against the CloudFormation spec | cfn-lint | 1.46.0 (+172) | `pkgx cfn-lint` |
 | **[github.com/minamijoyo/tfupdate](./packages/github.com/minamijoyo/tfupdate.md)** () | Update version constraints in your Terraform configurations | tfupdate | 0.9.3 (+9) | `pkgx tfupdate` |
 | **[github.com/terraform-linters/tflint](./packages/github.com/terraform-linters/tflint.md)** () | A Pluggable Terraform Linter | tflint | 0.61.0 (+22) | `pkgx tflint` |
 | **[helm.sh](./packages/helm.sh/index.md)** () | The Kubernetes Package Manager | helm | 4.1.1 (+52) | `pkgx helm` |
@@ -245,7 +245,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.109.5 (+40) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
-| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.95 (+2775) | `pkgx vi` |
+| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.96 (+2776) | `pkgx vi` |
 | **[wezfurlong.org/wezterm](./packages/wezfurlong.org/wezterm/index.md)** () | A GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemente... | wezterm | 2024.2.3 (+0) | `pkgx wezterm` |
 
 ## CLI Tools & Utilities
@@ -385,7 +385,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 |---------|-------------|----------|----------|----------|
 | **[appium.io](./packages/appium.io/index.md)** () | Cross-platform automation framework for all kinds of apps, built on top of the W3C WebDriver prot... | appium | 3.0.2 (+38) | `pkgx appium` |
 | **[fastlane.tools](./packages/fastlane.tools/index.md)** () | 🚀 The easiest way to automate building and releasing your iOS and Android apps | fastlane | 2.232.2 (+30) | `pkgx fastlane` |
-| **[flutter.dev](./packages/flutter.dev/index.md)** () | Flutter makes it easy and fast to build beautiful apps for mobile and beyond | flutter, dart | 3.41.2 (+73) | `pkgx flutter` |
+| **[flutter.dev](./packages/flutter.dev/index.md)** () | Flutter makes it easy and fast to build beautiful apps for mobile and beyond | flutter, dart | 3.41.3 (+74) | `pkgx flutter` |
 | **[gradle.org](./packages/gradle.org/index.md)** () | Open-source build automation tool based on the Groovy and Kotlin DSL | gradle | 9.3.1 (+26) | `pkgx gradle` |
 
 ## Testing
