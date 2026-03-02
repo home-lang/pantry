@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/texinfo`
  * @programs `info`, `install-info`, `makeinfo`, `pdftexi2dvi`, `pod2texi`, ... (+4 more)
- * @version `7.2.0` (5 versions available)
+ * @version `7.3.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/texinfo`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "texinfo"
  * console.log(pkg.description) // "Official documentation format of the GNU project"
  * console.log(pkg.programs)    // ["info", "install-info", ...]
- * console.log(pkg.versions[0]) // "7.2.0" (latest)
+ * console.log(pkg.versions[0]) // "7.3.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/texinfo.md
@@ -83,6 +83,7 @@ export const gnuorgtexinfoPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.3.0',
     '7.2.0',
     '7.1.1',
     '7.1.0',

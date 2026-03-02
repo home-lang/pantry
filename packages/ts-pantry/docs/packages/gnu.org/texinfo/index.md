@@ -33,21 +33,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 5 versions</summary>
+<summary>Show all 6 versions</summary>
 
+- `7.3.0`
 - `7.2.0`
 - `7.1.1`, `7.1.0`
 - `7.0.3`, `7.0.1`
 
 </details>
 
-**Latest Version**: `7.2.0`
+**Latest Version**: `7.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnu.org/texinfo@7.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnu.org/texinfo@7.3.0 -- $SHELL -i
 ```
 
 ## Dependencies
