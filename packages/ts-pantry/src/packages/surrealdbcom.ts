@@ -3,7 +3,7 @@
  *
  * @domain `surrealdb.com`
  * @programs `surreal`
- * @version `2023.9.1` (65 versions available)
+ * @version `2023.9.1` (66 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install surrealdb.com`
@@ -76,6 +76,7 @@ export const surrealdbcomPackage = {
   */
   versions: [
     '2023.9.1',
+    '3.0.2',
     '3.0.1',
     '3.0.0',
     '2.6.2',
