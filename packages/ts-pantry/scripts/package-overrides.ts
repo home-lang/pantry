@@ -5213,6 +5213,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
       if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+      // Constrain boost to <1.89 to match folly's soname (folly links boost 1.88.0)
+      if (recipe.dependencies?.['boost.org']) {
+        recipe.dependencies['boost.org'] = '<1.89'
+      }
       // Remove linux gnu.org/gcc build dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -5251,6 +5255,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
       if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+      // Constrain boost to <1.89 to match folly's soname (folly links boost 1.88.0)
+      if (recipe.build?.dependencies?.['boost.org']) {
+        recipe.build.dependencies['boost.org'] = '<1.89'
+      }
+      if (recipe.dependencies?.['boost.org']) {
+        recipe.dependencies['boost.org'] = '<1.89'
+      }
       // Remove linux gnu.org/gcc build dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
@@ -5294,6 +5305,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
       if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+      // Constrain boost to <1.89 to match folly's soname (folly links boost 1.88.0)
+      if (recipe.dependencies?.['boost.org']) {
+        recipe.dependencies['boost.org'] = '<1.89'
+      }
       // Fix sed steps: the YAML parser truncates multi-line plain scalar continuation,
       // so 'run: sed -i -E\n  -e "..." FBThriftTargets.cmake' becomes just 'sed -i -E'.
       // Reconstruct the full commands. The sed wrapper in buildkit.ts handles -i BSD compat.
@@ -5409,6 +5424,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
       if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
       if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+      // Add boost<1.89 as build dep to match folly's soname (folly links boost 1.88.0)
+      if (!recipe.build) recipe.build = {} as NormalizedRecipe['build']
+      if (!recipe.build!.dependencies) recipe.build!.dependencies = {}
+      recipe.build!.dependencies['boost.org'] = '<1.89'
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
