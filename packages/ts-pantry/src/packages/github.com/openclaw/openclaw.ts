@@ -2,7 +2,7 @@
  * **openclaw** - pkgx package
  *
  * @domain `github.com/openclaw/openclaw`
- * @version `2026.3.1` (3 versions available)
+ * @version `2026.3.2` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/openclaw/openclaw`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.githubcomopenclawopenclaw
  * console.log(pkg.name)        // "openclaw"
- * console.log(pkg.versions[0]) // "2026.3.1" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/openclaw/openclaw.md
@@ -71,6 +71,7 @@ export const openclawPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.2',
     '2026.3.1',
     '2026.2.26',
     '2026.2.25',

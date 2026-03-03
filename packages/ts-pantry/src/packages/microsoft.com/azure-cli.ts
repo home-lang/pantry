@@ -3,7 +3,7 @@
  *
  * @domain `microsoft.com/azure-cli`
  * @programs `az`
- * @version `2.83.0` (42 versions available)
+ * @version `2.84.0` (43 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install microsoft.com/azure-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "az"
  * console.log(pkg.description) // "Azure Command-Line Interface"
  * console.log(pkg.programs)    // ["az"]
- * console.log(pkg.versions[0]) // "2.83.0" (latest)
+ * console.log(pkg.versions[0]) // "2.84.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/microsoft-com/azure-cli.md
@@ -70,6 +70,7 @@ export const microsoftcomazurecliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.84.0',
     '2.83.0',
     '2.82.0',
     '2.81.0',
