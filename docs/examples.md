@@ -604,7 +604,7 @@ CMD ["node", "server.js"]
 
 ```bash
 # Check if shell integration is working
-type _pkgx_chpwd_hook
+type __pantry_chpwd
 
 # Verify dependency file syntax
 pantry dev:dump --dryrun --verbose
@@ -777,18 +777,18 @@ Set up a complete database development environment:
 
 ```bash
 # Start essential database services
-pantry service start postgres redis
+pantry start postgres redis
 
 # Start modern databases for specific use cases
-pantry service start cockroachdb      # Distributed SQL
-pantry service start neo4j            # Graph database
-pantry service start clickhouse       # Analytics database
+pantry start cockroachdb      # Distributed SQL
+pantry start neo4j            # Graph database
+pantry start clickhouse       # Analytics database
 
 # Enable auto-start for core databases
-pantry service enable postgres redis
+pantry enable postgres redis
 
 # Check service status
-pantry service list
+pantry services
 
 # Connect to databases
 psql postgresql://localhost:5432/postgres           # PostgreSQL
@@ -804,13 +804,13 @@ Complete web development stack with monitoring:
 
 ```bash
 # Start web development services
-pantry service start postgres redis nginx
+pantry start postgres redis nginx
 
 # Start monitoring stack
-pantry service start prometheus grafana
+pantry start prometheus grafana
 
 # Check all service status
-pantry service list
+pantry services
 
 # Services available at
 # PostgreSQL: localhost:5432
@@ -826,21 +826,21 @@ Infrastructure services for microservices development:
 
 ```bash
 # Start service discovery and secrets management
-pantry service start consul vault
+pantry start consul vault
 
 # Start message queue and monitoring (choose based on needs)
-pantry service start kafka jaeger prometheus       # Traditional stack
-pantry service start pulsar jaeger prometheus      # Cloud-native messaging
-pantry service start nats jaeger prometheus        # High-performance messaging
+pantry start kafka jaeger prometheus       # Traditional stack
+pantry start pulsar jaeger prometheus      # Cloud-native messaging
+pantry start nats jaeger prometheus        # High-performance messaging
 
 # Start storage services
-pantry service start minio etcd
+pantry start minio etcd
 
 # Start identity and API services
-pantry service start keycloak hasura
+pantry start keycloak hasura
 
 # Check all services
-pantry service list
+pantry services
 
 # Services available at
 # Consul UI: http://localhost:8500
@@ -885,14 +885,14 @@ Set up continuous integration and development tooling:
 
 ```bash
 # Start CI/CD infrastructure
-pantry service start jenkins          # CI/CD server
-pantry service start verdaccio        # Private npm registry
+pantry start jenkins          # CI/CD server
+pantry start verdaccio        # Private npm registry
 
 # Start local cloud development
-pantry service start localstack       # AWS services locally
+pantry start localstack       # AWS services locally
 
 # Start monitoring
-pantry service start prometheus grafana
+pantry start prometheus grafana
 
 # Services available at
 # Jenkins: http://localhost:8090
@@ -920,49 +920,49 @@ npm run dev
 
 ```bash
 # Morning: Start essential services
-pantry service start postgres redis
+pantry start postgres redis
 
 # Check what's running
-pantry service list
+pantry services
 
 # Work on projects
 
 # Evening: Stop non-essential services
-pantry service stop nginx grafana prometheus
+pantry stop nginx grafana prometheus
 
 # Keep databases running for next day
-pantry service list
+pantry services
 ```
 
 #### Project-Specific Services
 
 ```bash
 # Web project: Start web stack
-pantry service start postgres nginx redis
+pantry start postgres nginx redis
 
 # API project: Start API stack
-pantry service start postgres kafka vault
+pantry start postgres kafka vault
 
 # Data project: Start data stack
-pantry service start postgres influxdb grafana
+pantry start postgres influxdb grafana
 
 # Stop all services when done
-pantry service stop postgres nginx redis kafka vault influxdb grafana
+pantry stop postgres nginx redis kafka vault influxdb grafana
 ```
 
 #### Service Health Monitoring
 
 ```bash
 # Check service health
-pantry service status postgres
-pantry service status redis
+pantry status postgres
+pantry status redis
 
 # Monitor logs in real-time
 tail -f ~/.local/share/pantry/logs/postgres.log
 tail -f ~/.local/share/pantry/logs/redis.log
 
 # Restart unhealthy services
-pantry service restart postgres
+pantry restart postgres
 ```
 
 ### Custom Service Configuration
@@ -979,7 +979,7 @@ nano ~/.local/share/pantry/services/config/redis.conf
 # save 60 1000
 
 # Restart to apply changes
-pantry service restart redis
+pantry restart redis
 ```
 
 #### Customizing Nginx Configuration
@@ -1001,7 +1001,7 @@ nano ~/.local/share/pantry/services/config/nginx.conf
 nginx -t -c ~/.local/share/pantry/services/config/nginx.conf
 
 # Restart to apply changes
-pantry service restart nginx
+pantry restart nginx
 ```
 
 ### Service Backup and Migration
@@ -1027,13 +1027,13 @@ tar -czf services-backup.tar.gz \
 
 ```bash
 # Stop services before restore
-pantry service stop postgres redis
+pantry stop postgres redis
 
 # Restore data
 tar -xzf services-backup.tar.gz -C ~/
 
 # Restart services
-pantry service start postgres redis
+pantry start postgres redis
 ```
 
 ### Troubleshooting Services
@@ -1063,14 +1063,14 @@ curl http://localhost:8080/health
 
 ```bash
 # Stop all services
-pantry service stop postgres redis nginx
+pantry stop postgres redis nginx
 
 # Clear problematic data (careful!)
 rm -rf ~/.local/share/pantry/services/postgres/data/
 rm -rf ~/.local/share/pantry/services/redis/data/
 
 # Restart services (will reinitialize)
-pantry service start postgres redis nginx
+pantry start postgres redis nginx
 ```
 
 ### Service Integration Examples

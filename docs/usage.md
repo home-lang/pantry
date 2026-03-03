@@ -8,35 +8,76 @@ Here are the main commands available in pantry:
 
 | Command | Description |
 |---------|-------------|
-| `install` or `i` | Install packages |
-| `update`, `upgrade`, `up` | Update packages to newer versions |
-| `remove` | Remove specific packages |
-| `shim` | Create shims for packages |
-| `dev:on` | Activate dev environment in directory |
-| `dev:dump` | Generate environment setup script for a project |
-| `dev:shellcode` | Generate shell integration code |
-| `service:start` | Start one or more services (or a group) |
-| `service:stop` | Stop one or more services (or a group) |
-| `service:restart` | Restart one or more services (or a group) |
-| `service:status` | Check status of a service |
-| `service:list` | List all available services and their status |
-| `service:logs` | View service logs (`--follow` / `-f` for live tail) |
-| `service:enable` | Enable service for auto-start |
-| `service:disable` | Disable service auto-start |
-| `bun` | Install Bun runtime directly |
-| `zsh` | Install Zsh shell |
-| `bootstrap` | Install all essential tools at once |
+| **Package Management** | |
+| `install` or `i` or `add` | Install packages |
+| `remove` | Remove dependencies from your project |
+| `uninstall` | Uninstall packages from pantry folder |
+| `update` or `upgrade` or `up` | Update dependencies to latest versions |
 | `list` | List installed packages |
-| `uninstall` | Complete removal of pantry and all packages |
+| `outdated` | Check for outdated dependencies |
+| `search` | Search for packages in the registry |
+| `info` | Show detailed package information |
+| `tree` | Display dependency tree |
+| `why` | Explain why a package is installed |
+| `dedupe` | Deduplicate dependencies |
+| `audit` | Check packages for security vulnerabilities |
+| **Script Execution** | |
+| `run` | Run a script from pantry.json or package.json |
+| `scripts` | List available scripts |
+| `px` | Run packages from npm (like npx/bunx) |
+| **Environment Management** | |
+| `env` | Activate project environment (`eval "$(pantry env)"`) |
 | `env:list` | List all development environments |
-| `env:clean` | Clean up unused development environments |
 | `env:inspect` | Inspect a specific development environment |
+| `env:clean` | Clean up unused development environments |
 | `env:remove` | Remove a specific development environment |
+| **Service Management** | |
+| `services` | List all available services and their status |
+| `start` | Start one or more services (or a group) |
+| `stop` | Stop one or more services (or a group) |
+| `restart` | Restart one or more services (or a group) |
+| `status` | Check status of a service |
+| `logs` | View service logs (`--follow` / `-f` for live tail) |
+| `enable` | Enable service for auto-start |
+| `disable` | Disable service auto-start |
+| `inspect` | Inspect service configuration and status |
+| `exec` | Run a command in a service's environment |
+| `snapshot` | Create a snapshot of service data |
+| `restore` | Restore service data from a snapshot |
+| `snapshots` | List snapshots for a service |
+| **Shell Integration** | |
+| `shell:integrate` | Install shell integration |
+| `dev:shellcode` | Generate shell integration code |
+| **Shim Management** | |
+| `shim` | Create executable shims for packages |
+| `shim:list` | List existing shims |
+| `shim:remove` | Remove shims |
+| **Cache Management** | |
 | `cache:stats` | Show cache statistics and usage information |
 | `cache:clean` | Clean up old cached packages |
 | `cache:clear` | Clear all cached packages and downloads |
-| `publish:commit` | Publish packages from the current git commit (pkg-pr-new alternative) |
-| `clean` | Remove all pantry-installed packages and environments (use `--keep-global` to preserve global dependencies) |
+| `clean` | Remove all pantry-installed packages and environments |
+| **Publishing** | |
+| `publish` | Publish package to Pantry registry (S3) |
+| `publish:commit` | Publish from the current git commit (pkg-pr-new alternative) |
+| `npm:publish` | Publish package to npm (supports OIDC) |
+| **Security & Signing** | |
+| `verify` | Verify package signature |
+| `sign` | Sign a package |
+| `generate-key` | Generate Ed25519 keypair for signing |
+| **OIDC & Publishers** | |
+| `oidc setup` | Set up OIDC trusted publisher authentication |
+| `publisher:add` | Add a trusted publisher |
+| `publisher:list` | List trusted publishers |
+| `publisher:remove` | Remove a trusted publisher |
+| **Project Setup** | |
+| `init` | Initialize a new pantry.json file |
+| `bootstrap` | Set up development environment |
+| `link` | Register or link a local package |
+| `unlink` | Unregister or unlink a local package |
+| **Miscellaneous** | |
+| `doctor` | Run system diagnostics |
+| `whoami` | Display the currently authenticated user |
 | `version` | Show version information |
 | `help` | Display help information |
 
@@ -366,22 +407,22 @@ pantry provides comprehensive service management for development services like d
 
 ```bash
 # Start a database
-pantry service start postgres
+pantry start postgres
 
 # Start a service group (all databases)
-pantry service start db
+pantry start db
 
 # Check service status
-pantry service status postgres
+pantry status postgres
 
 # View service logs
-pantry service logs postgres --follow
+pantry logs postgres --follow
 
 # List all services
-pantry service list
+pantry services
 
 # Stop services
-pantry service stop postgres redis
+pantry stop postgres redis
 ```
 
 ### Available Services
@@ -390,7 +431,7 @@ pantry includes 68 pre-configured services:
 
 **Databases (22)**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, Valkey, KeyDB, DragonflyDB, Elasticsearch, OpenSearch, InfluxDB, CockroachDB, Neo4j, ClickHouse, Memcached, CouchDB, Cassandra, SurrealDB, Typesense, FerretDB, TiDB, ScyllaDB
 **Web Servers (3)**: Nginx, Caddy, Apache httpd
-**Search (2)**: Apache Solr, Apache Zookeeper
+**Search (3)**: Meilisearch, Apache Solr, Apache Zookeeper
 **Message Queues (6)**: Kafka, RabbitMQ, Apache Pulsar, NATS, Mosquitto, Redpanda
 **Monitoring (6)**: Prometheus, Grafana, Jaeger, Loki, Alertmanager, VictoriaMetrics
 **Proxy & Load Balancers (4)**: Traefik, HAProxy, Varnish, Envoy
@@ -405,7 +446,7 @@ pantry includes 68 pre-configured services:
 Each service includes:
 
 - Per-service health checks for readiness detection
-- Log viewing (`pantry service logs <service>`)
+- Log viewing (`pantry logs <service>`)
 - Cross-platform support (macOS/Linux)
 - Service groups for batch operations (`db`, `monitoring`, `queue`, `web`)
 - Custom service definitions in `deps.yaml`

@@ -30,7 +30,7 @@ pantry is a comprehensive dependency management solution that bridges the gap be
 
 At its core, pantry leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows.
 
-Learn more in the docs: [Why pantry](https://stacks-pantry.netlify.app/why), [Quick Start](https://stacks-pantry.netlify.app/quickstart).
+Learn more in the docs: [Why pantry](https://pantry.sh/why), [Quick Start](https://pantry.sh/quickstart).
 
 ## Features
 
@@ -45,7 +45,7 @@ pantry transforms how you manage dependencies across your entire development wor
 
 ### Service Management
 
-- ⚡ **30+ Pre-configured Services** — PostgreSQL, Redis, Kafka, Prometheus, Grafana, Vault, and more
+- ⚡ **68 Pre-configured Services** — PostgreSQL, Redis, Kafka, Prometheus, Grafana, Vault, and more
 - 🚀 **One-Command Service Control** — Start, stop, restart services with automatic configuration
 - 🏥 **Health Monitoring** — Built-in health checks with automatic status detection
 - 🔧 **Auto-Configuration** — Default configuration files generated for each service
@@ -100,7 +100,7 @@ Modern development requires managing dependencies at multiple levels - from syst
 - ✅ **Consistent Experience** — Same commands and behavior across all platforms
 - ✅ **Smart Defaults** — Sensible installation paths and configuration out of the box
 
-[Read more about why we created pantry](https://github.com/stacksjs/pantry/tree/main/docs/why.md)
+[Read more about why we created pantry](https://github.com/home-lang/pantry/tree/main/docs/why.md)
 
 ## Development
 
@@ -143,7 +143,7 @@ yarn global add ts-pantry
 pnpm add -g ts-pantry
 ```
 
-See [Installation Guide](https://stacks-pantry.netlify.app/install) for more options.
+See [Installation Guide](https://pantry.sh/install) for more options.
 
 ## Quick Start
 
@@ -224,7 +224,7 @@ cd ..
 # → 🔄 Environment deactivated
 ```
 
-Learn more: [Environment Management](https://stacks-pantry.netlify.app/features/environment-management), [Package Management](https://stacks-pantry.netlify.app/features/package-management), [Configuration](https://stacks-pantry.netlify.app/config), [FAQ](https://stacks-pantry.netlify.app/faq).
+Learn more: [Environment Management](https://pantry.sh/features/environment-management), [Package Management](https://pantry.sh/features/package-management), [Configuration](https://pantry.sh/config), [FAQ](https://pantry.sh/faq).
 
 **Supported Project Files:**
 
@@ -285,32 +285,37 @@ Manage development services with ease:
 
 ```bash
 # Start essential development services
-pantry service start postgres redis
+pantry start postgres redis
 
 # Start multiple services at once
-pantry service start postgres redis nginx prometheus
+pantry start postgres redis nginx prometheus
 
 # Check service status
-pantry service status postgres
-pantry service list
+pantry status postgres
+pantry services
 
 # Stop services when done
-pantry service stop postgres redis
+pantry stop postgres redis
 
 # Enable auto-start for essential services
-pantry service enable postgres redis
+pantry enable postgres redis
 ```
 
-**Available Services (31+):**
+**Available Services (68):**
 
-- **Databases**: PostgreSQL, MySQL, MongoDB, Redis, InfluxDB, CockroachDB, Neo4j, ClickHouse
-- **Web Servers**: Nginx, Caddy
-- **Message Queues**: Kafka, RabbitMQ, Apache Pulsar, NATS
-- **Monitoring**: Prometheus, Grafana, Jaeger
-- **Infrastructure**: Vault, Consul, etcd, MinIO, SonarQube, Temporal
-- **Development & CI/CD**: Jenkins, LocalStack, Verdaccio
+- **Databases**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, Valkey, InfluxDB, CockroachDB, Neo4j, ClickHouse, CouchDB, Cassandra, SurrealDB, DragonflyDB, FerretDB, TiDB, ScyllaDB, KeyDB, PocketBase
+- **Search**: Elasticsearch, OpenSearch, Meilisearch, Typesense, Solr
+- **Web Servers**: Nginx, Caddy, Apache (httpd), HAProxy, Traefik, Varnish, Envoy
+- **Message Queues**: Kafka, RabbitMQ, Apache Pulsar, NATS, Mosquitto, Redpanda
+- **Monitoring**: Prometheus, Grafana, Jaeger, Loki, Alertmanager, VictoriaMetrics
+- **Infrastructure**: Vault, Consul, etcd, MinIO, SonarQube, Temporal, Nomad, Zookeeper
+- **Development & CI/CD**: Jenkins, LocalStack, Verdaccio, Gitea, Mailpit
 - **API & Backend**: Hasura, Keycloak
-- **Caching**: Memcached, Elasticsearch
+- **AI/ML**: Ollama
+- **DNS**: CoreDNS, Unbound, dnsmasq
+- **Networking**: Cloudflared, Tor, Syncthing, Doppler
+- **PHP**: PHP-FPM
+- **Caching**: Memcached
 
 #### Configure services in deps.yaml
 
@@ -343,7 +348,7 @@ export pantry_DB_PASSWORD="mypassword"
 export pantry_DB_AUTH_METHOD="md5"  # PostgreSQL: trust|md5|scram-sha-256
 
 # Start databases with custom credentials
-pantry service start postgres mysql
+pantry start postgres mysql
 # Creates project-specific databases with your configured credentials
 ```
 
@@ -421,9 +426,9 @@ pantry bun     # Install Bun runtime
 Customize pantry's behavior for your system and projects:
 
 ```ts
-import type { pantryConfig } from 'ts-pantry'
+import type { PantryConfig } from 'ts-pantry'
 
-const config: pantryConfig = {
+const config: PantryConfig = {
   // System-wide installation preferences
   installationPath: '/usr/local', // Default system location
   sudoPassword: '', // Password for sudo operations, can be loaded from `SUDO_PASSWORD` environment variable
@@ -466,7 +471,7 @@ const config: pantryConfig = {
 export default config
 ```
 
-See [Configuration Guide](https://github.com/stacksjs/pantry/tree/main/docs/config.md) for all options.
+See [Configuration Guide](https://github.com/home-lang/pantry/tree/main/docs/config.md) for all options.
 
 ## GitHub Action
 
@@ -476,24 +481,24 @@ Integrate pantry into your CI/CD workflows:
 
 - name: Setup Development Environment
 
-  uses: stacksjs/pantry-installer@v1
+  uses: home-lang/pantry-installer@v1
   with:
     packages: node@22 typescript@5.7 bun@1.2.14
 ```
 
-See [GitHub Action Documentation](https://github.com/stacksjs/pantry/tree/main/packages/action/README.md) for details.
+See [GitHub Action Documentation](https://github.com/home-lang/pantry/tree/main/packages/action/README.md) for details.
 
 ## Advanced Usage
 
 Explore advanced dependency management topics:
 
-- [Commit Publishing](https://stacks-pantry.netlify.app/features/commit-publishing) _(pkg-pr-new alternative)_
-- [Service Management](https://stacks-pantry.netlify.app/features/service-management)
-- [Project Environment Configuration](https://stacks-pantry.netlify.app/features/package-management)
-- [Custom Shims and Tool Management](https://stacks-pantry.netlify.app/advanced/custom-shims)
-- [Cross-platform Compatibility](https://stacks-pantry.netlify.app/advanced/cross-platform)
-- [Performance Optimization](https://stacks-pantry.netlify.app/advanced/performance)
-- [API Reference](https://stacks-pantry.netlify.app/api/reference)
+- [Commit Publishing](https://pantry.sh/features/commit-publishing) _(pkg-pr-new alternative)_
+- [Service Management](https://pantry.sh/features/service-management)
+- [Project Environment Configuration](https://pantry.sh/features/package-management)
+- [Custom Shims and Tool Management](https://pantry.sh/advanced/custom-shims)
+- [Cross-platform Compatibility](https://pantry.sh/advanced/cross-platform)
+- [Performance Optimization](https://pantry.sh/advanced/performance)
+- [API Reference](https://pantry.sh/api/reference)
 
 ## Comparing to Alternatives
 
@@ -522,17 +527,17 @@ Explore advanced dependency management topics:
 
 ## Changelog
 
-Please see our [releases](https://github.com/stacksjs/pantry/releases) page for information on changes.
+Please see our [releases](https://github.com/home-lang/pantry/releases) page for information on changes.
 
 ## Contributing
 
-Please see [CONTRIBUTING](https://github.com/stacksjs/contributing) for details.
+Please see [CONTRIBUTING](https://github.com/home-lang/pantry/blob/main/.github/CONTRIBUTING.md) for details.
 
 ## Community
 
 For help or discussion:
 
-- [Discussions on GitHub](https://github.com/stacksjs/pantry/discussions)
+- [Discussions on GitHub](https://github.com/home-lang/pantry/discussions)
 - [Join the Stacks Discord Server](https://discord.gg/stacksjs)
 
 ## Postcardware
@@ -546,7 +551,7 @@ Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United St
 - [Max Howell](https://github.com/mxcl) - for creating [pkgx](https://github.com/pkgxdev/pkgx) and [Homebrew](https://github.com/Homebrew/brew)
 - [pkgm](https://github.com/pkgxdev/pkgm) & [dev](https://github.com/pkgxdev/dev) - thanks for the inspiration
 - [Chris Breuer](https://github.com/chrisbbreuer)
-- [All Contributors](https://github.com/stacksjs/pantry/graphs/contributors)
+- [All Contributors](https://github.com/home-lang/pantry/graphs/contributors)
 
 ## Sponsors
 
@@ -564,8 +569,8 @@ Made with 💙
 <!-- Badges -->
 [npm-version-src]: https://img.shields.io/npm/v/ts-pantry?style=flat-square
 [npm-version-href]: https://npmjs.com/package/ts-pantry
-[github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/pantry/ci.yml?style=flat-square&branch=main
-[github-actions-href]: https://github.com/stacksjs/pantry/actions?query=workflow%3Aci
+[github-actions-src]: https://img.shields.io/github/actions/workflow/status/home-lang/pantry/ci.yml?style=flat-square&branch=main
+[github-actions-href]: https://github.com/home-lang/pantry/actions?query=workflow%3Aci
 
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/pantry/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/pantry -->
+<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/home-lang/pantry/main?style=flat-square
+[codecov-href]: https://codecov.io/gh/home-lang/pantry -->

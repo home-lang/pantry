@@ -105,7 +105,7 @@ When you leave the directory, everything is automatically restored.
 
 ```bash
 # Should show function definition
-type _pkgx_chpwd_hook
+type __pantry_chpwd
 
 # If not working, add integration
 echo 'eval "$(pantry dev:shellcode)"' >> ~/.zshrc
@@ -653,10 +653,10 @@ python --version
 
 ### Where can I get support
 
-- **Documentation**: [<https://pantry.s>h](https://pantry.sh)
-- **GitHub Discussions**: [Ask questions](https://github.com/stacksjs/pantry/discussions)
+- **Documentation**: [https://pantry.sh](https://pantry.sh)
+- **GitHub Discussions**: [Ask questions](https://github.com/home-lang/pantry/discussions)
 - **Discord**: [Real-time chat](https://discord.gg/stacksjs)
-- **Issues**: [Report bugs](https://github.com/stacksjs/pantry/issues)
+- **Issues**: [Report bugs](https://github.com/home-lang/pantry/issues)
 
 ### How do I report a bug
 
@@ -680,6 +680,6 @@ When reporting issues, include:
 
 **Yes!** pantry is open source under the MIT license:
 
-- **GitHub**: [<https://github.com/stacksjs/pantr>y](https://github.com/stacksjs/pantry)
-- **License**: [MIT License](https://github.com/stacksjs/pantry/blob/main/LICENSE.md)
-- **Contributing**: [Contribution Guidelines](https://github.com/stacksjs/pantry/blob/main/<https://github.com/stacksjs/contributin>g)
+- **GitHub**: [https://github.com/home-lang/pantry](https://github.com/home-lang/pantry)
+- **License**: [MIT License](https://github.com/home-lang/pantry/blob/main/LICENSE.md)
+- **Contributing**: [Contribution Guidelines](https://github.com/home-lang/pantry/blob/main/.github/CONTRIBUTING.md)

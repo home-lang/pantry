@@ -93,7 +93,7 @@ To build and install from source:
 
 ```sh
 # Clone the repository
-git clone https://github.com/stacksjs/pantry.git
+git clone https://github.com/home-lang/pantry.git
 cd pantry
 
 # Install dependencies
@@ -106,15 +106,17 @@ bun run build
 bun link
 
 # Or use the compiled binary directly
-./packages/pantry/bin/pantry
+./packages/zig/zig-out/bin/pantry
 ```
 
 ## Dependencies
 
 pantry requires the following:
 
-- Node.js 16+ or Bun 1.0+
+- Bun 1.0+ (for development/building from source)
 - pkgx (will be automatically installed if not present)
+
+> The compiled pantry binary (Zig) has no runtime dependencies beyond pkgx.
 
 ## Verifying Installation
 

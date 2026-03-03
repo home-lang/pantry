@@ -48,16 +48,19 @@ pantry uses a human-readable hash format for environment directories:
 
 pantry automatically detects these dependency files:
 
-- `dependencies.yaml` / `dependencies.yml`
-- `.pantry.yaml` / `pantry.yaml`
-- `.pantry.yml` / `pantry.yml`
-- `deps.yml` / `deps.yaml`
-- `.deps.yml` / `.deps.yaml`
-
-For pkgx compatibility, pantry also supports:
-
-- `pkgx.yaml` / `pkgx.yml`
-- `.pkgx.yaml` / `.pkgx.yml`
+- `pantry.json` / `pantry.jsonc`
+- `pantry.yaml` / `pantry.yml`
+- `deps.yaml` / `deps.yml`
+- `dependencies.yaml`
+- `pkgx.yaml`
+- `config/deps.ts` / `pantry.config.ts`
+- `package.json` / `package.jsonc`
+- `zig.json`
+- `Cargo.toml`
+- `pyproject.toml` / `requirements.txt`
+- `Gemfile`
+- `go.mod`
+- `composer.json`
 
 **Example dependency file:**
 
@@ -430,7 +433,7 @@ env:
 1. Check shell integration:
 
    ```bash
-   type _pkgx_chpwd_hook
+   type __pantry_chpwd
    ```
 
 2. Verify dependency file:

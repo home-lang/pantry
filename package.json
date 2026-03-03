@@ -6,13 +6,13 @@
   "description": "A performant, universal package manager. Like Homebrew, but faster.",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
-  "homepage": "https://github.com/stacksjs/pantry#readme",
+  "homepage": "https://github.com/home-lang/pantry#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stacksjs/pantry.git"
+    "url": "git+https://github.com/home-lang/pantry.git"
   },
   "bugs": {
-    "url": "https://github.com/stacksjs/pantry/issues"
+    "url": "https://github.com/home-lang/pantry/issues"
   },
   "keywords": [
     "homebrew",

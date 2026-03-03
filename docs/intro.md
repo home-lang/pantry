@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/stacksjs/pantry/blob/main/.github/art/cover.jpg?raw=true" alt="Social Card of pantry"></p>
+<p align="center"><img src="https://github.com/home-lang/pantry/blob/main/.github/art/cover.jpg?raw=true" alt="Social Card of pantry"></p>
 
 # Introduction
 
@@ -184,7 +184,7 @@ Ready to get started with pantry? Check out these guides:
 
 For help, discussion about best practices, or any other conversation that would benefit from being searchable:
 
-[Discussions on GitHub](https://github.com/stacksjs/pantry/discussions)
+[Discussions on GitHub](https://github.com/home-lang/pantry/discussions)
 
 For casual chit-chat with others using this package:
 
@@ -208,11 +208,11 @@ We would like to extend our thanks to the following sponsors for funding Stacks 
 - [Max Howell](https://github.com/mxcl) - for creating [pkgx](https://github.com/pkgxdev/pkgx) and [Homebrew](https://github.com/Homebrew/brew)
 - [pkgm](https://github.com/pkgxdev/pkgm) & [dev](https://github.com/pkgxdev/dev) - for the initial project inspiration
 - [Chris Breuer](https://github.com/chrisbbreuer)
-- [All Contributors](https://github.com/stacksjs/pantry/graphs/contributors)
+- [All Contributors](https://github.com/home-lang/pantry/graphs/contributors)
 
 ## License
 
-The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/pantry/tree/main/LICENSE.md) for more information.
+The MIT License (MIT). Please see [LICENSE](https://github.com/home-lang/pantry/tree/main/LICENSE.md) for more information.
 
 Made with 💙
 

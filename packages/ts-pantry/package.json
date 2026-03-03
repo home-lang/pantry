@@ -5,14 +5,14 @@
   "description": "A library & CLI for managing packages",
   "author": "Chris Breuer <chris@stacksjs.org>",
   "license": "MIT",
-  "homepage": "https://github.com/stacksjs/pantry/tree/main/packages/ts-pantry#readme",
+  "homepage": "https://github.com/home-lang/pantry/tree/main/packages/ts-pantry#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/stacksjs/pantry.git",
+    "url": "https://github.com/home-lang/pantry.git",
     "directory": "packages/ts-pantry"
   },
   "bugs": {
-    "url": "https://github.com/stacksjs/pantry/issues"
+    "url": "https://github.com/home-lang/pantry/issues"
   },
   "keywords": [
     "pantry",

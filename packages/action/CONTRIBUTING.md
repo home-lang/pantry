@@ -7,7 +7,7 @@ Thank you for your interest in contributing to the pantry Installer! This docume
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/stacksjs/pantry.git
+   git clone https://github.com/home-lang/pantry.git
    cd pantry/packages/action
    ```
 
@@ -79,4 +79,4 @@ This project follows [Semantic Versioning](https://semver.org/).
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the project's [MIT License](https://github.com/stacksjs/pantry/tree/main/LICENSE.md).
+By contributing to this project, you agree that your contributions will be licensed under the project's [MIT License](https://github.com/home-lang/pantry/tree/main/LICENSE.md).

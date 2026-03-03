@@ -59,7 +59,7 @@ Please see our [releases](https://github.com/stackjs/launchpad/releases) page fo
 
 ## Contributing
 
-Please see [CONTRIBUTING](https://github.com/stacksjs/contributing) for details.
+Please see [CONTRIBUTING](https://github.com/home-lang/pantry/blob/main/.github/CONTRIBUTING.md) for details.
 
 ## Community
 

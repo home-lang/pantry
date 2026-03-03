@@ -21,7 +21,7 @@ const nav = [
   { text: 'News', link: 'https://stacksjs.org/news' },
   {
     text: 'Changelog',
-    link: 'https://github.com/stacksjs/pantry/blob/main/CHANGELOG.md',
+    link: 'https://github.com/home-lang/pantry/blob/main/CHANGELOG.md',
   },
   // { text: 'Blog', link: 'https://updates.ow3.org' },
   {
@@ -41,7 +41,7 @@ const nav = [
           },
           {
             text: 'Contributing',
-            link: 'https://github.com/stacksjs/contributing',
+            link: 'https://github.com/home-lang/pantry/blob/main/.github/CONTRIBUTING.md',
           },
         ],
       },
@@ -145,7 +145,7 @@ export default withPwa(
       sidebar,
 
       editLink: {
-        pattern: 'https://github.com/stacksjs/pantry/edit/main/docs/:path',
+        pattern: 'https://github.com/home-lang/pantry/edit/main/docs/:path',
         text: 'Edit this page on GitHub',
       },
 
@@ -157,7 +157,7 @@ export default withPwa(
       socialLinks: [
         { icon: 'twitter', link: 'https://twitter.com/stacksjs' },
         { icon: 'bluesky', link: 'https://bsky.app/profile/chrisbreuer.dev' },
-        { icon: 'github', link: 'https://github.com/stacksjs/pantry' },
+        { icon: 'github', link: 'https://github.com/home-lang/pantry' },
         { icon: 'discord', link: 'https://discord.gg/stacksjs' },
       ],
 

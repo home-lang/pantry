@@ -18,7 +18,7 @@ This action allows you to easily install dependencies with pantry in your GitHub
 
 - name: Install Dependencies with pantry
 
-  uses: stacksjs/pantry-installer@v1
+  uses: home-lang/pantry-installer@v1
 # Automatically detects and installs project dependencies
 # Optional parameters
 # with
@@ -136,7 +136,7 @@ jobs:
 
       - name: Install Dependencies
 
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
 # Automatically detects Node.js from package.json
 # and installs node + any other detected dependencies
 ```
@@ -161,7 +161,7 @@ jobs:
 
       - name: Install Dependencies from Config
 
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
 # Will automatically detect packages from pantry.config.ts
 ```
 
@@ -188,7 +188,7 @@ jobs:
 
       - name: Install Dependencies
 
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
 # Auto-detects dependencies across all platforms
 ```
 
@@ -210,7 +210,7 @@ jobs:
 
       - name: Install Specific Dependencies
 
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
         with:
           packages: node python go rust
 # Override auto-detection with specific packages
@@ -238,7 +238,7 @@ jobs:
 
       - name: Install Dependencies
 
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
 
       - name: Publish Commit Packages
 
@@ -267,7 +267,7 @@ jobs:
 
       - name: Install Dependencies from Custom Config
 
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
         with:
           config-path: .github/pantry.config.ts
 
@@ -284,17 +284,17 @@ bun test
 
 ## Changelog
 
-Please see our [releases](https://github.com/stacksjs/pantry-installer/releases) page for more information on what has changed recently.
+Please see our [releases](https://github.com/home-lang/pantry-installer/releases) page for more information on what has changed recently.
 
 ## Contributing
 
-Please see [CONTRIBUTING](https://github.com/stacksjs/contributing) for details.
+Please see [CONTRIBUTING](https://github.com/home-lang/pantry/blob/main/.github/CONTRIBUTING.md) for details.
 
 ## Community
 
 For help, discussion about best practices, or any other conversation that would benefit from being searchable:
 
-[Discussions on GitHub](https://github.com/stacksjs/pantry/discussions)
+[Discussions on GitHub](https://github.com/home-lang/pantry/discussions)
 
 For casual chit-chat with others using this package:
 
@@ -315,15 +315,15 @@ We would like to extend our thanks to the following sponsors for funding Stacks 
 
 ## License
 
-The MIT License (MIT). Please see [LICENSE](https://github.com/stacksjs/pantry/blob/main/LICENSE.md) for more information.
+The MIT License (MIT). Please see [LICENSE](https://github.com/home-lang/pantry/blob/main/LICENSE.md) for more information.
 
 Made with 💙
 
 <!-- Badges -->
 [npm-version-src]: https://img.shields.io/npm/v/pantry-installer?style=flat-square
 [npm-version-href]: https://npmjs.com/package/pantry-installer
-[github-actions-src]: https://img.shields.io/github/actions/workflow/status/stacksjs/pantry-installer/ci.yml?style=flat-square&branch=main
-[github-actions-href]: https://github.com/stacksjs/pantry-installer/actions?query=workflow%3Aci
+[github-actions-src]: https://img.shields.io/github/actions/workflow/status/home-lang/pantry-installer/ci.yml?style=flat-square&branch=main
+[github-actions-href]: https://github.com/home-lang/pantry-installer/actions?query=workflow%3Aci
 
-<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/stacksjs/pantry-installer/main?style=flat-square
-[codecov-href]: https://codecov.io/gh/stacksjs/pantry-installer -->
+<!-- [codecov-src]: https://img.shields.io/codecov/c/gh/home-lang/pantry-installer/main?style=flat-square
+[codecov-href]: https://codecov.io/gh/home-lang/pantry-installer -->

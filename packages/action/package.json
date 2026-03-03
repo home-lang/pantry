@@ -4,13 +4,13 @@
   "description": "GitHub Action to install packages using pantry.",
   "author": "Stacks.js <hello@stacks.js.org>",
   "license": "MIT",
-  "homepage": "https://github.com/stacksjs/pantry#readme",
+  "homepage": "https://github.com/home-lang/pantry#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/stacksjs/pantry.git"
+    "url": "git+https://github.com/home-lang/pantry.git"
   },
   "bugs": {
-    "url": "https://github.com/stacksjs/pantry/issues"
+    "url": "https://github.com/home-lang/pantry/issues"
   },
   "keywords": [
     "github-action",

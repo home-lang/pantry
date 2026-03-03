@@ -121,7 +121,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install Dependencies
-        uses: stacksjs/pantry-installer@v1
+        uses: home-lang/pantry-installer@v1
 
       - name: Publish Commit Packages
         run: pantry publish:commit './packages/*'

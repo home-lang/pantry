@@ -12,11 +12,11 @@ pantry looks for configuration in these locations (in order of precedence):
 Example configuration file (`pantry.config.ts`):
 
 ```ts
-import type { pantryConfig } from 'ts-pantry'
+import type { PantryConfig } from 'ts-pantry'
 import os from 'node:os'
 import path from 'node:path'
 
-const config: pantryConfig = {
+const config: PantryConfig = {
   // Enable verbose logging (default: false)
   verbose: true,
 
@@ -167,7 +167,7 @@ export pantry_DB_AUTH_METHOD="md5"  # 'trust' | 'md5' | 'scram-sha-256'
 
 ```ts
 // pantry.config.ts
-const config: pantryConfig = {
+const config: PantryConfig = {
   services: {
     database: {
       username: 'myuser',
@@ -517,9 +517,9 @@ Configure commands to run after the environment is prepared (independent of serv
 
 ```ts
 // pantry.config.ts
-import type { pantryConfig } from 'ts-pantry'
+import type { PantryConfig } from 'ts-pantry'
 
-const config: pantryConfig = {
+const config: PantryConfig = {
   postSetup: {
     enabled: true,
     commands: [
@@ -552,9 +552,9 @@ Config file example:
 
 ```ts
 // pantry.config.ts
-import type { pantryConfig } from 'ts-pantry'
+import type { PantryConfig } from 'ts-pantry'
 
-const config: pantryConfig = {
+const config: PantryConfig = {
   preSetup: {
     enabled: true,
     commands: [
@@ -830,10 +830,10 @@ When using pantry as a library, you can import the types:
 
 ```ts
 
-import type { pantryConfig, pantryOptions } from 'ts-pantry'
+import type { PantryConfig, pantryOptions } from 'ts-pantry'
 
 // Full configuration
-const config: pantryConfig = {
+const config: PantryConfig = {
   verbose: true,
   installationPath: '/usr/local',
   // ... all other required properties

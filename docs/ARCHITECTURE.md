@@ -1,24 +1,27 @@
 # pantry Architecture
 
-> **Purpose**: This document provides a comprehensive technical overview of pantry's architecture, focusing on core system flows, shell integration, caching strategies, and command execution. It serves as a roadmap for understanding the TypeScript implementation and planning future refactoring (e.g., to Zig).
+> **Purpose**: This document provides a comprehensive technical overview of pantry's architecture. The entire CLI is implemented in Zig for performance. Supporting packages handle metadata generation, the package registry API, CI integration, and benchmarking.
 
-**Last Updated**: 2025-10-20
+**Last Updated**: 2026-03-02
 
 ---
 
 ## Table of Contents
 
 1. [System Overview](#system-overview)
-2. [Core Architecture Layers](#core-architecture-layers)
-3. [Shell Integration](#shell-integration)
-4. [Dependency Installation Flow](#dependency-installation-flow)
-5. [Caching System](#caching-system)
-6. [Command Architecture](#command-architecture)
-7. [Environment Management](#environment-management)
-8. [Service Management](#service-management)
-9. [File System Layout](#file-system-layout)
-10. [Performance Optimizations](#performance-optimizations)
-11. [Cross-Platform Considerations](#cross-platform-considerations)
+2. [Repository Structure](#repository-structure)
+3. [Core Architecture Layers](#core-architecture-layers)
+4. [Shell Integration](#shell-integration)
+5. [Dependency Detection and Resolution](#dependency-detection-and-resolution)
+6. [Installation Flow](#installation-flow)
+7. [Caching System](#caching-system)
+8. [Command Architecture](#command-architecture)
+9. [Environment Management](#environment-management)
+10. [Service Management](#service-management)
+11. [Registry](#registry)
+12. [Authentication and Security](#authentication-and-security)
+13. [File System Layout](#file-system-layout)
+14. [Cross-Platform Considerations](#cross-platform-considerations)
 
 ---
 
@@ -28,56 +31,245 @@ pantry is a modern dependency manager that provides:
 
 - **System-wide and project-specific package installations**
 - **Automatic environment activation on directory changes (via shell hooks)**
-- **Intelligent caching for both packages and environment metadata**
-- **Service management (PostgreSQL, Redis, etc.)**
-- **Cross-platform support (macOS, Linux, Windows)**
+- **Multi-tier caching for packages and environment metadata**
+- **Service management for 68+ services (PostgreSQL, Redis, Kafka, etc.)**
+- **Cross-platform support (macOS, Linux, FreeBSD)**
+- **Package publishing with OIDC-based trusted publishers**
 
 ### Key Design Principles
 
-1. **Performance First**: Sub-millisecond environment switching via multi-tier caching
+1. **Performance First**: Written in Zig for sub-millisecond CLI startup and environment switching
 2. **Zero Configuration**: Automatic project detection and environment setup
 3. **Isolation**: Each project gets its own isolated dependency environment
 4. **Shell Integration**: Seamless activation/deactivation on `cd` commands
+5. **Security by Default**: Lifecycle scripts require explicit trust; OIDC for passwordless publishing
+
+---
+
+## Repository Structure
+
+The project is organized as a monorepo with five packages:
+
+```
+packages/
+  zig/           Main CLI binary (Zig)
+  ts-pantry/     TypeScript package metadata scraper/generator
+  registry/      REST API server (Bun.serve + DynamoDB)
+  action/        GitHub Action for CI integration
+  benchmark/     Package manager benchmarking tools
+```
+
+### `packages/zig/` -- Main CLI
+
+The core of pantry. A single statically-linked Zig binary (~3200 lines in `main.zig` alone) that handles all CLI operations. Built with Zig 0.15.1+, uses the `zig-cli` library for command parsing and `zig-config` for configuration loading.
+
+**Source layout** (`packages/zig/src/`):
+
+```
+main.zig              CLI entry point, command definitions, action handlers
+lib.zig               Library root, re-exports all modules
+io_helper.zig         I/O abstraction (file ops, env vars, child processes)
+version.zig           Version constants (injected at build time)
+
+cli/
+  commands.zig         Command module aggregator (re-exports all command modules)
+  style.zig            ANSI terminal styling utilities
+  commands/
+    install.zig        install, add, install --global
+    install/           Sub-modules: core, global, helpers, lockfile_hooks, workspace, types
+    package.zig        remove, update, outdated, uninstall, publish, why
+    registry.zig       search, info, list, whoami, registry publish
+    scripts.zig        run (script execution from package.json)
+    services.zig       start, stop, restart, status, enable, disable, logs, inspect, exec, snapshot, restore
+    env.zig            env:list, env:inspect, env:clean, env:remove
+    shell.zig          shell:integrate, dev:shellcode, shell:lookup, shell:activate
+    cache.zig          cache:stats, cache:clear, cache:clean
+    px.zig             px (package executor, npx/bunx equivalent)
+    dev.zig            dev:shellcode, dev:md5, dev:find-project-root, dev:check-updates
+    audit.zig          Security vulnerability auditing
+    verify.zig         Package signature verification, signing, key generation
+    publish_commit.zig Commit-based publishing (pkg-pr-new equivalent)
+    bootstrap.zig      Bootstrap pantry installation
+    doctor.zig         System health checks
+    init.zig           Project initialization
+    tree.zig           Dependency tree visualization
+    why.zig            Explain why a package is installed
+    outdated.zig       Check for outdated dependencies
+    update.zig         Update dependencies
+    clean.zig          Clean project artifacts
+    dedupe.zig         Deduplicate dependencies
+    link.zig           Link/unlink local packages
+    shim.zig           Create/list/remove command shims
+    oidc.zig           OIDC trusted publisher setup
+    run_filter.zig     Script execution with workspace filtering
+    parallel_executor.zig  Parallel command execution
+
+config/
+  loader.zig           Config file loading (pantry.json, package.json, etc.)
+  dependencies.zig     Extract dependencies from config
+  scripts.zig          Extract scripts from config
+  services.zig         Extract service definitions from config
+  toml.zig             TOML parser
+  npmrc.zig            .npmrc configuration parser
+  pantry_config.zig    pantry.toml project configuration (linker mode, peer deps, etc.)
+
+deps/
+  detector.zig         Dependency file detection (walks directory tree)
+  parser.zig           Dependency file parsing
+  resolver.zig         Dependency resolution and topological sorting
+  overrides.zig        Package.json override resolution
+  catalogs.zig         Catalog-based dependency management
+  global_scanner.zig   Global dependency scanning
+  resolution/
+    conflict.zig       Version conflict resolution
+    lockfile.zig       Lockfile-based resolution
+    optional.zig       Optional dependency handling
+    peer.zig           Peer dependency management
+
+install/
+  installer.zig        Core installation logic
+  downloader.zig       HTTP download with progress
+  extractor.zig        Archive extraction (tar.gz, tar.xz, zip)
+  symlink.zig          Binary symlink creation, discovery, conflict resolution
+  wrapper.zig          Shell wrapper/shim generation, macOS dylib path fixing
+  validator.zig        Post-install validation
+  rollback.zig         Installation rollback on failure
+  recovery.zig         Recovery from partial installs
+  parallel.zig         Parallel download orchestration
+  runtime.zig          Runtime installer (Node, Bun, Deno, Python, etc.)
+  offline.zig          Offline installation from cache
+  patches.zig          Post-install patches
+  libfixer.zig         Library path fixing (install_name_tool on macOS)
+
+env/
+  manager.zig          Environment lifecycle (create, activate, deactivate)
+  scanner.zig          Environment directory scanning
+  commands.zig         Environment command implementations
+
+shell/
+  generator.zig        Shell code generation (embeds shell_integration.sh)
+  integration.zig      Shell hook generation (chpwd, PROMPT_COMMAND)
+  integrate.zig        Shell RC file modification (~/.zshrc, ~/.bashrc)
+  commands.zig         Shell command implementations
+
+services/
+  definitions.zig      68+ pre-defined service configurations
+  manager.zig          Service lifecycle (register, start, stop, status)
+  platform.zig         Platform-specific service control (launchd, systemd)
+
+cache/
+  env_cache.zig        Environment directory cache
+  package_cache.zig    Downloaded package archive cache
+  optimized.zig        Optimized cache with statistics
+  shared.zig           Shared/global cache
+
+packages/
+  types.zig            PackageSpec, PackageInfo, Lockfile types
+  lockfile.zig         Lockfile read/write
+  registry.zig         Package registry client, version comparison
+  dep_graph.zig        Dependency graph construction
+  semver.zig           Semantic versioning
+  workspace.zig        Workspace package detection
+  workspace_deps.zig   Cross-workspace dependency resolution
+  filter.zig           Package filtering
+  filter_config.zig    Filter configuration
+  changed_detector.zig Detect changed packages in workspace
+  file_watcher.zig     File change watching
+  advanced_glob.zig    Glob pattern matching
+  publish.zig          Package publishing
+  aliases.zig          Package name aliases
+  generated.zig        Generated package name mappings (from ts-pantry)
+  simple_regex.zig     Lightweight regex for version matching
+
+registry/
+  core.zig             Registry type definitions (pantry, npm, pkgx, github, custom)
+  npm.zig              npm registry client
+  pantry.zig           Pantry registry client
+  custom.zig           Custom registry support
+
+auth/
+  oidc.zig             OIDC token handling for CI/CD publishing
+  signing.zig          Package signing (Ed25519)
+  sigstore.zig         Sigstore integration
+  registry.zig         Registry authentication
+  policy.zig           Access policy management
+  provenance.zig       Build provenance
+  github.zig           GitHub authentication
+
+core/
+  platform.zig         Platform/architecture detection
+  error.zig            Error types (PantryError, ErrorContext)
+  string.zig           String utilities
+  path.zig             Path utilities
+
+workspace/
+  core.zig             Workspace detection and configuration
+  commands.zig         Workspace commands (init, list, run, link, check, graph, exec)
+
+lifecycle/
+  enhanced.zig         Enhanced lifecycle script execution
+  hooks.zig            Lifecycle hook management
+
+utils/
+  concurrent.zig       Concurrency utilities
+  cpu.zig              CPU feature detection
+  jsonc.zig            JSONC (JSON with comments) parser
+  release_age.zig      Release age calculation
+```
+
+### `packages/ts-pantry/` -- TypeScript Package Metadata
+
+Scrapes package metadata from pkgx/Homebrew sources, resolves dependencies, and generates Zig source files (`generated.zig`) with package name mappings. This runs offline to produce compile-time data baked into the CLI binary.
+
+### `packages/registry/` -- REST API Server
+
+A Bun.serve HTTP server providing the Pantry package registry API. Uses DynamoDB (single-table design) for metadata storage and S3 for tarball storage. Falls back to npm for packages not in the Pantry registry.
+
+### `packages/action/` -- GitHub Action
+
+A GitHub Action (TypeScript, `@actions/core`) that installs pantry and project dependencies in CI. Supports auto-detecting project dependencies and a `setup-only` mode.
+
+### `packages/benchmark/` -- Benchmarks
+
+Benchmarking tools for comparing pantry against other package managers (npm, yarn, pnpm, bun).
 
 ---
 
 ## Core Architecture Layers
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    CLI Layer                            │
-│  (bin/cli.ts - @stacksjs/clapp framework)              │
-│  - Command parsing                                      │
-│  - Option handling                                      │
-│  - Lazy command loading                                 │
-└────────────────┬────────────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│              Command Layer                              │
-│  (src/commands/*.ts - Command implementations)          │
-│  - Install, uninstall, search, info, etc.              │
-│  - Environment management (env:list, env:clean)         │
-│  - Service management (start, stop, restart)            │
-│  - Cache management (cache:clear, cache:stats)          │
-└────────────────┬────────────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│            Core Logic Layer                             │
-│  - Package resolution (ts-pkgx integration)             │
-│  - Dependency resolution                                │
-│  - Installation orchestration                           │
-│  - Cache management                                     │
-│  - Environment detection                                │
-└────────────────┬────────────────────────────────────────┘
-                 │
-┌────────────────▼────────────────────────────────────────┐
-│          System Integration Layer                       │
-│  - File system operations                               │
-│  - Binary downloads                                     │
-│  - Symlink creation                                     │
-│  - Shell hook generation                                │
-│  - Platform-specific operations (launchd/systemd)       │
-└─────────────────────────────────────────────────────────┘
++-----------------------------------------------------------+
+|                      CLI Layer                            |
+|  (main.zig - zig-cli framework)                          |
+|  - Command/option/argument parsing                       |
+|  - Action dispatch                                       |
++---------------------+------------------------------------+
+                      |
++---------------------v------------------------------------+
+|                  Command Layer                           |
+|  (cli/commands/*.zig)                                    |
+|  - install, remove, update, publish, run, etc.           |
+|  - Environment, cache, shell, service commands           |
++---------------------+------------------------------------+
+                      |
++---------------------v------------------------------------+
+|                Core Logic Layer                           |
+|  - install/         Package installation pipeline        |
+|  - deps/            Dependency detection & resolution    |
+|  - packages/        Registry clients, lockfile, semver   |
+|  - config/          Config file parsing                  |
+|  - lifecycle/       Lifecycle script execution           |
+|  - auth/            OIDC, signing, provenance            |
++---------------------+------------------------------------+
+                      |
++---------------------v------------------------------------+
+|              System Integration Layer                    |
+|  - io_helper.zig    File I/O, env vars, child processes  |
+|  - core/            Platform detection, error handling   |
+|  - shell/           Shell hook generation & integration  |
+|  - services/        launchd/systemd service management   |
+|  - cache/           Multi-tier caching                   |
++-----------------------------------------------------------+
 ```
 
 ---
@@ -86,324 +278,128 @@ pantry is a modern dependency manager that provides:
 
 ### Overview
 
-Shell integration is the **heart of pantry's UX**. It enables automatic environment activation when you `cd` into a project directory. This is achieved by injecting shell code into the user's shell initialization files (`.zshrc`, `.bashrc`, etc.).
+Shell integration enables automatic environment activation when you `cd` into a project directory. The Zig binary generates shell code that gets evaluated by the user's shell.
 
 ### Integration Flow
 
 ```
-
-1. User runs: `pantry dev:integrate`
-
-   └─> Adds hook to ~/.zshrc or ~/.bashrc
+1. User runs: pantry shell:integrate
+   -> Appends hook to ~/.zshrc or ~/.bashrc
 
 2. Shell startup:
-
-   └─> eval "$(pantry dev:shellcode)"
-       └─> Generates shell functions and hooks
+   -> eval "$(pantry dev:shellcode)"
+      -> Zig binary outputs shell functions and hooks
 
 3. User runs: cd /path/to/project
-
-   └─> Triggers __pantry_chpwd (zsh) or __pantry_prompt_command (bash)
-       └─> Calls __pantry_switch_environment
-           ├─> Cache lookup (instant if cached)
-           ├─> Project detection (if cache miss)
-           ├─> Environment activation/deactivation
-           └─> PATH modification
+   -> Triggers __pantry_chpwd (zsh) or __pantry_prompt_command (bash)
+      -> Calls __pantry_switch_environment
+          +-> Cache lookup (instant if cached)
+          +-> Project detection (if cache miss)
+          +-> Environment activation/deactivation
+          +-> PATH modification
 ```
 
 ### Shell Code Generation
 
-**File**: `src/dev/shellcode.ts:13`
+**File**: `packages/zig/src/shell/generator.zig`
 
-The `shellcode()` function generates a complete shell script that:
+The `ShellCodeGenerator` struct produces shell integration code. It embeds a shell template (`shell_integration.sh`) at compile time via `@embedFile` and injects configuration variables (message preferences, verbose mode). The generated script includes:
 
-1. **Defines utility functions** (path helpers, MD5 hashing, cache operations)
-2. **Implements multi-tier caching** (in-memory + disk)
-3. **Provides environment switching logic**
-4. **Sets up directory change hooks** (zsh `chpwd`, bash `PROMPT_COMMAND`)
-
-### Key Shell Functions
-
-#### `__pantry_switch_environment()`
-
-**Location**: `src/dev/shellcode.ts:287`
-
-**Purpose**: Core function that handles environment activation/deactivation on directory changes.
-
-**Logic Flow**:
-
-```bash
-
-1. SUPER FAST PATH: Check if PWD unchanged → return immediately (0 syscalls)
-
-2. ULTRA FAST PATH: If already in project and still in subdirectory → skip
-
-3. INSTANT DEACTIVATION: If left project directory
-
-   ├─> Show deactivation message
-   ├─> Remove project paths from PATH
-   └─> Clear environment variables
-
-4. CACHE LOOKUP: Walk up directory tree checking cache
-
-   ├─> Tier 1: In-memory hash map (instant)
-   ├─> Tier 2: Indexed cache file (fast disk lookup)
-   └─> Cache hit → activate immediately (skip expensive work)
-
-5. PROJECT DETECTION (cache miss only):
-
-   ├─> Scan for dependency files (package.json, Cargo.toml, etc.)
-   └─> Use binary detection as fallback
-
-6. ENVIRONMENT ACTIVATION:
-
-   ├─> Compute environment directory hash
-   ├─> Check if environment exists
-   ├─> If exists: activate (update PATH, set vars)
-   └─> If missing: auto-install dependencies
-```
-
-**Performance Optimizations**:
-
-- **Zero syscalls** for unchanged directories
-- **Instant activation** for cached environments (3-5 syscalls max)
-- **Deferred installation** (non-blocking background process)
-- **MD5 hash caching** to avoid repeated computations
-
-#### Cache System (Shell Layer)
-
-**Three-tier caching** for environment lookups:
-
-```bash
-Tier 1: In-memory hash map
-
-  - ZSH: Associative array (__LP_CACHE_MAP)
-  - Bash: Dynamic variable names (__LP_CACHE_<encoded_path>)
-  - Lookup: O(1), zero syscalls
-
-Tier 2: Disk cache file (~/.cache/pantry/shell_cache/env_cache)
-
-  - Format: project_dir|dep_file|dep_mtime|env_dir
-  - Fast awk-based lookup (single syscall)
-  - Validated on read (checks env dir exists, dep file mtime)
-
-Tier 3: Filesystem walk (fallback)
-
-  - Walks up directory tree checking for dependency files
-  - Only triggered on cache miss
-  - Results written to cache for future use
-
-```
-
-**Cache Writing**: `src/dev/shellcode.ts:216`
-
-- Async/non-blocking (background process)
-- Atomic writes using temp file + rename
-- Automatically updates in-memory cache
-
-**Cache Invalidation**:
-
-- Automatic: When dependency file mtime changes
-- Manual: Environment directory deletion
-- Command: `pantry cache:clear` removes shell cache
+1. Utility functions (path helpers, MD5 hashing, cache operations)
+2. Multi-tier caching (in-memory + disk)
+3. Environment switching logic
+4. Directory change hooks (zsh `chpwd`, bash `PROMPT_COMMAND`)
 
 ### Hook Installation
 
-**File**: `src/dev/integrate.ts`
+**File**: `packages/zig/src/shell/integrate.zig`
 
-**Process**:
+The `ShellIntegrator` detects the user's shell, locates shell config files, and appends the integration line:
 
-1. Detects user's shell (zsh, bash)
-2. Locates shell config files (`~/.zshrc`, `~/.bashrc`, etc.)
-3. Appends integration line:
-
-   ```bash
+```bash
 # Added by pantry
-   command -v pantry >/dev/null 2>&1 && eval "$(pantry dev:shellcode)"
-   ```
-
-4. User restarts shell to activate
-
-**Uninstallation**: `pantry dev:integrate --uninstall`
-
-- Removes all lines containing pantry markers
-- Safe removal (preserves rest of config)
+command -v pantry >/dev/null 2>&1 && eval "$(pantry dev:shellcode)"
+```
 
 ---
 
-## Dependency Installation Flow
+## Dependency Detection and Resolution
+
+### Dependency File Detection
+
+**File**: `packages/zig/src/deps/detector.zig`
+
+The `findDepsFile()` function walks up the directory tree searching for dependency files in priority order:
+
+1. `pantry.json` / `pantry.jsonc` (highest priority)
+2. `pantry.yaml` / `pantry.yml`
+3. `deps.yaml` / `deps.yml` / `dependencies.yaml` / `pkgx.yaml`
+4. `config/deps.ts` / `pantry.config.ts` (TypeScript configs, need runtime)
+5. `package.json` / `package.jsonc` (npm/bun/yarn compatible)
+6. `zig.json`, `Cargo.toml`, `pyproject.toml`, `requirements.txt`, `Gemfile`, `go.mod`, `composer.json`
+
+### Dependency Resolution
+
+**Files**: `packages/zig/src/deps/resolver.zig`, `packages/zig/src/deps/resolution/`
+
+The resolution pipeline:
+
+1. Parse dependency specifications from config files
+2. Build a dependency graph (direct + transitive)
+3. Resolve version conflicts via `ConflictResolver`
+4. Handle peer dependencies via `PeerDependencyManager`
+5. Handle optional dependencies via `OptionalDependencyManager`
+6. Topological sort for correct installation order
+7. Produce/update lockfile via `LockFile`
+
+Overrides (`overrides.zig`) and catalogs (`catalogs.zig`) allow users to customize resolution behavior through `package.json` fields.
+
+---
+
+## Installation Flow
 
 ### High-Level Process
 
 ```
-User runs: `pantry install node python`
-    │
-    ├─> CLI parsing (bin/cli.ts:78)
-    │   └─> Resolves to install command
-    │
-    ├─> Command execution (src/commands/install.ts)
-    │   └─> Delegates to core install function
-    │
-    ├─> Main install() (src/install-main.ts:18)
-    │   ├─> Parse package specifications
-    │   ├─> Resolve dependencies (if enabled)
-    │   ├─> Add companion packages (npm for node)
-    │   └─> Install each package
-    │
-    ├─> Package installation loop (src/install-main.ts:164)
-    │   └─> For each package:
-    │       └─> installPackage() (src/install-core.ts)
-    │
-    └─> installPackage() flow:
-        ├─> 1. Resolve package name/version
-        ├─> 2. Check cache for downloaded archive
-        ├─> 3. Download if not cached
-        ├─> 4. Extract to install directory
-        ├─> 5. Create symlinks (version, compatibility)
-        ├─> 6. Generate binary wrappers/shims
-        ├─> 7. Fix library paths (macOS)
-        └─> 8. Validate installation
+User runs: pantry install lodash
+    |
+    +-> main.zig: installAction()
+    |   +-> Parse package arguments and options
+    |   +-> Load pantry.toml project configuration
+    |
+    +-> cli/commands/install.zig: installCommandWithOptions()
+    |   +-> Detect dependency file
+    |   +-> Parse dependencies
+    |   +-> Resolve versions via registry
+    |   +-> Install each package
+    |
+    +-> install/installer.zig: Installer
+        +-> 1. Check package cache
+        +-> 2. Download if not cached (install/downloader.zig)
+        +-> 3. Extract archive (install/extractor.zig)
+        +-> 4. Create symlinks (install/symlink.zig)
+        +-> 5. Generate binary wrappers (install/wrapper.zig)
+        +-> 6. Fix macOS library paths (install/libfixer.zig)
+        +-> 7. Validate installation (install/validator.zig)
+        +-> 8. On failure: rollback (install/rollback.zig)
 ```
 
-### Module Breakdown
+### Parallel Installation
 
-#### Package Resolution
+**File**: `packages/zig/src/install/parallel.zig`
 
-**File**: `src/package-resolution.ts`
+Multiple packages are downloaded in parallel with retry logic (`downloadParallelWithRetry`). The `InstallingStack` in `installer.zig` uses a mutex to prevent concurrent installations of the same package.
 
-**Key Functions**:
+### Lifecycle Scripts
 
-- `parsePackageSpec(spec: string)` - Parse package specs like `node@18`, `python@^3.11`
-- `resolvePackageName(name: string)` - Resolve aliases (e.g., `node` → `nodejs.org`)
-- `resolveVersion(name: string, constraint?: string)` - Find matching version using ts-pkgx
-- `getPackageInfo(name: string)` - Get package metadata (dependencies, companions, etc.)
+**File**: `packages/zig/src/lifecycle.zig`
 
-**ts-pkgx Integration**:
+Lifecycle scripts (preinstall, postinstall, etc.) follow a security-first model:
 
-pantry uses `ts-pkgx` (v0.4.93+) for package metadata:
-
-- Fully typed package names and versions
-- Access to pkgx package registry
-- Dependency graph resolution
-- Companion package suggestions
-
-#### Dependency Resolution
-
-**File**: `src/dependency-resolution.ts`
-
-**Function**: `resolveAllDependencies(packages: PackageSpec[])`
-
-**Purpose**: Resolve complete dependency tree with conflict resolution
-
-**Algorithm**:
-
-1. Use ts-pkgx to get runtime dependencies for each package
-2. Build dependency graph (direct + transitive)
-3. Resolve version conflicts (prefer latest compatible version)
-4. Return flattened, deduplicated package list
-
-**Config**: Controlled by `config.installDependencies` (default: true)
-
-#### Installation Core
-
-**File**: `src/install-core.ts`
-
-**Key Function**: `installPackage(packageName: string, spec: string, installPath: string)`
-
-**Steps**:
-
-1. **Version Resolution**
-
-   ```typescript
-   const version = await resolveVersion(packageName, versionConstraint)
-   ```
-
-2. **Cache Check**
-
-   ```typescript
-   const cachedPath = getCachedPackagePath(domain, version, format)
-   if (cachedPath)
-     return cachedPath // Skip download
-   ```
-
-3. **Download** (if not cached)
-   - Fetches from pkgx CDN
-   - Uses platform/architecture-specific URLs
-   - Stores in `~/.cache/pantry/binaries/packages/`
-
-4. **Extraction**
-   - Extracts to `<installPath>/pkgs/<domain>/v<version>/`
-   - Preserves permissions and symlinks
-
-5. **Symlink Creation**
-   - Version symlinks: `v*` → `v1.2.3`
-   - Compatibility symlinks: `libssl.dylib` → `libssl.1.1.dylib`
-   - PKG_CONFIG symlinks for build tools
-
-6. **Binary Wrappers**
-   - Creates wrapper scripts in `<installPath>/bin/`
-   - Sets `DYLD_LIBRARY_PATH` (macOS), `LD_LIBRARY_PATH` (Linux)
-   - Adds shebang and execution permissions
-
-7. **Validation**
-   - Checks binary exists and is executable
-   - Verifies library dependencies resolved
-
-#### Install Helpers
-
-**File**: `src/install-helpers.ts`
-
-**Key Functions**:
-
-- `createShims()` - Generate binary wrapper scripts
-- `createVersionSymlinks()` - Create version-based symlinks
-- `createVersionCompatibilitySymlinks()` - Create major version symlinks
-- `fixMacOSLibraryPaths()` - Update library install names for macOS
-- `validatePackageInstallation()` - Post-install validation
-
-### Installation Paths
-
-**System-wide**:
-
-```
-~/.local/share/pantry/global/
-  ├── bin/           # Binary wrappers/shims
-  ├── pkgs/          # Actual package installations
-  │   └── <domain>/
-  │       └── v<version>/
-  ├── lib/           # Symlinked libraries
-  ├── include/       # Symlinked headers
-  └── share/         # Shared data
-```
-
-**Project-specific**:
-
-```
-~/.local/share/pantry/envs/<project_hash>/
-  ├── bin/
-  ├── pkgs/
-  ├── lib/
-  ├── include/
-  └── share/
-```
-
-**Environment Hash Format**:
-
-```
-<project_name>_<dir_hash>[-d<deps_hash>]
-
-Examples:
-
-  - my-app_208a31ec
-  - pantry_208a31ec-d1a2b3c4  (with dependency file hash)
-
-```
-
-**Hashing**:
-
-- Directory hash: MD5(full_project_path) truncated to 8 chars
-- Dependency hash: MD5(dependency_file_contents) truncated to 8 chars
-- Purpose: Unique environment per project + dependency combination
+- Scripts are **disabled by default**
+- Packages must be in `trustedDependencies` or the built-in trusted list (esbuild, husky, sharp, etc.)
+- `--ignore-scripts` flag disables all script execution
+- Scripts run with `{modules_dir}/.bin` prepended to PATH (walks up directory tree for monorepo support)
 
 ---
 
@@ -411,278 +407,90 @@ Examples:
 
 ### Overview
 
-pantry uses **dual caching**:
-
-1. **Package Cache**: Downloaded binary archives
-2. **Environment Cache**: Project → environment directory mappings
+pantry uses multi-tier caching at both the shell level and the application level.
 
 ### Package Cache
 
-**Location**: `~/.cache/pantry/binaries/packages/`
+**File**: `packages/zig/src/cache/package_cache.zig`
 
-**Structure**:
-
-```
-packages/
-  ├── <domain>-<version>/
-  │   └── package.<format>  # .tar.gz, .tar.xz, .zip, etc.
-  └── ...
-
-Metadata file: ~/.cache/pantry/cache-metadata.json
-```
-
-**Metadata Format** (`src/cache.ts:12`):
-
-```json
-{
-  "version": "1.0",
-  "packages": {
-    "nodejs.org-20.10.0": {
-      "domain": "nodejs.org",
-      "version": "20.10.0",
-      "format": "tar.xz",
-      "downloadedAt": "2025-10-20T10:00:00.000Z",
-      "lastAccessed": "2025-10-20T15:30:00.000Z",
-      "size": 45678901
-    }
-  }
-}
-```
-
-**Cache Operations**:
-
-#### Cache Lookup
-
-**Function**: `getCachedPackagePath(domain, version, format)` - `src/cache.ts:272`
-
-**Logic**:
-
-1. Check if archive file exists
-2. Validate against metadata (size check)
-3. Update last accessed timestamp
-4. Return path or null
-
-#### Cache Writing
-
-**Function**: `savePackageToCache(domain, version, format, sourcePath)` - `src/cache.ts:322`
-
-**Logic**:
-
-1. Copy downloaded file to cache directory
-2. Update metadata with file size and timestamps
-3. Return cached path
-
-#### Cache Cleanup
-
-**Function**: `cleanupCache(maxAgeDays, maxSizeGB)` - `src/cache.ts:367`
-
-**Strategy**:
-
-1. Remove packages older than `maxAgeDays` (default: 30)
-2. If total size exceeds `maxSizeGB` (default: 5), remove oldest packages
-3. Sort by last accessed time (LRU eviction)
-
-**Command**: `pantry cache:clean --max-age 7 --max-size 2`
-
-#### Cache Clearing
-
-**Command**: `pantry cache:clear --force`
-
-**Function**: Removes entire cache directory (`~/.cache/pantry/`)
-
-**File**: `src/commands/cache/clear.ts:107`
+- **Location**: `~/.cache/pantry/binaries/packages/`
+- Stores downloaded package archives keyed by domain + version
+- Metadata tracked per package (download time, last access, size)
+- LRU eviction when cache exceeds configured size
 
 ### Environment Cache
 
-**Purpose**: Map project directories to their environment directories for instant activation
+**File**: `packages/zig/src/cache/env_cache.zig`
 
-**Location**: `~/.cache/pantry/shell_cache/env_cache`
+- Maps project directories to their environment directories
+- Pipe-delimited format: `project_dir|dep_file|mtime|env_dir`
+- Validated on read (checks env dir exists, dep file mtime unchanged)
 
-**Format** (pipe-delimited):
+### Shell-Level Caching
 
-```
-/path/to/project|dependency_file|mtime|environment_directory
+Generated shell code implements three tiers:
 
-Example:
-/Users/chris/dev/myapp|/Users/chris/dev/myapp/package.json|1729425600|/Users/chris/.local/share/pantry/envs/myapp_208a31ec
-```
+- **Tier 1**: In-memory associative array (0 syscalls)
+- **Tier 2**: Disk cache file with awk-based lookup (1-3 syscalls)
+- **Tier 3**: Filesystem walk fallback
 
-**Management**: `EnvCacheManager` class - `src/cache.ts:26-230`
+### Optimized Cache
 
-**Operations**:
+**File**: `packages/zig/src/cache/optimized.zig`
 
-#### Load Cache
-
-**Method**: `load()` - `src/cache.ts:33`
-
-- Reads entire cache file into memory on first access
-- Parses into in-memory Map for O(1) lookups
-- Singleton pattern (loaded once per process)
-
-#### Get Entry
-
-**Method**: `get(projectDir)` - `src/cache.ts:70`
-
-- Returns cached environment info or null
-- Checks in-memory cache first
-
-#### Set Entry
-
-**Method**: `set(projectDir, depFile, envDir)` - `src/cache.ts:80`
-
-- Updates in-memory cache immediately
-- Schedules async disk write (debounced 10ms)
-- Includes dependency file mtime for invalidation
-
-#### Validate Cache
-
-**Method**: `validate()` - `src/cache.ts:195`
-
-- Checks if environment directories still exist
-- Verifies dependency file mtime matches cached value
-- Removes stale entries
-- Returns count of removed entries
-
-**Invalidation Triggers**:
-
-1. **Environment directory deleted** (manual cleanup or env:remove)
-2. **Dependency file modified** (package.json changed)
-3. **Cache cleared** (`pantry cache:clear`)
-
-### Cache Performance
-
-**Shell-level caching** (covered in [Shell Integration](#shell-integration)):
-
-- **Tier 1**: In-memory (instant, 0 syscalls)
-- **Tier 2**: Disk lookup (fast, 1-3 syscalls)
-- **Tier 3**: Filesystem walk (fallback, many syscalls)
-
-**Typical performance**:
-
-- Cached environment activation: **< 5ms**
-- Cache miss (first activation): **50-200ms**
-- Package download (cache miss): **1-30s** (network dependent)
+`OptimizedCache` wraps the other caches and provides statistics tracking (`CacheStatistics`). The shared cache (`shared.zig`) enables cross-project cache sharing via `GlobalCache`.
 
 ---
 
 ## Command Architecture
 
-### Command Loading Strategy
-
-**Lazy Loading**: Commands are loaded on-demand to minimize CLI startup time.
-
-**Registry**: `src/commands/index.ts:4`
-
-```typescript
-const registry: Record<string, () => Promise<Command>> = {
-  install: async () => (await import('./install')).default,
-  search: async () => (await import('./search')).default,
-  // ... 50+ commands
-}
-```
-
-**Resolution**: `resolveCommand(name: string)` - Returns Command or undefined
-
-### Command Interface
-
-**File**: `src/cli/types.ts`
-
-```typescript
-interface Command {
-  name: string
-  description: string
-  run: (context: {
-    argv: string[]
-    env: Record<string, string | undefined>
-    options?: Record<string, unknown>
-  }) => Promise<number> // Exit code
-}
-```
-
 ### CLI Framework
 
-**Framework**: `@stacksjs/clapp` (CAC-based)
+**Framework**: `zig-cli`
 
-**Entry Point**: `bin/cli.ts`
+**Entry Point**: `packages/zig/src/main.zig`
 
-**Flow**:
+The `main()` function creates a root `BaseCommand` and attaches subcommands. Each subcommand defines its arguments, options, and action function. Example:
 
+```zig
+var install_cmd = try cli.BaseCommand.init(allocator, "install", "Install packages");
+_ = try install_cmd.addArgument(
+    cli.Argument.init("packages", "Packages to install", .string)
+        .withRequired(false)
+        .withVariadic(true),
+);
+_ = try install_cmd.addOption(
+    cli.Option.init("global", "global", "Install globally", .bool).withShort('g'),
+);
+_ = install_cmd.setAction(installAction);
+try root.addSubcommand(install_cmd);
 ```
 
-1. CLI definition (using clapp fluent API)
-2. User runs command: `pantry install node`
-3. clapp parses arguments and options
-4. Invokes action handler
-5. Action handler resolves command from registry
-6. Executes command.run({ argv, env })
-7. Exits with returned code
-
-```
-
-**Example** (install command - `bin/cli.ts:57`):
-
-```typescript
-cli
-  .command('install [packages...]', 'Install packages')
-  .option('--verbose', 'Enable verbose output')
-  .option('-g, --global', 'Install globally')
-  .action(async (packages: string[], options) => {
-    const argv = [...packages]
-    if (options.verbose)
-      argv.push('--verbose')
-    if (options.global)
-      argv.push('--global')
-
-    const cmd = await resolveCommand('install')
-    const code = await cmd.run({ argv, env: process.env })
-    process.exit(code)
-  })
-```
+Action handlers extract arguments/options from the `ParseContext`, call into the library layer (`lib.commands.*`), and exit with the result code.
 
 ### Command Categories
 
-**Core Package Management**:
+**Package Management**: `install`, `add`, `remove`, `update`, `outdated`, `dedupe`
 
-- `install` - Install packages
-- `uninstall` - Remove packages
-- `reinstall` - Reinstall packages
-- `update` - Update packages to newer versions
-- `outdated` - Check for outdated packages
-- `list` - List installed packages
+**Package Info**: `list`, `tree`, `why`, `search`, `info`
 
-**Package Discovery**:
+**Scripts**: `run`, `dev`, `build`, `test`, `px`, `scripts`
 
-- `search` - Search for packages
-- `info` - Show package details
-- `tags` - Browse packages by category
+**Publishing**: `publish`, `npm:publish`, `publisher:add/list/remove`, `publish-commit`
 
-**Environment Management**:
+**Security**: `audit`, `verify`, `sign`, `generate-key`, `oidc setup`
 
-- `env:list` - List all environments
-- `env:inspect` - Inspect environment details
-- `env:clean` - Clean old environments
-- `env:remove` - Remove specific environment
+**Project**: `init`, `doctor`, `clean`, `bootstrap`, `link`, `unlink`
 
-**Cache Management**:
+**Services**: `services`, `start`, `stop`, `restart`, `status`, `logs`, `enable`, `disable`, `inspect`, `exec`, `snapshot`, `restore`, `snapshots`
 
-- `cache:clear` - Clear all caches
-- `cache:stats` - Show cache statistics
-- `cache:clean` - Clean up old cached packages
+**Cache**: `cache:stats`, `cache:clear`, `cache:clean`
 
-**Service Management**:
+**Environment**: `env:list`, `env:inspect`, `env:clean`, `env:remove`, `env` (activate)
 
-- `start <service>` - Start service
-- `stop <service>` - Stop service
-- `restart <service>` - Restart service
-- `status [service]` - Show service status
+**Shell**: `shell:integrate`, `dev:shellcode`
 
-**Development**:
-
-- `dev` - Set up dev environment for current directory
-- `dev:integrate` - Install shell hooks
-- `dev:shellcode` - Generate shell integration code
-- `bootstrap` - Install essential tools
-- `doctor` - Run health checks
+**Shims**: `shim`, `shim:list`, `shim:remove`
 
 ---
 
@@ -690,364 +498,196 @@ cli
 
 ### Environment Lifecycle
 
+**Files**: `packages/zig/src/env/manager.zig`, `packages/zig/src/env/scanner.zig`
+
 ```
-
 1. PROJECT DETECTION
-
-   └─> Finds dependency files (package.json, Cargo.toml, etc.)
+   -> deps/detector.zig finds dependency file
 
 2. ENVIRONMENT CREATION
-
-   └─> Computes environment hash
-   └─> Creates directory: ~/.local/share/pantry/envs/<hash>/
+   -> Computes environment hash (FNV-1a of project path)
+   -> Creates directory: ~/.local/share/pantry/envs/<hash>/
 
 3. DEPENDENCY INSTALLATION
-
-   └─> Installs packages to environment directory
-   └─> Creates binary wrappers in env/bin/
+   -> Installs packages to environment directory
+   -> Creates binary wrappers in env/bin/
 
 4. CACHE REGISTRATION
-
-   └─> Adds entry to ~/.cache/pantry/shell_cache/env_cache
-   └─> Maps project directory → environment directory
+   -> Adds entry to environment cache
+   -> Maps project directory -> environment directory
 
 5. ENVIRONMENT ACTIVATION (automatic on cd)
-
-   └─> Modifies PATH to prioritize environment binaries
-   └─> Sets environment variables (BUN_INSTALL, etc.)
+   -> Modifies PATH to prioritize environment binaries
+   -> Sets environment variables
 
 6. ENVIRONMENT DEACTIVATION (automatic on cd out)
-
-   └─> Removes environment paths from PATH
-   └─> Clears environment variables
-```
-
-### Project Detection
-
-**File**: `src/env.ts:669`
-
-**Function**: `findDependencyFile(root: string, searchAncestors: boolean)`
-
-**Dependency File Priority** (`src/env.ts:611`):
-
-```typescript
-const DEPENDENCY_FILE_NAMES = [
-  // pantry-specific (highest priority)
-  'pantry.config.ts',
-  'pantry.config.js',
-  'dependencies.yaml',
-  'deps.yaml',
-  'pkgx.yaml',
-
-  // Language-specific
-  'package.json', // Node.js
-  'Cargo.toml', // Rust
-  'go.mod', // Go
-  'pyproject.toml', // Python
-  'Gemfile', // Ruby
-  'deno.json', // Deno
-
-  // Version files
-  '.nvmrc',
-  '.node-version',
-  '.ruby-version',
-  '.python-version',
-
-  // ... and more
-]
-```
-
-**Detection Algorithm**:
-
-1. Start at current directory
-2. Check for each dependency file in priority order
-3. If found → project root is current directory
-4. If `searchAncestors=true`, walk up directory tree
-5. Repeat until found or reach filesystem root
-
-**Shell Fallback**: If no file found, uses `dev:find-project-root` binary detection
-
-### Environment Directory Structure
-
-```
-~/.local/share/pantry/envs/<project_hash>/
-  ├── bin/              # Binary wrappers/shims (added to PATH)
-  ├── pkgs/             # Installed packages
-  │   └── <domain>/
-  │       └── v<version>/
-  ├── lib/              # Symlinked libraries
-  ├── include/          # Symlinked headers
-  ├── share/            # Shared resources
-  ├── .bun/             # Bun global installs (if bun present)
-  │   └── bin/
-  └── sbin/             # System binaries (if needed)
+   -> Removes environment paths from PATH
+   -> Clears environment variables
 ```
 
 ### Environment Commands
 
-#### `env:list`
-
-**File**: `src/commands/env/list.ts` → `src/env.ts:164`
-
-**Purpose**: List all development environments
-
-**Output Formats**:
-
-- `table` (default) - Formatted table with project name, packages, size, created date
-- `json` - JSON array of environment metadata
-- `simple` - One line per environment (name + hash)
-
-**Example**:
-
-```bash
-$ pantry env:list
-
-📦 Development Environments:
-
-│ Project    │ Packages │ Binaries │ Size     │ Created    │
-├─────────────┼──────────┼──────────┼──────────┼────────────┤
-│ my-app     │ 12       │ 34       │ 234.5 MB │ 10/15/2025 │
-│ pantry  │ 8        │ 21       │ 156.2 MB │ 10/10/2025 │
-└─────────────┴──────────┴──────────┴──────────┴────────────┘
-
-Total: 2 environment(s)
-```
-
-#### `env:inspect <hash>`
-
-**File**: `src/commands/env/inspect.ts` → `src/env.ts:246`
-
-**Purpose**: Show detailed information about a specific environment
-
-**Information Displayed**:
-
-- Basic info (project name, hash, path, size, timestamps)
-- Directory structure (bin/, pkgs/, lib/, etc.)
-- Installed packages
-- Available binaries
-- Health check (binaries present, packages installed, directory structure)
-
-#### `env:clean`
-
-**File**: `src/commands/env/clean.ts` → `src/env.ts:387`
-
-**Purpose**: Clean up old or broken environments
-
-**Cleanup Criteria**:
-
-- Environments older than X days (default: 30)
-- Environments with no binaries (failed installations)
-- Empty or corrupted environments
-
-**Options**:
-
-- `--dry-run` - Preview what would be cleaned
-- `--older-than <days>` - Custom age threshold
-- `--force` - Skip confirmation
-
-#### `env:remove <hash>` / `env:remove --all`
-
-**File**: `src/commands/env/remove.ts` → `src/env.ts:490`
-
-**Purpose**: Remove specific environment or all environments
-
-**Safety**:
-
-- Requires `--force` flag to prevent accidental deletion
-- Shows what will be removed before deletion
-- Displays freed disk space after removal
-
-### Environment Variables
-
-**Project Environment**:
-
-- `pantry_CURRENT_PROJECT` - Current project directory
-- `pantry_ENV_DIR` - Environment directory
-- `pantry_ENV_BIN_PATH` - Environment bin directory (for PATH)
-- `BUN_INSTALL` - Bun installation directory (if bun present)
-
-**Shell Integration**:
-
-- `pantry_DISABLE_SHELL_INTEGRATION` - Disable shell hooks
-- `pantry_SHELL_INTEGRATION` - Indicates shell integration mode
-- `PANTRY_VERBOSE` - Enable verbose shell messages
-- `pantry_SHELL_VERBOSE` - Shell-specific verbose mode
-
-**Internal**:
-
-- `__pantry_LAST_PWD` - Last processed directory (avoids duplicate work)
-- `__pantry_LAST_ACTIVATION_KEY` - Last activated project (prevents duplicate messages)
-- `__pantry_PROCESSING` - Lock flag to prevent infinite loops
-- `__pantry_IN_HOOK` - Flag to prevent hook recursion
+- `env:list` -- List all environments with package counts, sizes, creation dates
+- `env:inspect` -- Show detailed environment info (packages, binaries, health)
+- `env:clean` -- Remove old/broken environments
+- `env:remove` -- Remove specific environment
 
 ---
 
 ## Service Management
 
-### Overview
+### Architecture
 
-pantry provides built-in service management for common development services (PostgreSQL, MySQL, Redis, Nginx, etc.). It abstracts platform-specific service managers (launchd on macOS, systemd on Linux).
-
-### Service Architecture
+**Files**: `packages/zig/src/services/`
 
 ```
-User Command: `pantry start postgres`
-    │
-    ├─> src/commands/start.ts
-    │   └─> Resolves service name
-    │
-    ├─> src/services/manager.ts:startService(name)
-    │   ├─> Gets service definition
-    │   ├─> Checks if service binary installed
-    │   ├─> Initializes service (if first start)
-    │   └─> Starts via platform manager
-    │
-    └─> src/services/platform.ts
-        ├─> macOS: launchd (launchctl)
-        ├─> Linux: systemd (systemctl)
-        └─> Windows: NSSM (planned)
+User Command: pantry start postgres
+    |
+    +-> cli/commands/services.zig: startCommand()
+    |
+    +-> services/manager.zig: ServiceManager.start()
+    |   +-> Gets service definition
+    |   +-> Generates platform service file if needed
+    |   +-> Delegates to platform controller
+    |
+    +-> services/platform.zig: ServiceController
+        +-> macOS: launchd (launchctl)
+        +-> Linux: systemd (systemctl --user)
+        +-> FreeBSD: rc.d
 ```
 
 ### Service Definitions
 
-**File**: `src/services/definitions.ts`
+**File**: `packages/zig/src/services/definitions.zig` (68+ services)
 
-**Structure**:
+Each service is a factory function returning a `ServiceConfig` struct:
 
-```typescript
-interface ServiceDefinition {
-  name: string
-  displayName: string
-  description: string
-  package: string // Package to install
-  binary: string // Binary name
-  configTemplate?: string // Config file template
-  defaultPort?: number
-  autoStart?: boolean
-  initCommand?: string[] // Initialization command
-  startCommand?: string[] // Custom start command
-  stopCommand?: string[] // Custom stop command
-}
+```zig
+pub const ServiceConfig = struct {
+    name: []const u8,
+    display_name: []const u8,
+    description: []const u8,
+    start_command: []const u8,
+    working_directory: ?[]const u8 = null,
+    env_vars: std.StringHashMap([]const u8),
+    port: ?u16 = null,
+    auto_start: bool = false,
+    keep_alive: bool = true,
+    health_check: ?[]const u8 = null,
+    project_id: ?[]const u8 = null,
+};
 ```
 
-**Supported Services** (30+):
+**Supported services include**:
 
-**Databases**:
+- **Databases**: PostgreSQL, MySQL, MariaDB, MongoDB, Redis, Valkey, InfluxDB, CockroachDB, Neo4j, ClickHouse, CouchDB, Cassandra, SurrealDB, DragonflyDB, TiDB, ScyllaDB, KeyDB, FerretDB, PocketBase
+- **Search**: Meilisearch, Elasticsearch, OpenSearch, Typesense, Solr
+- **Message Queues**: Kafka, RabbitMQ, Pulsar, NATS, Mosquitto, Redpanda
+- **Caching**: Memcached
+- **Monitoring**: Prometheus, Grafana, Jaeger, Loki, Alertmanager, VictoriaMetrics
+- **Infrastructure**: Vault, Consul, etcd, MinIO, Nomad, Temporal
+- **Web/Proxy**: Nginx, Caddy, Apache (httpd), Traefik, HAProxy, Varnish, Envoy
+- **Dev Tools**: SonarQube, Jenkins, Verdaccio, Hasura, Keycloak, LocalStack, Gitea, Mailpit, Ollama
+- **DNS**: dnsmasq, CoreDNS, Unbound
+- **Other**: Zookeeper, PHP-FPM, Syncthing, Tor, Cloudflared, Doppler
 
-- PostgreSQL (postgres)
-- MySQL (mysql)
-- Redis (redis)
-- MongoDB (mongodb)
-- SQLite (sqlite)
-- Meilisearch (meilisearch)
+Services with Java/Erlang dependencies use `WithContext` variants that resolve `JAVA_HOME`, `PATH`, and package home directories from pantry install locations.
 
-**Web Servers**:
+### Platform-Specific Service Files
 
-- Nginx (nginx)
-- Apache (apache)
-- Caddy (caddy)
+**macOS (launchd)**: `~/Library/LaunchAgents/com.pantry.<service>.plist`
+- Start: `launchctl start com.pantry.<service>`
+- Stop: `launchctl stop com.pantry.<service>`
 
-**Message Queues**:
-
-- RabbitMQ (rabbitmq)
-- Apache Kafka (kafka)
-
-**...and more**
+**Linux (systemd)**: `~/.config/systemd/user/<service>.service`
+- Start: `systemctl --user start <service>`
+- Stop: `systemctl --user stop <service>`
 
 ### Service Operations
 
-#### Start Service
+Beyond start/stop/restart/status, pantry supports:
 
-**Command**: `pantry start <service>`
+- `enable/disable` -- Auto-start on boot
+- `logs` -- View service logs
+- `inspect` -- Detailed service config and status
+- `exec` -- Run command in service environment
+- `snapshot/restore/snapshots` -- Data snapshotting
 
-**Flow**:
+---
 
-1. Resolve service definition
-2. Check if service package installed (install if missing)
-3. Check if service initialized (run init if needed)
-4. Start service via platform manager
-5. Wait for service to be ready (health check)
-6. Display status
+## Registry
 
-#### Stop Service
+### Server
 
-**Command**: `pantry stop <service>`
+**File**: `packages/registry/src/server.ts`
 
-**Flow**:
+A Bun.serve HTTP server with these endpoint groups:
 
-1. Resolve service definition
-2. Stop service via platform manager
-3. Verify service stopped
+**Package endpoints**:
+- `GET /packages/{name}` -- Latest package metadata
+- `GET /packages/{name}/{version}` -- Specific version metadata
+- `GET /packages/{name}/{version}/tarball` -- Download tarball
+- `GET /packages/{name}/versions` -- List all versions
+- `GET /search?q={query}` -- Search packages
+- `POST /publish` -- Publish package (multipart/form-data)
 
-#### Restart Service
+**Analytics endpoints**:
+- `GET /analytics/{name}` -- Download stats
+- `GET /analytics/{name}/timeline` -- 30-day download timeline
+- `GET /analytics/top` -- Top downloaded packages
+- `POST /analytics/events` -- Report analytics events
 
-**Command**: `pantry restart <service>`
+**Commit publish endpoints** (pkg-pr-new equivalent):
+- `POST /publish/commit` -- Publish from a commit
+- `GET /commits/{sha}` -- List packages for a commit
+- `GET /commits/{sha}/{name}/tarball` -- Download commit tarball
 
-**Flow**: Stop → Start (with health check)
+**Zig package endpoints**:
+- `GET /zig/packages/{name}` -- Zig package metadata
+- `POST /zig/publish` -- Publish Zig package
 
-#### Enable/Disable Service
+### Storage Backends
 
-**Commands**:
+**File**: `packages/registry/src/storage/`
 
-- `pantry enable <service>` - Auto-start on boot
-- `pantry disable <service>` - Disable auto-start
+- `s3.ts` -- S3Storage (production) / LocalStorage (development) for tarballs
+- `dynamodb-metadata.ts` -- DynamoDB single-table design for metadata (production)
+- `metadata.ts` -- FileMetadataStorage for local development
+- `dynamodb-client.ts` / `aws-client.ts` -- AWS SDK clients
 
-**Implementation**: Uses `launchctl load -w` (macOS) or `systemctl enable` (Linux)
+### Registry Client (Zig)
 
-#### Service Status
+**Files**: `packages/zig/src/registry/`
 
-**Command**: `pantry status [service]`
+The CLI supports multiple registry types: `pantry`, `npm`, `pkgx`, `github`, `custom`. The npm client (`npm.zig`) handles npm-compatible registries. The pantry client (`pantry.zig`) communicates with the Pantry registry server. Custom registries (`custom.zig`) support arbitrary HTTP endpoints with configurable authentication.
 
-**Output**:
+---
 
-- If service specified: Status of that service
-- If no service specified: Status of all services
+## Authentication and Security
 
-**Formats**:
+### OIDC Publishing
 
-- `table` (default) - Formatted table
-- `json` - JSON output
-- `simple` - One line per service
+**File**: `packages/zig/src/auth/oidc.zig`
 
-### Platform-Specific Implementation
+Supports passwordless publishing from CI/CD environments using OIDC tokens. The CLI extracts OIDC tokens from GitHub Actions (via `ACTIONS_ID_TOKEN_REQUEST_*` environment variables), validates claims, and exchanges them for registry publish credentials.
 
-#### macOS (launchd)
+### Package Signing
 
-**Service Files**: `~/Library/LaunchAgents/com.pantry.<service>.plist`
+**File**: `packages/zig/src/auth/signing.zig`
 
-**Operations**:
+Ed25519-based package signing and verification. The `verify` command checks package signatures against a keyring. The `sign` command produces detached signatures.
 
-- Start: `launchctl start com.pantry.<service>`
-- Stop: `launchctl stop com.pantry.<service>`
-- Status: `launchctl list | grep com.pantry.<service>`
-- Enable: `launchctl load -w <plist>`
-- Disable: `launchctl unload -w <plist>`
+### Trusted Publishers
 
-#### Linux (systemd)
+**Files**: `packages/zig/src/auth/policy.zig`, `packages/zig/src/auth/provenance.zig`
 
-**Service Files**: `~/.config/systemd/user/<service>.service`
+Policy-based access control for publishing. Trusted publishers are configured per-package and validated against OIDC identity claims (repository, workflow, ref).
 
-**Operations**:
+### Security Auditing
 
-- Start: `systemctl --user start <service>`
-- Stop: `systemctl --user stop <service>`
-- Status: `systemctl --user status <service>`
-- Enable: `systemctl --user enable <service>`
-- Disable: `systemctl --user disable <service>`
+**File**: `packages/zig/src/cli/commands/audit.zig`
 
-### Auto-Start Configuration
-
-**Config**: `config.services.autoStart` (default: false)
-
-**Behavior**: When enabled, automatically starts services after installing their packages.
-
-**Example**:
-
-```bash
-$ pantry install postgres  # Installs PostgreSQL
-# If autoStart=true
-✅ Service postgres initialized and started
-```
+The `audit` command checks installed packages against known vulnerability databases.
 
 ---
 
@@ -1056,141 +696,67 @@ $ pantry install postgres  # Installs PostgreSQL
 ### Global Directories
 
 ```
-~/.local/
-  ├── bin/                    # System-wide binaries
-  └── share/
-      └── pantry/
-          ├── global/         # Global package installations
-          │   ├── bin/
-          │   ├── pkgs/
-          │   ├── lib/
-          │   ├── include/
-          │   └── share/
-          └── envs/           # Project-specific environments
-              ├── <project_hash_1>/
-              ├── <project_hash_2>/
-              └── ...
+~/.pantry/
+  global/
+    bin/                  Binary wrappers/shims
+    packages/             Installed packages
+      <domain>/
+        v<version>/
+    lib/                  Symlinked libraries
+    include/              Symlinked headers
 
-~/.cache/
-  └── pantry/
-      ├── binaries/
-      │   └── packages/       # Downloaded package archives
-      │       └── <domain>-<version>/
-      ├── shell_cache/        # Environment cache
-      │   ├── env_cache       # Project → env mapping
-      │   ├── update_check_backoff
-      │   └── global_refresh_needed
-      └── cache-metadata.json # Package cache metadata
+~/.local/share/pantry/
+  envs/                   Project-specific environments
+    <project_hash>/
+      bin/
+      packages/
+      lib/
+  data/                   Service data
+    postgres/
+    redis/
+    ...
+  scripts/                Service startup scripts
 
-~/.config/
-  └── systemd/
-      └── user/               # Linux systemd service files
-          ├── postgres.service
-          ├── redis.service
-          └── ...
+~/.cache/pantry/
+  binaries/
+    packages/             Downloaded package archives
+  shell_cache/
+    env_cache             Project -> env mapping
 
-~/Library/
-  └── LaunchAgents/           # macOS launchd service files
-      ├── com.pantry.postgres.plist
-      ├── com.pantry.redis.plist
-      └── ...
+~/Library/LaunchAgents/   macOS service plists
+  com.pantry.*.plist
+
+~/.config/systemd/user/   Linux service units
+  *.service
 ```
 
 ### Project Configuration
 
-**pantry Config**: `pantry.config.ts` (or `.js`)
+**pantry.toml** (project-level settings):
 
-**Example**:
-
-```typescript
-import type { pantryConfig } from 'pantry'
-
-export default {
-  dependencies: {
-    node: '20',
-    python: '^3.11',
-    bun: 'latest',
-  },
-
-  globalDependencies: {
-    starship: 'latest', // Installed globally
-  },
-
-  services: {
-    autoStart: true, // Auto-start services
-  },
-
-  verbose: false,
-  installDependencies: true,
-} satisfies pantryConfig
+```toml
+[install]
+peer = false
+production = false
+linker = "isolated"      # "isolated" or "hoisted"
+modules_dir = "pantry"   # default install directory name
 ```
 
-**Dependency Files**: See [Project Detection](#project-detection) for full list
+**pantry.json** / **package.json** (dependencies):
 
----
-
-## Performance Optimizations
-
-### Shell Integration Performance
-
-1. **PWD Change Detection** - `src/dev/shellcode.ts:289`
-   - Check: `if ($__pantry_LAST_PWD == $PWD) return 0`
-   - Result: **0 syscalls** for unchanged directory
-
-2. **Subdirectory Fast Path** - `src/dev/shellcode.ts:296`
-   - Check: `if ($PWD == $pantry_CURRENT_PROJECT*) return 0`
-   - Result: **0 syscalls** for subdirectories of current project
-
-3. **Instant Deactivation** - `src/dev/shellcode.ts:302`
-   - Deactivate immediately when leaving project
-   - No project detection needed
-   - Result: **5-10 syscalls** (PATH manipulation only)
-
-4. **Multi-Tier Caching** - `src/dev/shellcode.ts:143`
-   - Tier 1: In-memory (0 syscalls)
-   - Tier 2: Disk cache (1-3 syscalls)
-   - Tier 3: Filesystem walk (fallback)
-   - Result: **< 5 syscalls** for cached projects
-
-5. **MD5 Hash Caching** - `src/dev/shellcode.ts:96`
-   - Cache MD5 hashes in memory
-   - Include file mtime for invalidation
-   - Result: Avoid spawning MD5 process repeatedly
-
-6. **Async Cache Writes** - `src/dev/shellcode.ts:240`
-   - Write cache in background
-   - Don't block shell prompt
-   - Result: No blocking I/O
-
-### Installation Performance
-
-1. **Download Caching**
-   - Cache downloaded archives
-   - Validate with size + metadata
-   - Result: **Skip downloads** for cached packages
-
-2. **Parallel Installation** (planned)
-   - Install independent packages in parallel
-   - Respect dependency order
-   - Result: **Faster multi-package installs**
-
-3. **Lazy Command Loading** - `src/commands/index.ts`
-   - Load commands on-demand
-   - Result: **Fast CLI startup** (< 100ms)
-
-### Cache Performance
-
-**Environment Cache**:
-
-- **In-memory**: O(1) lookups, instant
-- **Disk cache**: Single awk invocation, 1-3ms
-- **Write**: Async, debounced (10ms), non-blocking
-
-**Package Cache**:
-
-- **Metadata**: Single JSON file, loaded once
-- **Lookup**: O(1) hash map lookup
-- **Validation**: Size check only (fast)
+```json
+{
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "trustedDependencies": [
+    "esbuild"
+  ]
+}
+```
 
 ---
 
@@ -1198,144 +764,26 @@ export default {
 
 ### Platform Detection
 
-**File**: `src/utils.ts`
+**File**: `packages/zig/src/core/platform.zig`
 
-**Functions**:
+Compile-time platform and architecture detection via `builtin.os.tag` and `builtin.cpu.arch`. Supports:
 
-- `getPlatform()` - Returns `darwin`, `linux`, `windows`
-- `getArchitecture()` - Returns `x64`, `arm64`, `aarch64`
+- **Platforms**: darwin (macOS), linux, windows, freebsd
+- **Architectures**: x86_64, aarch64
 
 ### Platform-Specific Behavior
 
-#### macOS (Darwin)
+**macOS**:
+- Library path fixing via `install_name_tool` (`install/libfixer.zig`)
+- Uses `DYLD_LIBRARY_PATH` / `DYLD_FALLBACK_LIBRARY_PATH`
+- Services via launchd (`~/Library/LaunchAgents/`)
 
-**Library Path Handling**:
-
-- Uses `DYLD_LIBRARY_PATH`, `DYLD_FALLBACK_LIBRARY_PATH`
-- Requires fixing install names with `install_name_tool`
-- Binary wrappers set `DYLD_*` variables
-
-**Library Install Names**: `src/install-helpers.ts:fixMacOSLibraryPaths()`
-
-- Updates library dependencies to use `@loader_path/../lib`
-- Enables relocatable binaries
-
-**Service Manager**: `launchd` (via `launchctl`)
-
-#### Linux
-
-**Library Path Handling**:
-
+**Linux**:
 - Uses `LD_LIBRARY_PATH`
-- Binary wrappers set `LD_LIBRARY_PATH`
+- Services via systemd user units (`~/.config/systemd/user/`)
 
-**Service Manager**: `systemd` (via `systemctl --user`)
-
-#### Windows
-
-**Library Path Handling**: `PATH` modification
-
-**Service Manager**: NSSM (planned)
-
-### Binary Distribution
-
-**Download URLs**: Platform + architecture specific
-
-**Example** (Node.js):
-
-```
-darwin-arm64: https://dist.nodejs.org/v20.10.0/node-v20.10.0-darwin-arm64.tar.gz
-darwin-x64:   https://dist.nodejs.org/v20.10.0/node-v20.10.0-darwin-x64.tar.gz
-linux-arm64:  https://dist.nodejs.org/v20.10.0/node-v20.10.0-linux-arm64.tar.gz
-linux-x64:    https://dist.nodejs.org/v20.10.0/node-v20.10.0-linux-x64.tar.gz
-```
-
-**Archive Formats**: `.tar.gz`, `.tar.xz`, `.zip` (platform dependent)
-
----
-
-## Zig Refactoring Considerations
-
-### High-Value Targets for Zig
-
-1. **Shell Code Generation** (`src/dev/shellcode.ts`)
-   - **Why**: Performance-critical, runs on every shell startup
-   - **Benefit**: Faster generation, smaller binary
-   - **Challenge**: Complex string manipulation
-
-2. **Cache System** (`src/cache.ts`)
-   - **Why**: Hot path for environment switching
-   - **Benefit**: Faster lookups, lower memory usage
-   - **Challenge**: Async I/O, JSON parsing
-
-3. **Project Detection** (`src/env.ts:findDependencyFile`)
-   - **Why**: Called frequently, I/O heavy
-   - **Benefit**: Faster file system operations
-   - **Challenge**: Recursive directory walking
-
-4. **MD5 Hashing** (`dev:md5` command)
-   - **Why**: Called by shell code for cache keys
-   - **Benefit**: Eliminate process spawning overhead
-   - **Challenge**: Shell integration
-
-5. **Binary Wrappers** (`src/install-helpers.ts:createShims`)
-   - **Why**: Generated for every installed binary
-   - **Benefit**: Faster execution, less overhead
-   - **Challenge**: Complex environment setup
-
-### Architecture Preservation
-
-**Keep**:
-
-- Multi-tier caching strategy
-- Lazy environment activation
-- Instant deactivation logic
-- Cache invalidation triggers
-
-**Consider**:
-
-- Compile shell code ahead of time (vs. runtime generation)
-- Native library for cache operations (FFI from shell)
-- Standalone binary for project detection (already done)
-
-### Performance Targets
-
-**Current** (TypeScript/Bun):
-
-- CLI startup: ~100ms
-- Cached environment activation: < 5ms
-- Cache miss activation: 50-200ms
-
-**Target** (Zig):
-
-- CLI startup: < 10ms
-- Cached environment activation: < 1ms
-- Cache miss activation: 20-50ms
-
----
-
-## Summary
-
-pantry's architecture is built around three core pillars:
-
-1. **Shell Integration**: Seamless environment activation via hooks
-2. **Multi-Tier Caching**: Instant environment switching via aggressive caching
-3. **Modular Commands**: Lazy-loaded commands for fast CLI startup
-
-The system achieves sub-millisecond environment switching through careful optimization of the shell integration layer, leveraging in-memory caching and minimizing syscalls. The caching system operates at multiple levels (shell, process, disk) to ensure optimal performance.
-
-For a Zig refactor, focus on:
-
-- Shell code generation (performance-critical)
-- Cache system (hot path)
-- File system operations (I/O heavy)
-
-While preserving:
-
-- Multi-tier caching architecture
-- Lazy activation strategy
-- Cache invalidation logic
-- Cross-platform abstractions
+**FreeBSD**:
+- Services via rc.d (`~/.config/pantry/services/`)
 
 ---
 

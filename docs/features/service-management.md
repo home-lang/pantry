@@ -12,7 +12,7 @@ Service management in pantry includes:
 - **Per-Service Health Checks**: Every service has a built-in health check command used for readiness detection
 - **Service Groups**: Start/stop multiple related services at once with built-in or custom groups
 - **Custom Services**: Define your own services in `deps.yaml`
-- **Log Viewing**: View service logs with `pantry service logs`
+- **Log Viewing**: View service logs with `pantry logs`
 - **Environment Isolation**: Service-specific data directories and configurations
 - **Template Variables**: Dynamic configuration with path substitution
 
@@ -20,25 +20,25 @@ Service management in pantry includes:
 
 ```bash
 # Start a database service
-pantry service start postgres
+pantry start postgres
 
 # Start a service group (all databases)
-pantry service start db
+pantry start db
 
 # Check service status
-pantry service status postgres
+pantry status postgres
 
 # View service logs
-pantry service logs postgres
+pantry logs postgres
 
 # Stop a service
-pantry service stop postgres
+pantry stop postgres
 
 # List all available services
-pantry service list
+pantry services
 
 # Restart a service
-pantry service restart redis
+pantry restart redis
 ```
 
 ## Configure Services in dependencies.yaml
@@ -108,13 +108,13 @@ Start, stop, or restart multiple related services at once using group names:
 
 ```bash
 # Start all database services
-pantry service start db
+pantry start db
 
 # Stop all monitoring services
-pantry service stop monitoring
+pantry stop monitoring
 
 # Restart the web server group
-pantry service restart web
+pantry restart web
 ```
 
 #### Built-in Groups
@@ -147,9 +147,9 @@ services:
 Then use them with any service command:
 
 ```bash
-pantry service start backend
-pantry service stop backend
-pantry service restart frontend
+pantry start backend
+pantry stop backend
+pantry restart frontend
 ```
 
 ### Shorthand: services.infer: true
@@ -215,8 +215,9 @@ pantry includes 68 pre-configured service definitions:
 - **Caddy** (`caddy`) - Web server with automatic HTTPS (port 2015)
 - **Apache httpd** (`httpd`) - Apache HTTP server (port 8084)
 
-### Search (2)
+### Search (3)
 
+- **Meilisearch** (`meilisearch`) - Lightning-fast search engine (port 7700)
 - **Apache Solr** (`solr`) - Enterprise search platform (port 8983)
 - **Apache Zookeeper** (`zookeeper`) - Coordination service (port 2181)
 
@@ -301,10 +302,10 @@ Start one or more services:
 
 ```bash
 # Start a single service
-pantry service start postgres
+pantry start postgres
 
 # Start a service group
-pantry service start db
+pantry start db
 
 # Services are initialized automatically on first start
 # PostgreSQL: Creates database cluster with initdb
@@ -317,10 +318,10 @@ Stop running services:
 
 ```bash
 # Stop a single service
-pantry service stop postgres
+pantry stop postgres
 
 # Stop a service group
-pantry service stop monitoring
+pantry stop monitoring
 
 # All services support graceful shutdown
 ```
@@ -331,10 +332,10 @@ Restart services (stop then start):
 
 ```bash
 # Restart a service
-pantry service restart postgres
+pantry restart postgres
 
 # Restart a group
-pantry service restart web
+pantry restart web
 
 # Includes automatic health checks after restart
 ```
@@ -345,11 +346,11 @@ Check the status of services:
 
 ```bash
 # Check specific service status
-pantry service status postgres
-# Output: stopped | starting | running | stopping | failed | unknown
+pantry status postgres
+# Output: running | stopped | failed | unknown
 
 # List all services and their status
-pantry service list
+pantry services
 ```
 
 ### Viewing Logs
@@ -358,11 +359,11 @@ View service output and error logs:
 
 ```bash
 # View recent logs for a service
-pantry service logs postgres
+pantry logs postgres
 
 # Follow logs in real-time
-pantry service logs postgres --follow
-pantry service logs postgres -f
+pantry logs postgres --follow
+pantry logs postgres -f
 ```
 
 On macOS, logs are stored at `~/.local/share/pantry/logs/{service}.log` and `~/.local/share/pantry/logs/{service}.err`. On Linux, logs are retrieved via `journalctl --user -u pantry-{service}.service`.
@@ -373,13 +374,13 @@ Configure services to start automatically:
 
 ```bash
 # Enable auto-start (starts with system)
-pantry service enable postgres
+pantry enable postgres
 
 # Disable auto-start
-pantry service disable postgres
+pantry disable postgres
 
 # Check if service is enabled
-pantry service status postgres
+pantry status postgres
 ```
 
 ## Service Configuration
@@ -481,12 +482,14 @@ nano ~/.local/share/pantry/services/config/redis.conf
 nano ~/.local/share/pantry/services/config/nginx.conf
 
 # Restart service to apply changes
-pantry service restart redis
+pantry restart redis
 ```
 
 ## Database Configuration
 
 pantry provides configurable database credentials for all database services. These settings allow you to customize database authentication while maintaining secure defaults.
+
+> **Note:** Database credential configuration via environment variables and `pantry.config.ts` is planned but not yet fully implemented. Currently, database auto-creation reads credentials from the project's `.env` file only.
 
 ### Default Database Credentials
 
@@ -521,7 +524,7 @@ Configure credentials in your `pantry.config.ts`:
 
 ```typescript
 // pantry.config.ts
-const config: pantryConfig = {
+const config: PantryConfig = {
   services: {
     database: {
       username: 'myuser',
@@ -543,7 +546,7 @@ PostgreSQL services support all configuration options:
 export pantry_DB_USERNAME="postgres_user"
 export pantry_DB_PASSWORD="secure_password"
 export pantry_DB_AUTH_METHOD="md5"
-pantry service start postgres
+pantry start postgres
 ```
 
 **Authentication Methods:**
@@ -560,7 +563,7 @@ MySQL services use username and password configuration:
 # Start MySQL with custom credentials
 export pantry_DB_USERNAME="mysql_user"
 export pantry_DB_PASSWORD="mysql_password"
-pantry service start mysql
+pantry start mysql
 ```
 
 #### Database Creation
@@ -600,7 +603,7 @@ Each service automatically creates a project-specific database:
 
 ```bash
 # Uses: username=root, password=password, authMethod=trust
-pantry service start postgres
+pantry start postgres
 # Database URL: postgresql://root:password@localhost:5432/my_project
 ```
 
@@ -609,7 +612,7 @@ pantry service start postgres
 ```bash
 export pantry_DB_USERNAME="dev_user"
 export pantry_DB_PASSWORD="dev_password"
-pantry service start postgres mysql
+pantry start postgres mysql
 # PostgreSQL: postgresql://dev_user:dev_password@localhost:5432/my_project
 # MySQL: mysql://dev_user:dev_password@localhost:3306/my_project
 ```
@@ -620,7 +623,7 @@ pantry service start postgres mysql
 export pantry_DB_USERNAME="app_user"
 export pantry_DB_PASSWORD="$(openssl rand -base64 32)"
 export pantry_DB_AUTH_METHOD="scram-sha-256"
-pantry service start postgres
+pantry start postgres
 ```
 
 ## Health Checks
@@ -733,8 +736,8 @@ Service logs are centrally managed:
 ~/.local/share/pantry/logs/nginx.log
 
 # View logs via CLI
-pantry service logs postgres
-pantry service logs redis --follow
+pantry logs postgres
+pantry logs redis --follow
 ```
 
 ### Backup and Migration
@@ -838,7 +841,7 @@ Services are automatically initialized on first start:
 2. Check service logs:
 
    ```bash
-   pantry service logs postgres
+   pantry logs postgres
    # or directly:
    tail -f ~/.local/share/pantry/logs/postgres.log
    ```
@@ -913,26 +916,26 @@ Services are automatically initialized on first start:
 1. **Use service groups for quick setup**:
 
    ```bash
-   pantry service start db
+   pantry start db
    ```
 
 2. **Enable auto-start for essential services**:
 
    ```bash
-   pantry service enable postgres
+   pantry enable postgres
    ```
 
 3. **Monitor service health and logs**:
 
    ```bash
-   pantry service list
-   pantry service logs postgres -f
+   pantry services
+   pantry logs postgres -f
    ```
 
 4. **Stop unused services to save resources**:
 
    ```bash
-   pantry service stop monitoring
+   pantry stop monitoring
    ```
 
 ### Production Considerations
@@ -1012,7 +1015,7 @@ services:
 
 ```bash
 # Start database services
-pantry service start postgres redis
+pantry start postgres redis
 
 # Connect to PostgreSQL
 psql postgresql://localhost:5432/postgres
@@ -1025,7 +1028,7 @@ redis-cli -h localhost -p 6379
 
 ```bash
 # Start web development stack
-pantry service start web db
+pantry start web db
 
 # Services are now available at
 # PostgreSQL: localhost:5432
@@ -1037,10 +1040,10 @@ pantry service start web db
 
 ```bash
 # Start infrastructure services
-pantry service start monitoring
+pantry start monitoring
 
 # Or start individually
-pantry service start consul vault prometheus grafana
+pantry start consul vault prometheus grafana
 
 # Service discovery: http://localhost:8500
 # Secrets management: http://localhost:8200

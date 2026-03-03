@@ -14,7 +14,7 @@ pantry --version
 pantry list --verbose
 
 # Test shell integration
-type _pkgx_chpwd_hook || echo "Shell integration not working"
+type __pantry_chpwd || echo "Shell integration not working"
 ```
 
 ### Environment Status
@@ -144,7 +144,7 @@ ls -la {dependencies,pkgx,deps}.{yaml,yml} .{pantry,pkgx,deps}.{yaml,yml} 2>/dev
 
    ```bash
 # Should show function definition
-   type _pkgx_chpwd_hook
+   type __pantry_chpwd
 
 # Check shell config
    grep "pantry dev:shellcode" ~/.zshrc ~/.bashrc
@@ -577,9 +577,9 @@ journalctl | grep -i pantry         # Linux systemd
 
 ### Community Support
 
-- **GitHub Discussions**: [stacksjs/pantry discussions](https://github.com/stacksjs/pantry/discussions)
+- **GitHub Discussions**: [home-lang/pantry discussions](https://github.com/home-lang/pantry/discussions)
 - **Discord**: [Join Stacks Discord](https://discord.gg/stacksjs)
-- **Issues**: [Report bugs](https://github.com/stacksjs/pantry/issues)
+- **Issues**: [Report bugs](https://github.com/home-lang/pantry/issues)
 
 ### Reporting Bugs
 
@@ -631,7 +631,7 @@ chown -R $USER ~/.local/share/pantry/services/
 
 # Reset service configuration
 rm ~/.local/share/pantry/services/config/postgres.conf
-pantry service start postgres  # Regenerates default config
+pantry start postgres  # Regenerates default config
 ```
 
 ### Service Health Check Failures
@@ -712,11 +712,11 @@ nginx -t -c ~/.local/share/pantry/services/config/nginx.conf
 ```bash
 # Regenerate default configuration
 rm ~/.local/share/pantry/services/config/redis.conf
-pantry service restart redis
+pantry restart redis
 
 # Edit configuration manually
 nano ~/.local/share/pantry/services/config/redis.conf
-pantry service restart redis
+pantry restart redis
 ```
 
 ### Platform-Specific Service Issues
@@ -813,7 +813,7 @@ sudo ufw allow 5432/tcp
 # Change service port in configuration
 nano ~/.local/share/pantry/services/config/postgres.conf
 # Change: port = 5433
-pantry service restart postgres
+pantry restart postgres
 ```
 
 ### Service Management Commands Not Working
@@ -826,7 +826,7 @@ pantry service restart postgres
 echo $pantry_SERVICES_ENABLED
 
 # Check platform support
-pantry service list  # Should show available services
+pantry services  # Should show available services
 ```
 
 **Solutions**:

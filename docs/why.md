@@ -22,7 +22,7 @@ pantry is a CLI and TypeScript library designed to solve these problems by provi
 - **Project-aware dev environments**: Automatic activation in project directories with version-aware isolation
 - **Version switching on cd**: Environments are derived from a project hash plus a dependency fingerprint, so changing versions in `deps.yaml` selects a new env automatically
 
-Learn more: [Quickstart](https://stacks-pantry.netlify.app/quickstart), [Environment Management](https://stacks-pantry.netlify.app/features/environment-management), [Package Management](https://stacks-pantry.netlify.app/features/package-management).
+Learn more: [Quickstart](https://pantry.sh/quickstart), [Environment Management](https://pantry.sh/features/environment-management), [Package Management](https://pantry.sh/features/package-management).
 
 ## Key Advantages
 

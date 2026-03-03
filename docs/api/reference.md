@@ -271,10 +271,10 @@ interface Installation {
 ### Configuration Module
 
 ```typescript
-import type { pantryConfig, pantryOptions } from 'ts-pantry'
+import type { PantryConfig, pantryOptions } from 'ts-pantry'
 import { config, defaultConfig } from 'ts-pantry'
 
-interface pantryConfig {
+interface PantryConfig {
   /** Enable verbose logging (default: false) */
   verbose: boolean
   /** Path where binaries should be installed (default: /usr/local if writable, ~/.local otherwise) */
@@ -303,13 +303,13 @@ interface pantryConfig {
   shellDeactivationMessage: string
 }
 
-type pantryOptions = Partial<pantryConfig>
+type pantryOptions = Partial<PantryConfig>
 
 // The resolved configuration object
-const config: pantryConfig
+const config: PantryConfig
 
 // The default configuration values
-const defaultConfig: pantryConfig
+const defaultConfig: PantryConfig
 ```
 
 ### Version Module
@@ -521,7 +521,7 @@ console.log('Installed files:', installedFiles)
 ### Configuration
 
 ```typescript
-import type { pantryConfig } from 'ts-pantry'
+import type { PantryConfig } from 'ts-pantry'
 import { config } from 'ts-pantry'
 
 // Access current configuration
@@ -529,7 +529,7 @@ console.log('Verbose mode:', config.verbose)
 console.log('Install path:', config.installationPath)
 
 // Create custom configuration
-const customConfig: pantryConfig = {
+const customConfig: PantryConfig = {
   ...config,
   verbose: true,
   installationPath: '/custom/path'
@@ -636,9 +636,9 @@ Project-level post-setup commands can be configured via top-level `postSetup` in
 
 ```ts
 // pantry.config.ts
-import type { pantryConfig } from 'ts-pantry'
+import type { PantryConfig } from 'ts-pantry'
 
-const config: pantryConfig = {
+const config: PantryConfig = {
   postSetup: {
     enabled: true,
     commands: [
@@ -1101,7 +1101,7 @@ pantry is written in TypeScript and provides full type definitions. All function
 import type {
   Installation,
   JsonResponse,
-  pantryConfig,
+  PantryConfig,
   pantryOptions,
   ServiceDefinition,
   ServiceInstance,
