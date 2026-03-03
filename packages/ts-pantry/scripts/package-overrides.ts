@@ -6868,17 +6868,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── convco.github.io — same time crate issue as git-delta ─────────
-  // libgit2-sys emits `cargo:rustc-link-lib=iconv` but no search path.
-  // On macOS Big Sur+, /usr/lib/libiconv.dylib is in the dyld shared cache
-  // (not on disk), so LIBRARY_PATH="/usr/lib" doesn't help. The Xcode SDK
-  // has .tbd stubs that the linker can resolve. Pass the SDK lib path via
-  // RUSTFLAGS so rustc's linker finds libiconv.tbd there.
+  // libgit2-sys links -liconv but can't find it on macOS (Big Sur+ dyld cache).
+  // Homebrew libiconv is installed but not linked on CI runners.
   'convco.github.io': {
     platforms: {
       darwin: {
         prependScript: [
-          'SDK_PATH="$(xcrun --show-sdk-path 2>/dev/null || echo /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk)"',
-          'export RUSTFLAGS="-L native=${SDK_PATH}/usr/lib ${RUSTFLAGS:-}"',
+          'brew install libiconv 2>/dev/null || true',
+          'ICONV_PREFIX="$(brew --prefix libiconv 2>/dev/null || echo /opt/homebrew/opt/libiconv)"',
+          'export LDFLAGS="-L${ICONV_PREFIX}/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I${ICONV_PREFIX}/include ${CPPFLAGS:-}"',
+          'export LIBRARY_PATH="${ICONV_PREFIX}/lib:${LIBRARY_PATH:-}"',
         ],
       },
     },
