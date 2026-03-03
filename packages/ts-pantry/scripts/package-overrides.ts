@@ -5185,6 +5185,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
+          'brew unlink boost 2>/dev/null || true',
           // Suppress duplicate linked dylib error (transitive deps via fizz/wangle)
           'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
         ],
@@ -5234,6 +5236,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
+          'brew unlink boost 2>/dev/null || true',
           // Suppress duplicate linked dylib error (libzstd linked transitively via libfizz + directly)
           'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
         ],
@@ -5279,6 +5283,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
     platforms: {
       darwin: {
         prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
+          'brew unlink boost 2>/dev/null || true',
           // Fix fmt::join missing in fmt 12+ — it moved to <fmt/ranges.h>
           'sed -i.bak \'1s/^/#include <fmt\\/ranges.h>\\n/\' thrift/lib/cpp2/server/RoundRobinRequestPile.h 2>/dev/null || true',
           // Suppress duplicate linked dylib error (transitive deps via fizz/wangle)
@@ -5412,6 +5418,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
+          'brew unlink boost 2>/dev/null || true',
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
