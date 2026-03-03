@@ -3945,7 +3945,7 @@ export interface GeneratedPackageVersions {
   'github.com/npiv/chatblade': '0.7.0' | '0.6.4' | '0.6.3' | '0.6.2' | '0.5.0' | '0.4.0' | '0.3.4' | '0.3.3' | '0.3.1' | '0.3.0' | '0.2.3' | '0.2.2' | '0.2.1' | '0.2.0' | '0.1.1'
   'github.com/npryce/adr-tools': '3.0.0'
   'github.com/NQMVD/needs': '0.8.0' | '0.6.0'
-  'github.com/nullclaw/nullclaw': '2026.3.1' | '2026.2.26' | '2026.2.25'
+  'github.com/nullclaw/nullclaw': '2026.3.2' | '2026.3.1' | '2026.2.26' | '2026.2.25'
   'github.com/numactl/numactl': '2.0.16'
   'github.com/nvbn/thefuck': '3.32.0'
   'github.com/nvm-sh/nvm': '0.40.4' | '0.40.3' | '0.40.2' | '0.40.1' | '0.40.0' | '0.39.7' | '0.39.6' | '0.39.5'
