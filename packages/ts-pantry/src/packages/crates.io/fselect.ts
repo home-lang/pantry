@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/fselect`
  * @programs `fselect`
- * @version `0.9.2` (11 versions available)
+ * @version `0.9.3` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/fselect`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "fselect"
  * console.log(pkg.description) // "Find files with SQL-like queries"
  * console.log(pkg.programs)    // ["fselect"]
- * console.log(pkg.versions[0]) // "0.9.2" (latest)
+ * console.log(pkg.versions[0]) // "0.9.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/fselect.md
@@ -75,6 +75,7 @@ export const cratesiofselectPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.9.3',
     '0.9.2',
     '0.9.1',
     '0.9.0',
