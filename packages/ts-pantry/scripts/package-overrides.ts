@@ -6868,12 +6868,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── convco.github.io — same time crate issue as git-delta ─────────
-  // Also needs libiconv for libgit2-sys on darwin (system libiconv at /usr/lib)
+  // libgit2-sys emits `cargo:rustc-link-lib=iconv` but no search path.
+  // On macOS Big Sur+, /usr/lib/libiconv.dylib is in the dyld shared cache
+  // (not on disk), so LIBRARY_PATH="/usr/lib" doesn't help. The Xcode SDK
+  // has .tbd stubs that the linker can resolve. Pass the SDK lib path via
+  // RUSTFLAGS so rustc's linker finds libiconv.tbd there.
   'convco.github.io': {
     platforms: {
       darwin: {
         prependScript: [
-          'export LIBRARY_PATH="/usr/lib:${LIBRARY_PATH:-}"',
+          'SDK_PATH="$(xcrun --show-sdk-path 2>/dev/null || echo /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk)"',
+          'export RUSTFLAGS="-L native=${SDK_PATH}/usr/lib ${RUSTFLAGS:-}"',
         ],
       },
     },
@@ -7604,12 +7609,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── github.com/plougher/squashfs-tools — fix macOS st_atim compat ──
-  // macOS uses st_atimespec instead of st_atim in struct stat
+  // macOS uses st_atimespec instead of st_atim in struct stat.
+  // CWD is already squashfs-tools/ (working-directory in recipe).
+  // Use specific patterns to avoid corrupting st_atime → st_atimespece.
   'github.com/plougher/squashfs-tools': {
     platforms: {
       darwin: {
         prependScript: [
-          'sed -i.bak \'s/st_atim/st_atimespec/g; s/st_mtim/st_mtimespec/g; s/st_ctim/st_ctimespec/g\' squashfs-tools/mksquashfs.c squashfs-tools/unsquashfs.c squashfs-tools/pseudo.c 2>/dev/null || true',
+          "sed -i.bak 's/buf->st_atim,/buf->st_atimespec,/g; s/buf->st_atim)/buf->st_atimespec)/g; s/buf->st_mtim,/buf->st_mtimespec,/g; s/buf->st_mtim)/buf->st_mtimespec)/g; s/buf->st_ctim,/buf->st_ctimespec,/g; s/buf->st_ctim)/buf->st_ctimespec)/g' mksquashfs.c unsquashfs.c pseudo.c 2>/dev/null || true",
         ],
       },
     },
