@@ -151,7 +151,9 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
 
           // Check if build script references props/
           const needsProps = content.includes('props/')
+          // Props can be in a props/ subdir OR as sibling files (copied to props/ at build time)
           const hasPropsDir = existsSync(join(dir, 'props'))
+            || readdirSync(dir).some(f => f !== 'package.yml' && !f.startsWith('.'))
 
           // Look up version from package metadata
           const pkg = lookupPantryPackage(domain)
@@ -371,7 +373,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // Old scryer-prolog fails on darwin; 0.10.0 works on both
   'scryer.pl': ['0.9.4'],
   // Old sentry-cli fails on darwin (Rust libiconv); 3.2.0+ works on both
-  'sentry.io': ['<3.2.0'],
+  // 3.2.3: apple-catalog-parsing crate fails with Xcode 26.3 RC2 module build error
+  'sentry.io': ['<3.2.0', '3.2.3'],
   // Old typst fails (Rust build); 0.12.0+ works on both
   'typst.app': ['<0.12.0'],
   // Old ICU build fails; 74.2.0+ works. 78.1.0/78.2.0 are phantom/broken.

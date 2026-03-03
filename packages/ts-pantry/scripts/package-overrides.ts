@@ -841,6 +841,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'linux-pam.org': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Install NIS/YP headers needed for pam_unix NIS support (YPERR_SUCCESS)
+          'sudo apt-get install -y libnsl-dev 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.MESON_ARGS)) {
         const args = recipe.build.env.MESON_ARGS
@@ -852,6 +860,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Add -Ddocs=disabled
         if (!recipe.build.env.MESON_ARGS.includes('-Ddocs=disabled')) {
           recipe.build.env.MESON_ARGS.push('-Ddocs=disabled')
+        }
+        // Redirect systemd unit dir to prefix (v1.7.0+ installs to /usr/lib/systemd/)
+        if (!recipe.build.env.MESON_ARGS.some((a: string) => a.includes('-Dsystemdunitdir'))) {
+          recipe.build.env.MESON_ARGS.push('-Dsystemdunitdir={{prefix}}/lib/systemd/system')
+        }
+        // Disable NIS support (missing libnsl-dev/ypbind headers on CI)
+        if (!recipe.build.env.MESON_ARGS.some((a: string) => a.includes('-Dnis'))) {
+          recipe.build.env.MESON_ARGS.push('-Dnis=disabled')
+        }
+        // Disable selinux (not available on CI)
+        if (!recipe.build.env.MESON_ARGS.some((a: string) => a.includes('-Dselinux'))) {
+          recipe.build.env.MESON_ARGS.push('-Dselinux=disabled')
+        }
+      }
+      // Also add --disable-nis for autotools builds (v1.6.x)
+      if (Array.isArray(recipe.build?.env?.CONFIGURE_ARGS)) {
+        if (!recipe.build.env.CONFIGURE_ARGS.includes('--disable-nis')) {
+          recipe.build.env.CONFIGURE_ARGS.push('--disable-nis')
         }
       }
     },
@@ -3830,6 +3856,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           'brew install libmagic 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix libmagic)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          // Ensure girara headers are findable — search S3 dep dirs for girara include path
+          'for d in /tmp/buildkit-deps/pwmt.org/girara/*/include; do',
+          '  if [ -d "$d/girara" ]; then',
+          '    export CPATH="$d:${CPATH:-}"',
+          '    export C_INCLUDE_PATH="$d:${C_INCLUDE_PATH:-}"',
+          '    export PKG_CONFIG_PATH="$(dirname "$d")/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
+          '    break',
+          '  fi',
+          'done',
         ],
       },
     },
@@ -5148,6 +5183,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'facebook.com/edencommon': {
     platforms: {
+      darwin: {
+        prependScript: [
+          // Suppress duplicate linked dylib error (transitive deps via fizz/wangle)
+          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
+        ],
+      },
       linux: {
         prependScript: [
           // Use system glog/gflags to match folly's ABI
@@ -5187,6 +5228,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'facebook.com/fb303': {
     platforms: {
+      darwin: {
+        prependScript: [
+          // Suppress duplicate linked dylib error (libzstd linked transitively via libfizz + directly)
+          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
+        ],
+      },
       linux: {
         prependScript: [
           // Use system glog/gflags to match folly's ABI
@@ -5223,6 +5270,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Fix fmt::join missing in fmt 12+ — it moved to <fmt/ranges.h>
           'sed -i.bak \'1s/^/#include <fmt\\/ranges.h>\\n/\' thrift/lib/cpp2/server/RoundRobinRequestPile.h 2>/dev/null || true',
+          // Suppress duplicate linked dylib error (transitive deps via fizz/wangle)
+          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
         ],
       },
       linux: {
@@ -5351,6 +5400,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
+          // Suppress duplicate dylib linker errors with newer Xcode ld
+          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
         ],
       },
     },
@@ -6817,7 +6868,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── convco.github.io — same time crate issue as git-delta ─────────
+  // Also needs libiconv for libgit2-sys on darwin (system libiconv at /usr/lib)
   'convco.github.io': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'export LIBRARY_PATH="/usr/lib:${LIBRARY_PATH:-}"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (typeof recipe.build?.script === 'string' && recipe.build.script.includes('--locked')) {
         recipe.build.script = recipe.build.script.replace(' --locked', '')
@@ -7542,6 +7601,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env = {}
       }
     },
+  },
+
+  // ─── github.com/plougher/squashfs-tools — fix macOS st_atim compat ──
+  // macOS uses st_atimespec instead of st_atim in struct stat
+  'github.com/plougher/squashfs-tools': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'sed -i.bak \'s/st_atim/st_atimespec/g; s/st_mtim/st_mtimespec/g; s/st_ctim/st_ctimespec/g\' squashfs-tools/mksquashfs.c squashfs-tools/unsquashfs.c squashfs-tools/pseudo.c 2>/dev/null || true',
+        ],
+      },
+    },
+  },
+
+  // ─── github.com/Everduin94/better-commits — fix npm cache corruption ─
+  // Multi-version builds reuse the global npm cache (~/.npm/_cacache/tmp/)
+  // causing ENOENT/EOF errors. Use a fresh cache dir per build (like nx.dev).
+  'github.com/Everduin94/better-commits': {
+    prependScript: [
+      'export npm_config_cache=/tmp/better-commits-npm-cache-$$',
+      'mkdir -p "$npm_config_cache"',
+      'npm cache clean --force 2>/dev/null || true',
+    ],
   },
 
   // ─── surrealdb.com — use pre-built binaries from GitHub ─────────────
