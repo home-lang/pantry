@@ -3,7 +3,7 @@
  *
  * @domain `github.com/igorshubovych/markdownlint-cli`
  * @programs `markdownlint`
- * @version `0.47.0` (6 versions available)
+ * @version `0.48.0` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/igorshubovych/markdownlint-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "markdownlint"
  * console.log(pkg.description) // "CLI for Node.js style checker and lint tool for..."
  * console.log(pkg.programs)    // ["markdownlint"]
- * console.log(pkg.versions[0]) // "0.47.0" (latest)
+ * console.log(pkg.versions[0]) // "0.48.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/igorshubovych/markdownlint-cli.md
@@ -74,6 +74,7 @@ export const markdownlintcliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.48.0',
     '0.47.0',
     '0.46.0',
     '0.45.0',
