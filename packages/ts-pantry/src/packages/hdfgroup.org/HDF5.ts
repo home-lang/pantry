@@ -3,7 +3,7 @@
  *
  * @domain `hdfgroup.org/HDF5`
  * @programs `h5c++`, `h5cc`, `h5clear`, `h5copy`, `h5debug`, ... (+16 more)
- * @version `2.0.0` (4 versions available)
+ * @version `2.1.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install hdfgroup.org/HDF5`
@@ -17,7 +17,7 @@
  * const pkg = pantry.hdfgrouporghdf5
  * console.log(pkg.name)        // "HDF5"
  * console.log(pkg.programs)    // ["h5c++", "h5cc", ...]
- * console.log(pkg.versions[0]) // "2.0.0" (latest)
+ * console.log(pkg.versions[0]) // "2.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/hdfgroup-org/HDF5.md
@@ -101,6 +101,7 @@ export const hdfgrouporghdf5Package = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.1.0',
     '2.0.0',
     '1.14.6',
     '1.14.5',
