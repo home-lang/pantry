@@ -975,6 +975,7 @@ export const aliases: Record<string, string> = {
   'orc': 'gstreamer.freedesktop.org/orc',
   'ord': 'ordinals.com',
   'org-stats': 'github.com/caarlos0/org-stats',
+  'otel-cli': 'github.com/equinix-labs/otel-cli',
   'otp-27': 'elixir-lang.org/otp-27',
   'ots': 'ots.sniptt.com',
   'overmind': 'github.com/darthsim/overmind',

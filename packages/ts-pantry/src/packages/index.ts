@@ -577,6 +577,7 @@ import { neofetchPackage } from './github.com/dylanaraps/neofetch'
 import { libdeflatePackage } from './github.com/ebiggers/libdeflate'
 import { kcatPackage } from './github.com/edenhill/kcat'
 import { pycparserPackage } from './github.com/eliben/pycparser'
+import { otelcliPackage } from './github.com/equinix-labs/otel-cli'
 import { trianglePackage } from './github.com/esimov/triangle'
 import { gnomeextensionscliPackage } from './github.com/essembeh/gnome-extensions-cli'
 import { ladderPackage } from './github.com/everywall/ladder'
@@ -2665,6 +2666,8 @@ export interface Pantry {
   githubcomedenhill: typeof kcatPackage
 
   githubcomeliben: typeof pycparserPackage
+  otel_cli: typeof otelcliPackage
+  githubcomequinixlabs: typeof otelcliPackage
 
   githubcomesimov: typeof trianglePackage
   gnome_extensions_cli: typeof gnomeextensionscliPackage
@@ -5688,6 +5691,7 @@ export interface Pantry {
   pakku: typeof pakkuPackage
   fsdiff: typeof fsdiffPackage
   commit: typeof commitPackage
+  'otel-cli': typeof otelcliPackage
   cookiecutter: typeof cookiecutterPackage
   fastgron: typeof fastgronPackage
   conform: typeof conformPackage
@@ -7025,6 +7029,8 @@ export const pantry: Pantry = {
   githubcomedenhill: kcatPackage,
 
   githubcomeliben: pycparserPackage,
+  otel_cli: otelcliPackage,
+  githubcomequinixlabs: otelcliPackage,
 
   githubcomesimov: trianglePackage,
   gnome_extensions_cli: gnomeextensionscliPackage,
@@ -10048,6 +10054,7 @@ export const pantry: Pantry = {
   pakku: pakkuPackage,
   fsdiff: fsdiffPackage,
   commit: commitPackage,
+  'otel-cli': otelcliPackage,
   cookiecutter: cookiecutterPackage,
   fastgron: fastgronPackage,
   conform: conformPackage,
