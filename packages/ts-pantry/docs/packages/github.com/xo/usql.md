@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 38 versions</summary>
+<summary>Show all 39 versions</summary>
 
-- `0.21.0`
+- `0.21.1`, `0.21.0`
 - `0.20.8`, `0.20.7`, `0.20.6`, `0.20.5`, `0.20.4`, `0.20.3`, `0.20.2`, `0.20.1`, `0.20.0`
 - `0.19.26`, `0.19.25`, `0.19.24`, `0.19.23`, `0.19.21`, `0.19.20`, `0.19.19`, `0.19.18`, `0.19.17`, `0.19.16`, `0.19.15`, `0.19.14`, `0.19.12`, `0.19.11`, `0.19.4`, `0.19.3`, `0.19.2`, `0.19.1`, `0.19.0`
 - `0.18.1`, `0.18.0`
@@ -36,13 +36,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.21.0`
+**Latest Version**: `0.21.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/xo/usql@0.21.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/xo/usql@0.21.1 -- $SHELL -i
 ```
 
 ## Usage Examples
