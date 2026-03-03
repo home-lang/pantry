@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 65 versions</summary>
+<summary>Show all 66 versions</summary>
 
+- `2026.3.3`
 - `2026.2.21`, `2026.2.4`
 - `2026.1.31`, `2026.1.29`
 - `2025.12.8`
@@ -62,13 +63,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2026.2.21`
+**Latest Version**: `2026.3.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +yt-dlp.org@2026.2.21 -- $SHELL -i
+sh <(curl https://pkgx.sh) +yt-dlp.org@2026.3.3 -- $SHELL -i
 ```
 
 ## Dependencies

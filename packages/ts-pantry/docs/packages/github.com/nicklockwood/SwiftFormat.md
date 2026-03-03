@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 58 versions</summary>
+<summary>Show all 59 versions</summary>
 
+- `0.60.0`
 - `0.59.1`, `0.59.0`
 - `0.58.7`, `0.58.6`, `0.58.5`, `0.58.4`, `0.58.3`, `0.58.2`, `0.58.1`, `0.58.0`
 - `0.57.2`, `0.57.1`, `0.57.0`
@@ -39,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.59.1`
+**Latest Version**: `0.60.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/nicklockwood/SwiftFormat@0.59.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/nicklockwood/SwiftFormat@0.60.0 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -3,7 +3,7 @@
  *
  * @domain `robotframework.org`
  * @programs `robot`
- * @version `7.4.1` (6 versions available)
+ * @version `7.4.2` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install robotframework.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "robot"
  * console.log(pkg.description) // "Generic automation framework for acceptance tes..."
  * console.log(pkg.programs)    // ["robot"]
- * console.log(pkg.versions[0]) // "7.4.1" (latest)
+ * console.log(pkg.versions[0]) // "7.4.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/robotframework-org.md
@@ -77,6 +77,7 @@ export const robotframeworkorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.4.2',
     '7.4.1',
     '7.4.0',
     '7.3.2',
