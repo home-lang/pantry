@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-02-26T08:26:20.420Z
+ * Generated on 2026-03-03T21:41:09.487Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1651 total)
+ * List of all known packages (1652 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -623,6 +623,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/ebiggers/libdeflate',
   'github.com/edenhill/kcat',
   'github.com/eliben/pycparser',
+  'github.com/equinix-labs/otel-cli',
   'github.com/esimov/triangle',
   'github.com/essembeh/gnome-extensions-cli',
   'github.com/everywall/ladder',
