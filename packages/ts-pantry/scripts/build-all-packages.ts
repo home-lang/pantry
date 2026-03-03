@@ -768,15 +768,31 @@ function selectImportantVersions(pkg: BuildablePackage, maxVersions: number): st
 // --- S3 Helpers ---
 
 async function checkExistsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
-  try {
-    const s3 = new S3Client(region)
-    const metadataKey = `binaries/${domain}/metadata.json`
-    const metadata = await s3.getObject(bucket, metadataKey)
-    const parsed = JSON.parse(metadata)
-    return !!(parsed.versions?.[version]?.platforms?.[platform])
-  } catch {
-    return false
+  // Retry up to 3 times to avoid transient S3/network errors causing unnecessary rebuilds
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const s3 = new S3Client(region)
+      const metadataKey = `binaries/${domain}/metadata.json`
+      const metadata = await s3.getObject(bucket, metadataKey)
+      const parsed = JSON.parse(metadata)
+      return !!(parsed.versions?.[version]?.platforms?.[platform])
+    } catch (err: any) {
+      const isNotFound = err?.message?.includes('404') || err?.message?.includes('NoSuchKey') || err?.message?.includes('Not Found')
+      if (isNotFound) {
+        // No metadata file = package never built, no need to retry
+        return false
+      }
+      if (attempt < 3) {
+        // Transient error — wait and retry (exponential backoff)
+        await new Promise(r => setTimeout(r, 1000 * attempt))
+        continue
+      }
+      // Final attempt failed — log the error so we can debug unnecessary rebuilds
+      console.log(`   ⚠️  S3 metadata check failed for ${domain}@${version} (${err?.message || err}), assuming not in S3`)
+      return false
+    }
   }
+  return false
 }
 
 // --- Build & Upload ---
