@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-03T12:42:25.223Z
+- **Last Updated**: 2026-03-03T13:47:46.839Z
 
 ## Table of Contents
 
@@ -154,7 +154,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[cilium.io/cilium](./packages/cilium.io/cilium/index.md)** () | CLI to install, manage & troubleshoot Kubernetes clusters running Cilium | cilium | 0.19.2 (+32) | `pkgx cilium` |
 | **[cilium.io/hubble](./packages/cilium.io/hubble/index.md)** () | Hubble - Network, Service & Security Observability for Kubernetes using eBPF | hubble | 1.18.6 (+19) | `pkgx hubble` |
 | **[cloudnative-pg.io](./packages/cloudnative-pg.io/index.md)** () | CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreSQL databases with... | kubectl-cnpg | 1.28.1 (+16) | `pkgx kubectl-cnpg` |
-| **[github.com/helmfile/helmfile](./packages/github.com/helmfile/helmfile.md)** () | Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as Helm releases. G... | helmfile | 1.4.0 (+39) | `pkgx helmfile` |
+| **[github.com/helmfile/helmfile](./packages/github.com/helmfile/helmfile.md)** () | Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as Helm releases. G... | helmfile | 1.4.1 (+40) | `pkgx helmfile` |
 | **[github.com/stern/stern](./packages/github.com/stern/stern.md)** () | ⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of <https://github.com/werck...> | stern | 1.33.1 (+8) | `pkgx stern` |
 | **[github.com/yannh/kubeconform](./packages/github.com/yannh/kubeconform.md)** () | A FAST Kubernetes manifests validator, with support for Custom Resources! | kubeconform | 0.7.0 (+4) | `pkgx kubeconform` |
 | **[helm.sh](./packages/helm.sh/index.md)** () | The Kubernetes Package Manager | helm | 4.1.1 (+52) | `pkgx helm` |
@@ -316,7 +316,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 |---------|-------------|----------|----------|----------|
 | **[agwa.name/git-crypt](./packages/agwa.name/git-crypt/index.md)** () | Enable transparent encryption/decryption of files in a git repo | git-crypt | 0.8.0 (+1) | `pkgx git-crypt` |
 | **[aquasecurity.github.io/tfsec](./packages/aquasecurity.github.io/tfsec/index.md)** () | Static analysis security scanner for your terraform code | tfsec | 1.28.14 (+8) | `pkgx tfsec` |
-| **[aquasecurity.github.io/trivy](./packages/aquasecurity.github.io/trivy/index.md)** () | Find vulnerabilities, misconfigurations, secrets, SBOM in containers, Kubernetes, code repositori... | trivy | 0.69.1 (+44) | `pkgx trivy` |
+| **[aquasecurity.github.io/trivy](./packages/aquasecurity.github.io/trivy/index.md)** () | Find vulnerabilities, misconfigurations, secrets, SBOM in containers, Kubernetes, code repositori... | trivy | 0.69.3 (+45) | `pkgx trivy` |
 | **[certbot.eff.org](./packages/certbot.eff.org/index.md)** () | Certbot is EFF&#39;s tool to obtain certs from Let&#39;s Encrypt and (optionally) auto-enable HTT... | certbot | 5.3.1 (+25) | `pkgx certbot` |
 | **[checkov.io](./packages/checkov.io/index.md)** () | Prevent cloud misconfigurations and find vulnerabilities during build-time in infrastructure as c... | checkov | 3.2.506 (+532) | `pkgx checkov` |
 | **[filippo.io/age](./packages/filippo.io/age/index.md)** () | A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config ... | age, age-keygen | 1.3.1 (+4) | `pkgx age` |

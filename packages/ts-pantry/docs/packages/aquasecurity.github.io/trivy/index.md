@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 45 versions</summary>
+<summary>Show all 46 versions</summary>
 
-- `0.69.1`, `0.69.0`
+- `0.69.3`, `0.69.1`, `0.69.0`
 - `0.68.2`, `0.68.1`
 - `0.67.2`
 - `0.66.0`
@@ -52,13 +52,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.69.1`
+**Latest Version**: `0.69.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +aquasecurity.github.io/trivy@0.69.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +aquasecurity.github.io/trivy@0.69.3 -- $SHELL -i
 ```
 
 ## Dependencies
