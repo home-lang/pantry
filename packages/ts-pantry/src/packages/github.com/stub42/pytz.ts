@@ -2,7 +2,7 @@
  * **pytz** - pytz Python historical timezone library and database
  *
  * @domain `github.com/stub42/pytz`
- * @version `2025.2.0` (4 versions available)
+ * @version `2026.1.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/stub42/pytz`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcomstub42pytz
  * console.log(pkg.name)        // "pytz"
  * console.log(pkg.description) // "pytz Python historical timezone library and dat..."
- * console.log(pkg.versions[0]) // "2025.2.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/stub42/pytz.md
@@ -68,6 +68,7 @@ export const pytzPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.1.0',
     '2025.2.0',
     '2025.1.0',
     '2024.2.0',

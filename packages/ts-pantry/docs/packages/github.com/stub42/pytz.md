@@ -25,8 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 4 versions</summary>
+<summary>Show all 5 versions</summary>
 
+- `2026.1.0`
 - `2025.2.0`
 - `2025.1.0`
 - `2024.2.0`
@@ -34,13 +35,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `2025.2.0`
+**Latest Version**: `2026.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/stub42/pytz@2025.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/stub42/pytz@2026.1.0 -- $SHELL -i
 ```
 
 ## Dependencies
