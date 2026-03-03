@@ -1164,7 +1164,15 @@ for d in dirs:
                         syspath = os.path.join(sysdir, libname)
                         if os.path.exists(syspath):
                             print(f'[cmake-scrub] replacing missing {path} -> {syspath}', file=sys.stderr)
-                            return syspath${osName === 'darwin' ? `
+                            return syspath
+                    # Search other /tmp/buildkit-deps/ directories for the library
+                    for dep_dir in dirs:
+                        if not dep_dir.startswith('/tmp'):
+                            continue
+                        candidate = os.path.join(dep_dir, 'lib', libname)
+                        if os.path.exists(candidate):
+                            print(f'[cmake-scrub] replacing missing {path} -> {candidate}', file=sys.stderr)
+                            return candidate${osName === 'darwin' ? `
                     # On macOS, also check SDK for .tbd stubs
                     if sdk:
                         tbd_name = libname.replace('.dylib', '.tbd')

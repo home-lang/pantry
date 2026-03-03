@@ -5095,6 +5095,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         prependScript: [
           'brew install double-conversion fast_float glog gflags 2>/dev/null || true',
+          // Unlink Homebrew boost so cmake uses S3 boost (matching <1.89 constraint)
+          'brew unlink boost 2>/dev/null || true',
           'export PKG_CONFIG_PATH="$(brew --prefix glog)/lib/pkgconfig:$(brew --prefix gflags)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"',
           'export LDFLAGS="-L$(brew --prefix glog)/lib -L$(brew --prefix gflags)/lib $LDFLAGS"',
           'export CPPFLAGS="-I$(brew --prefix glog)/include -I$(brew --prefix gflags)/include $CPPFLAGS"',
@@ -5164,9 +5166,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── facebook.com/fizz — unlink Homebrew boost on darwin ──────────────
+
+  'facebook.com/fizz': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's <1.89 constraint)
+          'brew unlink boost 2>/dev/null || true',
+        ],
+      },
+    },
+  },
+
   // ─── facebook.com/wangle — remove linux gcc dep ───────────────────────
 
   'facebook.com/wangle': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's <1.89 constraint)
+          'brew unlink boost 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gnu.org/gcc build dep (use system compiler)
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
@@ -5365,6 +5388,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── facebook.com/mvfst — fix stray cmake prefix + sed -i BSD + remove gcc ─
 
   'facebook.com/mvfst': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's <1.89 constraint)
+          'brew unlink boost 2>/dev/null || true',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix stray quote in -DCMAKE_INSTALL_PREFIX
       if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
