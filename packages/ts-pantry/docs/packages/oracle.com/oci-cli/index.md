@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 99 versions</summary>
+<summary>Show all 100 versions</summary>
 
+- `3.75.0`
 - `3.74.2`, `3.74.1`, `3.74.0`
 - `3.73.2`, `3.73.1`, `3.73.0`
 - `3.72.1`, `3.72.0`
@@ -68,13 +69,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.74.2`
+**Latest Version**: `3.75.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +oracle.com/oci-cli@3.74.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +oracle.com/oci-cli@3.75.0 -- $SHELL -i
 ```
 
 ## Dependencies
