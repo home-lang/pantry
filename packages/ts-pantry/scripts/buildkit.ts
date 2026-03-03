@@ -1160,7 +1160,7 @@ for d in dirs:
                 if path.startswith('/tmp/buildkit-deps/') and not os.path.exists(path):
                     # Try to find the library in system locations
                     libname = os.path.basename(path)
-                    for sysdir in ['/usr/lib', '/usr/local/lib']:
+                    for sysdir in ['/usr/lib', '/usr/local/lib'${osName === 'darwin' ? `, '/opt/homebrew/lib'` : ''}]:
                         syspath = os.path.join(sysdir, libname)
                         if os.path.exists(syspath):
                             print(f'[cmake-scrub] replacing missing {path} -> {syspath}', file=sys.stderr)
