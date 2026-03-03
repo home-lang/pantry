@@ -5213,7 +5213,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Suppress duplicate linked dylib error (transitive deps via fizz/wangle)
           'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
           // Remove explicit libzstd from dep cmake targets (transitively loaded by libfizz.dylib)
-          'find /tmp/buildkit-deps -name "*targets*.cmake" \\( -path "*/cmake/fizz/*" -o -path "*/cmake/wangle/*" \\) -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
+          'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
       linux: {
@@ -5267,7 +5267,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
           // Remove explicit libzstd from dep cmake targets — libfizz.dylib already loads it
           // transitively (LC_LOAD_DYLIB), so explicit refs cause "duplicate linked dylib" error
-          'find /tmp/buildkit-deps -name "*targets*.cmake" \\( -path "*/cmake/fizz/*" -o -path "*/cmake/wangle/*" \\) -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
+          'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
       linux: {
@@ -5462,7 +5462,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Suppress duplicate dylib linker errors with newer Xcode ld
           'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
           // Remove explicit libzstd from dep cmake targets (transitively loaded by libfizz.dylib)
-          'find /tmp/buildkit-deps -name "*targets*.cmake" \\( -path "*/cmake/fizz/*" -o -path "*/cmake/wangle/*" \\) -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
+          'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
     },
