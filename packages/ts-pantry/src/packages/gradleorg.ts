@@ -3,7 +3,7 @@
  *
  * @domain `gradle.org`
  * @programs `gradle`
- * @version `9.3.1` (27 versions available)
+ * @version `9.4.0` (28 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gradle.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "gradle"
  * console.log(pkg.description) // "Open-source build automation tool based on the ..."
  * console.log(pkg.programs)    // ["gradle"]
- * console.log(pkg.versions[0]) // "9.3.1" (latest)
+ * console.log(pkg.versions[0]) // "9.4.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gradle-org.md
@@ -75,6 +75,7 @@ export const gradleorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.4.0',
     '9.3.1',
     '9.3.0',
     '9.2.1',
