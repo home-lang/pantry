@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 29 versions</summary>
+<summary>Show all 30 versions</summary>
 
+- `0.37.0`
 - `0.36.3`, `0.36.1`, `0.36.0`
 - `0.35.2`, `0.35.1`, `0.35.0`
 - `0.34.5`, `0.34.4`, `0.34.3`, `0.34.2`, `0.34.1`, `0.34.0`
@@ -34,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.36.3`
+**Latest Version**: `0.37.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +tilt.dev@0.36.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +tilt.dev@0.37.0 -- $SHELL -i
 ```
 
 ## Usage Examples
