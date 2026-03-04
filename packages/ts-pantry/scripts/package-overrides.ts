@@ -5456,6 +5456,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'GFLAGS_S3=$(find /tmp/buildkit-deps/gflags.github.io -name "libgflags.dylib" 2>/dev/null | head -1)',
           'if [ -n "$GLOG_S3" ]; then find /tmp/buildkit-deps -name "*.cmake" -print0 | xargs -0 "$__real_sed" -i "s|/opt/homebrew/lib/libglog[.0-9]*\\.dylib|$GLOG_S3|g" 2>/dev/null; fi',
           'if [ -n "$GFLAGS_S3" ]; then find /tmp/buildkit-deps -name "*.cmake" -print0 | xargs -0 "$__real_sed" -i "s|/opt/homebrew/lib/libgflags[.0-9]*\\.dylib|$GFLAGS_S3|g" 2>/dev/null; fi',
+          // Replace bundled Homebrew-built glog copies with symlinks to S3 glog
+          // so dyld deduplicates by inode and avoids double flag registration
+          'S3_GLOG_DIR=$(find /tmp/buildkit-deps/google.com/glog -type d -name lib 2>/dev/null | head -1)',
+          'if [ -n "$S3_GLOG_DIR" ]; then find /tmp/buildkit-deps -name "libglog*.dylib" -not -path "*/google.com/glog/*" | while read f; do target="$S3_GLOG_DIR/$(basename "$f")"; if [ -f "$target" ]; then rm -f "$f"; ln -sf "$target" "$f"; echo "[glog-unify] $f -> $target"; fi; done; fi',
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
@@ -5479,6 +5483,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env.CMAKE_ARGS = recipe.build.env.CMAKE_ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
+        // Defer GoogleTest test discovery to ctest time (not build time) to avoid
+        // glog double flag registration crash when running test binaries during build
+        if (platform?.startsWith('darwin')) {
+          recipe.build.env.CMAKE_ARGS.push('-DCMAKE_GTEST_DISCOVER_TESTS_DISCOVERY_MODE=PRE_TEST')
+        }
       }
       // Pre-install rust-src to prevent race condition when parallel cmake jobs
       // both try to rustup component add rust-src simultaneously
