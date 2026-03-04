@@ -1292,6 +1292,18 @@ SYSLIB_OVERRIDE_EOF`)
   // GCC specs workaround: if ./specs is a directory, run GCC from /tmp
   // to prevent "fatal error: cannot read spec file './specs': Is a directory"
   // We convert relative file paths to absolute so GCC can still find them.
+  sections.push('# macOS Xcode 26.3+: suppress "duplicate linked dylib" errors from transitive deps.')
+  sections.push('# Multiple dep dylibs (e.g. libfizz, libfolly) may embed the same transitive dep')
+  sections.push('# (e.g. libzstd) — the strict linker treats this as a hard error.')
+  sections.push('if [ "$(uname)" = "Darwin" ]; then')
+  sections.push('  _is_linking=false')
+  sections.push('  for arg in "${args[@]}"; do')
+  sections.push('    case "$arg" in -dynamiclib|-shared|-bundle) _is_linking=true; break ;; *.o) _is_linking=true ;; esac')
+  sections.push('  done')
+  sections.push('  if $_is_linking; then')
+  sections.push('    args+=("-Wl,-no_warn_duplicate_libraries")')
+  sections.push('  fi')
+  sections.push('fi')
   sections.push('# GCC specs/ directory workaround: run from /tmp if ./specs is a directory')
   sections.push('# Only on Linux — macOS clang does not read ./specs, and the CWD change')
   sections.push('# breaks -Wl,-force_load,./relative paths embedded in linker flags')
