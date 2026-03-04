@@ -5456,10 +5456,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
         ],
       },
     },
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Remove glog/gflags S3 deps — use system-installed to match folly's ABI
-      if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
-      if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+    modifyRecipe: (recipe: NormalizedRecipe, platform?: string) => {
+      // On Linux, remove glog/gflags S3 deps — use system-installed via apt (see prependScript)
+      // On Darwin, keep S3 glog/gflags (Homebrew versions unlinked in prependScript)
+      if (!platform || platform.startsWith('linux')) {
+        if (recipe.dependencies?.['google.com/glog']) delete recipe.dependencies['google.com/glog']
+        if (recipe.dependencies?.['gflags.github.io']) delete recipe.dependencies['gflags.github.io']
+      }
       // Add boost<1.89 as build dep to match folly's soname (folly links boost 1.88.0)
       if (!recipe.build) recipe.build = {} as NormalizedRecipe['build']
       if (!recipe.build!.dependencies) recipe.build!.dependencies = {}
