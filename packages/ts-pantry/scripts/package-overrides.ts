@@ -7467,6 +7467,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'github.com/saagarjha/unxip': {
     supportedPlatforms: ['darwin/aarch64'],
+    // The version resolves to 3.3.0 (semver) but the GitHub tag/release is v3.3 (no trailing .0)
+    // Override the build script to download from the correct URL
+    prependScript: [
+      'RAW_VERSION="{{version}}"',
+      'SHORT_VERSION="${RAW_VERSION%.0}"',
+    ],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Replace the curl download URL to strip trailing .0 from version
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('curl -Lfo unxip')) {
+            recipe.build.script[i] = step.replace(
+              /curl -Lfo unxip "https:\/\/github\.com\/saagarjha\/unxip\/releases\/download\/v\{\{version\.raw\}\}\/unxip"/,
+              'curl -Lfo unxip "https://github.com/saagarjha/unxip/releases/download/v${SHORT_VERSION}/unxip"',
+            )
+          }
+        }
+      }
+    },
   },
 
   // ─── freedesktop.org/mesa-glu — use system OpenGL on linux ─────────
@@ -7845,15 +7865,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── psycopg.org/psycopg3 — widen Python + use release tarball ────────
 
-  'psycopg.org/psycopg3': {
-    distributableUrl: 'https://github.com/psycopg/psycopg/archive/refs/tags/psycopg-{{version}}.tar.gz',
-    stripComponents: 1,
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Widen Python version
-      if (recipe.dependencies?.['python.org']) recipe.dependencies['python.org'] = '>=3.11'
-      if (recipe.build?.dependencies?.['python.org']) recipe.build.dependencies['python.org'] = '>=3.11'
-    },
-  },
+  // psycopg.org/psycopg3: version resolver picks up psycopg_c tags (3.3.x) that don't have matching psycopg- tags
+  // Re-added to knownBroken — needs version discovery fix, not just URL override
 
   // ─── man-db.gitlab.io/man-db — use system groff + libpipeline ─────────
 
@@ -7871,6 +7884,25 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['libpipeline.gitlab.io/libpipeline']) delete recipe.dependencies['libpipeline.gitlab.io/libpipeline']
       if (recipe.dependencies?.['gnu.org/groff']) delete recipe.dependencies['gnu.org/groff']
       if (recipe.dependencies?.linux?.['gnu.org/gdbm']) delete recipe.dependencies.linux['gnu.org/gdbm']
+      // Fix post-install wrapper scripts — the original script fails under set -e
+      // because `rm` and `rmdir` can fail. Replace fragile shell steps with robust versions.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            // Fix the bin wrapper script: use ls -1 to avoid empty glob, protect rm
+            if (step.run.includes('Creating stubs')) {
+              step.run = step.run
+                .replace('rm lexgrog man-recode', 'rm -f lexgrog man-recode')
+            }
+            // Fix the lib symlink: use -f on rmdir, protect mv
+            if (step.run.includes('mv man-db/')) {
+              step.run = step.run
+                .replace('rmdir man-db', 'rm -rf man-db')
+            }
+          }
+        }
+      }
     },
   },
 
@@ -7887,6 +7919,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'export LLVM_SYS_160_PREFIX="$LLVM_PREFIX"',
           'export LLVM_SYS_170_PREFIX="$LLVM_PREFIX"',
           'export LLVM_SYS_180_PREFIX="$LLVM_PREFIX"',
+          '# Prevent llvm-sys from panicking on Homebrew z3 dylib path in --system-libs output',
+          'export LLVM_SYS_140_NO_CLEAN_CFLAGS=1',
+          'export LLVM_SYS_150_NO_CLEAN_CFLAGS=1',
+          'export LLVM_SYS_160_NO_CLEAN_CFLAGS=1',
+          'export LLVM_SYS_170_NO_CLEAN_CFLAGS=1',
+          'export LLVM_SYS_180_NO_CLEAN_CFLAGS=1',
           'export PATH="$LLVM_PREFIX/bin:$PATH"',
           'export LDFLAGS="-L$LLVM_PREFIX/lib ${LDFLAGS:-}"',
           'export CPPFLAGS="-I$LLVM_PREFIX/include ${CPPFLAGS:-}"',

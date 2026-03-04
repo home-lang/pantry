@@ -1182,7 +1182,7 @@ Options:
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
-    // psycopg.org/psycopg3 removed — switched to release tarball + widened Python version in override
+    'psycopg.org/psycopg3', // Version resolver picks up psycopg_c tags (3.3.x) that don't have matching psycopg- tags
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
     // taku910.github.io/mecab-ipadic removed — mecab now in S3
