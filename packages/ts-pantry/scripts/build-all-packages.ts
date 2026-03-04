@@ -1416,7 +1416,7 @@ Options:
     // midnight-commander.org removed — ncurses/glib available via system
     // modal.com removed — removed cython dep in override
     // mpv.io removed — removed vapoursynth dep in override
-    // mun-lang.org removed — use system LLVM (brew/apt) instead of S3 llvm.org in override
+    'mun-lang.org', // Requires LLVM 14 specifically (llvm-sys v140), Homebrew only has LLVM 19+
     // mupdf.com removed — fixed sed -i BSD + removed linux X11/mesa deps in override
     // netflix.com/vmaf removed — fixed meson prefix quoting in override
     // open-mpi.org removed — fixed prefix quoting + sed -i BSD in override
@@ -1499,7 +1499,7 @@ Options:
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
-    // man-db.gitlab.io/man-db removed — linux-only, use system groff + libpipeline in override
+    'man-db.gitlab.io/man-db', // Post-install wrapper shell script fails under set -e (heredoc/working-dir issues)
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
