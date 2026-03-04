@@ -8186,7 +8186,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Skip the UI build entirely — just build the Go CLI binary
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script = [
-          'CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/argoproj/argo-cd/v2/common.version={{version}}" -o dist/argocd ./cmd/argocd',
+          'CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/argoproj/argo-cd/v3/common.version={{version}}" -o dist/argocd ./cmd',
           'mkdir -p {{prefix}}/bin',
           'install dist/argocd {{prefix}}/bin/',
         ]
@@ -8203,9 +8203,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'argoproj.github.io/workflows': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // The recipe hardcodes dist/argo-linux-amd64 — replace with platform-agnostic go build
+      // Must create ui/dist/app placeholder to satisfy //go:embed directive in ui/embed.go
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script = [
-          'CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/argoproj/argo-workflows/v3/cmd/argo/commands.CLIVersion=v{{version}}" -o dist/argo ./cmd/argo',
+          'mkdir -p ui/dist/app',
+          'touch ui/dist/app/index.html',
+          'CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/argoproj/argo-workflows/v3.version=v{{version}}" -o dist/argo ./cmd/argo',
           'mkdir -p {{prefix}}/bin',
           'install dist/argo {{prefix}}/bin/argo',
         ]

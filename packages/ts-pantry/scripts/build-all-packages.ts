@@ -1162,8 +1162,8 @@ Options:
   const knownBrokenDomains = new Set([
     // apache.org/subversion removed — skip serf/kerberos/swig, build svn core only
     // apache.org/serf removed — use system scons, skip kerberos
-    'argoproj.github.io/cd', // Go build override failed — needs debugging
-    'argoproj.github.io/workflows', // Go build override failed — needs debugging
+    // argoproj.github.io/cd removed — fixed v3 module path + cmd entry point
+    // argoproj.github.io/workflows removed — fixed ui/embed.go placeholder + version ldflags
     // openai.com/codex removed — pre-built binary download from GitHub releases
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
     // coder.com/code-server removed — switched to pre-built release tarballs
