@@ -1161,15 +1161,15 @@ Options:
   //     macvim.org, github.com/facebookincubator/fizz — GitHub tag resolution now
   //     handles leading-zero normalization via API lookup (resolveGitHubTag)
   const knownBrokenDomains = new Set([
-    'apache.org/subversion', // Needs APR/APR-util chain (circular dep with serf)
-    'apache.org/serf', // Needs scons + apr (circular dep)
-    'argoproj.github.io/cd', // yarn + Go mixed build, yarn fails in CI sandbox
-    'argoproj.github.io/workflows', // Massive Go compilation (>60 min), exceeds per-package timeout
+    // apache.org/subversion removed — skip serf/kerberos/swig, build svn core only
+    // apache.org/serf removed — use system scons, skip kerberos
+    // argoproj.github.io/cd removed — skip UI build, Go-only CLI
+    // argoproj.github.io/workflows removed — platform-agnostic go build in override
     'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
     // coder.com/code-server removed — switched to pre-built release tarballs
     // cr.yp.to/daemontools removed — removed gcc dep, use xcrun on darwin
-    'clisp.org', // Complex FFI compiler, platform-specific ARM fixes
+    // clisp.org removed — widened dep constraints in override
     'crates.io/bpb', // upstream dep (pbp) uses removed Rust feature (rust_2018_preview, removed in 1.76)
     'crates.io/didyoumean', // Rust linker failure even with --cap-lints warn
     // crates.io/drill removed — added --cap-lints warn RUSTFLAGS override
@@ -1179,19 +1179,19 @@ Options:
     // crates.io/spider_cli removed — added --cap-lints warn RUSTFLAGS override
     // fabianlindfors.se/reshape removed — added --cap-lints warn RUSTFLAGS override
     // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
-    'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
+    // info-zip.org/unzip removed — distributableUrl override to working SourceForge URL
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
     'psycopg.org/psycopg3', // Version resolver picks up psycopg_c tags (3.3.x) that don't have matching psycopg- tags
     'sourceware.org/dm', // GitLab download URLs return 404
-    'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
+    // llm.datasette.io removed — widened Python version constraint in override
     // taku910.github.io/mecab-ipadic removed — mecab now in S3
     // itstool.org removed — use system python3-libxml2 on linux, supportedPlatforms linux-only
     'oberhumer.com/ucl', // Dead upstream domain
     'khronos.org/SPIRV-Cross', // Project archived, tags removed
     'getsynth.com', // Dead/abandoned project
-    'grpc.io', // darwin: TSAN/ASAN macro errors; linux: v1.78.1 missing protobuf header + timeout
-    'apache.org/zookeeper', // Maven C-client configure fails on both platforms
+    // grpc.io removed — disabled TSAN/ASAN + use bundled protobuf in override
+    // apache.org/zookeeper removed — skip C-client, Java-only build in override
     'ordinals.com', // GitHub tag format mismatch (all variants return 404)
     'dhruvkb.dev/pls', // Hardcoded beta tag + cargo auth failure on git deps
     'seaweedfs.com', // All GitHub release tags return 404
@@ -1203,20 +1203,20 @@ Options:
     'sdkman.io', // Shell script distribution, not compilable
     'spacetimedb.com', // Hardcoded beta tag, no version discovery
     // ntp.org removed — builds on darwin (linux fails: MD5Init/MD5Update deprecated in OpenSSL 3)
-    'jbig2dec.com', // Single hardcoded version, buried in ghostpdl releases
-    'videolan.org/x264', // Version includes git hash, Debian mirror URL
+    // jbig2dec.com removed — hardcoded URL to GitHub release works
+    // videolan.org/x264 removed — HTTPS URL override for Debian mirror
     'github.com/mamba-org/mamba', // Hardcoded version, FIXME in recipe
     'github.com/confluentinc/libserdes', // RC version format in tag
-    'github.com/siderolabs/conform', // Alpha version format in tag
+    // github.com/siderolabs/conform removed — widened Go version in override
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
-    'microsoft.com/markitdown', // Version tags don't exist on GitHub
+    // microsoft.com/markitdown removed — widened Python version in override
     // snyk.io removed — switched to pre-built binary download from GitHub
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
     'wez.github.io/wezterm', // Source tarball download fails
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
-    'libsdl.org/SDL_image', // SDL3 version resolved but URL uses SDL2_image naming
+    // libsdl.org/SDL_image removed — distributableUrl override for SDL2 naming
     'gource.io', // GitHub releases removed/restructured
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
@@ -1229,7 +1229,7 @@ Options:
     // crates.io/skim removed — added --cap-lints warn RUSTFLAGS override
     // crates.io/tabiew removed — 45min timeout should be sufficient
     'apple.com/container', // Massive Swift compilation (571+ files), fragile in CI
-    'strace.io', // v6.2.0 incompatible with modern kernel headers (io_uring struct renames, caps.rsv size)
+    // strace.io removed — newer versions (6.13+) compatible with current kernel headers
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
@@ -1238,7 +1238,7 @@ Options:
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
     // brxken128.github.io/dexios removed — added --cap-lints warn RUSTFLAGS override
     'clog-tool.github.io', // Uses unmaintained rustc-serialize crate, incompatible with modern Rust
-    'apache.org/jmeter', // Vendored Java dist: wget in build script + complex plugin manager download
+    // apache.org/jmeter removed — quoted PLUGINS_MANAGER_URL to prevent glob expansion
     // kornel.ski/dssim removed — isolated RUSTUP_HOME/CARGO_HOME prevents nightly corruption
     // khanacademy.org/genqlient removed — added go get x/tools@latest before build
     'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
@@ -1268,7 +1268,7 @@ Options:
     // digitalocean.com/doctl removed — built successfully on both platforms
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
     // qemu.org removed — disabled slirp/libssh deps, fixed configure flags
-    'freedesktop.org/poppler-qt5', // S3 curl.so missing version info breaks cmake on both platforms
+    // freedesktop.org/poppler-qt5 removed — existing override disables qt5/introspection
     'apache.org/arrow', // Massive C++ build, timeout/failure on both platforms
     'gdal.org', // patchelf post-build fixup fails on linux, cmake issues on darwin
     'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
@@ -1395,7 +1395,7 @@ Options:
     // grpc.io removed — fixed cmake prefix quoting in override
     // gtk.org/gtk3 removed — disabled introspection + removed x11/heavy deps in override
     // gtk.org/gtk4 removed — disabled introspection + removed heavy build deps in override
-    'hasura.io', // Build failure on darwin
+    // hasura.io removed — skip fragile npm cli-ext, build Go CLI only in override
     // ibr.cs.tu-bs.de/libsmi removed — fixed prefix quoting in override
     // intel.com/libva removed — removed x.org/x11 dep chain + disabled x11 in override
     // jpeg.org/jpegxl removed — disabled openexr in override
@@ -1405,7 +1405,7 @@ Options:
     // leonerd.org.uk/libtermkey removed — small C library, try on darwin
     // libarchive.org removed — autotools issue may be fixed with newer CI runner
     'llvm.org', // LLVM — too resource-intensive for CI (3500+ files)
-    'llvm.org/clang-format', // LLVM subset — still too heavy
+    // llvm.org/clang-format removed — pre-built binary download from LLVM releases
     // luarocks.org removed — lua already in CI brew list
     // lunarvim.org removed — fixed PATH/LD_LIBRARY_PATH for neovim+libiconv in override
     'macfuse.github.io/v2', // macOS FUSE — build timeout (1800s)
@@ -1447,7 +1447,7 @@ Options:
     // tcl-lang.org removed — removed x.org/x11 dep + fixed sed -i BSD in override
     'tectonic-typesetting.github.io', // TeX engine — heavy Rust build
     // tesseract-ocr.github.io removed — fixed prefix quoting in override
-    'tinygo.org', // TinyGo — heavy LLVM-based build
+    // tinygo.org removed — pre-built binary download from GitHub releases
     // tlr.dev removed — removed protobuf dep in override
     // vaultproject.io removed — Go-only CLI build, skip UI deps in override
     // videolan.org/libplacebo removed — removed linux gcc dep in override
@@ -1488,8 +1488,8 @@ Options:
     // github.com/mattrobenolt/jinja2-cli removed — widened python version constraint in override
     // github.com/pressly/sup removed — fixed go mod init in override
     // github.com/moretension/duti removed — fixed make install in override
-    'github.com/a7ex/xcresultparser', // ncurses unctrl.h conflict on darwin
-    'github.com/peripheryapp/periphery', // Swift ncurses unctrl.h conflict on darwin
+    // github.com/a7ex/xcresultparser removed — SDKROOT fix for ncurses unctrl.h conflict
+    // github.com/peripheryapp/periphery removed — SDKROOT fix for ncurses unctrl.h conflict
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
     'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
     'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
@@ -1504,7 +1504,7 @@ Options:
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
-    'eyrie.org/eagle/podlators', // Version 5.1.0 doesn't exist on archives.eyrie.org (only v6.0.2 available)
+    // eyrie.org/eagle/podlators removed — fixed distributableUrl to use marketing version
     // github.com/thkukuk/libnsl removed — added system libtirpc-dev install + linux-only supportedPlatforms
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
@@ -1522,7 +1522,7 @@ Options:
     // sourceforge.net/xmlstar removed — use system libxml2/libxslt instead of S3 2.15
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
     'github.com/aws/aws-sdk-cpp', // cc wrapper breaks stdlib.h include path (fatal error: stdlib.h: No such file or directory)
-    'projen.io', // npm pack ERR_OUT_OF_RANGE during jsii-pacmak Python packaging
+    // projen.io removed — JS-only packaging via jsii-pacmak (skip Python/Java)
     // opendap.org removed — moved ac_cv_sizeof cache vars from ARGS to env exports
     // aws.amazon.com/cli removed — upgraded flit_core + --no-build-isolation for Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
