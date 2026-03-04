@@ -1542,6 +1542,7 @@ Options:
     'vapoursynth.com', // Needs python.org ~3.11 (S3 has 3.14) + zimg dep
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)
     'github.com/nullclaw/nullclaw', // Hardcoded SHA256 checksums in recipe break on every new release
+    'github.com/ggerganov/llama.cpp', // pip install torch~=2.6.0 fails (only torch 2.9+ on PyPI)
     // imagemagick.org removed — fixed version tag format + removed broken deps in override
   ])
 
