@@ -5446,8 +5446,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
       darwin: {
         prependScript: [
-          // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
-          'brew unlink boost 2>/dev/null || true',
+          // Unlink Homebrew boost/glog/gflags so cmake uses S3 versions consistently
+          // (prevents duplicate glog flag registration from Homebrew + transitive S3 copies)
+          'brew unlink boost glog gflags 2>/dev/null || true',
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
