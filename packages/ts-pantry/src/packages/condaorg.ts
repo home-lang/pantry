@@ -3,7 +3,7 @@
  *
  * @domain `conda.org`
  * @programs `conda`
- * @version `25.11.1` (19 versions available)
+ * @version `26.1.1` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install conda.org`
@@ -17,7 +17,7 @@
  * const pkg = pantry.condaorg
  * console.log(pkg.name)        // "conda"
  * console.log(pkg.programs)    // ["conda"]
- * console.log(pkg.versions[0]) // "25.11.1" (latest)
+ * console.log(pkg.versions[0]) // "26.1.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/conda-org.md
@@ -76,6 +76,7 @@ export const condaorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '26.1.1',
     '25.11.1',
     '25.9.1',
     '25.7.0',

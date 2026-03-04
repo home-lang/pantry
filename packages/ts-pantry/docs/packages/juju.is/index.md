@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 28 versions</summary>
+<summary>Show all 29 versions</summary>
 
-- `4.0.1`, `4.0.0`
+- `4.0.3`, `4.0.1`, `4.0.0`
 - `3.6.14`, `3.6.13`, `3.6.12`, `3.6.11`, `3.6.10`, `3.6.9`, `3.6.8`, `3.6.7`, `3.6.6`, `3.6.5`, `3.6.4`, `3.6.3`, `3.6.2`, `3.6.1`, `3.6.0`
 - `3.5.7`, `3.5.6`, `3.5.5`, `3.5.4`, `3.5.3`
 - `3.4.6`
@@ -37,13 +37,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.0.1`
+**Latest Version**: `4.0.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +juju.is@4.0.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +juju.is@4.0.3 -- $SHELL -i
 ```
 
 ## Usage Examples
