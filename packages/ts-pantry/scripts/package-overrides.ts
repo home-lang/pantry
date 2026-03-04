@@ -8703,4 +8703,87 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── github.com/Diniboy1123/usque — pre-built binary from GitHub releases ─────────
+  'github.com/Diniboy1123/usque': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="darwin-arm64" ;;',
+            '  darwin/x86-64) SUFFIX="darwin-amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux-amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux-arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/usque" "https://github.com/Diniboy1123/usque/releases/download/v{{version}}/usque-${SUFFIX}"',
+            'chmod +x "{{prefix}}/bin/usque"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── iroh.computer — pre-built binaries from GitHub releases ─────────
+  'iroh.computer': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
+            '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
+            '  linux/x86-64) TRIPLE="x86_64-unknown-linux-musl" ;;',
+            '  linux/aarch64) TRIPLE="aarch64-unknown-linux-musl" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin" /tmp/iroh-extract',
+            'for TOOL in iroh-relay iroh-dns-server; do',
+            '  curl -fSL -o /tmp/${TOOL}.tar.gz "https://github.com/n0-computer/iroh/releases/download/v{{version}}/${TOOL}-v{{version}}-${TRIPLE}.tar.gz"',
+            '  tar -xzf /tmp/${TOOL}.tar.gz -C /tmp/iroh-extract',
+            '  cp /tmp/iroh-extract/${TOOL} "{{prefix}}/bin/" 2>/dev/null || cp /tmp/iroh-extract/*/${TOOL} "{{prefix}}/bin/" 2>/dev/null || true',
+            '  chmod +x "{{prefix}}/bin/${TOOL}"',
+            'done',
+            'ln -s iroh-relay "{{prefix}}/bin/iroh"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── pkl-lang.org — pre-built binaries from GitHub releases ─────────
+  'pkl-lang.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="macos-aarch64" ;;',
+            '  darwin/x86-64) SUFFIX="macos-amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux-amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux-aarch64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/pkl" "https://github.com/apple/pkl/releases/download/{{version}}/pkl-${SUFFIX}"',
+            'curl -fSL -o "{{prefix}}/bin/jpkl" "https://github.com/apple/pkl/releases/download/{{version}}/jpkl"',
+            'chmod +x "{{prefix}}/bin/pkl" "{{prefix}}/bin/jpkl"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
 }

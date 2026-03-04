@@ -1251,7 +1251,7 @@ Options:
     // ipfscluster.io removed — pre-built binary download from dist.ipfs.tech
     // syncthing.net removed — patched compat.yaml to add Go 1.26 runtime entry
     // projectdiscovery.io/nuclei removed — pre-built binary download from GitHub releases
-    'iroh.computer', // curve25519-dalek pre-release incompatible with digest crate
+    // iroh.computer removed — pre-built binary download from GitHub releases
     // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
     // dns.lookup.dog removed — builds on darwin
     // microsoft.com/code-cli removed — built successfully on darwin
@@ -1268,7 +1268,7 @@ Options:
     // mypy-lang.org removed — widened python version constraint in override
     // pcre.org removed — URL override to use GitHub releases instead of SourceForge
     // digitalocean.com/doctl removed — built successfully on both platforms
-    'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
+    // pkl-lang.org removed — pre-built binary download from GitHub releases
     // qemu.org removed — disabled slirp/libssh deps, fixed configure flags
     // freedesktop.org/poppler-qt5 removed — existing override disables qt5/introspection
     // apache.org/arrow removed — disabled Gandiva (LLVM dep) + tests/benchmarks in override
@@ -1503,7 +1503,7 @@ Options:
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
     'man-db.gitlab.io/man-db', // Post-install wrapper shell script fails under set -e (heredoc/working-dir issues)
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
-    'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
+    // github.com/Diniboy1123/usque removed — pre-built binary download from GitHub releases
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
     'eyrie.org/eagle/podlators', // GitHub tags (release/5.01) don't match archive site filenames (v6.0.2)
