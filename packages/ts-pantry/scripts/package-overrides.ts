@@ -8873,6 +8873,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── ghostscript.com — fix zero-padded version in download URL ─────────
   'ghostscript.com': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          '# Fix libiconv symbol mismatch — S3 libidn pulls GNU libiconv headers',
+          '# that rename iconv_open→libiconv_open. LIBICONV_PLUG disables this.',
+          'export CFLAGS="${CFLAGS:-} -DLIBICONV_PLUG"',
+          'export CPPFLAGS="${CPPFLAGS:-} -DLIBICONV_PLUG"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Ghostscript tag format: gs<major><padded-minor><patch> (e.g. gs10060 for 10.06.0)
       // Can't reconstruct from semver template vars, so download in build script instead
@@ -8914,15 +8924,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         if (recipe.build.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
           recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('system-libtiff'))
         }
-        // Fix libiconv symbol mismatch on darwin — S3 libidn pulls GNU libiconv headers
-        // that rename iconv_open to libiconv_open. LIBICONV_PLUG disables the rename.
-        if (recipe.build.env?.darwin) {
-          const darwinEnv = recipe.build.env.darwin as Record<string, string>
-          darwinEnv.CFLAGS = `${darwinEnv.CFLAGS || '$CFLAGS'} -DLIBICONV_PLUG`
-        } else {
-          recipe.build.env = recipe.build.env || {}
-          ;(recipe.build.env as any).darwin = { CFLAGS: '$CFLAGS -DLIBICONV_PLUG' }
-        }
+        // Note: libiconv fix is in prependScript (CFLAGS/CPPFLAGS -DLIBICONV_PLUG)
       }
     },
   },
