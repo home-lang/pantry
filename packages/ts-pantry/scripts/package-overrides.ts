@@ -8875,12 +8875,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'ghostscript.com': {
     platforms: {
       darwin: {
-        prependScript: [
-          '# Fix libiconv symbol mismatch — S3 libidn pulls GNU libiconv headers',
-          '# that rename iconv_open→libiconv_open. LIBICONV_PLUG disables this.',
-          'export CFLAGS="${CFLAGS:-} -DLIBICONV_PLUG"',
-          'export CPPFLAGS="${CPPFLAGS:-} -DLIBICONV_PLUG"',
-        ],
+        prependScript: [],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -8892,6 +8887,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // configure errors with "Mixing local libtiff with shared libjpeg not supported" — must bundle both.
       if (recipe.dependencies?.['simplesystems.org/libtiff']) delete recipe.dependencies['simplesystems.org/libtiff']
       if (recipe.dependencies?.['libjpeg-turbo.org']) delete recipe.dependencies['libjpeg-turbo.org']
+      // Remove libidn dep — it pulls GNU libiconv which exports prefixed symbols (libiconv_open)
+      // that conflict with macOS system iconv on darwin. Ghostscript doesn't need libidn.
+      if (recipe.dependencies?.['gnu.org/libidn']) delete recipe.dependencies['gnu.org/libidn']
       const downloadScript = [
         '# Download ghostpdl source — tag format requires zero-padded minor',
         'GS_MAJOR="{{version.major}}"',
@@ -8920,11 +8918,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = step.replace(/\btiff\b/, '').replace(/\bjpeg\b/, '').replace(/\s+/g, ' ').trim()
           }
         }
-        // Remove --with-system-libtiff from configure args
+        // Remove --with-system-libtiff from configure args, add --without-libidn-prefix
         if (recipe.build.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
           recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('system-libtiff'))
+          recipe.build.env.ARGS.push('--without-libidn-prefix')
         }
-        // Note: libiconv fix is in prependScript (CFLAGS/CPPFLAGS -DLIBICONV_PLUG)
       }
     },
   },
