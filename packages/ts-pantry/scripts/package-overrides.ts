@@ -8065,7 +8065,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (!recipe.build!.dependencies) recipe.build!.dependencies = {}
       recipe.build!.dependencies['gnu.org/autoconf'] = '*'
+      recipe.build!.dependencies['gnu.org/automake'] = '*'
+      recipe.build!.dependencies['gnu.org/libtool'] = '*'
     },
+    prependScript: [
+      // Fix libtool version mismatch — regenerate autotools files
+      'autoreconf -fi 2>/dev/null || (./autogen.sh 2>/dev/null || true)',
+    ],
   },
 
   // ─── microsoft.com/markitdown — widen Python version ──────────────────
@@ -8333,23 +8339,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
     supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.build!.script = [
+        'mkdir -p /tmp/solana-extract',
         'SOL_VERSION="{{version}}"',
         'case "{{hw.platform}}/{{hw.arch}}" in',
         '  darwin/aarch64) SOL_ARCH="aarch64-apple-darwin" ;;',
         '  linux/x86-64) SOL_ARCH="x86_64-unknown-linux-gnu" ;;',
         '  *) echo "Unsupported platform" && exit 1 ;;',
         'esac',
-        'SOL_URL="https://github.com/solana-labs/solana/releases/download/v${SOL_VERSION}/solana-release-${SOL_ARCH}.tar.bz2"',
-        'curl -fSL "$SOL_URL" | tar -xj -C /tmp/solana-extract',
+        'SOL_URL="https://github.com/anza-xyz/agave/releases/download/v${SOL_VERSION}/solana-release-${SOL_ARCH}.tar.bz2"',
+        'curl -fSL "$SOL_URL" -o /tmp/solana-release.tar.bz2',
+        'tar -xjf /tmp/solana-release.tar.bz2 -C /tmp/solana-extract',
         'mkdir -p {{prefix}}/bin',
         'cp -r /tmp/solana-extract/solana-release/bin/* {{prefix}}/bin/ 2>/dev/null || true',
         'cp -r /tmp/solana-extract/solana-release/lib {{prefix}}/ 2>/dev/null || true',
       ]
       recipe.build!.dependencies = {}
     },
-    prependScript: [
-      'mkdir -p /tmp/solana-extract',
-    ],
   },
 
   // ─── tectonic-typesetting.github.io — download pre-built binary ────────
@@ -8358,6 +8363,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.build!.script = [
+        'mkdir -p /tmp/tectonic-extract',
         'TEC_VERSION="{{version}}"',
         'case "{{hw.platform}}/{{hw.arch}}" in',
         '  darwin/aarch64) TEC_ARCH="aarch64-apple-darwin" ;;',
@@ -8365,15 +8371,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
         '  *) echo "Unsupported platform" && exit 1 ;;',
         'esac',
         'TEC_URL="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TEC_VERSION}/tectonic-${TEC_VERSION}-${TEC_ARCH}.tar.gz"',
-        'curl -fSL "$TEC_URL" | tar -xz -C /tmp/tectonic-extract',
+        'curl -fSL "$TEC_URL" -o /tmp/tectonic.tar.gz',
+        'tar -xzf /tmp/tectonic.tar.gz -C /tmp/tectonic-extract',
         'mkdir -p {{prefix}}/bin',
         'install /tmp/tectonic-extract/tectonic {{prefix}}/bin/',
       ]
       recipe.build!.dependencies = {}
     },
-    prependScript: [
-      'mkdir -p /tmp/tectonic-extract',
-    ],
   },
 
   // ─── crates.io/lighthouse — download pre-built binary ─────────────────
@@ -8382,6 +8386,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.build!.script = [
+        'mkdir -p /tmp/lighthouse-extract',
         'LH_VERSION="v{{version}}"',
         'case "{{hw.platform}}/{{hw.arch}}" in',
         '  darwin/aarch64) LH_ARCH="aarch64-apple-darwin" ;;',
@@ -8389,15 +8394,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
         '  *) echo "Unsupported platform" && exit 1 ;;',
         'esac',
         'LH_URL="https://github.com/sigp/lighthouse/releases/download/${LH_VERSION}/lighthouse-${LH_VERSION}-${LH_ARCH}.tar.gz"',
-        'curl -fSL "$LH_URL" | tar -xz -C /tmp/lighthouse-extract',
+        'curl -fSL "$LH_URL" -o /tmp/lighthouse.tar.gz',
+        'tar -xzf /tmp/lighthouse.tar.gz -C /tmp/lighthouse-extract',
         'mkdir -p {{prefix}}/bin',
         'install /tmp/lighthouse-extract/lighthouse {{prefix}}/bin/',
       ]
       recipe.build!.dependencies = {}
     },
-    prependScript: [
-      'mkdir -p /tmp/lighthouse-extract',
-    ],
   },
 
   // ─── openai.com/codex — download pre-built binary ─────────────────────
@@ -8406,6 +8409,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.build!.script = [
+        'mkdir -p /tmp/codex-extract',
         'CODEX_VERSION="{{version}}"',
         'case "{{hw.platform}}/{{hw.arch}}" in',
         '  darwin/aarch64) CODEX_ARCH="aarch64-apple-darwin" ;;',
@@ -8414,7 +8418,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         'esac',
         // Tag format is rust-v{version}
         'CODEX_URL="https://github.com/openai/codex/releases/download/rust-v${CODEX_VERSION}/codex-${CODEX_ARCH}.tar.gz"',
-        'curl -fSL "$CODEX_URL" | tar -xz -C /tmp/codex-extract',
+        'curl -fSL "$CODEX_URL" -o /tmp/codex.tar.gz',
+        'tar -xzf /tmp/codex.tar.gz -C /tmp/codex-extract',
         'mkdir -p {{prefix}}/bin',
         'install /tmp/codex-extract/codex {{prefix}}/bin/ 2>/dev/null || true',
         'install /tmp/codex-extract/codex-exec {{prefix}}/bin/ 2>/dev/null || true',
@@ -8423,9 +8428,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
       ]
       recipe.build!.dependencies = {}
     },
-    prependScript: [
-      'mkdir -p /tmp/codex-extract',
-    ],
   },
 
   // ─── wezfurlong.org/wezterm — download pre-built binary (macOS only) ───
