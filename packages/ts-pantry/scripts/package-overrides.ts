@@ -7969,9 +7969,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
               step.run = step.run
                 .replace('rm lexgrog man-recode', 'rm -f lexgrog man-recode')
             }
-            // Fix the lib symlink: use -f on rmdir, protect mv
+            // Fix the lib symlink: mv fails if files exist, use cp -a instead
             if (step.run.includes('mv man-db/')) {
               step.run = step.run
+                .replace('mv man-db/* .', 'cp -a man-db/* . 2>/dev/null || true')
                 .replace('rmdir man-db', 'rm -rf man-db')
             }
           }
