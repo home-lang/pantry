@@ -3,7 +3,7 @@
  *
  * @domain `gnome.org/libxml2`
  * @programs `xml2-config`, `xmlcatalog`, `xmllint`
- * @version `2.15.1` (40 versions available)
+ * @version `2.15.2` (41 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnome.org/libxml2`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "xml"
  * console.log(pkg.description) // "Read-only mirror of https://gitlab.gnome.org/GN..."
  * console.log(pkg.programs)    // ["xml2-config", "xmlcatalog", ...]
- * console.log(pkg.versions[0]) // "2.15.1" (latest)
+ * console.log(pkg.versions[0]) // "2.15.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnome-org/libxml2.md
@@ -78,6 +78,7 @@ export const gnomeorglibxml2Package = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.15.2',
     '2.15.1',
     '2.15.0',
     '2.14.6',
