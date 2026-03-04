@@ -5145,6 +5145,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           }
         }
       }
+      // Disable Gandiva (requires LLVM which we removed) and reduce build scope
+      if (Array.isArray(recipe.build?.env?.CMAKE_ARGS)) {
+        recipe.build.env.CMAKE_ARGS.push('-DARROW_GANDIVA=OFF')
+        recipe.build.env.CMAKE_ARGS.push('-DARROW_BUILD_TESTS=OFF')
+        recipe.build.env.CMAKE_ARGS.push('-DARROW_BUILD_BENCHMARKS=OFF')
+      }
       // Remove llvm.org build dep (too heavy)
       if (recipe.build?.dependencies?.['llvm.org']) {
         delete recipe.build.dependencies['llvm.org']
@@ -7056,6 +7062,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'glm.g-truc.net': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.script)) {
+        // Remove cmake build step — glm is header-only, nothing to compile
+        recipe.build.script = recipe.build.script.filter((step: any) => {
+          if (typeof step === 'string' && step.includes('cmake --build')) return false
+          return true
+        })
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('cp -a detail')) {
@@ -8448,6 +8459,89 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Widen avro dep — the recipe just needs libavro headers
       if (recipe.dependencies?.['apache.org/avro']) {
         recipe.dependencies['apache.org/avro'] = '*'
+      }
+    },
+  },
+
+  // ─── github.com/mamba-org/mamba — switch to Miniforge3 installer ───────
+
+  'github.com/mamba-org/mamba': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // The recipe uses deprecated Mambaforge installer. Replace with Miniforge3
+      // which includes mamba by default since Aug 2023
+      recipe.build!.script = [
+        'case "{{hw.platform}}/{{hw.arch}}" in',
+        '  darwin/aarch64) PLATFORM="MacOSX-arm64" ;;',
+        '  darwin/x86-64) PLATFORM="MacOSX-x86_64" ;;',
+        '  linux/aarch64) PLATFORM="Linux-aarch64" ;;',
+        '  linux/x86-64) PLATFORM="Linux-x86_64" ;;',
+        '  *) echo "Unsupported platform" && exit 1 ;;',
+        'esac',
+        'curl -fSL "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-${PLATFORM}.sh" -o miniforge.sh',
+        'chmod +x miniforge.sh',
+        './miniforge.sh -b -s -u -p {{prefix}}',
+      ]
+      // Remove aria2 build dep — we use curl directly
+      if (recipe.build?.dependencies?.['aria2.github.io']) {
+        delete recipe.build.dependencies['aria2.github.io']
+      }
+      recipe.build!.dependencies = {}
+    },
+  },
+
+  // ─── dhruvkb.dev/pls — update to beta.9, cargo builds clean now ───────
+
+  'dhruvkb.dev/pls': {
+    distributableUrl: 'https://github.com/pls-rs/pls/archive/refs/tags/v0.0.1-beta.9.tar.gz',
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Widen libgit2 dep to match whatever is in S3
+      if (recipe.dependencies?.['libgit2.org']) {
+        recipe.dependencies['libgit2.org'] = '*'
+      }
+    },
+  },
+
+  // ─── gdal.org — disable arrow dep, fix patchelf and cmake ─────────────
+
+  'gdal.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Disable Arrow format support (arrow dep chain is broken)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('-DGDAL_USE_ARROW=OFF')
+        recipe.build.env.ARGS.push('-DGDAL_USE_PARQUET=OFF')
+      }
+      // Remove apache.org/arrow dependency
+      if (recipe.dependencies?.['apache.org/arrow']) {
+        delete recipe.dependencies['apache.org/arrow']
+      }
+      // Fix stray quote in cmake prefix
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Fix sed -i BSD compat
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
+          }
+        }
+      }
+      // Remove llvm.org dep
+      if (recipe.build?.dependencies?.['llvm.org']) {
+        delete recipe.build.dependencies['llvm.org']
+      }
+      // Remove linux CC/CXX/LD
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
+      // Remove linux thrift dep
+      if (recipe.dependencies?.linux?.['apache.org/thrift']) {
+        delete recipe.dependencies.linux['apache.org/thrift']
       }
     },
   },

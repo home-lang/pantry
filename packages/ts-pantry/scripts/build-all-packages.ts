@@ -597,8 +597,7 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'crates.io/kaspa-miner': ['*'],
   // freetds: old versions fail on linux + libiconv cmake on darwin; latest 1.6.0+ works
   'freetds.org': ['<1.6.0'],
-  // glm fails on darwin (cmake install issues); already in darwinOnlyDomains
-  'glm.g-truc.net': ['<1.1.0'],
+  // glm.g-truc.net removed from skipVersions — cmake build step removed in override (header-only)
   // ntp.org 4.2.8.17 build failure on linux
   'ntp.org': ['<4.2.9'],
   // openslide 3.4.1 fails on linux; 4.0.0+ works
@@ -1193,7 +1192,7 @@ Options:
     // grpc.io removed — disabled TSAN/ASAN + use bundled protobuf in override
     // apache.org/zookeeper removed — skip C-client, Java-only build in override
     'ordinals.com', // GitHub tag format mismatch (all variants return 404)
-    'dhruvkb.dev/pls', // Hardcoded beta tag + cargo auth failure on git deps
+    // dhruvkb.dev/pls removed — updated distributableUrl to beta.9, widened libgit2
     'seaweedfs.com', // All GitHub release tags return 404
     'wundergraph.com', // All GitHub release tags return 404
     'riverbankcomputing.com/sip', // Server returns empty reply on all downloads
@@ -1205,7 +1204,7 @@ Options:
     // ntp.org removed — builds on darwin (linux fails: MD5Init/MD5Update deprecated in OpenSSL 3)
     // jbig2dec.com removed — hardcoded URL to GitHub release works
     // videolan.org/x264 removed — HTTPS URL override for Debian mirror
-    'github.com/mamba-org/mamba', // Hardcoded version, FIXME in recipe
+    // github.com/mamba-org/mamba removed — switched to Miniforge3 installer in override
     // github.com/confluentinc/libserdes removed — simple C lib, widened deps in override
     // github.com/siderolabs/conform removed — widened Go version in override
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
@@ -1269,8 +1268,8 @@ Options:
     'pkl-lang.org', // Gradle buildSrc dependency resolution failure in CI
     // qemu.org removed — disabled slirp/libssh deps, fixed configure flags
     // freedesktop.org/poppler-qt5 removed — existing override disables qt5/introspection
-    'apache.org/arrow', // Massive C++ build, timeout/failure on both platforms
-    'gdal.org', // patchelf post-build fixup fails on linux, cmake issues on darwin
+    // apache.org/arrow removed — disabled Gandiva (LLVM dep) + tests/benchmarks in override
+    // gdal.org removed — disabled Arrow/Parquet dep + fixed cmake/sed in override
     'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
     // raccoin.org removed — reduced parallelism + codegen-units to avoid linker OOM
     'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
