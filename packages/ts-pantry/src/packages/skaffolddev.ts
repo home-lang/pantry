@@ -3,7 +3,7 @@
  *
  * @domain `skaffold.dev`
  * @programs `skaffold`
- * @version `2.17.2` (18 versions available)
+ * @version `2.17.3` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install skaffold.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "skaffold"
  * console.log(pkg.description) // "Easy and Repeatable Kubernetes Development"
  * console.log(pkg.programs)    // ["skaffold"]
- * console.log(pkg.versions[0]) // "2.17.2" (latest)
+ * console.log(pkg.versions[0]) // "2.17.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/skaffold-dev.md
@@ -68,6 +68,7 @@ export const skaffolddevPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.17.3',
     '2.17.2',
     '2.17.1',
     '2.17.0',

@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 124 versions</summary>
+<summary>Show all 125 versions</summary>
 
-- `2.31.1`
+- `2.31.2`, `2.31.1`
 - `2.30.3`, `2.30.2`, `2.30.1`, `2.30.0`
 - `2.29.8`, `2.29.7`, `2.29.6`, `2.29.5`, `2.29.4`, `2.29.3`, `2.29.2`, `2.29.1`, `2.29.0`
 - `2.28.11`, `2.28.10`, `2.28.9`, `2.28.8`, `2.28.7`, `2.28.6`, `2.28.5`, `2.28.4`, `2.28.3`, `2.28.2`, `2.28.1`, `2.28.0`
@@ -56,13 +56,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.31.1`
+**Latest Version**: `2.31.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +coder.com@2.31.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +coder.com@2.31.2 -- $SHELL -i
 ```
 
 ## Usage Examples
