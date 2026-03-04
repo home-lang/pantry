@@ -8069,8 +8069,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       recipe.build!.dependencies['gnu.org/libtool'] = '*'
     },
     prependScript: [
-      // Fix libtool version mismatch — regenerate autotools files
-      'autoreconf -fi 2>/dev/null || (./autogen.sh 2>/dev/null || true)',
+      // Fix libtool version mismatch — regenerate autotools files with current libtool
+      'rm -f libtool ltmain.sh',
+      'libtoolize --force --copy 2>/dev/null || true',
+      'autoreconf -fvi 2>&1 | tail -5 || (./autogen.sh 2>/dev/null || true)',
     ],
   },
 
@@ -8338,22 +8340,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'solana.com': {
     supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      recipe.build!.script = [
-        'mkdir -p /tmp/solana-extract',
-        'SOL_VERSION="{{version}}"',
-        'case "{{hw.platform}}/{{hw.arch}}" in',
-        '  darwin/aarch64) SOL_ARCH="aarch64-apple-darwin" ;;',
-        '  linux/x86-64) SOL_ARCH="x86_64-unknown-linux-gnu" ;;',
-        '  *) echo "Unsupported platform" && exit 1 ;;',
-        'esac',
-        'SOL_URL="https://github.com/anza-xyz/agave/releases/download/v${SOL_VERSION}/solana-release-${SOL_ARCH}.tar.bz2"',
-        'curl -fSL "$SOL_URL" -o /tmp/solana-release.tar.bz2',
-        'tar -xjf /tmp/solana-release.tar.bz2 -C /tmp/solana-extract',
-        'mkdir -p {{prefix}}/bin',
-        'cp -r /tmp/solana-extract/solana-release/bin/* {{prefix}}/bin/ 2>/dev/null || true',
-        'cp -r /tmp/solana-extract/solana-release/lib {{prefix}}/ 2>/dev/null || true',
-      ]
-      recipe.build!.dependencies = {}
+      // Pre-built binary from anza-xyz/agave (project moved from solana-labs/solana)
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'mkdir -p /tmp/solana-extract',
+            'SOL_VERSION="{{version}}"',
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SOL_ARCH="aarch64-apple-darwin" ;;',
+            '  linux/x86-64) SOL_ARCH="x86_64-unknown-linux-gnu" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'SOL_URL="https://github.com/anza-xyz/agave/releases/download/v${SOL_VERSION}/solana-release-${SOL_ARCH}.tar.bz2"',
+            'curl -fSL "$SOL_URL" -o /tmp/solana-release.tar.bz2',
+            'tar -xjf /tmp/solana-release.tar.bz2 -C /tmp/solana-extract',
+            'mkdir -p "{{prefix}}/bin"',
+            'cp -r /tmp/solana-extract/solana-release/bin/* "{{prefix}}/bin/" 2>/dev/null || true',
+            'cp -r /tmp/solana-extract/solana-release/lib "{{prefix}}/" 2>/dev/null || true',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
     },
   },
 
@@ -8780,6 +8790,62 @@ export const packageOverrides: Record<string, PackageOverride> = {
             'curl -fSL -o "{{prefix}}/bin/pkl" "https://github.com/apple/pkl/releases/download/{{version}}/pkl-${SUFFIX}"',
             'curl -fSL -o "{{prefix}}/bin/jpkl" "https://github.com/apple/pkl/releases/download/{{version}}/jpkl"',
             'chmod +x "{{prefix}}/bin/pkl" "{{prefix}}/bin/jpkl"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── ghostscript.com — fix zero-padded version in download URL ─────────
+  'ghostscript.com': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Ghostscript tag format: gs<major><padded-minor><patch> (e.g. gs10060 for 10.06.0)
+      // Can't reconstruct from semver template vars, so download in build script instead
+      recipe.distributable = undefined
+      const downloadScript = [
+        '# Download ghostpdl source — tag format requires zero-padded minor',
+        'GS_MAJOR="{{version.major}}"',
+        'GS_MINOR="{{version.minor}}"',
+        'GS_PATCH="{{version.patch}}"',
+        'GS_PADDED_MINOR=$(printf "%02d" "$GS_MINOR")',
+        'GS_TAG="gs${GS_MAJOR}${GS_PADDED_MINOR}${GS_PATCH}"',
+        'GS_RAW="${GS_MAJOR}.${GS_PADDED_MINOR}.${GS_PATCH}"',
+        'GS_URL="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/${GS_TAG}/ghostpdl-${GS_RAW}.tar.xz"',
+        'echo "Downloading ghostpdl from: $GS_URL"',
+        'curl -fSL "$GS_URL" | tar xJ --strip-components=1',
+      ].join('\n')
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script.unshift(downloadScript)
+      }
+    },
+  },
+
+  // ─── psycopg.org/psycopg3 — widen Python version ─────────
+  'psycopg.org/psycopg3': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Widen Python version — S3 may only have 3.12+
+      if (recipe.dependencies?.['python.org']) recipe.dependencies['python.org'] = '>=3.11'
+      if (recipe.build?.dependencies?.['python.org']) recipe.build.dependencies['python.org'] = '>=3.11'
+    },
+  },
+
+  // ─── github.com/peripheryapp/periphery — pre-built binary from GitHub releases ─────────
+  'github.com/peripheryapp/periphery': {
+    supportedPlatforms: ['darwin/aarch64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -o /tmp/periphery.zip "https://github.com/peripheryapp/periphery/releases/download/{{version}}/periphery-{{version}}.artifactbundle.zip"',
+            'mkdir -p /tmp/periphery-extract',
+            'unzip -o /tmp/periphery.zip -d /tmp/periphery-extract',
+            'mkdir -p "{{prefix}}/bin"',
+            'find /tmp/periphery-extract -name periphery -type f -perm +111 | head -1 | xargs -I{} cp {} "{{prefix}}/bin/periphery"',
+            'chmod +x "{{prefix}}/bin/periphery"',
           ].join('\n'),
         ]
         recipe.build.env = {}

@@ -1184,7 +1184,7 @@ Options:
     // info-zip.org/unzip removed — distributableUrl override to working SourceForge URL
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
-    'psycopg.org/psycopg3', // Version resolver picks up psycopg_c tags (3.3.x) that don't have matching psycopg- tags
+    // psycopg.org/psycopg3 removed — widened Python version constraint in override
     'sourceware.org/dm', // GitLab download URLs return 404
     // llm.datasette.io removed — widened Python version constraint in override
     // taku910.github.io/mecab-ipadic removed — mecab now in S3
@@ -1235,7 +1235,7 @@ Options:
     // gnu.org/source-highlight removed — added -std=c++14 to CXXFLAGS
     'microbrew.org/md5sha1sum', // Server dead — microbrew.org times out on port 80, source tarball unavailable
     'ghostgum.com.au/epstool', // Source tarball removed from ftp.debian.org (404)
-    'ghostscript.com', // Tag format gs10060 for version 10.06.0 — zero-padded minor not reconstructible from semver
+    // ghostscript.com removed — modifyRecipe downloads source with zero-padded minor URL
     // amber-lang.com removed — distributableUrl override appends -alpha suffix
     // heasarc.gsfc.nasa.gov/cfitsio removed — built successfully on both platforms
     // brxken128.github.io/dexios removed — added --cap-lints warn RUSTFLAGS override
@@ -1491,7 +1491,7 @@ Options:
     // github.com/pressly/sup removed — fixed go mod init in override
     // github.com/moretension/duti removed — fixed make install in override
     // github.com/a7ex/xcresultparser removed — SDKROOT fix for ncurses unctrl.h conflict
-    'github.com/peripheryapp/periphery', // Swift build fails even with SDKROOT fix
+    // github.com/peripheryapp/periphery removed — pre-built binary from artifactbundle.zip
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
     'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
     'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
