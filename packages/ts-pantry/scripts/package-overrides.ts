@@ -3759,6 +3759,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Install crystal+shards via Homebrew (S3 crystal doesn't include shards)
           'brew install crystal 2>/dev/null || true',
           'export PATH="$(brew --prefix crystal)/bin:$PATH"',
+          // Set CRYSTAL_PATH to Homebrew's Crystal std lib so `require "prelude"` works
+          'CRYSTAL_STD="$(brew --prefix crystal)/share/crystal/src"',
+          'export CRYSTAL_PATH="./lib:$CRYSTAL_STD"',
         ],
       },
     },
@@ -7780,6 +7783,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── lunarvim.org — fix neovim/libiconv PATH and LD_LIBRARY_PATH ──────
 
   'lunarvim.org': {
+    prependScript: [
+      // Ensure all S3 dep bin/lib dirs are in PATH and library paths
+      // neovim.io binary needs libiconv from its own lib dir
+      'for d in /tmp/buildkit-deps/*/*/bin; do [ -d "$d" ] && export PATH="$d:$PATH"; done',
+      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
+      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export DYLD_LIBRARY_PATH="$d:${DYLD_LIBRARY_PATH:-}"; done',
+      // Ensure libiconv from gnu.org/libiconv is preferred over bundled copies in other deps
+      'ICONV_LIB=$(find /tmp/buildkit-deps/gnu.org/libiconv -type d -name lib 2>/dev/null | head -1)',
+      'if [ -n "$ICONV_LIB" ]; then export LD_LIBRARY_PATH="$ICONV_LIB:$LD_LIBRARY_PATH"; export DYLD_LIBRARY_PATH="$ICONV_LIB:$DYLD_LIBRARY_PATH"; fi',
+    ],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove gnu.org/bash from deps — S3 bash links to libiconv which conflicts with
       // bundled libiconv in other deps (doxygen.nl). System /bin/bash works fine.
