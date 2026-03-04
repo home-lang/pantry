@@ -8063,15 +8063,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'jbig2dec.com': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      if (!recipe.build!.dependencies) recipe.build!.dependencies = {}
-      recipe.build!.dependencies['gnu.org/autoconf'] = '*'
-      recipe.build!.dependencies['gnu.org/automake'] = '*'
-      recipe.build!.dependencies['gnu.org/libtool'] = '*'
-      // Replace autogen.sh with direct autoreconf + configure to avoid libtool version mismatch
+      // Skip autogen.sh entirely — release tarball has pre-generated configure
+      // autogen.sh requires autoconf/automake/libtool deps which have broken $PREFIX on darwin
+      recipe.build!.dependencies = {}
       recipe.build!.script = [
-        'rm -f libtool ltmain.sh aclocal.m4',
-        'libtoolize --force --copy',
-        'autoreconf -fvi',
         './configure --prefix="{{prefix}}"',
         'make --jobs {{ hw.concurrency }} install',
       ]
@@ -8824,6 +8819,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       ].join('\n')
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script.unshift(downloadScript)
+        // Remove 'make install-so' — shared lib build fails on darwin with -version flag
+        // Static binaries (gs, etc.) from 'make install' are sufficient
+        recipe.build.script = recipe.build.script.filter(
+          (step: string) => typeof step !== 'string' || !step.includes('install-so'),
+        )
       }
     },
   },
