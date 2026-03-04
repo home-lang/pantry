@@ -3,7 +3,7 @@
  *
  * @domain `github.com/boyter/scc`
  * @programs `scc`
- * @version `3.6.0` (11 versions available)
+ * @version `3.7.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/boyter/scc`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "scc"
  * console.log(pkg.description) // "Sloc, Cloc and Code: scc is a very fast accurat..."
  * console.log(pkg.programs)    // ["scc"]
- * console.log(pkg.versions[0]) // "3.6.0" (latest)
+ * console.log(pkg.versions[0]) // "3.7.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/boyter/scc.md
@@ -67,6 +67,7 @@ export const sccPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.7.0',
     '3.6.0',
     '3.5.0',
     '3.4.0',
