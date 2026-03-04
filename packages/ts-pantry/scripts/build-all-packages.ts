@@ -1162,8 +1162,8 @@ Options:
   const knownBrokenDomains = new Set([
     // apache.org/subversion removed — skip serf/kerberos/swig, build svn core only
     // apache.org/serf removed — use system scons, skip kerberos
-    // argoproj.github.io/cd removed — skip UI build, Go-only CLI
-    // argoproj.github.io/workflows removed — platform-agnostic go build in override
+    'argoproj.github.io/cd', // Go build override failed — needs debugging
+    'argoproj.github.io/workflows', // Go build override failed — needs debugging
     // openai.com/codex removed — pre-built binary download from GitHub releases
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
     // coder.com/code-server removed — switched to pre-built release tarballs
@@ -1215,7 +1215,7 @@ Options:
     // wez.github.io/wezterm removed — pre-built binary download (macOS only)
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
-    // libsdl.org/SDL_image removed — distributableUrl override for SDL2 naming
+    'libsdl.org/SDL_image', // SDL2 vs SDL3 filename mismatch in release tags
     'gource.io', // GitHub releases removed/restructured
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
@@ -1488,7 +1488,7 @@ Options:
     // github.com/pressly/sup removed — fixed go mod init in override
     // github.com/moretension/duti removed — fixed make install in override
     // github.com/a7ex/xcresultparser removed — SDKROOT fix for ncurses unctrl.h conflict
-    // github.com/peripheryapp/periphery removed — SDKROOT fix for ncurses unctrl.h conflict
+    'github.com/peripheryapp/periphery', // Swift build fails even with SDKROOT fix
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
     'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
     'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
