@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-04T04:47:05.255Z
+ * Generated on 2026-03-04T19:53:18.038Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1652 total)
+ * List of all known packages (1653 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -922,6 +922,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'gnu.org/fribidi',
   'gnu.org/gawk',
   'gnu.org/gcc',
+  'gnu.org/gcc/libgomp',
   'gnu.org/gcc/libstdcxx',
   'gnu.org/gdbm',
   'gnu.org/gettext',
