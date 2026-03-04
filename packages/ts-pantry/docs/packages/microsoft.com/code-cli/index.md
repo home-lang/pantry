@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 41 versions</summary>
+<summary>Show all 42 versions</summary>
 
+- `1.110.0`
 - `1.109.5`, `1.109.2`, `1.109.1`, `1.109.0`
 - `1.108.2`, `1.108.1`, `1.108.0`
 - `1.107.1`, `1.107.0`
@@ -43,13 +44,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.109.5`
+**Latest Version**: `1.110.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +microsoft.com/code-cli@1.109.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +microsoft.com/code-cli@1.110.0 -- $SHELL -i
 ```
 
 ## Dependencies

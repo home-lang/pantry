@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
+- `7.0.0`
 - `6.5.0`
 - `6.4.0`
 - `6.3.0`
@@ -38,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `6.5.0`
+**Latest Version**: `7.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cocogitto.io@6.5.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cocogitto.io@7.0.0 -- $SHELL -i
 ```
 
 ## Dependencies

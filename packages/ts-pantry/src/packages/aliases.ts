@@ -713,6 +713,7 @@ export const aliases: Record<string, string> = {
   'libgcrypt': 'gnupg.org/libgcrypt',
   'libgd.github': 'libgd.github.io',
   'libgeotiff': 'github.com/OSGeo/libgeotiff',
+  'libgomp': 'gnu.org/gcc/libgomp',
   'libgpg-error': 'gnupg.org/libgpg-error',
   'libimagequant': 'pngquant.org/lib',
   'libimobiledevice-glue': 'libimobiledevice.org/libimobiledevice-glue',

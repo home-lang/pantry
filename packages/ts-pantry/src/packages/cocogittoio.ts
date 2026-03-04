@@ -3,7 +3,7 @@
  *
  * @domain `cocogitto.io`
  * @programs `cog`
- * @version `6.5.0` (9 versions available)
+ * @version `7.0.0` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cocogitto.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "cog"
  * console.log(pkg.description) // "The Conventional Commits toolbox"
  * console.log(pkg.programs)    // ["cog"]
- * console.log(pkg.versions[0]) // "6.5.0" (latest)
+ * console.log(pkg.versions[0]) // "7.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/cocogitto-io.md
@@ -68,6 +68,7 @@ export const cocogittoioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.0.0',
     '6.5.0',
     '6.4.0',
     '6.3.0',

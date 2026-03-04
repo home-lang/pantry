@@ -876,6 +876,7 @@ import { gnuorgfindutilsPackage } from './gnu.org/findutils'
 import { gnuorgfribidiPackage } from './gnu.org/fribidi'
 import { gnuorggawkPackage } from './gnu.org/gawk'
 import { gnuorggccPackage } from './gnu.org/gcc'
+import { gnuorggcclibgompPackage } from './gnu.org/gcc/libgomp'
 import { gnuorggcclibstdcxxPackage } from './gnu.org/gcc/libstdcxx'
 import { gnuorggdbmPackage } from './gnu.org/gdbm'
 import { gnuorggettextPackage } from './gnu.org/gettext'
@@ -3261,7 +3262,9 @@ export interface Pantry {
 
   gnuorggcc: typeof gnuorggccPackage
 
-  gnuorggcc1: typeof gnuorggcclibstdcxxPackage
+  gnuorggcc1: typeof gnuorggcclibgompPackage
+
+  gnuorggcc2: typeof gnuorggcclibstdcxxPackage
 
   gnuorggdbm: typeof gnuorggdbmPackage
 
@@ -5863,6 +5866,7 @@ export interface Pantry {
   diffutils: typeof gnuorgdiffutilsPackage
   sed: typeof gnuorgsedPackage
   iconv: typeof gnuorglibiconvPackage
+  libgomp: typeof gnuorggcclibgompPackage
   libstdcxx: typeof gnuorggcclibstdcxxPackage
   mpc: typeof gnuorgmpcPackage
   which: typeof gnuorgwhichPackage
@@ -7624,7 +7628,9 @@ export const pantry: Pantry = {
 
   gnuorggcc: gnuorggccPackage,
 
-  gnuorggcc1: gnuorggcclibstdcxxPackage,
+  gnuorggcc1: gnuorggcclibgompPackage,
+
+  gnuorggcc2: gnuorggcclibstdcxxPackage,
 
   gnuorggdbm: gnuorggdbmPackage,
 
@@ -10226,6 +10232,7 @@ export const pantry: Pantry = {
   diffutils: gnuorgdiffutilsPackage,
   sed: gnuorgsedPackage,
   iconv: gnuorglibiconvPackage,
+  libgomp: gnuorggcclibgompPackage,
   libstdcxx: gnuorggcclibstdcxxPackage,
   mpc: gnuorgmpcPackage,
   which: gnuorgwhichPackage,

@@ -3,7 +3,7 @@
  *
  * @domain `github.com/astanin/python-tabulate`
  * @programs `tabulate`
- * @version `0.9.0` (1 versions available)
+ * @version `0.10.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/astanin/python-tabulate`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "tabulate"
  * console.log(pkg.description) // "Pretty-print tabular data in Python, a library ..."
  * console.log(pkg.programs)    // ["tabulate"]
- * console.log(pkg.versions[0]) // "0.9.0" (latest)
+ * console.log(pkg.versions[0]) // "0.10.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/astanin/python-tabulate.md
@@ -75,6 +75,7 @@ export const pythontabulatePackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.0',
     '0.9.0',
   ] as const,
   aliases: [] as const,
