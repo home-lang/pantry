@@ -8849,6 +8849,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Ghostscript tag format: gs<major><padded-minor><patch> (e.g. gs10060 for 10.06.0)
       // Can't reconstruct from semver template vars, so download in build script instead
       recipe.distributable = undefined
+      // Remove libtiff dep — S3 libtiff 4.7.1 was built against libjpeg-turbo 3.0+ (jpeg12_read_raw_data)
+      // but S3 only has libjpeg-turbo 2.1.5.1 which lacks that symbol. Use bundled tiff instead.
+      if (recipe.dependencies?.['simplesystems.org/libtiff']) delete recipe.dependencies['simplesystems.org/libtiff']
       const downloadScript = [
         '# Download ghostpdl source — tag format requires zero-padded minor',
         'GS_MAJOR="{{version.major}}"',
@@ -8870,6 +8873,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.script = recipe.build.script.filter(
           (step: string) => typeof step !== 'string' || !step.includes('install-so'),
         )
+        // Keep bundled tiff dir — don't rm it since we're not using system libtiff
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('rm -rf') && step.includes('tiff')) {
+            recipe.build.script[i] = step.replace(/\btiff\b/, '').replace(/\s+/g, ' ').trim()
+          }
+        }
+        // Remove --with-system-libtiff from configure args
+        if (recipe.build.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
+          recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('system-libtiff'))
+        }
       }
     },
   },
