@@ -3765,6 +3765,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Stub out help2man — it tries to run compiled binaries for --help text,
           // which fails because runtime deps (openssl etc) aren't in the build env.
           'mkdir -p /tmp/help2man-stub && printf \'#!/bin/sh\\nOUT=""\\nwhile [ $# -gt 0 ]; do case "$1" in -o) OUT="$2"; shift ;; esac; shift; done\\nif [ -n "$OUT" ]; then echo ".TH stub 1" > "$OUT"; fi\\n\' > /tmp/help2man-stub/help2man && chmod +x /tmp/help2man-stub/help2man && export PATH="/tmp/help2man-stub:$PATH"',
+          // macOS install command doesn't support -t flag. Use ginstall (GNU coreutils) instead.
+          'if command -v ginstall &>/dev/null; then mkdir -p /tmp/install-wrapper && printf \'#!/bin/sh\\nexec ginstall "$@"\\n\' > /tmp/install-wrapper/install && chmod +x /tmp/install-wrapper/install && export PATH="/tmp/install-wrapper:$PATH"; fi',
         ],
       },
     },
@@ -7811,6 +7813,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['gnu.org/bash']) delete recipe.build.dependencies['gnu.org/bash']
       if (recipe.dependencies?.['neovim.io']) delete recipe.dependencies['neovim.io']
       if (recipe.build?.dependencies?.['neovim.io']) delete recipe.build.dependencies['neovim.io']
+      // Remove install-neovim-from-release step — it downloads neovim from GitHub releases
+      // which fails. We already have neovim from brew/apt.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step) => {
+          if (typeof step === 'string') return !step.includes('install-neovim-from-release')
+          return true
+        })
+      }
     },
   },
 }
