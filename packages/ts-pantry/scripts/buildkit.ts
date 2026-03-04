@@ -1292,7 +1292,8 @@ SYSLIB_OVERRIDE_EOF`)
   // GCC specs workaround: if ./specs is a directory, run GCC from /tmp
   // to prevent "fatal error: cannot read spec file './specs': Is a directory"
   // We convert relative file paths to absolute so GCC can still find them.
-  sections.push('# macOS Xcode 26.3+: suppress "ignoring duplicate libraries" warnings.')
+  sections.push('# macOS Xcode 26.3+: use classic linker to avoid "duplicate linked dylib"')
+  sections.push('# hard errors, and suppress duplicate library warnings.')
   sections.push('# Only add for actual link commands (not compile-only -c invocations).')
   sections.push('if [ "$(uname)" = "Darwin" ]; then')
   sections.push('  _is_linking=false; _is_compile_only=false')
@@ -1300,7 +1301,7 @@ SYSLIB_OVERRIDE_EOF`)
   sections.push('    case "$arg" in -dynamiclib|-shared|-bundle) _is_linking=true ;; -c) _is_compile_only=true ;; esac')
   sections.push('  done')
   sections.push('  if $_is_linking && ! $_is_compile_only; then')
-  sections.push('    args+=("-Wl,-no_warn_duplicate_libraries")')
+  sections.push('    args+=("-Wl,-ld_classic" "-Wl,-no_warn_duplicate_libraries")')
   sections.push('  fi')
   sections.push('fi')
   sections.push('# GCC specs/ directory workaround: run from /tmp if ./specs is a directory')
