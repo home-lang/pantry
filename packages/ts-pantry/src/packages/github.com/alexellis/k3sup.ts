@@ -3,7 +3,7 @@
  *
  * @domain `github.com/alexellis/k3sup`
  * @programs `k3sup`
- * @version `0.13.11` (10 versions available)
+ * @version `0.13.12` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/alexellis/k3sup`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "k3sup"
  * console.log(pkg.description) // "Utility to create k3s clusters on any local or ..."
  * console.log(pkg.programs)    // ["k3sup"]
- * console.log(pkg.versions[0]) // "0.13.11" (latest)
+ * console.log(pkg.versions[0]) // "0.13.12" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/alexellis/k3sup.md
@@ -68,6 +68,7 @@ export const k3supPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.13.12',
     '0.13.11',
     '0.13.10',
     '0.13.9',

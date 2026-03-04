@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 10 versions</summary>
+<summary>Show all 11 versions</summary>
 
-- `0.13.11`, `0.13.10`, `0.13.9`, `0.13.8`, `0.13.6`, `0.13.5`, `0.13.4`, `0.13.3`, `0.13.2`, `0.13.1`
+- `0.13.12`, `0.13.11`, `0.13.10`, `0.13.9`, `0.13.8`, `0.13.6`, `0.13.5`, `0.13.4`, `0.13.3`, `0.13.2`, `0.13.1`
 
 </details>
 
-**Latest Version**: `0.13.11`
+**Latest Version**: `0.13.12`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/alexellis/k3sup@0.13.11 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/alexellis/k3sup@0.13.12 -- $SHELL -i
 ```
 
 ## Usage Examples
