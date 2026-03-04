@@ -8559,4 +8559,148 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── plakar.io — pre-built binary download from GitHub releases ─────────
+  'plakar.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="darwin_arm64" ;;',
+            '  darwin/x86-64) SUFFIX="darwin_amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux_amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux_arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'TARBALL="plakar_{{version}}_${SUFFIX}.tar.gz"',
+            'curl -fSL -o /tmp/plakar.tar.gz "https://github.com/PlakarKorp/plakar/releases/download/v{{version}}/${TARBALL}"',
+            'mkdir -p /tmp/plakar-extract',
+            'tar -xzf /tmp/plakar.tar.gz -C /tmp/plakar-extract',
+            'mkdir -p "{{prefix}}/bin"',
+            'cp /tmp/plakar-extract/plakar "{{prefix}}/bin/"',
+            'chmod +x "{{prefix}}/bin/plakar"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── ipfscluster.io — pre-built binaries from dist.ipfs.tech ─────────
+  'ipfscluster.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) ARCH="darwin-arm64" ;;',
+            '  darwin/x86-64) ARCH="darwin-amd64" ;;',
+            '  linux/x86-64) ARCH="linux-amd64" ;;',
+            '  linux/aarch64) ARCH="linux-arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin" /tmp/ipfs-extract',
+            'for TOOL in ipfs-cluster-service ipfs-cluster-ctl ipfs-cluster-follow; do',
+            '  curl -fSL -o /tmp/${TOOL}.tar.gz "https://dist.ipfs.tech/${TOOL}/v{{version}}/${TOOL}_v{{version}}_${ARCH}.tar.gz"',
+            '  tar -xzf /tmp/${TOOL}.tar.gz -C /tmp/ipfs-extract',
+            '  cp /tmp/ipfs-extract/${TOOL}/${TOOL} "{{prefix}}/bin/"',
+            '  chmod +x "{{prefix}}/bin/${TOOL}"',
+            'done',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── projectdiscovery.io/nuclei — pre-built binary from GitHub releases ─────────
+  'projectdiscovery.io/nuclei': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="macOS_arm64" ;;',
+            '  darwin/x86-64) SUFFIX="macOS_amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux_amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux_arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'ZIPFILE="nuclei_{{version}}_${SUFFIX}.zip"',
+            'curl -fSL -o /tmp/nuclei.zip "https://github.com/projectdiscovery/nuclei/releases/download/v{{version}}/${ZIPFILE}"',
+            'mkdir -p /tmp/nuclei-extract',
+            'unzip -o /tmp/nuclei.zip -d /tmp/nuclei-extract',
+            'mkdir -p "{{prefix}}/bin"',
+            'cp /tmp/nuclei-extract/nuclei "{{prefix}}/bin/"',
+            'chmod +x "{{prefix}}/bin/nuclei"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── github.com/glauth/glauth — pre-built binary from GitHub releases ─────────
+  'github.com/glauth/glauth': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="darwin-arm64" ;;',
+            '  darwin/x86-64) SUFFIX="darwin-amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux-amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux-arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/glauth" "https://github.com/glauth/glauth/releases/download/v{{version}}/glauth-${SUFFIX}"',
+            'chmod +x "{{prefix}}/bin/glauth"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── github.com/shaka-project/shaka-packager — pre-built binaries from GitHub releases ─────────
+  'github.com/shaka-project/shaka-packager': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="osx-arm64" ;;',
+            '  darwin/x86-64) SUFFIX="osx-x64" ;;',
+            '  linux/x86-64) SUFFIX="linux-x64" ;;',
+            '  linux/aarch64) SUFFIX="linux-arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/packager" "https://github.com/shaka-project/shaka-packager/releases/download/v{{version}}/packager-${SUFFIX}"',
+            'curl -fSL -o "{{prefix}}/bin/mpd_generator" "https://github.com/shaka-project/shaka-packager/releases/download/v{{version}}/mpd_generator-${SUFFIX}"',
+            'chmod +x "{{prefix}}/bin/packager" "{{prefix}}/bin/mpd_generator"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
 }

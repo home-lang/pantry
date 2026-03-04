@@ -277,6 +277,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'rust-lang.org/rustup': ['<1.28.0'],
   // Go 1.26 broke net.errNoSuchInterface in 1.9.x; 1.8.x and 1.10.x+ work
   'sing-box.app': ['1.9.0', '1.9.1', '1.9.2', '1.9.3', '1.9.4', '1.9.5', '1.9.6', '1.9.7'],
+  // SDL_image version resolver picks SDL3 tags (3.x) but distributableUrl is for SDL2.
+  // SDL3 tags use different filenames (SDL3_image vs SDL2_image). Keep only SDL2 versions.
+  'libsdl.org/SDL_image': ['>=3.0.0'],
   // Xcode 26.3 SDK declares strchrnul, conflicting with pg_query_go's static version
   'sqlc.dev': ['<1.29.0'],
   // pygit2 C API mismatch with newer libgit2 (git_error_set renamed)
@@ -1215,7 +1218,7 @@ Options:
     // wez.github.io/wezterm removed — pre-built binary download (macOS only)
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
-    'libsdl.org/SDL_image', // SDL2 vs SDL3 filename mismatch in release tags
+    // libsdl.org/SDL_image removed — SKIP_VERSIONS >= 3.0.0 excludes SDL3 tags, distributableUrl for SDL2
     'gource.io', // GitHub releases removed/restructured
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
@@ -1244,10 +1247,10 @@ Options:
     // elixir-lang.org removed — builds successfully on both platforms
     // elixir-lang.org/otp-27 removed — builds successfully on both platforms
     // pimalaya.org/himalaya removed — removed pinned rust-toolchain.toml, using stable Rust
-    'plakar.io', // cockroachdb/swiss requires Go runtime internals not in Go 1.26
-    'ipfscluster.io', // Same cockroachdb/swiss Go runtime internals issue
+    // plakar.io removed — pre-built binary download from GitHub releases
+    // ipfscluster.io removed — pre-built binary download from dist.ipfs.tech
     // syncthing.net removed — patched compat.yaml to add Go 1.26 runtime entry
-    'projectdiscovery.io/nuclei', // bytedance/sonic requires newer Go runtime internals
+    // projectdiscovery.io/nuclei removed — pre-built binary download from GitHub releases
     'iroh.computer', // curve25519-dalek pre-release incompatible with digest crate
     // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
     // dns.lookup.dog removed — builds on darwin
@@ -1492,8 +1495,8 @@ Options:
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
     'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
     'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
-    'github.com/glauth/glauth', // PAM plugin API mismatch — needs upstream code fix
-    'github.com/shaka-project/shaka-packager', // Complex git submodule + ninja build failures
+    // github.com/glauth/glauth removed — pre-built binary download from GitHub releases
+    // github.com/shaka-project/shaka-packager removed — pre-built binary download from GitHub releases
     'github.com/libkml/libkml', // minizip ints.h header not found + Boost compat issues
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
