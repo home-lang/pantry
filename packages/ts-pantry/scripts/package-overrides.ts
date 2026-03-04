@@ -408,6 +408,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'sass-lang.com/libsass': { prependScript: [GLIBTOOL_FIX] },
   'sass-lang.com/sassc': {
     prependScript: [GLIBTOOL_FIX],
+    platforms: {
+      darwin: {
+        prependScript: ['brew install autoconf automake libtool 2>/dev/null || true'],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Use system autotools — S3 autoconf has broken $PREFIX in Perl source on darwin
       if (recipe.build?.dependencies?.['gnu.org/autoconf']) delete recipe.build.dependencies['gnu.org/autoconf']
@@ -8349,6 +8354,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── geoff.greer.fm/ag — use system autotools instead of S3 autoconf ─────
 
   'geoff.greer.fm/ag': {
+    platforms: {
+      darwin: {
+        prependScript: ['brew install autoconf automake pkg-config 2>/dev/null || true'],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // S3 autoconf has broken $PREFIX in Perl source on darwin
       if (recipe.build?.dependencies?.['gnu.org/autoconf']) delete recipe.build.dependencies['gnu.org/autoconf']
