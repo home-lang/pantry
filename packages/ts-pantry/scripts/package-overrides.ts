@@ -406,7 +406,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'leonerd.org.uk/libvterm': { prependScript: [GLIBTOOL_FIX] },
   'libtom.net/math': { prependScript: [GLIBTOOL_FIX] },
   'sass-lang.com/libsass': { prependScript: [GLIBTOOL_FIX] },
-  'sass-lang.com/sassc': { prependScript: [GLIBTOOL_FIX] },
+  'sass-lang.com/sassc': {
+    prependScript: [GLIBTOOL_FIX],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Use system autotools — S3 autoconf has broken $PREFIX in Perl source on darwin
+      if (recipe.build?.dependencies?.['gnu.org/autoconf']) delete recipe.build.dependencies['gnu.org/autoconf']
+      if (recipe.build?.dependencies?.['gnu.org/automake']) delete recipe.build.dependencies['gnu.org/automake']
+      if (recipe.build?.dependencies?.['gnu.org/libtool']) delete recipe.build.dependencies['gnu.org/libtool']
+    },
+  },
   'zlib.net/minizip': { prependScript: [GLIBTOOL_FIX] },
   // github.com/sekrit-twc/zimg — moved to end of file (merged with prefix fix)
   'github.com/xiph/speexdsp': { prependScript: [GLIBTOOL_FIX] },
@@ -8336,6 +8344,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [
       'mkdir -p /tmp/tinygo-extract',
     ],
+  },
+
+  // ─── geoff.greer.fm/ag — use system autotools instead of S3 autoconf ─────
+
+  'geoff.greer.fm/ag': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // S3 autoconf has broken $PREFIX in Perl source on darwin
+      if (recipe.build?.dependencies?.['gnu.org/autoconf']) delete recipe.build.dependencies['gnu.org/autoconf']
+      if (recipe.build?.dependencies?.['gnu.org/automake']) delete recipe.build.dependencies['gnu.org/automake']
+    },
   },
 
   // ─── seaweedfs.com — widen Go version constraint ─────────────────────────
