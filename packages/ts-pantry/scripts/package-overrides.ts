@@ -2083,8 +2083,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // ─── eyrie.org/eagle/podlators — upstream files have v prefix in filename ──
   'eyrie.org/eagle/podlators': {
-    // Server filenames are 2-component (podlators-5.1.tar.xz), not 3-component semver
-    distributableUrl: 'https://archives.eyrie.org/software/perl/podlators-{{version.marketing}}.tar.xz',
+    // Server filenames use v-prefix: podlators-v6.0.2.tar.xz
+    distributableUrl: 'https://archives.eyrie.org/software/perl/podlators-v{{version.marketing}}.tar.xz',
   },
 
   // ─── github.com/chainguard-dev/apko — disable CGO, fix BSD install -D ──
@@ -8056,6 +8056,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen Python version constraint from ~3.11 to >=3.11
       if (recipe.dependencies?.['python.org']) recipe.dependencies['python.org'] = '>=3.11'
+    },
+  },
+
+  // ─── jbig2dec.com — add autoconf build dep ──────────────────────────
+
+  'jbig2dec.com': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      if (!recipe.build!.dependencies) recipe.build!.dependencies = {}
+      recipe.build!.dependencies['gnu.org/autoconf'] = '*'
     },
   },
 

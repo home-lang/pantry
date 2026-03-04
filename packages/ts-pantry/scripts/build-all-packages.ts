@@ -1208,7 +1208,7 @@ Options:
     // github.com/confluentinc/libserdes removed — simple C lib, widened deps in override
     // github.com/siderolabs/conform removed — widened Go version in override
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
-    // microsoft.com/markitdown removed — widened Python version in override
+    'microsoft.com/markitdown', // Version resolver picks v0.0.1a3 → 0.0.1.3 but no such tag on GitHub
     // snyk.io removed — switched to pre-built binary download from GitHub
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
@@ -1503,7 +1503,7 @@ Options:
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
-    // eyrie.org/eagle/podlators removed — fixed distributableUrl to use marketing version
+    'eyrie.org/eagle/podlators', // GitHub tags (release/5.01) don't match archive site filenames (v6.0.2)
     // github.com/thkukuk/libnsl removed — added system libtirpc-dev install + linux-only supportedPlatforms
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
