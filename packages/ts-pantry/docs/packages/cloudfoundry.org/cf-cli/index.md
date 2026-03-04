@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 33 versions</summary>
+<summary>Show all 34 versions</summary>
 
+- `8.18.0`
 - `8.17.1`, `8.17.0`
 - `8.16.0`
 - `8.14.1`, `8.14.0`
@@ -42,13 +43,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `8.17.1`
+**Latest Version**: `8.18.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cloudfoundry.org/cf-cli@8.17.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cloudfoundry.org/cf-cli@8.18.0 -- $SHELL -i
 ```
 
 ## Usage Examples

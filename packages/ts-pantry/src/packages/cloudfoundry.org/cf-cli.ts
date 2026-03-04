@@ -3,7 +3,7 @@
  *
  * @domain `cloudfoundry.org/cf-cli`
  * @programs `cf`
- * @version `8.17.1` (33 versions available)
+ * @version `8.18.0` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cloudfoundry.org/cf-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "cf"
  * console.log(pkg.description) // "Filter to replace numeric timestamps with a for..."
  * console.log(pkg.programs)    // ["cf"]
- * console.log(pkg.versions[0]) // "8.17.1" (latest)
+ * console.log(pkg.versions[0]) // "8.18.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/cloudfoundry-org/cf-cli.md
@@ -69,6 +69,7 @@ export const cloudfoundryorgcfcliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.18.0',
     '8.17.1',
     '8.17.0',
     '8.16.0',
