@@ -181,8 +181,51 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
 /// Check if a version string looks like a Zig dev version
 pub fn isZigDevVersion(version: []const u8) bool {
-    // Dev versions look like: 0.16.0-dev.1484+d0ba6642b or 0.14.0-dev.2851+b074a1eb8
-    return std.mem.indexOf(u8, version, "-dev.") != null;
+    // Dev versions look like: 0.16.0-dev.1484+d0ba6642b, 0.14.0-dev.2851+b074a1eb8, or 0.16.0-dev
+    return std.mem.indexOf(u8, version, "-dev") != null;
+}
+
+/// Check if a version is a short dev specifier (e.g. "0.16.0-dev") that needs resolution
+fn isShortDevVersion(version: []const u8) bool {
+    return std.mem.endsWith(u8, version, "-dev");
+}
+
+/// Resolve a short dev version like "0.16.0-dev" to the full version from ziglang.org/download/index.json
+pub fn resolveZigDevVersion(allocator: std.mem.Allocator, version: []const u8) ![]const u8 {
+    if (!isShortDevVersion(version)) return allocator.dupe(u8, version);
+
+    const result = io_helper.childRun(allocator, &[_][]const u8{
+        "curl", "-sfL", "--connect-timeout", "10", "https://ziglang.org/download/index.json",
+    }) catch return allocator.dupe(u8, version);
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    switch (result.term) {
+        .exited => |code| if (code != 0) return allocator.dupe(u8, version),
+        else => return allocator.dupe(u8, version),
+    }
+
+    if (result.stdout.len == 0) return allocator.dupe(u8, version);
+
+    // Parse JSON and extract master version
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, result.stdout, .{
+        .ignore_unknown_fields = true,
+        .allocate = .alloc_always,
+    }) catch return allocator.dupe(u8, version);
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return allocator.dupe(u8, version);
+    const master = parsed.value.object.get("master") orelse return allocator.dupe(u8, version);
+    if (master != .object) return allocator.dupe(u8, version);
+    const master_version = master.object.get("version") orelse return allocator.dupe(u8, version);
+    if (master_version != .string) return allocator.dupe(u8, version);
+
+    // Verify the resolved version starts with the requested prefix (e.g. "0.16.0-dev")
+    if (std.mem.startsWith(u8, master_version.string, version)) {
+        return allocator.dupe(u8, master_version.string);
+    }
+
+    return allocator.dupe(u8, version);
 }
 
 /// Build download URL for ziglang.org

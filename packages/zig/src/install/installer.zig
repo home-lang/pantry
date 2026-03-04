@@ -1380,17 +1380,24 @@ pub const Installer = struct {
             };
         }
 
+        // Resolve short dev versions like "0.16.0-dev" to full version
+        const resolved_version = try downloader.resolveZigDevVersion(self.allocator, spec.version);
+        defer if (!std.mem.eql(u8, resolved_version, spec.version)) self.allocator.free(resolved_version);
+
         if (!options.quiet) {
-            const is_dev = downloader.isZigDevVersion(spec.version);
+            const is_dev = downloader.isZigDevVersion(resolved_version);
             if (is_dev) {
-                style.print("  → Downloading Zig dev from ziglang.org: {s}\n", .{spec.version});
+                if (!std.mem.eql(u8, resolved_version, spec.version)) {
+                    style.print("  → Resolved {s} to {s}\n", .{ spec.version, resolved_version });
+                }
+                style.print("  → Downloading Zig dev from ziglang.org: {s}\n", .{resolved_version});
             } else {
-                style.print("  → Downloading Zig from ziglang.org: {s}\n", .{spec.version});
+                style.print("  → Downloading Zig from ziglang.org: {s}\n", .{resolved_version});
             }
         }
 
         // Build download URL
-        const url = try downloader.buildZiglangUrl(self.allocator, spec.version);
+        const url = try downloader.buildZiglangUrl(self.allocator, resolved_version);
         defer self.allocator.free(url);
 
         // Create temp directory for downloading
