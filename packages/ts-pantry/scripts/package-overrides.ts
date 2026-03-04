@@ -7789,23 +7789,28 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'lunarvim.org': {
     platforms: {
+      darwin: {
+        prependScript: [
+          // Use Homebrew neovim instead of S3 (0.11.6 darwin tarball is corrupt/104 bytes)
+          'brew install neovim 2>/dev/null || true',
+        ],
+      },
       linux: {
         prependScript: [
-          // neovim binary needs libiconv.so.2. Use `find` for multi-segment domains (gnu.org/libiconv).
-          'for d in $(find /tmp/buildkit-deps -type d -name lib 2>/dev/null); do export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
-          'for d in $(find /tmp/buildkit-deps -type d -name bin 2>/dev/null); do export PATH="$d:$PATH"; done',
-          'echo "[lunarvim-debug] LD_LIBRARY_PATH=$LD_LIBRARY_PATH"',
-          'find /tmp/buildkit-deps -name "libiconv*" 2>/dev/null || echo "[lunarvim-debug] no libiconv files found"',
-          'ls -la /tmp/buildkit-deps/gnu.org/libiconv/*/lib/ 2>/dev/null || echo "[lunarvim-debug] no libiconv lib dir"',
-          'ldd /tmp/buildkit-deps/neovim.io/*/bin/nvim 2>/dev/null | grep -i iconv || echo "[lunarvim-debug] no iconv in ldd"',
+          // Use system neovim instead of S3 (S3 neovim needs libiconv.so.2 which isn't portable)
+          'sudo apt-get install -y neovim 2>/dev/null || true',
         ],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Remove gnu.org/bash — S3 bash links to S3 libiconv which has symbol conflicts.
-      // System /bin/bash works fine for the installer scripts.
+      // Remove S3 deps that cause portability issues:
+      // - gnu.org/bash: S3 bash links to S3 libiconv which has _iconv symbol conflicts on darwin
+      // - neovim.io: S3 neovim 0.11.6 darwin tarball is corrupt; linux version needs libiconv.so.2
+      // System bash/neovim from brew/apt work fine for the installer scripts.
       if (recipe.dependencies?.['gnu.org/bash']) delete recipe.dependencies['gnu.org/bash']
       if (recipe.build?.dependencies?.['gnu.org/bash']) delete recipe.build.dependencies['gnu.org/bash']
+      if (recipe.dependencies?.['neovim.io']) delete recipe.dependencies['neovim.io']
+      if (recipe.build?.dependencies?.['neovim.io']) delete recipe.build.dependencies['neovim.io']
     },
   },
 }
