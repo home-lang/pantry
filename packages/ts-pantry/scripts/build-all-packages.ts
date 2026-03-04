@@ -269,6 +269,9 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'ko.build': ['0.16.0'],
   // lxml 4.x C extension incompatible with Python 3.14 API changes; 5.4.0+ works
   'lxml.de': ['<5.0.0'],
+  // markitdown alpha tags (v0.0.1a3 etc) get transformed to 4-part versions (0.0.1.3)
+  // but no matching tag exists on GitHub for download. Stable v0.1.x versions work fine.
+  'microsoft.com/markitdown': ['<0.1.0'],
   // mac-notification-sys crate fails with Xcode 26.3 ("could not build module 'Darwin'"); 2.0.1+ works
   'moonrepo.dev/moon': ['<2.0.0'],
   // setuptools_scm generates post-release version from git state — FIXED via override
@@ -1211,7 +1214,7 @@ Options:
     // github.com/confluentinc/libserdes removed — simple C lib, widened deps in override
     // github.com/siderolabs/conform removed — widened Go version in override
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
-    'microsoft.com/markitdown', // Version resolver picks v0.0.1a3 → 0.0.1.3 but no such tag on GitHub
+    // microsoft.com/markitdown removed — stable v0.1.x versions now available, widened Python in override
     // snyk.io removed — switched to pre-built binary download from GitHub
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
@@ -1255,7 +1258,7 @@ Options:
     // crates.io/mdcat removed — added --cap-lints warn RUSTFLAGS
     // dns.lookup.dog removed — builds on darwin
     // microsoft.com/code-cli removed — built successfully on darwin
-    'fluentci.io', // Uses deno compile, fragile in CI
+    // fluentci.io removed — pre-built binary download from GitHub releases
     // fna-xna.github.io removed — SDL2 dev packages now in CI
     // getclipboard.app removed — added include path fix override
     // perl.org removed — fixed poll.h include and removed llvm.org dep
@@ -1273,7 +1276,7 @@ Options:
     // freedesktop.org/poppler-qt5 removed — existing override disables qt5/introspection
     // apache.org/arrow removed — disabled Gandiva (LLVM dep) + tests/benchmarks in override
     // gdal.org removed — disabled Arrow/Parquet dep + fixed cmake/sed in override
-    'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
+    // quickwit.io removed — pre-built binary download from GitHub releases
     // raccoin.org removed — reduced parallelism + codegen-units to avoid linker OOM
     'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
     // wezfurlong.org/wezterm removed — pre-built binary download from GitHub releases
@@ -1501,7 +1504,7 @@ Options:
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
-    'man-db.gitlab.io/man-db', // Post-install wrapper shell script fails under set -e (heredoc/working-dir issues)
+    // man-db.gitlab.io/man-db removed — override fixes rm/rmdir under set -e, linux-only
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
     // github.com/Diniboy1123/usque removed — pre-built binary download from GitHub releases
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
