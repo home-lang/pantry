@@ -3766,7 +3766,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // which fails because runtime deps (openssl etc) aren't in the build env.
           'mkdir -p /tmp/help2man-stub && printf \'#!/bin/sh\\nOUT=""\\nwhile [ $# -gt 0 ]; do case "$1" in -o) OUT="$2"; shift ;; esac; shift; done\\nif [ -n "$OUT" ]; then echo ".TH stub 1" > "$OUT"; fi\\n\' > /tmp/help2man-stub/help2man && chmod +x /tmp/help2man-stub/help2man && export PATH="/tmp/help2man-stub:$PATH"',
           // macOS install command doesn't support -t flag. Use ginstall (GNU coreutils) instead.
-          'if command -v ginstall &>/dev/null; then mkdir -p /tmp/install-wrapper && printf \'#!/bin/sh\\nexec ginstall "$@"\\n\' > /tmp/install-wrapper/install && chmod +x /tmp/install-wrapper/install && export PATH="/tmp/install-wrapper:$PATH"; fi',
+          'brew install coreutils 2>/dev/null || true',
+          'mkdir -p /tmp/install-wrapper && printf \'#!/bin/sh\\nexec ginstall "$@"\\n\' > /tmp/install-wrapper/install && chmod +x /tmp/install-wrapper/install && export PATH="/tmp/install-wrapper:$PATH"',
         ],
       },
     },
