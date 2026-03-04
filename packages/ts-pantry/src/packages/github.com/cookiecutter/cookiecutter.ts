@@ -3,7 +3,7 @@
  *
  * @domain `github.com/cookiecutter/cookiecutter`
  * @programs `cookiecutter`
- * @version `2.7.0` (2 versions available)
+ * @version `2.7.1` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/cookiecutter/cookiecutter`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "cookiecutter"
  * console.log(pkg.description) // "A cross-platform command-line utility that crea..."
  * console.log(pkg.programs)    // ["cookiecutter"]
- * console.log(pkg.versions[0]) // "2.7.0" (latest)
+ * console.log(pkg.versions[0]) // "2.7.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/cookiecutter/cookiecutter.md
@@ -75,6 +75,7 @@ export const cookiecutterPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.7.1',
     '2.7.0',
     '2.6.0',
   ] as const,
