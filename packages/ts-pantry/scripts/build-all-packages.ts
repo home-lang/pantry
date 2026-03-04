@@ -1182,7 +1182,7 @@ Options:
     'info-zip.org/unzip', // SourceForge URL with spaces/parens, unmaintained since 2009
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
-    'psycopg.org/psycopg3', // Git-based distributable pulling dev versions
+    // psycopg.org/psycopg3 removed — switched to release tarball + widened Python version in override
     'sourceware.org/dm', // GitLab download URLs return 404
     'llm.datasette.io', // GitHub tag v0.28.0 no longer exists
     // taku910.github.io/mecab-ipadic removed — mecab now in S3
@@ -1221,7 +1221,7 @@ Options:
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
     // hdfgroup.org/HDF5 removed — fixed distributable URL for all version tag formats
-    'pipenv.pypa.io', // Version 3000.0.0 tag doesn't exist on GitHub
+    // pipenv.pypa.io removed — widened Python version constraint in override
     'riverbankcomputing.com/pyqt-builder', // Server returns empty reply
     'tcl-lang.org/expect', // SourceForge CDN unreliable (cytranet.dl.sourceforge.net)
     // surrealdb.com removed — switched to pre-built binaries from GitHub
@@ -1416,7 +1416,7 @@ Options:
     // midnight-commander.org removed — ncurses/glib available via system
     // modal.com removed — removed cython dep in override
     // mpv.io removed — removed vapoursynth dep in override
-    'mun-lang.org', // Build failure on darwin
+    // mun-lang.org removed — use system LLVM (brew/apt) instead of S3 llvm.org in override
     // mupdf.com removed — fixed sed -i BSD + removed linux X11/mesa deps in override
     // netflix.com/vmaf removed — fixed meson prefix quoting in override
     // open-mpi.org removed — fixed prefix quoting + sed -i BSD in override
@@ -1449,7 +1449,7 @@ Options:
     // tesseract-ocr.github.io removed — fixed prefix quoting in override
     'tinygo.org', // TinyGo — heavy LLVM-based build
     // tlr.dev removed — removed protobuf dep in override
-    'vaultproject.io', // HashiCorp Vault — Go build failure
+    // vaultproject.io removed — Go-only CLI build, skip UI deps in override
     // videolan.org/libplacebo removed — removed linux gcc dep in override
     // vim.org removed — removed perl/ruby interp deps in override
     // virtualsquare.org/vde removed — fixed prefix quoting in override
@@ -1480,7 +1480,7 @@ Options:
     'github.com/snowplow/factotum', // Ancient traitobject crate incompatible with modern Rust
     'github.com/withered-magic/starpls', // Bazel build fails in CI
     'github.com/hadolint/hadolint', // Haskell/Cabal build — GHC/Stack not available in CI
-    'github.com/mas-cli/mas', // Swift build: duplicate .build targets on CI runner
+    // github.com/mas-cli/mas removed — clean .build dir before swift build in override
     'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild
     // github.com/nvbn/thefuck removed — widened python version constraint in override
     'github.com/npiv/chatblade', // tiktoken requires Rust pyo3-ffi compilation that fails on Python 3.14
@@ -1499,7 +1499,7 @@ Options:
     'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
     'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
-    'man-db.gitlab.io/man-db', // Dependency chain failure (libpipeline, groff)
+    // man-db.gitlab.io/man-db removed — linux-only, use system groff + libpipeline in override
     'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
     'github.com/Diniboy1123/usque', // gvisor Go 1.26 build-tag redeclaration conflict
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
@@ -1509,7 +1509,7 @@ Options:
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
-    'github.com/saagarjha/unxip', // Release tag format mismatch (v3.3 not v3.3.0) — download 404
+    // github.com/saagarjha/unxip removed — existing override limits to darwin/aarch64, tag resolution works
     // videolan.org/x265 removed — patched CMakeLists.txt to use CMP0025/CMP0054 NEW policy
     'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
     // ceph.com/cephadm removed — replaced sed shebang patching with python3 -m zipapp

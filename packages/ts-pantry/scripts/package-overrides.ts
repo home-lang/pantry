@@ -7824,4 +7824,117 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── github.com/mas-cli/mas — clean stale .build before swift build ──
+
+  'github.com/mas-cli/mas': {
+    prependScript: [
+      'swift package clean 2>/dev/null || rm -rf .build',
+    ],
+  },
+
+  // ─── pipenv.pypa.io — widen Python version for S3 compat ──────────────
+
+  'pipenv.pypa.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Widen Python version — CI/S3 may only have 3.12+
+      if (recipe.dependencies?.['python.org']) recipe.dependencies['python.org'] = '>=3.11'
+      if (recipe.build?.dependencies?.['python.org']) recipe.build.dependencies['python.org'] = '>=3.11'
+    },
+  },
+
+  // ─── psycopg.org/psycopg3 — widen Python + use release tarball ────────
+
+  'psycopg.org/psycopg3': {
+    distributableUrl: 'https://github.com/psycopg/psycopg/archive/refs/tags/psycopg-{{version}}.tar.gz',
+    stripComponents: 1,
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Widen Python version
+      if (recipe.dependencies?.['python.org']) recipe.dependencies['python.org'] = '>=3.11'
+      if (recipe.build?.dependencies?.['python.org']) recipe.build.dependencies['python.org'] = '>=3.11'
+    },
+  },
+
+  // ─── man-db.gitlab.io/man-db — use system groff + libpipeline ─────────
+
+  'man-db.gitlab.io/man-db': {
+    supportedPlatforms: ['linux/x86-64'],
+    platforms: {
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y libpipeline-dev groff libgdbm-dev 2>/dev/null || true',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Use system libraries instead of S3 deps
+      if (recipe.dependencies?.['libpipeline.gitlab.io/libpipeline']) delete recipe.dependencies['libpipeline.gitlab.io/libpipeline']
+      if (recipe.dependencies?.['gnu.org/groff']) delete recipe.dependencies['gnu.org/groff']
+      if (recipe.dependencies?.linux?.['gnu.org/gdbm']) delete recipe.dependencies.linux['gnu.org/gdbm']
+    },
+  },
+
+  // ─── mun-lang.org — use Homebrew LLVM instead of S3 llvm.org ──────────
+
+  'mun-lang.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'brew install llvm 2>/dev/null || true',
+          'LLVM_PREFIX="$(brew --prefix llvm)"',
+          'export LLVM_SYS_140_PREFIX="$LLVM_PREFIX"',
+          'export LLVM_SYS_150_PREFIX="$LLVM_PREFIX"',
+          'export LLVM_SYS_160_PREFIX="$LLVM_PREFIX"',
+          'export LLVM_SYS_170_PREFIX="$LLVM_PREFIX"',
+          'export LLVM_SYS_180_PREFIX="$LLVM_PREFIX"',
+          'export PATH="$LLVM_PREFIX/bin:$PATH"',
+          'export LDFLAGS="-L$LLVM_PREFIX/lib ${LDFLAGS:-}"',
+          'export CPPFLAGS="-I$LLVM_PREFIX/include ${CPPFLAGS:-}"',
+        ],
+      },
+      linux: {
+        prependScript: [
+          'sudo apt-get install -y llvm-14-dev libclang-14-dev 2>/dev/null || sudo apt-get install -y llvm-dev libclang-dev 2>/dev/null || true',
+          'if [ -d /usr/lib/llvm-14 ]; then export LLVM_SYS_140_PREFIX=/usr/lib/llvm-14; export PATH="/usr/lib/llvm-14/bin:$PATH"; fi',
+        ],
+      },
+    },
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Remove llvm.org from build deps and companions — use system LLVM
+      if (recipe.build?.dependencies?.['llvm.org']) delete recipe.build.dependencies['llvm.org']
+      if (recipe.dependencies?.['llvm.org']) delete recipe.dependencies['llvm.org']
+      // Remove companions (llvm.org companion)
+      if ((recipe as any).companions?.['llvm.org']) delete (recipe as any).companions['llvm.org']
+    },
+  },
+
+  // ─── vaultproject.io — Go-only CLI build (skip UI) ────────────────────
+
+  'vaultproject.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Remove UI build deps — build CLI binary only
+      for (const dep of ['nodejs.org', 'npmjs.com', 'classic.yarnpkg.com', 'python.org', 'pkgx.sh']) {
+        if (recipe.build?.dependencies?.[dep]) delete recipe.build.dependencies[dep]
+      }
+      // Relax Go version
+      if (recipe.build?.dependencies?.['go.dev']) recipe.build.dependencies['go.dev'] = '>=1.22'
+      // Replace build script — skip UI, just build Go CLI
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.map((step) => {
+          if (typeof step === 'string' && step.includes('make bootstrap static-dist dev-ui')) {
+            return 'CGO_ENABLED=0 go build -ldflags="-s -w -X github.com/hashicorp/vault/sdk/version.GitCommit=pantry" -o bin/vault .'
+          }
+          return step
+        })
+        // Remove pkgx/enumer step — not needed for simple go build
+        recipe.build.script = recipe.build.script.filter((step) => {
+          if (typeof step === 'object' && step.run) {
+            const runStr = Array.isArray(step.run) ? step.run.join(' ') : step.run
+            if (runStr.includes('enumer') || runStr.includes('pkgx go=')) return false
+          }
+          return true
+        })
+      }
+    },
+  },
 }
