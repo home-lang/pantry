@@ -3,7 +3,7 @@
  *
  * @domain `github.com/kaspanet/rusty-kaspa`
  * @programs `kaspad`, `kaspa-cli`
- * @version `1.0.1` (16 versions available)
+ * @version `1.1.0` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/kaspanet/rusty-kaspa`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "kaspa"
  * console.log(pkg.description) // "Kaspa full-node reference implementation and re..."
  * console.log(pkg.programs)    // ["kaspad", "kaspa-cli"]
- * console.log(pkg.versions[0]) // "1.0.1" (latest)
+ * console.log(pkg.versions[0]) // "1.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/kaspanet/rusty-kaspa.md
@@ -78,6 +78,7 @@ export const rustykaspaPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.1.0',
     '1.0.1',
     '1.0.0',
     '0.17.2',

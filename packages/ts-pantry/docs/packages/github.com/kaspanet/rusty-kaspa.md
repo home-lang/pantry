@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 16 versions</summary>
+<summary>Show all 17 versions</summary>
 
+- `1.1.0`
 - `1.0.1`, `1.0.0`
 - `0.17.2`, `0.17.1`, `0.17.0`
 - `0.16.1`, `0.16.0`
@@ -38,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.0.1`
+**Latest Version**: `1.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/kaspanet/rusty-kaspa@1.0.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/kaspanet/rusty-kaspa@1.1.0 -- $SHELL -i
 ```
 
 ## Dependencies
