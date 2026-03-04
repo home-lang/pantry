@@ -8914,6 +8914,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
         if (recipe.build.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
           recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.includes('system-libtiff'))
         }
+        // Fix libiconv symbol mismatch on darwin — S3 libidn pulls GNU libiconv headers
+        // that rename iconv_open to libiconv_open. LIBICONV_PLUG disables the rename.
+        if (recipe.build.env?.darwin) {
+          const darwinEnv = recipe.build.env.darwin as Record<string, string>
+          darwinEnv.CFLAGS = `${darwinEnv.CFLAGS || '$CFLAGS'} -DLIBICONV_PLUG`
+        } else {
+          recipe.build.env = recipe.build.env || {}
+          ;(recipe.build.env as any).darwin = { CFLAGS: '$CFLAGS -DLIBICONV_PLUG' }
+        }
       }
     },
   },
