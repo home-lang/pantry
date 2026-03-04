@@ -5449,6 +5449,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Unlink Homebrew boost/glog/gflags so cmake uses S3 versions consistently
           // (prevents duplicate glog flag registration from Homebrew + transitive S3 copies)
           'brew unlink boost glog gflags 2>/dev/null || true',
+          // Replace baked-in Homebrew glog/gflags refs in dep cmake configs with S3 dep paths
+          // (deps built when cmake-scrub redirected to Homebrew have those paths baked in)
+          'GLOG_S3=$(find /tmp/buildkit-deps/google.com/glog -name "libglog*.dylib" -not -name "*.bak" 2>/dev/null | head -1)',
+          'GFLAGS_S3=$(find /tmp/buildkit-deps/gflags.github.io -name "libgflags*.dylib" -not -name "*.bak" 2>/dev/null | head -1)',
+          'if [ -n "$GLOG_S3" ]; then find /tmp/buildkit-deps -name "*.cmake" -exec sed -i "" "s|/opt/homebrew/lib/libglog[.0-9]*\\.dylib|$GLOG_S3|g" {} +; fi',
+          'if [ -n "$GFLAGS_S3" ]; then find /tmp/buildkit-deps -name "*.cmake" -exec sed -i "" "s|/opt/homebrew/lib/libgflags[.0-9]*\\.dylib|$GFLAGS_S3|g" {} +; fi',
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
