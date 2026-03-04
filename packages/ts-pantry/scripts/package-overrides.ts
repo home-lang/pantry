@@ -8723,14 +8723,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.script = [
           [
             'case "{{hw.platform}}/{{hw.arch}}" in',
-            '  darwin/aarch64) SUFFIX="darwin-arm64" ;;',
-            '  darwin/x86-64) SUFFIX="darwin-amd64" ;;',
-            '  linux/x86-64) SUFFIX="linux-amd64" ;;',
-            '  linux/aarch64) SUFFIX="linux-arm64" ;;',
+            '  darwin/aarch64) SUFFIX="darwin_arm64" ;;',
+            '  darwin/x86-64) SUFFIX="darwin_amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux_amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux_arm64" ;;',
             '  *) echo "Unsupported platform" && exit 1 ;;',
             'esac',
-            'mkdir -p "{{prefix}}/bin"',
-            'curl -fSL -o "{{prefix}}/bin/usque" "https://github.com/Diniboy1123/usque/releases/download/v{{version}}/usque-${SUFFIX}"',
+            'ZIPFILE="usque_{{version}}_${SUFFIX}.zip"',
+            'curl -fSL -o /tmp/usque.zip "https://github.com/Diniboy1123/usque/releases/download/v{{version}}/${ZIPFILE}"',
+            'mkdir -p /tmp/usque-extract "{{prefix}}/bin"',
+            'unzip -o /tmp/usque.zip -d /tmp/usque-extract',
+            'cp /tmp/usque-extract/usque "{{prefix}}/bin/"',
             'chmod +x "{{prefix}}/bin/usque"',
           ].join('\n'),
         ]
