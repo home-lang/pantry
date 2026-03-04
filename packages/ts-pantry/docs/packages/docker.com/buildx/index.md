@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 36 versions</summary>
+<summary>Show all 37 versions</summary>
 
+- `0.32.0`
 - `0.31.1`, `0.31.0`
 - `0.30.1`, `0.30.0`
 - `0.29.1`, `0.29.0`
@@ -49,13 +50,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.31.1`
+**Latest Version**: `0.32.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +docker.com/buildx@0.31.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +docker.com/buildx@0.32.0 -- $SHELL -i
 ```
 
 ## Usage Examples

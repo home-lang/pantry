@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 70 versions</summary>
+<summary>Show all 71 versions</summary>
 
+- `0.224.0`
 - `0.223.0`
 - `0.222.0`
 - `0.221.0`
@@ -100,13 +101,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.223.0`
+**Latest Version**: `0.224.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +eksctl.io@0.223.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +eksctl.io@0.224.0 -- $SHELL -i
 ```
 
 ## Dependencies
