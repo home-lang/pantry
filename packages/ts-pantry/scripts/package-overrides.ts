@@ -5212,6 +5212,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'brew unlink boost 2>/dev/null || true',
           // Fix "duplicate linked dylib" — neutralize libzstd refs in dep dylibs (see fb303 for details)
           'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; done',
+          // Create symlinks so @loader_path/.disabled/libXzstd_neutralized.dylib resolves at runtime
+          '_zstd_real=$(find /tmp/buildkit-deps -path "*/zstd/*/lib/libzstd.1.dylib" -type f 2>/dev/null | head -1); if [ -z "$_zstd_real" ]; then _zstd_real=/opt/homebrew/lib/libzstd.1.dylib; fi; for _dir in $(find /tmp/buildkit-deps -name "*.dylib" -type f -exec dirname {} \\; 2>/dev/null | sort -u); do mkdir -p "$_dir/.disabled" && ln -sf "$_zstd_real" "$_dir/.disabled/libXzstd_neutralized.dylib"; done',
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
@@ -5263,12 +5265,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
           'brew unlink boost 2>/dev/null || true',
           // Fix "duplicate linked dylib" error: Xcode 26.3 treats same transitive dylib
-          // from multiple sources as HARD ERROR (no flag suppresses it, not even
-          // -Wl,-no_warn_duplicate_libraries). Multiple dep dylibs (libfizz, libfolly)
-          // embed @rpath/libzstd.1.dylib. Fix: neutralize ALL libzstd LC_LOAD_DYLIB refs
-          // in dep dylibs using a dummy path. -Wl,-undefined,dynamic_lookup on the link
-          // line means undefined symbols are OK at link time; fix-up.ts handles final refs.
+          // from multiple sources as HARD ERROR. Multiple dep dylibs (libfizz, libfolly)
+          // embed @rpath/libzstd.1.dylib. Fix: rename all libzstd LC_LOAD_DYLIB refs to
+          // a unique basename so linker doesn't detect duplicates, then create symlinks
+          // so the renamed refs actually resolve at runtime (thrift compiler runs during build).
           'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; done',
+          // Create symlinks so @loader_path/.disabled/libXzstd_neutralized.dylib resolves at runtime
+          '_zstd_real=$(find /tmp/buildkit-deps -path "*/zstd/*/lib/libzstd.1.dylib" -type f 2>/dev/null | head -1); if [ -z "$_zstd_real" ]; then _zstd_real=/opt/homebrew/lib/libzstd.1.dylib; fi; for _dir in $(find /tmp/buildkit-deps -name "*.dylib" -type f -exec dirname {} \\; 2>/dev/null | sort -u); do mkdir -p "$_dir/.disabled" && ln -sf "$_zstd_real" "$_dir/.disabled/libXzstd_neutralized.dylib"; done',
           // Also strip explicit libzstd refs from cmake targets
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
@@ -5464,6 +5467,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
           // Fix "duplicate linked dylib" — neutralize libzstd refs in dep dylibs (see fb303 for details)
           'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; done',
+          // Create symlinks so @loader_path/.disabled/libXzstd_neutralized.dylib resolves at runtime
+          '_zstd_real=$(find /tmp/buildkit-deps -path "*/zstd/*/lib/libzstd.1.dylib" -type f 2>/dev/null | head -1); if [ -z "$_zstd_real" ]; then _zstd_real=/opt/homebrew/lib/libzstd.1.dylib; fi; for _dir in $(find /tmp/buildkit-deps -name "*.dylib" -type f -exec dirname {} \\; 2>/dev/null | sort -u); do mkdir -p "$_dir/.disabled" && ln -sf "$_zstd_real" "$_dir/.disabled/libXzstd_neutralized.dylib"; done',
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
