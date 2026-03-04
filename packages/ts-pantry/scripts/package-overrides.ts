@@ -5211,7 +5211,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
           'brew unlink boost 2>/dev/null || true',
           // Fix "duplicate linked dylib" — neutralize libzstd refs in dep dylibs (see fb303 for details)
-          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libzstd.1.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libzstd.1.dylib "$_dylib" 2>/dev/null || true; done',
+          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; done',
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
@@ -5268,7 +5268,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // embed @rpath/libzstd.1.dylib. Fix: neutralize ALL libzstd LC_LOAD_DYLIB refs
           // in dep dylibs using a dummy path. -Wl,-undefined,dynamic_lookup on the link
           // line means undefined symbols are OK at link time; fix-up.ts handles final refs.
-          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libzstd.1.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libzstd.1.dylib "$_dylib" 2>/dev/null || true; done',
+          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; done',
           // Also strip explicit libzstd refs from cmake targets
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
@@ -5463,7 +5463,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
           // Fix "duplicate linked dylib" — neutralize libzstd refs in dep dylibs (see fb303 for details)
-          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libzstd.1.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libzstd.1.dylib "$_dylib" 2>/dev/null || true; done',
+          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; install_name_tool -change /opt/homebrew/lib/libzstd.1.dylib @loader_path/.disabled/libXzstd_neutralized.dylib "$_dylib" 2>/dev/null || true; done',
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
