@@ -3762,6 +3762,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // Set CRYSTAL_PATH to Homebrew's Crystal std lib so `require "prelude"` works
           'CRYSTAL_STD="$(brew --prefix crystal)/share/crystal/src"',
           'export CRYSTAL_PATH="./lib:$CRYSTAL_STD"',
+          // Stub out help2man — it tries to run compiled binaries for --help text,
+          // which fails because runtime deps (openssl etc) aren't in the build env.
+          'mkdir -p /tmp/help2man-stub && printf \'#!/bin/sh\\nOUT=""\\nwhile [ $# -gt 0 ]; do case "$1" in -o) OUT="$2"; shift ;; esac; shift; done\\nif [ -n "$OUT" ]; then echo ".TH stub 1" > "$OUT"; fi\\n\' > /tmp/help2man-stub/help2man && chmod +x /tmp/help2man-stub/help2man && export PATH="/tmp/help2man-stub:$PATH"',
         ],
       },
     },
@@ -3769,6 +3772,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove crystal deps — using Homebrew crystal+shards instead
       if (recipe.build?.dependencies?.['crystal-lang.org']) delete recipe.build.dependencies['crystal-lang.org']
       if (recipe.build?.dependencies?.['crystal-lang.org/shards']) delete recipe.build.dependencies['crystal-lang.org/shards']
+      // Remove help2man — it tries to run compiled binaries which fail without runtime deps
+      if (recipe.build?.dependencies?.['gnu.org/help2man']) delete recipe.build.dependencies['gnu.org/help2man']
       // Fix sed -i BSD compat in darwin Makefile patch
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -7783,19 +7788,18 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── lunarvim.org — fix neovim/libiconv PATH and LD_LIBRARY_PATH ──────
 
   'lunarvim.org': {
-    prependScript: [
-      // Ensure all S3 dep bin/lib dirs are in PATH and library paths
-      // neovim.io binary needs libiconv from its own lib dir
-      'for d in /tmp/buildkit-deps/*/*/bin; do [ -d "$d" ] && export PATH="$d:$PATH"; done',
-      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
-      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export DYLD_LIBRARY_PATH="$d:${DYLD_LIBRARY_PATH:-}"; done',
-      // Ensure libiconv from gnu.org/libiconv is preferred over bundled copies in other deps
-      'ICONV_LIB=$(find /tmp/buildkit-deps/gnu.org/libiconv -type d -name lib 2>/dev/null | head -1)',
-      'if [ -n "$ICONV_LIB" ]; then export LD_LIBRARY_PATH="$ICONV_LIB:$LD_LIBRARY_PATH"; export DYLD_LIBRARY_PATH="$ICONV_LIB:$DYLD_LIBRARY_PATH"; fi',
-    ],
+    platforms: {
+      linux: {
+        prependScript: [
+          // neovim binary needs libiconv.so.2. Use `find` for multi-segment domains (gnu.org/libiconv).
+          'for d in $(find /tmp/buildkit-deps -type d -name lib 2>/dev/null); do export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
+          'for d in $(find /tmp/buildkit-deps -type d -name bin 2>/dev/null); do export PATH="$d:$PATH"; done',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Remove gnu.org/bash from deps — S3 bash links to libiconv which conflicts with
-      // bundled libiconv in other deps (doxygen.nl). System /bin/bash works fine.
+      // Remove gnu.org/bash — S3 bash links to S3 libiconv which has symbol conflicts.
+      // System /bin/bash works fine for the installer scripts.
       if (recipe.dependencies?.['gnu.org/bash']) delete recipe.dependencies['gnu.org/bash']
       if (recipe.build?.dependencies?.['gnu.org/bash']) delete recipe.build.dependencies['gnu.org/bash']
     },
