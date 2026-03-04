@@ -1206,7 +1206,7 @@ Options:
     'render.com', // Needs deno compile (no distributable source)
     'tea.xyz', // Needs deno task compile (no distributable source)
     'sdkman.io', // Shell script distribution, not compilable
-    // spacetimedb.com removed — pre-built binary download from GitHub releases
+    'spacetimedb.com', // Recipe hardcodes version 2023.12.8 (beta), no github: version discovery — pre-built override ready when recipe updated
     // ntp.org removed — builds on darwin (linux fails: MD5Init/MD5Update deprecated in OpenSSL 3)
     // jbig2dec.com removed — hardcoded URL to GitHub release works
     // videolan.org/x264 removed — HTTPS URL override for Debian mirror
