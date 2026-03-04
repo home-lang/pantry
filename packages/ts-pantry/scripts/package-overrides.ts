@@ -5210,9 +5210,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
           'brew unlink boost 2>/dev/null || true',
-          // Suppress duplicate linked dylib error (transitive deps via fizz/wangle)
-          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
-          // Remove explicit libzstd from dep cmake targets (transitively loaded by libfizz.dylib)
+          // Fix duplicate linked dylib: change @rpath/libzstd refs in dep dylibs to absolute path
+          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib /opt/homebrew/lib/libzstd.1.dylib "$_dylib" 2>/dev/null || true; done',
+          // Also strip explicit libzstd refs from cmake targets (belt-and-suspenders)
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
@@ -5263,10 +5263,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Unlink Homebrew boost so cmake uses S3 boost (matching folly's soname)
           'brew unlink boost 2>/dev/null || true',
-          // Suppress duplicate linked dylib error (libzstd linked transitively via libfizz + directly)
-          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
-          // Remove explicit libzstd from dep cmake targets — libfizz.dylib already loads it
-          // transitively (LC_LOAD_DYLIB), so explicit refs cause "duplicate linked dylib" error
+          // Fix duplicate linked dylib: multiple dep dylibs (libfizz, libfolly) embed
+          // @rpath/libzstd.1.dylib as LC_LOAD_DYLIB. Xcode 26.3 treats same @rpath ref
+          // from multiple transitive deps as hard error. Change to absolute path so linker
+          // deduplicates properly (same absolute path = not duplicate).
+          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib /opt/homebrew/lib/libzstd.1.dylib "$_dylib" 2>/dev/null || true; done',
+          // Also strip explicit libzstd refs from cmake targets (belt-and-suspenders)
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
@@ -5459,9 +5461,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // pywatchman install needs setuptools in the S3 dep Python that cmake uses (not just system python)
           'for pybin in /tmp/buildkit-deps/python.org/*/bin/python3; do "$pybin" -m ensurepip 2>/dev/null || true; "$pybin" -m pip install "setuptools<78" 2>/dev/null || true; done',
           'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || pip3 install "setuptools<78" 2>/dev/null || true',
-          // Suppress duplicate dylib linker errors with newer Xcode ld
-          'export LDFLAGS="${LDFLAGS:-} -Wl,-no_warn_duplicate_libraries"',
-          // Remove explicit libzstd from dep cmake targets (transitively loaded by libfizz.dylib)
+          // Fix duplicate linked dylib: change @rpath/libzstd refs in dep dylibs to absolute path
+          'for _dylib in $(find /tmp/buildkit-deps -name "*.dylib" -type f 2>/dev/null); do install_name_tool -change @rpath/libzstd.1.dylib /opt/homebrew/lib/libzstd.1.dylib "$_dylib" 2>/dev/null || true; done',
+          // Also strip explicit libzstd refs from cmake targets (belt-and-suspenders)
           'find /tmp/buildkit-deps -name "*.cmake" -exec sed -i.bak "s|;[^;]*libzstd[^;]*\\.dylib||g" {} + 2>/dev/null || true',
         ],
       },
