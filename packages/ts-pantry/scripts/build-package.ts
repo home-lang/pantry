@@ -1537,6 +1537,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
           ...templateVars,
           'version': shortVersion,
           'version.raw': shortVersion,
+          'version.tag': determineVersionTag(yamlContent, shortVersion),
           'version.marketing': shortVersion.split('.').slice(0, 2).join('.'),
           'version.patch': '0',
         }
@@ -1558,7 +1559,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
             ...templateVars,
             'version': fullyStripped,
             'version.raw': fullyStripped,
-            'version.tag': versionTag.startsWith('v') ? `v${fullyStripped}` : fullyStripped,
+            'version.tag': determineVersionTag(yamlContent, fullyStripped),
             'version.marketing': fullyStripped.split('.').slice(0, 2).join('.'),
             'version.patch': '0',
           }
