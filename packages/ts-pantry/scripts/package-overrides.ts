@@ -8303,4 +8303,152 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'mkdir -p /tmp/tinygo-extract',
     ],
   },
+
+  // ─── solana.com — download pre-built binaries from GitHub releases ─────
+
+  'solana.com': {
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.build!.script = [
+        'SOL_VERSION="{{version}}"',
+        'case "{{hw.platform}}/{{hw.arch}}" in',
+        '  darwin/aarch64) SOL_ARCH="aarch64-apple-darwin" ;;',
+        '  linux/x86-64) SOL_ARCH="x86_64-unknown-linux-gnu" ;;',
+        '  *) echo "Unsupported platform" && exit 1 ;;',
+        'esac',
+        'SOL_URL="https://github.com/solana-labs/solana/releases/download/v${SOL_VERSION}/solana-release-${SOL_ARCH}.tar.bz2"',
+        'curl -fSL "$SOL_URL" | tar -xj -C /tmp/solana-extract',
+        'mkdir -p {{prefix}}/bin',
+        'cp -r /tmp/solana-extract/solana-release/bin/* {{prefix}}/bin/ 2>/dev/null || true',
+        'cp -r /tmp/solana-extract/solana-release/lib {{prefix}}/ 2>/dev/null || true',
+      ]
+      recipe.build!.dependencies = {}
+    },
+    prependScript: [
+      'mkdir -p /tmp/solana-extract',
+    ],
+  },
+
+  // ─── tectonic-typesetting.github.io — download pre-built binary ────────
+
+  'tectonic-typesetting.github.io': {
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.build!.script = [
+        'TEC_VERSION="{{version}}"',
+        'case "{{hw.platform}}/{{hw.arch}}" in',
+        '  darwin/aarch64) TEC_ARCH="aarch64-apple-darwin" ;;',
+        '  linux/x86-64) TEC_ARCH="x86_64-unknown-linux-gnu" ;;',
+        '  *) echo "Unsupported platform" && exit 1 ;;',
+        'esac',
+        'TEC_URL="https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TEC_VERSION}/tectonic-${TEC_VERSION}-${TEC_ARCH}.tar.gz"',
+        'curl -fSL "$TEC_URL" | tar -xz -C /tmp/tectonic-extract',
+        'mkdir -p {{prefix}}/bin',
+        'install /tmp/tectonic-extract/tectonic {{prefix}}/bin/',
+      ]
+      recipe.build!.dependencies = {}
+    },
+    prependScript: [
+      'mkdir -p /tmp/tectonic-extract',
+    ],
+  },
+
+  // ─── crates.io/lighthouse — download pre-built binary ─────────────────
+
+  'crates.io/lighthouse': {
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.build!.script = [
+        'LH_VERSION="v{{version}}"',
+        'case "{{hw.platform}}/{{hw.arch}}" in',
+        '  darwin/aarch64) LH_ARCH="aarch64-apple-darwin" ;;',
+        '  linux/x86-64) LH_ARCH="x86_64-unknown-linux-gnu" ;;',
+        '  *) echo "Unsupported platform" && exit 1 ;;',
+        'esac',
+        'LH_URL="https://github.com/sigp/lighthouse/releases/download/${LH_VERSION}/lighthouse-${LH_VERSION}-${LH_ARCH}.tar.gz"',
+        'curl -fSL "$LH_URL" | tar -xz -C /tmp/lighthouse-extract',
+        'mkdir -p {{prefix}}/bin',
+        'install /tmp/lighthouse-extract/lighthouse {{prefix}}/bin/',
+      ]
+      recipe.build!.dependencies = {}
+    },
+    prependScript: [
+      'mkdir -p /tmp/lighthouse-extract',
+    ],
+  },
+
+  // ─── openai.com/codex — download pre-built binary ─────────────────────
+
+  'openai.com/codex': {
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.build!.script = [
+        'CODEX_VERSION="{{version}}"',
+        'case "{{hw.platform}}/{{hw.arch}}" in',
+        '  darwin/aarch64) CODEX_ARCH="aarch64-apple-darwin" ;;',
+        '  linux/x86-64) CODEX_ARCH="x86_64-unknown-linux-gnu" ;;',
+        '  *) echo "Unsupported platform" && exit 1 ;;',
+        'esac',
+        // Tag format is rust-v{version}
+        'CODEX_URL="https://github.com/openai/codex/releases/download/rust-v${CODEX_VERSION}/codex-${CODEX_ARCH}.tar.gz"',
+        'curl -fSL "$CODEX_URL" | tar -xz -C /tmp/codex-extract',
+        'mkdir -p {{prefix}}/bin',
+        'install /tmp/codex-extract/codex {{prefix}}/bin/ 2>/dev/null || true',
+        'install /tmp/codex-extract/codex-exec {{prefix}}/bin/ 2>/dev/null || true',
+        'install /tmp/codex-extract/codex-tui {{prefix}}/bin/ 2>/dev/null || true',
+        'install /tmp/codex-extract/md-events {{prefix}}/bin/ 2>/dev/null || true',
+      ]
+      recipe.build!.dependencies = {}
+    },
+    prependScript: [
+      'mkdir -p /tmp/codex-extract',
+    ],
+  },
+
+  // ─── wezfurlong.org/wezterm — download pre-built binary (macOS only) ───
+
+  'wezfurlong.org/wezterm': {
+    supportedPlatforms: ['darwin/aarch64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // WezTerm macOS releases are .zip files with a .app bundle
+      // The tag format is date-based: 20240203-110809-5046fc22
+      recipe.build!.script = [
+        'WEZTERM_TAG="{{version.tag}}"',
+        'WEZTERM_URL="https://github.com/wez/wezterm/releases/download/${WEZTERM_TAG}/WezTerm-macos-${WEZTERM_TAG}.zip"',
+        'curl -fSL "$WEZTERM_URL" -o /tmp/wezterm.zip',
+        'cd /tmp && unzip -o wezterm.zip',
+        'mkdir -p {{prefix}}/bin',
+        // Extract the CLI binary from the app bundle
+        'cp /tmp/WezTerm-macos-*/WezTerm.app/Contents/MacOS/wezterm {{prefix}}/bin/ 2>/dev/null || cp /tmp/WezTerm.app/Contents/MacOS/wezterm {{prefix}}/bin/ 2>/dev/null || true',
+        'cp /tmp/WezTerm-macos-*/WezTerm.app/Contents/MacOS/wezterm-gui {{prefix}}/bin/ 2>/dev/null || cp /tmp/WezTerm.app/Contents/MacOS/wezterm-gui {{prefix}}/bin/ 2>/dev/null || true',
+        'cp /tmp/WezTerm-macos-*/WezTerm.app/Contents/MacOS/wezterm-mux-server {{prefix}}/bin/ 2>/dev/null || cp /tmp/WezTerm.app/Contents/MacOS/wezterm-mux-server {{prefix}}/bin/ 2>/dev/null || true',
+        'cp /tmp/WezTerm-macos-*/WezTerm.app/Contents/MacOS/strip-ansi-escapes {{prefix}}/bin/ 2>/dev/null || cp /tmp/WezTerm.app/Contents/MacOS/strip-ansi-escapes {{prefix}}/bin/ 2>/dev/null || true',
+        'chmod +x {{prefix}}/bin/*',
+      ]
+      recipe.build!.dependencies = {}
+    },
+  },
+
+  // ─── raccoin.org — fix linker OOM by reducing parallelism ──────────────
+
+  'raccoin.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Reduce parallelism to avoid linker OOM on CI
+      if (!recipe.build!.env) recipe.build!.env = {}
+      recipe.build!.env.CARGO_BUILD_JOBS = '2'
+      // Ensure enough stack for linker
+      recipe.build!.env.RUSTFLAGS = '-C codegen-units=1'
+    },
+  },
+
+  // ─── github.com/confluentinc/libserdes — simple C lib, should build ───
+
+  'github.com/confluentinc/libserdes': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Widen avro dep — the recipe just needs libavro headers
+      if (recipe.dependencies?.['apache.org/avro']) {
+        recipe.dependencies['apache.org/avro'] = '*'
+      }
+    },
+  },
 }

@@ -1165,7 +1165,7 @@ Options:
     // apache.org/serf removed — use system scons, skip kerberos
     // argoproj.github.io/cd removed — skip UI build, Go-only CLI
     // argoproj.github.io/workflows removed — platform-agnostic go build in override
-    'openai.com/codex', // 3 cargo installs take >50 min then ETIMEDOUT, never succeeds
+    // openai.com/codex removed — pre-built binary download from GitHub releases
     // docker.com/cli and docker.com/machine removed — go-md2man available as pantry dep
     // coder.com/code-server removed — switched to pre-built release tarballs
     // cr.yp.to/daemontools removed — removed gcc dep, use xcrun on darwin
@@ -1206,14 +1206,14 @@ Options:
     // jbig2dec.com removed — hardcoded URL to GitHub release works
     // videolan.org/x264 removed — HTTPS URL override for Debian mirror
     'github.com/mamba-org/mamba', // Hardcoded version, FIXME in recipe
-    'github.com/confluentinc/libserdes', // RC version format in tag
+    // github.com/confluentinc/libserdes removed — simple C lib, widened deps in override
     // github.com/siderolabs/conform removed — widened Go version in override
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
     // microsoft.com/markitdown removed — widened Python version in override
     // snyk.io removed — switched to pre-built binary download from GitHub
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
     'foundry-rs.github.io', // All download tags return 404 (project restructured)
-    'wez.github.io/wezterm', // Source tarball download fails
+    // wez.github.io/wezterm removed — pre-built binary download (macOS only)
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
     // libsdl.org/SDL_image removed — distributableUrl override for SDL2 naming
@@ -1272,9 +1272,9 @@ Options:
     'apache.org/arrow', // Massive C++ build, timeout/failure on both platforms
     'gdal.org', // patchelf post-build fixup fails on linux, cmake issues on darwin
     'quickwit.io', // Private git dep (pulsar-rs) requires authentication, can't build in CI
-    'raccoin.org', // Linker OOM — huge Slint UI generated code exceeds CI runner memory
+    // raccoin.org removed — reduced parallelism + codegen-units to avoid linker OOM
     'replibyte.com', // Locked wasm-bindgen v0.2.80 incompatible with current Rust (needs >= 0.2.88)
-    'wezfurlong.org/wezterm', // OS error 35 (EAGAIN) — OOM during parallel Rust compilation
+    // wezfurlong.org/wezterm removed — pre-built binary download from GitHub releases
     // x.org/libSM removed — already has clean ARGS (no $SHELF), ice/sm fixed
     // x.org/xmu removed — fixed $SHELF variable references in script
     // x.org/xt removed — fixed $SHELF variable references in script
@@ -1350,7 +1350,7 @@ Options:
     // bitcoin.org removed — removed capnproto/gcc deps in override
     'bittensor.com', // Heavy Rust/Python build, fails on both platforms
     // crates.io/kaspa-miner removed — builds on darwin (linux: protobuf.dev S3 version mismatch)
-    'crates.io/lighthouse', // Heavy Rust build (Ethereum client)
+    // crates.io/lighthouse removed — pre-built binary download from GitHub releases
     // crates.io/qsv removed — built successfully on linux
     // debian.org/iso-codes removed — fixed prefix quoting in override
     // doxygen.nl removed — removed llvm.org dep override
@@ -1442,10 +1442,10 @@ Options:
     // sass-lang.com/libsass removed — built successfully on darwin
     // sass-lang.com/sassc — needs libsass in S3, build libsass first then sassc
     // sfcgal.org removed — fixed stray cmake prefix quote in override
-    'solana.com', // Heavy Rust blockchain build
+    // solana.com removed — pre-built binary download from GitHub releases
     // sourceforge.net/faac removed — fixed prefix quoting + removed gcc dep in override
     // tcl-lang.org removed — removed x.org/x11 dep + fixed sed -i BSD in override
-    'tectonic-typesetting.github.io', // TeX engine — heavy Rust build
+    // tectonic-typesetting.github.io removed — pre-built binary download from GitHub releases
     // tesseract-ocr.github.io removed — fixed prefix quoting in override
     // tinygo.org removed — pre-built binary download from GitHub releases
     // tlr.dev removed — removed protobuf dep in override
