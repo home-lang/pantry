@@ -3748,12 +3748,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── lavinmq.com — fix sed -i BSD compat + darwin-only (Crystal only in S3 for darwin) ─
+  // ─── lavinmq.com — fix sed -i BSD + use Homebrew crystal (darwin-only) ─
 
   'lavinmq.com': {
-    // Crystal compiler only available in S3 for darwin-arm64
+    // Crystal compiler only available for darwin (S3 has crystal but not shards)
     supportedPlatforms: ['darwin/aarch64'],
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Install crystal+shards via Homebrew (S3 crystal doesn't include shards)
+          'brew install crystal 2>/dev/null || true',
+          'export PATH="$(brew --prefix crystal)/bin:$PATH"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Remove crystal deps — using Homebrew crystal+shards instead
+      if (recipe.build?.dependencies?.['crystal-lang.org']) delete recipe.build.dependencies['crystal-lang.org']
+      if (recipe.build?.dependencies?.['crystal-lang.org/shards']) delete recipe.build.dependencies['crystal-lang.org/shards']
       // Fix sed -i BSD compat in darwin Makefile patch
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
@@ -7768,12 +7780,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── lunarvim.org — fix neovim/libiconv PATH and LD_LIBRARY_PATH ──────
 
   'lunarvim.org': {
-    prependScript: [
-      // The installer runs neovim which can't find libiconv. Ensure S3 dep paths are in PATH/LD_LIBRARY_PATH.
-      'for d in /tmp/buildkit-deps/*/*/bin; do [ -d "$d" ] && export PATH="$d:$PATH"; done',
-      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
-      // Ensure DYLD_LIBRARY_PATH too for darwin
-      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export DYLD_LIBRARY_PATH="$d:${DYLD_LIBRARY_PATH:-}"; done',
-    ],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Remove gnu.org/bash from deps — S3 bash links to libiconv which conflicts with
+      // bundled libiconv in other deps (doxygen.nl). System /bin/bash works fine.
+      if (recipe.dependencies?.['gnu.org/bash']) delete recipe.dependencies['gnu.org/bash']
+      if (recipe.build?.dependencies?.['gnu.org/bash']) delete recipe.build.dependencies['gnu.org/bash']
+    },
   },
 }
