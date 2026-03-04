@@ -8067,13 +8067,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
       recipe.build!.dependencies['gnu.org/autoconf'] = '*'
       recipe.build!.dependencies['gnu.org/automake'] = '*'
       recipe.build!.dependencies['gnu.org/libtool'] = '*'
+      // Replace autogen.sh with direct autoreconf + configure to avoid libtool version mismatch
+      recipe.build!.script = [
+        'rm -f libtool ltmain.sh aclocal.m4',
+        'libtoolize --force --copy',
+        'autoreconf -fvi',
+        './configure --prefix="{{prefix}}"',
+        'make --jobs {{ hw.concurrency }} install',
+      ]
     },
-    prependScript: [
-      // Fix libtool version mismatch — regenerate autotools files with current libtool
-      'rm -f libtool ltmain.sh',
-      'libtoolize --force --copy 2>/dev/null || true',
-      'autoreconf -fvi 2>&1 | tail -5 || (./autogen.sh 2>/dev/null || true)',
-    ],
   },
 
   // ─── microsoft.com/markitdown — widen Python version ──────────────────
@@ -8816,7 +8818,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         'GS_RAW="${GS_MAJOR}.${GS_PADDED_MINOR}.${GS_PATCH}"',
         'GS_URL="https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/${GS_TAG}/ghostpdl-${GS_RAW}.tar.xz"',
         'echo "Downloading ghostpdl from: $GS_URL"',
-        'curl -fSL "$GS_URL" | tar xJ --strip-components=1',
+        '# Use env -i to avoid LD_LIBRARY_PATH conflict with deps curl.se',
+        'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o /tmp/ghostpdl.tar.xz "$GS_URL"',
+        'tar xJf /tmp/ghostpdl.tar.xz --strip-components=1',
       ].join('\n')
       if (Array.isArray(recipe.build?.script)) {
         recipe.build.script.unshift(downloadScript)
