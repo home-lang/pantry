@@ -1199,14 +1199,14 @@ Options:
     // apache.org/zookeeper removed — skip C-client, Java-only build in override
     'ordinals.com', // GitHub tag format mismatch (all variants return 404)
     // dhruvkb.dev/pls removed — updated distributableUrl to beta.9, widened libgit2
-    'seaweedfs.com', // All GitHub release tags return 404
+    // seaweedfs.com removed — widened Go version constraint in override
     'wundergraph.com', // All GitHub release tags return 404
     'riverbankcomputing.com/sip', // Server returns empty reply on all downloads
     'alembic.sqlalchemy.org', // Version tags return 404 on PyPI/GitHub
     'render.com', // Needs deno compile (no distributable source)
     'tea.xyz', // Needs deno task compile (no distributable source)
     'sdkman.io', // Shell script distribution, not compilable
-    'spacetimedb.com', // Hardcoded beta tag, no version discovery
+    // spacetimedb.com removed — pre-built binary download from GitHub releases
     // ntp.org removed — builds on darwin (linux fails: MD5Init/MD5Update deprecated in OpenSSL 3)
     // jbig2dec.com removed — hardcoded URL to GitHub release works
     // videolan.org/x264 removed — HTTPS URL override for Debian mirror
