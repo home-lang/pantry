@@ -7794,6 +7794,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
           // neovim binary needs libiconv.so.2. Use `find` for multi-segment domains (gnu.org/libiconv).
           'for d in $(find /tmp/buildkit-deps -type d -name lib 2>/dev/null); do export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
           'for d in $(find /tmp/buildkit-deps -type d -name bin 2>/dev/null); do export PATH="$d:$PATH"; done',
+          'echo "[lunarvim-debug] LD_LIBRARY_PATH=$LD_LIBRARY_PATH"',
+          'find /tmp/buildkit-deps -name "libiconv*" 2>/dev/null || echo "[lunarvim-debug] no libiconv files found"',
+          'ls -la /tmp/buildkit-deps/gnu.org/libiconv/*/lib/ 2>/dev/null || echo "[lunarvim-debug] no libiconv lib dir"',
+          'ldd /tmp/buildkit-deps/neovim.io/*/bin/nvim 2>/dev/null | grep -i iconv || echo "[lunarvim-debug] no iconv in ldd"',
         ],
       },
     },
