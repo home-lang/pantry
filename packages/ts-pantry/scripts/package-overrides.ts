@@ -7963,6 +7963,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
+          // Skip PKGX_DIR sed steps — variable unset in our build env, causes empty regex error
+          if (typeof step === 'string' && (step.includes('PKGX_DIR') || step.includes('man-db.service.bak'))) {
+            recipe.build.script[i] = 'true'
+            continue
+          }
           if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             // Fix the bin wrapper script: use ls -1 to avoid empty glob, protect rm
             if (step.run.includes('Creating stubs')) {
