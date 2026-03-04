@@ -3,7 +3,7 @@
  *
  * @domain `github.com/AOMediaCodec/libavif`
  * @programs `avifenc`, `avifdec`
- * @version `1.3.0` (11 versions available)
+ * @version `1.4.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/AOMediaCodec/libavif`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "avif"
  * console.log(pkg.description) // "libavif - Library for encoding and decoding .av..."
  * console.log(pkg.programs)    // ["avifenc", "avifdec"]
- * console.log(pkg.versions[0]) // "1.3.0" (latest)
+ * console.log(pkg.versions[0]) // "1.4.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/AOMediaCodec/libavif.md
@@ -78,6 +78,7 @@ export const libavifPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.0',
     '1.3.0',
     '1.2.1',
     '1.2.0',
