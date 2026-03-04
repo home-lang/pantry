@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 38 versions</summary>
+<summary>Show all 39 versions</summary>
 
+- `0.28.0`
 - `0.27.1`, `0.27.0`
 - `0.26.3`, `0.26.2`, `0.26.1`, `0.26.0`
 - `0.25.2`, `0.25.1`, `0.25.0`
@@ -46,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.27.1`
+**Latest Version**: `0.28.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/moby/buildkit@0.27.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/moby/buildkit@0.28.0 -- $SHELL -i
 ```
 
 ## Usage Examples
