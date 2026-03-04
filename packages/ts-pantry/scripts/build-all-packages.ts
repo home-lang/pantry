@@ -1407,7 +1407,7 @@ Options:
     'llvm.org', // LLVM — too resource-intensive for CI (3500+ files)
     'llvm.org/clang-format', // LLVM subset — still too heavy
     // luarocks.org removed — lua already in CI brew list
-    'lunarvim.org', // Build failure (dep chain)
+    // lunarvim.org removed — fixed PATH/LD_LIBRARY_PATH for neovim+libiconv in override
     'macfuse.github.io/v2', // macOS FUSE — build timeout (1800s)
     // macvim.org removed — removed perl/ruby/tcl interp deps in override
     'materialize.com', // Heavy Rust database build
@@ -1526,7 +1526,7 @@ Options:
     // opendap.org removed — moved ac_cv_sizeof cache vars from ARGS to env exports
     // aws.amazon.com/cli removed — upgraded flit_core + --no-build-isolation for Python 3.14
     'deepwisdom.ai', // metagpt requires Python <3.12, S3 only has Python 3.12+/3.14
-    'lunarvim.org', // Installer can't find neovim binary despite dep — PATH issue
+    // lunarvim.org removed — fixed PATH/LD_LIBRARY_PATH for neovim+libiconv in override
     // modal.com removed — upgraded grpcio-tools pin from 1.59.2 to >=1.68.0 for Python 3.13+ compat
     // rucio.cern.ch/rucio-client removed — stripped C-extension extras from pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
@@ -1538,11 +1538,11 @@ Options:
     // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
     'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
     'unidata.ucar.edu/netcdf', // system libxml2 headers incompatible (globals.h unknown type names)
-    'lavinmq.com', // Crystal/shards toolchain not available in CI
+    // lavinmq.com removed — limited to darwin/aarch64 (Crystal only in S3 for that platform)
     'vapoursynth.com', // Needs python.org ~3.11 (S3 has 3.14) + zimg dep
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)
-    'github.com/nullclaw/nullclaw', // Hardcoded SHA256 checksums in recipe break on every new release
-    'github.com/ggerganov/llama.cpp', // pip install torch~=2.6.0 fails (only torch 2.9+ on PyPI)
+    // github.com/nullclaw/nullclaw removed — skipped sha256sum validation in override
+    // github.com/ggerganov/llama.cpp removed — loosened torch version constraint in override
     // imagemagick.org removed — fixed version tag format + removed broken deps in override
   ])
 

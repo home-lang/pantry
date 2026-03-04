@@ -3748,9 +3748,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── lavinmq.com — fix sed -i BSD compat ─────────────────────────────
+  // ─── lavinmq.com — fix sed -i BSD compat + darwin-only (Crystal only in S3 for darwin) ─
 
   'lavinmq.com': {
+    // Crystal compiler only available in S3 for darwin-arm64
+    supportedPlatforms: ['darwin/aarch64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix sed -i BSD compat in darwin Makefile patch
       if (Array.isArray(recipe.build?.script)) {
@@ -7733,5 +7735,45 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.env = {}
       }
     },
+  },
+
+  // ─── nullclaw — skip hardcoded SHA256 checksum validation ──────────────
+
+  'github.com/nullclaw/nullclaw': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // The recipe has hardcoded SHA256 checksums per platform that break on every new release.
+      // Remove the sha256sum validation step from the build script.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step) => {
+          if (typeof step === 'string') {
+            return !step.includes('sha256sum')
+          }
+          return true
+        })
+      }
+    },
+  },
+
+  // ─── llama.cpp — loosen torch version constraint ──────────────────────
+
+  'github.com/ggerganov/llama.cpp': {
+    prependScript: [
+      // The recipe's requirements.txt pins torch~=2.6.0 which is unavailable on PyPI (only 2.9+).
+      // Loosen to torch>=2.6 so pip can install whatever is currently available.
+      'if [ -f requirements.txt ]; then "$__real_sed" -i "s/torch~=2\\.[0-9]\\+\\.[0-9]\\+/torch>=2.6/" requirements.txt; fi',
+      'if [ -f requirements/requirements-convert_hf_to_gguf.txt ]; then "$__real_sed" -i "s/torch~=2\\.[0-9]\\+\\.[0-9]\\+/torch>=2.6/" requirements/requirements-convert_hf_to_gguf.txt; fi',
+    ],
+  },
+
+  // ─── lunarvim.org — fix neovim/libiconv PATH and LD_LIBRARY_PATH ──────
+
+  'lunarvim.org': {
+    prependScript: [
+      // The installer runs neovim which can't find libiconv. Ensure S3 dep paths are in PATH/LD_LIBRARY_PATH.
+      'for d in /tmp/buildkit-deps/*/*/bin; do [ -d "$d" ] && export PATH="$d:$PATH"; done',
+      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export LD_LIBRARY_PATH="$d:${LD_LIBRARY_PATH:-}"; done',
+      // Ensure DYLD_LIBRARY_PATH too for darwin
+      'for d in /tmp/buildkit-deps/*/*/lib; do [ -d "$d" ] && export DYLD_LIBRARY_PATH="$d:${DYLD_LIBRARY_PATH:-}"; done',
+    ],
   },
 }
