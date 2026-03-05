@@ -250,6 +250,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // fermyon.com/spin: wasm32-wasi target renamed to wasm32-wasip1 in Rust 1.93+;
   // spin's build.rs hardcodes wasm32-wasi which can't be fixed via overrides
   'fermyon.com/spin': ['*'],
+  // dhall 1.42.3 on Hackage but no pre-built binary on GitHub (latest release is 1.42.2)
+  'dhall-lang.org': ['>=1.42.3'],
   // Go 1.26 breaks vendored tokeninternal + linker/timeout issues.
   // Only Go 1.26 is available in S3. All versions below 0.13 fail.
   'cuelang.org': ['<0.13.0'],
