@@ -1186,6 +1186,7 @@ Options:
   //     macvim.org, github.com/facebookincubator/fizz — GitHub tag resolution now
   //     handles leading-zero normalization via API lookup (resolveGitHubTag)
   const knownBrokenDomains = new Set([
+    'gnu.org/gcc/libgomp', // GCC sub-package — requires compiling all of GCC (~225s+ before failing), too resource-intensive for CI
     // apache.org/subversion removed — skip serf/kerberos/swig, build svn core only
     // apache.org/serf removed — use system scons, skip kerberos
     // argoproj.github.io/cd removed — fixed v3 module path + cmd entry point

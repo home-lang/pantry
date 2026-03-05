@@ -9560,6 +9560,56 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // ─── alembic.sqlalchemy.org — fix version tag format (rel_X_Y_Z) + widen Python ─────────
+  'rubygems.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // On linux, the plugins dir is not empty so `rmdir` fails — use rm -rf instead
+      if (recipe.build?.script) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
+          if (typeof step === 'string' && step.includes('rmdir') && step.includes('plugins')) {
+            return step.replace(/rmdir\s+/, 'rm -rf ')
+          }
+          if (typeof step === 'object' && step.run) {
+            if (typeof step.run === 'string' && step.run.includes('rmdir') && step.run.includes('plugins')) {
+              step.run = step.run.replace(/rmdir\s+/, 'rm -rf ')
+            } else if (Array.isArray(step.run)) {
+              step.run = step.run.map((cmd: string) =>
+                typeof cmd === 'string' && cmd.includes('rmdir') && cmd.includes('plugins')
+                  ? cmd.replace(/rmdir\s+/, 'rm -rf ')
+                  : cmd,
+              )
+            }
+          }
+          return step
+        })
+      }
+    },
+  },
+
+  'ruby-lang.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Ruby v4+ installs files at prefix/prefix oddly; the fix-up step has
+      // working-directory: ${{prefix}}/{{prefix}} which double-expands in buildkit.
+      // Make the sed on rbconfig.rb conditional so it doesn't fail if the nested path is empty.
+      if (recipe.build?.script) {
+        recipe.build.script = recipe.build.script.map((step: any) => {
+          if (typeof step !== 'object' || !step.run) return step
+          const runText = Array.isArray(step.run) ? step.run.join('\n') : String(step.run)
+          if (!runText.includes('rsync include/') || !runText.includes('rbconfig.rb')) return step
+          const fixSed = (cmd: string) => cmd.replace(
+            /sed -i -f \$PROP (lib\/ruby\/\S+\/rbconfig\.rb)/,
+            (_match: string, path: string) => `if test -f ${path}; then sed -i -f $PROP ${path}; fi`,
+          )
+          if (Array.isArray(step.run)) {
+            step.run = step.run.map((cmd: string) => typeof cmd === 'string' ? fixSed(cmd) : cmd)
+          } else if (typeof step.run === 'string') {
+            step.run = fixSed(step.run)
+          }
+          return step
+        })
+      }
+    },
+  },
+
   'alembic.sqlalchemy.org': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // GitHub tags use rel_1_18_4 format (underscores), not v1.18.4
