@@ -3,7 +3,7 @@
  *
  * @domain `dotenvx.com`
  * @programs `dotenvx`
- * @version `1.52.0` (195 versions available)
+ * @version `1.53.0` (196 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dotenvx.com`
@@ -16,7 +16,7 @@
  * const pkg = pantry.dotenvxcom
  * console.log(pkg.name)        // "dotenvx"
  * console.log(pkg.programs)    // ["dotenvx"]
- * console.log(pkg.versions[0]) // "1.52.0" (latest)
+ * console.log(pkg.versions[0]) // "1.53.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dotenvx-com.md
@@ -66,6 +66,7 @@ export const dotenvxcomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.53.0',
     '1.52.0',
     '1.51.4',
     '1.51.3',
