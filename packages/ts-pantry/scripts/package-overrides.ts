@@ -9537,4 +9537,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── alembic.sqlalchemy.org — fix version tag format (rel_X_Y_Z) + widen Python ─────────
+  'alembic.sqlalchemy.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // GitHub tags use rel_1_18_4 format (underscores), not v1.18.4
+      // Replace distributable URL with shell-based download that transforms version
+      recipe.distributable = undefined
+      // Widen python dep to work with CI Python 3.14
+      if (recipe.build) {
+        if (recipe.build.dependencies) {
+          recipe.build.dependencies['python.org'] = '>=3.10'
+        }
+        // Prepend source download with correct tag format
+        const origScript = recipe.build.script || []
+        recipe.build.script = [
+          [
+            'VER_UNDERSCORE=$(echo "{{version}}" | tr "." "_")',
+            'TAG="rel_${VER_UNDERSCORE}"',
+            'curl -fSL "https://github.com/sqlalchemy/alembic/archive/refs/tags/${TAG}.tar.gz" | tar xz --strip-components=1',
+          ].join('\n'),
+          ...origScript,
+        ]
+      }
+    },
+  },
 }

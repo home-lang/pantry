@@ -1222,7 +1222,7 @@ Options:
     // seaweedfs.com removed — widened Go version constraint in override
     'wundergraph.com', // All GitHub release tags return 404
     'riverbankcomputing.com/sip', // Server returns empty reply on all downloads
-    'alembic.sqlalchemy.org', // Version tags return 404 on PyPI/GitHub
+    // alembic.sqlalchemy.org removed — fixed tag format (rel_X_Y_Z) + widened Python in override
     'render.com', // Needs deno compile (no distributable source)
     'tea.xyz', // Needs deno task compile (no distributable source)
     'sdkman.io', // Shell script distribution, not compilable
