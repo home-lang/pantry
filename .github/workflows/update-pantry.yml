@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
 
     steps:
       - name: Checkout repository
@@ -148,3 +149,50 @@ jobs:
           cd packages/ts-pantry
           bun scripts/sync-metadata-to-registry.ts --all
         timeout-minutes: 10
+
+      - name: Trigger builds for changed recipes
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          # Extract domain names from changed pantry recipe files
+          CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/pantry/ 2>/dev/null)
+          if [ -z "$CHANGED" ]; then
+            echo "No pantry recipe changes to build"
+            exit 0
+          fi
+
+          # Convert file paths to domain names
+          # e.g. packages/ts-pantry/src/pantry/crates.io/aichat/package.yml → crates.io/aichat
+          DOMAINS=""
+          SEEN=""
+          while IFS= read -r filepath; do
+            [ -z "$filepath" ] && continue
+            # Strip prefix to get relative path under pantry/
+            REL="${filepath#packages/ts-pantry/src/pantry/}"
+            # Remove the filename (package.yml, *.patch, etc.) to get domain path
+            DOMAIN_PATH=$(dirname "$REL")
+            [ -z "$DOMAIN_PATH" ] || [ "$DOMAIN_PATH" = "." ] && continue
+            # Deduplicate
+            case ",$SEEN," in
+              *",$DOMAIN_PATH,"*) continue ;;
+            esac
+            SEEN="$SEEN,$DOMAIN_PATH"
+            if [ -z "$DOMAINS" ]; then
+              DOMAINS="$DOMAIN_PATH"
+            else
+              DOMAINS="$DOMAINS,$DOMAIN_PATH"
+            fi
+          done <<< "$CHANGED"
+
+          if [ -z "$DOMAINS" ]; then
+            echo "No valid package domains extracted from pantry changes"
+            exit 0
+          fi
+
+          echo "Triggering build for changed recipes: $DOMAINS"
+          gh workflow run build-package.yml \
+            -f packages="$DOMAINS" \
+            -f force=false
+          echo "Build workflow triggered successfully"
+        timeout-minutes: 2
