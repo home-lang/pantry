@@ -261,7 +261,15 @@ fn loadWorkspaceConfigFromPackageJson(
     };
     defer allocator.free(content);
 
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+    // Strip JSONC comments if present (pantry.jsonc files have comments)
+    const is_jsonc = std.mem.endsWith(u8, file_path, ".jsonc");
+    const json_content = if (is_jsonc)
+        lib.utils.jsonc.stripComments(allocator, content) catch content
+    else
+        content;
+    defer if (is_jsonc and json_content.ptr != content.ptr) allocator.free(json_content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch {
         return error.NoWorkspacePatternsFound;
     };
     defer parsed.deinit();

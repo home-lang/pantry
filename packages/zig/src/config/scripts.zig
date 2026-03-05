@@ -205,6 +205,19 @@ pub fn findProjectScripts(allocator: std.mem.Allocator, project_dir: []const u8)
         }
     }
 
+    // Also check package.json for scripts (common in workspace packages)
+    pkg_json: {
+        const pkg_path = std.fmt.allocPrint(allocator, "{s}/package.json", .{project_dir}) catch break :pkg_json;
+        defer allocator.free(pkg_path);
+
+        const file_content = readFileContent(allocator, pkg_path) catch break :pkg_json;
+        defer allocator.free(file_content);
+
+        if (parseScriptsFromContent(allocator, file_content, false) catch null) |scripts| {
+            return scripts;
+        }
+    }
+
     // Fallback to zig-config loader for other config formats (.ts, .zig, etc.)
     const loader = @import("loader.zig");
     var config = loader.loadpantryConfig(allocator, .{
