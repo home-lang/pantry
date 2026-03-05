@@ -1,14 +1,14 @@
 # Package Catalog
 
-This comprehensive catalog lists all 1398+ packages available in ts-pkgx, organized by category.
+This comprehensive catalog lists all 1399+ packages available in ts-pkgx, organized by category.
 
 Each package can be accessed using `getPackage(name)` or directly via `pantry.domain`.
 
 ## Quick Stats
 
-- **Total Packages**: 1398
+- **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-05T05:10:18.801Z
+- **Last Updated**: 2026-03-05T05:49:47.464Z
 
 ## Table of Contents
 
