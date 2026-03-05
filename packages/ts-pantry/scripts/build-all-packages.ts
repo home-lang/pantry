@@ -1239,7 +1239,7 @@ Options:
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
     // libsdl.org/SDL_image removed — SKIP_VERSIONS >= 3.0.0 excludes SDL3 tags, distributableUrl for SDL2
-    // gource.io removed — releases exist, deps (boost/SDL2/glew) fixed
+    'gource.io', // configure fails: sdl2/SDL2_image not found (deps not in pkg-config)
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
     // hdfgroup.org/HDF5 removed — fixed distributable URL for all version tag formats
