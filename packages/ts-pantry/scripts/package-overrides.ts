@@ -9586,8 +9586,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'rubygems.org/gist': {
-    // rake (from ruby-lang.org dep) needs rubygems.org on RUBYLIB to find 'rubygems'
-    prependScript: ['for d in /tmp/buildkit-deps/rubygems.org/*/lib; do export RUBYLIB="$d:${RUBYLIB:-}"; done'],
+    // rake (from ruby-lang.org dep) needs rubygems.org on RUBYLIB to find 'rubygems',
+    // and GEM_PATH to include ruby's gem dir so rubygems can find the rake gem spec
+    prependScript: [
+      'for d in /tmp/buildkit-deps/rubygems.org/*/lib; do export RUBYLIB="$d:${RUBYLIB:-}"; done',
+      'for d in /tmp/buildkit-deps/ruby-lang.org/*/lib/ruby/gems/*; do export GEM_PATH="$d:${GEM_PATH:-}"; done',
+    ],
   },
 
   'ruby-lang.org': {
