@@ -9421,8 +9421,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
             '  *) echo "Unsupported: $OS/$ARCH" && exit 1 ;;',
             'esac',
             'mkdir -p "{{prefix}}/bin" /tmp/ord-extract',
-            'curl -fSL "https://github.com/ordinals/ord/releases/download/{{version}}/ord-{{version}}-${SUFFIX}.tar.gz" | tar xz --strip-components=1 -C /tmp/ord-extract',
-            'cp /tmp/ord-extract/ord "{{prefix}}/bin/ord"',
+            'curl -fSL "https://github.com/ordinals/ord/releases/download/{{version}}/ord-{{version}}-${SUFFIX}.tar.gz" | tar xz -C /tmp/ord-extract',
+            'cp "$(find /tmp/ord-extract -name ord -type f | head -1)" "{{prefix}}/bin/ord"',
             'chmod +x "{{prefix}}/bin/ord"',
           ].join('\n'),
         ]
@@ -9502,7 +9502,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
             '  x86_64) ARCH="amd64" ;;',
             'esac',
             'mkdir -p "{{prefix}}/bin"',
-            'curl -fSL "https://github.com/foundry-rs/foundry/releases/download/{{version.tag}}/foundry_{{version.tag}}_${OS}_${ARCH}.tar.gz" | tar xz -C "{{prefix}}/bin"',
+            'curl -fSL "https://github.com/foundry-rs/foundry/releases/download/v{{version}}/foundry_v{{version}}_${OS}_${ARCH}.tar.gz" | tar xz -C "{{prefix}}/bin"',
             'chmod +x "{{prefix}}/bin/forge" "{{prefix}}/bin/cast" "{{prefix}}/bin/anvil" "{{prefix}}/bin/chisel"',
           ].join('\n'),
         ]

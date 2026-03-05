@@ -679,6 +679,8 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'gnome.org/gtk-mac-integration-gtk3': ['*'],
   // github.com/zaach/jsonlint: npm build failure on both platforms
   'github.com/zaach/jsonlint': ['*'],
+  // foundry switched from date-based tags (2024.4.12) to semver (v1.5.1); skip old scheme
+  'getfoundry.sh': ['>=2023.0.0'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
@@ -1155,6 +1157,7 @@ Options:
     'dns.lookup.dog', // openssl-sys build failure on linux, builds fine on darwin
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
     'musepack.net', // duplicate symbols on linux, builds fine on darwin
+    'github.com/OSGeo/libgeotiff', // proj.org dep only available on darwin
   ])
 
   // Packages needing specialized toolchains not available in CI
@@ -1214,7 +1217,7 @@ Options:
     'getsynth.com', // Dead/abandoned project
     // grpc.io removed — disabled TSAN/ASAN + use bundled protobuf in override
     // apache.org/zookeeper removed — skip C-client, Java-only build in override
-    'ordinals.com', // Pre-built override ready but version data stale (0.6.x, needs 0.26.x)
+    // ordinals.com removed — pre-built binary, v0.6.1 available for darwin-arm64 + linux-x86_64
     // dhruvkb.dev/pls removed — updated distributableUrl to beta.9, widened libgit2
     // seaweedfs.com removed — widened Go version constraint in override
     'wundergraph.com', // All GitHub release tags return 404
@@ -1487,7 +1490,7 @@ Options:
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
     // libsoup.org removed — fixed prefix quoting + disabled introspection/vala in override
     'systemd.io', // Complex linux init system — build failure
-    'getfoundry.sh', // Pre-built override ready but version data stale (date-based 2024.x, now semver v1.x)
+    // getfoundry.sh removed — pre-built binary, date-based versions skipped via SKIP_VERSIONS
     // deepwisdom.ai removed — patched out faiss_cpu on linux
     // expo.dev/eas-cli removed — added corepack yarn 4 activation
     // geoff.greer.fm/ag — added earlier in this list
