@@ -864,9 +864,16 @@ async function buildAndUpload(
   console.log(`${'─'.repeat(60)}`)
 
   // Skip versions with known fundamental toolchain incompatibilities
+  // Fall back to next non-skipped version if latest is skipped
   if (isVersionSkipped(domain, version)) {
-    console.log(`   ⚠️  Version ${version} skipped (known incompatibility)`)
-    return { status: 'skipped' }
+    const fallback = versions.find(v => v !== version && v !== '999.999.999' && v !== '0.0.0' && !isVersionSkipped(domain, v))
+    if (fallback) {
+      console.log(`   ⚠️  Version ${version} skipped, falling back to ${fallback}`)
+      version = fallback
+    } else {
+      console.log(`   ⚠️  Version ${version} skipped (known incompatibility)`)
+      return { status: 'skipped' }
+    }
   }
 
   // Skip sentinel/placeholder versions
