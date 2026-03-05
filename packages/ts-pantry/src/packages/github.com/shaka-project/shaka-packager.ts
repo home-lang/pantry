@@ -3,7 +3,7 @@
  *
  * @domain `github.com/shaka-project/shaka-packager`
  * @programs `packager`, `mpd_generator`
- * @version `3.4.2` (3 versions available)
+ * @version `3.5.0` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/shaka-project/shaka-packager`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "shaka-packager"
  * console.log(pkg.description) // "A media packaging and development framework for..."
  * console.log(pkg.programs)    // ["packager", "mpd_generator"]
- * console.log(pkg.versions[0]) // "3.4.2" (latest)
+ * console.log(pkg.versions[0]) // "3.5.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/shaka-project/shaka-packager.md
@@ -80,6 +80,7 @@ export const shakapackagerPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.5.0',
     '3.4.2',
     '3.4.1',
     '3.4.0',

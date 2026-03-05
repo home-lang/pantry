@@ -1,13 +1,11 @@
 /**
- * **openresty** - High Performance Web Platform Based on Nginx and LuaJIT
+ * **openresty** - pkgx package
  *
  * @domain `openresty.org`
- * @programs `nginx-xml2pod`, `opm`, `resty`, `restydoc`, `restydoc-index`
  * @version `1.27.1.2` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openresty.org`
- * @homepage https://openresty.org
  * @dependencies `pcre.org@8`, `openssl.org^1.1`, `zlib.net^1.2`, ... (+1 more)
  * @buildDependencies `waterlan.home.xs4all.nl/dos2unix`, `gnu.org/wget` - required only when building from source
  *
@@ -17,8 +15,6 @@
  *
  * const pkg = pantry.openrestyorg
  * console.log(pkg.name)        // "openresty"
- * console.log(pkg.description) // "High Performance Web Platform Based on Nginx an..."
- * console.log(pkg.programs)    // ["nginx-xml2pod", "opm", ...]
  * console.log(pkg.versions[0]) // "1.27.1.2" (latest)
  * ```
  *
@@ -37,10 +33,10 @@ export const openrestyorgPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: 'High Performance Web Platform Based on Nginx and LuaJIT' as const,
+  description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/openresty.org/package.yml' as const,
-  homepageUrl: 'https://openresty.org' as const,
-  githubUrl: 'https://github.com/openresty/openresty' as const,
+  homepageUrl: '' as const,
+  githubUrl: '' as const,
   /**
   * Command to install this package using launchpad.
   * @example launchpad install package-name
@@ -48,17 +44,7 @@ export const openrestyorgPackage = {
   installCommand: 'launchpad install openresty.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openresty.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install openresty.org' as const,
-  /**
-  * Executable programs provided by this package.
-  * These can be run after installation.
-  */
-  programs: [
-    'nginx-xml2pod',
-    'opm',
-    'resty',
-    'restydoc',
-    'restydoc-index',
-  ] as const,
+  programs: [] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
