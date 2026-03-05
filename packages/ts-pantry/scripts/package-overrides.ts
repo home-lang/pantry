@@ -9586,6 +9586,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'ruby-lang.org': {
+    platforms: {
+      darwin: {
+        // Ruby 4.0.1 configure validates LDFLAGS — macOS 15/Xcode 26 linker test
+        // fails when LDFLAGS is completely unset. Provide SDK lib path explicitly.
+        prependScript: 'export LDFLAGS="-L$(xcrun --show-sdk-path)/usr/lib ${LDFLAGS:-}"',
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Ruby v4+ installs files at prefix/prefix oddly; the fix-up step has
       // working-directory: ${{prefix}}/{{prefix}} which double-expands in buildkit.
