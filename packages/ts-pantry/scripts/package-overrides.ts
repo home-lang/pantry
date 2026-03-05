@@ -410,7 +410,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
     prependScript: [GLIBTOOL_FIX],
     platforms: {
       darwin: {
-        prependScript: ['brew install autoconf automake libtool 2>/dev/null || true'],
+        prependScript: [
+            'export PATH="/opt/homebrew/opt/autoconf/bin:/opt/homebrew/opt/automake/bin:/opt/homebrew/opt/libtool/libexec/gnubin:$PATH"',
+          ],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -8356,7 +8358,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'geoff.greer.fm/ag': {
     platforms: {
       darwin: {
-        prependScript: ['brew install autoconf automake pkg-config 2>/dev/null || true'],
+        prependScript: [
+            // autoconf/automake installed by CI but may not be linked — ensure PATH includes opt paths
+            'export PATH="/opt/homebrew/opt/autoconf/bin:/opt/homebrew/opt/automake/bin:$PATH"',
+          ],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -8377,7 +8382,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.script = [
           [
             'mkdir -p "{{prefix}}/bin"',
-            'curl -fSL -o "{{prefix}}/bin/ack" "https://beyondgrep.com/ack-v{{version}}"',
+            'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o "{{prefix}}/bin/ack" "https://beyondgrep.com/ack-v{{version}}"',
             'chmod +x "{{prefix}}/bin/ack"',
           ].join('\n'),
         ]
