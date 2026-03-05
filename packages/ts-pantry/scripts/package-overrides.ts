@@ -9585,12 +9585,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  'rubygems.org/gist': {
+    // rake (from ruby-lang.org dep) needs rubygems.org on RUBYLIB to find 'rubygems'
+    prependScript: ['for d in /tmp/buildkit-deps/rubygems.org/*/lib; do export RUBYLIB="$d:${RUBYLIB:-}"; done'],
+  },
+
   'ruby-lang.org': {
     platforms: {
       darwin: {
         // Ruby 4.0.1 configure validates LDFLAGS — macOS 15/Xcode 26 linker test
         // fails when LDFLAGS is completely unset. Provide SDK lib path explicitly.
-        prependScript: ['export LDFLAGS="-L$(xcrun --show-sdk-path)/usr/lib ${LDFLAGS:-}"'],
+        prependScript: ['export LDFLAGS="${LDFLAGS:--Wl,-search_paths_first}"'],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
