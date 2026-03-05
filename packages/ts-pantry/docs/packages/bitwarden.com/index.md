@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 34 versions</summary>
+<summary>Show all 35 versions</summary>
 
+- `2026.2.0`
 - `2026.1.0`
 - `2025.12.1`, `2025.12.0`
 - `2025.11.0`
@@ -53,13 +54,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2026.1.0`
+**Latest Version**: `2026.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +bitwarden.com@2026.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +bitwarden.com@2026.2.0 -- $SHELL -i
 ```
 
 ## Dependencies

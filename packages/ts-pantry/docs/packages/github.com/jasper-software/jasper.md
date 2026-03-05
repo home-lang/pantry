@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
-- `4.2.8`, `4.2.7`, `4.2.6`, `4.2.5`, `4.2.4`, `4.2.3`, `4.2.2`, `4.2.1`, `4.2.0`
+- `4.2.9`, `4.2.8`, `4.2.7`, `4.2.6`, `4.2.5`, `4.2.4`, `4.2.3`, `4.2.2`, `4.2.1`, `4.2.0`
 - `4.1.2`, `4.1.1`, `4.1.0`
 - `4.0.1`, `4.0.0`
 
 </details>
 
-**Latest Version**: `4.2.8`
+**Latest Version**: `4.2.9`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/jasper-software/jasper@4.2.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/jasper-software/jasper@4.2.9 -- $SHELL -i
 ```
 
 ## Dependencies

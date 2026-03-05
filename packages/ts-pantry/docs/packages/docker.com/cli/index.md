@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 73 versions</summary>
+<summary>Show all 74 versions</summary>
 
+- `29.3.0`
 - `29.2.1`, `29.2.0`
 - `29.1.5`, `29.1.4`, `29.1.3`, `29.1.2`, `29.1.1`, `29.1.0`
 - `29.0.4`, `29.0.3`, `29.0.2`, `29.0.1`
@@ -51,13 +52,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `29.2.1`
+**Latest Version**: `29.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +docker.com/cli@29.2.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +docker.com/cli@29.3.0 -- $SHELL -i
 ```
 
 ## Usage Examples

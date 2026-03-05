@@ -3,7 +3,7 @@
  *
  * @domain `ipython.org`
  * @programs `ipython`, `ipython3`
- * @version `9.10.0` (52 versions available)
+ * @version `9.11.0` (53 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install ipython.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ipython"
  * console.log(pkg.description) // "Official repository for IPython itself. Other r..."
  * console.log(pkg.programs)    // ["ipython", "ipython3"]
- * console.log(pkg.versions[0]) // "9.10.0" (latest)
+ * console.log(pkg.versions[0]) // "9.11.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/ipython-org.md
@@ -76,6 +76,7 @@ export const ipythonorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.11.0',
     '9.10.0',
     '9.9.0',
     '9.8.0',

@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 52 versions</summary>
+<summary>Show all 53 versions</summary>
 
+- `9.11.0`
 - `9.10.0`
 - `9.9.0`
 - `9.8.0`
@@ -69,13 +70,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `9.10.0`
+**Latest Version**: `9.11.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +ipython.org@9.10.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +ipython.org@9.11.0 -- $SHELL -i
 ```
 
 ## Dependencies
