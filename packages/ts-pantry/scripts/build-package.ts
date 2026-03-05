@@ -1341,7 +1341,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   if (bucket && region && depsDir) {
     // Merge TS metadata deps + YAML deps (deduplicate by domain)
     // Filter out deps that were explicitly removed by modifyRecipe overrides
-    // YAML deps with constraints take priority over TS deps without constraints
+    // When both build and runtime deps specify constraints for the same domain,
+    // merge them into a compound constraint (e.g., ">=2.3" + "<4" → ">=2.3<4")
     const tsDeps = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
     const depByDomain = new Map<string, string>()
     // First pass: add TS deps
@@ -1349,10 +1350,21 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       const domain = parseDep(dep)
       if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
     }
-    // Second pass: YAML deps override (they have version constraints)
+    // Second pass: YAML deps — merge constraints when both build and runtime specify them
     for (const dep of [...yamlBuildDeps, ...yamlRuntimeDeps]) {
       const domain = parseDep(dep)
-      if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
+      if (!domain || removedDeps.has(domain)) continue
+      const existing = depByDomain.get(domain)
+      if (existing) {
+        const existingConstraint = parseDepConstraint(existing)
+        const newConstraint = parseDepConstraint(dep)
+        if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
+          // Merge constraints: e.g., ">=2.3" + "<4" → ">=2.3<4"
+          depByDomain.set(domain, `${domain} ${existingConstraint}${newConstraint}`)
+          continue
+        }
+      }
+      depByDomain.set(domain, dep)
     }
     const allDeps = Array.from(depByDomain.values())
     depPaths = await downloadDependencies(allDeps, depsDir, platform, bucket, region)
