@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 62 versions</summary>
+<summary>Show all 63 versions</summary>
 
-- `1.21.2`, `1.21.1`
+- `1.21.3`, `1.21.2`, `1.21.1`
 - `1.20.3`, `1.20.2`, `1.20.1`, `1.20.0`
 - `1.19.5`, `1.19.4`, `1.19.3`, `1.19.2`, `1.19.1`, `1.19.0`
 - `1.18.5`, `1.18.4`, `1.18.3`, `1.18.2`, `1.18.1`, `1.18.0`
@@ -40,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.21.2`
+**Latest Version**: `1.21.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +vaultproject.io@1.21.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +vaultproject.io@1.21.3 -- $SHELL -i
 ```
 
 ## Usage Examples

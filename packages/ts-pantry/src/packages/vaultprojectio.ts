@@ -3,7 +3,7 @@
  *
  * @domain `vaultproject.io`
  * @programs `vault`
- * @version `1.21.2` (62 versions available)
+ * @version `1.21.3` (63 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install vaultproject.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "vault"
  * console.log(pkg.description) // "A tool for secrets management, encryption as a ..."
  * console.log(pkg.programs)    // ["vault"]
- * console.log(pkg.versions[0]) // "1.21.2" (latest)
+ * console.log(pkg.versions[0]) // "1.21.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/vaultproject-io.md
@@ -73,6 +73,7 @@ export const vaultprojectioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.21.3',
     '1.21.2',
     '1.21.1',
     '1.20.3',
