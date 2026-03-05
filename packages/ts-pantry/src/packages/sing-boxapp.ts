@@ -3,7 +3,7 @@
  *
  * @domain `sing-box.app`
  * @programs `sing-box`
- * @version `1.13.0` (78 versions available)
+ * @version `1.13.0` (79 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install sing-box.app`
@@ -69,6 +69,7 @@ export const singboxappPackage = {
   */
   versions: [
     '1.13.0',
+    '1.12.24',
     '1.12.23',
     '1.12.22',
     '1.12.21',

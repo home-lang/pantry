@@ -25,7 +25,7 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 174 versions</summary>
+<summary>Show all 175 versions</summary>
 
 - `25.8.0`
 - `25.7.0`
@@ -92,7 +92,7 @@ This package provides the following executable programs:
 - `21.2.0`
 - `21.1.0`
 - `21.0.0`
-- `20.20.0`
+- `20.20.1`, `20.20.0`
 - `20.19.6`, `20.19.5`, `20.19.4`, `20.19.3`, `20.19.2`, `20.19.1`, `20.19.0`
 - `20.18.3`, `20.18.2`, `20.18.1`, `20.18.0`
 - `20.17.0`
