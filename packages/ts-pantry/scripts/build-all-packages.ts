@@ -1518,7 +1518,7 @@ Options:
     // github.com/glauth/glauth removed — pre-built binary download from GitHub releases
     // github.com/shaka-project/shaka-packager removed — pre-built binary download from GitHub releases
     'github.com/libkml/libkml', // minizip ints.h header not found + Boost compat issues
-    // gaia-gis.it/libspatialite removed — deps (freexl, librttopo, geos) not broken
+    'gaia-gis.it/libspatialite', // configure fails: cannot find minizip/unzip.h (dep not available)
     // github.com/OSGeo/libgeotiff removed — proj.org available on darwin
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
     // man-db.gitlab.io/man-db removed — override fixes rm/rmdir under set -e, linux-only
