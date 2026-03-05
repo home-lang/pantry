@@ -9323,31 +9323,47 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.script = [
           [
             '# shards binary is bundled with the crystal distribution',
-            'CRYSTAL_BIN="$(dirname $(command -v crystal 2>/dev/null) 2>/dev/null)"',
-            'if [ -z "$CRYSTAL_BIN" ]; then',
-            '  # Try the deps dir',
-            '  CRYSTAL_BIN="/tmp/buildkit-deps/crystal-lang.org"',
-            '  SHARDS=$(find "$CRYSTAL_BIN" -name shards -type f 2>/dev/null | head -1)',
-            'else',
-            '  SHARDS=$(find "$(dirname "$CRYSTAL_BIN")" -name shards -type f 2>/dev/null | head -1)',
-            'fi',
+            '# Search for shards in deps dir (crystal-lang.org pre-built includes it)',
+            'SHARDS=$(find /tmp/buildkit-deps/crystal-lang.org -name shards -type f 2>/dev/null | head -1)',
             'if [ -z "$SHARDS" ] || [ ! -f "$SHARDS" ]; then',
-            '  echo "shards not found in crystal distribution, downloading..."',
+            '  echo "shards not found in deps, fetching latest crystal release..."',
             '  OS=$(uname -s)',
             '  ARCH=$(uname -m)',
             '  case "$OS/$ARCH" in',
             '    Darwin/*) SUFFIX="darwin-universal" ;;',
             '    Linux/x86_64) SUFFIX="linux-x86_64-bundled" ;;',
             '    Linux/aarch64) SUFFIX="linux-aarch64-bundled" ;;',
-            '    *) echo "Unsupported" && exit 1 ;;',
+            '    *) echo "Unsupported: $OS/$ARCH" && exit 1 ;;',
             '  esac',
+            '  # Get latest crystal version from GitHub API',
+            '  CRYSTAL_VER=$(curl -fsSL https://api.github.com/repos/crystal-lang/crystal/releases/latest | grep -o \'"tag_name":"[^"]*"\' | head -1 | cut -d\'"\' -f4)',
+            '  echo "Downloading crystal $CRYSTAL_VER to extract shards..."',
             '  mkdir -p /tmp/crystal-dl',
-            '  curl -fSL "https://github.com/crystal-lang/crystal/releases/download/{{deps.crystal-lang.org.version}}/crystal-{{deps.crystal-lang.org.version}}-1-${SUFFIX}.tar.gz" | tar xz --strip-components=1 -C /tmp/crystal-dl',
+            '  curl -fSL "https://github.com/crystal-lang/crystal/releases/download/${CRYSTAL_VER}/crystal-${CRYSTAL_VER}-1-${SUFFIX}.tar.gz" | tar xz --strip-components=1 -C /tmp/crystal-dl',
             '  SHARDS="/tmp/crystal-dl/embedded/bin/shards"',
             'fi',
             'mkdir -p "{{prefix}}/bin"',
             'cp "$SHARDS" "{{prefix}}/bin/shards"',
             'chmod +x "{{prefix}}/bin/shards"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── rebar3.org — pre-built escript from GitHub releases ─────────
+  'rebar3.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = { 'erlang.org': '*' }
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/rebar3" "https://github.com/erlang/rebar3/releases/download/{{version}}/rebar3"',
+            'chmod +x "{{prefix}}/bin/rebar3"',
           ].join('\n'),
         ]
         recipe.build.env = {}
