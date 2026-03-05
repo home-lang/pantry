@@ -9286,4 +9286,103 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── crystal-lang.org — pre-built binary from GitHub releases ─────────
+  'crystal-lang.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s)',
+            'ARCH=$(uname -m)',
+            'case "$OS/$ARCH" in',
+            '  Darwin/*) SUFFIX="darwin-universal" ;;',
+            '  Linux/x86_64) SUFFIX="linux-x86_64-bundled" ;;',
+            '  Linux/aarch64) SUFFIX="linux-aarch64-bundled" ;;',
+            '  *) echo "Unsupported platform: $OS/$ARCH" && exit 1 ;;',
+            'esac',
+            'curl -fSL "https://github.com/crystal-lang/crystal/releases/download/{{version}}/crystal-{{version}}-1-${SUFFIX}.tar.gz" | tar xz --strip-components=1 -C "{{prefix}}"',
+            'chmod +x "{{prefix}}/bin/crystal" 2>/dev/null || true',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── crystal-lang.org/shards — included in crystal pre-built bundle ─────────
+  'crystal-lang.org/shards': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = { 'crystal-lang.org': '*' }
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            '# shards binary is bundled with the crystal distribution',
+            'CRYSTAL_BIN="$(dirname $(command -v crystal 2>/dev/null) 2>/dev/null)"',
+            'if [ -z "$CRYSTAL_BIN" ]; then',
+            '  # Try the deps dir',
+            '  CRYSTAL_BIN="/tmp/buildkit-deps/crystal-lang.org"',
+            '  SHARDS=$(find "$CRYSTAL_BIN" -name shards -type f 2>/dev/null | head -1)',
+            'else',
+            '  SHARDS=$(find "$(dirname "$CRYSTAL_BIN")" -name shards -type f 2>/dev/null | head -1)',
+            'fi',
+            'if [ -z "$SHARDS" ] || [ ! -f "$SHARDS" ]; then',
+            '  echo "shards not found in crystal distribution, downloading..."',
+            '  OS=$(uname -s)',
+            '  ARCH=$(uname -m)',
+            '  case "$OS/$ARCH" in',
+            '    Darwin/*) SUFFIX="darwin-universal" ;;',
+            '    Linux/x86_64) SUFFIX="linux-x86_64-bundled" ;;',
+            '    Linux/aarch64) SUFFIX="linux-aarch64-bundled" ;;',
+            '    *) echo "Unsupported" && exit 1 ;;',
+            '  esac',
+            '  mkdir -p /tmp/crystal-dl',
+            '  curl -fSL "https://github.com/crystal-lang/crystal/releases/download/{{deps.crystal-lang.org.version}}/crystal-{{deps.crystal-lang.org.version}}-1-${SUFFIX}.tar.gz" | tar xz --strip-components=1 -C /tmp/crystal-dl',
+            '  SHARDS="/tmp/crystal-dl/embedded/bin/shards"',
+            'fi',
+            'mkdir -p "{{prefix}}/bin"',
+            'cp "$SHARDS" "{{prefix}}/bin/shards"',
+            'chmod +x "{{prefix}}/bin/shards"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── dart.dev — pre-built SDK from Google Cloud Storage ─────────
+  'dart.dev': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'case "$OS/$ARCH" in',
+            '  darwin/arm64) SDK="dartsdk-macos-arm64-release.zip" ;;',
+            '  darwin/x86_64) SDK="dartsdk-macos-x64-release.zip" ;;',
+            '  linux/x86_64) SDK="dartsdk-linux-x64-release.zip" ;;',
+            '  linux/aarch64) SDK="dartsdk-linux-arm64-release.zip" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'curl -fSL -o /tmp/dartsdk.zip "https://storage.googleapis.com/dart-archive/channels/stable/release/{{version}}/sdk/${SDK}"',
+            'mkdir -p "{{prefix}}/libexec" "{{prefix}}/bin"',
+            'unzip -qo /tmp/dartsdk.zip -d /tmp/dart-extract',
+            'cp -r /tmp/dart-extract/dart-sdk/* "{{prefix}}/libexec/"',
+            'ln -sf ../libexec/bin/dart "{{prefix}}/bin/dart"',
+            'ln -sf ../libexec/bin/dartaotruntime "{{prefix}}/bin/dartaotruntime" 2>/dev/null || true',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
 }

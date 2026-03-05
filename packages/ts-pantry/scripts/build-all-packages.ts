@@ -1162,13 +1162,13 @@ Options:
     // All Haskell packages now use pre-built binary overrides — no GHC/cabal needed
   ])
   const specializedToolchainPackages = new Set([
-    ...haskellPackages, // Need GHC/cabal
-    'nim-lang.org', // Need Nim compiler
-    'crystal-lang.org', // Need Crystal compiler
-    'crystal-lang.org/shards', // Depends on crystal
-    'dart.dev', // Need Dart SDK
-    'vlang.io', // Need V compiler
-    'rebar3.org', // Need Erlang runtime
+    ...haskellPackages,
+    // nim-lang.org removed — builds from C source (sh build.sh bootstraps)
+    // crystal-lang.org removed — pre-built binary override
+    // crystal-lang.org/shards removed — bundled with crystal pre-built
+    // dart.dev removed — pre-built SDK download override
+    // vlang.io removed — builds from C source (make prod=1)
+    // rebar3.org removed — erlang.org available in S3
   ])
 
   // Packages with known broken recipes or that fundamentally can't build in standard CI
