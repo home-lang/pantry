@@ -8875,7 +8875,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'ghostscript.com': {
     platforms: {
       darwin: {
-        prependScript: [],
+        prependScript: [
+          // GNU libiconv headers redefine iconv_open → libiconv_open via macros,
+          // but macOS system libiconv exports unprefixed symbols. Remove GNU libiconv
+          // headers/libs (pulled transitively via gettext) so configure uses system iconv.
+          'rm -rf /tmp/buildkit-deps/gnu.org/libiconv 2>/dev/null || true',
+        ],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
