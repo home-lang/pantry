@@ -685,9 +685,18 @@ function isVersionSkipped(domain: string, version: string): boolean {
   const specs = SKIP_VERSIONS[domain]
   if (!specs) return false
   if (specs.includes(version) || specs.includes('*')) return true
-  // Support version range specs: '<X.Y.Z' skips all versions below threshold
+  // Support version range specs
   for (const spec of specs) {
-    if (spec.startsWith('<')) {
+    if (spec.startsWith('>=')) {
+      const threshold = spec.slice(2)
+      if (compareVersions(version, threshold) >= 0) return true
+    } else if (spec.startsWith('>')) {
+      const threshold = spec.slice(1)
+      if (compareVersions(version, threshold) > 0) return true
+    } else if (spec.startsWith('<=')) {
+      const threshold = spec.slice(2)
+      if (compareVersions(version, threshold) <= 0) return true
+    } else if (spec.startsWith('<')) {
       const threshold = spec.slice(1)
       if (compareVersions(version, threshold) < 0) return true
     }
