@@ -25,9 +25,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 65 versions</summary>
+<summary>Show all 66 versions</summary>
 
 - `72.3.83`
+- `53.1.0`
 - `52.12.0`
 - `52.11.7`, `52.11.0`
 - `52.10.3`, `52.10.0`

@@ -3,7 +3,7 @@
  *
  * @domain `rust-lang.org/cargo`
  * @programs `cargo`
- * @version `0.94.0` (32 versions available)
+ * @version `0.95.0` (33 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rust-lang.org/cargo`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "cargo"
  * console.log(pkg.description) // "The Rust package manager"
  * console.log(pkg.programs)    // ["cargo"]
- * console.log(pkg.versions[0]) // "0.94.0" (latest)
+ * console.log(pkg.versions[0]) // "0.95.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rust-lang-org/cargo.md
@@ -81,6 +81,7 @@ export const rustlangorgcargoPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.95.0',
     '0.94.0',
     '0.93.0',
     '0.92.0',

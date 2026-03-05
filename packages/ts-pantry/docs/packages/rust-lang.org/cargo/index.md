@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 32 versions</summary>
+<summary>Show all 33 versions</summary>
 
+- `0.95.0`
 - `0.94.0`
 - `0.93.0`
 - `0.92.0`
@@ -58,13 +59,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.94.0`
+**Latest Version**: `0.95.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +rust-lang.org/cargo@0.94.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +rust-lang.org/cargo@0.95.0 -- $SHELL -i
 ```
 
 ## Dependencies
