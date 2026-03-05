@@ -34,8 +34,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 42 versions</summary>
+<summary>Show all 43 versions</summary>
 
+- `1.94.0`
 - `1.93.1`, `1.93.0`
 - `1.92.0`
 - `1.91.1`, `1.91.0`
@@ -68,13 +69,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.93.1`
+**Latest Version**: `1.94.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +rust-lang.org@1.93.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +rust-lang.org@1.94.0 -- $SHELL -i
 ```
 
 ## Dependencies
