@@ -1225,7 +1225,7 @@ Options:
     // alembic.sqlalchemy.org removed — fixed tag format (rel_X_Y_Z) + widened Python in override
     'render.com', // Needs deno compile (no distributable source)
     'tea.xyz', // Needs deno task compile (no distributable source)
-    'sdkman.io', // Shell script distribution, not compilable
+    // sdkman.io removed — fixed working-directory (strip-components already unwraps)
     'spacetimedb.com', // Recipe hardcodes version 2023.12.8 (beta), no github: version discovery — pre-built override ready when recipe updated
     // ntp.org removed — builds on darwin (linux fails: MD5Init/MD5Update deprecated in OpenSSL 3)
     // jbig2dec.com removed — hardcoded URL to GitHub release works

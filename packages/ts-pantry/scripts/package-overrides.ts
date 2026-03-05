@@ -9538,6 +9538,27 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── sdkman.io — remove stale working-directory (strip-components already unwraps) ─────────
+  'sdkman.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // After strip-components=1, the sdkman-X.Y.Z/ dir is unwrapped.
+      // The build script runs in the build dir directly, no subdir needed.
+      if (recipe.build) {
+        delete (recipe.build as any)['working-directory']
+        // Also fix script steps that reference the working-directory
+        if (Array.isArray(recipe.build.script)) {
+          recipe.build.script = recipe.build.script.map((step: any) => {
+            if (typeof step === 'object' && step['working-directory'] === 'sdkman-{{version}}') {
+              const { 'working-directory': _, ...rest } = step
+              return rest
+            }
+            return step
+          })
+        }
+      }
+    },
+  },
+
   // ─── alembic.sqlalchemy.org — fix version tag format (rel_X_Y_Z) + widen Python ─────────
   'alembic.sqlalchemy.org': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
