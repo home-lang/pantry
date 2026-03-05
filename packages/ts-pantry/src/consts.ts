@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-04T19:53:18.038Z
+ * Generated on 2026-03-05T23:10:58.858Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1653 total)
+ * List of all known packages (1654 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -1443,6 +1443,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'rome.tools',
   'rpm.org/popt',
   'rpm.org/rpm',
+  'rpm.org/rpm-sequoia',
   'rsync.samba.org',
   'rtmpdump.mplayerhq.hu',
   'rtomayko.github.io/ronn',
