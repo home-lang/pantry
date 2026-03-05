@@ -1080,7 +1080,7 @@ Options:
     'elfutils.org', 'freedesktop.org/libbsd', 'kernel.org/linux-headers',
     'musl.libc.org', 'pagure.io/libaio', 'strace.io', 'systemd.io',
     'nixos.org/patchelf', // ELF binary patcher, Linux-only
-    'spawn.link', 'postgrest.org', 'gitlab.com/procps-ng/procps',
+    'spawn.link', 'gitlab.com/procps-ng/procps',
     'apptainer.org', // Linux container runtime
     'apple.com/remote_cmds', // ironically Linux-buildable only in certain configs
     'freedesktop.org/slirp', // Linux-only networking library (needs Linux headers)
@@ -1140,9 +1140,8 @@ Options:
   ])
 
   // Packages needing specialized toolchains not available in CI
-  const haskellPackages = new Set([
-    'dhall-lang.org', 'pandoc.org', 'pandoc.org/crossref',
-    'shellcheck.net', 'haskell.org', 'haskell.org/cabal',
+  const haskellPackages = new Set<string>([
+    // All Haskell packages now use pre-built binary overrides — no GHC/cabal needed
   ])
   const specializedToolchainPackages = new Set([
     ...haskellPackages, // Need GHC/cabal
@@ -1324,7 +1323,7 @@ Options:
     // x.org/xkbfile removed — fixed meson invocation
     // freedesktop.org/slirp removed — built successfully on linux
     // gnome.org/libxml2 removed — fixed sed -i BSD + removed --with-python
-    'postgrest.org', // Haskell build — GHC/Stack not available
+    // postgrest.org removed — pre-built binary override
     // ceph.com/cephadm removed — fixed sed -i BSD in shebang step
     // gnupg.org/libgcrypt removed — built successfully on darwin
     // libimobiledevice.org removed — fixed sed -i BSD + glibtool fix
@@ -1484,7 +1483,7 @@ Options:
     // github.com/aristocratos/btop removed — darwin-only (Xcode clang supports C++23)
     'github.com/snowplow/factotum', // Ancient traitobject crate incompatible with modern Rust
     'github.com/withered-magic/starpls', // Bazel build fails in CI
-    'github.com/hadolint/hadolint', // Haskell/Cabal build — GHC/Stack not available in CI
+    // github.com/hadolint/hadolint removed — pre-built binary override
     // github.com/mas-cli/mas removed — clean .build dir before swift build in override
     'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild
     // github.com/nvbn/thefuck removed — widened python version constraint in override

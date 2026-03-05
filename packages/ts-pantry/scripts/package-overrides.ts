@@ -9044,4 +9044,245 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── haskell.org — GHC via ghcup pre-built binaries ─────────
+  'haskell.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // ghcup installer downloads pre-built GHC binaries — no source compile needed.
+      // Fix: PKGX_DIR is not set in our build env, so the sed commands that replace
+      // $PKGX_DIR would match empty string and corrupt files. Remove those sed steps.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
+          if (typeof step === 'string') return !step.includes('PKGX_DIR')
+          if (typeof step === 'object' && 'run' in step) return !step.run.includes('PKGX_DIR')
+          return true
+        })
+        // Also remove the 'ln -s .ghcup/*' step which creates broken symlinks outside our prefix structure
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
+          if (typeof step === 'object' && 'run' in step) return !step.run.includes('ln -s .ghcup')
+          return true
+        })
+        // Add step to properly symlink ghcup binaries
+        recipe.build.script.push(
+          'mkdir -p "{{prefix}}/bin"',
+          'for f in "{{prefix}}/.ghcup/bin/"*; do [ -f "$f" ] && ln -sf "$f" "{{prefix}}/bin/$(basename "$f")" 2>/dev/null || true; done',
+          'for f in "{{prefix}}/.ghcup/ghc/{{version}}/bin/"*; do [ -f "$f" ] && ln -sf "$f" "{{prefix}}/bin/$(basename "$f")" 2>/dev/null || true; done',
+        )
+      }
+      // Remove platform-override prop install (linux/x86-64 specific pkgx config)
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
+          if (typeof step === 'object' && 'run' in step) return !step.run.includes('config.yaml')
+          return true
+        })
+      }
+    },
+  },
+
+  // ─── haskell.org/cabal — pre-built binary from downloads.haskell.org ─────────
+  'haskell.org/cabal': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'if [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then',
+            '  SUFFIX="aarch64-darwin"',
+            'elif [ "$OS" = "darwin" ] && [ "$ARCH" = "x86_64" ]; then',
+            '  SUFFIX="x86_64-darwin"',
+            'elif [ "$OS" = "linux" ] && [ "$ARCH" = "x86_64" ]; then',
+            '  SUFFIX="x86_64-linux-deb10"',
+            'elif [ "$OS" = "linux" ] && [ "$ARCH" = "aarch64" ]; then',
+            '  SUFFIX="aarch64-linux-deb10"',
+            'else',
+            '  echo "Unsupported platform: $OS/$ARCH" && exit 1',
+            'fi',
+            'mkdir -p "{{prefix}}/bin"',
+            'URL="https://downloads.haskell.org/~cabal/cabal-install-{{version}}/cabal-install-{{version}}-${SUFFIX}.tar.xz"',
+            'echo "Downloading cabal from: $URL"',
+            'curl -fSL "$URL" | tar xJ -C "{{prefix}}/bin"',
+            'chmod +x "{{prefix}}/bin/cabal"',
+            'rm -f "{{prefix}}/bin/plan.json"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── postgrest.org — pre-built binary from GitHub releases ─────────
+  'postgrest.org': {
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.platforms) recipe.platforms = undefined as any
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'if [ "$OS" = "darwin" ] && [ "$ARCH" = "arm64" ]; then',
+            '  SUFFIX="macos-aarch64"',
+            'elif [ "$OS" = "linux" ] && [ "$ARCH" = "x86_64" ]; then',
+            '  SUFFIX="linux-static-x86-64"',
+            'else',
+            '  echo "Unsupported platform: $OS/$ARCH" && exit 1',
+            'fi',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL "https://github.com/PostgREST/postgrest/releases/download/v{{version}}/postgrest-v{{version}}-${SUFFIX}.tar.xz" | tar xJ -C "{{prefix}}/bin"',
+            'chmod +x "{{prefix}}/bin/postgrest"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── github.com/hadolint/hadolint — pre-built binary from GitHub releases ─────────
+  'github.com/hadolint/hadolint': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s)',
+            'ARCH=$(uname -m)',
+            'case "$OS/$ARCH" in',
+            '  Darwin/arm64) SUFFIX="macos-arm64" ;;',
+            '  Darwin/x86_64) SUFFIX="macos-x86_64" ;;',
+            '  Linux/x86_64) SUFFIX="linux-x86_64" ;;',
+            '  Linux/aarch64) SUFFIX="linux-arm64" ;;',
+            '  *) echo "Unsupported platform: $OS/$ARCH" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/hadolint" "https://github.com/hadolint/hadolint/releases/download/v{{version}}/hadolint-${SUFFIX}"',
+            'chmod +x "{{prefix}}/bin/hadolint"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── pandoc.org — pre-built binary from GitHub releases ─────────
+  'pandoc.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s)',
+            'ARCH=$(uname -m)',
+            'mkdir -p "{{prefix}}/bin" "{{prefix}}/share/man/man1"',
+            'if [ "$OS" = "Darwin" ]; then',
+            '  case "$ARCH" in',
+            '    arm64) ZIP="pandoc-{{version}}-arm64-macOS.zip" ;;',
+            '    x86_64) ZIP="pandoc-{{version}}-x86_64-macOS.zip" ;;',
+            '  esac',
+            '  curl -fSL -o /tmp/pandoc.zip "https://github.com/jgm/pandoc/releases/download/{{version}}/$ZIP"',
+            '  unzip -o /tmp/pandoc.zip -d /tmp/pandoc-extract',
+            '  cp /tmp/pandoc-extract/*/bin/pandoc "{{prefix}}/bin/"',
+            '  cp /tmp/pandoc-extract/*/share/man/man1/*.1* "{{prefix}}/share/man/man1/" 2>/dev/null || true',
+            'else',
+            '  case "$ARCH" in',
+            '    x86_64) TARNAME="pandoc-{{version}}-linux-amd64.tar.gz" ;;',
+            '    aarch64) TARNAME="pandoc-{{version}}-linux-arm64.tar.gz" ;;',
+            '  esac',
+            '  curl -fSL "https://github.com/jgm/pandoc/releases/download/{{version}}/$TARNAME" | tar xz --strip-components=1 -C "{{prefix}}"',
+            'fi',
+            'chmod +x "{{prefix}}/bin/pandoc"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── shellcheck.net — pre-built binary from GitHub releases ─────────
+  'shellcheck.net': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'case "$ARCH" in',
+            '  arm64) ARCH="aarch64" ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL "https://github.com/koalaman/shellcheck/releases/download/v{{version}}/shellcheck-v{{version}}.${OS}.${ARCH}.tar.xz" | tar xJ --strip-components=1 -C "{{prefix}}/bin" --include="*/shellcheck"',
+            'chmod +x "{{prefix}}/bin/shellcheck"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── dhall-lang.org — pre-built binary from GitHub releases ─────────
+  'dhall-lang.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'case "$ARCH" in',
+            '  arm64) ARCH="aarch64" ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin" "{{prefix}}/share/man/man1"',
+            'curl -fSL "https://github.com/dhall-lang/dhall-haskell/releases/download/{{version}}/dhall-{{version}}-${ARCH}-${OS}.tar.bz2" | tar xj -C "{{prefix}}"',
+            'chmod +x "{{prefix}}/bin/dhall"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── pandoc.org/crossref — pre-built binary from GitHub releases ─────────
+  'pandoc.org/crossref': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      // Keep pandoc.org as runtime dep since crossref is a pandoc filter
+      recipe.dependencies = { 'pandoc.org': recipe.dependencies?.['pandoc.org'] || '^3' }
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s)',
+            'ARCH=$(uname -m)',
+            'case "$OS/$ARCH" in',
+            '  Darwin/arm64) SUFFIX="macOS-ARM64" ;;',
+            '  Darwin/x86_64) SUFFIX="macOS-X64" ;;',
+            '  Linux/x86_64) SUFFIX="Linux-X64" ;;',
+            '  Linux/aarch64) SUFFIX="Linux-ARM64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL "https://github.com/lierdakil/pandoc-crossref/releases/download/v{{version}}/pandoc-crossref-${SUFFIX}.tar.xz" | tar xJ -C "{{prefix}}/bin"',
+            'rm -f "{{prefix}}/bin/pandoc-crossref.1"',
+            'chmod +x "{{prefix}}/bin/pandoc-crossref"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
 }
