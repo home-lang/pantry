@@ -9590,7 +9590,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       darwin: {
         // Ruby 4.0.1 configure validates LDFLAGS — macOS 15/Xcode 26 linker test
         // fails when LDFLAGS is completely unset. Provide SDK lib path explicitly.
-        prependScript: 'export LDFLAGS="-L$(xcrun --show-sdk-path)/usr/lib ${LDFLAGS:-}"',
+        prependScript: ['export LDFLAGS="-L$(xcrun --show-sdk-path)/usr/lib ${LDFLAGS:-}"'],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
