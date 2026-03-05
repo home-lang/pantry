@@ -1214,7 +1214,7 @@ Options:
     'getsynth.com', // Dead/abandoned project
     // grpc.io removed — disabled TSAN/ASAN + use bundled protobuf in override
     // apache.org/zookeeper removed — skip C-client, Java-only build in override
-    'ordinals.com', // GitHub tag format mismatch (all variants return 404)
+    // ordinals.com removed — pre-built binary from GitHub releases
     // dhruvkb.dev/pls removed — updated distributableUrl to beta.9, widened libgit2
     // seaweedfs.com removed — widened Go version constraint in override
     'wundergraph.com', // All GitHub release tags return 404
@@ -1234,7 +1234,7 @@ Options:
     // microsoft.com/markitdown removed — stable v0.1.x versions now available, widened Python in override
     // snyk.io removed — switched to pre-built binary download from GitHub
     'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
-    'foundry-rs.github.io', // All download tags return 404 (project restructured)
+    // foundry-rs.github.io removed — no package.yml exists (phantom entry)
     // wez.github.io/wezterm removed — pre-built binary download (macOS only)
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
@@ -1281,7 +1281,7 @@ Options:
     // perl.org removed — fixed poll.h include and removed llvm.org dep
     // priver.dev/geni removed — built successfully on both platforms
     // schollz.com/croc removed — built successfully on both platforms
-    'foundry-rs.github.io/foundry', // All old version tags pruned from repo
+    // foundry-rs.github.io/foundry removed — no package.yml exists (phantom entry)
     // volta.sh removed — removed pinned rust-toolchain.toml, unpinned yanked zip crate
     // libtom.net/math removed — libtool already in CI
     // sourceforge.net/xmlstar removed — libxml2 headers available via system
@@ -1487,7 +1487,7 @@ Options:
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
     // libsoup.org removed — fixed prefix quoting + disabled introspection/vala in override
     'systemd.io', // Complex linux init system — build failure
-    'getfoundry.sh', // GitHub tags deleted from foundry-rs/foundry repo (old versions pruned)
+    // getfoundry.sh removed — pre-built binary from GitHub releases
     // deepwisdom.ai removed — patched out faiss_cpu on linux
     // expo.dev/eas-cli removed — added corepack yarn 4 activation
     // geoff.greer.fm/ag — added earlier in this list
@@ -1499,8 +1499,8 @@ Options:
     // luarocks.org removed — fixed prefix quoting + sed -i BSD + removed info-zip dep in override
     'github.com/safe-waters/docker-lock', // Repository deleted (404)
     // github.com/aristocratos/btop removed — darwin-only (Xcode clang supports C++23)
-    'github.com/snowplow/factotum', // Ancient traitobject crate incompatible with modern Rust
-    'github.com/withered-magic/starpls', // Bazel build fails in CI
+    // github.com/snowplow/factotum removed — pre-built binary from GitHub releases
+    // github.com/withered-magic/starpls removed — pre-built binary from GitHub releases
     // github.com/hadolint/hadolint removed — pre-built binary override
     // github.com/mas-cli/mas removed — clean .build dir before swift build in override
     'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild

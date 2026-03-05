@@ -9401,4 +9401,112 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── ordinals.com — pre-built binary from GitHub releases ─────────
+  'ordinals.com': {
+    supportedPlatforms: ['darwin/aarch64', 'linux/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s)',
+            'ARCH=$(uname -m)',
+            'case "$OS/$ARCH" in',
+            '  Darwin/arm64) SUFFIX="aarch64-apple-darwin" ;;',
+            '  Linux/x86_64) SUFFIX="x86_64-unknown-linux-gnu" ;;',
+            '  *) echo "Unsupported: $OS/$ARCH" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin" /tmp/ord-extract',
+            'curl -fSL "https://github.com/ordinals/ord/releases/download/{{version}}/ord-{{version}}-${SUFFIX}.tar.gz" | tar xz --strip-components=1 -C /tmp/ord-extract',
+            'cp /tmp/ord-extract/ord "{{prefix}}/bin/ord"',
+            'chmod +x "{{prefix}}/bin/ord"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── github.com/withered-magic/starpls — pre-built binary from GitHub releases ─────────
+  'github.com/withered-magic/starpls': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s)',
+            'ARCH=$(uname -m)',
+            'case "$OS/$ARCH" in',
+            '  Darwin/arm64) SUFFIX="darwin-arm64" ;;',
+            '  Darwin/x86_64) SUFFIX="darwin-amd64" ;;',
+            '  Linux/x86_64) SUFFIX="linux-amd64" ;;',
+            '  Linux/aarch64) SUFFIX="linux-aarch64" ;;',
+            '  *) echo "Unsupported: $OS/$ARCH" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL "https://github.com/withered-magic/starpls/releases/download/v{{version}}/starpls-${SUFFIX}.tar.gz" | tar xz -C "{{prefix}}/bin"',
+            'chmod +x "{{prefix}}/bin/starpls"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── github.com/snowplow/factotum — pre-built binary from GitHub releases ─────────
+  'github.com/snowplow/factotum': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'case "$ARCH" in',
+            '  arm64|aarch64) ARCH="arm64" ;;',
+            '  x86_64) ARCH="x86_64" ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o /tmp/factotum.zip "https://github.com/snowplow/factotum/releases/download/{{version}}/factotum_{{version}}_${OS}_${ARCH}.zip"',
+            'unzip -qo /tmp/factotum.zip -d "{{prefix}}/bin"',
+            'chmod +x "{{prefix}}/bin/factotum"',
+            'rm -f /tmp/factotum.zip',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  // ─── getfoundry.sh — pre-built foundry toolchain from GitHub releases ─────────
+  'getfoundry.sh': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'case "$ARCH" in',
+            '  arm64|aarch64) ARCH="arm64" ;;',
+            '  x86_64) ARCH="amd64" ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL "https://github.com/foundry-rs/foundry/releases/download/{{version.tag}}/foundry_{{version.tag}}_${OS}_${ARCH}.tar.gz" | tar xz -C "{{prefix}}/bin"',
+            'chmod +x "{{prefix}}/bin/forge" "{{prefix}}/bin/cast" "{{prefix}}/bin/anvil" "{{prefix}}/bin/chisel"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
 }
