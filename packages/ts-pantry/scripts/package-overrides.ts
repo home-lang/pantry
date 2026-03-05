@@ -8366,6 +8366,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── beyondgrep.com — download raw Perl script (not an archive) ─────────
+
+  'beyondgrep.com': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // The distributable is a raw Perl script, not an archive. Our build system
+      // tries to extract it as an archive and fails. Download in build script instead.
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.script = [
+          [
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o "{{prefix}}/bin/ack" "https://beyondgrep.com/ack-v{{version}}"',
+            'chmod +x "{{prefix}}/bin/ack"',
+          ].join('\n'),
+        ]
+        recipe.build.dependencies = {}
+      }
+    },
+  },
+
   // ─── seaweedfs.com — widen Go version constraint ─────────────────────────
 
   'seaweedfs.com': {

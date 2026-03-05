@@ -1246,7 +1246,7 @@ Options:
     // apache.org/jmeter removed — quoted PLUGINS_MANAGER_URL to prevent glob expansion
     // kornel.ski/dssim removed — isolated RUSTUP_HOME/CARGO_HOME prevents nightly corruption
     // khanacademy.org/genqlient removed — added go get x/tools@latest before build
-    'beyondgrep.com', // Download URL returns 404 (ack-v3.9.0 not available)
+    // beyondgrep.com removed — raw Perl script download in modifyRecipe override
     // elixir-lang.org removed — builds successfully on both platforms
     // elixir-lang.org/otp-27 removed — builds successfully on both platforms
     // pimalaya.org/himalaya removed — removed pinned rust-toolchain.toml, using stable Rust
