@@ -1396,6 +1396,7 @@ import { robotframeworkorgPackage } from './robotframeworkorg'
 import { rockdabootgithubiolibpslPackage } from './rockdaboot.github.io/libpsl'
 import { rometoolsPackage } from './rometools'
 import { rpmorgpoptPackage } from './rpm.org/popt'
+import { rpmorgrpmsequoiaPackage } from './rpm.org/rpm-sequoia'
 import { rpmorgrpmPackage } from './rpm.org/rpm'
 import { rsyncsambaorgPackage } from './rsyncsambaorg'
 import { rtmpdumpmplayerhqhuPackage } from './rtmpdumpmplayerhqhu'
@@ -4045,6 +4046,8 @@ export interface Pantry {
   rometools: typeof rometoolsPackage
 
   rpmorgpopt: typeof rpmorgpoptPackage
+  rpm_sequoia: typeof rpmorgrpmsequoiaPackage
+  rpmorgrpmsequoia: typeof rpmorgrpmsequoiaPackage
 
   rpmorg: typeof rpmorgrpmPackage
   rsyncsambaorg: typeof rsyncsambaorgPackage
@@ -4448,6 +4451,7 @@ export interface Pantry {
   cog: typeof cocogittoioPackage
   popt: typeof rpmorgpoptPackage
   rpm: typeof rpmorgrpmPackage
+  'rpm-sequoia': typeof rpmorgrpmsequoiaPackage
   'kube-linter': typeof kubelinterioPackage
   localstack: typeof localstackcloudcliPackage
   awslocal: typeof localstackcloudawsclilocalPackage
@@ -8411,6 +8415,8 @@ export const pantry: Pantry = {
   rometools: rometoolsPackage,
 
   rpmorgpopt: rpmorgpoptPackage,
+  rpm_sequoia: rpmorgrpmsequoiaPackage,
+  rpmorgrpmsequoia: rpmorgrpmsequoiaPackage,
 
   rpmorg: rpmorgrpmPackage,
   rsyncsambaorg: rsyncsambaorgPackage,
@@ -8814,6 +8820,7 @@ export const pantry: Pantry = {
   cog: cocogittoioPackage,
   popt: rpmorgpoptPackage,
   rpm: rpmorgrpmPackage,
+  'rpm-sequoia': rpmorgrpmsequoiaPackage,
   'kube-linter': kubelinterioPackage,
   localstack: localstackcloudcliPackage,
   awslocal: localstackcloudawsclilocalPackage,

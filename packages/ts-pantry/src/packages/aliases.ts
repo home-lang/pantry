@@ -1156,6 +1156,7 @@ export const aliases: Record<string, string> = {
   'rover': 'apollographql.com/rover',
   'rpg-cli': 'crates.io/rpg-cli',
   'rpm': 'rpm.org/rpm',
+  'rpm-sequoia': 'rpm.org/rpm-sequoia',
   'rsvg-convert': 'gnome.org/librsvg',
   'rswift': 'github.com/mac-cain13/R.swift',
   'rsync': 'rsync.samba.org',
