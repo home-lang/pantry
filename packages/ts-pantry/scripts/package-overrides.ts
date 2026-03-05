@@ -9509,4 +9509,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
       }
     },
   },
+
+  // ─── github.com/awslabs/llrt — pre-built binary from GitHub releases ─────────
+  'github.com/awslabs/llrt': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'OS=$(uname -s | tr "[:upper:]" "[:lower:]")',
+            'ARCH=$(uname -m)',
+            'case "$ARCH" in',
+            '  arm64|aarch64) ARCH="arm64" ;;',
+            '  x86_64) ARCH="x64" ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin"',
+            'curl -fSL -o /tmp/llrt.zip "https://github.com/awslabs/llrt/releases/download/{{version.tag}}/llrt-${OS}-${ARCH}.zip"',
+            'unzip -qo /tmp/llrt.zip -d "{{prefix}}/bin"',
+            'chmod +x "{{prefix}}/bin/llrt"',
+            'rm -f /tmp/llrt.zip',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
 }

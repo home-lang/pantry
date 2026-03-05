@@ -1239,7 +1239,7 @@ Options:
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
     // libsdl.org/SDL_image removed — SKIP_VERSIONS >= 3.0.0 excludes SDL3 tags, distributableUrl for SDL2
-    'gource.io', // GitHub releases removed/restructured
+    // gource.io removed — releases exist, deps (boost/SDL2/glew) fixed
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
     // hdfgroup.org/HDF5 removed — fixed distributable URL for all version tag formats
@@ -1514,15 +1514,15 @@ Options:
     // github.com/peripheryapp/periphery removed — pre-built binary from artifactbundle.zip
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
     'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
-    'github.com/awslabs/llrt', // Requires Rust nightly + Zig toolchain, not in standard CI
+    // github.com/awslabs/llrt removed — pre-built binary from GitHub releases
     // github.com/glauth/glauth removed — pre-built binary download from GitHub releases
     // github.com/shaka-project/shaka-packager removed — pre-built binary download from GitHub releases
     'github.com/libkml/libkml', // minizip ints.h header not found + Boost compat issues
-    'gaia-gis.it/libspatialite', // Blocked on proj.org dependency chain
-    'github.com/OSGeo/libgeotiff', // Blocked on proj.org dependency chain
+    // gaia-gis.it/libspatialite removed — deps (freexl, librttopo, geos) not broken
+    // github.com/OSGeo/libgeotiff removed — proj.org available on darwin
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
     // man-db.gitlab.io/man-db removed — override fixes rm/rmdir under set -e, linux-only
-    'aws.amazon.com/sam', // pip install requires Python <3.14 (upstream constraint)
+    // aws.amazon.com/sam removed — recipe already pins python.org ~3.13
     // github.com/Diniboy1123/usque removed — pre-built binary download from GitHub releases
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
