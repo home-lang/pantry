@@ -1214,7 +1214,7 @@ Options:
     'getsynth.com', // Dead/abandoned project
     // grpc.io removed — disabled TSAN/ASAN + use bundled protobuf in override
     // apache.org/zookeeper removed — skip C-client, Java-only build in override
-    // ordinals.com removed — pre-built binary from GitHub releases
+    'ordinals.com', // Pre-built override ready but version data stale (0.6.x, needs 0.26.x)
     // dhruvkb.dev/pls removed — updated distributableUrl to beta.9, widened libgit2
     // seaweedfs.com removed — widened Go version constraint in override
     'wundergraph.com', // All GitHub release tags return 404
@@ -1487,7 +1487,7 @@ Options:
     // leonerd.org.uk/libvterm removed — small C library, try build script fix
     // libsoup.org removed — fixed prefix quoting + disabled introspection/vala in override
     'systemd.io', // Complex linux init system — build failure
-    // getfoundry.sh removed — pre-built binary from GitHub releases
+    'getfoundry.sh', // Pre-built override ready but version data stale (date-based 2024.x, now semver v1.x)
     // deepwisdom.ai removed — patched out faiss_cpu on linux
     // expo.dev/eas-cli removed — added corepack yarn 4 activation
     // geoff.greer.fm/ag — added earlier in this list
