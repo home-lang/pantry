@@ -1522,7 +1522,7 @@ Options:
     // github.com/OSGeo/libgeotiff removed — proj.org available on darwin
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
     // man-db.gitlab.io/man-db removed — override fixes rm/rmdir under set -e, linux-only
-    // aws.amazon.com/sam removed — recipe already pins python.org ~3.13
+    'aws.amazon.com/sam', // Needs Python <3.14, CI has 3.14.3 and Python 3.13 not in S3
     // github.com/Diniboy1123/usque removed — pre-built binary download from GitHub releases
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign

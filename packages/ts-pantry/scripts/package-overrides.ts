@@ -9527,7 +9527,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
             '  x86_64) ARCH="x64" ;;',
             'esac',
             'mkdir -p "{{prefix}}/bin"',
-            'curl -fSL -o /tmp/llrt.zip "https://github.com/awslabs/llrt/releases/download/{{version.tag}}/llrt-${OS}-${ARCH}.zip"',
+            'curl -fSL -o /tmp/llrt.zip "https://github.com/awslabs/llrt/releases/download/v{{version}}-beta/llrt-${OS}-${ARCH}.zip"',
             'unzip -qo /tmp/llrt.zip -d "{{prefix}}/bin"',
             'chmod +x "{{prefix}}/bin/llrt"',
             'rm -f /tmp/llrt.zip',
