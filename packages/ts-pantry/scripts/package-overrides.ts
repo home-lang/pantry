@@ -9593,10 +9593,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'ruby-lang.org': {
     platforms: {
       darwin: {
-        // Ruby 4.0.1 configure creates an Info.plist with empty CFBundleIdentifier
-        // in its LDFLAGS validity check. Xcode 26 linker warns about this, and
-        // Ruby's -Werror mode turns the warning into an error. Fix the bundle ID.
-        prependScript: ['sed -i "s|<string></string>|<string>com.ruby.test</string>|" configure'],
+        // Ruby's configure LDFLAGS check uses -Werror. On Xcode 26 the linker warns
+        // about deprecated -ld_classic and LIBRARY_PATH dirs that don't exist (build
+        // deps like patch/autoconf have no lib/). -Wl,-w suppresses linker warnings.
+        prependScript: ['export LDFLAGS="-Wl,-w"'],
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
