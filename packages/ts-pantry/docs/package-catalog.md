@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-06T22:21:52.007Z
+- **Last Updated**: 2026-03-06T22:53:19.087Z
 
 ## Table of Contents
 
@@ -97,7 +97,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[mongodb.com/shell](./packages/mongodb.com/shell/index.md)** () | MongoDB Shell to connect, configure, query, and work with your MongoDB database | mongosh | 2.7.0 (+42) | `pkgx mongosh` |
 | **[mysql.com](./packages/mysql.com/index.md)** () | MySQL Server, the world&#39;s most popular open source database, and MySQL Cluster, a real-time, ... | mysql_client_test, my_print_defaults, myisam_ftdump, ... (+28) | 9.6.0 (+31) | `pkgx mysql` |
 | **[opensearch.org](./packages/opensearch.org/index.md)** () | 🔎 Open source distributed and RESTful search engine. | opensearch, opensearch-keystore, opensearch-plugin, ... (+1) | 3.5.0 (+16) | `pkgx opensearch` |
-| **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.5.0 (+24) | `pkgx postgrest` |
+| **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.6.0 (+25) | `pkgx postgrest` |
 | **[redis.io](./packages/redis.io/index.md)** () | Redis is an in-memory database that persists on disk. The data model is key-value, but many diffe... | redis-server, redis-cli, redis-benchmark | 8.6.0 (+59) | `pkgx redis` |
 | **[sqlite.org](./packages/sqlite.org/index.md)** (sqlite) | Official Git mirror of the SQLite source tree | sqlite3 | 3.52.0 (+32) | `pkgx sqlite` |
 | **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+66) | `pkgx surreal` |
