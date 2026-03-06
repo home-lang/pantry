@@ -62,15 +62,15 @@ describe('PostgreSQL Alias Resolution - Regression Test', () => {
     }
   })
 
-  it('should fail with postgres alias (reproduces the original bug)', async () => {
-    // This test demonstrates the original bug where using "postgres" instead of
-    // "postgresql.org" would only resolve to 1 package
+  it('should resolve postgres alias correctly (verifies the bug is fixed)', async () => {
+    // This test verifies that the alias bug has been fixed: using "postgres" instead of
+    // "postgresql.org" should now properly resolve via alias resolution and return
+    // all transitive dependencies, just like using the full domain name.
 
     const tempDir = os.tmpdir()
     const tempFile = path.join(tempDir, `postgres-bug-test-${Date.now()}.yaml`)
 
-    // This is what Launchpad was incorrectly generating - using the alias "postgres"
-    // instead of the resolved domain "postgresql.org"
+    // Using the alias "postgres" should now resolve to "postgresql.org"
     const yamlContent = `dependencies:
   postgres: "*"
 `
@@ -83,19 +83,15 @@ describe('PostgreSQL Alias Resolution - Regression Test', () => {
         includeOsSpecific: true,
       })
 
-      // With the alias bug, this would only resolve to 1 package
-      // because ts-pkgx doesn't recognize "postgres" as a valid package domain
-      expect(result.totalCount).toBe(1)
-      expect(result.directCount).toBe(1)
+      // The alias should now resolve correctly, returning all transitive dependencies
+      expect(result.totalCount).toBeGreaterThan(1)
+      expect(result.totalCount).toBeGreaterThanOrEqual(10) // PostgreSQL has many dependencies
 
-      // The "package" would just be the original alias, not resolved
-      expect(result.packages[0]).toEqual({
-        name: 'postgres',
-        version: '*',
-        constraint: '*',
-        isOsSpecific: false,
-        os: undefined,
-      })
+      // The direct dependency retains its original alias name "postgres" in the result,
+      // but its transitive dependencies are properly resolved via the package index
+      const postgresPkg = result.packages.find(pkg => pkg.name === 'postgres' || pkg.name === 'postgresql.org')
+      expect(postgresPkg).toBeDefined()
+      expect(postgresPkg?.version).toBeTruthy()
     }
     finally {
       // Clean up

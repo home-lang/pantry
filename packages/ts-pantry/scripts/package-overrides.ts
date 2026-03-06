@@ -569,16 +569,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── quickwit.io — pre-built binary download from GitHub releases ─────────
   'quickwit.io': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Fix sed for cross-platform: BSD sed requires suffix arg after -i
-      if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && step.run.includes('build_info.rs')) {
-            step.run = 'sed -i.bak \'s/ version,$/version: "{{version}}".to_string(),/\' build_info.rs\nrm -f build_info.rs.bak'
-          }
-        }
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
+            '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
+            '  linux/x86-64) TRIPLE="x86_64-unknown-linux-gnu" ;;',
+            '  linux/aarch64) TRIPLE="aarch64-unknown-linux-gnu" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'curl -fSL -o /tmp/quickwit.tar.gz "https://github.com/quickwit-oss/quickwit/releases/download/v{{version}}/quickwit-v{{version}}-${TRIPLE}.tar.gz"',
+            'mkdir -p /tmp/quickwit-extract "{{prefix}}/bin"',
+            'tar -xzf /tmp/quickwit.tar.gz -C /tmp/quickwit-extract',
+            'find /tmp/quickwit-extract -name quickwit -type f | head -1 | xargs -I{} cp {} "{{prefix}}/bin/quickwit"',
+            'chmod +x "{{prefix}}/bin/quickwit"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
       }
     },
   },
@@ -1943,17 +1957,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/Diniboy1123/usque — fix goreleaser output path glob ──
+  // ─── github.com/Diniboy1123/usque — pre-built binary from GitHub releases ─────────
   'github.com/Diniboy1123/usque': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // goreleaser creates dirs like dist/usque_darwin_arm64_v8.0/ — glob doesn't match
-      if (Array.isArray(recipe.build?.script)) {
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
-          if (typeof step === 'string' && step.includes('mv dist/')) {
-            recipe.build.script[i] = 'mv $(find dist -name usque -type f | head -1) "{{ prefix }}"/bin'
-          }
-        }
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) SUFFIX="darwin_arm64" ;;',
+            '  darwin/x86-64) SUFFIX="darwin_amd64" ;;',
+            '  linux/x86-64) SUFFIX="linux_amd64" ;;',
+            '  linux/aarch64) SUFFIX="linux_arm64" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'ZIPFILE="usque_{{version}}_${SUFFIX}.zip"',
+            'curl -fSL -o /tmp/usque.zip "https://github.com/Diniboy1123/usque/releases/download/v{{version}}/${ZIPFILE}"',
+            'mkdir -p /tmp/usque-extract "{{prefix}}/bin"',
+            'unzip -o /tmp/usque.zip -d /tmp/usque-extract',
+            'cp /tmp/usque-extract/usque "{{prefix}}/bin/"',
+            'chmod +x "{{prefix}}/bin/usque"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
       }
     },
   },
@@ -2215,12 +2243,35 @@ export const packageOverrides: Record<string, PackageOverride> = {
     env: { RUSTFLAGS: '--cap-lints warn' },
   },
 
+  // ─── iroh.computer — pre-built binaries from GitHub releases ─────────
   'iroh.computer': {
-    env: { RUSTFLAGS: '--cap-lints warn' },
-    prependScript: [
-      'rm -f rust-toolchain.toml',
-      'rustup default stable',
-    ],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'case "{{hw.platform}}/{{hw.arch}}" in',
+            '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
+            '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
+            '  linux/x86-64) TRIPLE="x86_64-unknown-linux-musl" ;;',
+            '  linux/aarch64) TRIPLE="aarch64-unknown-linux-musl" ;;',
+            '  *) echo "Unsupported platform" && exit 1 ;;',
+            'esac',
+            'mkdir -p "{{prefix}}/bin" /tmp/iroh-extract',
+            'for TOOL in iroh-relay iroh-dns-server; do',
+            '  curl -fSL -o /tmp/${TOOL}.tar.gz "https://github.com/n0-computer/iroh/releases/download/v{{version}}/${TOOL}-v{{version}}-${TRIPLE}.tar.gz"',
+            '  tar -xzf /tmp/${TOOL}.tar.gz -C /tmp/iroh-extract',
+            '  cp /tmp/iroh-extract/${TOOL} "{{prefix}}/bin/" 2>/dev/null || cp /tmp/iroh-extract/*/${TOOL} "{{prefix}}/bin/" 2>/dev/null || true',
+            '  chmod +x "{{prefix}}/bin/${TOOL}"',
+            'done',
+            'ln -s iroh-relay "{{prefix}}/bin/iroh"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
   },
 
   'dns.lookup.dog': {
@@ -4253,7 +4304,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── gdal.org — fix stray cmake quote + sed -i BSD + remove llvm dep ─
+  // ─── gdal.org — fix stray cmake quote + sed -i BSD + remove llvm/arrow deps ─
 
   'gdal.org': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -4263,27 +4314,52 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Fix sed -i BSD compat in gdal-config fixup
+      // Disable Arrow format support (arrow dep chain is broken)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS.push('-DGDAL_USE_ARROW=OFF')
+        recipe.build.env.ARGS.push('-DGDAL_USE_PARQUET=OFF')
+        // Fix stray quote in cmake prefix (ARGS variant)
+        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
+          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
+        )
+      }
+      // Remove apache.org/arrow dependency
+      if (recipe.dependencies?.['apache.org/arrow']) {
+        delete recipe.dependencies['apache.org/arrow']
+      }
+      // Fix sed -i BSD compat in gdal-config fixup (object steps and string steps)
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
             step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
+          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
+            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
+          }
         }
       }
-      // Remove linux llvm.org build dep
+      // Remove llvm.org build dep (linux-specific and top-level)
       if (recipe.build?.dependencies?.linux?.['llvm.org']) {
         delete recipe.build.dependencies.linux['llvm.org']
+      }
+      if (recipe.build?.dependencies?.['llvm.org']) {
+        delete recipe.build.dependencies['llvm.org']
       }
       // Remove linux apache.org/thrift dep (not in S3 yet)
       if (recipe.dependencies?.linux?.['apache.org/thrift']) {
         delete recipe.dependencies.linux['apache.org/thrift']
       }
-      // Remove CC/CXX/LD overrides (use system compiler)
+      // Remove CC/CXX/LD overrides (use system compiler) — top-level and linux-specific
       if (recipe.build?.env?.CC === 'clang') delete recipe.build.env.CC
       if (recipe.build?.env?.CXX === 'clang++') delete recipe.build.env.CXX
       if (recipe.build?.env?.LD === 'clang') delete recipe.build.env.LD
+      if (recipe.build?.env?.linux) {
+        delete recipe.build.env.linux.CC
+        delete recipe.build.env.linux.CXX
+        delete recipe.build.env.linux.LD
+      }
     },
   },
 
@@ -6570,15 +6646,38 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/google/re2 — fix date-based version tag ────────────────
+  // ─── github.com/google/re2 — fix date-based version tag + abseil ABI mismatch ────────────────
   // Version: 2025.11.5, tag: 2025-11-05 (dots→hyphens, zero-pad day/month)
+  // Also: widen abseil constraint + remove failing Makefile step + darwin LDFLAGS
 
   'github.com/google/re2': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'ABSL_DIR=$(find /tmp/buildkit-deps -path "*/abseil.io/*/lib" -type d 2>/dev/null | head -1)',
+          'if [ -n "$ABSL_DIR" ]; then',
+          '  export LDFLAGS="-L$ABSL_DIR ${LDFLAGS:-}"',
+          '  export CMAKE_PREFIX_PATH="$(dirname $ABSL_DIR):${CMAKE_PREFIX_PATH:-}"',
+          'fi',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // The resolveGitHubTag should handle this, but if not, we can override
       // Remove linux gcc dep if present
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // Widen abseil constraint to pick up 20260107+ from S3 (matches brew headers)
+      if (recipe.dependencies?.['abseil.io']) {
+        recipe.dependencies['abseil.io'] = '>=20260107'
+      }
+      // Remove the `make common-install` Makefile step that fails due to abseil linking.
+      // cmake builds install pkg-config files too, so the Makefile step is redundant.
+      if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: string | Record<string, unknown>) => {
+          if (typeof step === 'string' && step.includes('make common-install')) return false
+          return true
+        })
       }
     },
   },
@@ -7184,38 +7283,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // Newer ccache versions FetchContent xxhash from GitHub during cmake configure,
   // which fails in CI (network flake). Pre-install xxhash so cmake finds it locally.
   // (linux override already exists above at line ~703)
-
-  // ─── github.com/google/re2 — fix abseil ABI mismatch + Makefile linking ──
-  // The YAML pins abseil.io: ^20250127 which pulls 20250127.x from S3, but brew
-  // installs 20260107 headers. Compiled objects reference lts_20260107 symbols.
-  // Fix: widen abseil constraint + remove the Makefile step that fails linking.
-  'github.com/google/re2': {
-    platforms: {
-      darwin: {
-        prependScript: [
-          'ABSL_DIR=$(find /tmp/buildkit-deps -path "*/abseil.io/*/lib" -type d 2>/dev/null | head -1)',
-          'if [ -n "$ABSL_DIR" ]; then',
-          '  export LDFLAGS="-L$ABSL_DIR ${LDFLAGS:-}"',
-          '  export CMAKE_PREFIX_PATH="$(dirname $ABSL_DIR):${CMAKE_PREFIX_PATH:-}"',
-          'fi',
-        ],
-      },
-    },
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Widen abseil constraint to pick up 20260107+ from S3 (matches brew headers)
-      if (recipe.dependencies?.['abseil.io']) {
-        recipe.dependencies['abseil.io'] = '>=20260107'
-      }
-      // Remove the `make common-install` Makefile step that fails due to abseil linking.
-      // cmake builds install pkg-config files too, so the Makefile step is redundant.
-      if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.filter((step: string | Record<string, unknown>) => {
-          if (typeof step === 'string' && step.includes('make common-install')) return false
-          return true
-        })
-      }
-    },
-  },
 
   // ─── apache.org/httpd — fix stale apr compiler paths on linux ───────
   // httpd configure picks up CPP from a stale apr build directory
@@ -8163,14 +8230,33 @@ export const packageOverrides: Record<string, PackageOverride> = {
     ],
   },
 
-  // ─── github.com/peripheryapp/periphery — fix ncurses unctrl.h conflict
+  // ─── github.com/peripheryapp/periphery — pre-built binary from GitHub releases ─────────
 
   'github.com/peripheryapp/periphery': {
+    supportedPlatforms: ['darwin/aarch64'],
     prependScript: [
       // Fix ncurses unctrl.h conflict with Swift CTerminfo module on macOS
       'export SDKROOT="$(xcrun --show-sdk-path 2>/dev/null || echo /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk)"',
       'export CPATH="$SDKROOT/usr/include"',
     ],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -o /tmp/periphery.zip "https://github.com/peripheryapp/periphery/releases/download/{{version}}/periphery-{{version}}.artifactbundle.zip"',
+            'mkdir -p /tmp/periphery-extract',
+            'unzip -o /tmp/periphery.zip -d /tmp/periphery-extract',
+            'mkdir -p "{{prefix}}/bin"',
+            'find /tmp/periphery-extract -name periphery -type f -perm +111 | head -1 | xargs -I{} cp {} "{{prefix}}/bin/periphery"',
+            'chmod +x "{{prefix}}/bin/periphery"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
   },
 
   // ─── github.com/siderolabs/conform — widen Go version ────────────────
@@ -8621,51 +8707,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── gdal.org — disable arrow dep, fix patchelf and cmake ─────────────
-
-  'gdal.org': {
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Disable Arrow format support (arrow dep chain is broken)
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS.push('-DGDAL_USE_ARROW=OFF')
-        recipe.build.env.ARGS.push('-DGDAL_USE_PARQUET=OFF')
-      }
-      // Remove apache.org/arrow dependency
-      if (recipe.dependencies?.['apache.org/arrow']) {
-        delete recipe.dependencies['apache.org/arrow']
-      }
-      // Fix stray quote in cmake prefix
-      if (Array.isArray(recipe.build?.env?.ARGS)) {
-        recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
-          a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
-        )
-      }
-      // Fix sed -i BSD compat
-      if (Array.isArray(recipe.build?.script)) {
-        for (let i = 0; i < recipe.build.script.length; i++) {
-          const step = recipe.build.script[i]
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
-          }
-        }
-      }
-      // Remove llvm.org dep
-      if (recipe.build?.dependencies?.['llvm.org']) {
-        delete recipe.build.dependencies['llvm.org']
-      }
-      // Remove linux CC/CXX/LD
-      if (recipe.build?.env?.linux) {
-        delete recipe.build.env.linux.CC
-        delete recipe.build.env.linux.CXX
-        delete recipe.build.env.linux.LD
-      }
-      // Remove linux thrift dep
-      if (recipe.dependencies?.linux?.['apache.org/thrift']) {
-        delete recipe.dependencies.linux['apache.org/thrift']
-      }
-    },
-  },
-
   // ─── plakar.io — pre-built binary download from GitHub releases ─────────
   'plakar.io': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -8809,66 +8850,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/Diniboy1123/usque — pre-built binary from GitHub releases ─────────
-  'github.com/Diniboy1123/usque': {
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      recipe.dependencies = {}
-      recipe.distributable = undefined
-      if (recipe.build) {
-        recipe.build.dependencies = {}
-        recipe.build.script = [
-          [
-            'case "{{hw.platform}}/{{hw.arch}}" in',
-            '  darwin/aarch64) SUFFIX="darwin_arm64" ;;',
-            '  darwin/x86-64) SUFFIX="darwin_amd64" ;;',
-            '  linux/x86-64) SUFFIX="linux_amd64" ;;',
-            '  linux/aarch64) SUFFIX="linux_arm64" ;;',
-            '  *) echo "Unsupported platform" && exit 1 ;;',
-            'esac',
-            'ZIPFILE="usque_{{version}}_${SUFFIX}.zip"',
-            'curl -fSL -o /tmp/usque.zip "https://github.com/Diniboy1123/usque/releases/download/v{{version}}/${ZIPFILE}"',
-            'mkdir -p /tmp/usque-extract "{{prefix}}/bin"',
-            'unzip -o /tmp/usque.zip -d /tmp/usque-extract',
-            'cp /tmp/usque-extract/usque "{{prefix}}/bin/"',
-            'chmod +x "{{prefix}}/bin/usque"',
-          ].join('\n'),
-        ]
-        recipe.build.env = {}
-      }
-    },
-  },
-
-  // ─── iroh.computer — pre-built binaries from GitHub releases ─────────
-  'iroh.computer': {
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      recipe.dependencies = {}
-      recipe.distributable = undefined
-      if (recipe.build) {
-        recipe.build.dependencies = {}
-        recipe.build.script = [
-          [
-            'case "{{hw.platform}}/{{hw.arch}}" in',
-            '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
-            '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
-            '  linux/x86-64) TRIPLE="x86_64-unknown-linux-musl" ;;',
-            '  linux/aarch64) TRIPLE="aarch64-unknown-linux-musl" ;;',
-            '  *) echo "Unsupported platform" && exit 1 ;;',
-            'esac',
-            'mkdir -p "{{prefix}}/bin" /tmp/iroh-extract',
-            'for TOOL in iroh-relay iroh-dns-server; do',
-            '  curl -fSL -o /tmp/${TOOL}.tar.gz "https://github.com/n0-computer/iroh/releases/download/v{{version}}/${TOOL}-v{{version}}-${TRIPLE}.tar.gz"',
-            '  tar -xzf /tmp/${TOOL}.tar.gz -C /tmp/iroh-extract',
-            '  cp /tmp/iroh-extract/${TOOL} "{{prefix}}/bin/" 2>/dev/null || cp /tmp/iroh-extract/*/${TOOL} "{{prefix}}/bin/" 2>/dev/null || true',
-            '  chmod +x "{{prefix}}/bin/${TOOL}"',
-            'done',
-            'ln -s iroh-relay "{{prefix}}/bin/iroh"',
-          ].join('\n'),
-        ]
-        recipe.build.env = {}
-      }
-    },
-  },
-
   // ─── pkl-lang.org — pre-built binaries from GitHub releases ─────────
   'pkl-lang.org': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -8939,7 +8920,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Remove 'make install-so' — shared lib build fails on darwin with -version flag
         // Static binaries (gs, etc.) from 'make install' are sufficient
         recipe.build.script = recipe.build.script.filter(
-          (step: string) => typeof step !== 'string' || !step.includes('install-so'),
+          (step: RecipeScriptStep) => typeof step !== 'string' || !step.includes('install-so'),
         )
         // Keep bundled tiff+jpeg dirs — don't rm them since we're using bundled versions
         for (let i = 0; i < recipe.build.script.length; i++) {
@@ -8966,29 +8947,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── github.com/peripheryapp/periphery — pre-built binary from GitHub releases ─────────
-  'github.com/peripheryapp/periphery': {
-    supportedPlatforms: ['darwin/aarch64'],
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      recipe.dependencies = {}
-      recipe.distributable = undefined
-      if (recipe.build) {
-        recipe.build.dependencies = {}
-        recipe.build.script = [
-          [
-            'curl -fSL -o /tmp/periphery.zip "https://github.com/peripheryapp/periphery/releases/download/{{version}}/periphery-{{version}}.artifactbundle.zip"',
-            'mkdir -p /tmp/periphery-extract',
-            'unzip -o /tmp/periphery.zip -d /tmp/periphery-extract',
-            'mkdir -p "{{prefix}}/bin"',
-            'find /tmp/periphery-extract -name periphery -type f -perm +111 | head -1 | xargs -I{} cp {} "{{prefix}}/bin/periphery"',
-            'chmod +x "{{prefix}}/bin/periphery"',
-          ].join('\n'),
-        ]
-        recipe.build.env = {}
-      }
-    },
-  },
-
   // ─── fluentci.io — pre-built binary download from GitHub releases ─────────
   'fluentci.io': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
@@ -9010,34 +8968,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
             'tar -xzf /tmp/fluentci.tar.gz -C /tmp/fluentci-extract',
             'find /tmp/fluentci-extract -name fluentci -type f | head -1 | xargs -I{} cp {} "{{prefix}}/bin/fluentci"',
             'chmod +x "{{prefix}}/bin/fluentci"',
-          ].join('\n'),
-        ]
-        recipe.build.env = {}
-      }
-    },
-  },
-
-  // ─── quickwit.io — pre-built binary download from GitHub releases ─────────
-  'quickwit.io': {
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      recipe.dependencies = {}
-      recipe.distributable = undefined
-      if (recipe.build) {
-        recipe.build.dependencies = {}
-        recipe.build.script = [
-          [
-            'case "{{hw.platform}}/{{hw.arch}}" in',
-            '  darwin/aarch64) TRIPLE="aarch64-apple-darwin" ;;',
-            '  darwin/x86-64) TRIPLE="x86_64-apple-darwin" ;;',
-            '  linux/x86-64) TRIPLE="x86_64-unknown-linux-gnu" ;;',
-            '  linux/aarch64) TRIPLE="aarch64-unknown-linux-gnu" ;;',
-            '  *) echo "Unsupported platform" && exit 1 ;;',
-            'esac',
-            'curl -fSL -o /tmp/quickwit.tar.gz "https://github.com/quickwit-oss/quickwit/releases/download/v{{version}}/quickwit-v{{version}}-${TRIPLE}.tar.gz"',
-            'mkdir -p /tmp/quickwit-extract "{{prefix}}/bin"',
-            'tar -xzf /tmp/quickwit.tar.gz -C /tmp/quickwit-extract',
-            'find /tmp/quickwit-extract -name quickwit -type f | head -1 | xargs -I{} cp {} "{{prefix}}/bin/quickwit"',
-            'chmod +x "{{prefix}}/bin/quickwit"',
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -9563,7 +9493,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'rubygems.org': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // On linux, the plugins dir is not empty so `rmdir` fails — use rm -rf instead
-      if (recipe.build?.script) {
+      if (Array.isArray(recipe.build?.script)) {
         recipe.build.script = recipe.build.script.map((step: any) => {
           if (typeof step === 'string' && step.includes('rmdir') && step.includes('plugins')) {
             return step.replace(/rmdir\s+/, 'rm -rf ')
@@ -9607,7 +9537,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Ruby v4+ installs files at prefix/prefix oddly; the fix-up step has
       // working-directory: ${{prefix}}/{{prefix}} which double-expands in buildkit.
       // Make the sed on rbconfig.rb conditional so it doesn't fail if the nested path is empty.
-      if (recipe.build?.script) {
+      if (Array.isArray(recipe.build?.script)) {
         recipe.build.script = recipe.build.script.map((step: any) => {
           if (typeof step !== 'object' || !step.run) return step
           const runText = Array.isArray(step.run) ? step.run.join('\n') : String(step.run)
