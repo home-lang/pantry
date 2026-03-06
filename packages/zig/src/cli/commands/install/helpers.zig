@@ -192,10 +192,12 @@ pub fn isLocalDependency(dep: lib.deps.parser.PackageDependency) bool {
         isLocalPath(dep.version);
 }
 
-/// Strip display prefixes like "auto:" and "local:" from package names for output
+/// Strip display prefixes like "auto:", "npm:", and "local:" from package names for output
 pub fn stripDisplayPrefix(name: []const u8) []const u8 {
     if (std.mem.startsWith(u8, name, "auto:")) {
         return name[5..]; // Skip "auto:"
+    } else if (std.mem.startsWith(u8, name, "npm:")) {
+        return name[4..]; // Skip "npm:"
     } else if (std.mem.startsWith(u8, name, "local:")) {
         return name[6..]; // Skip "local:"
     }

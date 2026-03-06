@@ -463,11 +463,12 @@ pub const ShellCommands = struct {
         }
     }
 
-    /// Get runtime bin paths for the project
+    /// Get runtime and system dependency bin paths for the project
     fn getRuntimePaths(self: *ShellCommands, project_root: []const u8) ![]const u8 {
-        // Parse dependency file to find runtime dependencies
+        // Parse dependency file to find runtime/system dependencies
         const detector = @import("../deps/detector.zig");
         const parser = @import("../deps/parser.zig");
+        const pkg_registry = @import("../packages/generated.zig");
 
         const deps_file = (try detector.findDepsFile(self.allocator, project_root)) orelse {
             return try self.allocator.dupe(u8, "");
@@ -485,7 +486,7 @@ pub const ShellCommands = struct {
             self.allocator.free(deps);
         }
 
-        // Find runtime dependencies and build paths
+        // Find runtime and system dependencies and build paths
         var runtime_paths: std.ArrayList([]const u8) = .{};
         defer {
             for (runtime_paths.items) |path| self.allocator.free(path);
@@ -496,13 +497,20 @@ pub const ShellCommands = struct {
         defer self.allocator.free(home_dir);
 
         for (deps) |dep| {
-            if (dep.isRuntime()) {
-                // Build path to runtime bin directory
+            // Check both runtime deps (bun, node) and system deps (sqlite.org, bun.com)
+            if (dep.isRuntime() or dep.isSystemDep()) {
+                // Resolve the canonical package name via the registry
+                const canonical_name = if (pkg_registry.getPackageByName(dep.name)) |pkg_info|
+                    pkg_info.name
+                else
+                    dep.name;
+
+                // Build path to installed bin directory
                 const runtime_bin = try std.fs.path.join(self.allocator, &[_][]const u8{
                     home_dir,
                     ".pantry",
                     "runtimes",
-                    dep.name,
+                    canonical_name,
                     dep.version,
                     "bin",
                 });

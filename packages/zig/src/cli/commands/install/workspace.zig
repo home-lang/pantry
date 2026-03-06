@@ -344,6 +344,36 @@ pub fn installWorkspaceCommandWithOptions(
         deps_seen.deinit();
     }
 
+    // Process root-level dependencies from pantry.jsonc (system deps like bun.com, sqlite.org)
+    {
+        const detector = @import("../../../deps/detector.zig");
+        if (try detector.findDepsFile(allocator, workspace_root)) |root_deps_file| {
+            defer allocator.free(root_deps_file.path);
+            const root_deps = parser.inferDependencies(allocator, root_deps_file) catch null;
+            if (root_deps) |deps| {
+                defer allocator.free(deps);
+                for (deps) |dep| {
+                    if (std.mem.startsWith(u8, dep.version, "workspace:")) continue;
+
+                    const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
+                    var key_buf: [512]u8 = undefined;
+                    const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, dep.version }) catch
+                        try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
+                    const key_is_heap = dep_key.ptr != &key_buf;
+                    defer if (key_is_heap) allocator.free(dep_key);
+
+                    if (!deps_seen.contains(dep_key)) {
+                        try deps_seen.put(try allocator.dupe(u8, dep_key), {});
+                        if (all_deps_count < all_deps_buffer.len) {
+                            all_deps_buffer[all_deps_count] = try dep.clone(allocator);
+                            all_deps_count += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // Process each workspace member
     for (workspace_config.members) |member| {
         // Skip members that don't match the filter
@@ -711,17 +741,30 @@ pub fn installWorkspaceCommandWithOptions(
     defer lockfile.deinit(allocator);
 
     // Add entries for all installed packages
+    const pkg_registry = @import("../../../packages/generated.zig");
     for (all_deps_buffer[0..all_deps_count]) |dep| {
         const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
-        const entry = lib.packages.LockfileEntry{
-            .name = try allocator.dupe(u8, clean_dep_name),
-            .version = try allocator.dupe(u8, dep.version),
-            .source = switch (dep.source) {
-                .registry => .pkgx,
+
+        // Determine the correct source: npm packages vs pkgx system packages
+        const lock_source: lib.packages.PackageSource = if (dep.source != .registry)
+            switch (dep.source) {
                 .github => .github,
                 .git => .git,
                 .url => .http,
-            },
+                .registry => unreachable,
+            }
+        else if (std.mem.startsWith(u8, dep.name, "npm:") or
+            std.mem.startsWith(u8, dep.name, "auto:"))
+            .npm
+        else if (pkg_registry.getPackageByName(clean_dep_name) != null)
+            .pkgx
+        else
+            .npm; // Default to npm for unknown registry deps
+
+        const entry = lib.packages.LockfileEntry{
+            .name = try allocator.dupe(u8, clean_dep_name),
+            .version = try allocator.dupe(u8, dep.version),
+            .source = lock_source,
             .url = null,
             .resolved = null,
             .integrity = null,
@@ -783,8 +826,9 @@ pub fn installWorkspaceCommandWithOptions(
             io_helper.makePath(parent_owned) catch {};
         }
 
-        // Create symlink: pantry/{name} -> {member.abs_path}
+        // Remove existing symlink/dir and create new one
         io_helper.deleteFile(link_path) catch {};
+        io_helper.deleteTree(link_path) catch {};
         io_helper.symLink(member.abs_path, link_path) catch |err| {
             style.print("{s}  ! Failed to link {s}: {}{s}\n", .{ style.dim, pkg_name, err, style.reset });
             continue;

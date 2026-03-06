@@ -46,11 +46,29 @@ pub const PackageDependency = struct {
     }
 
     /// Check if this dependency is a runtime (bun, node, deno, python)
+    /// Recognizes both canonical names and pkgx-style aliases (bun.com, nodejs.org, etc.)
     pub fn isRuntime(self: *const PackageDependency) bool {
         return std.mem.eql(u8, self.name, "bun") or
+            std.mem.eql(u8, self.name, "bun.com") or
+            std.mem.eql(u8, self.name, "bun.sh") or
             std.mem.eql(u8, self.name, "node") or
+            std.mem.eql(u8, self.name, "nodejs.org") or
             std.mem.eql(u8, self.name, "deno") or
-            std.mem.eql(u8, self.name, "python");
+            std.mem.eql(u8, self.name, "deno.land") or
+            std.mem.eql(u8, self.name, "python") or
+            std.mem.eql(u8, self.name, "python.org");
+    }
+
+    /// Check if this dependency is a system package (not an npm package)
+    /// System packages use domain-style names (e.g., sqlite.org, bun.com)
+    pub fn isSystemDep(self: *const PackageDependency) bool {
+        // Domain-style names contain a dot (e.g., bun.com, sqlite.org)
+        // Scoped npm packages start with @ (e.g., @stacksjs/cloud)
+        // Regular npm packages are simple names (e.g., stripe, typescript)
+        if (std.mem.startsWith(u8, self.name, "@")) return false;
+        if (std.mem.startsWith(u8, self.name, "npm:")) return false;
+        if (std.mem.startsWith(u8, self.name, "auto:")) return false;
+        return std.mem.indexOf(u8, self.name, ".") != null;
     }
 
     pub fn clone(self: PackageDependency, allocator: std.mem.Allocator) !PackageDependency {
@@ -672,6 +690,29 @@ pub const SourceDetection = struct {
             };
         }
 
+        // Domain format detection (e.g., nodejs.org, bun.sh, info-zip.org/zip)
+        // Must come before GitHub owner/repo check since domain-style names
+        // can contain slashes (e.g., info-zip.org/zip)
+        if (std.mem.indexOf(u8, pkg_name, ".")) |_| {
+            // Extract the base (before any slash) to check for domain TLDs
+            const base = if (std.mem.indexOf(u8, pkg_name, "/")) |slash_pos|
+                pkg_name[0..slash_pos]
+            else
+                pkg_name;
+
+            if (std.mem.endsWith(u8, base, ".org") or
+                std.mem.endsWith(u8, base, ".com") or
+                std.mem.endsWith(u8, base, ".dev") or
+                std.mem.endsWith(u8, base, ".io") or
+                std.mem.endsWith(u8, base, ".sh") or
+                std.mem.endsWith(u8, base, ".net"))
+            {
+                return .{
+                    .source = "pkgx",
+                };
+            }
+        }
+
         // GitHub owner/repo format detection
         if (std.mem.indexOf(u8, pkg_name, "/")) |_| {
             // Check if it's a scoped npm package (@org/package)
@@ -685,22 +726,6 @@ pub const SourceDetection = struct {
                 .source = "github",
                 .repo = pkg_name,
             };
-        }
-
-        // Domain format detection (e.g., nodejs.org, bun.sh)
-        if (std.mem.indexOf(u8, pkg_name, ".")) |_| {
-            // Check if it contains common TLDs or domain patterns
-            if (std.mem.endsWith(u8, pkg_name, ".org") or
-                std.mem.endsWith(u8, pkg_name, ".com") or
-                std.mem.endsWith(u8, pkg_name, ".dev") or
-                std.mem.endsWith(u8, pkg_name, ".io") or
-                std.mem.endsWith(u8, pkg_name, ".sh") or
-                std.mem.endsWith(u8, pkg_name, ".net"))
-            {
-                return .{
-                    .source = "pkgx",
-                };
-            }
         }
 
         // Default: Could be npm or pkgx
@@ -1096,6 +1121,14 @@ test "SourceDetection.fromPackageName detects scoped npm package" {
 test "SourceDetection.fromPackageName handles ambiguous names" {
     const detection = SourceDetection.fromPackageName("typescript");
     try std.testing.expectEqualStrings("auto", detection.source);
+}
+
+test "SourceDetection.fromPackageName detects domain with slash as pkgx" {
+    const detection = SourceDetection.fromPackageName("info-zip.org/zip");
+    try std.testing.expectEqualStrings("pkgx", detection.source);
+
+    const detection2 = SourceDetection.fromPackageName("info-zip.org/unzip");
+    try std.testing.expectEqualStrings("pkgx", detection2.source);
 }
 
 test "parseZigPackageJson with explicit GitHub source" {

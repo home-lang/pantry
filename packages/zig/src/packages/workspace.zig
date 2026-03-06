@@ -46,80 +46,65 @@ fn discoverMembersForPattern(
     workspace_root: []const u8,
     pattern: []const u8,
 ) ![]types.WorkspaceMember {
-    var members_buffer: [128]types.WorkspaceMember = undefined;
+    var members_buffer: [256]types.WorkspaceMember = undefined;
     var member_count: usize = 0;
-    // Simple glob matching: support patterns like "packages/*" or "apps/*"
-    // More complex patterns would need a full glob implementation
 
     // Check if pattern contains a wildcard
     if (std.mem.indexOf(u8, pattern, "*")) |wildcard_pos| {
         // Extract the directory part before the wildcard
         const base_dir = pattern[0..wildcard_pos];
 
-        // If wildcard is at the end (e.g., "packages/*"), list all subdirectories
-        if (wildcard_pos == pattern.len - 1) {
+        // Check for ** (recursive) glob pattern (e.g., "storage/framework/**")
+        const is_recursive = wildcard_pos + 1 < pattern.len and pattern[wildcard_pos + 1] == '*';
+
+        if (is_recursive or wildcard_pos == pattern.len - 1) {
             const full_base_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, base_dir });
             defer allocator.free(full_base_path);
 
-            // Open the directory
-            // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
-            var dir = io_helper.openDirAbsoluteForIteration(full_base_path) catch |err| {
-                // If directory doesn't exist, skip this pattern - return empty list
-                if (err == error.FileNotFound) {
-                    return allocator.alloc(types.WorkspaceMember, 0);
-                }
-                return err;
-            };
-            defer dir.close();
-
-            // Iterate through subdirectories
-            var iter = dir.iterate();
-            while (iter.next() catch null) |entry| {
-                if (entry.kind != .directory) continue;
-
-                // Skip common ignore directories
-                if (std.mem.eql(u8, entry.name, "node_modules") or
-                    std.mem.eql(u8, entry.name, "cdk.out") or
-                    std.mem.eql(u8, entry.name, ".cache") or
-                    std.mem.eql(u8, entry.name, ".git") or
-                    std.mem.eql(u8, entry.name, "dist") or
-                    std.mem.eql(u8, entry.name, "build") or
-                    std.mem.eql(u8, entry.name, ".next") or
-                    std.mem.eql(u8, entry.name, ".turbo") or
-                    std.mem.startsWith(u8, entry.name, "."))
-                {
-                    continue;
-                }
-
-                // Construct member path
-                const member_rel_path = try std.fs.path.join(allocator, &[_][]const u8{ base_dir, entry.name });
-                errdefer allocator.free(member_rel_path);
-
-                const member_abs_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, member_rel_path });
-                errdefer allocator.free(member_abs_path);
-
-                // Check if this directory has a config or deps file
-                const config_path = try findConfigFile(allocator, member_abs_path);
-                const deps_file_path = try findDepsFileInDir(allocator, member_abs_path);
-
-                // Only add as member if it has a config or deps file
-                if (config_path != null or deps_file_path != null) {
-                    if (member_count >= members_buffer.len) {
-                        style.print("Error: Too many workspace members in pattern (limit: {d})\n", .{members_buffer.len});
-                        return error.TooManyWorkspaceMembers;
+            if (is_recursive) {
+                // Recursive: scan all subdirectories at any depth
+                try discoverMembersRecursive(allocator, workspace_root, full_base_path, base_dir, &members_buffer, &member_count);
+            } else {
+                // Non-recursive: only immediate subdirectories
+                var dir = io_helper.openDirAbsoluteForIteration(full_base_path) catch |err| {
+                    if (err == error.FileNotFound) {
+                        return allocator.alloc(types.WorkspaceMember, 0);
                     }
-                    members_buffer[member_count] = .{
-                        .name = try allocator.dupe(u8, entry.name),
-                        .path = member_rel_path,
-                        .abs_path = member_abs_path,
-                        .config_path = config_path,
-                        .deps_file_path = deps_file_path,
-                    };
-                    member_count += 1;
-                } else {
-                    // Clean up if not a valid member
-                    allocator.free(member_rel_path);
-                    allocator.free(member_abs_path);
+                    return err;
+                };
+                defer dir.close();
+
+                var iter = dir.iterate();
+                while (iter.next() catch null) |entry| {
+                    if (entry.kind != .directory) continue;
+                    if (shouldSkipDir(entry.name)) continue;
+
+                    const member_rel_path = try std.fs.path.join(allocator, &[_][]const u8{ base_dir, entry.name });
+                    errdefer allocator.free(member_rel_path);
+
+                    const member_abs_path = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, member_rel_path });
+                    errdefer allocator.free(member_abs_path);
+
+                    const config_path = try findConfigFile(allocator, member_abs_path);
+                    const deps_file_path = try findDepsFileInDir(allocator, member_abs_path);
+
+                    if (config_path != null or deps_file_path != null) {
+                        if (member_count >= members_buffer.len) {
+                            style.print("Error: Too many workspace members in pattern (limit: {d})\n", .{members_buffer.len});
+                            return error.TooManyWorkspaceMembers;
+                        }
+                        members_buffer[member_count] = .{
+                            .name = try allocator.dupe(u8, entry.name),
+                            .path = member_rel_path,
+                            .abs_path = member_abs_path,
+                            .config_path = config_path,
+                            .deps_file_path = deps_file_path,
+                        };
+                        member_count += 1;
+                    } else {
+                        allocator.free(member_rel_path);
+                        allocator.free(member_abs_path);
+                    }
                 }
             }
         }
@@ -161,6 +146,73 @@ fn discoverMembersForPattern(
     const members = try allocator.alloc(types.WorkspaceMember, member_count);
     @memcpy(members, members_buffer[0..member_count]);
     return members;
+}
+
+/// Check if a directory should be skipped during workspace discovery
+fn shouldSkipDir(name: []const u8) bool {
+    return std.mem.eql(u8, name, "node_modules") or
+        std.mem.eql(u8, name, "pantry") or
+        std.mem.eql(u8, name, "cdk.out") or
+        std.mem.eql(u8, name, ".cache") or
+        std.mem.eql(u8, name, ".git") or
+        std.mem.eql(u8, name, "dist") or
+        std.mem.eql(u8, name, "build") or
+        std.mem.eql(u8, name, ".next") or
+        std.mem.eql(u8, name, ".turbo") or
+        std.mem.startsWith(u8, name, ".");
+}
+
+/// Recursively discover workspace members in all subdirectories
+fn discoverMembersRecursive(
+    allocator: std.mem.Allocator,
+    workspace_root: []const u8,
+    dir_path: []const u8,
+    rel_base: []const u8,
+    members_buffer: *[256]types.WorkspaceMember,
+    member_count: *usize,
+) !void {
+    var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch |err| {
+        if (err == error.FileNotFound) return;
+        return err;
+    };
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory) continue;
+        if (shouldSkipDir(entry.name)) continue;
+
+        const child_rel = try std.fs.path.join(allocator, &[_][]const u8{ rel_base, entry.name });
+        const child_abs = try std.fs.path.join(allocator, &[_][]const u8{ workspace_root, child_rel });
+
+        const config_path = try findConfigFile(allocator, child_abs);
+        const deps_file_path = try findDepsFileInDir(allocator, child_abs);
+
+        if (config_path != null or deps_file_path != null) {
+            if (member_count.* >= members_buffer.len) {
+                allocator.free(child_rel);
+                allocator.free(child_abs);
+                style.print("Error: Too many workspace members (limit: {d})\n", .{members_buffer.len});
+                return error.TooManyWorkspaceMembers;
+            }
+            members_buffer[member_count.*] = .{
+                .name = try allocator.dupe(u8, entry.name),
+                .path = child_rel,
+                .abs_path = child_abs,
+                .config_path = config_path,
+                .deps_file_path = deps_file_path,
+            };
+            member_count.* += 1;
+
+            // Also recurse — subdirs of a member can themselves be members
+            try discoverMembersRecursive(allocator, workspace_root, child_abs, child_rel, members_buffer, member_count);
+        } else {
+            // Not a workspace member, but still recurse into it
+            try discoverMembersRecursive(allocator, workspace_root, child_abs, child_rel, members_buffer, member_count);
+            allocator.free(child_rel);
+            allocator.free(child_abs);
+        }
+    }
 }
 
 /// Find config file in a directory (pantry.config.ts, pantry.json, etc.)

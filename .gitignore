@@ -28,3 +28,4 @@ packages/pantry/test/clean-integration-*
 /pantry
 **/pantry_modules
 packages/zig/dump.rdb
+packages/ts-pantry/bin/ts-pantry
