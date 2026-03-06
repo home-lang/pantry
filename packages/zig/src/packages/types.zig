@@ -124,9 +124,12 @@ pub const LockfileEntry = struct {
     version: []const u8,
     source: PackageSource,
     url: ?[]const u8 = null,
-    resolved: ?[]const u8 = null, // Actual download URL
-    integrity: ?[]const u8 = null, // SHA256 checksum
+    resolved: ?[]const u8 = null, // Actual download URL (tarball)
+    integrity: ?[]const u8 = null, // Integrity hash (sha512 or shasum)
     dependencies: ?std.StringHashMap([]const u8) = null,
+    peer_dependencies: ?std.StringHashMap([]const u8) = null,
+    bin: ?std.StringHashMap([]const u8) = null,
+    optional_peers: ?std.StringHashMap(bool) = null,
 
     pub fn deinit(self: *LockfileEntry, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -142,6 +145,54 @@ pub const LockfileEntry = struct {
             }
             deps.deinit();
         }
+        if (self.peer_dependencies) |*deps| {
+            var it = deps.iterator();
+            while (it.next()) |entry| {
+                allocator.free(entry.key_ptr.*);
+                allocator.free(entry.value_ptr.*);
+            }
+            deps.deinit();
+        }
+        if (self.bin) |*b| {
+            var it = b.iterator();
+            while (it.next()) |entry| {
+                allocator.free(entry.key_ptr.*);
+                allocator.free(entry.value_ptr.*);
+            }
+            b.deinit();
+        }
+        if (self.optional_peers) |*op| {
+            var it = op.iterator();
+            while (it.next()) |entry| {
+                allocator.free(entry.key_ptr.*);
+            }
+            op.deinit();
+        }
+    }
+};
+
+/// Workspace member entry in the lockfile
+/// Records what each workspace member declared as dependencies
+pub const WorkspaceLockEntry = struct {
+    name: []const u8,
+    version: ?[]const u8 = null,
+    dependencies: ?std.StringHashMap([]const u8) = null,
+    dev_dependencies: ?std.StringHashMap([]const u8) = null,
+    system: ?std.StringHashMap([]const u8) = null,
+
+    pub fn deinit(self: *WorkspaceLockEntry, allocator: std.mem.Allocator) void {
+        allocator.free(self.name);
+        if (self.version) |v| allocator.free(v);
+        inline for (.{ "dependencies", "dev_dependencies", "system" }) |field_name| {
+            if (@field(self, field_name)) |*deps| {
+                var it = deps.iterator();
+                while (it.next()) |entry| {
+                    allocator.free(entry.key_ptr.*);
+                    allocator.free(entry.value_ptr.*);
+                }
+                deps.deinit();
+            }
+        }
     }
 };
 
@@ -149,6 +200,7 @@ pub const LockfileEntry = struct {
 pub const Lockfile = struct {
     version: []const u8,
     lockfile_version: u32 = 1,
+    workspaces: std.StringHashMap(WorkspaceLockEntry),
     packages: std.StringHashMap(LockfileEntry),
     generated_at: i64,
 
@@ -156,6 +208,7 @@ pub const Lockfile = struct {
         return Lockfile{
             .version = try allocator.dupe(u8, version),
             .lockfile_version = 1,
+            .workspaces = std.StringHashMap(WorkspaceLockEntry).init(allocator),
             .packages = std.StringHashMap(LockfileEntry).init(allocator),
             .generated_at = (io_helper.clockGettime()).sec,
         };
@@ -163,6 +216,13 @@ pub const Lockfile = struct {
 
     pub fn deinit(self: *Lockfile, allocator: std.mem.Allocator) void {
         allocator.free(self.version);
+        var ws_it = self.workspaces.iterator();
+        while (ws_it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            var ws_entry = entry.value_ptr.*;
+            ws_entry.deinit(allocator);
+        }
+        self.workspaces.deinit();
         var it = self.packages.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
@@ -174,6 +234,10 @@ pub const Lockfile = struct {
 
     pub fn addEntry(self: *Lockfile, allocator: std.mem.Allocator, key: []const u8, entry: LockfileEntry) !void {
         try self.packages.put(try allocator.dupe(u8, key), entry);
+    }
+
+    pub fn addWorkspace(self: *Lockfile, allocator: std.mem.Allocator, path: []const u8, entry: WorkspaceLockEntry) !void {
+        try self.workspaces.put(try allocator.dupe(u8, path), entry);
     }
 };
 

@@ -2,6 +2,21 @@ const std = @import("std");
 const types = @import("types.zig");
 const io_helper = @import("../io_helper.zig");
 
+/// Compare two string hashmaps for equality
+fn stringMapsEqual(a: ?std.StringHashMap([]const u8), b: ?std.StringHashMap([]const u8)) bool {
+    if (a) |*a_map| {
+        if (b) |*b_map| {
+            if (a_map.count() != b_map.count()) return false;
+            var it = a_map.iterator();
+            while (it.next()) |entry| {
+                const b_val = b_map.get(entry.key_ptr.*) orelse return false;
+                if (!std.mem.eql(u8, entry.value_ptr.*, b_val)) return false;
+            }
+            return true;
+        } else return false;
+    } else return b == null;
+}
+
 /// Compare two lockfiles, ignoring the generatedAt field
 /// Returns true if lockfiles are equal (excluding generatedAt)
 pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
@@ -10,6 +25,22 @@ pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
 
     // Compare lockfile_version
     if (a.lockfile_version != b.lockfile_version) return false;
+
+    // Compare workspace count
+    if (a.workspaces.count() != b.workspaces.count()) return false;
+
+    // Compare workspaces
+    var ws_it = a.workspaces.iterator();
+    while (ws_it.next()) |entry| {
+        const key = entry.key_ptr.*;
+        const a_ws = entry.value_ptr.*;
+        const b_ws = b.workspaces.get(key) orelse return false;
+
+        if (!std.mem.eql(u8, a_ws.name, b_ws.name)) return false;
+        if (!stringMapsEqual(a_ws.dependencies, b_ws.dependencies)) return false;
+        if (!stringMapsEqual(a_ws.dev_dependencies, b_ws.dev_dependencies)) return false;
+        if (!stringMapsEqual(a_ws.system, b_ws.system)) return false;
+    }
 
     // Compare package count
     if (a.packages.count() != b.packages.count()) return false;
@@ -28,39 +59,21 @@ pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
         if (!std.mem.eql(u8, a_pkg.version, b_pkg.version)) return false;
         if (a_pkg.source != b_pkg.source) return false;
 
-        // Compare optional fields
-        if (a_pkg.url) |a_url| {
-            if (b_pkg.url) |b_url| {
-                if (!std.mem.eql(u8, a_url, b_url)) return false;
-            } else return false;
-        } else if (b_pkg.url != null) return false;
+        // Compare optional string fields
+        inline for (.{ "url", "resolved", "integrity" }) |field| {
+            const a_val = @field(a_pkg, field);
+            const b_val = @field(b_pkg, field);
+            if (a_val) |av| {
+                if (b_val) |bv| {
+                    if (!std.mem.eql(u8, av, bv)) return false;
+                } else return false;
+            } else if (b_val != null) return false;
+        }
 
-        if (a_pkg.resolved) |a_resolved| {
-            if (b_pkg.resolved) |b_resolved| {
-                if (!std.mem.eql(u8, a_resolved, b_resolved)) return false;
-            } else return false;
-        } else if (b_pkg.resolved != null) return false;
-
-        if (a_pkg.integrity) |a_integrity| {
-            if (b_pkg.integrity) |b_integrity| {
-                if (!std.mem.eql(u8, a_integrity, b_integrity)) return false;
-            } else return false;
-        } else if (b_pkg.integrity != null) return false;
-
-        // Compare dependencies
-        if (a_pkg.dependencies) |*a_deps| {
-            if (b_pkg.dependencies) |*b_deps| {
-                if (a_deps.count() != b_deps.count()) return false;
-
-                var deps_it = a_deps.iterator();
-                while (deps_it.next()) |dep_entry| {
-                    const dep_key = dep_entry.key_ptr.*;
-                    const a_dep_value = dep_entry.value_ptr.*;
-                    const b_dep_value = b_deps.get(dep_key) orelse return false;
-                    if (!std.mem.eql(u8, a_dep_value, b_dep_value)) return false;
-                }
-            } else return false;
-        } else if (b_pkg.dependencies != null) return false;
+        // Compare string map fields
+        if (!stringMapsEqual(a_pkg.dependencies, b_pkg.dependencies)) return false;
+        if (!stringMapsEqual(a_pkg.peer_dependencies, b_pkg.peer_dependencies)) return false;
+        if (!stringMapsEqual(a_pkg.bin, b_pkg.bin)) return false;
     }
 
     return true;
@@ -101,14 +114,32 @@ fn appendJsonEscaped(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: [
     }
 }
 
+/// Write a string-keyed hashmap as a JSON object
+fn writeJsonStringMap(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, map: *const std.StringHashMap([]const u8), indent: []const u8) !void {
+    try buf.appendSlice(allocator, "{\n");
+    var it = map.iterator();
+    var first_entry = true;
+    while (it.next()) |entry| {
+        if (!first_entry) try buf.appendSlice(allocator, ",\n");
+        first_entry = false;
+        try buf.appendSlice(allocator, indent);
+        try buf.appendSlice(allocator, "  \"");
+        try appendJsonEscaped(buf, allocator, entry.key_ptr.*);
+        try buf.appendSlice(allocator, "\": \"");
+        try appendJsonEscaped(buf, allocator, entry.value_ptr.*);
+        try buf.appendSlice(allocator, "\"");
+    }
+    try buf.appendSlice(allocator, "\n");
+    try buf.appendSlice(allocator, indent);
+    try buf.appendSlice(allocator, "}");
+}
+
 /// Write lockfile to disk in JSON format (always writes, internal use)
 /// Uses atomic write (write to temp file, then rename) to prevent corruption.
 fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
-    var buf = try std.ArrayList(u8).initCapacity(allocator, 4096);
+    var buf = try std.ArrayList(u8).initCapacity(allocator, 16384);
     defer buf.deinit(allocator);
 
-    // Build JSON structure - write directly to buffer without intermediate allocations
-    // Use appendSlice for literals and a shared format buffer for dynamic values
     var fmt_buf: [1024]u8 = undefined;
 
     try buf.appendSlice(allocator, "{\n");
@@ -120,21 +151,63 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         const s = std.fmt.bufPrint(&fmt_buf, "  \"lockfileVersion\": {d},\n", .{lockfile.lockfile_version}) catch return error.FormatError;
         try buf.appendSlice(allocator, s);
     }
-    {
-        const s = std.fmt.bufPrint(&fmt_buf, "  \"generatedAt\": \"{d}\",\n", .{lockfile.generated_at}) catch return error.FormatError;
-        try buf.appendSlice(allocator, s);
+
+    // Write workspaces section
+    if (lockfile.workspaces.count() > 0) {
+        try buf.appendSlice(allocator, "  \"workspaces\": {\n");
+        var ws_it = lockfile.workspaces.iterator();
+        var ws_first = true;
+        while (ws_it.next()) |entry| {
+            if (!ws_first) try buf.appendSlice(allocator, ",\n");
+            ws_first = false;
+
+            try buf.appendSlice(allocator, "    \"");
+            try appendJsonEscaped(&buf, allocator, entry.key_ptr.*);
+            try buf.appendSlice(allocator, "\": {\n      \"name\": \"");
+            try appendJsonEscaped(&buf, allocator, entry.value_ptr.name);
+            try buf.appendSlice(allocator, "\"");
+
+            if (entry.value_ptr.version) |v| {
+                try buf.appendSlice(allocator, ",\n      \"version\": \"");
+                try appendJsonEscaped(&buf, allocator, v);
+                try buf.appendSlice(allocator, "\"");
+            }
+
+            if (entry.value_ptr.dependencies) |*deps| {
+                if (deps.count() > 0) {
+                    try buf.appendSlice(allocator, ",\n      \"dependencies\": ");
+                    try writeJsonStringMap(&buf, allocator, deps, "      ");
+                }
+            }
+
+            if (entry.value_ptr.dev_dependencies) |*deps| {
+                if (deps.count() > 0) {
+                    try buf.appendSlice(allocator, ",\n      \"devDependencies\": ");
+                    try writeJsonStringMap(&buf, allocator, deps, "      ");
+                }
+            }
+
+            if (entry.value_ptr.system) |*deps| {
+                if (deps.count() > 0) {
+                    try buf.appendSlice(allocator, ",\n      \"system\": ");
+                    try writeJsonStringMap(&buf, allocator, deps, "      ");
+                }
+            }
+
+            try buf.appendSlice(allocator, "\n    }");
+        }
+        try buf.appendSlice(allocator, "\n  },\n");
     }
+
+    // Write packages section
     try buf.appendSlice(allocator, "  \"packages\": {\n");
 
     var it = lockfile.packages.iterator();
     var first = true;
     while (it.next()) |entry| {
-        if (!first) {
-            try buf.appendSlice(allocator, ",\n");
-        }
+        if (!first) try buf.appendSlice(allocator, ",\n");
         first = false;
 
-        // JSON-escape all string values to prevent invalid JSON from special chars
         try buf.appendSlice(allocator, "    \"");
         try appendJsonEscaped(&buf, allocator, entry.key_ptr.*);
         try buf.appendSlice(allocator, "\": {\n      \"name\": \"");
@@ -145,11 +218,6 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         try buf.appendSlice(allocator, entry.value_ptr.source.toString());
         try buf.appendSlice(allocator, "\"");
 
-        if (entry.value_ptr.url) |url| {
-            try buf.appendSlice(allocator, ",\n      \"url\": \"");
-            try appendJsonEscaped(&buf, allocator, url);
-            try buf.appendSlice(allocator, "\"");
-        }
         if (entry.value_ptr.resolved) |resolved| {
             try buf.appendSlice(allocator, ",\n      \"resolved\": \"");
             try appendJsonEscaped(&buf, allocator, resolved);
@@ -161,24 +229,44 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
             try buf.appendSlice(allocator, "\"");
         }
 
-        // Write dependencies if any
+        // Write dependencies
         if (entry.value_ptr.dependencies) |*deps| {
             if (deps.count() > 0) {
-                try buf.appendSlice(allocator, ",\n      \"dependencies\": {\n");
-                var deps_it = deps.iterator();
-                var first_dep = true;
-                while (deps_it.next()) |dep_entry| {
-                    if (!first_dep) {
-                        try buf.appendSlice(allocator, ",\n");
-                    }
-                    first_dep = false;
-                    try buf.appendSlice(allocator, "        \"");
-                    try appendJsonEscaped(&buf, allocator, dep_entry.key_ptr.*);
-                    try buf.appendSlice(allocator, "\": \"");
-                    try appendJsonEscaped(&buf, allocator, dep_entry.value_ptr.*);
+                try buf.appendSlice(allocator, ",\n      \"dependencies\": ");
+                try writeJsonStringMap(&buf, allocator, deps, "      ");
+            }
+        }
+
+        // Write peerDependencies
+        if (entry.value_ptr.peer_dependencies) |*deps| {
+            if (deps.count() > 0) {
+                try buf.appendSlice(allocator, ",\n      \"peerDependencies\": ");
+                try writeJsonStringMap(&buf, allocator, deps, "      ");
+            }
+        }
+
+        // Write bin entries
+        if (entry.value_ptr.bin) |*b| {
+            if (b.count() > 0) {
+                try buf.appendSlice(allocator, ",\n      \"bin\": ");
+                try writeJsonStringMap(&buf, allocator, b, "      ");
+            }
+        }
+
+        // Write optionalPeers
+        if (entry.value_ptr.optional_peers) |*op| {
+            if (op.count() > 0) {
+                try buf.appendSlice(allocator, ",\n      \"optionalPeers\": [");
+                var op_it = op.iterator();
+                var first_op = true;
+                while (op_it.next()) |op_entry| {
+                    if (!first_op) try buf.appendSlice(allocator, ", ");
+                    first_op = false;
+                    try buf.appendSlice(allocator, "\"");
+                    try appendJsonEscaped(&buf, allocator, op_entry.key_ptr.*);
                     try buf.appendSlice(allocator, "\"");
                 }
-                try buf.appendSlice(allocator, "\n      }");
+                try buf.appendSlice(allocator, "]");
             }
         }
 
@@ -243,10 +331,67 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
     var lockfile = types.Lockfile{
         .version = try allocator.dupe(u8, version),
         .lockfile_version = lockfile_version,
+        .workspaces = std.StringHashMap(types.WorkspaceLockEntry).init(allocator),
         .packages = std.StringHashMap(types.LockfileEntry).init(allocator),
         .generated_at = generated_at,
     };
     errdefer lockfile.deinit(allocator);
+
+    // Parse workspaces
+    if (root.object.get("workspaces")) |ws_value| {
+        if (ws_value == .object) {
+            var ws_it = ws_value.object.iterator();
+            while (ws_it.next()) |entry| {
+                const ws_key = entry.key_ptr.*;
+                const ws_val = entry.value_ptr.*;
+                if (ws_val != .object) continue;
+
+                const ws_name = if (ws_val.object.get("name")) |v|
+                    if (v == .string) v.string else ws_key
+                else
+                    ws_key;
+
+                var ws_version: ?[]const u8 = null;
+                if (ws_val.object.get("version")) |v| {
+                    if (v == .string) ws_version = try allocator.dupe(u8, v.string);
+                }
+
+                var ws_deps: ?std.StringHashMap([]const u8) = null;
+                var ws_dev_deps: ?std.StringHashMap([]const u8) = null;
+                var ws_system: ?std.StringHashMap([]const u8) = null;
+
+                inline for (.{
+                    .{ "dependencies", &ws_deps },
+                    .{ "devDependencies", &ws_dev_deps },
+                    .{ "system", &ws_system },
+                }) |pair| {
+                    if (ws_val.object.get(pair[0])) |deps_val| {
+                        if (deps_val == .object) {
+                            var map = std.StringHashMap([]const u8).init(allocator);
+                            var d_it = deps_val.object.iterator();
+                            while (d_it.next()) |d_entry| {
+                                if (d_entry.value_ptr.* == .string) {
+                                    try map.put(
+                                        try allocator.dupe(u8, d_entry.key_ptr.*),
+                                        try allocator.dupe(u8, d_entry.value_ptr.string),
+                                    );
+                                }
+                            }
+                            if (map.count() > 0) pair[1].* = map else map.deinit();
+                        }
+                    }
+                }
+
+                try lockfile.workspaces.put(try allocator.dupe(u8, ws_key), .{
+                    .name = try allocator.dupe(u8, ws_name),
+                    .version = ws_version,
+                    .dependencies = ws_deps,
+                    .dev_dependencies = ws_dev_deps,
+                    .system = ws_system,
+                });
+            }
+        }
+    }
 
     // Parse packages
     if (root.object.get("packages")) |packages_value| {
@@ -290,20 +435,44 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                 if (v == .string) integrity = try allocator.dupe(u8, v.string);
             }
 
+            // Parse string map fields (dependencies, peerDependencies, bin)
             var dependencies: ?std.StringHashMap([]const u8) = null;
-            if (pkg_value.object.get("dependencies")) |deps_value| {
-                if (deps_value == .object) {
-                    var deps_map = std.StringHashMap([]const u8).init(allocator);
-                    var deps_it = deps_value.object.iterator();
-                    while (deps_it.next()) |dep_entry| {
-                        if (dep_entry.value_ptr.* == .string) {
-                            try deps_map.put(
-                                try allocator.dupe(u8, dep_entry.key_ptr.*),
-                                try allocator.dupe(u8, dep_entry.value_ptr.string),
-                            );
+            var peer_dependencies: ?std.StringHashMap([]const u8) = null;
+            var bin: ?std.StringHashMap([]const u8) = null;
+
+            inline for (.{
+                .{ "dependencies", &dependencies },
+                .{ "peerDependencies", &peer_dependencies },
+                .{ "bin", &bin },
+            }) |pair| {
+                if (pkg_value.object.get(pair[0])) |deps_value| {
+                    if (deps_value == .object) {
+                        var deps_map = std.StringHashMap([]const u8).init(allocator);
+                        var deps_it = deps_value.object.iterator();
+                        while (deps_it.next()) |dep_entry| {
+                            if (dep_entry.value_ptr.* == .string) {
+                                try deps_map.put(
+                                    try allocator.dupe(u8, dep_entry.key_ptr.*),
+                                    try allocator.dupe(u8, dep_entry.value_ptr.string),
+                                );
+                            }
+                        }
+                        if (deps_map.count() > 0) pair[1].* = deps_map else deps_map.deinit();
+                    }
+                }
+            }
+
+            // Parse optionalPeers (array of strings)
+            var optional_peers: ?std.StringHashMap(bool) = null;
+            if (pkg_value.object.get("optionalPeers")) |op_val| {
+                if (op_val == .array) {
+                    var op_map = std.StringHashMap(bool).init(allocator);
+                    for (op_val.array.items) |item| {
+                        if (item == .string) {
+                            try op_map.put(try allocator.dupe(u8, item.string), true);
                         }
                     }
-                    dependencies = deps_map;
+                    if (op_map.count() > 0) optional_peers = op_map else op_map.deinit();
                 }
             }
 
@@ -315,6 +484,9 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                 .resolved = resolved,
                 .integrity = integrity,
                 .dependencies = dependencies,
+                .peer_dependencies = peer_dependencies,
+                .bin = bin,
+                .optional_peers = optional_peers,
             };
 
             try lockfile.packages.put(try allocator.dupe(u8, pkg_key), lock_entry);

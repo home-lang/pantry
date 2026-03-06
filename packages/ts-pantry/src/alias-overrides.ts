@@ -20,7 +20,7 @@ export interface AliasOverride {
  * Add entries here to define aliases that should persist through regeneration
  */
 export const ALIAS_OVERRIDES: AliasOverride[] = [
-  // Common programming languages
+  // Programming languages
   {
     domain: 'php.net',
     aliases: ['php'],
@@ -41,8 +41,42 @@ export const ALIAS_OVERRIDES: AliasOverride[] = [
     domain: 'python.org',
     aliases: ['python', 'py'],
   },
+  {
+    domain: 'openjdk.org',
+    aliases: ['java', 'jdk'],
+  },
+  {
+    domain: 'kotlinlang.org',
+    aliases: ['kotlin'],
+  },
+  {
+    domain: 'scala-lang.org',
+    aliases: ['scala'],
+  },
+  {
+    domain: 'deno.land',
+    aliases: ['deno'],
+  },
 
-  // Common tools with short names
+  // Build tools & compilers
+  {
+    domain: 'openssl.org',
+    aliases: ['openssl'],
+  },
+  {
+    domain: 'cmake.org',
+    aliases: ['cmake'],
+  },
+  {
+    domain: 'gradle.org',
+    aliases: ['gradle'],
+  },
+  {
+    domain: 'maven.apache.org',
+    aliases: ['maven', 'mvn'],
+  },
+
+  // Common CLI tools
   {
     domain: 'curl.se',
     aliases: ['curl'],
@@ -54,6 +88,14 @@ export const ALIAS_OVERRIDES: AliasOverride[] = [
   {
     domain: 'vim.org',
     aliases: ['vim', 'vi'],
+  },
+  {
+    domain: 'gnupg.org',
+    aliases: ['gpg'],
+  },
+  {
+    domain: 'crates.io/ripgrep',
+    aliases: ['ripgrep', 'rg'],
   },
 
   // Package managers
@@ -70,22 +112,50 @@ export const ALIAS_OVERRIDES: AliasOverride[] = [
     aliases: ['bun', 'bun.com'],
   },
 
-  // S3 tools
+  // Containers & infrastructure
   {
-    domain: 's3tools.org',
-    aliases: ['s3cmd'],
+    domain: 'docker.com/cli',
+    aliases: ['docker'],
   },
-
-  // AWS Tools
   {
-    domain: 'aws.amazon.com/cdk',
-    aliases: ['cdk', 'aws/cdk'],
+    domain: 'terraform.io',
+    aliases: ['terraform'],
+  },
+  {
+    domain: 'kubernetes.io/kubectl',
+    aliases: ['kubectl'],
+  },
+  {
+    domain: 'helm.sh',
+    aliases: ['helm'],
   },
 
   // Databases
   {
     domain: 'sqlite.org',
     aliases: ['sqlite'],
+  },
+  {
+    domain: 'postgresql.org',
+    aliases: ['postgres', 'postgresql'],
+  },
+  {
+    domain: 'redis.io',
+    aliases: ['redis'],
+  },
+  {
+    domain: 'mysql.com',
+    aliases: ['mysql'],
+  },
+
+  // Cloud tools
+  {
+    domain: 's3tools.org',
+    aliases: ['s3cmd'],
+  },
+  {
+    domain: 'aws.amazon.com/cdk',
+    aliases: ['cdk', 'aws/cdk'],
   },
 
   // Compression/Archive tools

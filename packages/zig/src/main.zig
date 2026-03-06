@@ -3138,6 +3138,29 @@ pub fn main() !void {
     const args = try io_helper.argsAlloc(allocator);
     defer allocator.free(args);
 
+    // Detect if invoked as panx/pnx (package executor aliases, like npx/bunx)
+    if (args.len >= 1) {
+        const exe_basename = std.fs.path.basename(args[0]);
+        if (std.mem.eql(u8, exe_basename, "panx") or std.mem.eql(u8, exe_basename, "pnx")) {
+            // Auto-route to px command: "panx foo bar" -> "pantry px foo bar"
+            if (args.len <= 1) {
+                style.print("Usage: {s} <executable> [args...]\n\nRun packages from npm (like npx/bunx)\n", .{exe_basename});
+                return;
+            }
+            // Build px args: skip argv[0], pass rest directly to px command
+            const px_args = args[1..];
+            const result = try lib.commands.pxCommand(allocator, px_args, .{});
+            if (result.exit_code != 0) {
+                if (result.message) |msg| {
+                    style.print("{s}\n", .{msg});
+                    allocator.free(msg);
+                }
+                std.process.exit(@intCast(result.exit_code));
+            }
+            return;
+        }
+    }
+
     // Handle no arguments or --help flag
     if (args.len <= 1) {
         printHelp();

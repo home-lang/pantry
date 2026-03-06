@@ -21,7 +21,7 @@ test "Lockfile - addEntry and retrieve" {
     const entry = lib.packages.LockfileEntry{
         .name = try allocator.dupe(u8, "test-package"),
         .version = try allocator.dupe(u8, "1.2.3"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,
@@ -54,7 +54,7 @@ test "Lockfile - multiple entries" {
         const entry = lib.packages.LockfileEntry{
             .name = try allocator.dupe(u8, e.name),
             .version = try allocator.dupe(u8, e.version),
-            .source = .pkgx,
+            .source = .pantry,
             .url = null,
             .resolved = null,
             .integrity = null,
@@ -106,7 +106,7 @@ test "Lockfile - basic structure" {
 
 test "Lockfile - PackageSource enum values" {
     try testing.expect(@TypeOf(lib.packages.PackageSource.local) != void);
-    try testing.expect(@TypeOf(lib.packages.PackageSource.pkgx) != void);
+    try testing.expect(@TypeOf(lib.packages.PackageSource.pantry) != void);
     try testing.expect(@TypeOf(lib.packages.PackageSource.github) != void);
     try testing.expect(@TypeOf(lib.packages.PackageSource.npm) != void);
 }
@@ -124,7 +124,7 @@ test "Lockfile - entry with dependencies" {
     const entry = lib.packages.LockfileEntry{
         .name = try allocator.dupe(u8, "parent-pkg"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,

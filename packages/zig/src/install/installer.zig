@@ -101,10 +101,11 @@ const InstallingStack = struct {
 /// Level 1: package name → raw registry JSON bytes (avoids duplicate HTTP fetches).
 /// Level 2: name@constraint → resolved version + tarball URL (avoids duplicate parsing).
 const NpmCache = struct {
-    // --- Level 2: resolution cache (name@constraint → version + tarball) ---
+    // --- Level 2: resolution cache (name@constraint → version + tarball + integrity) ---
     const ResolutionEntry = struct {
         version: []const u8,
         tarball_url: []const u8,
+        integrity: ?[]const u8 = null,
     };
 
     resolution_map: std.StringHashMap(ResolutionEntry),
@@ -133,6 +134,7 @@ const NpmCache = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.version);
             self.allocator.free(entry.value_ptr.tarball_url);
+            if (entry.value_ptr.integrity) |i| self.allocator.free(i);
         }
         self.resolution_map.deinit();
 
@@ -150,14 +152,16 @@ const NpmCache = struct {
         self.resolution_mutex.lock();
         defer self.resolution_mutex.unlock();
         const entry = self.resolution_map.get(key) orelse return null;
+        const integrity_dupe = if (entry.integrity) |i| (allocator.dupe(u8, i) catch null) else null;
         return Installer.NpmResolution{
             .version = allocator.dupe(u8, entry.version) catch return null,
             .tarball_url = allocator.dupe(u8, entry.tarball_url) catch return null,
+            .integrity = integrity_dupe,
         };
     }
 
     /// Level 2: Store a resolution result (skip if another thread already cached it).
-    fn putResolution(self: *NpmCache, key: []const u8, version: []const u8, tarball_url: []const u8) void {
+    fn putResolution(self: *NpmCache, key: []const u8, version: []const u8, tarball_url: []const u8, integrity: ?[]const u8) void {
         self.resolution_mutex.lock();
         defer self.resolution_mutex.unlock();
         // Another thread may have resolved while we were parsing - skip to avoid memory leak
@@ -172,10 +176,12 @@ const NpmCache = struct {
             self.allocator.free(owned_ver);
             return;
         };
-        self.resolution_map.put(owned_key, .{ .version = owned_ver, .tarball_url = owned_url }) catch {
+        const owned_integrity = if (integrity) |i| (self.allocator.dupe(u8, i) catch null) else null;
+        self.resolution_map.put(owned_key, .{ .version = owned_ver, .tarball_url = owned_url, .integrity = owned_integrity }) catch {
             self.allocator.free(owned_key);
             self.allocator.free(owned_ver);
             self.allocator.free(owned_url);
+            if (owned_integrity) |oi| self.allocator.free(oi);
         };
     }
 
@@ -978,6 +984,7 @@ pub const Installer = struct {
     pub const NpmResolution = struct {
         version: []const u8,
         tarball_url: []const u8,
+        integrity: ?[]const u8 = null, // sha512-... or shasum
     };
 
     /// Read an installed package's package.json and install its dependencies + peerDependencies.
@@ -1262,13 +1269,25 @@ pub const Installer = struct {
         const tarball = dist.object.get("tarball") orelse return error.NoTarballUrl;
         if (tarball != .string) return error.NoTarballUrl;
 
+        // Capture integrity hash: prefer sha512 "integrity" field, fallback to "shasum"
+        var integrity: ?[]const u8 = null;
+        if (dist.object.get("integrity")) |i| {
+            if (i == .string) integrity = try self.allocator.dupe(u8, i.string);
+        }
+        if (integrity == null) {
+            if (dist.object.get("shasum")) |s| {
+                if (s == .string) integrity = try self.allocator.dupe(u8, s.string);
+            }
+        }
+
         const result = NpmResolution{
             .version = try self.allocator.dupe(u8, target_version),
             .tarball_url = try self.allocator.dupe(u8, tarball.string),
+            .integrity = integrity,
         };
 
         // Store in L2 cache for other threads with same constraint
-        self.npm_cache.putResolution(cache_key, result.version, result.tarball_url);
+        self.npm_cache.putResolution(cache_key, result.version, result.tarball_url, result.integrity);
 
         return result;
     }

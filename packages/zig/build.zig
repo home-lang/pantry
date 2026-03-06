@@ -96,6 +96,12 @@ pub fn build(b: *std.Build) void {
     });
     b.installArtifact(exe);
 
+    // Package executor aliases (like npx/bunx) - symlinks to pantry binary
+    inline for (.{ "panx", "pnx" }) |alias_name| {
+        const symlink_step = b.addInstallBinFile(exe.getEmittedBin(), alias_name);
+        b.getInstallStep().dependOn(&symlink_step.step);
+    }
+
     // Run command
     const run_step = b.step("run", "Run the app");
     const run_cmd = b.addRunArtifact(exe);

@@ -18,9 +18,16 @@ const WorkspaceInstallResult = struct {
     version: []const u8,
     success: bool,
     error_msg: ?[]const u8,
+    // Enriched fields for lockfile
+    resolved_version: ?[]const u8 = null, // Exact resolved version
+    tarball_url: ?[]const u8 = null, // Resolved download URL
+    integrity: ?[]const u8 = null, // Integrity hash (sha512 or shasum)
 
     fn deinit(self: *WorkspaceInstallResult, allocator: std.mem.Allocator) void {
         if (self.error_msg) |msg| allocator.free(msg);
+        if (self.resolved_version) |v| allocator.free(v);
+        if (self.tarball_url) |u| allocator.free(u);
+        if (self.integrity) |i| allocator.free(i);
     }
 };
 
@@ -97,8 +104,17 @@ fn installSingleWorkspaceDep(
                 };
             };
             const ver = allocator.dupe(u8, result.version) catch dep.version;
+            const pantry_resolved_url = allocator.dupe(u8, pantry_info.tarball_url) catch null;
             result.deinit(allocator);
-            return .{ .name = clean_name, .version = ver, .success = true, .error_msg = null };
+            return .{
+                .name = clean_name,
+                .version = ver,
+                .success = true,
+                .error_msg = null,
+                .resolved_version = allocator.dupe(u8, pantry_info.version) catch null,
+                .tarball_url = pantry_resolved_url,
+                .integrity = null,
+            };
         }
 
         // Fall back to npm registry
@@ -112,6 +128,7 @@ fn installSingleWorkspaceDep(
         };
         defer allocator.free(npm_info.version);
         defer allocator.free(npm_info.tarball_url);
+        defer if (npm_info.integrity) |i| allocator.free(i);
 
         const npm_spec = lib.packages.PackageSpec{
             .name = clean_name,
@@ -132,8 +149,18 @@ fn installSingleWorkspaceDep(
             };
         };
         const ver = allocator.dupe(u8, result.version) catch dep.version;
+        const resolved_url = allocator.dupe(u8, npm_info.tarball_url) catch null;
+        const resolved_integrity = if (npm_info.integrity) |i| (allocator.dupe(u8, i) catch null) else null;
         result.deinit(allocator);
-        return .{ .name = clean_name, .version = ver, .success = true, .error_msg = null };
+        return .{
+            .name = clean_name,
+            .version = ver,
+            .success = true,
+            .error_msg = null,
+            .resolved_version = allocator.dupe(u8, npm_info.version) catch null,
+            .tarball_url = resolved_url,
+            .integrity = resolved_integrity,
+        };
     }
 
     // Create package spec for pkgx/GitHub packages
@@ -549,6 +576,25 @@ pub fn installWorkspaceCommandWithOptions(
 
     const all_deps = all_deps_buffer[0..all_deps_count];
 
+    // Resolution data map: package name -> (resolved_version, tarball_url, integrity)
+    // Populated from install results, used when generating the lockfile
+    const ResolutionData = struct {
+        resolved_version: ?[]const u8 = null,
+        tarball_url: ?[]const u8 = null,
+        integrity: ?[]const u8 = null,
+    };
+    var resolution_map = std.StringHashMap(ResolutionData).init(allocator);
+    defer {
+        var rmap_it = resolution_map.iterator();
+        while (rmap_it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            if (entry.value_ptr.resolved_version) |v| allocator.free(v);
+            if (entry.value_ptr.tarball_url) |u| allocator.free(u);
+            if (entry.value_ptr.integrity) |i| allocator.free(i);
+        }
+        resolution_map.deinit();
+    }
+
     // Check if all packages can be skipped (lockfile + destination match)
     var ws_skipped_count: usize = 0;
     if (existing_lockfile) |*lf| {
@@ -722,12 +768,24 @@ pub fn installWorkspaceCommandWithOptions(
             }
         }
 
-        // Print results
+        // Print results and collect resolution data for lockfile
         for (remote_results) |result| {
             if (result.name.len == 0) continue;
             if (result.success) {
                 style.printInstalled(result.name, result.version);
                 success_count += 1;
+
+                // Capture resolution data for lockfile
+                if (result.resolved_version != null or result.tarball_url != null or result.integrity != null) {
+                    const res_key = allocator.dupe(u8, result.name) catch continue;
+                    resolution_map.put(res_key, .{
+                        .resolved_version = if (result.resolved_version) |v| (allocator.dupe(u8, v) catch null) else null,
+                        .tarball_url = if (result.tarball_url) |u| (allocator.dupe(u8, u) catch null) else null,
+                        .integrity = if (result.integrity) |i| (allocator.dupe(u8, i) catch null) else null,
+                    }) catch {
+                        allocator.free(res_key);
+                    };
+                }
             } else {
                 style.printFailed(result.name, result.version, result.error_msg);
                 failed_count += 1;
@@ -742,12 +800,125 @@ pub fn installWorkspaceCommandWithOptions(
     var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
     defer lockfile.deinit(allocator);
 
-    // Add entries for all installed packages
+    // --- Add workspace entries (what each workspace member declared) ---
+    {
+        // Root workspace entry
+        var root_ws_deps: ?std.StringHashMap([]const u8) = null;
+        var root_ws_dev_deps: ?std.StringHashMap([]const u8) = null;
+        var root_ws_system: ?std.StringHashMap([]const u8) = null;
+        const root_pkg_path = try std.fmt.allocPrint(allocator, "{s}/package.json", .{workspace_root});
+        defer allocator.free(root_pkg_path);
+
+        if (io_helper.readFileAlloc(allocator, root_pkg_path, 2 * 1024 * 1024)) |root_content| {
+            defer allocator.free(root_content);
+            if (std.json.parseFromSlice(std.json.Value, allocator, root_content, .{})) |root_parsed| {
+                defer root_parsed.deinit();
+                if (root_parsed.value == .object) {
+                    // Collect dependencies, devDependencies, system
+                    inline for (.{
+                        .{ "dependencies", &root_ws_deps },
+                        .{ "devDependencies", &root_ws_dev_deps },
+                        .{ "system", &root_ws_system },
+                    }) |pair| {
+                        if (root_parsed.value.object.get(pair[0])) |deps_val| {
+                            if (deps_val == .object) {
+                                var map = std.StringHashMap([]const u8).init(allocator);
+                                var d_it = deps_val.object.iterator();
+                                while (d_it.next()) |d_entry| {
+                                    if (d_entry.value_ptr.* == .string) {
+                                        map.put(
+                                            allocator.dupe(u8, d_entry.key_ptr.*) catch continue,
+                                            allocator.dupe(u8, d_entry.value_ptr.string) catch continue,
+                                        ) catch {};
+                                    }
+                                }
+                                if (map.count() > 0) pair[1].* = map else map.deinit();
+                            }
+                        }
+                    }
+
+                    const root_name = if (root_parsed.value.object.get("name")) |n|
+                        if (n == .string) n.string else workspace_config.name
+                    else
+                        workspace_config.name;
+
+                    try lockfile.addWorkspace(allocator, "", .{
+                        .name = try allocator.dupe(u8, root_name),
+                        .version = null,
+                        .dependencies = root_ws_deps,
+                        .dev_dependencies = root_ws_dev_deps,
+                        .system = root_ws_system,
+                    });
+                }
+            } else |_| {}
+        } else |_| {}
+
+        // Workspace member entries
+        for (workspace_config.members) |member| {
+            const member_pkg = try std.fmt.allocPrint(allocator, "{s}/package.json", .{member.abs_path});
+            defer allocator.free(member_pkg);
+
+            const m_content = io_helper.readFileAlloc(allocator, member_pkg, 1024 * 1024) catch continue;
+            defer allocator.free(m_content);
+
+            const m_parsed = std.json.parseFromSlice(std.json.Value, allocator, m_content, .{}) catch continue;
+            defer m_parsed.deinit();
+
+            if (m_parsed.value != .object) continue;
+
+            const m_name = if (m_parsed.value.object.get("name")) |n|
+                if (n == .string) n.string else member.name
+            else
+                member.name;
+
+            const m_version: ?[]const u8 = if (m_parsed.value.object.get("version")) |v|
+                if (v == .string) (allocator.dupe(u8, v.string) catch null) else null
+            else
+                null;
+
+            var m_deps: ?std.StringHashMap([]const u8) = null;
+            var m_dev_deps: ?std.StringHashMap([]const u8) = null;
+
+            inline for (.{ .{ "dependencies", &m_deps }, .{ "devDependencies", &m_dev_deps } }) |pair| {
+                if (m_parsed.value.object.get(pair[0])) |deps_val| {
+                    if (deps_val == .object) {
+                        var map = std.StringHashMap([]const u8).init(allocator);
+                        var d_it = deps_val.object.iterator();
+                        while (d_it.next()) |d_entry| {
+                            if (d_entry.value_ptr.* == .string) {
+                                map.put(
+                                    allocator.dupe(u8, d_entry.key_ptr.*) catch continue,
+                                    allocator.dupe(u8, d_entry.value_ptr.string) catch continue,
+                                ) catch {};
+                            }
+                        }
+                        if (map.count() > 0) pair[1].* = map else map.deinit();
+                    }
+                }
+            }
+
+            // Compute relative path from workspace root
+            const rel_path = if (std.mem.startsWith(u8, member.abs_path, workspace_root))
+                member.abs_path[workspace_root.len + 1 ..]
+            else
+                member.path;
+
+            try lockfile.addWorkspace(allocator, rel_path, .{
+                .name = try allocator.dupe(u8, m_name),
+                .version = m_version,
+                .dependencies = m_deps,
+                .dev_dependencies = m_dev_deps,
+                .system = null,
+            });
+        }
+    }
+
+    // --- Add package entries with resolved data ---
     const pkg_registry = @import("../../../packages/generated.zig");
     for (all_deps_buffer[0..all_deps_count]) |dep| {
         const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
 
-        // Determine the correct source: npm packages vs pkgx system packages
+        // Determine the correct source
         const lock_source: lib.packages.PackageSource = if (dep.source != .registry)
             switch (dep.source) {
                 .github => .github,
@@ -761,19 +932,138 @@ pub fn installWorkspaceCommandWithOptions(
         else if (pkg_registry.getPackageByName(clean_dep_name) != null)
             .pantry
         else
-            .npm; // Default to npm for unknown registry deps
+            .npm;
+
+        // Look up resolution data captured during installation
+        const resolution = resolution_map.get(clean_dep_name);
+        const resolved_version = if (resolution) |r| r.resolved_version else null;
+        const entry_version = resolved_version orelse dep.version;
+        const resolved_url = if (resolution) |r| r.tarball_url else null;
+        const resolved_integrity = if (resolution) |r| r.integrity else null;
+
+        // Read installed package.json for dependencies and bin entries
+        var pkg_deps: ?std.StringHashMap([]const u8) = null;
+        var pkg_peer_deps: ?std.StringHashMap([]const u8) = null;
+        var pkg_bin: ?std.StringHashMap([]const u8) = null;
+        var pkg_optional_peers: ?std.StringHashMap(bool) = null;
+
+        if (lock_source == .npm) {
+            const installed_pkg_path = try std.fmt.allocPrint(
+                allocator,
+                "{s}/{s}/{s}/package.json",
+                .{ workspace_root, shared_installer.modules_dir, clean_dep_name },
+            );
+            defer allocator.free(installed_pkg_path);
+
+            if (io_helper.readFileAlloc(allocator, installed_pkg_path, 2 * 1024 * 1024)) |pkg_content| {
+                defer allocator.free(pkg_content);
+
+                if (std.json.parseFromSlice(std.json.Value, allocator, pkg_content, .{})) |pkg_parsed| {
+                    defer pkg_parsed.deinit();
+                    if (pkg_parsed.value == .object) {
+                        // Extract dependencies
+                        if (pkg_parsed.value.object.get("dependencies")) |deps_val| {
+                            if (deps_val == .object and deps_val.object.count() > 0) {
+                                var map = std.StringHashMap([]const u8).init(allocator);
+                                var d_it = deps_val.object.iterator();
+                                while (d_it.next()) |d_entry| {
+                                    if (d_entry.value_ptr.* == .string) {
+                                        map.put(
+                                            allocator.dupe(u8, d_entry.key_ptr.*) catch continue,
+                                            allocator.dupe(u8, d_entry.value_ptr.string) catch continue,
+                                        ) catch {};
+                                    }
+                                }
+                                if (map.count() > 0) pkg_deps = map else map.deinit();
+                            }
+                        }
+
+                        // Extract peerDependencies
+                        if (pkg_parsed.value.object.get("peerDependencies")) |deps_val| {
+                            if (deps_val == .object and deps_val.object.count() > 0) {
+                                var map = std.StringHashMap([]const u8).init(allocator);
+                                var d_it = deps_val.object.iterator();
+                                while (d_it.next()) |d_entry| {
+                                    if (d_entry.value_ptr.* == .string) {
+                                        map.put(
+                                            allocator.dupe(u8, d_entry.key_ptr.*) catch continue,
+                                            allocator.dupe(u8, d_entry.value_ptr.string) catch continue,
+                                        ) catch {};
+                                    }
+                                }
+                                if (map.count() > 0) pkg_peer_deps = map else map.deinit();
+                            }
+                        }
+
+                        // Extract peerDependenciesMeta (optional peers)
+                        if (pkg_parsed.value.object.get("peerDependenciesMeta")) |meta_val| {
+                            if (meta_val == .object) {
+                                var omap = std.StringHashMap(bool).init(allocator);
+                                var m_it = meta_val.object.iterator();
+                                while (m_it.next()) |m_entry| {
+                                    if (m_entry.value_ptr.* == .object) {
+                                        if (m_entry.value_ptr.object.get("optional")) |opt| {
+                                            if (opt == .bool and opt.bool) {
+                                                omap.put(
+                                                    allocator.dupe(u8, m_entry.key_ptr.*) catch continue,
+                                                    true,
+                                                ) catch {};
+                                            }
+                                        }
+                                    }
+                                }
+                                if (omap.count() > 0) pkg_optional_peers = omap else omap.deinit();
+                            }
+                        }
+
+                        // Extract bin entries
+                        if (pkg_parsed.value.object.get("bin")) |bin_val| {
+                            if (bin_val == .string) {
+                                // Single binary: use package name as command
+                                var map = std.StringHashMap([]const u8).init(allocator);
+                                const bin_name = if (std.mem.lastIndexOf(u8, clean_dep_name, "/")) |idx|
+                                    clean_dep_name[idx + 1 ..]
+                                else
+                                    clean_dep_name;
+                                map.put(
+                                    allocator.dupe(u8, bin_name) catch "",
+                                    allocator.dupe(u8, bin_val.string) catch "",
+                                ) catch {};
+                                if (map.count() > 0) pkg_bin = map else map.deinit();
+                            } else if (bin_val == .object) {
+                                var map = std.StringHashMap([]const u8).init(allocator);
+                                var b_it = bin_val.object.iterator();
+                                while (b_it.next()) |b_entry| {
+                                    if (b_entry.value_ptr.* == .string) {
+                                        map.put(
+                                            allocator.dupe(u8, b_entry.key_ptr.*) catch continue,
+                                            allocator.dupe(u8, b_entry.value_ptr.string) catch continue,
+                                        ) catch {};
+                                    }
+                                }
+                                if (map.count() > 0) pkg_bin = map else map.deinit();
+                            }
+                        }
+                    }
+                } else |_| {}
+            } else |_| {}
+        }
 
         const entry = lib.packages.LockfileEntry{
             .name = try allocator.dupe(u8, clean_dep_name),
-            .version = try allocator.dupe(u8, dep.version),
+            .version = try allocator.dupe(u8, entry_version),
             .source = lock_source,
             .url = null,
-            .resolved = null,
-            .integrity = null,
-            .dependencies = null,
+            .resolved = if (resolved_url) |u| (try allocator.dupe(u8, u)) else null,
+            .integrity = if (resolved_integrity) |i| (try allocator.dupe(u8, i)) else null,
+            .dependencies = pkg_deps,
+            .peer_dependencies = pkg_peer_deps,
+            .bin = pkg_bin,
+            .optional_peers = pkg_optional_peers,
         };
 
-        const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
+        // Use resolved version in key if available
+        const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, entry_version });
         defer allocator.free(key);
         try lockfile.addEntry(allocator, key, entry);
     }
