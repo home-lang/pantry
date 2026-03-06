@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install deno.land`
+ * @name `deno`
  * @homepage https://deno.com/
  * @buildDependencies `llvm.org`, `curl.se`, `cmake.org@^3`, ... (+4 more) - required only when building from source
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.denoland
+ * // Access the package
+ * const pkg = pantry.deno
+ * // Or access via domain
+ * const samePkg = pantry.denoland
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "deno"
  * console.log(pkg.description) // "A modern runtime for JavaScript and TypeScript."
  * console.log(pkg.programs)    // ["deno"]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/deno-land.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const denolandPackage = {
+export const denoPackage = {
   /**
   * The display name of this package.
   */
@@ -241,7 +246,11 @@ export const denolandPackage = {
     '1.28.0',
     '1.26.2',
   ] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 
-export type DenolandPackage = typeof denolandPackage
+export type DenoPackage = typeof denoPackage

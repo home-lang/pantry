@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install postgresql.org
+launchpad install postgres
 ```
 
 ## Programs
@@ -48,6 +48,12 @@ This package provides the following executable programs:
 - `psql`
 - `reindexdb`
 - `vacuumdb`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `postgres`
 
 ## Available Versions
 
@@ -97,7 +103,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.postgresql
+const pkg = pantry.postgres
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

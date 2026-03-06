@@ -1,5 +1,5 @@
 /**
- * **docker/cli** - Pack, ship and run any application as a lightweight container
+ * **docker** - Pack, ship and run any application as a lightweight container
  *
  * @domain `docker.com/cli`
  * @programs `docker`
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install docker.com/cli`
+ * @aliases `docker`
  * @homepage https://www.docker.com/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.dockercomcli
+ * // Access via alias (recommended)
+ * const pkg = pantry.docker
+ * // Or access via domain
+ * const samePkg = pantry.dockercomcli
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "docker/cli"
  * console.log(pkg.description) // "Pack, ship and run any application as a lightwe..."
  * console.log(pkg.programs)    // ["docker"]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/docker-com/cli.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const dockercomcliPackage = {
+export const dockerPackage = {
   /**
   * The display name of this package.
   */
@@ -143,7 +148,13 @@ export const dockercomcliPackage = {
     '20.10.27',
     '20.10.26',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'docker',
+  ] as const,
 }
 
-export type DockercomcliPackage = typeof dockercomcliPackage
+export type DockerPackage = typeof dockerPackage

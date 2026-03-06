@@ -1,5 +1,5 @@
 /**
- * **openjdk** - Development kit for the Java programming language
+ * **java** - Development kit for the Java programming language
  *
  * @domain `openjdk.org`
  * @programs `jar`, `jarsigner`, `java`, `javac`, `javadoc`, ... (+22 more)
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openjdk.org`
+ * @aliases `java`, `jdk`
  * @homepage https://openjdk.java.net/
  * @dependencies `giflib.sourceforge.io`, `harfbuzz.org^8`, `libjpeg-turbo.org`, ... (+17 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `linux:llvm.org@^16`, `linux:gnu.org/make`, `gnu.org/autoconf`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -15,7 +16,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.openjdkorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.java
+ * // Or access via domain
+ * const samePkg = pantry.openjdkorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "openjdk"
  * console.log(pkg.description) // "Development kit for the Java programming language"
  * console.log(pkg.programs)    // ["jar", "jarsigner", ...]
@@ -25,7 +30,7 @@
  * @see https://ts-pkgx.netlify.app/packages/openjdk-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const openjdkorgPackage = {
+export const javaPackage = {
   /**
   * The display name of this package.
   */
@@ -135,7 +140,14 @@ export const openjdkorgPackage = {
     '11.0.28.5',
     '11.0.23.6',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'java',
+    'jdk',
+  ] as const,
 }
 
-export type OpenjdkorgPackage = typeof openjdkorgPackage
+export type JavaPackage = typeof javaPackage

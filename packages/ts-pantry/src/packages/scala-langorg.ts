@@ -1,5 +1,5 @@
 /**
- * **scala-lang** - The Scala 3 compiler, also known as Dotty.
+ * **scala** - The Scala 3 compiler, also known as Dotty.
  *
  * @domain `scala-lang.org`
  * @programs `scalac`, `scala`, `scala-cli`, `sbtn`, `amm`
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install scala-lang.org`
+ * @aliases `scala`
  * @homepage https://dotty.epfl.ch
  * @dependencies `openjdk.org`
  * @buildDependencies `curl.se` - required only when building from source
@@ -15,7 +16,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.scalalangorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.scala
+ * // Or access via domain
+ * const samePkg = pantry.scalalangorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "scala-lang"
  * console.log(pkg.description) // "The Scala 3 compiler, also known as Dotty."
  * console.log(pkg.programs)    // ["scalac", "scala", ...]
@@ -25,7 +30,7 @@
  * @see https://ts-pkgx.netlify.app/packages/scala-lang-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const scalalangorgPackage = {
+export const scalaPackage = {
   /**
   * The display name of this package.
   */
@@ -96,7 +101,13 @@ export const scalalangorgPackage = {
     '3.3.6',
     '3.3.5',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'scala',
+  ] as const,
 }
 
-export type ScalalangorgPackage = typeof scalalangorgPackage
+export type ScalaPackage = typeof scalaPackage

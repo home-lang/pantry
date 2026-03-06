@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install kubernetes.io/kubectl`
+ * @name `kubectl`
  * @homepage https://kubernetes.io/docs/reference/kubectl/
  * @buildDependencies `go.dev@~1.24.4`, `gnu.org/coreutils@^9.1.0`, `gnu.org/bash@^5.1`, ... (+2 more) - required only when building from source
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.kubernetesiokubectl
+ * // Access the package
+ * const pkg = pantry.kubectl
+ * // Or access via domain
+ * const samePkg = pantry.kubernetesiokubectl
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "kubectl"
  * console.log(pkg.description) // "Production-Grade Container Scheduling and Manag..."
  * console.log(pkg.programs)    // ["kubectl"]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/kubernetes-io/kubectl.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const kubernetesiokubectlPackage = {
+export const kubectlPackage = {
   /**
   * The display name of this package.
   */
@@ -209,7 +214,11 @@ export const kubernetesiokubectlPackage = {
     '1.24.14',
     '1.24.12',
   ] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 
-export type KubernetesiokubectlPackage = typeof kubernetesiokubectlPackage
+export type KubectlPackage = typeof kubectlPackage

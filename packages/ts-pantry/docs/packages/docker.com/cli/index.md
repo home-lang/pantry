@@ -13,12 +13,18 @@
 
 ```bash
 # Install with launchpad
-launchpad install docker.com/cli
+launchpad install docker
 ```
 
 ## Programs
 
 This package provides the following executable programs:
+
+- `docker`
+
+## Aliases
+
+This package can also be accessed using these aliases:
 
 - `docker`
 
@@ -67,7 +73,7 @@ sh <(curl https://pkgx.sh) +docker.com/cli@29.3.0 -- $SHELL -i
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry['docker/cli']
+const pkg = pantry.docker
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

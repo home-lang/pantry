@@ -1,5 +1,5 @@
 /**
- * **kotlinlang** - Statically typed programming language for the JVM
+ * **kotlin** - Statically typed programming language for the JVM
  *
  * @domain `kotlinlang.org`
  * @programs `kapt`, `kotlin`, `kotlinc`, `kotlinc-js`, `kotlinc-jvm`
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install kotlinlang.org`
+ * @aliases `kotlin`
  * @homepage https://kotlinlang.org/
  * @dependencies `openjdk.org`
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.kotlinlangorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.kotlin
+ * // Or access via domain
+ * const samePkg = pantry.kotlinlangorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "kotlinlang"
  * console.log(pkg.description) // "Statically typed programming language for the JVM"
  * console.log(pkg.programs)    // ["kapt", "kotlin", ...]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/kotlinlang-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const kotlinlangorgPackage = {
+export const kotlinPackage = {
   /**
   * The display name of this package.
   */
@@ -95,7 +100,13 @@ export const kotlinlangorgPackage = {
     '1.9.10',
     '1.9.0',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'kotlin',
+  ] as const,
 }
 
-export type KotlinlangorgPackage = typeof kotlinlangorgPackage
+export type KotlinPackage = typeof kotlinPackage

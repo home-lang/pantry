@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install redis.io`
+ * @name `redis`
  * @homepage http://redis.io
  * @dependencies `openssl.org^1`
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.redisio
+ * // Access the package
+ * const pkg = pantry.redis
+ * // Or access via domain
+ * const samePkg = pantry.redisio
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "redis"
  * console.log(pkg.description) // "Redis is an in-memory database that persists on..."
  * console.log(pkg.programs)    // ["redis-server", "redis-cli", ...]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/redis-io.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const redisioPackage = {
+export const redisPackage = {
   /**
   * The display name of this package.
   */
@@ -131,7 +136,11 @@ export const redisioPackage = {
     '6.0.19',
     '6.0.18',
   ] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 
-export type RedisioPackage = typeof redisioPackage
+export type RedisPackage = typeof redisPackage

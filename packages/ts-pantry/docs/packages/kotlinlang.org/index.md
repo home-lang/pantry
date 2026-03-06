@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install kotlinlang.org
+launchpad install kotlin
 ```
 
 ## Programs
@@ -25,6 +25,12 @@ This package provides the following executable programs:
 - `kotlinc`
 - `kotlinc-js`
 - `kotlinc-jvm`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `kotlin`
 
 ## Available Versions
 
@@ -60,7 +66,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.kotlinlang
+const pkg = pantry.kotlin
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

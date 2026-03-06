@@ -1,6 +1,6 @@
 # Programming Languages
 
-15 packages in this category
+17 packages in this category
 
 Popular programming languages and their runtimes available through pkgx.
 
@@ -43,6 +43,16 @@ The Julia Programming Language
 **Programs**: julia
 
 **Install**: `launchpad install julialang.org`
+
+---
+
+### [kotlinlang.org](../packages/kotlinlang.org/index.md) (kotlinlang, kotlin)
+
+Statically typed programming language for the JVM
+
+**Programs**: kapt, kotlin, kotlinc, kotlinc-js, kotlinc-jvm
+
+**Install**: `launchpad install kotlin`
 
 ---
 
@@ -123,6 +133,16 @@ Empowering everyone to build reliable and efficient software.
 **Programs**: cargo-clippy, cargo-fmt, clippy-driver, rust-analyzer, rust-gdb, rust-gdbgui, rust-lldb, rustc, rustdoc, rustfmt
 
 **Install**: `launchpad install rust-lang.org`
+
+---
+
+### [scala-lang.org](../packages/scala-lang.org/index.md) (scala-lang, scala)
+
+The Scala 3 compiler, also known as Dotty.
+
+**Programs**: scalac, scala, scala-cli, sbtn, amm
+
+**Install**: `launchpad install scala`
 
 ---
 

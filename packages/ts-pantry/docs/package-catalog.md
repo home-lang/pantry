@@ -8,23 +8,23 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-06T03:13:41.242Z
+- **Last Updated**: 2026-03-06T04:56:57.274Z
 
 ## Table of Contents
 
-- [Programming Languages](#programming-languages) (15 packages)
+- [Programming Languages](#programming-languages) (17 packages)
 - [Artificial Intelligence](#artificial-intelligence) (13 packages)
 - [Databases](#databases) (14 packages)
 - [Web Development](#web-development) (4 packages)
-- [DevOps](#devops) (25 packages)
-- [Container & Kubernetes Tools](#container-kubernetes-tools) (24 packages)
+- [DevOps](#devops) (26 packages)
+- [Container & Kubernetes Tools](#container-kubernetes-tools) (25 packages)
 - [Monitoring & Observability](#monitoring-observability) (4 packages)
 - [Build Tools & Automation](#build-tools-automation) (16 packages)
 - [Package Managers](#package-managers) (16 packages)
 - [Editors & IDEs](#editors-ides) (8 packages)
 - [CLI Tools & Utilities](#cli-tools-utilities) (36 packages)
 - [Networking](#networking) (10 packages)
-- [Security & Cryptography](#security-cryptography) (12 packages)
+- [Security & Cryptography](#security-cryptography) (13 packages)
 - [Multimedia](#multimedia) (9 packages)
 - [Graphics Libraries](#graphics-libraries) (4 packages)
 - [Gaming & Game Development](#gaming-game-development) (1 packages)
@@ -41,7 +41,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Programming Languages
 
-15 packages in this category
+17 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -49,6 +49,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[dart.dev](./packages/dart.dev/index.md)** () | The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries, and more. | dart, dartaotruntime | 3.11.1 (+54) | `pkgx dart` |
 | **[go.dev](./packages/go.dev/index.md)** () | The Go programming language | go, gofmt | 1.26.1 (+89) | `pkgx go` |
 | **[julialang.org](./packages/julialang.org/index.md)** () | The Julia Programming Language | julia | 1.12.5 (+28) | `pkgx julia` |
+| **[kotlinlang.org](./packages/kotlinlang.org/index.md)** (kotlin) | Statically typed programming language for the JVM | kapt, kotlin, kotlinc, ... (+2) | 2.3.10 (+21) | `pkgx kotlin` |
 | **[lua.org](./packages/lua.org/index.md)** () | Powerful, lightweight programming language | lua, luac | 5.5.0 (+4) | `pkgx lua` |
 | **[luajit.org](./packages/luajit.org/index.md)** () | Mirror of the LuaJIT git repository | luajit, luajit-&lbrace;&lbrace;version.marketing&rbrace;&rbrace;. | 2.1.0 (+0) | `pkgx luajit` |
 | **[nodejs.org](./packages/nodejs.org/index.md)** () | Platform built on V8 to build network applications | node | 25.8.0 (+175) | `pkgx node` |
@@ -57,6 +58,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[python.org](./packages/python.org/index.md)** (py) | The Python programming language | python, python&lbrace;&lbrace; version.major &rbrace;&rbrace;, python&lbrace;&lbrace; version.marketing &rbrace;&rbrace; | 3.14.3 (+168) | `pkgx py` |
 | **[ruby-lang.org](./packages/ruby-lang.org/index.md)** (ruby) | Powerful, clean, object-oriented scripting language | erb, irb, rake, ... (+3) | 4.0.1 (+51) | `pkgx ruby` |
 | **[rust-lang.org](./packages/rust-lang.org/index.md)** () | Empowering everyone to build reliable and efficient software. | cargo-clippy, cargo-fmt, clippy-driver, ... (+7) | 1.94.0 (+42) | `pkgx rust` |
+| **[scala-lang.org](./packages/scala-lang.org/index.md)** (scala) | The Scala 3 compiler, also known as Dotty. | scalac, scala, scala-cli, ... (+2) | 3.8.2 (+15) | `pkgx scala` |
 | **[swift.org](./packages/swift.org/index.md)** () | The Swift Programming Language | docc, dsymutil, sourcekit-lsp, ... (+23) | 6.2.4 (+15) | `pkgx swift` |
 | **[tinygo.org](./packages/tinygo.org/index.md)** () | Go compiler for small places. Microcontrollers, WebAssembly (WASM/WASI), and command-line tools. ... | tinygo | 0.40.1 (+10) | `pkgx tinygo` |
 | **[ziglang.org](./packages/ziglang.org/index.md)** () | General-purpose programming language and toolchain for maintaining robust, optimal, and reusable ... | zig | 0.15.2 (+9) | `pkgx zig` |
@@ -115,13 +117,14 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## DevOps
 
-25 packages in this category
+26 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[ansible.com](./packages/ansible.com/index.md)** () | Ansible is a radically simple IT automation platform that makes your applications and systems eas... | ansible, ansible-config, ansible-connection, ... (+8) | 2.20.3 (+91) | `pkgx ansible` |
 | **[ansible.com/ansible-lint](./packages/ansible.com/ansible-lint/index.md)** () | ansible-lint checks playbooks for practices and behavior that could potentially be improved and c... | ansible-lint | 26.3.0 (+38) | `pkgx ansible-lint` |
 | **[consul.io](./packages/consul.io/index.md)** () | Consul is a distributed, highly available, and data center aware solution to connect and configur... | consul | 1.22.5 (+20) | `pkgx consul` |
+| **[docker.com/cli](./packages/docker.com/cli/index.md)** (docker) | Pack, ship and run any application as a lightweight container | docker | 29.3.0 (+73) | `pkgx docker` |
 | **[docker.com/compose](./packages/docker.com/compose/index.md)** () | Define and run multi-container applications with Docker | docker-compose | 5.1.0 (+69) | `pkgx docker-compose` |
 | **[fluxcd.io/flux2](./packages/fluxcd.io/flux2/index.md)** () | Open and extensible continuous delivery solution for Kubernetes. Powered by GitOps Toolkit. | flux | 2.8.1 (+21) | `pkgx flux` |
 | **[github.com/aws-cloudformation/cfn-lint](./packages/github.com/aws-cloudformation/cfn-lint.md)** () | Validate CloudFormation templates against the CloudFormation spec | cfn-lint | 1.46.0 (+172) | `pkgx cfn-lint` |
@@ -147,13 +150,14 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Container & Kubernetes Tools
 
-24 packages in this category
+25 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[cilium.io/cilium](./packages/cilium.io/cilium/index.md)** () | CLI to install, manage & troubleshoot Kubernetes clusters running Cilium | cilium | 0.19.2 (+32) | `pkgx cilium` |
 | **[cilium.io/hubble](./packages/cilium.io/hubble/index.md)** () | Hubble - Network, Service & Security Observability for Kubernetes using eBPF | hubble | 1.18.6 (+19) | `pkgx hubble` |
 | **[cloudnative-pg.io](./packages/cloudnative-pg.io/index.md)** () | CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreSQL databases with... | kubectl-cnpg | 1.28.1 (+16) | `pkgx kubectl-cnpg` |
+| **[docker.com/cli](./packages/docker.com/cli/index.md)** (docker) | Pack, ship and run any application as a lightweight container | docker | 29.3.0 (+73) | `pkgx docker` |
 | **[github.com/helmfile/helmfile](./packages/github.com/helmfile/helmfile.md)** () | Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as Helm releases. G... | helmfile | 1.4.1 (+40) | `pkgx helmfile` |
 | **[github.com/stern/stern](./packages/github.com/stern/stern.md)** () | ⎈ Multi pod and container log tailing for Kubernetes -- Friendly fork of <https://github.com/werck...> | stern | 1.33.1 (+8) | `pkgx stern` |
 | **[github.com/yannh/kubeconform](./packages/github.com/yannh/kubeconform.md)** () | A FAST Kubernetes manifests validator, with support for Custom Resources! | kubeconform | 0.7.0 (+4) | `pkgx kubeconform` |
@@ -203,7 +207,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[gnu.org/automake](./packages/gnu.org/automake/index.md)** () | Tool for generating GNU Standards-compliant Makefiles | aclocal, automake | 1.18.1 (+3) | `pkgx automake` |
 | **[gradle.org](./packages/gradle.org/index.md)** () | Open-source build automation tool based on the Groovy and Kotlin DSL | gradle | 9.4.0 (+27) | `pkgx gradle` |
 | **[just.systems](./packages/just.systems/index.md)** () | Handy way to save and run project-specific commands | just | 1.46.0 (+51) | `pkgx just` |
-| **[maven.apache.org](./packages/maven.apache.org/index.md)** () | Java-based project management | mvn, mvnDebug, mvnyjp | 3.9.12 (+12) | `pkgx mvn` |
+| **[maven.apache.org](./packages/maven.apache.org/index.md)** (maven) | Java-based project management | mvn, mvnDebug, mvnyjp | 3.9.12 (+12) | `pkgx maven` |
 | **[mesonbuild.com](./packages/mesonbuild.com/index.md)** () | Fast and user friendly build system | meson | 1.10.1 (+35) | `pkgx meson` |
 | **[ninja-build.org](./packages/ninja-build.org/index.md)** () | Small build system for use with gyp or CMake | ninja | 1.13.2 (+6) | `pkgx ninja` |
 | **[pantsbuild.org/scie-pants](./packages/pantsbuild.org/scie-pants/index.md)** () | Protects your Pants from the elements. | pants | 0.12.5 (+4) | `pkgx scie-pants` |
@@ -262,7 +266,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[crates.io/eza](./packages/crates.io/eza/index.md)** () | Modern, maintained replacement for ls | eza | 0.23.4 (+85) | `pkgx eza` |
 | **[crates.io/git-delta](./packages/crates.io/git-delta/index.md)** () | A syntax-highlighting pager for git, diff, grep, and blame output | delta | 0.18.2 (+10) | `pkgx delta` |
 | **[crates.io/hyperfine](./packages/crates.io/hyperfine/index.md)** () | A command-line benchmarking tool | hyperfine | 1.20.0 (+7) | `pkgx hyperfine` |
-| **[crates.io/ripgrep](./packages/crates.io/ripgrep/index.md)** () | ripgrep recursively searches directories for a regex pattern while respecting your gitignore | rg | 15.1.0 (+8) | `pkgx rg` |
+| **[crates.io/ripgrep](./packages/crates.io/ripgrep/index.md)** (ripgrep) | ripgrep recursively searches directories for a regex pattern while respecting your gitignore | rg | 15.1.0 (+8) | `pkgx ripgrep` |
 | **[crates.io/ripgrep-all](./packages/crates.io/ripgrep-all/index.md)** () | rga: ripgrep, but also search in PDFs, E-Books, Office documents, zip, tar.gz, etc. | rga, rga-fzf, rga-fzf-open, ... (+1) | 0.10.10 (+4) | `pkgx rga` |
 | **[crates.io/sd](./packages/crates.io/sd/index.md)** () | Intuitive find & replace CLI (sed alternative) | sd | 1.1.0 (+2) | `pkgx sd` |
 | **[crates.io/tokei](./packages/crates.io/tokei/index.md)** () | Program that allows you to count code, quickly | tokei | 14.0.0 (+2) | `pkgx tokei` |
@@ -310,7 +314,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Security & Cryptography
 
-12 packages in this category
+13 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
@@ -321,8 +325,9 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[checkov.io](./packages/checkov.io/index.md)** () | Prevent cloud misconfigurations and find vulnerabilities during build-time in infrastructure as c... | checkov | 3.2.507 (+533) | `pkgx checkov` |
 | **[filippo.io/age](./packages/filippo.io/age/index.md)** () | A simple, modern and secure encryption tool (and Go library) with small explicit keys, no config ... | age, age-keygen | 1.3.1 (+4) | `pkgx age` |
 | **[filippo.io/yubikey-agent](./packages/filippo.io/yubikey-agent/index.md)** () | Seamless ssh-agent for YubiKeys and other PIV tokens | yubikey-agent | 0.1.6 (+0) | `pkgx yubikey-agent` |
+| **[gnupg.org](./packages/gnupg.org/index.md)** (gpg) | GNU Pretty Good Privacy (PGP) package | gpg, gpg-agent, gpg-connect-agent, ... (+10) | 2.4.8 (+11) | `pkgx gpg` |
 | **[mkcert.dev](./packages/mkcert.dev/index.md)** () | A simple zero-config tool to make locally trusted development certificates with any names you&#39... | mkcert | 1.4.4 (+0) | `pkgx mkcert` |
-| **[openssl.org](./packages/openssl.org/index.md)** () | TLS/SSL and crypto library with QUIC APIs | openssl, c_rehash | 3.6.1 (+42) | `pkgx OpenSSL` |
+| **[openssl.org](./packages/openssl.org/index.md)** (openssl) | TLS/SSL and crypto library with QUIC APIs | openssl, c_rehash | 3.6.1 (+42) | `pkgx openssl` |
 | **[orhun.dev/gpg-tui](./packages/orhun.dev/gpg-tui/index.md)** () | Manage your GnuPG keys with ease! 🔐 | gpg-tui | 0.11.1 (+2) | `pkgx gpg-tui` |
 | **[snyk.io](./packages/snyk.io/index.md)** () | Scans and monitors projects for security vulnerabilities | snyk | 1.1303.1 (+58) | `pkgx snyk` |
 | **[vaultproject.io](./packages/vaultproject.io/index.md)** () | A tool for secrets management, encryption as a service, and privileged access management | vault | 1.21.4 (+63) | `pkgx vault` |

@@ -1,5 +1,5 @@
 /**
- * **OpenSSL** - TLS/SSL and crypto library with QUIC APIs
+ * **openssl** - TLS/SSL and crypto library with QUIC APIs
  *
  * @domain `openssl.org`
  * @programs `openssl`, `c_rehash`
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openssl.org`
+ * @aliases `openssl`
  * @homepage https://quictls.github.io/openssl
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `perl.org@5` - required only when building from source
@@ -15,7 +16,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.opensslorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.openssl
+ * // Or access via domain
+ * const samePkg = pantry.opensslorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "OpenSSL"
  * console.log(pkg.description) // "TLS/SSL and crypto library with QUIC APIs"
  * console.log(pkg.programs)    // ["openssl", "c_rehash"]
@@ -25,7 +30,7 @@
  * @see https://ts-pkgx.netlify.app/packages/openssl-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const opensslorgPackage = {
+export const opensslPackage = {
   /**
   * The display name of this package.
   */
@@ -120,7 +125,13 @@ export const opensslorgPackage = {
     '1.1.1t',
     '1.1.1s',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'openssl',
+  ] as const,
 }
 
-export type OpensslorgPackage = typeof opensslorgPackage
+export type OpensslPackage = typeof opensslPackage

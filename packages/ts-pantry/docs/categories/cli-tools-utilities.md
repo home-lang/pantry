@@ -86,13 +86,13 @@ A command-line benchmarking tool
 
 ---
 
-### [crates.io/ripgrep](../packages/crates.io/ripgrep/index.md) (rg)
+### [crates.io/ripgrep](../packages/crates.io/ripgrep/index.md) (rg, ripgrep)
 
 ripgrep recursively searches directories for a regex pattern while respecting your gitignore
 
 **Programs**: rg
 
-**Install**: `launchpad install crates.io/ripgrep`
+**Install**: `launchpad install ripgrep`
 
 ---
 

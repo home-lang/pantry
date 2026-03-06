@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install gnupg.org
+launchpad install gpg
 ```
 
 ## Programs
@@ -33,6 +33,12 @@ This package provides the following executable programs:
 - `gpgv`
 - `kbxutil`
 - `watchgnupg`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `gpg`
 
 ## Available Versions
 
@@ -77,7 +83,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.gnupg
+const pkg = pantry.gpg
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

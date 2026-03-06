@@ -1,6 +1,6 @@
 # DevOps
 
-25 packages in this category
+26 packages in this category
 
 Tools for deployment, orchestration, and infrastructure management.
 
@@ -33,6 +33,16 @@ Consul is a distributed, highly available, and data center aware solution to con
 **Programs**: consul
 
 **Install**: `launchpad install consul.io`
+
+---
+
+### [docker.com/cli](../packages/docker.com/cli/index.md) (docker/cli, docker)
+
+Pack, ship and run any application as a lightweight container
+
+**Programs**: docker
+
+**Install**: `launchpad install docker`
 
 ---
 

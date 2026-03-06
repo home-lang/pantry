@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install cmake.org`
+ * @name `cmake`
  * @homepage https://www.cmake.org/
  * @dependencies `curl.se>=5<8.13`, `zlib.net@1`, `sourceware.org/bzip2@1`
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.cmakeorg
+ * // Access the package
+ * const pkg = pantry.cmake
+ * // Or access via domain
+ * const samePkg = pantry.cmakeorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "cmake"
  * console.log(pkg.description) // "Mirror of CMake upstream repository"
  * console.log(pkg.programs)    // ["cmake", "ccmake", ...]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/cmake-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const cmakeorgPackage = {
+export const cmakePackage = {
   /**
   * The display name of this package.
   */
@@ -152,7 +157,11 @@ export const cmakeorgPackage = {
     '3.24.4',
     '3.24.2',
   ] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 
-export type CmakeorgPackage = typeof cmakeorgPackage
+export type CmakePackage = typeof cmakePackage

@@ -1,6 +1,6 @@
 # Container & Kubernetes Tools
 
-24 packages in this category
+25 packages in this category
 
 Packages related to container & kubernetes tools.
 
@@ -33,6 +33,16 @@ CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreS
 **Programs**: kubectl-cnpg
 
 **Install**: `launchpad install cloudnative-pg.io`
+
+---
+
+### [docker.com/cli](../packages/docker.com/cli/index.md) (docker/cli, docker)
+
+Pack, ship and run any application as a lightweight container
+
+**Programs**: docker
+
+**Install**: `launchpad install docker`
 
 ---
 

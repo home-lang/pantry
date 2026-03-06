@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install openjdk.org
+launchpad install jdk
 ```
 
 ## Programs
@@ -47,6 +47,13 @@ This package provides the following executable programs:
 - `keytool`
 - `rmiregistry`
 - `serialver`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `java`
+- `jdk`
 
 ## Available Versions
 
@@ -99,7 +106,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.openjdk
+const pkg = pantry.java
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

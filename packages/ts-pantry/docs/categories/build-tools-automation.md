@@ -106,13 +106,13 @@ Handy way to save and run project-specific commands
 
 ---
 
-### [maven.apache.org](../packages/maven.apache.org/index.md) (mvn)
+### [maven.apache.org](../packages/maven.apache.org/index.md) (mvn, maven)
 
 Java-based project management
 
 **Programs**: mvn, mvnDebug, mvnyjp
 
-**Install**: `launchpad install maven.apache.org`
+**Install**: `launchpad install maven`
 
 ---
 

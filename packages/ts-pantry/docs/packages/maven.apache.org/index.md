@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install maven.apache.org
+launchpad install maven
 ```
 
 ## Programs
@@ -23,6 +23,12 @@ This package provides the following executable programs:
 - `mvn`
 - `mvnDebug`
 - `mvnyjp`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `maven`
 
 ## Available Versions
 
@@ -56,7 +62,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.mvn
+const pkg = pantry.maven
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

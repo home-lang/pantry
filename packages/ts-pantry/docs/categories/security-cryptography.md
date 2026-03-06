@@ -1,6 +1,6 @@
 # Security & Cryptography
 
-12 packages in this category
+13 packages in this category
 
 Packages related to security & cryptography.
 
@@ -76,6 +76,16 @@ Seamless ssh-agent for YubiKeys and other PIV tokens
 
 ---
 
+### [gnupg.org](../packages/gnupg.org/index.md) (gnupg, gpg)
+
+GNU Pretty Good Privacy (PGP) package
+
+**Programs**: gpg, gpg-agent, gpg-connect-agent, gpg-wks-server, gpgconf, gpgparsemail, gpgscm, gpgsm, gpgsplit, gpgtar, gpgv, kbxutil, watchgnupg
+
+**Install**: `launchpad install gpg`
+
+---
+
 ### [mkcert.dev](../packages/mkcert.dev/index.md) (mkcert)
 
 A simple zero-config tool to make locally trusted development certificates with any names you'd like.
@@ -86,13 +96,13 @@ A simple zero-config tool to make locally trusted development certificates with 
 
 ---
 
-### [openssl.org](../packages/openssl.org/index.md) (OpenSSL)
+### [openssl.org](../packages/openssl.org/index.md) (OpenSSL, openssl)
 
 TLS/SSL and crypto library with QUIC APIs
 
 **Programs**: openssl, c_rehash
 
-**Install**: `launchpad install openssl.org`
+**Install**: `launchpad install openssl`
 
 ---
 

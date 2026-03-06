@@ -129,7 +129,7 @@ import { clogtoolgithubioPackage } from './clog-toolgithubio'
 import { cloudflarecomcloudflaredPackage } from './cloudflare.com/cloudflared'
 import { cloudfoundryorgcfcliPackage } from './cloudfoundry.org/cf-cli'
 import { cloudnativepgioPackage } from './cloudnative-pgio'
-import { cmakeorgPackage } from './cmakeorg'
+import { cmakePackage } from './cmakeorg'
 import { cmockaorgPackage } from './cmockaorg'
 import { cnqueryioPackage } from './cnqueryio'
 import { cocoapodsorgxcodeprojPackage } from './cocoapods.org/xcodeproj'
@@ -228,7 +228,7 @@ import { cratesiopushenvPackage } from './crates.io/pushenv'
 import { cratesioqsvPackage } from './crates.io/qsv'
 import { cratesioragePackage } from './crates.io/rage'
 import { cratesioripgrepallPackage } from './crates.io/ripgrep-all'
-import { cratesioripgrepPackage } from './crates.io/ripgrep'
+import { ripgrepPackage } from './crates.io/ripgrep'
 import { cratesiormzPackage } from './crates.io/rmz'
 import { cratesiorpgcliPackage } from './crates.io/rpg-cli'
 import { cratesiortxcliPackage } from './crates.io/rtx-cli'
@@ -298,7 +298,7 @@ import { debianorgbashcompletionPackage } from './debian.org/bash-completion'
 import { debianorgisocodesPackage } from './debian.org/iso-codes'
 import { deepwisdomaiPackage } from './deepwisdomai'
 import { denilsonsanombrprettypingPackage } from './denilson.sa.nom.br/prettyping'
-import { denolandPackage } from './denoland'
+import { denoPackage } from './denoland'
 import { depotdevPackage } from './depotdev'
 import { destunreachorgsocatPackage } from './dest-unreach.org/socat'
 import { devyorhelnlncduPackage } from './dev.yorhel.nl/ncdu'
@@ -318,7 +318,7 @@ import { dnslookupdogPackage } from './dnslookupdog'
 import { docbookorgxslPackage } from './docbook.org/xsl'
 import { docbookorgPackage } from './docbookorg'
 import { dockercombuildxPackage } from './docker.com/buildx'
-import { dockercomcliPackage } from './docker.com/cli'
+import { dockerPackage } from './docker.com/cli'
 import { dockercomcomposePackage } from './docker.com/compose'
 import { dockercommachinePackage } from './docker.com/machine'
 import { doctavecomPackage } from './doctavecom'
@@ -919,7 +919,7 @@ import { gnupgorglibksbaPackage } from './gnupg.org/libksba'
 import { gnupgorgnpthPackage } from './gnupg.org/npth'
 import { gnupgorgpinentryPackage } from './gnupg.org/pinentry'
 import { gnupgorgv25Package } from './gnupg.org/v2.5'
-import { gnupgorgPackage } from './gnupgorg'
+import { gpgPackage } from './gnupgorg'
 import { gnuplotinfoPackage } from './gnuplotinfo'
 import { gnutlsorgPackage } from './gnutlsorg'
 import { godevgovulncheckPackage } from './go.dev/govulncheck'
@@ -947,7 +947,7 @@ import { goreleasercomPackage } from './goreleasercom'
 import { gourceioPackage } from './gourceio'
 import { gphotoorglibgphoto2Package } from './gphoto.org/libgphoto2'
 import { gqlgencomPackage } from './gqlgencom'
-import { gradleorgPackage } from './gradleorg'
+import { gradlePackage } from './gradleorg'
 import { grafanacomlokiPackage } from './grafana.com/loki'
 import { granteddevPackage } from './granteddev'
 import { graphicsmagickorgPackage } from './graphicsmagickorg'
@@ -976,7 +976,7 @@ import { hboehminfogcPackage } from './hboehm.info/gc'
 import { hdfgrouporghdf5Package } from './hdfgroup.org/HDF5'
 import { heasarcgsfcnasagovcfitsioPackage } from './heasarc.gsfc.nasa.gov/cfitsio'
 import { helixeditorcomPackage } from './helix-editorcom'
-import { helmshPackage } from './helmsh'
+import { helmPackage } from './helmsh'
 import { herokucomPackage } from './herokucom'
 import { hetznercomhcloudPackage } from './hetzner.com/hcloud'
 import { hjsongithubioPackage } from './hjsongithubio'
@@ -1052,7 +1052,7 @@ import { kislyukgithubioargcompletePackage } from './kislyuk.github.io/argcomple
 import { kluctlioPackage } from './kluctlio'
 import { kobuildPackage } from './kobuild'
 import { kornelskidssimPackage } from './kornel.ski/dssim'
-import { kotlinlangorgPackage } from './kotlinlangorg'
+import { kotlinPackage } from './kotlinlangorg'
 import { koyebcomPackage } from './koyebcom'
 import { kptdevPackage } from './kptdev'
 import { krewsigsk8sioPackage } from './krewsigsk8sio'
@@ -1061,7 +1061,7 @@ import { kubebuilderioPackage } from './kubebuilderio'
 import { kubecmcloudPackage } from './kubecmcloud'
 import { kubectxdevPackage } from './kubectxdev'
 import { kubelinterioPackage } from './kubelinterio'
-import { kubernetesiokubectlPackage } from './kubernetes.io/kubectl'
+import { kubectlPackage } from './kubernetes.io/kubectl'
 import { kubernetesiokustomizePackage } from './kubernetes.io/kustomize'
 import { kubernetesiominikubePackage } from './kubernetes.io/minikube'
 import { kubesharkcoPackage } from './kubesharkco'
@@ -1149,7 +1149,7 @@ import { markupsafepalletsprojectscomPackage } from './markupsafepalletsprojects
 import { materializecomPackage } from './materializecom'
 import { matiosourceforgeioPackage } from './matiosourceforgeio'
 import { maturinrsPackage } from './maturinrs'
-import { mavenapacheorgPackage } from './mavenapacheorg'
+import { mavenPackage } from './mavenapacheorg'
 import { mcmcjagssourceforgeioPackage } from './mcmc-jagssourceforgeio'
 import { meilisearchcomPackage } from './meilisearchcom'
 import { mercurerocksPackage } from './mercurerocks'
@@ -1200,7 +1200,7 @@ import { musllibcorgPackage } from './musllibcorg'
 import { mvdanccgofumptPackage } from './mvdan.cc/gofumpt'
 import { mvdanccshPackage } from './mvdan.cc/sh'
 import { mypylangorgPackage } from './mypy-langorg'
-import { mysqlcomPackage } from './mysqlcom'
+import { mysqlPackage } from './mysqlcom'
 import { nanoeditororgPackage } from './nano-editororg'
 import { nasmusPackage } from './nasmus'
 import { neovimioPackage } from './neovimio'
@@ -1253,7 +1253,7 @@ import { opendevorgopenstackpythonopenstackclientPackage } from './opendev.org/o
 import { openexrcomimathPackage } from './openexr.com/imath'
 import { openexrcomPackage } from './openexrcom'
 import { openinterpretercomPackage } from './openinterpretercom'
-import { openjdkorgPackage } from './openjdkorg'
+import { javaPackage } from './openjdkorg'
 import { openjpegorgPackage } from './openjpegorg'
 import { openldaporgliblmdbPackage } from './openldap.org/liblmdb'
 import { openldaporgPackage } from './openldaporg'
@@ -1266,7 +1266,7 @@ import { opensearchorgPackage } from './opensearchorg'
 import { openshiftcomPackage } from './openshiftcom'
 import { openslideorgPackage } from './openslideorg'
 import { opensshcomPackage } from './opensshcom'
-import { opensslorgPackage } from './opensslorg'
+import { opensslPackage } from './opensslorg'
 import { opensuseorglibsolvPackage } from './opensuse.org/libsolv'
 import { opentofuorgPackage } from './opentofuorg'
 import { openvpnnetPackage } from './openvpnnet'
@@ -1326,7 +1326,7 @@ import { popplerfreedesktoporgpopplerdataPackage } from './poppler.freedesktop.o
 import { popplerfreedesktoporgPackage } from './popplerfreedesktoporg'
 import { portaudiocomPackage } from './portaudiocom'
 import { postgresqlorglibpqPackage } from './postgresql.org/libpq'
-import { postgresqlorgPackage } from './postgresqlorg'
+import { postgresPackage } from './postgresqlorg'
 import { postgrestorgPackage } from './postgrestorg'
 import { practicalschemenetgauchePackage } from './practical-scheme.net/gauche'
 import { precommitcomPackage } from './pre-commitcom'
@@ -1383,7 +1383,7 @@ import { rcloneorgPackage } from './rcloneorg'
 import { re2corgPackage } from './re2corg'
 import { reacheremailcheckifemailexistscliPackage } from './reacher.email/check-if-email-exists-cli'
 import { rebar3orgPackage } from './rebar3org'
-import { redisioPackage } from './redisio'
+import { redisPackage } from './redisio'
 import { rendercomPackage } from './rendercom'
 import { replibytecomPackage } from './replibytecom'
 import { resticnetresticPackage } from './restic.net/restic'
@@ -1422,7 +1422,7 @@ import { sasslangcomlibsassPackage } from './sass-lang.com/libsass'
 import { sasslangcomsasscPackage } from './sass-lang.com/sassc'
 import { savannahnongnuorgaclPackage } from './savannah.nongnu.org/acl'
 import { savannahnongnuorgattrPackage } from './savannah.nongnu.org/attr'
-import { scalalangorgPackage } from './scala-langorg'
+import { scalaPackage } from './scala-langorg'
 import { scalasbtorgPackage } from './scala-sbtorg'
 import { scalewaycomPackage } from './scalewaycom'
 import { schollzcomcrocPackage } from './schollz.com/croc'
@@ -1512,7 +1512,7 @@ import { temporalioPackage } from './temporalio'
 import { termsharkioPackage } from './termsharkio'
 import { terraformdocsioPackage } from './terraform-docsio'
 import { terraformiocdkPackage } from './terraform.io/cdk'
-import { terraformioPackage } from './terraformio'
+import { terraformPackage } from './terraformio'
 import { terragruntgruntworkioPackage } from './terragruntgruntworkio'
 import { terratagioPackage } from './terratagio'
 import { tesseractocrgithubioPackage } from './tesseract-ocrgithubio'
@@ -1858,7 +1858,7 @@ export interface Pantry {
   cloudfoundryorgcfcli: typeof cloudfoundryorgcfcliPackage
   cloudnative_pgio: typeof cloudnativepgioPackage
   cloudnativepgio: typeof cloudnativepgioPackage
-  cmakeorg: typeof cmakeorgPackage
+  cmakeorg: typeof cmakePackage
   cmockaorg: typeof cmockaorgPackage
   cnqueryio: typeof cnqueryioPackage
 
@@ -2043,8 +2043,8 @@ export interface Pantry {
   cratesiorage: typeof cratesioragePackage
   ripgrep_all: typeof cratesioripgrepallPackage
   cratesioripgrepall: typeof cratesioripgrepallPackage
-  ripgrep: typeof cratesioripgrepPackage
-  cratesioripgrep: typeof cratesioripgrepPackage
+
+  cratesioripgrep: typeof ripgrepPackage
 
   cratesiormz: typeof cratesiormzPackage
   rpg_cli: typeof cratesiorpgcliPackage
@@ -2167,7 +2167,7 @@ export interface Pantry {
   deepwisdomai: typeof deepwisdomaiPackage
 
   denilsonsanombrprettyping: typeof denilsonsanombrprettypingPackage
-  denoland: typeof denolandPackage
+  denoland: typeof denoPackage
   depotdev: typeof depotdevPackage
 
   destunreachorgsocat: typeof destunreachorgsocatPackage
@@ -2200,8 +2200,8 @@ export interface Pantry {
   docbookorg: typeof docbookorgPackage
 
   dockercombuildx: typeof dockercombuildxPackage
-  cli3: typeof dockercomcliPackage
-  dockercomcli: typeof dockercomcliPackage
+  cli3: typeof dockerPackage
+  dockercomcli: typeof dockerPackage
   compose: typeof dockercomcomposePackage
   dockercomcompose: typeof dockercomcomposePackage
   machine: typeof dockercommachinePackage
@@ -3348,7 +3348,7 @@ export interface Pantry {
   gnupgorgpinentry: typeof gnupgorgpinentryPackage
   v2_5: typeof gnupgorgv25Package
   gnupgorgv25: typeof gnupgorgv25Package
-  gnupgorg: typeof gnupgorgPackage
+  gnupgorg: typeof gpgPackage
   gnuplotinfo: typeof gnuplotinfoPackage
   gnutlsorg: typeof gnutlsorgPackage
 
@@ -3395,7 +3395,7 @@ export interface Pantry {
   libgphoto2: typeof gphotoorglibgphoto2Package
   gphotoorglibgphoto2: typeof gphotoorglibgphoto2Package
   gqlgencom: typeof gqlgencomPackage
-  gradleorg: typeof gradleorgPackage
+  gradleorg: typeof gradlePackage
 
   grafanacomloki: typeof grafanacomlokiPackage
   granteddev: typeof granteddevPackage
@@ -3440,7 +3440,7 @@ export interface Pantry {
   heasarcgsfcnasagovcfitsio: typeof heasarcgsfcnasagovcfitsioPackage
   helix_editorcom: typeof helixeditorcomPackage
   helixeditorcom: typeof helixeditorcomPackage
-  helmsh: typeof helmshPackage
+  helmsh: typeof helmPackage
   herokucom: typeof herokucomPackage
 
   hetznercomhcloud: typeof hetznercomhcloudPackage
@@ -3551,7 +3551,7 @@ export interface Pantry {
   kobuild: typeof kobuildPackage
 
   kornelskidssim: typeof kornelskidssimPackage
-  kotlinlangorg: typeof kotlinlangorgPackage
+  kotlinlangorg: typeof kotlinPackage
   koyebcom: typeof koyebcomPackage
   kptdev: typeof kptdevPackage
   krewsigsk8sio: typeof krewsigsk8sioPackage
@@ -3561,7 +3561,7 @@ export interface Pantry {
   kubectxdev: typeof kubectxdevPackage
   kubelinterio: typeof kubelinterioPackage
 
-  kubernetesiokubectl: typeof kubernetesiokubectlPackage
+  kubernetesiokubectl: typeof kubectlPackage
 
   kubernetesiokustomize: typeof kubernetesiokustomizePackage
 
@@ -3681,7 +3681,7 @@ export interface Pantry {
   materializecom: typeof materializecomPackage
   matiosourceforgeio: typeof matiosourceforgeioPackage
   maturinrs: typeof maturinrsPackage
-  mavenapacheorg: typeof mavenapacheorgPackage
+  mavenapacheorg: typeof mavenPackage
   mcmc_jagssourceforgeio: typeof mcmcjagssourceforgeioPackage
   mcmcjagssourceforgeio: typeof mcmcjagssourceforgeioPackage
   meilisearchcom: typeof meilisearchcomPackage
@@ -3759,7 +3759,7 @@ export interface Pantry {
   mvdanccsh: typeof mvdanccshPackage
   mypy_langorg: typeof mypylangorgPackage
   mypylangorg: typeof mypylangorgPackage
-  mysqlcom: typeof mysqlcomPackage
+  mysqlcom: typeof mysqlPackage
   nano_editororg: typeof nanoeditororgPackage
   nanoeditororg: typeof nanoeditororgPackage
   nasmus: typeof nasmusPackage
@@ -3839,7 +3839,7 @@ export interface Pantry {
   openexrcomimath: typeof openexrcomimathPackage
   openexrcom: typeof openexrcomPackage
   openinterpretercom: typeof openinterpretercomPackage
-  openjdkorg: typeof openjdkorgPackage
+  openjdkorg: typeof javaPackage
   openjpegorg: typeof openjpegorgPackage
 
   openldaporgliblmdb: typeof openldaporgliblmdbPackage
@@ -3854,7 +3854,7 @@ export interface Pantry {
   openshiftcom: typeof openshiftcomPackage
   openslideorg: typeof openslideorgPackage
   opensshcom: typeof opensshcomPackage
-  opensslorg: typeof opensslorgPackage
+  opensslorg: typeof opensslPackage
 
   opensuseorglibsolv: typeof opensuseorglibsolvPackage
   opentofuorg: typeof opentofuorgPackage
@@ -3942,7 +3942,7 @@ export interface Pantry {
   portaudiocom: typeof portaudiocomPackage
 
   postgresqlorglibpq: typeof postgresqlorglibpqPackage
-  postgresqlorg: typeof postgresqlorgPackage
+  postgresqlorg: typeof postgresPackage
   postgrestorg: typeof postgrestorgPackage
 
   practicalschemenetgauche: typeof practicalschemenetgauchePackage
@@ -4027,7 +4027,7 @@ export interface Pantry {
   check_if_email_exists_cli: typeof reacheremailcheckifemailexistscliPackage
   reacheremailcheckifemailexistscli: typeof reacheremailcheckifemailexistscliPackage
   rebar3org: typeof rebar3orgPackage
-  redisio: typeof redisioPackage
+  redisio: typeof redisPackage
   rendercom: typeof rendercomPackage
   replibytecom: typeof replibytecomPackage
 
@@ -4091,8 +4091,8 @@ export interface Pantry {
   savannahnongnuorgacl: typeof savannahnongnuorgaclPackage
 
   savannahnongnuorgattr: typeof savannahnongnuorgattrPackage
-  scala_langorg: typeof scalalangorgPackage
-  scalalangorg: typeof scalalangorgPackage
+  scala_langorg: typeof scalaPackage
+  scalalangorg: typeof scalaPackage
   scala_sbtorg: typeof scalasbtorgPackage
   scalasbtorg: typeof scalasbtorgPackage
   scalewaycom: typeof scalewaycomPackage
@@ -4219,7 +4219,7 @@ export interface Pantry {
   terraformdocsio: typeof terraformdocsioPackage
   cdk1: typeof terraformiocdkPackage
   terraformiocdk: typeof terraformiocdkPackage
-  terraformio: typeof terraformioPackage
+  terraformio: typeof terraformPackage
   terragruntgruntworkio: typeof terragruntgruntworkioPackage
   terratagio: typeof terratagioPackage
   tesseract_ocrgithubio: typeof tesseractocrgithubioPackage
@@ -4578,7 +4578,8 @@ export interface Pantry {
   cue: typeof cuelangorgPackage
   php: typeof phpPackage
   go: typeof goPackage
-  gnupg: typeof gnupgorgPackage
+  gnupg: typeof gpgPackage
+  gpg: typeof gpgPackage
   epstool: typeof ghostgumcomauepstoolPackage
   ipfscluster: typeof ipfsclusterioPackage
   'eigen.tuxfamily': typeof eigentuxfamilyorgPackage
@@ -4635,12 +4636,13 @@ export interface Pantry {
   mkcert: typeof mkcertdevPackage
   'sfcgal-config': typeof sfcgalorgPackage
   'taglib-config': typeof tagliborgPackage
-  gradle: typeof gradleorgPackage
+  gradle: typeof gradlePackage
   'libusb-compat': typeof libusbinfocompatPackage
   'rucio-client': typeof ruciocernchrucioclientPackage
   'protoc-gen-connect-go': typeof connectrpcorgprotocgenconnectgoPackage
   task: typeof taskfiledevPackage
-  postgresql: typeof postgresqlorgPackage
+  postgresql: typeof postgresPackage
+  postgres: typeof postgresPackage
   groonga: typeof groongaorgPackage
   'poppler-data': typeof popplerfreedesktoporgpopplerdataPackage
   soliditylang: typeof soliditylangorgPackage
@@ -4702,7 +4704,8 @@ export interface Pantry {
   'opencore-amr.sourceforge': typeof opencoreamrsourceforgeioPackage
   pls: typeof dhruvkbdevplsPackage
   docbook: typeof docbookorgPackage
-  kotlinlang: typeof kotlinlangorgPackage
+  kotlinlang: typeof kotlinPackage
+  kotlin: typeof kotlinPackage
   steampipe: typeof steampipeioPackage
   talhelper: typeof budimanjojogithubiotalhelperPackage
   forc: typeof fuellabsgithubioswayPackage
@@ -4717,7 +4720,8 @@ export interface Pantry {
   pytest: typeof pytestorgPackage
   ipfs: typeof ipfstechPackage
   'gen-ir': typeof veracodecomgenirPackage
-  mvn: typeof mavenapacheorgPackage
+  mvn: typeof mavenPackage
+  maven: typeof mavenPackage
   changie: typeof changiedevPackage
   tart: typeof tartrunPackage
   opensearch: typeof opensearchorgPackage
@@ -4810,7 +4814,7 @@ export interface Pantry {
   vorbis: typeof xiphorgvorbisPackage
   flac: typeof xiphorgflacPackage
   ogg: typeof xiphorgoggPackage
-  cmake: typeof cmakeorgPackage
+  cmake: typeof cmakePackage
   rbw: typeof gittoztnetrbwPackage
   tinyxml2: typeof leethomasongithubiotinyxml2Package
   SeaweedFS: typeof seaweedfscomPackage
@@ -4945,7 +4949,7 @@ export interface Pantry {
   s4cmd: typeof bloomreachcoms4cmdPackage
   'jenkins-lts': typeof jenkinsioPackage
   mergestat: typeof mergestatcommergestatlitePackage
-  helm: typeof helmshPackage
+  helm: typeof helmPackage
   's-lang': typeof jedsoftorgslangPackage
   MariaDB: typeof mariadbcomserverPackage
   'pkl-lang': typeof pkllangorgPackage
@@ -5032,8 +5036,10 @@ export interface Pantry {
   fluentci: typeof fluentciioPackage
   'sonar-scanner': typeof sonarqubeorgsonarscannerPackage
   pixman: typeof pixmanorgPackage
-  mysql: typeof mysqlcomPackage
-  openjdk: typeof openjdkorgPackage
+  mysql: typeof mysqlPackage
+  openjdk: typeof javaPackage
+  java: typeof javaPackage
+  jdk: typeof javaPackage
   libssh2: typeof libssh2orgPackage
   checkov: typeof checkovioPackage
   libsrtp: typeof ciscocomlibsrtpPackage
@@ -5156,7 +5162,7 @@ export interface Pantry {
   convco: typeof convcogithubioPackage
   wayland: typeof waylandfreedesktoporgPackage
   devpod: typeof devpodshcliPackage
-  deno: typeof denolandPackage
+  deno: typeof denoPackage
   graphene: typeof ebassigithubiographenePackage
   xpra: typeof xpraorgPackage
   'openpmix.github': typeof openpmixgithubioPackage
@@ -5187,7 +5193,8 @@ export interface Pantry {
   robot: typeof robotframeworkorgPackage
   dnsmasq: typeof thekelleysorgukdnsmasqPackage
   'otp-27': typeof elixirlangorgotp27Package
-  OpenSSL: typeof opensslorgPackage
+  OpenSSL: typeof opensslPackage
+  openssl: typeof opensslPackage
   'libimobiledevice-glue': typeof libimobiledeviceorglibimobiledevicegluePackage
   plistutil: typeof libimobiledeviceorglibplistPackage
   libtatsu: typeof libimobiledeviceorglibtatsuPackage
@@ -5223,7 +5230,8 @@ export interface Pantry {
   pdm: typeof pdmfmingdevPackage
   kaggle: typeof kagglecomPackage
   ktlint: typeof ktlintgithubioPackage
-  'scala-lang': typeof scalalangorgPackage
+  'scala-lang': typeof scalaPackage
+  scala: typeof scalaPackage
   libspng: typeof libspngorgPackage
   capnproto: typeof capnprotoorgPackage
   'poppler.freedesktop': typeof popplerfreedesktoporgPackage
@@ -5246,7 +5254,7 @@ export interface Pantry {
   mockery: typeof vektragithubiomockeryPackage
   oras: typeof oraslandPackage
   babashka: typeof babashkaorgPackage
-  terraform: typeof terraformioPackage
+  terraform: typeof terraformPackage
   'swagger-codegen': typeof swaggerioswaggercodegenPackage
   velero: typeof veleroioPackage
   nss: typeof mozillaorgnssPackage
@@ -5269,6 +5277,7 @@ export interface Pantry {
   gitweb: typeof cratesiogitwebPackage
   topgrade: typeof cratesiotopgradePackage
   licensor: typeof cratesiolicensorPackage
+  ripgrep: typeof ripgrepPackage
   stego: typeof cratesiostegoPackage
   pgen: typeof cratesiopgenPackage
   killport: typeof cratesiokillportPackage
@@ -5392,7 +5401,8 @@ export interface Pantry {
   rye: typeof ryeastralshPackage
   'docker-compose': typeof dockercomcomposePackage
   'docker-machine': typeof dockercommachinePackage
-  'docker/cli': typeof dockercomcliPackage
+  'docker/cli': typeof dockerPackage
+  docker: typeof dockerPackage
   buildx: typeof dockercombuildxPackage
   cosign: typeof sigstoredevcosignPackage
   gitsign: typeof sigstoredevgitsignPackage
@@ -5403,7 +5413,7 @@ export interface Pantry {
   'opus-codec': typeof opuscodecorgPackage
   termshark: typeof termsharkioPackage
   kustomize: typeof kubernetesiokustomizePackage
-  kubectl: typeof kubernetesiokubectlPackage
+  kubectl: typeof kubectlPackage
   minikube: typeof kubernetesiominikubePackage
   exr: typeof openexrcomPackage
   'mecab-ipadic': typeof taku910githubiomecabipadicPackage
@@ -5418,7 +5428,7 @@ export interface Pantry {
   'linux-headers': typeof kernelorglinuxheadersPackage
   libcap: typeof kernelorglibcapPackage
   litecli: typeof liteclicomPackage
-  redis: typeof redisioPackage
+  redis: typeof redisPackage
   doctl: typeof digitaloceancomdoctlPackage
   flyway: typeof flywaydborgPackage
   pscale: typeof planetscalecomPackage
@@ -6022,6 +6032,7 @@ export interface Pantry {
   perl: typeof perlorgPackage
   pkg: typeof vercelcompkgPackage
   curl: typeof curlPackage
+  rg: typeof ripgrepPackage
 }
 
 export type Packages = Pantry
@@ -6228,7 +6239,7 @@ export const pantry: Pantry = {
   cloudfoundryorgcfcli: cloudfoundryorgcfcliPackage,
   cloudnative_pgio: cloudnativepgioPackage,
   cloudnativepgio: cloudnativepgioPackage,
-  cmakeorg: cmakeorgPackage,
+  cmakeorg: cmakePackage,
   cmockaorg: cmockaorgPackage,
   cnqueryio: cnqueryioPackage,
 
@@ -6413,8 +6424,8 @@ export const pantry: Pantry = {
   cratesiorage: cratesioragePackage,
   ripgrep_all: cratesioripgrepallPackage,
   cratesioripgrepall: cratesioripgrepallPackage,
-  ripgrep: cratesioripgrepPackage,
-  cratesioripgrep: cratesioripgrepPackage,
+
+  cratesioripgrep: ripgrepPackage,
 
   cratesiormz: cratesiormzPackage,
   rpg_cli: cratesiorpgcliPackage,
@@ -6537,7 +6548,7 @@ export const pantry: Pantry = {
   deepwisdomai: deepwisdomaiPackage,
 
   denilsonsanombrprettyping: denilsonsanombrprettypingPackage,
-  denoland: denolandPackage,
+  denoland: denoPackage,
   depotdev: depotdevPackage,
 
   destunreachorgsocat: destunreachorgsocatPackage,
@@ -6570,8 +6581,8 @@ export const pantry: Pantry = {
   docbookorg: docbookorgPackage,
 
   dockercombuildx: dockercombuildxPackage,
-  cli3: dockercomcliPackage,
-  dockercomcli: dockercomcliPackage,
+  cli3: dockerPackage,
+  dockercomcli: dockerPackage,
   compose: dockercomcomposePackage,
   dockercomcompose: dockercomcomposePackage,
   machine: dockercommachinePackage,
@@ -7718,7 +7729,7 @@ export const pantry: Pantry = {
   gnupgorgpinentry: gnupgorgpinentryPackage,
   v2_5: gnupgorgv25Package,
   gnupgorgv25: gnupgorgv25Package,
-  gnupgorg: gnupgorgPackage,
+  gnupgorg: gpgPackage,
   gnuplotinfo: gnuplotinfoPackage,
   gnutlsorg: gnutlsorgPackage,
 
@@ -7765,7 +7776,7 @@ export const pantry: Pantry = {
   libgphoto2: gphotoorglibgphoto2Package,
   gphotoorglibgphoto2: gphotoorglibgphoto2Package,
   gqlgencom: gqlgencomPackage,
-  gradleorg: gradleorgPackage,
+  gradleorg: gradlePackage,
 
   grafanacomloki: grafanacomlokiPackage,
   granteddev: granteddevPackage,
@@ -7810,7 +7821,7 @@ export const pantry: Pantry = {
   heasarcgsfcnasagovcfitsio: heasarcgsfcnasagovcfitsioPackage,
   helix_editorcom: helixeditorcomPackage,
   helixeditorcom: helixeditorcomPackage,
-  helmsh: helmshPackage,
+  helmsh: helmPackage,
   herokucom: herokucomPackage,
 
   hetznercomhcloud: hetznercomhcloudPackage,
@@ -7921,7 +7932,7 @@ export const pantry: Pantry = {
   kobuild: kobuildPackage,
 
   kornelskidssim: kornelskidssimPackage,
-  kotlinlangorg: kotlinlangorgPackage,
+  kotlinlangorg: kotlinPackage,
   koyebcom: koyebcomPackage,
   kptdev: kptdevPackage,
   krewsigsk8sio: krewsigsk8sioPackage,
@@ -7931,7 +7942,7 @@ export const pantry: Pantry = {
   kubectxdev: kubectxdevPackage,
   kubelinterio: kubelinterioPackage,
 
-  kubernetesiokubectl: kubernetesiokubectlPackage,
+  kubernetesiokubectl: kubectlPackage,
 
   kubernetesiokustomize: kubernetesiokustomizePackage,
 
@@ -8051,7 +8062,7 @@ export const pantry: Pantry = {
   materializecom: materializecomPackage,
   matiosourceforgeio: matiosourceforgeioPackage,
   maturinrs: maturinrsPackage,
-  mavenapacheorg: mavenapacheorgPackage,
+  mavenapacheorg: mavenPackage,
   mcmc_jagssourceforgeio: mcmcjagssourceforgeioPackage,
   mcmcjagssourceforgeio: mcmcjagssourceforgeioPackage,
   meilisearchcom: meilisearchcomPackage,
@@ -8129,7 +8140,7 @@ export const pantry: Pantry = {
   mvdanccsh: mvdanccshPackage,
   mypy_langorg: mypylangorgPackage,
   mypylangorg: mypylangorgPackage,
-  mysqlcom: mysqlcomPackage,
+  mysqlcom: mysqlPackage,
   nano_editororg: nanoeditororgPackage,
   nanoeditororg: nanoeditororgPackage,
   nasmus: nasmusPackage,
@@ -8209,7 +8220,7 @@ export const pantry: Pantry = {
   openexrcomimath: openexrcomimathPackage,
   openexrcom: openexrcomPackage,
   openinterpretercom: openinterpretercomPackage,
-  openjdkorg: openjdkorgPackage,
+  openjdkorg: javaPackage,
   openjpegorg: openjpegorgPackage,
 
   openldaporgliblmdb: openldaporgliblmdbPackage,
@@ -8224,7 +8235,7 @@ export const pantry: Pantry = {
   openshiftcom: openshiftcomPackage,
   openslideorg: openslideorgPackage,
   opensshcom: opensshcomPackage,
-  opensslorg: opensslorgPackage,
+  opensslorg: opensslPackage,
 
   opensuseorglibsolv: opensuseorglibsolvPackage,
   opentofuorg: opentofuorgPackage,
@@ -8312,7 +8323,7 @@ export const pantry: Pantry = {
   portaudiocom: portaudiocomPackage,
 
   postgresqlorglibpq: postgresqlorglibpqPackage,
-  postgresqlorg: postgresqlorgPackage,
+  postgresqlorg: postgresPackage,
   postgrestorg: postgrestorgPackage,
 
   practicalschemenetgauche: practicalschemenetgauchePackage,
@@ -8397,7 +8408,7 @@ export const pantry: Pantry = {
   check_if_email_exists_cli: reacheremailcheckifemailexistscliPackage,
   reacheremailcheckifemailexistscli: reacheremailcheckifemailexistscliPackage,
   rebar3org: rebar3orgPackage,
-  redisio: redisioPackage,
+  redisio: redisPackage,
   rendercom: rendercomPackage,
   replibytecom: replibytecomPackage,
 
@@ -8461,8 +8472,8 @@ export const pantry: Pantry = {
   savannahnongnuorgacl: savannahnongnuorgaclPackage,
 
   savannahnongnuorgattr: savannahnongnuorgattrPackage,
-  scala_langorg: scalalangorgPackage,
-  scalalangorg: scalalangorgPackage,
+  scala_langorg: scalaPackage,
+  scalalangorg: scalaPackage,
   scala_sbtorg: scalasbtorgPackage,
   scalasbtorg: scalasbtorgPackage,
   scalewaycom: scalewaycomPackage,
@@ -8589,7 +8600,7 @@ export const pantry: Pantry = {
   terraformdocsio: terraformdocsioPackage,
   cdk1: terraformiocdkPackage,
   terraformiocdk: terraformiocdkPackage,
-  terraformio: terraformioPackage,
+  terraformio: terraformPackage,
   terragruntgruntworkio: terragruntgruntworkioPackage,
   terratagio: terratagioPackage,
   tesseract_ocrgithubio: tesseractocrgithubioPackage,
@@ -8948,7 +8959,8 @@ export const pantry: Pantry = {
   cue: cuelangorgPackage,
   php: phpPackage,
   go: goPackage,
-  gnupg: gnupgorgPackage,
+  gnupg: gpgPackage,
+  gpg: gpgPackage,
   epstool: ghostgumcomauepstoolPackage,
   ipfscluster: ipfsclusterioPackage,
   'eigen.tuxfamily': eigentuxfamilyorgPackage,
@@ -9005,12 +9017,13 @@ export const pantry: Pantry = {
   mkcert: mkcertdevPackage,
   'sfcgal-config': sfcgalorgPackage,
   'taglib-config': tagliborgPackage,
-  gradle: gradleorgPackage,
+  gradle: gradlePackage,
   'libusb-compat': libusbinfocompatPackage,
   'rucio-client': ruciocernchrucioclientPackage,
   'protoc-gen-connect-go': connectrpcorgprotocgenconnectgoPackage,
   task: taskfiledevPackage,
-  postgresql: postgresqlorgPackage,
+  postgresql: postgresPackage,
+  postgres: postgresPackage,
   groonga: groongaorgPackage,
   'poppler-data': popplerfreedesktoporgpopplerdataPackage,
   soliditylang: soliditylangorgPackage,
@@ -9072,7 +9085,8 @@ export const pantry: Pantry = {
   'opencore-amr.sourceforge': opencoreamrsourceforgeioPackage,
   pls: dhruvkbdevplsPackage,
   docbook: docbookorgPackage,
-  kotlinlang: kotlinlangorgPackage,
+  kotlinlang: kotlinPackage,
+  kotlin: kotlinPackage,
   steampipe: steampipeioPackage,
   talhelper: budimanjojogithubiotalhelperPackage,
   forc: fuellabsgithubioswayPackage,
@@ -9087,7 +9101,8 @@ export const pantry: Pantry = {
   pytest: pytestorgPackage,
   ipfs: ipfstechPackage,
   'gen-ir': veracodecomgenirPackage,
-  mvn: mavenapacheorgPackage,
+  mvn: mavenPackage,
+  maven: mavenPackage,
   changie: changiedevPackage,
   tart: tartrunPackage,
   opensearch: opensearchorgPackage,
@@ -9180,7 +9195,7 @@ export const pantry: Pantry = {
   vorbis: xiphorgvorbisPackage,
   flac: xiphorgflacPackage,
   ogg: xiphorgoggPackage,
-  cmake: cmakeorgPackage,
+  cmake: cmakePackage,
   rbw: gittoztnetrbwPackage,
   tinyxml2: leethomasongithubiotinyxml2Package,
   SeaweedFS: seaweedfscomPackage,
@@ -9315,7 +9330,7 @@ export const pantry: Pantry = {
   s4cmd: bloomreachcoms4cmdPackage,
   'jenkins-lts': jenkinsioPackage,
   mergestat: mergestatcommergestatlitePackage,
-  helm: helmshPackage,
+  helm: helmPackage,
   's-lang': jedsoftorgslangPackage,
   MariaDB: mariadbcomserverPackage,
   'pkl-lang': pkllangorgPackage,
@@ -9402,8 +9417,10 @@ export const pantry: Pantry = {
   fluentci: fluentciioPackage,
   'sonar-scanner': sonarqubeorgsonarscannerPackage,
   pixman: pixmanorgPackage,
-  mysql: mysqlcomPackage,
-  openjdk: openjdkorgPackage,
+  mysql: mysqlPackage,
+  openjdk: javaPackage,
+  java: javaPackage,
+  jdk: javaPackage,
   libssh2: libssh2orgPackage,
   checkov: checkovioPackage,
   libsrtp: ciscocomlibsrtpPackage,
@@ -9526,7 +9543,7 @@ export const pantry: Pantry = {
   convco: convcogithubioPackage,
   wayland: waylandfreedesktoporgPackage,
   devpod: devpodshcliPackage,
-  deno: denolandPackage,
+  deno: denoPackage,
   graphene: ebassigithubiographenePackage,
   xpra: xpraorgPackage,
   'openpmix.github': openpmixgithubioPackage,
@@ -9557,7 +9574,8 @@ export const pantry: Pantry = {
   robot: robotframeworkorgPackage,
   dnsmasq: thekelleysorgukdnsmasqPackage,
   'otp-27': elixirlangorgotp27Package,
-  OpenSSL: opensslorgPackage,
+  OpenSSL: opensslPackage,
+  openssl: opensslPackage,
   'libimobiledevice-glue': libimobiledeviceorglibimobiledevicegluePackage,
   plistutil: libimobiledeviceorglibplistPackage,
   libtatsu: libimobiledeviceorglibtatsuPackage,
@@ -9593,7 +9611,8 @@ export const pantry: Pantry = {
   pdm: pdmfmingdevPackage,
   kaggle: kagglecomPackage,
   ktlint: ktlintgithubioPackage,
-  'scala-lang': scalalangorgPackage,
+  'scala-lang': scalaPackage,
+  scala: scalaPackage,
   libspng: libspngorgPackage,
   capnproto: capnprotoorgPackage,
   'poppler.freedesktop': popplerfreedesktoporgPackage,
@@ -9616,7 +9635,7 @@ export const pantry: Pantry = {
   mockery: vektragithubiomockeryPackage,
   oras: oraslandPackage,
   babashka: babashkaorgPackage,
-  terraform: terraformioPackage,
+  terraform: terraformPackage,
   'swagger-codegen': swaggerioswaggercodegenPackage,
   velero: veleroioPackage,
   nss: mozillaorgnssPackage,
@@ -9639,6 +9658,7 @@ export const pantry: Pantry = {
   gitweb: cratesiogitwebPackage,
   topgrade: cratesiotopgradePackage,
   licensor: cratesiolicensorPackage,
+  ripgrep: ripgrepPackage,
   stego: cratesiostegoPackage,
   pgen: cratesiopgenPackage,
   killport: cratesiokillportPackage,
@@ -9762,7 +9782,8 @@ export const pantry: Pantry = {
   rye: ryeastralshPackage,
   'docker-compose': dockercomcomposePackage,
   'docker-machine': dockercommachinePackage,
-  'docker/cli': dockercomcliPackage,
+  'docker/cli': dockerPackage,
+  docker: dockerPackage,
   buildx: dockercombuildxPackage,
   cosign: sigstoredevcosignPackage,
   gitsign: sigstoredevgitsignPackage,
@@ -9773,7 +9794,7 @@ export const pantry: Pantry = {
   'opus-codec': opuscodecorgPackage,
   termshark: termsharkioPackage,
   kustomize: kubernetesiokustomizePackage,
-  kubectl: kubernetesiokubectlPackage,
+  kubectl: kubectlPackage,
   minikube: kubernetesiominikubePackage,
   exr: openexrcomPackage,
   'mecab-ipadic': taku910githubiomecabipadicPackage,
@@ -9788,7 +9809,7 @@ export const pantry: Pantry = {
   'linux-headers': kernelorglinuxheadersPackage,
   libcap: kernelorglibcapPackage,
   litecli: liteclicomPackage,
-  redis: redisioPackage,
+  redis: redisPackage,
   doctl: digitaloceancomdoctlPackage,
   flyway: flywaydborgPackage,
   pscale: planetscalecomPackage,
@@ -10392,6 +10413,7 @@ export const pantry: Pantry = {
   perl: perlorgPackage,
   pkg: vercelcompkgPackage,
   curl: curlPackage,
+  rg: ripgrepPackage,
 }
 
 export const packages: Packages = pantry

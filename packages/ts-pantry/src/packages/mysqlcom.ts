@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mysql.com`
+ * @name `mysql`
  * @homepage http://www.mysql.com/
  * @dependencies `unicode.org^71`, `libevent.org^2`, `lz4.org^1`, ... (+8 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3`, `gnu.org/bison@>=3.0.4`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -15,7 +16,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.mysqlcom
+ * // Access the package
+ * const pkg = pantry.mysql
+ * // Or access via domain
+ * const samePkg = pantry.mysqlcom
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "mysql"
  * console.log(pkg.description) // "MySQL Server, the world's most popular open sou..."
  * console.log(pkg.programs)    // ["mysql_client_test", "my_print_defaults", ...]
@@ -25,7 +30,7 @@
  * @see https://ts-pkgx.netlify.app/packages/mysql-com.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const mysqlcomPackage = {
+export const mysqlPackage = {
   /**
   * The display name of this package.
   */
@@ -152,7 +157,11 @@ export const mysqlcomPackage = {
     '8.0.33',
     '8.0.32',
   ] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 
-export type MysqlcomPackage = typeof mysqlcomPackage
+export type MysqlPackage = typeof mysqlPackage

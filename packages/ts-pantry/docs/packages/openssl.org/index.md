@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install openssl.org
+launchpad install openssl
 ```
 
 ## Programs
@@ -22,6 +22,12 @@ This package provides the following executable programs:
 
 - `openssl`
 - `c_rehash`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `openssl`
 
 ## Available Versions
 
@@ -60,7 +66,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.OpenSSL
+const pkg = pantry.openssl
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

@@ -1,5 +1,5 @@
 /**
- * **gnupg** - GNU Pretty Good Privacy (PGP) package
+ * **gpg** - GNU Pretty Good Privacy (PGP) package
  *
  * @domain `gnupg.org`
  * @programs `gpg`, `gpg-agent`, `gpg-connect-agent`, `gpg-wks-server`, `gpgconf`, ... (+8 more)
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnupg.org`
+ * @aliases `gpg`
  * @homepage https://gnupg.org/
  * @dependencies `zlib.net^1.1`, `sourceware.org/bzip2`, `gnupg.org/npth`, ... (+9 more)
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.gnupgorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.gpg
+ * // Or access via domain
+ * const samePkg = pantry.gnupgorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "gnupg"
  * console.log(pkg.description) // "GNU Pretty Good Privacy (PGP) package"
  * console.log(pkg.programs)    // ["gpg", "gpg-agent", ...]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/gnupg-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const gnupgorgPackage = {
+export const gpgPackage = {
   /**
   * The display name of this package.
   */
@@ -104,7 +109,13 @@ export const gnupgorgPackage = {
     '2.2.43',
     '2.2.42',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'gpg',
+  ] as const,
 }
 
-export type GnupgorgPackage = typeof gnupgorgPackage
+export type GpgPackage = typeof gpgPackage

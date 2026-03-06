@@ -1,5 +1,5 @@
 /**
- * **rg** - ripgrep recursively searches directories for a regex pattern while respecting your gitignore
+ * **ripgrep** - ripgrep recursively searches directories for a regex pattern while respecting your gitignore
  *
  * @domain `crates.io/ripgrep`
  * @programs `rg`
@@ -7,12 +7,18 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/ripgrep`
+ * @name `rg`
+ * @aliases `ripgrep`
  *
  * @example
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.cratesioripgrep
+ * // Access via alias (recommended)
+ * const pkg = pantry.ripgrep
+ * // Or access via domain
+ * const samePkg = pantry.cratesioripgrep
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "rg"
  * console.log(pkg.description) // "ripgrep recursively searches directories for a ..."
  * console.log(pkg.programs)    // ["rg"]
@@ -22,7 +28,7 @@
  * @see https://ts-pkgx.netlify.app/packages/crates-io/ripgrep.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const cratesioripgrepPackage = {
+export const ripgrepPackage = {
   /**
   * The display name of this package.
   */
@@ -70,7 +76,13 @@ export const cratesioripgrepPackage = {
     '14.0.0',
     '13.0.0',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'ripgrep',
+  ] as const,
 }
 
-export type CratesioripgrepPackage = typeof cratesioripgrepPackage
+export type RipgrepPackage = typeof ripgrepPackage

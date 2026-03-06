@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gradle.org`
+ * @name `gradle`
  * @homepage https://www.gradle.org/
  * @dependencies `openjdk.org`
  * @buildDependencies `openjdk.org@17` - required only when building from source
@@ -15,7 +16,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.gradleorg
+ * // Access the package
+ * const pkg = pantry.gradle
+ * // Or access via domain
+ * const samePkg = pantry.gradleorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "gradle"
  * console.log(pkg.description) // "Open-source build automation tool based on the ..."
  * console.log(pkg.programs)    // ["gradle"]
@@ -25,7 +30,7 @@
  * @see https://ts-pkgx.netlify.app/packages/gradle-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const gradleorgPackage = {
+export const gradlePackage = {
   /**
   * The display name of this package.
   */
@@ -104,7 +109,11 @@ export const gradleorgPackage = {
     '7.6.6',
     '7.6.5',
   ] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
   aliases: [] as const,
 }
 
-export type GradleorgPackage = typeof gradleorgPackage
+export type GradlePackage = typeof gradlePackage

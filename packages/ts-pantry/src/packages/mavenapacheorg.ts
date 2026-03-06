@@ -1,5 +1,5 @@
 /**
- * **mvn** - Java-based project management
+ * **maven** - Java-based project management
  *
  * @domain `maven.apache.org`
  * @programs `mvn`, `mvnDebug`, `mvnyjp`
@@ -7,6 +7,8 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install maven.apache.org`
+ * @name `mvn`
+ * @aliases `maven`
  * @homepage https://maven.apache.org/
  * @dependencies `openjdk.org`
  *
@@ -14,7 +16,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.mavenapacheorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.maven
+ * // Or access via domain
+ * const samePkg = pantry.mavenapacheorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "mvn"
  * console.log(pkg.description) // "Java-based project management"
  * console.log(pkg.programs)    // ["mvn", "mvnDebug", ...]
@@ -24,7 +30,7 @@
  * @see https://ts-pkgx.netlify.app/packages/maven-apache-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const mavenapacheorgPackage = {
+export const mavenPackage = {
   /**
   * The display name of this package.
   */
@@ -84,7 +90,13 @@ export const mavenapacheorgPackage = {
     '3.8.7',
     '3.6.3',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'maven',
+  ] as const,
 }
 
-export type MavenapacheorgPackage = typeof mavenapacheorgPackage
+export type MavenPackage = typeof mavenPackage

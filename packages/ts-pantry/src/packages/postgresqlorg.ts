@@ -1,5 +1,5 @@
 /**
- * **postgresql** - Mirror of the official PostgreSQL GIT repository. Note that this is just a *mirror* - we don't work with pull requests on github. To contribute, please see https://wiki.postgresql.org/wiki/Submitting_a_Patch
+ * **postgres** - Mirror of the official PostgreSQL GIT repository. Note that this is just a *mirror* - we don't work with pull requests on github. To contribute, please see https://wiki.postgresql.org/wiki/Submitting_a_Patch
  *
  * @domain `postgresql.org`
  * @programs `clusterdb`, `createdb`, `dropdb`, `dropuser`, `ecpg`, ... (+23 more)
@@ -7,6 +7,8 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install postgresql.org`
+ * @name `postgresql`
+ * @aliases `postgres`
  * @homepage https://www.postgresql.org/
  * @dependencies `openssl.org^1.0.1`, `gnu.org/readline`, `zlib.net`, ... (+4 more)
  * @buildDependencies `gnu.org/bison`, `github.com/westes/flex@^2.5.31`, `perl.org` - required only when building from source
@@ -15,7 +17,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.postgresqlorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.postgres
+ * // Or access via domain
+ * const samePkg = pantry.postgresqlorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "postgresql"
  * console.log(pkg.description) // "Mirror of the official PostgreSQL GIT repositor..."
  * console.log(pkg.programs)    // ["clusterdb", "createdb", ...]
@@ -25,7 +31,7 @@
  * @see https://ts-pkgx.netlify.app/packages/postgresql-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const postgresqlorgPackage = {
+export const postgresPackage = {
   /**
   * The display name of this package.
   */
@@ -124,7 +130,13 @@ export const postgresqlorgPackage = {
     '12.14.0',
     '11.19.0',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'postgres',
+  ] as const,
 }
 
-export type PostgresqlorgPackage = typeof postgresqlorgPackage
+export type PostgresPackage = typeof postgresPackage

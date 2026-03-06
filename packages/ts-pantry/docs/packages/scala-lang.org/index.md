@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install scala-lang.org
+launchpad install scala
 ```
 
 ## Programs
@@ -25,6 +25,12 @@ This package provides the following executable programs:
 - `scala-cli`
 - `sbtn`
 - `amm`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `scala`
 
 ## Available Versions
 
@@ -60,7 +66,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry['scala-lang']
+const pkg = pantry.scala
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

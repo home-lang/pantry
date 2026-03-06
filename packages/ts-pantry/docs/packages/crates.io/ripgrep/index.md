@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install crates.io/ripgrep
+launchpad install ripgrep
 ```
 
 ## Programs
@@ -21,6 +21,12 @@ launchpad install crates.io/ripgrep
 This package provides the following executable programs:
 
 - `rg`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `ripgrep`
 
 ## Available Versions
 
@@ -50,7 +56,7 @@ sh <(curl https://pkgx.sh) +crates.io/ripgrep@15.1.0 -- $SHELL -i
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.rg
+const pkg = pantry.ripgrep
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)
