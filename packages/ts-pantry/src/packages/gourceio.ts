@@ -3,7 +3,7 @@
  *
  * @domain `gource.io`
  * @programs `gource`
- * @version `0.55.0` (2 versions available)
+ * @version `0.56.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gource.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gource"
  * console.log(pkg.description) // "software version control visualization"
  * console.log(pkg.programs)    // ["gource"]
- * console.log(pkg.versions[0]) // "0.55.0" (latest)
+ * console.log(pkg.versions[0]) // "0.56.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gource-io.md
@@ -74,6 +74,7 @@ export const gourceioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.56.0',
     '0.55.0',
     '0.54.0',
   ] as const,
