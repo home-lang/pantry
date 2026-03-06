@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to Lambda
+    name: Deploy to EC2
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -17,29 +17,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Build Lambda bundle
-        run: |
-          cd packages/registry
-          bun build src/lambda.ts --outfile dist/lambda.mjs --target node --minify
-          cd dist && zip -j lambda.zip lambda.mjs
-          echo "Bundle size: $(wc -c < lambda.zip) bytes"
-
-      - name: Deploy to AWS Lambda
+      - name: Deploy to registry server
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: us-east-1
+          SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
         run: |
-          aws lambda update-function-code \
-            --function-name pantry-registry \
-            --zip-file fileb://packages/registry/dist/lambda.zip \
-            --region us-east-1 \
-            --query 'LastModified' --output text
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 54.243.196.101 >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -o StrictHostKeyChecking=no ec2-user@54.243.196.101 << 'EOF'
+            cd /opt/pantry-registry/repo
+            git pull origin main
+            cd packages/registry
+            ~/.bun/bin/bun install --production
+            sudo systemctl restart pantry-registry
+            sleep 2
+            curl -sf http://localhost:3000/health || echo "Health check failed"
+          EOF
 
       - name: Verify deployment
         run: |
@@ -49,7 +44,7 @@ jobs:
             --max-time 15 2>/dev/null) || true
           echo "Health check: HTTP $HTTP_CODE"
           if [ "$HTTP_CODE" != "200" ]; then
-            echo "::warning::Health check returned $HTTP_CODE (custom domain may not be configured yet)"
+            echo "::warning::Health check returned $HTTP_CODE"
           fi
 
   notify:
@@ -62,7 +57,7 @@ jobs:
       - uses: ./.github/actions/discord-notify
         with:
           title: "Registry Deploy — ${{ needs.deploy.result == 'success' && 'Deployed' || needs.deploy.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
-          description: "Registry Lambda function updated"
+          description: "Registry server updated"
           status: ${{ needs.deploy.result == 'success' && 'success' || needs.deploy.result == 'cancelled' && 'warning' || 'failure' }}
           fields: |
             [

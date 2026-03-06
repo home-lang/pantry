@@ -23,9 +23,7 @@
     "test": "bun test",
     "test:analytics": "bun test src/analytics.test.ts",
     "test:commit-publish": "bun test src/commit-publish.test.ts",
-    "typecheck": "bun --bun tsc --noEmit",
-    "build:lambda": "bun build src/lambda.ts --outfile dist/lambda.mjs --target node --minify && cd dist && zip -j lambda.zip lambda.mjs",
-    "deploy": "bun run build:lambda && aws lambda update-function-code --function-name pantry-registry --zip-file fileb://dist/lambda.zip --region us-east-1"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {},
   "devDependencies": {
