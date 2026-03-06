@@ -1,0 +1,99 @@
+<script server>
+  const packages = props.packages || []
+  const page = props.page || 1
+  const perPage = props.perPage || 25
+  const totalPackages = packages.length
+  const totalPages = Math.max(1, Math.ceil(totalPackages / perPage))
+  const startIdx = (page - 1) * perPage
+  const pagedPackages = packages.slice(startIdx, startIdx + perPage)
+  const totalDownloads = packages.reduce((sum, p) => sum + (p.downloads || 0), 0)
+  const topPkg = packages[0]
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overview - Pantry Dashboard</title>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+  <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold text-white hover:text-slate-300">Pantry Dashboard</a>
+      <div class="flex items-center gap-4">
+        <a href="/dashboard" class="text-slate-300 hover:text-white text-sm">Overview</a>
+        <a href="/health" class="text-slate-400 hover:text-white text-sm">Health</a>
+        <a href="/dashboard/logout" class="text-slate-400 hover:text-red-400 text-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <h1 class="text-2xl font-bold mb-6">Overview</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Total Downloads</div>
+        <div class="text-2xl font-bold">{{ totalDownloads.toLocaleString() }}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Tracked Packages</div>
+        <div class="text-2xl font-bold">{{ totalPackages.toLocaleString() }}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Top Package</div>
+        <div class="text-2xl font-bold">{{ topPkg ? topPkg.name : 'N/A' }}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Top Downloads</div>
+        <div class="text-2xl font-bold">{{ topPkg ? topPkg.downloads.toLocaleString() : '0' }}</div>
+      </div>
+    </div>
+
+    <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Top Packages</h2>
+        <span class="text-sm text-slate-400">Page {{ page }} of {{ totalPages }}</span>
+      </div>
+      <table class="w-full">
+        <thead>
+          <tr class="text-slate-400 text-sm border-b border-slate-700">
+            <th class="py-2 px-4 text-left w-12">#</th>
+            <th class="py-2 px-4 text-left">Package</th>
+            <th class="py-2 px-4 text-right">Downloads</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (pagedPackages as pkg, index)
+            <tr class="border-b border-slate-700 hover:bg-slate-700/50">
+              <td class="py-3 px-4 text-slate-400">{{ startIdx + index + 1 }}</td>
+              <td class="py-3 px-4">
+                <a href="/dashboard/package/{{ encodeURIComponent(pkg.name) }}" class="text-blue-400 hover:text-blue-300">{{ pkg.name }}</a>
+              </td>
+              <td class="py-3 px-4 text-right">{{ (pkg.downloads || 0).toLocaleString() }}</td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+      @if (totalPages > 1)
+        <div class="px-6 py-3 border-t border-slate-700 flex items-center justify-center gap-2">
+          @if (page > 1)
+            <a href="/dashboard?page={{ page - 1 }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">Previous</a>
+          @endif
+          @for (let i = 1; i <= totalPages; i++)
+            @if (i === page)
+              <span class="px-3 py-1 bg-blue-600 rounded text-sm font-bold">{{ i }}</span>
+            @else
+              <a href="/dashboard?page={{ i }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">{{ i }}</a>
+            @endif
+          @endfor
+          @if (page < totalPages)
+            <a href="/dashboard?page={{ page + 1 }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">Next</a>
+          @endif
+        </div>
+      @endif
+    </div>
+  </main>
+</body>
+</html>

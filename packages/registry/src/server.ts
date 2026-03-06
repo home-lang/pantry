@@ -1,8 +1,203 @@
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { RegistryConfig } from './types'
 import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
 import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from './analytics'
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
+import { S3Client } from './storage/aws-client'
+
+/**
+ * Lightweight .stx template renderer — processes server scripts, directives and expressions.
+ * Handles: <script server>, {{ expr }}, {!! expr !!}, @if/@else/@endif, @foreach/@endforeach, @for/@endfor
+ */
+async function stxRender(filePath: string, props: Record<string, unknown> = {}): Promise<string> {
+  const raw = await Bun.file(filePath).text()
+
+  // 1. Extract and evaluate <script server> blocks to build context
+  const ctx: Record<string, any> = { props, ...props }
+  const serverScriptRe = /<script\s+server\b[^>]*>([\s\S]*?)<\/script>/gi
+  let templateContent = raw
+  let match: RegExpExecArray | null
+  const serverBlocks: string[] = []
+  while ((match = serverScriptRe.exec(raw)) !== null) {
+    serverBlocks.push(match[1])
+  }
+  // Remove server script tags from output
+  templateContent = raw.replace(serverScriptRe, '')
+
+  // Build evaluation function body from server blocks
+  if (serverBlocks.length > 0) {
+    const script = serverBlocks.join('\n')
+    // Extract variable names assigned with const/let/var
+    const varNames = new Set<string>()
+    for (const m of script.matchAll(/(?:const|let|var)\s+(\w+)\s*=/g)) {
+      varNames.add(m[1])
+    }
+    // Execute the script in a Function, returning declared variables
+    const returnObj = [...varNames].map(v => `${v}`).join(', ')
+    const fn = new Function('props', `${script}\nreturn { ${returnObj} }`)
+    try {
+      const result = fn(props)
+      Object.assign(ctx, result)
+    }
+    catch { /* ignore script errors, variables stay as defaults from props */ }
+  }
+
+  // 2. Process directives
+  templateContent = processBlock(templateContent, ctx)
+  return templateContent
+}
+
+function processBlock(template: string, ctx: Record<string, any>): string {
+  let output = ''
+  const lines = template.split('\n')
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    const trimmed = line.trim()
+
+    // @if (condition)
+    if (trimmed.startsWith('@if')) {
+      const condMatch = trimmed.match(/@if\s*\((.+)\)\s*$/)
+      if (condMatch) {
+        const { ifBody, elseBody, endIndex } = extractIfBlock(lines, i)
+        const condResult = evalExpr(condMatch[1], ctx)
+        output += processBlock(condResult ? ifBody : elseBody, ctx)
+        i = endIndex + 1
+        continue
+      }
+    }
+
+    // @foreach (array as item) or @foreach (array as item, index)
+    if (trimmed.startsWith('@foreach')) {
+      const foreachMatch = trimmed.match(/@foreach\s*\((\w+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/)
+      if (foreachMatch) {
+        const { body, endIndex } = extractBlock(lines, i, '@foreach', '@endforeach')
+        const arr = evalExpr(foreachMatch[1], ctx)
+        const itemName = foreachMatch[2]
+        const indexName = foreachMatch[3]
+        if (Array.isArray(arr)) {
+          for (let j = 0; j < arr.length; j++) {
+            const loopCtx = { ...ctx, [itemName]: arr[j] }
+            if (indexName) loopCtx[indexName] = j
+            output += processBlock(body, loopCtx)
+          }
+        }
+        i = endIndex + 1
+        continue
+      }
+    }
+
+    // @for (let i = ...; i <= ...; i++)
+    if (trimmed.startsWith('@for')) {
+      const { body, endIndex } = extractBlock(lines, i, '@for', '@endfor')
+      const forMatch = trimmed.match(/@for\s*\((.+)\)/)
+      if (forMatch) {
+        // Execute the for loop
+        const forExpr = forMatch[1]
+        const iterMatch = forExpr.match(/(?:let|var)\s+(\w+)\s*=\s*(.+?);\s*\1\s*([<>=!]+)\s*(.+?);\s*\1(\+\+|--)/)
+        if (iterMatch) {
+          const varName = iterMatch[1]
+          let current = Number(evalExpr(iterMatch[2], ctx))
+          const op = iterMatch[3]
+          const limit = Number(evalExpr(iterMatch[4], ctx))
+          const inc = iterMatch[5] === '++' ? 1 : -1
+          const check = (v: number) => {
+            if (op === '<=') return v <= limit
+            if (op === '<') return v < limit
+            if (op === '>=') return v >= limit
+            if (op === '>') return v > limit
+            return false
+          }
+          while (check(current)) {
+            const loopCtx = { ...ctx, [varName]: current }
+            output += processBlock(body, loopCtx)
+            current += inc
+          }
+        }
+      }
+      i = endIndex + 1
+      continue
+    }
+
+    // Regular line — process expressions
+    output += processExpressions(line, ctx) + '\n'
+    i++
+  }
+
+  return output
+}
+
+function extractIfBlock(lines: string[], startIdx: number): { ifBody: string, elseBody: string, endIndex: number } {
+  let depth = 0
+  let elseIdx = -1
+  for (let i = startIdx; i < lines.length; i++) {
+    const t = lines[i].trim()
+    if (t.startsWith('@if')) depth++
+    if (t === '@endif') {
+      depth--
+      if (depth === 0) {
+        const ifLines = lines.slice(startIdx + 1, elseIdx >= 0 ? elseIdx : i)
+        const elseLines = elseIdx >= 0 ? lines.slice(elseIdx + 1, i) : []
+        return { ifBody: ifLines.join('\n'), elseBody: elseLines.join('\n'), endIndex: i }
+      }
+    }
+    if (t === '@else' && depth === 1) elseIdx = i
+  }
+  return { ifBody: '', elseBody: '', endIndex: lines.length - 1 }
+}
+
+function extractBlock(lines: string[], startIdx: number, openTag: string, closeTag: string): { body: string, endIndex: number } {
+  let depth = 0
+  for (let i = startIdx; i < lines.length; i++) {
+    const t = lines[i].trim()
+    if (t.startsWith(openTag)) depth++
+    if (t.startsWith(closeTag)) {
+      depth--
+      if (depth === 0) {
+        return { body: lines.slice(startIdx + 1, i).join('\n'), endIndex: i }
+      }
+    }
+  }
+  return { body: '', endIndex: lines.length - 1 }
+}
+
+function processExpressions(line: string, ctx: Record<string, any>): string {
+  // {!! expr !!} — raw (unescaped) output
+  line = line.replace(/\{!!\s*(.+?)\s*!!\}/g, (_match, expr) => {
+    try { return String(evalExpr(expr, ctx)) }
+    catch { return '' }
+  })
+  // {{ expr }} — escaped output
+  line = line.replace(/\{\{\s*(.+?)\s*\}\}/g, (_match, expr) => {
+    try { return escapeHtml(String(evalExpr(expr, ctx))) }
+    catch { return '' }
+  })
+  return line
+}
+
+function evalExpr(expr: string, ctx: Record<string, any>): any {
+  const keys = Object.keys(ctx)
+  const values = Object.values(ctx)
+  const fn = new Function(...keys, `return (${expr})`)
+  return fn(...values)
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+// Resolve dashboard pages directory relative to this file
+const __dirname = typeof import.meta.dirname === 'string'
+  ? import.meta.dirname
+  : dirname(fileURLToPath(import.meta.url))
+const DASHBOARD_DIR = resolve(__dirname, '../dashboard/pages')
 
 const categorySlugMap: Record<string, AnalyticsCategory> = {
   'install': 'install',
@@ -45,15 +240,33 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * GET  /zig/hash/{hash}                      - Lookup by content hash
  * GET  /zig/search?q={query}                 - Search Zig packages
  * POST /zig/publish                          - Publish Zig package
+ *
+ * Binary proxy (pantry CLI install):
+ * GET  /binaries/{domain}/metadata.json                        - Package metadata (5min cache)
+ * GET  /binaries/{domain}/{version}/{platform}/{file}.tar.gz   - Tarball download (24h cache, tracked)
+ * GET  /binaries/{domain}/{version}/{platform}/{file}.sha256   - Checksum (24h cache)
+ *
+ * Dashboard:
+ * GET  /dashboard            - Analytics overview (auth required)
+ * GET  /dashboard/package/*  - Package detail (auth required)
+ * GET  /dashboard/login      - Login page
  */
 /**
  * Create the request handler (shared between Bun server and Lambda)
  */
+/**
+ * Interface for fetching binary data from storage (S3 in prod, mock in tests)
+ */
+export interface BinaryStorage {
+  getObject(key: string): Promise<Buffer>
+}
+
 export function createHandler(
   registry: Registry,
   analyticsStorage: AnalyticsStorage,
   zigPackageStorage: ZigPackageStorage,
   baseUrl: string,
+  binaryStorage?: BinaryStorage,
 ): (req: Request) => Promise<Response> {
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url)
@@ -178,6 +391,16 @@ export function createHandler(
         }
       }
 
+      // Binary proxy routes — proxy pantry binary tarballs from S3
+      if (path.startsWith('/binaries/')) {
+        return handleBinaryProxy(path, req, analyticsStorage, corsHeaders, binaryStorage)
+      }
+
+      // Dashboard routes
+      if (path.startsWith('/dashboard')) {
+        return handleDashboard(path, req, url, analyticsStorage, corsHeaders)
+      }
+
       // Package routes
       const packageMatch = path.match(/^\/packages\/(@?[^/]+(?:\/[^/]+)?)(?:\/(.+))?$/)
       if (packageMatch) {
@@ -270,12 +493,13 @@ export function createServer(
   port = 3000,
   analytics?: AnalyticsStorage,
   zigStorage?: ZigPackageStorage,
+  binaryStorage?: BinaryStorage,
 ): { start: () => void, stop: () => void } {
   let server: ReturnType<typeof Bun.serve> | null = null
   const analyticsStorage = analytics || createAnalytics()
   const zigPackageStorage = zigStorage || createZigStorage()
   const baseUrl = process.env.BASE_URL || `http://localhost:${port}`
-  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl)
+  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl, binaryStorage)
 
   const start = () => {
     server = Bun.serve({
@@ -311,6 +535,13 @@ export function createServer(
     console.log('  GET  /zig/search?q={query}      - Search Zig packages')
     console.log('  POST /zig/publish               - Publish Zig package')
     console.log('  GET  /health                    - Health check')
+    console.log('Binary proxy (pantry CLI):')
+    console.log('  GET  /binaries/{domain}/metadata.json  - Package metadata')
+    console.log('  GET  /binaries/{domain}/{ver}/{plat}/*  - Tarball/checksum')
+    console.log('Dashboard:')
+    console.log('  GET  /dashboard                 - Analytics overview')
+    console.log('  GET  /dashboard/package/{name}   - Package detail')
+    console.log('  GET  /dashboard/login            - Login')
   }
 
   const stop = () => {
@@ -690,6 +921,193 @@ async function handleCommitPublish(
     { error: 'Unsupported content type' },
     { status: 415, headers: corsHeaders },
   )
+}
+
+/**
+ * Handle binary proxy requests — stream tarballs/metadata/checksums from S3
+ */
+async function handleBinaryProxy(
+  path: string,
+  req: Request,
+  analytics: AnalyticsStorage,
+  corsHeaders: Record<string, string>,
+  storage?: BinaryStorage,
+): Promise<Response> {
+  if (req.method !== 'GET') {
+    return Response.json({ error: 'Method not allowed' }, { status: 405, headers: corsHeaders })
+  }
+
+  // Strip leading slash to get S3 key: /binaries/curl.se/metadata.json -> binaries/curl.se/metadata.json
+  const s3Key = path.slice(1)
+
+  // Determine content type and cache policy
+  const isMetadata = path.endsWith('/metadata.json')
+  const isTarball = path.endsWith('.tar.gz')
+  const isChecksum = path.endsWith('.sha256')
+
+  const contentType = isMetadata ? 'application/json'
+    : isTarball ? 'application/gzip'
+    : isChecksum ? 'text/plain'
+    : 'application/octet-stream'
+
+  const cacheControl = isMetadata
+    ? 'public, max-age=300'
+    : (isTarball || isChecksum)
+      ? 'public, max-age=86400, immutable'
+      : 'public, max-age=300'
+
+  // Use injected storage or fall back to S3
+  const binaryStore: BinaryStorage = storage || (() => {
+    const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
+    const s3Region = process.env.AWS_REGION || 'us-east-1'
+    const s3 = new S3Client(s3Region)
+    return { getObject: (key: string) => s3.getObjectBuffer(s3Bucket, key) }
+  })()
+
+  try {
+    const buffer = await binaryStore.getObject(s3Key)
+
+    // Track tarball downloads fire-and-forget
+    if (isTarball) {
+      // Extract domain from path: binaries/{domain}/{version}/{platform}/{filename}.tar.gz
+      const parts = s3Key.split('/')
+      if (parts.length >= 4) {
+        const domain = parts[1]
+        const version = parts[2]
+        analytics.trackDownload({
+          packageName: domain,
+          version,
+          timestamp: new Date().toISOString(),
+          userAgent: req.headers.get('user-agent') || undefined,
+        }).catch(() => {}) // fire-and-forget
+        analytics.trackEvent({
+          packageName: domain,
+          category: 'install',
+          timestamp: new Date().toISOString(),
+          version,
+        }).catch(() => {}) // fire-and-forget
+      }
+    }
+
+    return new Response(new Uint8Array(buffer), {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': contentType,
+        'Cache-Control': cacheControl,
+        'Content-Length': String(buffer.length),
+      },
+    })
+  }
+  catch (error) {
+    console.error(`Binary proxy error for ${s3Key}:`, error)
+    return Response.json(
+      { error: 'Not found' },
+      { status: 404, headers: corsHeaders },
+    )
+  }
+}
+
+/**
+ * Handle dashboard routes — analytics UI (rendered via stx)
+ */
+const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
+
+function getDashboardAuth(req: Request): boolean {
+  const cookieHeader = req.headers.get('cookie') || ''
+  const match = cookieHeader.match(/pantry_token=([^;]+)/)
+  return match ? match[1] === DASHBOARD_TOKEN : false
+}
+
+async function handleDashboard(
+  path: string,
+  req: Request,
+  url: URL,
+  analytics: AnalyticsStorage,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const noCacheHeaders = {
+    ...corsHeaders,
+    'Cache-Control': 'no-cache, no-store',
+  }
+  const htmlHeaders = { ...noCacheHeaders, 'Content-Type': 'text/html' }
+
+  // Logout
+  if (path === '/dashboard/logout') {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...noCacheHeaders,
+        'Location': '/dashboard/login',
+        'Set-Cookie': 'pantry_token=; Path=/dashboard; HttpOnly; SameSite=Strict; Max-Age=0',
+      },
+    })
+  }
+
+  // Login page
+  if (path === '/dashboard/login') {
+    if (req.method === 'POST') {
+      const formData = await req.formData()
+      const token = formData.get('token') as string
+      if (token === DASHBOARD_TOKEN) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...noCacheHeaders,
+            'Location': '/dashboard',
+            'Set-Cookie': `pantry_token=${token}; Path=/dashboard; HttpOnly; SameSite=Strict; Max-Age=86400`,
+          },
+        })
+      }
+      const html = await stxRender(`${DASHBOARD_DIR}/login.stx`, { error: 'Invalid token' })
+      return new Response(html, { status: 401, headers: htmlHeaders })
+    }
+    const html = await stxRender(`${DASHBOARD_DIR}/login.stx`, {})
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  // Auth gate for all other dashboard routes
+  if (!getDashboardAuth(req)) {
+    return new Response(null, {
+      status: 302,
+      headers: { ...noCacheHeaders, 'Location': '/dashboard/login' },
+    })
+  }
+
+  // Dashboard API endpoints (JSON)
+  if (path === '/dashboard/api/overview') {
+    const topPackages = await analytics.getTopPackages(100)
+    return Response.json({ packages: topPackages }, { headers: noCacheHeaders })
+  }
+
+  if (path.startsWith('/dashboard/api/package/')) {
+    const packageName = decodeURIComponent(path.replace('/dashboard/api/package/', ''))
+    const [stats, timeline] = await Promise.all([
+      analytics.getPackageStats(packageName),
+      analytics.getDownloadTimeline(packageName, 30),
+    ])
+    return Response.json({ stats, timeline }, { headers: noCacheHeaders })
+  }
+
+  // Package detail page
+  if (path.startsWith('/dashboard/package/')) {
+    const packageName = decodeURIComponent(path.replace('/dashboard/package/', ''))
+    const [stats, timeline] = await Promise.all([
+      analytics.getPackageStats(packageName),
+      analytics.getDownloadTimeline(packageName, 30),
+    ])
+    const html = await stxRender(`${DASHBOARD_DIR}/package.stx`, { packageName, stats, timeline })
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  // Overview page (default)
+  if (path === '/dashboard' || path === '/dashboard/') {
+    const topPackages = await analytics.getTopPackages(100)
+    const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
+    const html = await stxRender(`${DASHBOARD_DIR}/overview.stx`, { packages: topPackages, page, perPage: 25 })
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  return Response.json({ error: 'Not found' }, { status: 404, headers: noCacheHeaders })
 }
 
 // Run server if this is the main module

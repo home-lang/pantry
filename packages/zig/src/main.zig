@@ -107,6 +107,33 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn ciAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    // Load pantry.toml project configuration
+    const cwd_buf = io_helper.getCwdAlloc(allocator) catch try allocator.dupe(u8, ".");
+    defer allocator.free(cwd_buf);
+    const pantry_config = lib.config.loadPantryToml(allocator, cwd_buf) catch lib.config.PantryConfig{};
+
+    // ci = install with frozen lockfile (fails if lockfile out of sync)
+    const install_options = lib.commands.InstallOptions{
+        .production = ctx.hasOption("production"),
+        .frozen_lockfile = true,
+        .ignore_scripts = ctx.hasOption("ignore-scripts"),
+        .verbose = ctx.hasOption("verbose"),
+        .linker = pantry_config.install.linker,
+        .modules_dir = pantry_config.install.modules_dir,
+    };
+    const result = try lib.commands.installCommandWithOptions(allocator, &[_][]const u8{}, install_options);
+    defer result.deinit(allocator);
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -127,6 +154,8 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const global = ctx.hasOption("global");
     const dev = ctx.hasOption("dev");
     const peer = ctx.hasOption("peer");
+    const optional = ctx.hasOption("optional");
+    const exact = ctx.hasOption("exact");
     const verbose = ctx.hasOption("verbose");
 
     // Handle global add: install to global prefix, skip config save
@@ -188,7 +217,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
         defer allocator.free(path);
 
         // Save dependencies to config file
-        saveDependenciesToConfig(allocator, path, packages.items, dev, peer) catch |err| {
+        saveDependenciesToConfig(allocator, path, packages.items, dev, peer, optional, exact) catch |err| {
             style.print("\n⚠ Warning: Failed to save to config file: {}\n", .{err});
             style.print("[33m Note:[0m To save to config, manually add to {s}\n", .{std.fs.path.basename(path)});
             std.process.exit(0);
@@ -283,6 +312,8 @@ fn saveDependenciesToConfig(
     packages: []const []const u8,
     is_dev: bool,
     is_peer: bool,
+    is_optional: bool,
+    is_exact: bool,
 ) !void {
     // Read existing config
     const config_content = try io_helper.readFileAlloc(allocator, config_path, 1024 * 1024);
@@ -301,7 +332,9 @@ fn saveDependenciesToConfig(
     defer parsed.deinit();
 
     // Determine dependency type field
-    const dep_field = if (is_peer)
+    const dep_field = if (is_optional)
+        "optionalDependencies"
+    else if (is_peer)
         "peerDependencies"
     else if (is_dev)
         "devDependencies"
@@ -344,8 +377,17 @@ fn saveDependenciesToConfig(
         else
             "latest";
 
-        // Add to dependencies
-        const version_value = std.json.Value{ .string = try allocator.dupe(u8, pkg_version) };
+        // Format version: add ^ prefix unless --exact or already has a range prefix
+        const saved_version = if (is_exact or std.mem.eql(u8, pkg_version, "latest") or
+            pkg_version.len == 0 or pkg_version[0] == '^' or pkg_version[0] == '~' or
+            pkg_version[0] == '>' or pkg_version[0] == '<' or pkg_version[0] == '=' or
+            std.mem.startsWith(u8, pkg_version, "workspace:") or
+            std.mem.startsWith(u8, pkg_version, "link:"))
+            try allocator.dupe(u8, pkg_version)
+        else
+            try std.fmt.allocPrint(allocator, "^{s}", .{pkg_version});
+
+        const version_value = std.json.Value{ .string = saved_version };
         try deps_obj.put(try allocator.dupe(u8, pkg_name), version_value);
     }
 
@@ -2004,6 +2046,175 @@ fn printHelp() void {
 }
 
 /// Help command action
+// ========================================================================
+// PM Subcommand Actions
+// ========================================================================
+
+fn pmBinAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    const global = ctx.hasOption("global");
+    var result = try lib.commands.pmBinCommand(allocator, global);
+    defer result.deinit(allocator);
+    std.process.exit(result.exit_code);
+}
+
+fn pmHashAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmHashCommand(allocator);
+    defer result.deinit(allocator);
+    std.process.exit(result.exit_code);
+}
+
+fn pmHashStringAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmHashStringCommand(allocator);
+    defer result.deinit(allocator);
+    std.process.exit(result.exit_code);
+}
+
+fn pmHashPrintAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmHashPrintCommand(allocator);
+    defer result.deinit(allocator);
+    std.process.exit(result.exit_code);
+}
+
+fn pmCacheAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmCacheCommand(allocator);
+    defer result.deinit(allocator);
+    std.process.exit(result.exit_code);
+}
+
+fn pmCacheRmAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmCacheRmCommand(allocator);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn pmMigrateAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmMigrateCommand(allocator);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn pmVersionAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    defer args.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args.append(allocator, arg);
+    }
+
+    if (ctx.hasOption("no-git-tag-version")) try args.append(allocator, "--no-git-tag-version");
+    if (ctx.getOption("preid")) |p| {
+        try args.append(allocator, "--preid");
+        try args.append(allocator, p);
+    }
+
+    var result = try lib.commands.pmVersionCommand(allocator, args.items);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn pmPkgAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    defer args.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args.append(allocator, arg);
+    }
+
+    var result = try lib.commands.pmPkgCommand(allocator, args.items);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn pmTrustAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 4);
+    defer args.deinit(allocator);
+
+    if (ctx.hasOption("all")) try args.append(allocator, "--all");
+
+    var result = try lib.commands.pmTrustCommand(allocator, args.items);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn pmUntrustedAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmUntrustedCommand(allocator);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn pmDefaultTrustedAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    var result = try lib.commands.pmDefaultTrustedCommand(allocator);
+    defer result.deinit(allocator);
+    std.process.exit(result.exit_code);
+}
+
+fn pmLsAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    const all = ctx.hasOption("all");
+    const format = if (all) "json" else "table";
+    var result = try lib.commands.listCommandWithFormat(allocator, format, all);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
+fn patchAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+    const commit = ctx.hasOption("commit");
+
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 4);
+    defer args.deinit(allocator);
+
+    var i: usize = 0;
+    while (ctx.getArgument(i)) |arg| : (i += 1) {
+        try args.append(allocator, arg);
+    }
+
+    var result = try lib.commands.patchCommand(allocator, args.items, commit);
+    defer result.deinit(allocator);
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+    std.process.exit(result.exit_code);
+}
+
 fn helpAction(_: *cli.BaseCommand.ParseContext) !void {
     printHelp();
 }
@@ -2088,6 +2299,25 @@ pub fn main() !void {
     _ = try root.addCommand(install_cmd);
 
     // ========================================================================
+    // CI Command (strict install - fails if lockfile out of sync)
+    // ========================================================================
+    var ci_cmd = try cli.BaseCommand.init(allocator, "ci", "Install with frozen lockfile (fails if lockfile out of sync)");
+
+    const ci_production_opt = cli.Option.init("production", "production", "Skip devDependencies", .bool)
+        .withShort('p');
+    _ = try ci_cmd.addOption(ci_production_opt);
+
+    const ci_ignore_scripts_opt = cli.Option.init("ignore-scripts", "ignore-scripts", "Don't run lifecycle scripts", .bool);
+    _ = try ci_cmd.addOption(ci_ignore_scripts_opt);
+
+    const ci_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
+        .withShort('v');
+    _ = try ci_cmd.addOption(ci_verbose_opt);
+
+    _ = ci_cmd.setAction(ciAction);
+    _ = try root.addCommand(ci_cmd);
+
+    // ========================================================================
     // Add Command
     // ========================================================================
     var add_cmd = try cli.BaseCommand.init(allocator, "add", "Add and install packages");
@@ -2108,6 +2338,13 @@ pub fn main() !void {
     const add_peer_opt = cli.Option.init("peer", "peer", "Add to peerDependencies", .bool)
         .withShort('P');
     _ = try add_cmd.addOption(add_peer_opt);
+
+    const add_optional_opt = cli.Option.init("optional", "optional", "Add to optionalDependencies", .bool);
+    _ = try add_cmd.addOption(add_optional_opt);
+
+    const add_exact_opt = cli.Option.init("exact", "exact", "Pin exact version (no ^ prefix)", .bool)
+        .withShort('E');
+    _ = try add_cmd.addOption(add_exact_opt);
 
     const add_verbose_opt = cli.Option.init("verbose", "verbose", "Verbose output", .bool)
         .withShort('v');
@@ -3121,6 +3358,109 @@ pub fn main() !void {
     var version_cmd = try cli.BaseCommand.init(allocator, "version", "Show version information");
     _ = version_cmd.setAction(versionAction);
     _ = try root.addCommand(version_cmd);
+
+    // ========================================================================
+    // PM Command (Package Manager Utilities)
+    // ========================================================================
+    var pm_cmd = try cli.BaseCommand.init(allocator, "pm", "Package manager utilities");
+
+    // pm bin
+    var pm_bin_cmd = try cli.BaseCommand.init(allocator, "bin", "Print bin directory path");
+    const pm_bin_global_opt = cli.Option.init("global", "global", "Print global bin directory", .bool)
+        .withShort('g');
+    _ = try pm_bin_cmd.addOption(pm_bin_global_opt);
+    _ = pm_bin_cmd.setAction(pmBinAction);
+    _ = try pm_cmd.addCommand(pm_bin_cmd);
+
+    // pm hash
+    var pm_hash_cmd = try cli.BaseCommand.init(allocator, "hash", "Print lockfile hash");
+    _ = pm_hash_cmd.setAction(pmHashAction);
+    _ = try pm_cmd.addCommand(pm_hash_cmd);
+
+    // pm hash-string
+    var pm_hash_string_cmd = try cli.BaseCommand.init(allocator, "hash-string", "Print string used to hash lockfile");
+    _ = pm_hash_string_cmd.setAction(pmHashStringAction);
+    _ = try pm_cmd.addCommand(pm_hash_string_cmd);
+
+    // pm hash-print
+    var pm_hash_print_cmd = try cli.BaseCommand.init(allocator, "hash-print", "Print hash stored in lockfile");
+    _ = pm_hash_print_cmd.setAction(pmHashPrintAction);
+    _ = try pm_cmd.addCommand(pm_hash_print_cmd);
+
+    // pm cache
+    var pm_cache_cmd = try cli.BaseCommand.init(allocator, "cache", "Print cache directory path");
+    _ = pm_cache_cmd.setAction(pmCacheAction);
+    _ = try pm_cmd.addCommand(pm_cache_cmd);
+
+    // pm cache rm (handled as "cache:rm" since nested subcommands of subcommands may not work)
+    // We'll register it as a top-level "pm:cache-rm" or handle within cache action
+
+    // pm migrate
+    var pm_migrate_cmd = try cli.BaseCommand.init(allocator, "migrate", "Migrate lockfile from another package manager");
+    _ = pm_migrate_cmd.setAction(pmMigrateAction);
+    _ = try pm_cmd.addCommand(pm_migrate_cmd);
+
+    // pm version
+    var pm_version_cmd = try cli.BaseCommand.init(allocator, "version", "Bump package version");
+    const pm_ver_arg = cli.Argument.init("bump", "Version bump type (patch, minor, major, premajor, preminor, prepatch, prerelease) or specific version", .string)
+        .withRequired(false);
+    _ = try pm_version_cmd.addArgument(pm_ver_arg);
+    const pm_ver_no_git_opt = cli.Option.init("no-git-tag-version", "no-git-tag-version", "Skip git tag creation", .bool);
+    _ = try pm_version_cmd.addOption(pm_ver_no_git_opt);
+    const pm_ver_preid_opt = cli.Option.init("preid", "preid", "Prerelease identifier (e.g., beta)", .string);
+    _ = try pm_version_cmd.addOption(pm_ver_preid_opt);
+    _ = pm_version_cmd.setAction(pmVersionAction);
+    _ = try pm_cmd.addCommand(pm_version_cmd);
+
+    // pm pkg
+    var pm_pkg_cmd = try cli.BaseCommand.init(allocator, "pkg", "Manage package.json fields");
+    const pm_pkg_args = cli.Argument.init("args", "Subcommand and arguments (get/set/delete field)", .string)
+        .withRequired(false)
+        .withVariadic(true);
+    _ = try pm_pkg_cmd.addArgument(pm_pkg_args);
+    _ = pm_pkg_cmd.setAction(pmPkgAction);
+    _ = try pm_cmd.addCommand(pm_pkg_cmd);
+
+    // pm trust
+    var pm_trust_cmd = try cli.BaseCommand.init(allocator, "trust", "Trust packages with lifecycle scripts");
+    const pm_trust_all_opt = cli.Option.init("all", "all", "Trust all untrusted packages", .bool);
+    _ = try pm_trust_cmd.addOption(pm_trust_all_opt);
+    _ = pm_trust_cmd.setAction(pmTrustAction);
+    _ = try pm_cmd.addCommand(pm_trust_cmd);
+
+    // pm untrusted
+    var pm_untrusted_cmd = try cli.BaseCommand.init(allocator, "untrusted", "List untrusted packages with scripts");
+    _ = pm_untrusted_cmd.setAction(pmUntrustedAction);
+    _ = try pm_cmd.addCommand(pm_untrusted_cmd);
+
+    // pm default-trusted
+    var pm_default_trusted_cmd = try cli.BaseCommand.init(allocator, "default-trusted", "Print default trusted packages list");
+    _ = pm_default_trusted_cmd.setAction(pmDefaultTrustedAction);
+    _ = try pm_cmd.addCommand(pm_default_trusted_cmd);
+
+    // pm ls
+    var pm_ls_cmd = try cli.BaseCommand.init(allocator, "ls", "List installed packages");
+    const pm_ls_all_opt = cli.Option.init("all", "all", "Include transitive dependencies", .bool);
+    _ = try pm_ls_cmd.addOption(pm_ls_all_opt);
+    _ = pm_ls_cmd.setAction(pmLsAction);
+    _ = try pm_cmd.addCommand(pm_ls_cmd);
+
+    _ = try root.addCommand(pm_cmd);
+
+    // ========================================================================
+    // Patch Command
+    // ========================================================================
+    var patch_cmd = try cli.BaseCommand.init(allocator, "patch", "Prepare a package for patching");
+    const patch_pkg_arg = cli.Argument.init("package", "Package to patch (name@version)", .string)
+        .withRequired(false)
+        .withVariadic(true);
+    _ = try patch_cmd.addArgument(patch_pkg_arg);
+    const patch_commit_opt = cli.Option.init("commit", "commit", "Finalize patch and generate .patch file", .bool);
+    _ = try patch_cmd.addOption(patch_commit_opt);
+    const patch_dir_opt = cli.Option.init("patches-dir", "patches-dir", "Directory for patch files", .string);
+    _ = try patch_cmd.addOption(patch_dir_opt);
+    _ = patch_cmd.setAction(patchAction);
+    _ = try root.addCommand(patch_cmd);
 
     // Parse arguments
     const args = try io_helper.argsAlloc(allocator);

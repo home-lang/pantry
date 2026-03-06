@@ -1,14 +1,19 @@
 //! Outdated package detection
 //!
 //! Check which dependencies have newer versions available by querying
-//! the npm registry for each package listed in the project's dependency file.
+//! the appropriate registry (npm for JS packages, S3 for system packages).
 
 const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const style = @import("../style.zig");
+const aliases = @import("../../packages/aliases.zig");
+const parser = @import("../../deps/parser.zig");
 
 const CommandResult = common.CommandResult;
+
+/// Dependency kind for version resolution
+const DepKind = enum { npm, system, skip };
 
 /// Package version comparison result
 pub const VersionStatus = enum {
@@ -45,7 +50,7 @@ pub const OutdatedPackage = struct {
     }
 };
 
-/// Registry version info returned from npm
+/// Registry version info
 const RegistryVersionInfo = struct {
     latest: []const u8,
     wanted: []const u8,
@@ -56,24 +61,105 @@ const RegistryVersionInfo = struct {
     }
 };
 
+/// Classify a dependency by its name and version
+fn classifyDep(name: []const u8, version: []const u8) DepKind {
+    if (std.mem.startsWith(u8, version, "link:")) return .skip;
+    if (std.mem.startsWith(u8, version, "workspace:")) return .skip;
+    if (std.mem.startsWith(u8, version, "~") and version.len > 1 and version[1] == '/') return .skip; // ~/path
+    if (std.mem.startsWith(u8, version, "/") or std.mem.startsWith(u8, version, ".")) return .skip;
+    if (std.mem.startsWith(u8, name, "npm:")) return .npm;
+    if (std.mem.startsWith(u8, name, "auto:")) {
+        // auto: means "try pantry registry first, then npm" — classify by the underlying name
+        const inner = name[5..];
+        if (std.mem.indexOf(u8, inner, ".") != null) return .system;
+        if (aliases.resolvealias(inner) != null) return .system;
+        return .npm;
+    }
+    if (std.mem.startsWith(u8, name, "@")) return .npm;
+    if (std.mem.indexOf(u8, name, ".") != null) return .system;
+    if (aliases.resolvealias(name) != null) return .system;
+    return .npm;
+}
+
+/// Resolve domain for a system dep
+fn resolveSystemDomain(name: []const u8) []const u8 {
+    const clean = if (std.mem.startsWith(u8, name, "auto:")) name[5..] else name;
+    if (std.mem.indexOf(u8, clean, ".") != null) return clean;
+    return aliases.resolvealias(clean) orelse clean;
+}
+
+/// Check if a name matches a glob-style filter pattern
+fn matchesFilter(name: []const u8, pattern: []const u8) bool {
+    // Negation pattern
+    if (pattern.len > 0 and pattern[0] == '!') {
+        return !matchesFilter(name, pattern[1..]);
+    }
+    // Exact match
+    if (std.mem.eql(u8, name, pattern)) return true;
+    // Wildcard at end: "eslint*" matches "eslint-plugin-foo"
+    if (std.mem.endsWith(u8, pattern, "*")) {
+        return std.mem.startsWith(u8, name, pattern[0 .. pattern.len - 1]);
+    }
+    // Wildcard at start: "*-utils" matches "string-utils"
+    if (pattern.len > 0 and pattern[0] == '*') {
+        return std.mem.endsWith(u8, name, pattern[1..]);
+    }
+    // Scoped wildcard: "@types/*" matches "@types/node"
+    if (std.mem.indexOf(u8, pattern, "/*")) |slash_pos| {
+        if (std.mem.endsWith(u8, pattern, "/*")) {
+            const scope = pattern[0..slash_pos];
+            if (std.mem.indexOf(u8, name, "/")) |name_slash| {
+                return std.mem.eql(u8, name[0..name_slash], scope);
+            }
+        }
+    }
+    return false;
+}
+
+/// Check if a dep name matches any of the filter patterns
+fn matchesFilters(name: []const u8, filters: []const []const u8) bool {
+    if (filters.len == 0) return true; // No filters = match all
+
+    // Check for negation-only patterns (all start with !)
+    var has_positive = false;
+    for (filters) |f| {
+        if (f.len == 0) continue;
+        if (f[0] != '!') {
+            has_positive = true;
+            break;
+        }
+    }
+
+    if (!has_positive) {
+        // Only negation patterns: include everything except negated
+        for (filters) |f| {
+            if (!matchesFilter(name, f)) return false;
+        }
+        return true;
+    }
+
+    // Has positive patterns: must match at least one positive, and not match any negation
+    var matched_positive = false;
+    for (filters) |f| {
+        if (f.len == 0) continue;
+        if (f[0] == '!') {
+            if (!matchesFilter(name, f)) return false;
+        } else {
+            if (matchesFilter(name, f)) matched_positive = true;
+        }
+    }
+    return matched_positive;
+}
+
 /// Check for outdated packages
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    _ = args;
-
-    const detector = @import("../../deps/detector.zig");
-    const parser = @import("../../deps/parser.zig");
+    const update_mod = @import("update.zig");
 
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
-    // Find dependency file
-    const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
-        return CommandResult.err(allocator, "No dependency file found");
-    };
-    defer allocator.free(deps_file.path);
-
-    // Parse dependencies
-    const deps = try parser.inferDependencies(allocator, deps_file);
+    // Collect all deps from root + workspace members (reuse update logic)
+    const deps = try update_mod.collectAllDeps(allocator, cwd);
     defer {
         for (deps) |*dep| {
             var d = dep.*;
@@ -101,29 +187,43 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     for (deps) |dep| {
-        // Get installed version from node_modules/<name>/package.json
-        const installed = getInstalledVersion(allocator, cwd, dep.name) orelse continue;
-        defer allocator.free(installed);
+        // Apply filter patterns from args
+        if (!matchesFilters(dep.name, args)) continue;
 
-        // Query npm registry for latest and wanted versions
-        var registry_info = queryRegistryVersions(allocator, dep.name, dep.version) orelse continue;
-        defer registry_info.deinit(allocator);
+        const kind = classifyDep(dep.name, dep.version);
+        if (kind == .skip) continue;
+
+        // Get installed version from pantry/ or node_modules/
+        const installed = getInstalledVersion(allocator, cwd, dep.name) orelse stripPrefix(dep.version);
+
+        // Query appropriate registry
+        var registry_info: ?RegistryVersionInfo = switch (kind) {
+            .npm => queryNpmVersions(allocator, dep.name, dep.version),
+            .system => querySystemVersions(allocator, dep.name, dep.version),
+            .skip => null,
+        };
+        if (registry_info == null) continue;
+        defer registry_info.?.deinit(allocator);
 
         // Determine update status
-        const status = determineStatus(installed, registry_info.latest);
+        const status = determineStatus(installed, registry_info.?.latest);
         if (status == .up_to_date) continue;
 
-        const location: []const u8 = switch (dep.dep_type) {
-            .normal => "dependencies",
-            .dev => "devDependencies",
-            .peer => "peerDependencies",
+        const location: []const u8 = switch (kind) {
+            .system => "system",
+            .npm => switch (dep.dep_type) {
+                .normal => "dependencies",
+                .dev => "devDependencies",
+                .peer => "peerDependencies",
+            },
+            .skip => "local",
         };
 
         try outdated.append(allocator, .{
             .name = try allocator.dupe(u8, dep.name),
             .current = try allocator.dupe(u8, installed),
-            .wanted = try allocator.dupe(u8, registry_info.wanted),
-            .latest = try allocator.dupe(u8, registry_info.latest),
+            .wanted = try allocator.dupe(u8, registry_info.?.wanted),
+            .latest = try allocator.dupe(u8, registry_info.?.latest),
             .status = status,
             .location = try allocator.dupe(u8, location),
         });
@@ -131,7 +231,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
 
     // Display results
     if (outdated.items.len == 0) {
-        style.print("{s}✓{s} All packages are up to date!\n", .{ style.green, style.reset });
+        style.print("{s}All packages are up to date!{s}\n", .{ style.green, style.reset });
         return CommandResult.success(allocator, null);
     }
 
@@ -164,14 +264,12 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         "Location",
     });
 
-    // Separator
-    var i: usize = 0;
-    while (i < 95) : (i += 1) {
+    var sep_i: usize = 0;
+    while (sep_i < 95) : (sep_i += 1) {
         style.print("-", .{});
     }
     style.print("\n", .{});
 
-    // Print outdated packages
     for (outdated.items) |pkg| {
         const clr = pkg.status.color();
         style.print("{s}{s:<30}{s} {s:<15} {s:<15} {s:<15} {s:<20}\n", .{
@@ -205,45 +303,62 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     };
 }
 
-/// Read the installed version of a package from pantry/<name>/package.json (or node_modules/)
-fn getInstalledVersion(allocator: std.mem.Allocator, project_root: []const u8, name: []const u8) ?[]const u8 {
-    // Try pantry/ first, then node_modules/ for compatibility
-    const dirs = [_][]const u8{ "pantry", "node_modules" };
-    var content: ?[]const u8 = null;
-    for (dirs) |dir| {
-        const pkg_json_path = std.fmt.allocPrint(allocator, "{s}/{s}/{s}/package.json", .{ project_root, dir, name }) catch continue;
-        defer allocator.free(pkg_json_path);
-        content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch continue;
-        break;
-    }
-    const actual_content = content orelse return null;
-    defer allocator.free(actual_content);
-
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, actual_content, .{}) catch return null;
-    defer parsed.deinit();
-
-    if (parsed.value != .object) return null;
-
-    const version_val = parsed.value.object.get("version") orelse return null;
-    if (version_val != .string) return null;
-
-    return allocator.dupe(u8, version_val.string) catch null;
+/// Strip semver prefix
+fn stripPrefix(version: []const u8) []const u8 {
+    if (version.len == 0) return version;
+    if (version[0] == '^' or version[0] == '~') return version[1..];
+    if (std.mem.startsWith(u8, version, ">=") or std.mem.startsWith(u8, version, "<=")) return version[2..];
+    if (version[0] == '>' or version[0] == '<') return version[1..];
+    return version;
 }
 
-/// Query the npm registry for the latest version of a package.
-/// Returns { latest: dist-tags.latest, wanted: max version satisfying constraint }.
-fn queryRegistryVersions(allocator: std.mem.Allocator, name: []const u8, constraint: []const u8) ?RegistryVersionInfo {
-    const url = std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{name}) catch return null;
+/// Read the installed version of a package from pantry/<name>/package.json (or node_modules/)
+fn getInstalledVersion(allocator: std.mem.Allocator, project_root: []const u8, name: []const u8) ?[]const u8 {
+    // Strip prefix from name for path lookup
+    const clean_name = if (std.mem.startsWith(u8, name, "auto:"))
+        name[5..]
+    else if (std.mem.startsWith(u8, name, "npm:"))
+        name[4..]
+    else
+        name;
+
+    const dirs = [_][]const u8{ "pantry", "node_modules" };
+    for (dirs) |dir| {
+        const pkg_json_path = std.fmt.allocPrint(allocator, "{s}/{s}/{s}/package.json", .{ project_root, dir, clean_name }) catch continue;
+        defer allocator.free(pkg_json_path);
+
+        const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch continue;
+        defer allocator.free(content);
+
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch continue;
+        defer parsed.deinit();
+
+        if (parsed.value != .object) continue;
+        const version_val = parsed.value.object.get("version") orelse continue;
+        if (version_val != .string) continue;
+        return allocator.dupe(u8, version_val.string) catch null;
+    }
+    return null;
+}
+
+/// Query npm registry for latest and wanted versions
+fn queryNpmVersions(allocator: std.mem.Allocator, name: []const u8, constraint: []const u8) ?RegistryVersionInfo {
+    const clean_name = if (std.mem.startsWith(u8, name, "auto:"))
+        name[5..]
+    else if (std.mem.startsWith(u8, name, "npm:"))
+        name[4..]
+    else
+        name;
+
+    const url = std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{clean_name}) catch return null;
     defer allocator.free(url);
 
     const body = io_helper.httpGet(allocator, url) catch return null;
     defer allocator.free(body);
-
     if (body.len == 0) return null;
 
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{}) catch return null;
     defer parsed.deinit();
-
     if (parsed.value != .object) return null;
 
     // Get dist-tags.latest
@@ -255,31 +370,74 @@ fn queryRegistryVersions(allocator: std.mem.Allocator, name: []const u8, constra
         break :blk latest_val.string;
     } orelse return null;
 
-    // Get "wanted" version: the highest version that satisfies the constraint.
-    // If no versions object, or constraint is *, just use latest.
+    // Find wanted version (highest satisfying constraint)
     const wanted = blk: {
-        // Skip complex resolution for simple constraints
         if (constraint.len == 0 or std.mem.eql(u8, constraint, "*") or std.mem.eql(u8, constraint, "latest")) {
             break :blk latest;
         }
-
         const versions_obj = parsed.value.object.get("versions") orelse break :blk latest;
         if (versions_obj != .object) break :blk latest;
-
-        // Iterate versions and find the highest that satisfies
         var best: ?[]const u8 = null;
         var ver_iter = versions_obj.object.iterator();
         while (ver_iter.next()) |entry| {
             const ver = entry.key_ptr.*;
             if (satisfiesConstraint(ver, constraint)) {
-                if (best == null or compareVersions(ver, best.?) == .gt) {
-                    best = ver;
-                }
+                if (best == null or compareVersions(ver, best.?) == .gt) best = ver;
             }
         }
-
         break :blk best orelse latest;
     };
+
+    return RegistryVersionInfo{
+        .latest = allocator.dupe(u8, latest) catch return null,
+        .wanted = allocator.dupe(u8, wanted) catch return null,
+    };
+}
+
+/// Query Pantry S3 registry for system package versions
+fn querySystemVersions(allocator: std.mem.Allocator, name: []const u8, constraint: []const u8) ?RegistryVersionInfo {
+    const domain = resolveSystemDomain(name);
+
+    const metadata_url = std.fmt.allocPrint(
+        allocator,
+        "https://registry.pantry.dev/binaries/{s}/metadata.json",
+        .{domain},
+    ) catch return null;
+    defer allocator.free(metadata_url);
+
+    const body = io_helper.httpGet(allocator, metadata_url) catch return null;
+    defer allocator.free(body);
+    if (body.len == 0) return null;
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{}) catch return null;
+    defer parsed.deinit();
+    if (parsed.value != .object) return null;
+
+    const versions_obj = parsed.value.object.get("versions") orelse return null;
+    if (versions_obj != .object) return null;
+
+    // Find latest (highest version overall)
+    var absolute_best: ?[]const u8 = null;
+    var wanted_best: ?[]const u8 = null;
+    var ver_iter = versions_obj.object.iterator();
+    while (ver_iter.next()) |entry| {
+        const ver = entry.key_ptr.*;
+        // Track absolute latest
+        if (absolute_best == null or compareVersions(ver, absolute_best.?) == .gt) {
+            absolute_best = ver;
+        }
+        // Track wanted (satisfies constraint)
+        if (constraint.len == 0 or std.mem.eql(u8, constraint, "*") or std.mem.eql(u8, constraint, "latest") or
+            satisfiesConstraint(ver, constraint))
+        {
+            if (wanted_best == null or compareVersions(ver, wanted_best.?) == .gt) {
+                wanted_best = ver;
+            }
+        }
+    }
+
+    const latest = absolute_best orelse return null;
+    const wanted = wanted_best orelse latest;
 
     return RegistryVersionInfo{
         .latest = allocator.dupe(u8, latest) catch return null,
@@ -298,7 +456,6 @@ pub fn satisfiesConstraint(version: []const u8, constraint: []const u8) bool {
         const trimmed = std.mem.trim(u8, or_segment, " \t");
         if (trimmed.len == 0) continue;
 
-        // Check AND group (space-separated constraints)
         var all_match = true;
         var space_iter = std.mem.tokenizeScalar(u8, trimmed, ' ');
         while (space_iter.next()) |token| {
@@ -323,7 +480,6 @@ pub fn compareVersions(a: []const u8, b: []const u8) std.math.Order {
     var a_iter = std.mem.splitScalar(u8, a, '.');
     var b_iter = std.mem.splitScalar(u8, b, '.');
 
-    // Compare up to 3 parts (major.minor.patch)
     var i: usize = 0;
     while (i < 3) : (i += 1) {
         const a_part = a_iter.next();
@@ -333,7 +489,6 @@ pub fn compareVersions(a: []const u8, b: []const u8) std.math.Order {
         if (a_part == null) return .lt;
         if (b_part == null) return .gt;
 
-        // Strip pre-release suffix (e.g., "0-beta.1" → "0")
         const a_clean = if (std.mem.indexOf(u8, a_part.?, "-")) |dash| a_part.?[0..dash] else a_part.?;
         const b_clean = if (std.mem.indexOf(u8, b_part.?, "-")) |dash| b_part.?[0..dash] else b_part.?;
 
@@ -348,9 +503,7 @@ pub fn compareVersions(a: []const u8, b: []const u8) std.math.Order {
 
 /// Determine version status based on current and latest
 fn determineStatus(current: []const u8, latest: []const u8) VersionStatus {
-    if (std.mem.eql(u8, current, latest)) {
-        return .up_to_date;
-    }
+    if (std.mem.eql(u8, current, latest)) return .up_to_date;
 
     var current_parts = std.mem.splitScalar(u8, current, '.');
     var latest_parts = std.mem.splitScalar(u8, latest, '.');
@@ -358,9 +511,6 @@ fn determineStatus(current: []const u8, latest: []const u8) VersionStatus {
     const current_major = std.fmt.parseInt(u32, current_parts.next() orelse "0", 10) catch 0;
     const latest_major = std.fmt.parseInt(u32, latest_parts.next() orelse "0", 10) catch 0;
 
-    if (latest_major > current_major) {
-        return .major_update;
-    } else {
-        return .minor_update;
-    }
+    if (latest_major > current_major) return .major_update;
+    return .minor_update;
 }

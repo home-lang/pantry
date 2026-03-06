@@ -52,6 +52,8 @@ pub const link_commands = @import("commands/link.zig");
 pub const bootstrap_commands = @import("commands/bootstrap.zig");
 pub const shim_commands = @import("commands/shim.zig");
 pub const oidc_cmd = @import("commands/oidc.zig");
+pub const pm_cmd = @import("commands/pm.zig");
+pub const patch_cmd = @import("commands/patch.zig");
 
 // ============================================================================
 // Re-export Package Commands
@@ -280,3 +282,26 @@ pub const treeCommand = tree_commands.treeCommand;
 pub const linkCommand = link_commands.linkCommand;
 pub const unlinkCommand = link_commands.unlinkCommand;
 pub const resolveLinkPath = link_commands.resolveLinkPath;
+
+// ============================================================================
+// Re-export PM Commands
+// ============================================================================
+
+pub const pmBinCommand = pm_cmd.binCommand;
+pub const pmHashCommand = pm_cmd.hashCommand;
+pub const pmHashStringCommand = pm_cmd.hashStringCommand;
+pub const pmHashPrintCommand = pm_cmd.hashPrintCommand;
+pub const pmCacheCommand = pm_cmd.cacheCommand;
+pub const pmCacheRmCommand = pm_cmd.cacheRmCommand;
+pub const pmMigrateCommand = pm_cmd.migrateCommand;
+pub const pmVersionCommand = pm_cmd.versionCommand;
+pub const pmPkgCommand = pm_cmd.pkgCommand;
+pub const pmTrustCommand = pm_cmd.trustCommand;
+pub const pmUntrustedCommand = pm_cmd.untrustedCommand;
+pub const pmDefaultTrustedCommand = pm_cmd.defaultTrustedCommand;
+
+// ============================================================================
+// Re-export Patch Command
+// ============================================================================
+
+pub const patchCommand = patch_cmd.execute;

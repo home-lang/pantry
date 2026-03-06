@@ -316,6 +316,22 @@ pub fn build(b: *std.Build) void {
     });
     const run_resolution_tests = b.addRunArtifact(resolution_tests);
 
+    // PM commands tests (pm subcommands, outdated, update, patch)
+    const pm_commands_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/pm_commands_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+            .{ .name = "zig-test-framework", .module = test_framework_mod },
+        },
+    });
+    const pm_commands_tests = b.addTest(.{
+        .root_module = pm_commands_test_mod,
+    });
+    const run_pm_commands_tests = b.addRunArtifact(pm_commands_tests);
+
     // Shell integration benchmark
     const shell_bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/shell_bench.zig"),
@@ -347,6 +363,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_oidc_tests.step);
     test_step.dependOn(&run_resolution_tests.step);
     test_step.dependOn(&run_publish_commit_tests.step);
+    test_step.dependOn(&run_pm_commands_tests.step);
 
     const services_step = b.step("test:services", "Run services tests");
     services_step.dependOn(&run_services_tests.step);
@@ -356,6 +373,9 @@ pub fn build(b: *std.Build) void {
 
     const publish_commit_step = b.step("test:publish-commit", "Run publish commit tests");
     publish_commit_step.dependOn(&run_publish_commit_tests.step);
+
+    const pm_commands_step = b.step("test:pm", "Run PM commands tests");
+    pm_commands_step.dependOn(&run_pm_commands_tests.step);
 
     const test_all_step = b.step("test:all", "Run all tests");
     test_all_step.dependOn(&run_lib_tests.step);
@@ -370,6 +390,7 @@ pub fn build(b: *std.Build) void {
     test_all_step.dependOn(&run_config_comprehensive_tests.step);
     test_all_step.dependOn(&run_resolution_tests.step);
     test_all_step.dependOn(&run_publish_commit_tests.step);
+    test_all_step.dependOn(&run_pm_commands_tests.step);
 
     // Coverage report
     const coverage_cmd = b.addSystemCommand(&[_][]const u8{

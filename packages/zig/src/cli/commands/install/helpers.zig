@@ -120,7 +120,7 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     // Fetch metadata.json from S3 to get the exact platform-specific tarball path
     const metadata_url = try std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.us-east-1.amazonaws.com/{s}",
+        "https://registry.pantry.dev/{s}",
         .{s3_path},
     );
     defer allocator.free(metadata_url);
@@ -157,7 +157,7 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     // Build full S3 URL from the tarball path in metadata
     const tarball_url = try std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.us-east-1.amazonaws.com/{s}",
+        "https://registry.pantry.dev/{s}",
         .{tarball_path},
     );
 

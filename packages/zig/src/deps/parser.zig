@@ -293,10 +293,6 @@ fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]c
 pub fn parseTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
     // Execute the TypeScript file
     const json_output = executeTsConfigFile(allocator, file_path) catch |err| {
-        if (err == error.NoRuntimeAvailable) {
-            style.print("Error: No JavaScript runtime found (bun or node required)\n", .{});
-            style.print("Install bun or node to use TypeScript config files\n", .{});
-        }
         return err;
     };
     defer allocator.free(json_output);

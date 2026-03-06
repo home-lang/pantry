@@ -1,0 +1,29 @@
+<script server>
+  const error = props.error || ''
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Pantry Dashboard</title>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center">
+  <div class="bg-slate-800 rounded-lg p-8 w-full max-w-md border border-slate-700">
+    <h1 class="text-2xl font-bold mb-6 text-center">Pantry Dashboard</h1>
+    @if (error)
+      <div class="bg-red-900/50 border border-red-500 text-red-200 px-4 py-2 rounded mb-4 text-sm">{{ error }}</div>
+    @endif
+    <form method="POST" action="/dashboard/login">
+      <label class="block text-sm text-slate-300 mb-2">Access Token</label>
+      <input type="password" name="token" required
+        class="w-full bg-slate-700 border border-slate-600 rounded px-4 py-2 text-white mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <button type="submit"
+        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors">
+        Sign In
+      </button>
+    </form>
+  </div>
+</body>
+</html>

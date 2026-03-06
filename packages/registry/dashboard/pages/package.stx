@@ -1,0 +1,160 @@
+<script server>
+  const packageName = props.packageName || ''
+  const stats = props.stats || {}
+  const timeline = props.timeline || []
+  const totalDownloads = stats.totalDownloads || 0
+  const lastDownload = stats.lastDownload ? new Date(stats.lastDownload).toLocaleDateString() : 'N/A'
+  const versions = stats.versionDownloads || {}
+  const versionCount = Object.keys(versions).length
+  const monthlyDownloads = timeline.reduce((sum, d) => sum + (d.count || 0), 0)
+
+  const sortedVersions = Object.entries(versions)
+    .sort((a, b) => Number(b[1]) - Number(a[1]))
+
+  const chartData = JSON.stringify(timeline.map(d => ({
+    date: d.date,
+    downloads: d.count || 0,
+  })))
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ packageName }} - Pantry Dashboard</title>
+</head>
+<body class="bg-slate-900 text-white min-h-screen">
+  <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold text-white hover:text-slate-300">Pantry Dashboard</a>
+      <div class="flex items-center gap-4">
+        <a href="/dashboard" class="text-slate-300 hover:text-white text-sm">Overview</a>
+        <a href="/health" class="text-slate-400 hover:text-white text-sm">Health</a>
+        <a href="/dashboard/logout" class="text-slate-400 hover:text-red-400 text-sm">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex items-center gap-3 mb-6">
+      <a href="/dashboard" class="text-slate-400 hover:text-white">&larr;</a>
+      <h1 class="text-2xl font-bold">{{ packageName }}</h1>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Total Downloads</div>
+        <div class="text-2xl font-bold">{{ totalDownloads.toLocaleString() }}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Last Download</div>
+        <div class="text-2xl font-bold">{{ lastDownload }}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Versions Tracked</div>
+        <div class="text-2xl font-bold">{{ versionCount }}</div>
+      </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">30d Downloads</div>
+        <div class="text-2xl font-bold">{{ monthlyDownloads.toLocaleString() }}</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
+        <h2 class="text-lg font-semibold mb-4">Downloads (30 days)</h2>
+        <canvas id="chart" height="200"></canvas>
+      </div>
+
+      <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-700">
+          <h2 class="text-lg font-semibold">Version Breakdown</h2>
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr class="text-slate-400 text-sm border-b border-slate-700">
+              <th class="py-2 px-4 text-left">Version</th>
+              <th class="py-2 px-4 text-right">Downloads</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (sortedVersions.length > 0)
+              @foreach (sortedVersions as entry)
+                <tr class="border-b border-slate-700">
+                  <td class="py-2 px-4 font-mono text-sm">{{ entry[0] }}</td>
+                  <td class="py-2 px-4 text-right">{{ Number(entry[1]).toLocaleString() }}</td>
+                </tr>
+              @endforeach
+            @else
+              <tr><td class="py-2 px-4 text-slate-400" colspan="2">No version data</td></tr>
+            @endif
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script client>
+    const data = JSON.parse(document.getElementById('chart-data').textContent)
+    const canvas = document.getElementById('chart')
+    const ctx = canvas.getContext('2d')
+    const dpr = window.devicePixelRatio || 1
+    const W = canvas.offsetWidth
+    const H = 200
+    canvas.width = W * dpr
+    canvas.height = H * dpr
+    canvas.style.width = W + 'px'
+    canvas.style.height = H + 'px'
+    ctx.scale(dpr, dpr)
+
+    const maxVal = Math.max(...data.map(d => d.downloads), 1)
+    const barW = Math.max(2, (W - 60) / data.length - 2)
+    const pad = { top: 20, right: 10, bottom: 24, left: 50 }
+    const plotW = W - pad.left - pad.right
+    const plotH = H - pad.top - pad.bottom
+
+    // Background
+    ctx.fillStyle = '#1e293b'
+    ctx.fillRect(0, 0, W, H)
+
+    // Grid lines
+    ctx.strokeStyle = '#334155'
+    ctx.lineWidth = 0.5
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (plotH / 4) * i
+      ctx.beginPath()
+      ctx.moveTo(pad.left, y)
+      ctx.lineTo(W - pad.right, y)
+      ctx.stroke()
+    }
+
+    // Bars
+    data.forEach((d, i) => {
+      const x = pad.left + i * (plotW / data.length)
+      const h = (d.downloads / maxVal) * plotH
+      const gradient = ctx.createLinearGradient(x, pad.top + plotH - h, x, pad.top + plotH)
+      gradient.addColorStop(0, '#60a5fa')
+      gradient.addColorStop(1, '#3b82f6')
+      ctx.fillStyle = gradient
+      ctx.fillRect(x + 1, pad.top + plotH - h, barW, h)
+    })
+
+    // Labels
+    ctx.fillStyle = '#94a3b8'
+    ctx.font = '10px system-ui, sans-serif'
+    ctx.textAlign = 'right'
+    for (let i = 0; i <= 4; i++) {
+      const val = Math.round(maxVal * (4 - i) / 4)
+      ctx.fillText(val.toLocaleString(), pad.left - 6, pad.top + (plotH / 4) * i + 4)
+    }
+    ctx.textAlign = 'left'
+    if (data.length > 0) {
+      ctx.fillText(data[0].date.slice(5), pad.left, H - 4)
+      ctx.textAlign = 'right'
+      ctx.fillText(data[data.length - 1].date.slice(5), W - pad.right, H - 4)
+    }
+  </script>
+  <script type="application/json" id="chart-data">{!! chartData !!}</script>
+</body>
+</html>
