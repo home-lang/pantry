@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 15 versions</summary>
+<summary>Show all 16 versions</summary>
 
+- `25.3.0`
 - `25.2.0`
 - `25.1.0`
 - `25.0.0`
@@ -36,13 +37,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `25.2.0`
+**Latest Version**: `25.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dgraph.io@25.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dgraph.io@25.3.0 -- $SHELL -i
 ```
 
 ## Usage Examples

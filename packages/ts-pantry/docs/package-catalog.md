@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-06T17:40:01.883Z
+- **Last Updated**: 2026-03-06T19:55:00.421Z
 
 ## Table of Contents
 
@@ -89,7 +89,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
-| **[dgraph.io](./packages/dgraph.io/index.md)** () | high-performance graph database for real-time use cases | dgraph | 25.2.0 (+14) | `pkgx dgraph` |
+| **[dgraph.io](./packages/dgraph.io/index.md)** () | high-performance graph database for real-time use cases | dgraph | 25.3.0 (+15) | `pkgx dgraph` |
 | **[duckdb.org](./packages/duckdb.org/index.md)** () | DuckDB is an analytical in-process SQL database management system | duckdb | 1.4.4 (+25) | `pkgx duckdb` |
 | **[edgedb.com](./packages/edgedb.com/index.md)** () | The EdgeDB CLI | edgedb | 7.10.2 (+43) | `pkgx edgedb` |
 | **[etcd.io](./packages/etcd.io/index.md)** () | Distributed reliable key-value store for the most critical data of a distributed system | etcd, etcdctl | 3.6.8 (+28) | `pkgx etcd` |
@@ -99,7 +99,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[opensearch.org](./packages/opensearch.org/index.md)** () | 🔎 Open source distributed and RESTful search engine. | opensearch, opensearch-keystore, opensearch-plugin, ... (+1) | 3.5.0 (+16) | `pkgx opensearch` |
 | **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.5.0 (+24) | `pkgx postgrest` |
 | **[redis.io](./packages/redis.io/index.md)** () | Redis is an in-memory database that persists on disk. The data model is key-value, but many diffe... | redis-server, redis-cli, redis-benchmark | 8.6.0 (+59) | `pkgx redis` |
-| **[sqlite.org](./packages/sqlite.org/index.md)** (sqlite) | Official Git mirror of the SQLite source tree | sqlite3 | 3.51.2 (+31) | `pkgx sqlite` |
+| **[sqlite.org](./packages/sqlite.org/index.md)** (sqlite) | Official Git mirror of the SQLite source tree | sqlite3 | 3.52.0 (+32) | `pkgx sqlite` |
 | **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+66) | `pkgx surreal` |
 | **[turso.tech](./packages/turso.tech/index.md)** () | Command line interface to Turso. | turso | 1.0.17 (+95) | `pkgx turso` |
 | **[valkey.io](./packages/valkey.io/index.md)** () | A flexible distributed key-value datastore that is optimized for caching and other realtime workl... | valkey-server, valkey-cli, valkey-benchmark | 9.0.3 (+25) | `pkgx valkey` |
@@ -310,7 +310,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[mosh.org](./packages/mosh.org/index.md)** () | Remote terminal application | mosh-client, mosh-server | 1.4.0 (+0) | `pkgx mosh` |
 | **[nginx.org](./packages/nginx.org/index.md)** () | HTTP(S) server and reverse proxy, and IMAP/POP3 proxy server | nginx | 1.29.5 (+25) | `pkgx nginx` |
 | **[rsync.samba.org](./packages/rsync.samba.org/index.md)** () | An open source utility that provides fast incremental file transfer. It also has useful features ... | rsync, rsync-ssl | 3.4.1 (+3) | `pkgx rsync` |
-| **[traefik.io](./packages/traefik.io/index.md)** () | The Cloud Native Application Proxy | traefik | 3.6.9 (+90) | `pkgx traefik` |
+| **[traefik.io](./packages/traefik.io/index.md)** () | The Cloud Native Application Proxy | traefik | 3.6.10 (+92) | `pkgx traefik` |
 
 ## Security & Cryptography
 

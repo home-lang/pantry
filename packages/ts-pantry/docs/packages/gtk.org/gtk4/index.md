@@ -35,8 +35,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 59 versions</summary>
+<summary>Show all 60 versions</summary>
 
+- `4.22.0`
 - `4.21.6`, `4.21.5`, `4.21.4`, `4.21.3`, `4.21.2`, `4.21.1`, `4.21.0`
 - `4.20.3`, `4.20.2`, `4.20.1`, `4.20.0`
 - `4.19.4`, `4.19.3`, `4.19.2`, `4.19.1`, `4.19.0`
@@ -49,13 +50,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.21.6`
+**Latest Version**: `4.22.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gtk.org/gtk4@4.21.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gtk.org/gtk4@4.22.0 -- $SHELL -i
 ```
 
 ## Dependencies

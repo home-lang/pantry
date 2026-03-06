@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 69 versions</summary>
+<summary>Show all 71 versions</summary>
 
+- `2.11.1`, `2.11.0`
 - `2.10.1`, `2.10.0`
 - `2.9.0`
 - `2.8.0`
@@ -55,13 +56,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.10.1`
+**Latest Version**: `2.11.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +golangci-lint.run@2.10.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +golangci-lint.run@2.11.1 -- $SHELL -i
 ```
 
 ## Usage Examples

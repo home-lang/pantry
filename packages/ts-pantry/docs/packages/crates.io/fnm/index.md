@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 8 versions</summary>
+<summary>Show all 9 versions</summary>
 
+- `1.39.0`
 - `1.38.1`, `1.38.0`
 - `1.37.2`, `1.37.1`, `1.37.0`
 - `1.36.0`
@@ -34,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.38.1`
+**Latest Version**: `1.39.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/fnm@1.38.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/fnm@1.39.0 -- $SHELL -i
 ```
 
 ## Dependencies

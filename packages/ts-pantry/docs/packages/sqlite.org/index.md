@@ -31,8 +31,9 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 32 versions</summary>
+<summary>Show all 33 versions</summary>
 
+- `3.52.0`
 - `3.51.2`, `3.51.1`, `3.51.0`
 - `3.50.4`, `3.50.3`, `3.50.2`, `3.50.1`, `3.50.0`
 - `3.49.2`, `3.49.1`, `3.49.0`
@@ -48,13 +49,13 @@ This package can also be accessed using these aliases:
 
 </details>
 
-**Latest Version**: `3.51.2`
+**Latest Version**: `3.52.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +sqlite.org@3.51.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +sqlite.org@3.52.0 -- $SHELL -i
 ```
 
 ## Dependencies

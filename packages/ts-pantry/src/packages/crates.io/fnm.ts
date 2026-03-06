@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/fnm`
  * @programs `fnm`
- * @version `1.38.1` (8 versions available)
+ * @version `1.39.0` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/fnm`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fnm"
  * console.log(pkg.description) // "🚀 Fast and simple Node.js version manager, bui..."
  * console.log(pkg.programs)    // ["fnm"]
- * console.log(pkg.versions[0]) // "1.38.1" (latest)
+ * console.log(pkg.versions[0]) // "1.39.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/fnm.md
@@ -69,6 +69,7 @@ export const cratesiofnmPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.39.0',
     '1.38.1',
     '1.38.0',
     '1.37.2',
