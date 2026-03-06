@@ -2,58 +2,61 @@ const std = @import("std");
 const io_helper = @import("../../io_helper.zig");
 const common = @import("common.zig");
 const lib = @import("../../lib.zig");
-const outdated_cmd = @import("outdated.zig");
-const npm = @import("../../registry/npm.zig");
-const registry_core = @import("../../registry/core.zig");
 const style = @import("../style.zig");
 
 const CommandResult = common.CommandResult;
 
 /// Update packages to latest versions
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    const detector = @import("../../deps/detector.zig");
+    const parser = @import("../../deps/parser.zig");
+
     // Parse flags
-    var update_all = false;
     var update_specific: ?[]const u8 = null;
     var dry_run = false;
+    var latest = false;
 
     var i: usize = 0;
     while (i < args.len) : (i += 1) {
         const arg = args[i];
         if (std.mem.eql(u8, arg, "--all")) {
-            update_all = true;
+            // Accepted for backwards compat but is now the default
         } else if (std.mem.eql(u8, arg, "--dry-run")) {
             dry_run = true;
+        } else if (std.mem.eql(u8, arg, "--latest")) {
+            latest = true;
+        } else if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) {
+            latest = true; // --force implies fetching latest
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             update_specific = arg;
         }
     }
 
-    // Load pantry.json
-    const config_result = lib.loadpantryConfig(allocator, .{}) catch {
-        return CommandResult.err(allocator, common.ERROR_NO_CONFIG);
+    // Find dependency file
+    const cwd = try io_helper.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
+        return CommandResult.err(allocator, "No dependency file found (pantry.json, pantry.jsonc, or package.json)");
     };
+    defer allocator.free(deps_file.path);
+
+    // Parse dependencies
+    const deps = try parser.inferDependencies(allocator, deps_file);
     defer {
-        var mut_result = config_result;
-        mut_result.deinit();
+        for (deps) |*dep| {
+            var d = dep.*;
+            d.deinit(allocator);
+        }
+        allocator.free(deps);
     }
 
-    const stdout = std.io.getStdOut().writer();
+    if (deps.len == 0) {
+        return CommandResult.success(allocator, "No dependencies found");
+    }
 
     if (dry_run) {
-        try stdout.print("🔍 Dry run mode - no changes will be made\n\n", .{});
-    }
-
-    // Get outdated packages
-    const deps_map = try lib.extractDependencies(allocator, config_result.value);
-    defer {
-        var mut_deps = deps_map;
-        var it = mut_deps.iterator();
-        while (it.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
-            var dep_info = entry.value_ptr;
-            dep_info.deinit(allocator);
-        }
-        mut_deps.deinit();
+        style.print("Dry run mode - no changes will be made\n\n", .{});
     }
 
     var updates_made: usize = 0;
@@ -61,11 +64,20 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
 
     if (update_specific) |pkg_name| {
         // Update specific package
-        try stdout.print("Updating {s}...\n", .{pkg_name});
+        style.print("Updating {s}...\n", .{pkg_name});
 
-        if (deps_map.get(pkg_name)) |dep_info| {
-            var result = updatePackage(allocator, pkg_name, dep_info.version, dry_run) catch |err| {
-                try stdout.print("✗ Failed to check {s}: {}\n", .{ pkg_name, err });
+        // Find the package in deps
+        var found_dep: ?parser.PackageDependency = null;
+        for (deps) |dep| {
+            if (std.mem.eql(u8, dep.name, pkg_name)) {
+                found_dep = dep;
+                break;
+            }
+        }
+
+        if (found_dep) |dep| {
+            var result = updatePackage(allocator, dep.name, dep.version, dry_run, latest) catch |err| {
+                style.print("Failed to check {s}: {}\n", .{ pkg_name, err });
                 errors_encountered += 1;
                 return CommandResult.err(allocator, "Failed to check package for updates");
             };
@@ -74,29 +86,30 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             if (result.has_update) {
                 updates_made += 1;
                 if (result.new_version) |new_ver| {
-                    try stdout.print("✓ Updated {s}: {s} → {s}\n", .{ pkg_name, result.current_version, new_ver });
+                    style.print("Updated {s}: {s} -> {s}\n", .{ pkg_name, result.current_version, new_ver });
                 } else {
-                    try stdout.print("✓ Updated {s}\n", .{pkg_name});
+                    style.print("Updated {s}\n", .{pkg_name});
                 }
             } else {
-                try stdout.print("⊘ {s} is already up to date ({s})\n", .{ pkg_name, result.current_version });
+                style.print("{s} is already up to date ({s})\n", .{ pkg_name, result.current_version });
             }
         } else {
             return CommandResult.err(allocator, "Package not found in dependencies");
         }
-    } else if (update_all) {
-        // Update all packages
-        try stdout.print("Updating all packages...\n\n", .{});
+    } else {
+        // Default: update all packages (matching bun behavior)
+        style.print("Updating all packages...\n\n", .{});
 
-        var dep_iter = deps_map.iterator();
-        while (dep_iter.next()) |entry| {
-            const pkg_name = entry.key_ptr.*;
-            const dep_info = entry.value_ptr;
+        for (deps) |dep| {
+            // Skip non-registry deps (github, git, url)
+            if (dep.source != .registry) continue;
+            // Skip workspace:* deps
+            if (std.mem.startsWith(u8, dep.version, "workspace:")) continue;
 
-            try stdout.print("Checking {s}... ", .{pkg_name});
+            style.print("Checking {s}... ", .{dep.name});
 
-            var result = updatePackage(allocator, pkg_name, dep_info.version, dry_run) catch |err| {
-                try stdout.print("✗ Error: {}\n", .{err});
+            var result = updatePackage(allocator, dep.name, dep.version, dry_run, latest) catch |err| {
+                style.print("Error: {}\n", .{err});
                 errors_encountered += 1;
                 continue;
             };
@@ -105,23 +118,17 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             if (result.has_update) {
                 updates_made += 1;
                 if (result.new_version) |new_ver| {
-                    try stdout.print("✓ {s} → {s}\n", .{ result.current_version, new_ver });
+                    style.print("{s} -> {s}\n", .{ result.current_version, new_ver });
                 } else {
-                    try stdout.print("✓ Updated\n", .{});
+                    style.print("Updated\n", .{});
                 }
             } else {
-                try stdout.print("⊘ Up to date ({s})\n", .{result.current_version});
+                style.print("Up to date ({s})\n", .{result.current_version});
             }
         }
-    } else {
-        // No specific package and not --all
-        return CommandResult.err(
-            allocator,
-            "Please specify a package name or use --all to update all packages",
-        );
     }
 
-    try stdout.print("\n", .{});
+    style.print("\n", .{});
 
     if (dry_run) {
         const message = try std.fmt.allocPrint(
@@ -136,7 +143,16 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (updates_made > 0) {
-        try stdout.print("📝 Don't forget to run 'pantry install' to apply updates\n", .{});
+        // Auto-run install to apply updates (like bun update does)
+        style.print("\nInstalling updated packages...\n", .{});
+        const install_mod = @import("install.zig");
+        const install_opts = install_mod.InstallOptions{
+            .force = true,
+        };
+        const install_result = try install_mod.installCommandWithOptions(allocator, &[_][]const u8{}, install_opts);
+        if (install_result.message) |msg| {
+            allocator.free(msg);
+        }
 
         const message = try std.fmt.allocPrint(
             allocator,
@@ -169,13 +185,9 @@ fn updatePackage(
     package_name: []const u8,
     current_version: []const u8,
     dry_run: bool,
+    use_latest: bool,
 ) !UpdateResult {
-    // Initialize NPM registry
-    var registry_config = try registry_core.RegistryConfig.npm(allocator);
-    defer registry_config.deinit(allocator);
-
-    var registry = try npm.NpmRegistry.init(allocator, registry_config);
-    defer registry.deinit();
+    const outdated_mod = @import("outdated.zig");
 
     // Strip version prefix (^, ~, etc.) from current version to get actual installed version
     var installed_version = current_version;
@@ -191,94 +203,127 @@ fn updatePackage(
         }
     }
 
-    // Use the constraint to resolve the best matching version
-    const resolution = npm.resolveVersion(
-        &registry,
-        allocator,
-        package_name,
-        current_version, // Use full constraint for resolution
-        installed_version, // Compare against stripped version
-    ) catch |err| {
-        // If we can't reach the registry, return no update
-        switch (err) {
-            error.PackageNotFound => return UpdateResult{
-                .has_update = false,
-                .new_version = null,
-                .current_version = installed_version,
-            },
-            else => return err,
-        }
+    // When --latest, use "*" as constraint to get absolute latest
+    const constraint = if (use_latest) "*" else current_version;
+
+    // Query registry for version info
+    const url = try std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{package_name});
+    defer allocator.free(url);
+
+    const body = io_helper.httpGet(allocator, url) catch {
+        return UpdateResult{
+            .has_update = false,
+            .new_version = null,
+            .current_version = installed_version,
+        };
     };
-    defer {
-        var res = resolution;
-        res.deinit(allocator);
+    defer allocator.free(body);
+
+    if (body.len == 0) {
+        return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
     }
 
-    if (resolution.has_update) {
-        const new_version = try allocator.dupe(u8, resolution.version);
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{}) catch {
+        return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
+    };
+    defer parsed.deinit();
 
-        // If not dry run, update the config file
-        if (!dry_run) {
-            updateConfigFile(allocator, package_name, new_version) catch |err| {
-                // Log but don't fail - config update is best effort
-                style.print("Warning: Failed to update config for {s}: {}\n", .{ package_name, err });
-            };
+    if (parsed.value != .object) {
+        return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
+    }
+
+    // Get dist-tags.latest
+    const latest_version = blk: {
+        const dist_tags = parsed.value.object.get("dist-tags") orelse break :blk null;
+        if (dist_tags != .object) break :blk null;
+        const latest_val = dist_tags.object.get("latest") orelse break :blk null;
+        if (latest_val != .string) break :blk null;
+        break :blk latest_val.string;
+    } orelse {
+        return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
+    };
+
+    // Determine the target version
+    const target_version = if (use_latest or std.mem.eql(u8, constraint, "*"))
+        latest_version
+    else blk: {
+        // Find highest version satisfying the constraint
+        const versions_obj = parsed.value.object.get("versions") orelse break :blk latest_version;
+        if (versions_obj != .object) break :blk latest_version;
+
+        var best: ?[]const u8 = null;
+        var ver_iter = versions_obj.object.iterator();
+        while (ver_iter.next()) |entry| {
+            const ver = entry.key_ptr.*;
+            if (outdated_mod.satisfiesConstraint(ver, constraint)) {
+                if (best == null or outdated_mod.compareVersions(ver, best.?) == .gt) {
+                    best = ver;
+                }
+            }
         }
+        break :blk best orelse latest_version;
+    };
 
-        return UpdateResult{
-            .has_update = true,
-            .new_version = new_version,
-            .current_version = installed_version,
+    // Compare with installed version
+    if (std.mem.eql(u8, installed_version, target_version)) {
+        return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
+    }
+
+    // Check if target is actually newer
+    if (outdated_mod.compareVersions(target_version, installed_version) != .gt) {
+        return UpdateResult{ .has_update = false, .new_version = null, .current_version = installed_version };
+    }
+
+    const new_version = try allocator.dupe(u8, target_version);
+
+    // If not dry run, update the config file
+    if (!dry_run) {
+        updateConfigFile(allocator, package_name, new_version) catch |err| {
+            style.print("Warning: Failed to update config for {s}: {}\n", .{ package_name, err });
         };
     }
 
     return UpdateResult{
-        .has_update = false,
-        .new_version = null,
+        .has_update = true,
+        .new_version = new_version,
         .current_version = installed_version,
     };
 }
 
-/// Update pantry.json with new version
+/// Update pantry.json/pantry.jsonc/package.json with new version
 fn updateConfigFile(
     allocator: std.mem.Allocator,
     package_name: []const u8,
     new_version: []const u8,
 ) !void {
-    // Try to find and read pantry.json
-    const config_path = "pantry.json";
-    const file = io_helper.cwd().openFile(io_helper.io, config_path, .{ .mode = .read_write }) catch |err| {
-        // Try package.json as fallback
-        if (err == error.FileNotFound) {
-            const pkg_file = io_helper.cwd().openFile(io_helper.io, "package.json", .{ .mode = .read_write }) catch {
-                return error.ConfigNotFound;
-            };
-            defer pkg_file.close(io_helper.io);
-            try updateJsonFile(allocator, pkg_file, package_name, new_version);
-            return;
-        }
-        return err;
-    };
-    defer file.close(io_helper.io);
+    const config_files = [_][]const u8{ "pantry.jsonc", "pantry.json", "package.json" };
+    for (config_files) |config_path| {
+        const content = io_helper.readFileAlloc(allocator, config_path, 10 * 1024 * 1024) catch continue;
+        defer allocator.free(content);
 
-    try updateJsonFile(allocator, file, package_name, new_version);
+        const updated = try updateJsonContent(allocator, content, package_name, new_version);
+        defer allocator.free(updated);
+
+        // Write back by creating/overwriting the file
+        const file = io_helper.createFile(config_path, .{}) catch continue;
+        defer file.close(io_helper.io);
+        io_helper.writeAllToFile(file, updated) catch continue;
+        return;
+    }
+    return error.ConfigNotFound;
 }
 
-/// Update version in a JSON config file.
+/// Update version in JSON content string.
 /// Uses text-level scanning to preserve formatting, indentation, and trailing
 /// commas exactly as they were — only the version string value changes.
-fn updateJsonFile(
+fn updateJsonContent(
     allocator: std.mem.Allocator,
-    file: std.Io.File,
+    content: []const u8,
     package_name: []const u8,
     new_version: []const u8,
-) !void {
-    // Read file content
-    const content = try file.readToEndAlloc(io_helper.io, allocator, 10 * 1024 * 1024);
-    defer allocator.free(content);
-
-    var result = std.ArrayList(u8).init(allocator);
-    defer result.deinit();
+) ![]u8 {
+    var result = std.ArrayList(u8){};
+    defer result.deinit(allocator);
 
     // Build the search key: "package_name"
     const pattern = try std.fmt.allocPrint(allocator, "\"{s}\"", .{package_name});
@@ -330,14 +375,14 @@ fn updateJsonFile(
             std.mem.startsWith(u8, content[i..], pattern))
         {
             // Copy the key verbatim
-            try result.appendSlice(content[i .. i + pattern.len]);
+            try result.appendSlice(allocator, content[i .. i + pattern.len]);
             i += pattern.len;
 
             // Copy whitespace / colon / whitespace between key and value
             while (i < content.len and (content[i] == ' ' or content[i] == '\t' or
                 content[i] == '\n' or content[i] == '\r' or content[i] == ':'))
             {
-                try result.append(content[i]);
+                try result.append(allocator, content[i]);
                 i += 1;
             }
 
@@ -373,21 +418,18 @@ fn updateJsonFile(
                 }
 
                 // Write the new version with the original prefix preserved
-                try result.append('"');
-                try result.appendSlice(prefix);
-                try result.appendSlice(new_version);
-                try result.append('"');
+                try result.append(allocator, '"');
+                try result.appendSlice(allocator, prefix);
+                try result.appendSlice(allocator, new_version);
+                try result.append(allocator, '"');
                 continue;
             }
         }
 
         // --- default: copy byte as-is ---
-        try result.append(content[i]);
+        try result.append(allocator, content[i]);
         i += 1;
     }
 
-    // Write back to file (truncate to new length)
-    try file.seekTo(io_helper.io, 0);
-    try io_helper.writeAllToFile(file, result.items);
-    try file.setEndPos(io_helper.io, result.items.len);
+    return try allocator.dupe(u8, result.items);
 }

@@ -106,6 +106,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             is_global = true;
         } else if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) {
             opts.force = true;
+        } else if (std.mem.eql(u8, arg, "--frozen-lockfile")) {
+            opts.frozen_lockfile = true;
+        } else if (std.mem.eql(u8, arg, "--no-cache")) {
+            opts.no_cache = true;
+        } else if (std.mem.eql(u8, arg, "--no-save")) {
+            opts.no_save = true;
+        } else if (std.mem.eql(u8, arg, "--dry-run")) {
+            opts.dry_run = true;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             try package_args.append(allocator, arg);
         }
@@ -758,13 +766,21 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             try lockfile.addEntry(allocator, key, entry);
         }
 
-        // Write lockfile
-        style.printLockfileSaving();
-        const lockfile_writer = @import("../../../packages/lockfile.zig");
-        lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-            style.printWarn("Failed to write lockfile: {}\n", .{err});
-        };
-        style.printLockfileSaved();
+        // Write lockfile (unless --frozen-lockfile or --no-save)
+        if (opts.frozen_lockfile) {
+            style.printWarn("Lockfile would be modified but --frozen-lockfile is set\n", .{});
+            return .{
+                .exit_code = 1,
+                .message = try allocator.dupe(u8, "Error: lockfile is out of date (--frozen-lockfile)"),
+            };
+        } else if (!opts.no_save) {
+            style.printLockfileSaving();
+            const lockfile_writer = @import("../../../packages/lockfile.zig");
+            lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+                style.printWarn("Failed to write lockfile: {}\n", .{err});
+            };
+            style.printLockfileSaved();
+        }
 
         // Add successful packages to pantry.lock and record in checkpoint
         for (install_results) |result| {

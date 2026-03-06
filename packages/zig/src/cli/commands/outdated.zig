@@ -92,12 +92,12 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     });
 
     // Check each dependency for updates
-    var outdated = std.ArrayList(OutdatedPackage).init(allocator);
+    var outdated = std.ArrayList(OutdatedPackage){};
     defer {
         for (outdated.items) |*pkg| {
             pkg.deinit(allocator);
         }
-        outdated.deinit();
+        outdated.deinit(allocator);
     }
 
     for (deps) |dep| {
@@ -119,7 +119,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             .peer => "peerDependencies",
         };
 
-        try outdated.append(.{
+        try outdated.append(allocator, .{
             .name = try allocator.dupe(u8, dep.name),
             .current = try allocator.dupe(u8, installed),
             .wanted = try allocator.dupe(u8, registry_info.wanted),
@@ -205,15 +205,21 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     };
 }
 
-/// Read the installed version of a package from node_modules/<name>/package.json
+/// Read the installed version of a package from pantry/<name>/package.json (or node_modules/)
 fn getInstalledVersion(allocator: std.mem.Allocator, project_root: []const u8, name: []const u8) ?[]const u8 {
-    const pkg_json_path = std.fmt.allocPrint(allocator, "{s}/node_modules/{s}/package.json", .{ project_root, name }) catch return null;
-    defer allocator.free(pkg_json_path);
+    // Try pantry/ first, then node_modules/ for compatibility
+    const dirs = [_][]const u8{ "pantry", "node_modules" };
+    var content: ?[]const u8 = null;
+    for (dirs) |dir| {
+        const pkg_json_path = std.fmt.allocPrint(allocator, "{s}/{s}/{s}/package.json", .{ project_root, dir, name }) catch continue;
+        defer allocator.free(pkg_json_path);
+        content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch continue;
+        break;
+    }
+    const actual_content = content orelse return null;
+    defer allocator.free(actual_content);
 
-    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch return null;
-    defer allocator.free(content);
-
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return null;
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, actual_content, .{}) catch return null;
     defer parsed.deinit();
 
     if (parsed.value != .object) return null;
@@ -282,7 +288,7 @@ fn queryRegistryVersions(allocator: std.mem.Allocator, name: []const u8, constra
 }
 
 /// Check if a version satisfies a semver constraint string (supports ^, ~, >=, >, <=, <, exact, *)
-fn satisfiesConstraint(version: []const u8, constraint: []const u8) bool {
+pub fn satisfiesConstraint(version: []const u8, constraint: []const u8) bool {
     const npm = @import("../../registry/npm.zig");
     const SemverConstraint = npm.SemverConstraint;
 
@@ -298,7 +304,7 @@ fn satisfiesConstraint(version: []const u8, constraint: []const u8) bool {
         while (space_iter.next()) |token| {
             const t = std.mem.trim(u8, token, " \t");
             if (t.len == 0) continue;
-            const sc = SemverConstraint.parse(t) orelse {
+            const sc = SemverConstraint.parse(t) catch {
                 all_match = false;
                 break;
             };
@@ -313,7 +319,7 @@ fn satisfiesConstraint(version: []const u8, constraint: []const u8) bool {
 }
 
 /// Compare semantic versions
-fn compareVersions(a: []const u8, b: []const u8) std.math.Order {
+pub fn compareVersions(a: []const u8, b: []const u8) std.math.Order {
     var a_iter = std.mem.splitScalar(u8, a, '.');
     var b_iter = std.mem.splitScalar(u8, b, '.');
 

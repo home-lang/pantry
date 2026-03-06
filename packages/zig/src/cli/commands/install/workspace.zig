@@ -563,7 +563,16 @@ pub fn installWorkspaceCommandWithOptions(
     const lockfile_reader = @import("../../../packages/lockfile.zig");
     const ws_lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});
     defer allocator.free(ws_lockfile_path);
-    var existing_lockfile: ?lib.packages.Lockfile = lockfile_reader.readLockfile(allocator, ws_lockfile_path) catch null;
+
+    // --force: delete existing lockfile to force full re-resolution from registry
+    if (options.force) {
+        io_helper.deleteFile(ws_lockfile_path) catch {};
+    }
+
+    var existing_lockfile: ?lib.packages.Lockfile = if (options.force)
+        null
+    else
+        lockfile_reader.readLockfile(allocator, ws_lockfile_path) catch null;
     defer if (existing_lockfile) |*lf| lf.deinit(allocator);
 
     // Clean up dependencies after installation
@@ -1068,13 +1077,32 @@ pub fn installWorkspaceCommandWithOptions(
         try lockfile.addEntry(allocator, key, entry);
     }
 
-    // Write lockfile
-    const lockfile_writer = @import("../../../packages/lockfile.zig");
-    style.printLockfileSaving();
-    lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-        style.printWarn("Failed to write lockfile: {}\n", .{err});
-    };
-    style.printLockfileSaved();
+    // Write lockfile (unless --frozen-lockfile or --no-save)
+    if (options.frozen_lockfile) {
+        // In frozen lockfile mode, check if lockfile would change
+        const lockfile_writer = @import("../../../packages/lockfile.zig");
+        if (existing_lockfile) |*existing| {
+            if (!lockfile_writer.lockfilesEqual(existing, &lockfile)) {
+                return types.CommandResult{
+                    .exit_code = 1,
+                    .message = try allocator.dupe(u8, "Error: lockfile is out of date (--frozen-lockfile)"),
+                };
+            }
+        } else {
+            // No existing lockfile but we'd generate one - that's a change
+            return types.CommandResult{
+                .exit_code = 1,
+                .message = try allocator.dupe(u8, "Error: no lockfile found (--frozen-lockfile)"),
+            };
+        }
+    } else if (!options.no_save) {
+        const lockfile_writer = @import("../../../packages/lockfile.zig");
+        style.printLockfileSaving();
+        lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+            style.printWarn("Failed to write lockfile: {}\n", .{err});
+        };
+        style.printLockfileSaved();
+    }
 
     // Link workspace members into root pantry/ so they can reference each other
     const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{workspace_root});

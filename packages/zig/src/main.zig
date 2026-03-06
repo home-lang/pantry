@@ -28,6 +28,10 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const production = ctx.hasOption("production");
     const dev_only = ctx.hasOption("dev");
     const ignore_scripts = ctx.hasOption("ignore-scripts");
+    const frozen_lockfile = ctx.hasOption("frozen-lockfile");
+    const no_cache = ctx.hasOption("no-cache");
+    const dry_run = ctx.hasOption("dry-run");
+    const no_save = ctx.hasOption("no-save");
 
     // Load pantry.toml project configuration
     const cwd_buf = io_helper.getCwdAlloc(allocator) catch try allocator.dupe(u8, ".");
@@ -85,6 +89,10 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .ignore_scripts = ignore_scripts,
         .verbose = verbose,
         .force = force,
+        .frozen_lockfile = frozen_lockfile,
+        .no_cache = no_cache,
+        .dry_run = dry_run,
+        .no_save = no_save,
         .filter = filter,
         .linker = pantry_config.install.linker,
         .modules_dir = pantry_config.install.modules_dir,
@@ -497,38 +505,22 @@ fn runAction(ctx: *cli.BaseCommand.ParseContext) !void {
 fn updateAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
-    // Get variadic package arguments
-    var packages = std.ArrayList([]const u8){};
-    defer packages.deinit(allocator);
+    // Build args array for the update command (it parses its own flags)
+    var args = try std.ArrayList([]const u8).initCapacity(allocator, 8);
+    defer args.deinit(allocator);
 
+    // Pass through package names
     var i: usize = 0;
     while (ctx.getArgument(i)) |pkg| : (i += 1) {
-        try packages.append(allocator, pkg);
+        try args.append(allocator, pkg);
     }
 
-    const latest = ctx.hasOption("latest");
-    const force = ctx.hasOption("force");
-    const interactive = ctx.hasOption("interactive");
-    const production = ctx.hasOption("production");
-    const global = ctx.hasOption("global");
-    const dry_run = ctx.hasOption("dry-run");
-    const silent = ctx.hasOption("silent");
-    const verbose = ctx.hasOption("verbose");
-    const no_save = ctx.hasOption("no-save");
+    // Pass through flags
+    if (ctx.hasOption("latest")) try args.append(allocator, "--latest");
+    if (ctx.hasOption("force")) try args.append(allocator, "--force");
+    if (ctx.hasOption("dry-run")) try args.append(allocator, "--dry-run");
 
-    const options = lib.commands.UpdateOptions{
-        .latest = latest,
-        .force = force,
-        .interactive = interactive,
-        .production = production,
-        .global = global,
-        .dry_run = dry_run,
-        .silent = silent,
-        .verbose = verbose,
-        .save = !no_save,
-    };
-
-    const result = try lib.commands.updateCommand(allocator, packages.items, options);
+    const result = try lib.commands.updateNewCommand(allocator, args.items);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -584,23 +576,7 @@ fn outdatedAction(ctx: *cli.BaseCommand.ParseContext) !void {
         try args.append(allocator, arg);
     }
 
-    const production = ctx.hasOption("production");
-    const global = ctx.hasOption("global");
-    const filter = ctx.getOption("filter");
-    const silent = ctx.hasOption("silent");
-    const verbose = ctx.hasOption("verbose");
-    const no_progress = ctx.hasOption("no-progress");
-
-    const options = lib.commands.OutdatedOptions{
-        .production = production,
-        .global = global,
-        .filter = filter,
-        .silent = silent,
-        .verbose = verbose,
-        .no_progress = no_progress,
-    };
-
-    const result = try lib.commands.outdatedCommand(allocator, args.items, options);
+    const result = try lib.commands.outdatedNewCommand(allocator, args.items);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {
@@ -2067,7 +2043,7 @@ pub fn main() !void {
         .withShort('u');
     _ = try install_cmd.addOption(user_opt);
 
-    const install_force_opt = cli.Option.init("force", "force", "Force reinstallation (not yet implemented)", .bool)
+    const install_force_opt = cli.Option.init("force", "force", "Fetch latest versions and reinstall all dependencies", .bool)
         .withShort('f');
     _ = try install_cmd.addOption(install_force_opt);
 
@@ -2095,6 +2071,18 @@ pub fn main() !void {
     const install_filter_opt = cli.Option.init("filter", "filter", "Filter workspace packages by pattern", .string)
         .withShort('F');
     _ = try install_cmd.addOption(install_filter_opt);
+
+    const install_frozen_opt = cli.Option.init("frozen-lockfile", "frozen-lockfile", "Prevent lockfile modifications (for CI)", .bool);
+    _ = try install_cmd.addOption(install_frozen_opt);
+
+    const install_no_cache_opt = cli.Option.init("no-cache", "no-cache", "Ignore manifest cache entirely", .bool);
+    _ = try install_cmd.addOption(install_no_cache_opt);
+
+    const install_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Preview without installing", .bool);
+    _ = try install_cmd.addOption(install_dry_run_opt);
+
+    const install_no_save_opt = cli.Option.init("no-save", "no-save", "Skip updating package.json or lockfile", .bool);
+    _ = try install_cmd.addOption(install_no_save_opt);
 
     _ = install_cmd.setAction(installAction);
     _ = try root.addCommand(install_cmd);
