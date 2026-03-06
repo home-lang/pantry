@@ -26,10 +26,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 88 versions</summary>
+<summary>Show all 90 versions</summary>
 
-- `1.26.0`
-- `1.25.7`, `1.25.6`, `1.25.5`, `1.25.4`, `1.25.3`, `1.25.2`, `1.25.1`, `1.25.0`
+- `1.26.1`, `1.26.0`
+- `1.25.8`, `1.25.7`, `1.25.6`, `1.25.5`, `1.25.4`, `1.25.3`, `1.25.2`, `1.25.1`, `1.25.0`
 - `1.24.13`, `1.24.12`, `1.24.11`, `1.24.10`, `1.24.9`, `1.24.8`, `1.24.7`, `1.24.6`, `1.24.5`, `1.24.4`, `1.24.3`, `1.24.2`, `1.24.1`, `1.24.0`
 - `1.23.12`, `1.23.11`, `1.23.10`, `1.23.9`, `1.23.8`, `1.23.7`, `1.23.6`, `1.23.5`, `1.23.4`, `1.23.3`, `1.23.2`, `1.23.1`, `1.23.0`
 - `1.22.12`, `1.22.11`, `1.22.10`, `1.22.9`, `1.22.8`, `1.22.7`, `1.22.6`, `1.22.5`, `1.22.4`, `1.22.3`, `1.22.2`, `1.22.1`, `1.22.0`
@@ -42,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.26.0`
+**Latest Version**: `1.26.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +go.dev@1.26.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +go.dev@1.26.1 -- $SHELL -i
 ```
 
 ## Dependencies

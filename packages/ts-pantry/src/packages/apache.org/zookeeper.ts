@@ -3,7 +3,7 @@
  *
  * @domain `apache.org/zookeeper`
  * @programs `zkCleanup`, `zkCli`, `zkEnv`, `zkServer-initialize`, `zkServer`, ... (+4 more)
- * @version `3.9.4` (5 versions available)
+ * @version `3.9.5` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install apache.org/zookeeper`
@@ -17,7 +17,7 @@
  * const pkg = pantry.apacheorgzookeeper
  * console.log(pkg.name)        // "zookeeper"
  * console.log(pkg.programs)    // ["zkCleanup", "zkCli", ...]
- * console.log(pkg.versions[0]) // "3.9.4" (latest)
+ * console.log(pkg.versions[0]) // "3.9.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/apache-org/zookeeper.md
@@ -88,6 +88,7 @@ export const apacheorgzookeeperPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.9.5',
     '3.9.4',
     '3.9.3',
     '3.9.2',

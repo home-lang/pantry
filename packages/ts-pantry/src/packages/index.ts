@@ -1468,7 +1468,7 @@ import { speexorgPackage } from './speexorg'
 import { sphinxdocorgPackage } from './sphinx-docorg'
 import { sqlcdevPackage } from './sqlcdev'
 import { sqlfluffcomPackage } from './sqlfluffcom'
-import { sqliteorgPackage } from './sqliteorg'
+import { sqlitePackage } from './sqliteorg'
 import { squawkhqcomPackage } from './squawkhqcom'
 import { srhtscdocPackage } from './sr.ht/scdoc'
 import { srtallianceorgPackage } from './srtallianceorg'
@@ -4161,7 +4161,7 @@ export interface Pantry {
   sphinxdocorg: typeof sphinxdocorgPackage
   sqlcdev: typeof sqlcdevPackage
   sqlfluffcom: typeof sqlfluffcomPackage
-  sqliteorg: typeof sqliteorgPackage
+  sqliteorg: typeof sqlitePackage
   squawkhqcom: typeof squawkhqcomPackage
 
   srhtscdoc: typeof srhtscdocPackage
@@ -5139,7 +5139,8 @@ export interface Pantry {
   libmatio: typeof matiosourceforgeioPackage
   libuv: typeof libuvorgPackage
   lame: typeof lamesourceforgeioPackage
-  sqlite3: typeof sqliteorgPackage
+  sqlite3: typeof sqlitePackage
+  sqlite: typeof sqlitePackage
   modal: typeof modalcomPackage
   istioctl: typeof istioioPackage
   difft: typeof wilfredmeukdifftasticPackage
@@ -8530,7 +8531,7 @@ export const pantry: Pantry = {
   sphinxdocorg: sphinxdocorgPackage,
   sqlcdev: sqlcdevPackage,
   sqlfluffcom: sqlfluffcomPackage,
-  sqliteorg: sqliteorgPackage,
+  sqliteorg: sqlitePackage,
   squawkhqcom: squawkhqcomPackage,
 
   srhtscdoc: srhtscdocPackage,
@@ -9508,7 +9509,8 @@ export const pantry: Pantry = {
   libmatio: matiosourceforgeioPackage,
   libuv: libuvorgPackage,
   lame: lamesourceforgeioPackage,
-  sqlite3: sqliteorgPackage,
+  sqlite3: sqlitePackage,
+  sqlite: sqlitePackage,
   modal: modalcomPackage,
   istioctl: istioioPackage,
   difft: wilfredmeukdifftasticPackage,

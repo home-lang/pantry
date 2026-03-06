@@ -13,7 +13,7 @@
 
 ```bash
 # Install with launchpad
-launchpad install sqlite.org
+launchpad install sqlite
 ```
 
 ## Programs
@@ -21,6 +21,12 @@ launchpad install sqlite.org
 This package provides the following executable programs:
 
 - `sqlite3`
+
+## Aliases
+
+This package can also be accessed using these aliases:
+
+- `sqlite`
 
 ## Available Versions
 
@@ -64,7 +70,7 @@ This package depends on:
 import { pantry } from 'ts-pkgx'
 
 // Access this package
-const pkg = pantry.sqlite3
+const pkg = pantry.sqlite
 
 console.log(`Package: ${pkg.name}`)
 console.log(`Description: ${pkg.description}`)

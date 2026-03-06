@@ -1,5 +1,5 @@
 /**
- * **sqlite3** - Official Git mirror of the SQLite source tree
+ * **sqlite** - Official Git mirror of the SQLite source tree
  *
  * @domain `sqlite.org`
  * @programs `sqlite3`
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `launchpad install sqlite.org`
+ * @aliases `sqlite`
  * @homepage https://sqlite.org/index.html
  * @dependencies `zlib.net@1`, `gnu.org/readline@8`
  *
@@ -14,7 +15,11 @@
  * ```typescript
  * import { pantry } from 'ts-pkgx'
  *
- * const pkg = pantry.sqliteorg
+ * // Access via alias (recommended)
+ * const pkg = pantry.sqlite
+ * // Or access via domain
+ * const samePkg = pantry.sqliteorg
+ * console.log(pkg === samePkg) // true
  * console.log(pkg.name)        // "sqlite3"
  * console.log(pkg.description) // "Official Git mirror of the SQLite source tree"
  * console.log(pkg.programs)    // ["sqlite3"]
@@ -24,7 +29,7 @@
  * @see https://ts-pkgx.netlify.app/packages/sqlite-org.md
  * @see https://ts-pkgx.netlify.app/usage
  */
-export const sqliteorgPackage = {
+export const sqlitePackage = {
   /**
   * The display name of this package.
   */
@@ -102,7 +107,13 @@ export const sqliteorgPackage = {
     '3.40.0',
     '3.39.4',
   ] as const,
-  aliases: [] as const,
+  /**
+  * Alternative names for this package.
+  * You can use any of these names to access the package.
+  */
+  aliases: [
+    'sqlite',
+  ] as const,
 }
 
-export type SqliteorgPackage = typeof sqliteorgPackage
+export type SqlitePackage = typeof sqlitePackage

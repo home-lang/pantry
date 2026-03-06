@@ -106,13 +106,13 @@ Redis is an in-memory database that persists on disk. The data model is key-valu
 
 ---
 
-### [sqlite.org](../packages/sqlite.org/index.md) (sqlite3)
+### [sqlite.org](../packages/sqlite.org/index.md) (sqlite3, sqlite)
 
 Official Git mirror of the SQLite source tree
 
 **Programs**: sqlite3
 
-**Install**: `launchpad install sqlite.org`
+**Install**: `launchpad install sqlite`
 
 ---
 

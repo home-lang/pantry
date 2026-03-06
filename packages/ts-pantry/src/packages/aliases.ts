@@ -1275,6 +1275,7 @@ export const aliases: Record<string, string> = {
   'sqlboiler': 'github.com/volatiletech/sqlboiler',
   'sqlc': 'sqlc.dev',
   'sqlfluff': 'sqlfluff.com',
+  'sqlite': 'sqlite.org',
   'sqlite3': 'sqlite.org',
   'sqlx-cli': 'crates.io/sqlx-cli',
   'sqruff': 'quary.dev/sqruff',
