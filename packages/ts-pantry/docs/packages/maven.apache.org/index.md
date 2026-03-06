@@ -33,21 +33,21 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 13 versions</summary>
+<summary>Show all 14 versions</summary>
 
-- `3.9.12`, `3.9.11`, `3.9.10`, `3.9.9`, `3.9.8`, `3.9.7`, `3.9.6`, `3.9.5`, `3.9.4`, `3.9.3`
+- `3.9.13`, `3.9.12`, `3.9.11`, `3.9.10`, `3.9.9`, `3.9.8`, `3.9.7`, `3.9.6`, `3.9.5`, `3.9.4`, `3.9.3`
 - `3.8.9`, `3.8.7`
 - `3.6.3`
 
 </details>
 
-**Latest Version**: `3.9.12`
+**Latest Version**: `3.9.13`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +maven.apache.org@3.9.12 -- $SHELL -i
+sh <(curl https://pkgx.sh) +maven.apache.org@3.9.13 -- $SHELL -i
 ```
 
 ## Dependencies
