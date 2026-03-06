@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-06T06:13:23.809Z
+- **Last Updated**: 2026-03-06T07:13:40.086Z
 
 ## Table of Contents
 
@@ -178,7 +178,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[skaffold.dev](./packages/skaffold.dev/index.md)** () | Easy and Repeatable Kubernetes Development | skaffold | 2.17.3 (+18) | `pkgx skaffold` |
 | **[tilt.dev](./packages/tilt.dev/index.md)** () | Define your dev environment as code. For microservice apps on Kubernetes. | tilt | 0.37.0 (+29) | `pkgx tilt` |
 | **[vcluster.com](./packages/vcluster.com/index.md)** () | vCluster - Create fully functional virtual Kubernetes clusters - Each vcluster runs inside a name... | vcluster | 0.32.1 (+63) | `pkgx vcluster` |
-| **[velero.io](./packages/velero.io/index.md)** () | Backup and migrate Kubernetes applications and their persistent volumes | velero | 1.17.2 (+4) | `pkgx velero` |
+| **[velero.io](./packages/velero.io/index.md)** () | Backup and migrate Kubernetes applications and their persistent volumes | velero | 1.18.0 (+5) | `pkgx velero` |
 
 ## Monitoring & Observability
 

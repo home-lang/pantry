@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 15 versions</summary>
+<summary>Show all 16 versions</summary>
 
-- `1.14.1`, `1.14.0`
+- `1.14.2`, `1.14.1`, `1.14.0`
 - `1.13.2`, `1.13.1`, `1.13.0`
 - `1.12.4`, `1.12.3`, `1.12.2`, `1.12.1`, `1.12.0`
 - `1.11.4`, `1.11.3`, `1.11.2`, `1.11.1`
@@ -35,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.14.1`
+**Latest Version**: `1.14.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +coredns.io@1.14.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +coredns.io@1.14.2 -- $SHELL -i
 ```
 
 ## Usage Examples

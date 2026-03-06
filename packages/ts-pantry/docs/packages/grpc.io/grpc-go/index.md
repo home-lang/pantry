@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 42 versions</summary>
+<summary>Show all 43 versions</summary>
 
-- `1.79.1`, `1.79.0`
+- `1.79.2`, `1.79.1`, `1.79.0`
 - `1.78.0`
 - `1.77.0`
 - `1.76.0`
@@ -47,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.79.1`
+**Latest Version**: `1.79.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +grpc.io/grpc-go@1.79.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +grpc.io/grpc-go@1.79.2 -- $SHELL -i
 ```
 
 ## Dependencies

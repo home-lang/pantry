@@ -3,7 +3,7 @@
  *
  * @domain `velero.io`
  * @programs `velero`
- * @version `1.17.2` (5 versions available)
+ * @version `1.18.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install velero.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "velero"
  * console.log(pkg.description) // "Backup and migrate Kubernetes applications and ..."
  * console.log(pkg.programs)    // ["velero"]
- * console.log(pkg.versions[0]) // "1.17.2" (latest)
+ * console.log(pkg.versions[0]) // "1.18.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/velero-io.md
@@ -68,6 +68,7 @@ export const veleroioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.18.0',
     '1.17.2',
     '1.17.1',
     '1.17.0',
