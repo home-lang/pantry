@@ -1329,7 +1329,7 @@ test "canSkipFromLockfile - matching entry but no dir" {
     const entry = lib.packages.LockfileEntry{
         .name = try allocator.dupe(u8, "foo"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
     };
     try packages.put(try allocator.dupe(u8, "foo@1.0.0"), entry);
 

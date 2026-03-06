@@ -730,7 +730,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             else if (std.mem.startsWith(u8, dep.name, "npm:"))
                 lib.packages.PackageSource.npm
             else
-                lib.packages.PackageSource.pkgx;
+                lib.packages.PackageSource.pantry;
 
             const clean_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
                 dep.name[colon_pos + 1 ..]

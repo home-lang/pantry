@@ -48,14 +48,14 @@ fn installSingleWorkspaceDep(
         std.mem.startsWith(u8, dep.name, "auto:");
 
     const pkg_source: lib.packages.PackageSource = switch (dep.source) {
-        .registry => .pkgx,
+        .registry => .pantry,
         .github => .github,
         .git => .git,
         .url => .http,
     };
 
     // For npm/auto packages, try Pantry DynamoDB then npm registry
-    if (is_npm_package or (pkg_source == .pkgx and
+    if (is_npm_package or (pkg_source == .pantry and
         pkg_registry.getPackageByName(clean_name) == null))
     {
         // Try Pantry DynamoDB registry first
@@ -344,30 +344,32 @@ pub fn installWorkspaceCommandWithOptions(
         deps_seen.deinit();
     }
 
-    // Process root-level dependencies from pantry.jsonc (system deps like bun.com, sqlite.org)
+    // Process root-level dependencies from the workspace file (system deps, root deps)
     {
         const detector = @import("../../../deps/detector.zig");
-        if (try detector.findDepsFile(allocator, workspace_root)) |root_deps_file| {
-            defer allocator.free(root_deps_file.path);
-            const root_deps = parser.inferDependencies(allocator, root_deps_file) catch null;
-            if (root_deps) |deps| {
-                defer allocator.free(deps);
-                for (deps) |dep| {
-                    if (std.mem.startsWith(u8, dep.version, "workspace:")) continue;
+        // Use the workspace file itself (package.json / pantry.jsonc) for root deps
+        const root_deps_file = detector.DepsFile{
+            .path = workspace_file_path,
+            .format = detector.inferFormat(std.fs.path.basename(workspace_file_path)) orelse .package_json,
+        };
+        const root_deps = parser.inferDependencies(allocator, root_deps_file) catch null;
+        if (root_deps) |deps| {
+            defer allocator.free(deps);
+            for (deps) |dep| {
+                if (std.mem.startsWith(u8, dep.version, "workspace:")) continue;
 
-                    const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
-                    var key_buf: [512]u8 = undefined;
-                    const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, dep.version }) catch
-                        try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
-                    const key_is_heap = dep_key.ptr != &key_buf;
-                    defer if (key_is_heap) allocator.free(dep_key);
+                const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
+                var key_buf: [512]u8 = undefined;
+                const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, dep.version }) catch
+                    try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
+                const key_is_heap = dep_key.ptr != &key_buf;
+                defer if (key_is_heap) allocator.free(dep_key);
 
-                    if (!deps_seen.contains(dep_key)) {
-                        try deps_seen.put(try allocator.dupe(u8, dep_key), {});
-                        if (all_deps_count < all_deps_buffer.len) {
-                            all_deps_buffer[all_deps_count] = try dep.clone(allocator);
-                            all_deps_count += 1;
-                        }
+                if (!deps_seen.contains(dep_key)) {
+                    try deps_seen.put(try allocator.dupe(u8, dep_key), {});
+                    if (all_deps_count < all_deps_buffer.len) {
+                        all_deps_buffer[all_deps_count] = try dep.clone(allocator);
+                        all_deps_count += 1;
                     }
                 }
             }
@@ -757,7 +759,7 @@ pub fn installWorkspaceCommandWithOptions(
             std.mem.startsWith(u8, dep.name, "auto:"))
             .npm
         else if (pkg_registry.getPackageByName(clean_dep_name) != null)
-            .pkgx
+            .pantry
         else
             .npm; // Default to npm for unknown registry deps
 

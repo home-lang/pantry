@@ -269,11 +269,11 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                 "unknown";
 
             const source_str = if (pkg_value.object.get("source")) |v|
-                if (v == .string) v.string else "pkgx"
+                if (v == .string) v.string else "pantry"
             else
-                "pkgx";
+                "pantry";
 
-            const source = types.PackageSource.fromString(source_str) orelse .pkgx;
+            const source = types.PackageSource.fromString(source_str) orelse .pantry;
 
             var url: ?[]const u8 = null;
             if (pkg_value.object.get("url")) |v| {
@@ -381,7 +381,7 @@ test "lockfile comparison ignores generatedAt" {
     const entry1 = types.LockfileEntry{
         .name = try allocator.dupe(u8, "test-pkg"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,
@@ -392,7 +392,7 @@ test "lockfile comparison ignores generatedAt" {
     const entry2 = types.LockfileEntry{
         .name = try allocator.dupe(u8, "test-pkg"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,
@@ -418,7 +418,7 @@ test "lockfile comparison detects package changes" {
     const entry1 = types.LockfileEntry{
         .name = try allocator.dupe(u8, "pkg1"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,
@@ -429,7 +429,7 @@ test "lockfile comparison detects package changes" {
     const entry2 = types.LockfileEntry{
         .name = try allocator.dupe(u8, "pkg2"),
         .version = try allocator.dupe(u8, "2.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,
@@ -455,7 +455,7 @@ test "writeLockfile skips write when no changes" {
     const entry1 = types.LockfileEntry{
         .name = try allocator.dupe(u8, "test"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,
@@ -485,7 +485,7 @@ test "writeLockfile skips write when no changes" {
     const entry2 = types.LockfileEntry{
         .name = try allocator.dupe(u8, "test"),
         .version = try allocator.dupe(u8, "1.0.0"),
-        .source = .pkgx,
+        .source = .pantry,
         .url = null,
         .resolved = null,
         .integrity = null,

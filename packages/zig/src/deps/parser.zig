@@ -645,11 +645,11 @@ fn parseComposerJson(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
 
 /// Source resolution preferences
 pub const SourceResolutionOrder = struct {
-    order: []const []const u8 = &[_][]const u8{ "pkgx", "npm", "github" },
+    order: []const []const u8 = &[_][]const u8{ "pantry", "npm", "github" },
 
     pub fn default() SourceResolutionOrder {
         return .{
-            .order = &[_][]const u8{ "pkgx", "npm", "github" },
+            .order = &[_][]const u8{ "pantry", "npm", "github" },
         };
     }
 };
@@ -708,7 +708,7 @@ pub const SourceDetection = struct {
                 std.mem.endsWith(u8, base, ".net"))
             {
                 return .{
-                    .source = "pkgx",
+                    .source = "pantry",
                 };
             }
         }
@@ -740,7 +740,7 @@ pub const SourceDetection = struct {
 pub const ExtendedPackageDependency = struct {
     name: []const u8,
     version: []const u8,
-    source: []const u8 = "pkgx", // pkgx, github, npm, http, git
+    source: []const u8 = "pantry", // pantry, github, npm, http, git
     url: ?[]const u8 = null,
     repo: ?[]const u8 = null, // For github: owner/repo
     branch: ?[]const u8 = null, // For git
@@ -870,6 +870,54 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
         }
     }
 
+    // Parse "system" field for system/pantry dependencies (short names like "bun", "sqlite")
+    if (parsed.value.object.get("system")) |system_val| {
+        if (system_val == .object) {
+            const pkg_registry = @import("../packages/generated.zig");
+            var domain_buf: [256]u8 = undefined;
+
+            var sys_it = system_val.object.iterator();
+            while (sys_it.next()) |entry| {
+                const short_name = entry.key_ptr.*;
+                const pkg_spec = entry.value_ptr.*;
+                var version: []const u8 = "latest";
+
+                if (pkg_spec == .string) {
+                    version = pkg_spec.string;
+                } else if (pkg_spec == .object) {
+                    if (pkg_spec.object.get("version")) |v| {
+                        if (v == .string) version = v.string;
+                    }
+                }
+
+                // Resolve short name to canonical domain via registry
+                // e.g., "bun" -> "bun.sh", "sqlite" -> "sqlite.org"
+                // Try exact match first, then try "{name}.org" domain match
+                const canonical_name = if (pkg_registry.getPackageByName(short_name)) |pkg_info|
+                    pkg_info.domain
+                else if (pkg_registry.getPackageByDomain(
+                    std.fmt.bufPrint(&domain_buf, "{s}.org", .{short_name}) catch short_name,
+                )) |pkg_info|
+                    pkg_info.domain
+                else if (pkg_registry.getPackageByDomain(
+                    std.fmt.bufPrint(&domain_buf, "{s}.com", .{short_name}) catch short_name,
+                )) |pkg_info|
+                    pkg_info.domain
+                else
+                    short_name; // fallback to the name as-is
+
+                try deps.append(allocator, .{
+                    .name = try allocator.dupe(u8, canonical_name),
+                    .version = try allocator.dupe(u8, version),
+                    .global = false,
+                    .dep_type = .normal,
+                    .source = .registry,
+                    .github_ref = null,
+                });
+            }
+        }
+    }
+
     for (dep_sections) |section| {
         if (parsed.value.object.get(section.key)) |deps_value| {
             if (deps_value != .object) continue;
@@ -955,7 +1003,7 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
                         } else if (std.mem.eql(u8, source, "local")) {
                             const local_path = url orelse pkg_name;
                             break :blk try std.fmt.allocPrint(allocator, "local:{s}", .{local_path});
-                        } else if (std.mem.eql(u8, source, "pkgx")) {
+                        } else if (std.mem.eql(u8, source, "pantry") or std.mem.eql(u8, source, "pkgx")) {
                             break :blk try allocator.dupe(u8, pkg_name);
                         }
                     }
@@ -1108,9 +1156,9 @@ test "SourceDetection.fromPackageName detects HTTP URL" {
     try std.testing.expect(detection.url != null);
 }
 
-test "SourceDetection.fromPackageName detects pkgx domain" {
+test "SourceDetection.fromPackageName detects pantry domain" {
     const detection = SourceDetection.fromPackageName("nodejs.org");
-    try std.testing.expectEqualStrings("pkgx", detection.source);
+    try std.testing.expectEqualStrings("pantry", detection.source);
 }
 
 test "SourceDetection.fromPackageName detects scoped npm package" {
@@ -1123,12 +1171,12 @@ test "SourceDetection.fromPackageName handles ambiguous names" {
     try std.testing.expectEqualStrings("auto", detection.source);
 }
 
-test "SourceDetection.fromPackageName detects domain with slash as pkgx" {
+test "SourceDetection.fromPackageName detects domain with slash as pantry" {
     const detection = SourceDetection.fromPackageName("info-zip.org/zip");
-    try std.testing.expectEqualStrings("pkgx", detection.source);
+    try std.testing.expectEqualStrings("pantry", detection.source);
 
     const detection2 = SourceDetection.fromPackageName("info-zip.org/unzip");
-    try std.testing.expectEqualStrings("pkgx", detection2.source);
+    try std.testing.expectEqualStrings("pantry", detection2.source);
 }
 
 test "parseZigPackageJson with explicit GitHub source" {

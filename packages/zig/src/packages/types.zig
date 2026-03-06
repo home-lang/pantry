@@ -3,7 +3,7 @@ const io_helper = @import("../io_helper.zig");
 
 /// Package source types
 pub const PackageSource = enum {
-    pkgx, // Default: pkgx.dev ecosystem
+    pantry, // Pantry registry (system packages)
     github, // GitHub releases or repositories
     npm, // npm registry
     http, // Direct HTTP download
@@ -13,7 +13,7 @@ pub const PackageSource = enum {
 
     pub fn toString(self: PackageSource) []const u8 {
         return switch (self) {
-            .pkgx => "pkgx",
+            .pantry => "pantry",
             .github => "github",
             .npm => "npm",
             .http => "http",
@@ -24,7 +24,8 @@ pub const PackageSource = enum {
     }
 
     pub fn fromString(s: []const u8) ?PackageSource {
-        if (std.mem.eql(u8, s, "pkgx")) return .pkgx;
+        if (std.mem.eql(u8, s, "pantry")) return .pantry;
+        if (std.mem.eql(u8, s, "pkgx")) return .pantry; // backwards compat
         if (std.mem.eql(u8, s, "github")) return .github;
         if (std.mem.eql(u8, s, "npm")) return .npm;
         if (std.mem.eql(u8, s, "http")) return .http;
@@ -41,8 +42,8 @@ pub const PackageSpec = struct {
     name: []const u8,
     /// Package version (semantic version)
     version: []const u8,
-    /// Package source (default: pkgx)
-    source: PackageSource = .pkgx,
+    /// Package source (default: pantry)
+    source: PackageSource = .pantry,
     /// Source-specific URL (for http/git sources)
     url: ?[]const u8 = null,
     /// GitHub repository (owner/repo format for github source)

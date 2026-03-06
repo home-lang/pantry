@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
 
 /**
  * Generate Zig package definitions from TypeScript package data
@@ -21,6 +22,16 @@ interface ZigPackageDefinition {
 /**
  * Recursively find all TypeScript package files
  */
+/**
+ * Merge package aliases with alias overrides from alias-overrides.ts
+ */
+function mergeAliases(domain: string, existing: string[]): string[] {
+  const overrides = getAliasOverrides(domain)
+  if (overrides.length === 0) return existing
+  if (shouldReplaceAliases(domain)) return overrides
+  return [...new Set([...existing, ...overrides])]
+}
+
 function findPackageFiles(dir: string): string[] {
   const files: string[] = []
   const entries = fs.readdirSync(dir, { withFileTypes: true })
@@ -162,7 +173,7 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
         programs: Array.isArray(pkgData.programs) ? pkgData.programs : [],
         dependencies: Array.isArray(pkgData.dependencies) ? pkgData.dependencies : [],
         buildDependencies: Array.isArray(pkgData.buildDependencies) ? pkgData.buildDependencies : [],
-        aliases: Array.isArray(pkgData.aliases) ? pkgData.aliases : [],
+        aliases: mergeAliases(pkgData.domain, Array.isArray(pkgData.aliases) ? pkgData.aliases : []),
         versions: sortedVersions,
       })
 

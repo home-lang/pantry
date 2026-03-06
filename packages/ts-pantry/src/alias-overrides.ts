@@ -82,6 +82,12 @@ export const ALIAS_OVERRIDES: AliasOverride[] = [
     aliases: ['cdk', 'aws/cdk'],
   },
 
+  // Databases
+  {
+    domain: 'sqlite.org',
+    aliases: ['sqlite'],
+  },
+
   // Compression/Archive tools
   {
     domain: 'info-zip.org/zip',
