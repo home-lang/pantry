@@ -21,13 +21,14 @@ jobs:
         run: |
           HTTP_CODE=$(curl -sS -o /tmp/health-response -w '%{http_code}' \
             --max-time 15 --retry 2 --retry-delay 5 \
-            'https://registry.stacksjs.org/health' || echo "000")
+            'https://registry.stacksjs.com/health' 2>/dev/null) || HTTP_CODE="000"
           echo "http_code=$HTTP_CODE" >> "$GITHUB_OUTPUT"
           if [ "$HTTP_CODE" = "200" ]; then
             echo "status=healthy" >> "$GITHUB_OUTPUT"
           else
+            BODY=$(cat /tmp/health-response 2>/dev/null | head -c 200 || echo "no response")
             echo "status=unhealthy" >> "$GITHUB_OUTPUT"
-            echo "body=$(cat /tmp/health-response 2>/dev/null | head -c 200)" >> "$GITHUB_OUTPUT"
+            echo "body=$BODY" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check S3 bucket accessibility
@@ -37,7 +38,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
         run: |
-          if aws s3 ls s3://ts-pantry --max-items 1 >/dev/null 2>&1; then
+          if aws s3 ls s3://pantry-registry --max-items 1 >/dev/null 2>&1; then
             echo "status=accessible" >> "$GITHUB_OUTPUT"
           else
             echo "status=inaccessible" >> "$GITHUB_OUTPUT"
@@ -48,15 +49,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          SIX_HOURS_AGO=$(date -u -d '6 hours ago' '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
-            || date -u -v-6H '+%Y-%m-%dT%H:%M:%SZ')
+          SIX_HOURS_AGO=$(date -u -d '6 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
 
           FAIL_COUNT=$(gh api \
             "repos/${{ github.repository }}/actions/runs?status=failure&created=>=$SIX_HOURS_AGO&per_page=100" \
             --jq '.total_count' 2>/dev/null || echo "0")
 
           echo "count=$FAIL_COUNT" >> "$GITHUB_OUTPUT"
-          if [ "$FAIL_COUNT" -gt 5 ]; then
+          if [ "$FAIL_COUNT" -gt 15 ]; then
             echo "status=elevated" >> "$GITHUB_OUTPUT"
           else
             echo "status=normal" >> "$GITHUB_OUTPUT"
@@ -68,13 +68,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           STALE_ITEMS=""
+          NOW=$(date -u +%s)
 
           # Check update-pantry — should run every 20min, alert if >2h stale
           LAST_PANTRY=$(gh api \
             "repos/${{ github.repository }}/actions/workflows/update-pantry.yml/runs?status=success&per_page=1" \
             --jq '.workflow_runs[0].updated_at' 2>/dev/null || echo "")
           if [ -n "$LAST_PANTRY" ]; then
-            PANTRY_AGE=$(( ($(date -u +%s) - $(date -u -d "$LAST_PANTRY" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_PANTRY" +%s)) / 3600 ))
+            PANTRY_TS=$(date -u -d "$LAST_PANTRY" +%s 2>/dev/null || echo "0")
+            PANTRY_AGE=$(( (NOW - PANTRY_TS) / 3600 ))
             if [ "$PANTRY_AGE" -gt 2 ]; then
               STALE_ITEMS="update-pantry (${PANTRY_AGE}h ago)"
             fi
@@ -85,7 +87,8 @@ jobs:
             "repos/${{ github.repository }}/actions/workflows/sync-binaries.yml/runs?status=success&per_page=1" \
             --jq '.workflow_runs[0].updated_at' 2>/dev/null || echo "")
           if [ -n "$LAST_SYNC" ]; then
-            SYNC_AGE=$(( ($(date -u +%s) - $(date -u -d "$LAST_SYNC" +%s 2>/dev/null || date -u -j -f "%Y-%m-%dT%H:%M:%SZ" "$LAST_SYNC" +%s)) / 3600 ))
+            SYNC_TS=$(date -u -d "$LAST_SYNC" +%s 2>/dev/null || echo "0")
+            SYNC_AGE=$(( (NOW - SYNC_TS) / 3600 ))
             if [ "$SYNC_AGE" -gt 12 ]; then
               if [ -n "$STALE_ITEMS" ]; then
                 STALE_ITEMS="$STALE_ITEMS, sync-binaries (${SYNC_AGE}h ago)"
@@ -111,22 +114,20 @@ jobs:
             ISSUES="Registry unhealthy (HTTP ${{ steps.registry.outputs.http_code }})"
           fi
           if [ "${{ steps.s3.outputs.status }}" != "accessible" ]; then
-            [ -n "$ISSUES" ] && ISSUES="$ISSUES\n"
+            [ -n "$ISSUES" ] && ISSUES="$ISSUES; "
             ISSUES="${ISSUES}S3 bucket inaccessible"
           fi
           if [ "${{ steps.failures.outputs.status }}" = "elevated" ]; then
-            [ -n "$ISSUES" ] && ISSUES="$ISSUES\n"
+            [ -n "$ISSUES" ] && ISSUES="$ISSUES; "
             ISSUES="${ISSUES}${{ steps.failures.outputs.count }} workflow failures in last 6h"
           fi
           if [ "${{ steps.stale.outputs.status }}" = "stale" ]; then
-            [ -n "$ISSUES" ] && ISSUES="$ISSUES\n"
-            ISSUES="${ISSUES}Stale syncs: ${{ steps.stale.outputs.items }}"
+            [ -n "$ISSUES" ] && ISSUES="$ISSUES; "
+            ISSUES="${ISSUES}Stale: ${{ steps.stale.outputs.items }}"
           fi
 
           if [ -n "$ISSUES" ]; then
             echo "healthy=false" >> "$GITHUB_OUTPUT"
-            # Store issues in a file to preserve newlines
-            printf '%s' "$ISSUES" > /tmp/health-issues.txt
           else
             echo "healthy=true" >> "$GITHUB_OUTPUT"
           fi

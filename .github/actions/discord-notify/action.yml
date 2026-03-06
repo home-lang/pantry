@@ -33,6 +33,7 @@ runs:
         FIELDS: ${{ inputs.fields }}
         WEBHOOK_URL: ${{ inputs.webhook_url }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        WORKFLOW_NAME: ${{ github.workflow }}
       run: |
         # Map status to color
         case "$STATUS" in
@@ -42,16 +43,16 @@ runs:
           *) COLOR=10181046 ;;        # purple/unknown
         esac
 
-        # Build fields JSON — append workflow run link
-        FIELDS_WITH_LINK=$(echo "$FIELDS" | jq -c '. + [{"name": "Workflow Run", "value": "'"$RUN_URL"'", "inline": false}]')
+        # Build fields JSON — append clickable workflow run link
+        FIELDS_WITH_LINK=$(echo "$FIELDS" | jq -c \
+          --arg url "$RUN_URL" \
+          --arg name "$WORKFLOW_NAME" \
+          '. + [{"name": "Workflow Run", "value": ("[" + $name + "](" + $url + ")"), "inline": false}]')
 
-        # Escape description for JSON
-        DESC_ESCAPED=$(echo "$DESCRIPTION" | jq -Rs '.')
-
-        # Build payload
-        PAYLOAD=$(jq -nc \
+        # Build payload safely via jq (handles all escaping)
+        jq -nc \
           --arg title "$TITLE" \
-          --argjson description "$DESC_ESCAPED" \
+          --arg description "$DESCRIPTION" \
           --argjson color "$COLOR" \
           --argjson fields "$FIELDS_WITH_LINK" \
           '{
@@ -62,10 +63,7 @@ runs:
               fields: $fields,
               timestamp: (now | todate)
             }]
-          }')
-
-        # Send — never fail the parent workflow
-        curl -sS -X POST \
+          }' | curl -sS -X POST \
           -H "Content-Type: application/json" \
-          -d "$PAYLOAD" \
+          --data-binary @- \
           "$WEBHOOK_URL" || true
