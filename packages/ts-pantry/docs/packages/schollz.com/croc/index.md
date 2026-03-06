@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 42 versions</summary>
+<summary>Show all 43 versions</summary>
 
-- `10.4.0`
+- `10.4.1`, `10.4.0`
 - `10.3.1`, `10.3.0`
 - `10.2.7`, `10.2.6`, `10.2.5`, `10.2.4`, `10.2.3`, `10.2.2`, `10.2.1`, `10.2.0`
 - `10.1.3`, `10.1.2`, `10.1.1`, `10.1.0`
@@ -36,13 +36,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.4.0`
+**Latest Version**: `10.4.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +schollz.com/croc@10.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +schollz.com/croc@10.4.1 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -3,7 +3,7 @@
  *
  * @domain `schollz.com/croc`
  * @programs `croc`
- * @version `10.4.0` (42 versions available)
+ * @version `10.4.1` (43 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install schollz.com/croc`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "croc"
  * console.log(pkg.description) // "Easily and securely send things from one comput..."
  * console.log(pkg.programs)    // ["croc"]
- * console.log(pkg.versions[0]) // "10.4.0" (latest)
+ * console.log(pkg.versions[0]) // "10.4.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/schollz-com/croc.md
@@ -68,6 +68,7 @@ export const schollzcomcrocPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.4.1',
     '10.4.0',
     '10.3.1',
     '10.3.0',

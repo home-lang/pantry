@@ -2,7 +2,7 @@
  * **libuv** - Cross-platform asynchronous I/O
  *
  * @domain `libuv.org`
- * @version `1.52.0` (11 versions available)
+ * @version `1.52.1` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install libuv.org`
@@ -16,7 +16,7 @@
  * const pkg = pantry.libuvorg
  * console.log(pkg.name)        // "libuv"
  * console.log(pkg.description) // "Cross-platform asynchronous I/O"
- * console.log(pkg.versions[0]) // "1.52.0" (latest)
+ * console.log(pkg.versions[0]) // "1.52.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/libuv-org.md
@@ -60,6 +60,7 @@ export const libuvorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.52.1',
     '1.52.0',
     '1.51.0',
     '1.50.0',

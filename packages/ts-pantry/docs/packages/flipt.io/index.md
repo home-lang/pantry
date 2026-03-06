@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 59 versions</summary>
+<summary>Show all 61 versions</summary>
 
+- `2.8.0`
 - `2.7.0`
 - `2.6.0`
 - `2.5.0`
@@ -35,7 +36,7 @@ This package provides the following executable programs:
 - `2.2.0`
 - `2.1.3`, `2.1.2`, `2.1.1`, `2.1.0`
 - `2.0.2`, `2.0.1`, `2.0.0`
-- `1.61.0`
+- `1.61.1`, `1.61.0`
 - `1.60.0`
 - `1.59.3`, `1.59.2`, `1.59.1`, `1.59.0`
 - `1.58.5`, `1.58.4`, `1.58.3`, `1.58.2`, `1.58.1`, `1.58.0`
@@ -56,13 +57,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.7.0`
+**Latest Version**: `2.8.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +flipt.io@2.7.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +flipt.io@2.8.0 -- $SHELL -i
 ```
 
 ## Usage Examples
