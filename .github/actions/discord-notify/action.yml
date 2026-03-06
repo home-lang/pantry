@@ -35,35 +35,46 @@ runs:
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         WORKFLOW_NAME: ${{ github.workflow }}
       run: |
-        # Map status to color
-        case "$STATUS" in
-          success) COLOR=3066993 ;;   # green
-          warning) COLOR=16776960 ;;  # yellow
-          failure) COLOR=15158332 ;;  # red
-          *) COLOR=10181046 ;;        # purple/unknown
-        esac
+        # Entire block is wrapped so notification errors never fail the parent workflow
+        _send_discord() {
+          # Map status to color
+          case "$STATUS" in
+            success) COLOR=3066993 ;;   # green
+            warning) COLOR=16776960 ;;  # yellow
+            failure) COLOR=15158332 ;;  # red
+            *) COLOR=10181046 ;;        # purple/unknown
+          esac
 
-        # Build fields JSON — append clickable workflow run link
-        FIELDS_WITH_LINK=$(echo "$FIELDS" | jq -c \
-          --arg url "$RUN_URL" \
-          --arg name "$WORKFLOW_NAME" \
-          '. + [{"name": "Workflow Run", "value": ("[" + $name + "](" + $url + ")"), "inline": false}]')
+          # Validate fields JSON, fall back to empty array
+          if ! echo "$FIELDS" | jq -e '.' >/dev/null 2>&1; then
+            FIELDS='[]'
+          fi
 
-        # Build payload safely via jq (handles all escaping)
-        jq -nc \
-          --arg title "$TITLE" \
-          --arg description "$DESCRIPTION" \
-          --argjson color "$COLOR" \
-          --argjson fields "$FIELDS_WITH_LINK" \
-          '{
-            embeds: [{
-              title: $title,
-              description: $description,
-              color: $color,
-              fields: $fields,
-              timestamp: (now | todate)
-            }]
-          }' | curl -sS -X POST \
-          -H "Content-Type: application/json" \
-          --data-binary @- \
-          "$WEBHOOK_URL" || true
+          # Append clickable workflow run link
+          FIELDS_WITH_LINK=$(echo "$FIELDS" | jq -c \
+            --arg url "$RUN_URL" \
+            --arg name "$WORKFLOW_NAME" \
+            '. + [{"name": "Workflow Run", "value": ("[" + $name + "](" + $url + ")"), "inline": false}]')
+
+          # Build payload safely via jq (handles all escaping)
+          PAYLOAD=$(jq -nc \
+            --arg title "$TITLE" \
+            --arg description "$DESCRIPTION" \
+            --argjson color "$COLOR" \
+            --argjson fields "$FIELDS_WITH_LINK" \
+            '{
+              embeds: [{
+                title: $title,
+                description: $description,
+                color: $color,
+                fields: $fields,
+                timestamp: (now | todate)
+              }]
+            }')
+
+          curl -sS -X POST \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$WEBHOOK_URL"
+        }
+        _send_discord || echo "::warning::Discord notification failed (non-fatal)"

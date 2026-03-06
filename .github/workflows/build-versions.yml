@@ -437,15 +437,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Build fields
+        id: fields
+        run: |
+          FIELDS="["
+          FIRST=true
+          for pair in "Build Targeted:${{ needs.build-targeted.result }}" "Build Batches:${{ needs.build.result }}"; do
+            NAME="${pair%%:*}"
+            VAL="${pair##*:}"
+            [ "$VAL" = "skipped" ] && continue
+            [ "$FIRST" = "true" ] && FIRST=false || FIELDS="$FIELDS,"
+            FIELDS="$FIELDS{\"name\":\"$NAME\",\"value\":\"$VAL\",\"inline\":true}"
+          done
+          FIELDS="$FIELDS,{\"name\":\"Max Versions\",\"value\":\"${{ github.event.inputs.max-versions || '5' }}\",\"inline\":true}]"
+          echo "json=$FIELDS" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/discord-notify
         with:
           title: Build Versions — Failed
           description: Multi-version build failed
           status: failure
-          fields: |
-            [
-              {"name": "Build Targeted", "value": "${{ needs.build-targeted.result }}", "inline": true},
-              {"name": "Build Batches", "value": "${{ needs.build.result }}", "inline": true},
-              {"name": "Max Versions", "value": "${{ github.event.inputs.max-versions || '5' }}", "inline": true}
-            ]
+          fields: ${{ steps.fields.outputs.json }}
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

@@ -19,16 +19,17 @@ jobs:
       - name: Check registry health
         id: registry
         run: |
+          # Use a temp file to isolate the HTTP code from error output
           HTTP_CODE=$(curl -sS -o /tmp/health-response -w '%{http_code}' \
-            --max-time 15 --retry 2 --retry-delay 5 \
-            'https://registry.stacksjs.com/health' 2>/dev/null) || HTTP_CODE="000"
+            --max-time 15 \
+            'https://registry.stacksjs.com/health' 2>/dev/null) || true
+          # Extract only the last 3 chars (the HTTP code) in case of any prefix noise
+          HTTP_CODE="${HTTP_CODE: -3}"
           echo "http_code=$HTTP_CODE" >> "$GITHUB_OUTPUT"
           if [ "$HTTP_CODE" = "200" ]; then
             echo "status=healthy" >> "$GITHUB_OUTPUT"
           else
-            BODY=$(cat /tmp/health-response 2>/dev/null | head -c 200 || echo "no response")
             echo "status=unhealthy" >> "$GITHUB_OUTPUT"
-            echo "body=$BODY" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Check S3 bucket accessibility
@@ -38,7 +39,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
         run: |
-          if aws s3 ls s3://pantry-registry --max-items 1 >/dev/null 2>&1; then
+          if aws s3api head-bucket --bucket pantry-registry 2>/dev/null; then
             echo "status=accessible" >> "$GITHUB_OUTPUT"
           else
             echo "status=inaccessible" >> "$GITHUB_OUTPUT"
@@ -73,27 +74,31 @@ jobs:
           # Check update-pantry — should run every 20min, alert if >2h stale
           LAST_PANTRY=$(gh api \
             "repos/${{ github.repository }}/actions/workflows/update-pantry.yml/runs?status=success&per_page=1" \
-            --jq '.workflow_runs[0].updated_at' 2>/dev/null || echo "")
-          if [ -n "$LAST_PANTRY" ]; then
-            PANTRY_TS=$(date -u -d "$LAST_PANTRY" +%s 2>/dev/null || echo "0")
-            PANTRY_AGE=$(( (NOW - PANTRY_TS) / 3600 ))
-            if [ "$PANTRY_AGE" -gt 2 ]; then
-              STALE_ITEMS="update-pantry (${PANTRY_AGE}h ago)"
+            --jq '.workflow_runs[0].updated_at // empty' 2>/dev/null || echo "")
+          if [ -n "$LAST_PANTRY" ] && [ "$LAST_PANTRY" != "null" ]; then
+            PANTRY_TS=$(date -u -d "$LAST_PANTRY" +%s 2>/dev/null || echo "")
+            if [ -n "$PANTRY_TS" ] && [ "$PANTRY_TS" -gt 0 ] 2>/dev/null; then
+              PANTRY_AGE=$(( (NOW - PANTRY_TS) / 3600 ))
+              if [ "$PANTRY_AGE" -gt 2 ]; then
+                STALE_ITEMS="update-pantry (${PANTRY_AGE}h ago)"
+              fi
             fi
           fi
 
           # Check sync-binaries — runs every 6h, alert if >12h stale
           LAST_SYNC=$(gh api \
             "repos/${{ github.repository }}/actions/workflows/sync-binaries.yml/runs?status=success&per_page=1" \
-            --jq '.workflow_runs[0].updated_at' 2>/dev/null || echo "")
-          if [ -n "$LAST_SYNC" ]; then
-            SYNC_TS=$(date -u -d "$LAST_SYNC" +%s 2>/dev/null || echo "0")
-            SYNC_AGE=$(( (NOW - SYNC_TS) / 3600 ))
-            if [ "$SYNC_AGE" -gt 12 ]; then
-              if [ -n "$STALE_ITEMS" ]; then
-                STALE_ITEMS="$STALE_ITEMS, sync-binaries (${SYNC_AGE}h ago)"
-              else
-                STALE_ITEMS="sync-binaries (${SYNC_AGE}h ago)"
+            --jq '.workflow_runs[0].updated_at // empty' 2>/dev/null || echo "")
+          if [ -n "$LAST_SYNC" ] && [ "$LAST_SYNC" != "null" ]; then
+            SYNC_TS=$(date -u -d "$LAST_SYNC" +%s 2>/dev/null || echo "")
+            if [ -n "$SYNC_TS" ] && [ "$SYNC_TS" -gt 0 ] 2>/dev/null; then
+              SYNC_AGE=$(( (NOW - SYNC_TS) / 3600 ))
+              if [ "$SYNC_AGE" -gt 12 ]; then
+                if [ -n "$STALE_ITEMS" ]; then
+                  STALE_ITEMS="$STALE_ITEMS, sync-binaries (${SYNC_AGE}h ago)"
+                else
+                  STALE_ITEMS="sync-binaries (${SYNC_AGE}h ago)"
+                fi
               fi
             fi
           fi
@@ -141,9 +146,9 @@ jobs:
           status: failure
           fields: |
             [
-              {"name": "Registry", "value": "${{ steps.registry.outputs.status }} (HTTP ${{ steps.registry.outputs.http_code }})", "inline": true},
-              {"name": "S3 Bucket", "value": "${{ steps.s3.outputs.status }}", "inline": true},
-              {"name": "Failures (6h)", "value": "${{ steps.failures.outputs.count }}", "inline": true},
+              {"name": "Registry", "value": "${{ steps.registry.outputs.status || 'unknown' }} (HTTP ${{ steps.registry.outputs.http_code || '?' }})", "inline": true},
+              {"name": "S3 Bucket", "value": "${{ steps.s3.outputs.status || 'unknown' }}", "inline": true},
+              {"name": "Failures (6h)", "value": "${{ steps.failures.outputs.count || '?' }}", "inline": true},
               {"name": "Stale Syncs", "value": "${{ steps.stale.outputs.items || 'none' }}", "inline": false}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -171,8 +176,8 @@ jobs:
           status: success
           fields: |
             [
-              {"name": "Registry", "value": "${{ steps.registry.outputs.status }}", "inline": true},
-              {"name": "S3 Bucket", "value": "${{ steps.s3.outputs.status }}", "inline": true},
-              {"name": "Failures (6h)", "value": "${{ steps.failures.outputs.count }}", "inline": true}
+              {"name": "Registry", "value": "${{ steps.registry.outputs.status || 'unknown' }}", "inline": true},
+              {"name": "S3 Bucket", "value": "${{ steps.s3.outputs.status || 'unknown' }}", "inline": true},
+              {"name": "Failures (6h)", "value": "${{ steps.failures.outputs.count || '0' }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

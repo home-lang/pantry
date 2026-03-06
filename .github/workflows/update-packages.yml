@@ -393,7 +393,8 @@ jobs:
           status: failure
           fields: |
             [
-              {"name": "Fetch Result", "value": "${{ steps.fetch-packages.outputs.fetch_result && 'received' || 'missing' }}", "inline": true},
-              {"name": "Safe to Commit", "value": "${{ steps.deletion-check.outputs.safe_to_commit || 'n/a' }}", "inline": true}
+              {"name": "Fetch Success", "value": "${{ steps.commit-message.outputs.should_commit || 'unknown' }}", "inline": true},
+              {"name": "Safe to Commit", "value": "${{ steps.deletion-check.outputs.safe_to_commit || 'not reached' }}", "inline": true},
+              {"name": "Updated", "value": "${{ steps.commit-message.outputs.total_updated || '?' }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

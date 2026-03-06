@@ -234,13 +234,13 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/discord-notify
         with:
-          title: "Build Package — ${{ needs.build.result == 'success' && 'Success' || 'Failed' }}"
+          title: "Build Package — ${{ needs.build.result == 'success' && 'Success' || needs.build.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
           description: "Packages: ${{ github.event.inputs.packages }}"
-          status: ${{ needs.build.result == 'success' && 'success' || 'failure' }}
+          status: ${{ needs.build.result == 'success' && 'success' || needs.build.result == 'cancelled' && 'warning' || 'failure' }}
           fields: |
             [
-              {"name": "Platform", "value": "${{ github.event.inputs.platform }}", "inline": true},
-              {"name": "Force", "value": "${{ github.event.inputs.force }}", "inline": true},
+              {"name": "Platform", "value": "${{ github.event.inputs.platform || 'both' }}", "inline": true},
+              {"name": "Force", "value": "${{ github.event.inputs.force || 'true' }}", "inline": true},
               {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

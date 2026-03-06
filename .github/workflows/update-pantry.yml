@@ -206,7 +206,7 @@ jobs:
           status: failure
           fields: |
             [
-              {"name": "Update Success", "value": "${{ steps.update-pantry.outputs.success }}", "inline": true},
-              {"name": "Changes", "value": "${{ steps.update-pantry.outputs.total_changes }}", "inline": true}
+              {"name": "Update Success", "value": "${{ steps.update-pantry.outputs.success || 'unknown' }}", "inline": true},
+              {"name": "Changes", "value": "${{ steps.update-pantry.outputs.total_changes || '?' }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

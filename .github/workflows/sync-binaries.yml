@@ -538,15 +538,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - name: Build fields
+        id: fields
+        run: |
+          # Only include jobs that actually ran (not skipped)
+          FIELDS="["
+          FIRST=true
+          for pair in "Sync Pre-built:${{ needs.sync-prebuilt.result }}" "Build Targeted:${{ needs.build-targeted.result }}" "Build Batches:${{ needs.build.result }}"; do
+            NAME="${pair%%:*}"
+            VAL="${pair##*:}"
+            [ "$VAL" = "skipped" ] && continue
+            [ "$FIRST" = "true" ] && FIRST=false || FIELDS="$FIELDS,"
+            FIELDS="$FIELDS{\"name\":\"$NAME\",\"value\":\"$VAL\",\"inline\":true}"
+          done
+          FIELDS="$FIELDS]"
+          echo "json=$FIELDS" >> "$GITHUB_OUTPUT"
       - uses: ./.github/actions/discord-notify
         with:
           title: Sync Binaries — Failed
           description: One or more sync/build jobs failed
           status: failure
-          fields: |
-            [
-              {"name": "Sync Pre-built", "value": "${{ needs.sync-prebuilt.result }}", "inline": true},
-              {"name": "Build Targeted", "value": "${{ needs.build-targeted.result }}", "inline": true},
-              {"name": "Build Batches", "value": "${{ needs.build.result }}", "inline": true}
-            ]
+          fields: ${{ steps.fields.outputs.json }}
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

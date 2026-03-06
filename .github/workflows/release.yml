@@ -86,9 +86,9 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/discord-notify
         with:
-          title: "Release — ${{ needs.pantry.result == 'success' && 'Published' || 'Failed' }}"
+          title: "Release — ${{ needs.pantry.result == 'success' && 'Published' || needs.pantry.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
           description: "Tag: ${{ github.ref_name }}"
-          status: ${{ needs.pantry.result == 'success' && 'success' || 'failure' }}
+          status: ${{ needs.pantry.result == 'success' && 'success' || needs.pantry.result == 'cancelled' && 'warning' || 'failure' }}
           fields: |
             [
               {"name": "Tag", "value": "${{ github.ref_name }}", "inline": true},
