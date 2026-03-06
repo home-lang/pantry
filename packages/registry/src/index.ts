@@ -10,7 +10,7 @@
 export { Registry, createLocalRegistry, createProductionRegistry, createRegistryFromEnv } from './registry'
 
 // Server
-export { createServer } from './server'
+export { createServer, createHandler } from './server'
 
 // Storage backends
 export { S3Storage, LocalStorage } from './storage/s3'

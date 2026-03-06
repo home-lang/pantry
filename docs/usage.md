@@ -868,7 +868,7 @@ Each published package gets an install URL tied to the commit SHA:
 
 ```bash
 # Install a commit package
-npm install https://registry.stacksjs.org/commits/abc1234/@scope/my-package/tarball
+npm install https://registry.pantry.dev/commits/abc1234/@scope/my-package/tarball
 ```
 
 ### CI/CD Usage
@@ -887,7 +887,7 @@ Replace `pkg-pr-new` in your GitHub Actions:
 
 | Option | Description |
 |--------|-------------|
-| `--registry <url>` | Custom registry URL (default: `https://registry.stacksjs.org`) |
+| `--registry <url>` | Custom registry URL (default: `https://registry.pantry.dev`) |
 | `--token <token>` | Authentication token (or set `PANTRY_TOKEN` env var) |
 | `--dry-run` | Preview without publishing |
 | `--compact` | Minimal output for CI environments |

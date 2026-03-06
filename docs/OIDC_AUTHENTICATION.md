@@ -173,7 +173,7 @@ pantry publish --no-oidc
 pantry publish --dry-run
 
 # Specify custom registry
-pantry publish --registry https://registry.pantry.sh
+pantry publish --registry https://registry.pantry.dev
 
 # Disable provenance generation
 pantry publish --no-provenance

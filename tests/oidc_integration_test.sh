@@ -251,7 +251,7 @@ test_start "Registry Client URL Validation"
 REGISTRY_URLS=(
     "https://registry.npmjs.org"
     "https://npm.pkg.github.com"
-    "https://registry.pantry.sh"
+    "https://registry.pantry.dev"
 )
 
 for url in "${REGISTRY_URLS[@]}"; do

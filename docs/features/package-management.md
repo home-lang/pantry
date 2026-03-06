@@ -342,7 +342,7 @@ Published packages get install URLs tied to the commit SHA:
 
 ```bash
 # Install from a specific commit
-npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+npm install https://registry.pantry.dev/commits/abc1234/@scope/package/tarball
 ```
 
 ### Options

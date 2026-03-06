@@ -27,14 +27,14 @@ pantry publish:commit './packages/*' --dry-run
 ## Install URLs
 
 ```bash
-npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+npm install https://registry.pantry.dev/commits/abc1234/@scope/package/tarball
 ```
 
 ## Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--registry <url>` | Registry URL | `https://registry.stacksjs.org` |
+| `--registry <url>` | Registry URL | `https://registry.pantry.dev` |
 | `--token <token>` | Auth token (or `PANTRY_TOKEN` env) | |
 | `--dry-run` | Preview without publishing | `false` |
 | `--compact` | Minimal CI output | `false` |

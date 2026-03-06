@@ -22,7 +22,7 @@ jobs:
           # Use a temp file to isolate the HTTP code from error output
           HTTP_CODE=$(curl -sS -o /tmp/health-response -w '%{http_code}' \
             --max-time 15 \
-            'https://registry.stacksjs.com/health' 2>/dev/null) || true
+            'https://registry.pantry.dev/health' 2>/dev/null) || true
           # Extract only the last 3 chars (the HTTP code) in case of any prefix noise
           HTTP_CODE="${HTTP_CODE: -3}"
           echo "http_code=$HTTP_CODE" >> "$GITHUB_OUTPUT"

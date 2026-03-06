@@ -24,7 +24,7 @@ pantry publish:commit ./my-package
 Each published package gets an install URL:
 
 ```
-https://registry.stacksjs.org/commits/abc1234/@scope/my-package/tarball
+https://registry.pantry.dev/commits/abc1234/@scope/my-package/tarball
 ```
 
 ## Usage
@@ -66,7 +66,7 @@ Private packages (those with `"private": true` in `package.json`) are automatica
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--registry <url>` | Registry URL to publish to | `https://registry.stacksjs.org` |
+| `--registry <url>` | Registry URL to publish to | `https://registry.pantry.dev` |
 | `--token <token>` | Authentication token | `PANTRY_TOKEN` env var |
 | `--dry-run` | Preview what would be published without uploading | `false` |
 | `--compact` | Minimal output suitable for CI environments | `false` |
@@ -135,10 +135,10 @@ Published commit packages can be installed using standard package managers:
 
 ```bash
 # Install via npm/bun/yarn/pnpm
-npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+npm install https://registry.pantry.dev/commits/abc1234/@scope/package/tarball
 
 # Or for unscoped packages
-npm install https://registry.stacksjs.org/commits/abc1234/my-package/tarball
+npm install https://registry.pantry.dev/commits/abc1234/my-package/tarball
 ```
 
 ## Registry API
@@ -156,10 +156,10 @@ The Pantry registry provides these endpoints for commit packages:
 
 ```bash
 # List all packages for a commit
-curl https://registry.stacksjs.org/commits/abc1234
+curl https://registry.pantry.dev/commits/abc1234
 
 # Get metadata for a specific package
-curl https://registry.stacksjs.org/commits/abc1234/@scope/my-package
+curl https://registry.pantry.dev/commits/abc1234/@scope/my-package
 ```
 
 ## Architecture

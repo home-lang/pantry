@@ -209,7 +209,7 @@ pantry publish:commit './packages/*' --compact
 Published packages get install URLs tied to the commit SHA:
 
 ```bash
-npm install https://registry.stacksjs.org/commits/abc1234/@scope/package/tarball
+npm install https://registry.pantry.dev/commits/abc1234/@scope/package/tarball
 ```
 
 Replace `pkg-pr-new` in CI:

@@ -46,6 +46,225 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * GET  /zig/search?q={query}                 - Search Zig packages
  * POST /zig/publish                          - Publish Zig package
  */
+/**
+ * Create the request handler (shared between Bun server and Lambda)
+ */
+export function createHandler(
+  registry: Registry,
+  analyticsStorage: AnalyticsStorage,
+  zigPackageStorage: ZigPackageStorage,
+  baseUrl: string,
+): (req: Request) => Promise<Response> {
+  return async (req: Request): Promise<Response> => {
+    const url = new URL(req.url)
+    const path = url.pathname
+
+    // CORS headers for browser access
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    }
+
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders })
+    }
+
+    try {
+      // Health check
+      if (path === '/health') {
+        return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
+      }
+
+      // Search
+      if (path === '/search' && req.method === 'GET') {
+        const query = url.searchParams.get('q') || ''
+        const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+        const results = await registry.search(query, limit)
+        return Response.json({ results }, { headers: corsHeaders })
+      }
+
+      // Publish
+      if (path === '/publish' && req.method === 'POST') {
+        return handlePublish(req, registry, corsHeaders)
+      }
+
+      // Category analytics API (JSON endpoints)
+      const categoryApiMatch = path.match(/^\/api\/analytics\/(install|install-on-request|build-error)\/(30|90|365)d\.json$/)
+      if (categoryApiMatch && req.method === 'GET') {
+        const category = categorySlugMap[categoryApiMatch[1]]
+        const days = Number.parseInt(categoryApiMatch[2], 10) as 30 | 90 | 365
+        const result = await analyticsStorage.getCategoryAnalytics(category, days)
+        return Response.json(result, {
+          headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=3600' },
+        })
+      }
+
+      // POST /analytics/events
+      if (path === '/analytics/events' && req.method === 'POST') {
+        return handleAnalyticsEvent(req, analyticsStorage, corsHeaders)
+      }
+
+      // Analytics routes
+      const analyticsMatch = path.match(/^\/analytics(?:\/(.+))?$/)
+      if (analyticsMatch && req.method === 'GET') {
+        return handleAnalytics(analyticsMatch[1], url, analyticsStorage, corsHeaders)
+      }
+
+      // Commit publish routes (pkg-pr-new equivalent)
+      if (path === '/publish/commit' && req.method === 'POST') {
+        return handleCommitPublish(req, registry, baseUrl, corsHeaders)
+      }
+
+      // GET /commits/{sha} - List all packages for a commit
+      // GET /commits/{sha}/{name} - Get commit package metadata
+      // GET /commits/{sha}/{name}/tarball - Download commit tarball
+      const commitMatch = path.match(/^\/commits\/([a-f0-9]+)(?:\/((?:@[^/]+\/[^/]+)|(?:[^@/][^/]*)))?(?:\/(tarball))?$/)
+      if (commitMatch && req.method === 'GET') {
+        const sha = commitMatch[1]
+        const packageName = commitMatch[2] ? decodeURIComponent(commitMatch[2]) : undefined
+        const action = commitMatch[3]
+
+        // GET /commits/{sha}/{name}/tarball
+        if (packageName && action === 'tarball') {
+          const tarball = await registry.downloadCommitTarball(sha, packageName)
+          if (!tarball) {
+            return Response.json(
+              { error: 'Commit package not found' },
+              { status: 404, headers: corsHeaders },
+            )
+          }
+          const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
+          return new Response(tarball, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/gzip',
+              'Content-Disposition': `attachment; filename="${safeName}-${sha.slice(0, 7)}.tgz"`,
+            },
+          })
+        }
+
+        // GET /commits/{sha}/{name}
+        if (packageName && !action) {
+          const publish = await registry.getCommitPackage(sha, packageName)
+          if (!publish) {
+            return Response.json(
+              { error: 'Commit package not found' },
+              { status: 404, headers: corsHeaders },
+            )
+          }
+          return Response.json(publish, { headers: corsHeaders })
+        }
+
+        // GET /commits/{sha}
+        if (!packageName) {
+          const summary = await registry.getCommitPackages(sha)
+          if (!summary) {
+            return Response.json(
+              { error: 'No packages found for this commit' },
+              { status: 404, headers: corsHeaders },
+            )
+          }
+          return Response.json(summary, { headers: corsHeaders })
+        }
+      }
+
+      // Zig package routes
+      if (path.startsWith('/zig/')) {
+        const zigResponse = await handleZigRoutes(path, req, url, zigPackageStorage, baseUrl, corsHeaders)
+        if (zigResponse) {
+          return zigResponse
+        }
+      }
+
+      // Package routes
+      const packageMatch = path.match(/^\/packages\/(@?[^/]+(?:\/[^/]+)?)(?:\/(.+))?$/)
+      if (packageMatch) {
+        const packageName = decodeURIComponent(packageMatch[1])
+        const rest = packageMatch[2]
+
+        // GET /packages/{name}/versions
+        if (rest === 'versions' && req.method === 'GET') {
+          const versions = await registry.listVersions(packageName)
+          return Response.json({ versions }, { headers: corsHeaders })
+        }
+
+        // GET /packages/{name}/{version}/tarball
+        if (rest?.endsWith('/tarball') && req.method === 'GET') {
+          const version = rest.replace('/tarball', '')
+          const tarball = await registry.downloadTarball(packageName, version)
+
+          if (!tarball) {
+            return Response.json(
+              { error: 'Package not found' },
+              { status: 404, headers: corsHeaders },
+            )
+          }
+
+          // Track download
+          await analyticsStorage.trackDownload({
+            packageName,
+            version,
+            timestamp: new Date().toISOString(),
+            userAgent: req.headers.get('user-agent') || undefined,
+          })
+
+          return new Response(tarball, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/gzip',
+              'Content-Disposition': `attachment; filename="${packageName}-${version}.tgz"`,
+            },
+          })
+        }
+
+        // GET /packages/{name}/{version}
+        if (rest && !rest.includes('/') && req.method === 'GET') {
+          const metadata = await registry.getPackage(packageName, rest)
+          if (!metadata) {
+            // Track this missing version request asynchronously
+            analyticsStorage.trackMissingVersion(
+              packageName,
+              rest,
+              req.headers.get('user-agent') || undefined,
+            ).catch(() => {}) // fire-and-forget
+            return Response.json(
+              { error: 'Package version not found' },
+              { status: 404, headers: corsHeaders },
+            )
+          }
+          return Response.json(metadata, { headers: corsHeaders })
+        }
+
+        // GET /packages/{name}
+        if (!rest && req.method === 'GET') {
+          const metadata = await registry.getPackage(packageName)
+          if (!metadata) {
+            return Response.json(
+              { error: 'Package not found' },
+              { status: 404, headers: corsHeaders },
+            )
+          }
+          return Response.json(metadata, { headers: corsHeaders })
+        }
+      }
+
+      return Response.json(
+        { error: 'Not found' },
+        { status: 404, headers: corsHeaders },
+      )
+    }
+    catch (error) {
+      console.error('Server error:', error)
+      return Response.json(
+        { error: 'Internal server error' },
+        { status: 500, headers: corsHeaders },
+      )
+    }
+  }
+}
+
 export function createServer(
   registry: Registry,
   port = 3000,
@@ -56,218 +275,12 @@ export function createServer(
   const analyticsStorage = analytics || createAnalytics()
   const zigPackageStorage = zigStorage || createZigStorage()
   const baseUrl = process.env.BASE_URL || `http://localhost:${port}`
+  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl)
 
   const start = () => {
     server = Bun.serve({
       port,
-      async fetch(req) {
-        const url = new URL(req.url)
-        const path = url.pathname
-
-        // CORS headers for browser access
-        const corsHeaders = {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        }
-
-        // Handle preflight
-        if (req.method === 'OPTIONS') {
-          return new Response(null, { headers: corsHeaders })
-        }
-
-        try {
-          // Health check
-          if (path === '/health') {
-            return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
-          }
-
-          // Search
-          if (path === '/search' && req.method === 'GET') {
-            const query = url.searchParams.get('q') || ''
-            const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
-            const results = await registry.search(query, limit)
-            return Response.json({ results }, { headers: corsHeaders })
-          }
-
-          // Publish
-          if (path === '/publish' && req.method === 'POST') {
-            return handlePublish(req, registry, corsHeaders)
-          }
-
-          // Category analytics API (JSON endpoints)
-          const categoryApiMatch = path.match(/^\/api\/analytics\/(install|install-on-request|build-error)\/(30|90|365)d\.json$/)
-          if (categoryApiMatch && req.method === 'GET') {
-            const category = categorySlugMap[categoryApiMatch[1]]
-            const days = Number.parseInt(categoryApiMatch[2], 10) as 30 | 90 | 365
-            const result = await analyticsStorage.getCategoryAnalytics(category, days)
-            return Response.json(result, {
-              headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=3600' },
-            })
-          }
-
-          // POST /analytics/events
-          if (path === '/analytics/events' && req.method === 'POST') {
-            return handleAnalyticsEvent(req, analyticsStorage, corsHeaders)
-          }
-
-          // Analytics routes
-          const analyticsMatch = path.match(/^\/analytics(?:\/(.+))?$/)
-          if (analyticsMatch && req.method === 'GET') {
-            return handleAnalytics(analyticsMatch[1], url, analyticsStorage, corsHeaders)
-          }
-
-          // Commit publish routes (pkg-pr-new equivalent)
-          if (path === '/publish/commit' && req.method === 'POST') {
-            return handleCommitPublish(req, registry, baseUrl, corsHeaders)
-          }
-
-          // GET /commits/{sha} - List all packages for a commit
-          // GET /commits/{sha}/{name} - Get commit package metadata
-          // GET /commits/{sha}/{name}/tarball - Download commit tarball
-          const commitMatch = path.match(/^\/commits\/([a-f0-9]+)(?:\/((?:@[^/]+\/[^/]+)|(?:[^@/][^/]*)))?(?:\/(tarball))?$/)
-          if (commitMatch && req.method === 'GET') {
-            const sha = commitMatch[1]
-            const packageName = commitMatch[2] ? decodeURIComponent(commitMatch[2]) : undefined
-            const action = commitMatch[3]
-
-            // GET /commits/{sha}/{name}/tarball
-            if (packageName && action === 'tarball') {
-              const tarball = await registry.downloadCommitTarball(sha, packageName)
-              if (!tarball) {
-                return Response.json(
-                  { error: 'Commit package not found' },
-                  { status: 404, headers: corsHeaders },
-                )
-              }
-              const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
-              return new Response(tarball, {
-                headers: {
-                  ...corsHeaders,
-                  'Content-Type': 'application/gzip',
-                  'Content-Disposition': `attachment; filename="${safeName}-${sha.slice(0, 7)}.tgz"`,
-                },
-              })
-            }
-
-            // GET /commits/{sha}/{name}
-            if (packageName && !action) {
-              const publish = await registry.getCommitPackage(sha, packageName)
-              if (!publish) {
-                return Response.json(
-                  { error: 'Commit package not found' },
-                  { status: 404, headers: corsHeaders },
-                )
-              }
-              return Response.json(publish, { headers: corsHeaders })
-            }
-
-            // GET /commits/{sha}
-            if (!packageName) {
-              const summary = await registry.getCommitPackages(sha)
-              if (!summary) {
-                return Response.json(
-                  { error: 'No packages found for this commit' },
-                  { status: 404, headers: corsHeaders },
-                )
-              }
-              return Response.json(summary, { headers: corsHeaders })
-            }
-          }
-
-          // Zig package routes
-          if (path.startsWith('/zig/')) {
-            const zigResponse = await handleZigRoutes(path, req, url, zigPackageStorage, baseUrl, corsHeaders)
-            if (zigResponse) {
-              return zigResponse
-            }
-          }
-
-          // Package routes
-          const packageMatch = path.match(/^\/packages\/(@?[^/]+(?:\/[^/]+)?)(?:\/(.+))?$/)
-          if (packageMatch) {
-            const packageName = decodeURIComponent(packageMatch[1])
-            const rest = packageMatch[2]
-
-            // GET /packages/{name}/versions
-            if (rest === 'versions' && req.method === 'GET') {
-              const versions = await registry.listVersions(packageName)
-              return Response.json({ versions }, { headers: corsHeaders })
-            }
-
-            // GET /packages/{name}/{version}/tarball
-            if (rest?.endsWith('/tarball') && req.method === 'GET') {
-              const version = rest.replace('/tarball', '')
-              const tarball = await registry.downloadTarball(packageName, version)
-
-              if (!tarball) {
-                return Response.json(
-                  { error: 'Package not found' },
-                  { status: 404, headers: corsHeaders },
-                )
-              }
-
-              // Track download
-              await analyticsStorage.trackDownload({
-                packageName,
-                version,
-                timestamp: new Date().toISOString(),
-                userAgent: req.headers.get('user-agent') || undefined,
-              })
-
-              return new Response(tarball, {
-                headers: {
-                  ...corsHeaders,
-                  'Content-Type': 'application/gzip',
-                  'Content-Disposition': `attachment; filename="${packageName}-${version}.tgz"`,
-                },
-              })
-            }
-
-            // GET /packages/{name}/{version}
-            if (rest && !rest.includes('/') && req.method === 'GET') {
-              const metadata = await registry.getPackage(packageName, rest)
-              if (!metadata) {
-                // Track this missing version request asynchronously
-                analyticsStorage.trackMissingVersion(
-                  packageName,
-                  rest,
-                  req.headers.get('user-agent') || undefined,
-                ).catch(() => {}) // fire-and-forget
-                return Response.json(
-                  { error: 'Package version not found' },
-                  { status: 404, headers: corsHeaders },
-                )
-              }
-              return Response.json(metadata, { headers: corsHeaders })
-            }
-
-            // GET /packages/{name}
-            if (!rest && req.method === 'GET') {
-              const metadata = await registry.getPackage(packageName)
-              if (!metadata) {
-                return Response.json(
-                  { error: 'Package not found' },
-                  { status: 404, headers: corsHeaders },
-                )
-              }
-              return Response.json(metadata, { headers: corsHeaders })
-            }
-          }
-
-          return Response.json(
-            { error: 'Not found' },
-            { status: 404, headers: corsHeaders },
-          )
-        }
-        catch (error) {
-          console.error('Server error:', error)
-          return Response.json(
-            { error: 'Internal server error' },
-            { status: 500, headers: corsHeaders },
-          )
-        }
-      },
+      fetch: handler,
     })
 
     console.log(`Pantry Registry running at http://localhost:${port}`)

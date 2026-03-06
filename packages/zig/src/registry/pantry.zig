@@ -23,7 +23,7 @@ pub const PantryRegistry = struct {
     npm_fallback: bool = true,
 
     /// Default Pantry registry URL
-    pub const DEFAULT_URL = "https://registry.stacksjs.com";
+    pub const DEFAULT_URL = "https://registry.pantry.dev";
 
     /// npm registry URL for fallback
     pub const NPM_URL = "https://registry.npmjs.org";

@@ -1,0 +1,72 @@
+name: Deploy Registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/registry/src/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Lambda
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build Lambda bundle
+        run: |
+          cd packages/registry
+          bun build src/lambda.ts --outfile dist/lambda.mjs --target node --minify
+          cd dist && zip -j lambda.zip lambda.mjs
+          echo "Bundle size: $(wc -c < lambda.zip) bytes"
+
+      - name: Deploy to AWS Lambda
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+        run: |
+          aws lambda update-function-code \
+            --function-name pantry-registry \
+            --zip-file fileb://packages/registry/dist/lambda.zip \
+            --region us-east-1 \
+            --query 'LastModified' --output text
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          HTTP_CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
+            'https://registry.pantry.dev/health' \
+            --max-time 15 2>/dev/null) || true
+          echo "Health check: HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Health check returned $HTTP_CODE (custom domain may not be configured yet)"
+          fi
+
+  notify:
+    name: Discord notification
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: "Registry Deploy — ${{ needs.deploy.result == 'success' && 'Deployed' || needs.deploy.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
+          description: "Registry Lambda function updated"
+          status: ${{ needs.deploy.result == 'success' && 'success' || needs.deploy.result == 'cancelled' && 'warning' || 'failure' }}
+          fields: |
+            [
+              {"name": "Branch", "value": "${{ github.ref_name }}", "inline": true},
+              {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
