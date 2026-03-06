@@ -76,3 +76,22 @@ jobs:
             dist/pantry-freebsd-arm64.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Discord notification
+    needs: pantry
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: "Release — ${{ needs.pantry.result == 'success' && 'Published' || 'Failed' }}"
+          description: "Tag: ${{ github.ref_name }}"
+          status: ${{ needs.pantry.result == 'success' && 'success' || 'failure' }}
+          fields: |
+            [
+              {"name": "Tag", "value": "${{ github.ref_name }}", "inline": true},
+              {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

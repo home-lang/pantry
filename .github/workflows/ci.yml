@@ -156,3 +156,26 @@ jobs:
 
       - name: Continuous Releases
         run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
+
+  notify:
+    name: Discord failure alert
+    needs: [lint, typecheck, test, continuous-release]
+    if: always() && (needs.lint.result == 'failure' || needs.typecheck.result == 'failure' || needs.test.result == 'failure' || needs.continuous-release.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: "CI — Failed"
+          description: "CI pipeline failure on ${{ github.ref_name }}"
+          status: failure
+          fields: |
+            [
+              {"name": "Lint", "value": "${{ needs.lint.result }}", "inline": true},
+              {"name": "Typecheck", "value": "${{ needs.typecheck.result }}", "inline": true},
+              {"name": "Test", "value": "${{ needs.test.result }}", "inline": true},
+              {"name": "Release", "value": "${{ needs.continuous-release.result }}", "inline": true},
+              {"name": "Branch", "value": "${{ github.ref_name }}", "inline": true},
+              {"name": "Author", "value": "${{ github.actor }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

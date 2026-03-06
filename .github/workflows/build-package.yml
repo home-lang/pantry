@@ -224,3 +224,23 @@ jobs:
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
         timeout-minutes: 110
+
+  notify:
+    name: Discord notification
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: "Build Package — ${{ needs.build.result == 'success' && 'Success' || 'Failed' }}"
+          description: "Packages: ${{ github.event.inputs.packages }}"
+          status: ${{ needs.build.result == 'success' && 'success' || 'failure' }}
+          fields: |
+            [
+              {"name": "Platform", "value": "${{ github.event.inputs.platform }}", "inline": true},
+              {"name": "Force", "value": "${{ github.event.inputs.force }}", "inline": true},
+              {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

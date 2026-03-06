@@ -429,3 +429,23 @@ jobs:
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
         timeout-minutes: 170
+
+  notify:
+    name: Discord failure alert
+    needs: [build-targeted, build]
+    if: always() && (needs.build-targeted.result == 'failure' || needs.build.result == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: Build Versions — Failed
+          description: Multi-version build failed
+          status: failure
+          fields: |
+            [
+              {"name": "Build Targeted", "value": "${{ needs.build-targeted.result }}", "inline": true},
+              {"name": "Build Batches", "value": "${{ needs.build.result }}", "inline": true},
+              {"name": "Max Versions", "value": "${{ github.event.inputs.max-versions || '5' }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

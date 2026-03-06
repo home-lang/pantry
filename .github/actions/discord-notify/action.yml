@@ -1,0 +1,71 @@
+name: Discord Notify
+description: Send a Discord webhook notification with embed formatting
+
+inputs:
+  title:
+    description: Embed title
+    required: true
+  description:
+    description: Embed description
+    required: false
+    default: ''
+  status:
+    description: 'Status: success, failure, or warning'
+    required: true
+    default: failure
+  fields:
+    description: 'JSON array of {name, value, inline?} objects'
+    required: false
+    default: '[]'
+  webhook_url:
+    description: Discord webhook URL
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Send Discord notification
+      shell: bash
+      env:
+        TITLE: ${{ inputs.title }}
+        DESCRIPTION: ${{ inputs.description }}
+        STATUS: ${{ inputs.status }}
+        FIELDS: ${{ inputs.fields }}
+        WEBHOOK_URL: ${{ inputs.webhook_url }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        # Map status to color
+        case "$STATUS" in
+          success) COLOR=3066993 ;;   # green
+          warning) COLOR=16776960 ;;  # yellow
+          failure) COLOR=15158332 ;;  # red
+          *) COLOR=10181046 ;;        # purple/unknown
+        esac
+
+        # Build fields JSON — append workflow run link
+        FIELDS_WITH_LINK=$(echo "$FIELDS" | jq -c '. + [{"name": "Workflow Run", "value": "'"$RUN_URL"'", "inline": false}]')
+
+        # Escape description for JSON
+        DESC_ESCAPED=$(echo "$DESCRIPTION" | jq -Rs '.')
+
+        # Build payload
+        PAYLOAD=$(jq -nc \
+          --arg title "$TITLE" \
+          --argjson description "$DESC_ESCAPED" \
+          --argjson color "$COLOR" \
+          --argjson fields "$FIELDS_WITH_LINK" \
+          '{
+            embeds: [{
+              title: $title,
+              description: $description,
+              color: $color,
+              fields: $fields,
+              timestamp: (now | todate)
+            }]
+          }')
+
+        # Send — never fail the parent workflow
+        curl -sS -X POST \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          "$WEBHOOK_URL" || true

@@ -383,3 +383,17 @@ jobs:
             -f force=false
           echo "Build workflow triggered successfully"
         timeout-minutes: 2
+
+      - name: Discord failure alert
+        if: failure()
+        uses: ./.github/actions/discord-notify
+        with:
+          title: Update Packages — Failed
+          description: Package fetch workflow failed
+          status: failure
+          fields: |
+            [
+              {"name": "Fetch Result", "value": "${{ steps.fetch-packages.outputs.fetch_result && 'received' || 'missing' }}", "inline": true},
+              {"name": "Safe to Commit", "value": "${{ steps.deletion-check.outputs.safe_to_commit || 'n/a' }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
