@@ -50,17 +50,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          SIX_HOURS_AGO=$(date -u -d '6 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
+          TWO_HOURS_AGO=$(date -u -d '2 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
 
           # Count failures excluding health-monitor itself to avoid self-referential counting
+          # Use 2h window: workflows run every 20min, so 2h captures 6 runs per workflow
           FAIL_COUNT=$(gh api \
-            "repos/${{ github.repository }}/actions/runs?status=failure&created=>=$SIX_HOURS_AGO&per_page=100" \
+            "repos/${{ github.repository }}/actions/runs?status=failure&created=>=$TWO_HOURS_AGO&per_page=100" \
             --jq '[.workflow_runs[] | select(.name != "Health Monitor")] | length' 2>/dev/null || echo "0")
 
           echo "count=$FAIL_COUNT" >> "$GITHUB_OUTPUT"
-          # Threshold: update-pantry + update-packages run every 20min each = 36 runs/6h total
-          # Alert only if >50% are failing (sustained breakage, not transient)
-          if [ "$FAIL_COUNT" -gt 30 ]; then
+          # 2 workflows x 6 runs/2h = 12 total runs. Alert if >8 fail (sustained breakage)
+          if [ "$FAIL_COUNT" -gt 8 ]; then
             echo "status=elevated" >> "$GITHUB_OUTPUT"
           else
             echo "status=normal" >> "$GITHUB_OUTPUT"
@@ -129,7 +129,7 @@ jobs:
           fi
           if [ "${{ steps.failures.outputs.status }}" = "elevated" ]; then
             [ -n "$ISSUES" ] && ISSUES="$ISSUES; "
-            ISSUES="${ISSUES}${{ steps.failures.outputs.count }} workflow failures in last 6h"
+            ISSUES="${ISSUES}${{ steps.failures.outputs.count }} workflow failures in last 2h"
           fi
           if [ "${{ steps.stale.outputs.status }}" = "stale" ]; then
             [ -n "$ISSUES" ] && ISSUES="$ISSUES; "
@@ -189,7 +189,7 @@ jobs:
             [
               {"name": "Registry", "value": "${{ steps.registry.outputs.status || 'unknown' }} (HTTP ${{ steps.registry.outputs.http_code || '?' }})", "inline": true},
               {"name": "S3 Bucket", "value": "${{ steps.s3.outputs.status || 'unknown' }}", "inline": true},
-              {"name": "Failures (6h)", "value": "${{ steps.failures.outputs.count || '?' }}", "inline": true},
+              {"name": "Failures (2h)", "value": "${{ steps.failures.outputs.count || '?' }}", "inline": true},
               {"name": "Stale Syncs", "value": "${{ steps.stale.outputs.items || 'none' }}", "inline": false}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -219,6 +219,6 @@ jobs:
             [
               {"name": "Registry", "value": "${{ steps.registry.outputs.status || 'unknown' }}", "inline": true},
               {"name": "S3 Bucket", "value": "${{ steps.s3.outputs.status || 'unknown' }}", "inline": true},
-              {"name": "Failures (6h)", "value": "${{ steps.failures.outputs.count || '0' }}", "inline": true}
+              {"name": "Failures (2h)", "value": "${{ steps.failures.outputs.count || '0' }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
