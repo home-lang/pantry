@@ -1381,7 +1381,7 @@ fn inspectorAction(_: *cli.BaseCommand.ParseContext) !void {
     style.print("\n  " ++ style.cyan ++ "pantry" ++ style.reset ++ " inspector\n\n", .{});
     style.print("  Starting at " ++ style.cyan ++ url ++ style.reset ++ "\n\n", .{});
 
-    // Find the inspector pages directory
+    // Find the inspector directory (parent of pages/)
     const home = io_helper.getenv("HOME") orelse "/tmp";
     var inspector_dir: ?[]const u8 = null;
 
@@ -1389,23 +1389,28 @@ fn inspectorAction(_: *cli.BaseCommand.ParseContext) !void {
     if (io_helper.openDir("packages/inspector/pages", .{})) |dir| {
         var d = dir;
         d.close(io_helper.io);
-        inspector_dir = "packages/inspector/pages";
+        inspector_dir = "packages/inspector";
     } else |_| {}
 
     // Try installed path
     if (inspector_dir == null) {
         var buf: [1024]u8 = undefined;
-        const installed_path = std.fmt.bufPrint(&buf, "{s}/.local/share/pantry/inspector/pages", .{home}) catch {
-            style.print("Error: Could not find inspector pages directory\n", .{});
+        const installed_path = std.fmt.bufPrint(&buf, "{s}/.local/share/pantry/inspector", .{home}) catch {
+            style.print("Error: Could not find inspector directory\n", .{});
             std.process.exit(1);
         };
-        if (io_helper.openDir(installed_path, .{})) |dir| {
+        var pages_buf: [1024]u8 = undefined;
+        const pages_path = std.fmt.bufPrint(&pages_buf, "{s}/pages", .{installed_path}) catch {
+            style.print("Error: Could not find inspector directory\n", .{});
+            std.process.exit(1);
+        };
+        if (io_helper.openDir(pages_path, .{})) |dir| {
             var d = dir;
             d.close(io_helper.io);
             inspector_dir = installed_path;
         } else |_| {
-            style.print("Error: Could not find inspector pages directory\n", .{});
-            style.print("  Looked in: packages/inspector/pages\n", .{});
+            style.print("Error: Could not find inspector directory\n", .{});
+            style.print("  Looked in: packages/inspector\n", .{});
             style.print("  Looked in: {s}\n", .{installed_path});
             std.process.exit(1);
         }
@@ -1414,10 +1419,24 @@ fn inspectorAction(_: *cli.BaseCommand.ParseContext) !void {
     // Open browser in background
     _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "open", url } }) catch {};
 
-    // Launch stx dev server (blocking)
-    _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "stx", "dev", inspector_dir.?, "--port", port } }) catch |err| {
+    // Launch inspector server via bun run serve.ts (blocking)
+    // PANTRY_PROJECT_ROOT tells server scripts where the user's project is
+    var env_buf: [2048]u8 = undefined;
+    const project_root = io_helper.getenv("PWD") orelse ".";
+
+    // Build the serve.ts path
+    var serve_buf: [1024]u8 = undefined;
+    const serve_path = std.fmt.bufPrint(&serve_buf, "{s}/serve.ts", .{inspector_dir.?}) catch {
+        style.print("Error: Could not construct serve path\n", .{});
+        std.process.exit(1);
+    };
+
+    const user_shell = io_helper.getenv("SHELL") orelse "/bin/sh";
+    _ = io_helper.spawnAndWait(.{
+        .argv = &[_][]const u8{ user_shell, "-ic", std.fmt.bufPrint(&env_buf, "PANTRY_PROJECT_ROOT='{s}' PORT={s} bun run {s}", .{ project_root, port, serve_path }) catch "echo 'Error constructing command'" },
+    }) catch |err| {
         style.print("Error: Could not start inspector server: {any}\n", .{err});
-        style.print("Make sure 'stx' is installed (bun install -g bun-plugin-stx).\n", .{});
+        style.print("Make sure 'bun' is installed.\n", .{});
         std.process.exit(1);
     };
 }
@@ -1426,8 +1445,9 @@ fn inspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     const service_name = ctx.getArgument(0) orelse {
-        style.print("Error: inspect requires a service name argument\n", .{});
-        std.process.exit(1);
+        // No argument: launch the inspector UI
+        try inspectorAction(ctx);
+        return;
     };
 
     const args = [_][]const u8{service_name};
@@ -2980,10 +3000,10 @@ pub fn main() !void {
     // ========================================================================
     // Inspect Command (Service Inspection)
     // ========================================================================
-    var inspect_cmd = try cli.BaseCommand.init(allocator, "inspect", "Inspect service configuration and status");
+    var inspect_cmd = try cli.BaseCommand.init(allocator, "inspect", "Open inspector UI, or inspect a service with: inspect <service>");
 
-    const inspect_service_arg = cli.Argument.init("service", "Service name", .string)
-        .withRequired(true);
+    const inspect_service_arg = cli.Argument.init("service", "Service name (omit to open inspector UI)", .string)
+        .withRequired(false);
     _ = try inspect_cmd.addArgument(inspect_service_arg);
 
     _ = inspect_cmd.setAction(inspectAction);

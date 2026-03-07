@@ -1,74 +1,116 @@
 <script server>
-  const REGISTRY = 'https://registry.pantry.dev'
+  const path = require('node:path')
+  const fs = require('node:fs')
 
-  const formatNum = (n) => {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
-    return String(n)
+  const formatSize = (bytes) => {
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB'
+    if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB'
+    return bytes + ' B'
   }
 
-  // Fetch top packages from analytics
-  const topRes = await fetch(`${REGISTRY}/analytics/top?limit=100`, { signal: AbortSignal.timeout(8000) }).catch(() => null)
-  const topData = topRes ? await topRes.json().catch(() => ({})) : {}
-  const topPackages = topData.packages || []
+  // Find the project root by looking for pantry.lock
+  let projectRoot = process.env.PANTRY_PROJECT_ROOT || process.cwd()
+  let searchDir = projectRoot
+  while (searchDir !== '/') {
+    if (fs.existsSync(path.join(searchDir, 'pantry.lock'))) {
+      projectRoot = searchDir
+      break
+    }
+    searchDir = path.dirname(searchDir)
+  }
 
-  // Featured packages with metadata
-  const FEATURED = [
-    { domain: 'curl.se', label: 'curl', desc: 'Command line data transfer' },
-    { domain: 'python.org', label: 'Python', desc: 'Programming language' },
-    { domain: 'nodejs.org', label: 'Node.js', desc: 'JavaScript runtime' },
-    { domain: 'go.dev', label: 'Go', desc: 'Programming language' },
-    { domain: 'ruby-lang.org', label: 'Ruby', desc: 'Programming language' },
-    { domain: 'cmake.org', label: 'CMake', desc: 'Build system generator' },
-    { domain: 'openssl.org', label: 'OpenSSL', desc: 'TLS/SSL toolkit' },
-    { domain: 'redis.io', label: 'Redis', desc: 'In-memory data store' },
-    { domain: 'postgresql.org', label: 'PostgreSQL', desc: 'Relational database' },
-    { domain: 'nginx.org', label: 'nginx', desc: 'Web server & reverse proxy' },
-    { domain: 'sqlite.org', label: 'SQLite', desc: 'Embedded SQL database' },
-    { domain: 'ffmpeg.org', label: 'FFmpeg', desc: 'Multimedia framework' },
-    { domain: 'rust-lang.org', label: 'Rust', desc: 'Systems programming language' },
-    { domain: 'git-scm.com', label: 'Git', desc: 'Version control system' },
-    { domain: 'vim.org', label: 'Vim', desc: 'Terminal text editor' },
-    { domain: 'gnupg.org', label: 'GnuPG', desc: 'Privacy encryption' },
-    { domain: 'tmux.github.io', label: 'tmux', desc: 'Terminal multiplexer' },
-    { domain: 'jqlang.github.io', label: 'jq', desc: 'JSON processor' },
-    { domain: 'github.com/sharkdp/bat', label: 'bat', desc: 'cat with syntax highlighting' },
-    { domain: 'github.com/BurntSushi/ripgrep', label: 'ripgrep', desc: 'Fast recursive search' },
-  ]
+  const lockPath = path.join(projectRoot, 'pantry.lock')
+  let lockData = { version: '0', lockfileVersion: 0, workspaces: {}, packages: {} }
+  if (fs.existsSync(lockPath)) {
+    try { lockData = JSON.parse(fs.readFileSync(lockPath, 'utf-8')) } catch {}
+  }
 
-  // Enrich featured packages with version/platform data
-  const enrichResults = await Promise.allSettled(
-    FEATURED.map(async (pkg) => {
-      const meta = await fetch(`${REGISTRY}/binaries/${pkg.domain}/metadata.json`, { signal: AbortSignal.timeout(5000) }).then(r => r.ok ? r.json() : null).catch(() => null)
-      const topEntry = topPackages.find(t => t.name === pkg.domain || t.packageName === pkg.domain)
-      return {
-        ...pkg,
-        version: meta?.latestVersion || null,
-        versionCount: meta?.versions ? Object.keys(meta.versions).length : 0,
-        downloads: topEntry?.downloads || topEntry?.totalDownloads || 0,
-        platforms: meta?.versions?.[meta?.latestVersion]?.platforms ? Object.keys(meta.versions[meta.latestVersion].platforms) : [],
-        hasDarwin: meta?.versions?.[meta?.latestVersion]?.platforms ? Object.keys(meta.versions[meta.latestVersion].platforms).some(p => p.includes('darwin')) : false,
-        hasLinux: meta?.versions?.[meta?.latestVersion]?.platforms ? Object.keys(meta.versions[meta.latestVersion].platforms).some(p => p.includes('linux')) : false,
-      }
-    })
-  )
+  const workspaces = Object.entries(lockData.workspaces || {})
+  const allPackages = Object.entries(lockData.packages || {})
 
-  const pkgs = enrichResults.map((r, i) =>
-    r.status === 'fulfilled' ? r.value : { ...FEATURED[i], version: null, versionCount: 0, downloads: 0, platforms: [], hasDarwin: false, hasLinux: false }
-  ).sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+  // Categorize packages
+  const pantryPkgs = allPackages.filter(([, v]) => v.source === 'pantry')
+  const npmPkgs = allPackages.filter(([, v]) => v.source === 'npm')
+  const linkedPkgs = allPackages.filter(([, v]) => v.source === 'npm' && (v.version || '').startsWith('link:'))
 
-  const total = pkgs.length
-  const totalDownloads = topPackages.reduce((sum, p) => sum + (p.downloads || p.totalDownloads || 0), 0)
-  const trackedCount = topPackages.length
-
-  const platformCounts = {}
-  pkgs.forEach(p => {
-    (p.platforms || []).forEach(pl => {
-      const key = pl.includes('darwin') ? 'macOS' : pl.includes('linux') ? 'Linux' : pl
-      platformCounts[key] = (platformCounts[key] || 0) + 1
+  // Build dependency graph
+  const depGraph = {}
+  const reverseDepGraph = {}
+  allPackages.forEach(([key, pkg]) => {
+    const deps = Object.keys(pkg.dependencies || {})
+    depGraph[pkg.name || key] = deps
+    deps.forEach(d => {
+      if (!reverseDepGraph[d]) reverseDepGraph[d] = []
+      reverseDepGraph[d].push(pkg.name || key)
     })
   })
-  const platformEntries = Object.entries(platformCounts).sort((a, b) => b[1] - a[1])
+
+  // Compute depth for each package (BFS from workspace roots)
+  const depths = {}
+  const queue = []
+  workspaces.forEach(([wsPath, ws]) => {
+    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
+    Object.keys(allDeps).forEach(d => {
+      if (depths[d] === undefined) {
+        depths[d] = 1
+        queue.push(d)
+      }
+    })
+  })
+  while (queue.length > 0) {
+    const current = queue.shift()
+    const pkg = allPackages.find(([, v]) => v.name === current)
+    if (pkg) {
+      const deps = Object.keys(pkg[1].dependencies || {})
+      deps.forEach(d => {
+        if (depths[d] === undefined) {
+          depths[d] = depths[current] + 1
+          queue.push(d)
+        }
+      })
+    }
+  }
+  const maxDepth = Math.max(...Object.values(depths).map(Number), 1)
+
+  // Get transitive dependency counts
+  const transitiveCounts = {}
+  function getTransitiveDeps(name, visited) {
+    if (visited.has(name)) return visited
+    visited.add(name)
+    const pkg = allPackages.find(([, v]) => v.name === name)
+    if (pkg) {
+      Object.keys(pkg[1].dependencies || {}).forEach(d => getTransitiveDeps(d, visited))
+    }
+    return visited
+  }
+
+  allPackages.forEach(([, pkg]) => {
+    const visited = new Set()
+    getTransitiveDeps(pkg.name, visited)
+    visited.delete(pkg.name)
+    transitiveCounts[pkg.name] = visited.size
+  })
+
+  // Most depended on
+  const mostDepended = Object.entries(reverseDepGraph).map(([name, dependents]) => ({ name, count: dependents.length, dependents })).sort((a, b) => b.count - a.count).slice(0, 10)
+
+  // Heaviest transitive dependency chains
+  const heaviestChains = Object.entries(transitiveCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 10)
+
+  // Depth distribution
+  const depthDist = {}
+  Object.values(depths).forEach(d => { depthDist[d] = (depthDist[d] || 0) + 1 })
+  const depthEntries = Object.entries(depthDist).sort((a, b) => Number(a[0]) - Number(b[0]))
+
+  // Source distribution
+  const sourceDistMap = { pantry: pantryPkgs.length, npm: npmPkgs.length - linkedPkgs.length, linked: linkedPkgs.length }
+  const sourceEntries = Object.entries(sourceDistMap).filter(([, v]) => v > 0)
+  const totalPkgs = allPackages.length
+
+  // Package list for grid
+  const packageList = allPackages.map(([key, pkg]) => ({ key, name: pkg.name || key, version: (pkg.version || '').replace(/^\^|~/, ''), source: pkg.source || 'unknown', depCount: Object.keys(pkg.dependencies || {}).length, transitive: transitiveCounts[pkg.name] || 0, depth: depths[pkg.name] || 0, dependents: (reverseDepGraph[pkg.name] || []).length, hasBin: !!pkg.bin, isLinked: (pkg.version || '').startsWith('link:'), peerDeps: Object.keys(pkg.peerDependencies || {}).length })).sort((a, b) => b.dependents - a.dependents || b.transitive - a.transitive)
+
+  const projectName = path.basename(projectRoot)
 </script>
 
 <!DOCTYPE html>
@@ -76,141 +118,276 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Pantry Inspector</title>
-  <meta name="description" content="Explore, inspect, and analyze pantry packages" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <title>{{ projectName }} - Pantry Inspector</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-sans@1/index.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@1/index.min.css" rel="stylesheet" />
   <style>
     :root {
-      --bg: oklch(0.145 0 0);
-      --bg-subtle: oklch(0.178 0 0);
-      --bg-muted: oklch(0.215 0 0);
-      --fg: oklch(0.965 0 0);
-      --fg-muted: oklch(0.72 0 0);
-      --fg-subtle: oklch(0.55 0 0);
-      --border: oklch(0.255 0 0);
-      --border-hover: oklch(0.36 0 0);
-      --accent: oklch(0.72 0.19 250);
-      --accent-hover: oklch(0.80 0.19 250);
-      --accent-subtle: oklch(0.72 0.19 250 / 0.12);
-      --amber: oklch(0.80 0.16 80);
+      --bg: oklch(0.171 0 0); --bg-subtle: oklch(0.198 0 0); --bg-muted: oklch(0.236 0 0); --bg-elevated: oklch(0.266 0 0);
+      --fg: oklch(0.982 0 0); --fg-muted: oklch(0.749 0 0); --fg-subtle: oklch(0.673 0 0);
+      --border: oklch(0.269 0 0); --border-hover: oklch(0.371 0 0);
+      --accent: oklch(0.787 0.128 230.318); --accent-subtle: oklch(0.787 0.128 230.318 / 0.12);
+      --green: oklch(0.792 0.153 166.95); --green-subtle: oklch(0.792 0.153 166.95 / 0.12);
+      --amber: oklch(0.828 0.165 84.429); --amber-subtle: oklch(0.828 0.165 84.429 / 0.12);
+      --purple: oklch(0.78 0.148 286.067); --purple-subtle: oklch(0.78 0.148 286.067 / 0.12);
+      --red: oklch(0.704 0.177 14.75); --red-subtle: oklch(0.704 0.177 14.75 / 0.12);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
-    body { min-height: 100vh; }
+    html { font-family: 'Geist Variable', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-size: 15px; }
+    body { min-height: 100vh; line-height: 1.6; }
     a { color: inherit; text-decoration: none; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
+    .mono { font-family: 'Geist Mono Variable', monospace; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    ::selection { background-color: var(--fg-muted); color: var(--bg-subtle); }
+    * { scrollbar-color: var(--border) var(--bg); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn 0.2s ease-out; }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .search-input { background: var(--bg-muted); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px 8px 36px; color: var(--fg); font-family: 'Geist Mono Variable', monospace; font-size: 13px; width: 100%; outline: none; transition: border-color 0.2s; }
+    .search-input:focus { border-color: var(--accent); }
+    .search-input::placeholder { color: var(--fg-subtle); }
+    .filter-btn { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-family: 'Geist Mono Variable', monospace; font-weight: 500; border: 1px solid var(--border); background: transparent; color: var(--fg-subtle); cursor: pointer; transition: all 0.15s; }
+    .filter-btn:hover, .filter-btn.active { background: var(--accent-subtle); color: var(--accent); border-color: var(--accent); }
+    .pkg-row { display: grid; grid-template-columns: 1fr 100px 80px 80px 90px 60px; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); transition: background 0.15s; cursor: pointer; }
+    .pkg-row:hover { background: var(--bg-muted); }
   </style>
 </head>
 <body>
 
   <!-- Header -->
-  <header class="sticky top-0 z-50 border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(16px) saturate(1.5);">
-    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+  <header class="sticky top-0 z-50 border-b border-[var(--border)]">
+    <div class="absolute inset-0" style="background: oklch(0.171 0 0 / 0.8); backdrop-filter: blur(12px);"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
       <div class="flex items-center gap-5">
-        <a href="/" class="flex items-center gap-2">
-          <span class="font-bold text-base tracking-tight" style="color: var(--accent);">pantry</span>
-          <span class="font-normal text-base" style="color: var(--fg-subtle);">inspector</span>
+        <a href="/" class="flex items-center gap-1 mono text-lg font-medium" style="color: var(--fg);">
+          <span style="color: var(--accent);">pantry</span>
+          <span class="font-normal text-sm" style="color: var(--fg-subtle);">inspector</span>
         </a>
-        <nav class="flex items-center gap-1" aria-label="main navigation">
-          <a href="/" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-[var(--border)]" style="color: var(--fg); background: var(--bg-subtle);">
+        <nav class="flex items-center gap-1">
+          <a href="/" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[var(--border)] transition-colors" style="color: var(--fg); background: var(--bg-subtle);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Packages
+            Grid
           </a>
-          <a href="/analytics" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Analytics
-          </a>
-          <a href="/dependencies" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
+          <a href="/graph" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-            Dependencies
+            Graph
+          </a>
+          <a href="/report" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Report
           </a>
         </nav>
       </div>
+      <div class="mono text-xs" style="color: var(--fg-subtle);">{{ projectName }}</div>
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main class="max-w-6xl mx-auto px-6 pt-8 pb-16 fade-in">
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-16 fade-in">
     <!-- Stats row -->
-    <div class="grid grid-cols-3 gap-3 mb-8">
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Featured Packages</p>
-        <p class="text-2xl font-semibold mono leading-tight">{{ total }}</p>
+    <div class="grid grid-cols-5 gap-3 mb-6">
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Total Packages</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ totalPkgs }}</p>
       </div>
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Total Downloads</p>
-        <p class="text-2xl font-semibold mono leading-tight">{{ formatNum(totalDownloads) }}</p>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Workspaces</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ workspaces.length }}</p>
       </div>
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Tracked Packages</p>
-        <p class="text-2xl font-semibold mono leading-tight">{{ trackedCount }}</p>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Max Depth</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ maxDepth }}</p>
+      </div>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Pantry Packages</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--green);">{{ pantryPkgs.length }}</p>
+      </div>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">npm Packages</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--amber);">{{ npmPkgs.length }}</p>
       </div>
     </div>
 
-    <!-- Platform distribution bar -->
-    @if (platformEntries.length > 0)
-    <div class="rounded-xl px-5 py-4 border border-[var(--border)] mb-8" style="background: var(--bg-subtle);">
-      <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Platform Distribution</span>
+    <!-- Source distribution bar -->
+    @if (sourceEntries.length > 0)
+    <div class="rounded-lg px-5 py-4 border border-[var(--border)] mb-6" style="background: var(--bg-subtle);">
+      <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Source Distribution</span>
       <div class="flex gap-0.5 h-2 rounded-full overflow-hidden mt-3 mb-3">
-        @foreach (platformEntries as entry)
-        <div style="flex: {{ entry[1] }}; background: {!! entry[0] === 'macOS' ? 'var(--accent)' : 'var(--amber)' !!};" title="{{ entry[0] }}: {{ entry[1] }} packages"></div>
+        @foreach (sourceEntries as entry)
+        <div style="flex: {{ entry[1] }}; background: {!! entry[0] === 'pantry' ? 'var(--green)' : entry[0] === 'npm' ? 'var(--amber)' : 'var(--purple)' !!};" title="{{ entry[0] }}: {{ entry[1] }} packages"></div>
         @endforeach
       </div>
       <div class="flex gap-6 text-xs">
-        @foreach (platformEntries as entry)
+        @foreach (sourceEntries as entry)
         <div class="flex items-center gap-1.5">
-          <span class="w-2 h-2 rounded-full" style="background: {!! entry[0] === 'macOS' ? 'var(--accent)' : 'var(--amber)' !!};"></span>
+          <span class="w-2 h-2 rounded-full" style="background: {!! entry[0] === 'pantry' ? 'var(--green)' : entry[0] === 'npm' ? 'var(--amber)' : 'var(--purple)' !!};"></span>
           <span style="color: var(--fg-muted);">{{ entry[0] }}</span>
-          <span style="color: var(--fg-subtle);">{{ entry[1] }}</span>
+          <span class="mono" style="color: var(--fg-subtle);">{{ entry[1] }}</span>
         </div>
         @endforeach
       </div>
     </div>
     @endif
 
-    <!-- Section header -->
-    <div class="flex items-center gap-3 mb-5">
-      <h2 class="text-base font-semibold">Packages</h2>
-      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ total }}</span>
+    <!-- Depth distribution -->
+    @if (depthEntries.length > 0)
+    <div class="rounded-lg px-5 py-4 border border-[var(--border)] mb-6" style="background: var(--bg-subtle);">
+      <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Depth Distribution</span>
+      <div class="flex items-end gap-1 mt-3" style="height: 48px;">
+        @foreach (depthEntries as entry)
+        <div class="flex flex-col items-center gap-1 flex-1">
+          <div class="w-full rounded-sm" style="height: {!! Math.max(4, Math.round(entry[1] / Math.max(...Object.values(depthDist)) * 44)) !!}px; background: var(--accent);"></div>
+          <span class="mono text-xs" style="color: var(--fg-subtle);">{{ entry[0] }}</span>
+        </div>
+        @endforeach
+      </div>
+    </div>
+    @endif
+
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <!-- Most depended on -->
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Most Depended On</span>
+        </div>
+        <div class="p-3">
+          <div class="flex flex-col gap-2">
+            @foreach (mostDepended as pkg)
+            <div>
+              <div class="flex justify-between mb-0.5">
+                <a href="/package/{{ pkg.name }}" class="mono text-xs transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg-muted)'">{{ pkg.name }}</a>
+                <span class="mono text-xs" style="color: var(--fg-subtle);">{{ pkg.count }}</span>
+              </div>
+              <div class="h-1 rounded-full overflow-hidden" style="background: var(--bg-muted);">
+                <div class="h-full rounded-full" style="width: {!! Math.round(pkg.count / mostDepended[0].count * 100) !!}%; background: var(--green);"></div>
+              </div>
+            </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+      <!-- Heaviest chains -->
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Most Transitive Deps</span>
+        </div>
+        <div class="p-3">
+          <div class="flex flex-col gap-2">
+            @foreach (heaviestChains as pkg)
+            <div>
+              <div class="flex justify-between mb-0.5">
+                <a href="/package/{{ pkg.name }}" class="mono text-xs transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg-muted)'">{{ pkg.name }}</a>
+                <span class="mono text-xs" style="color: var(--fg-subtle);">{{ pkg.count }}</span>
+              </div>
+              <div class="h-1 rounded-full overflow-hidden" style="background: var(--bg-muted);">
+                <div class="h-full rounded-full" style="width: {!! Math.round(pkg.count / heaviestChains[0].count * 100) !!}%; background: var(--purple);"></div>
+              </div>
+            </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspaces -->
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Workspaces</span>
+        </div>
+        <div class="p-3">
+          <div class="flex flex-col gap-2">
+            @foreach (workspaces as ws)
+            <div class="flex items-center justify-between py-1 px-2 rounded-md" style="background: var(--bg-muted);">
+              <span class="mono text-xs" style="color: var(--fg-muted);">{{ ws[1].name || ws[0] || 'root' }}</span>
+              <div class="flex gap-2">
+                @if (ws[1].dependencies)
+                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--green-subtle); color: var(--green);">{{ Object.keys(ws[1].dependencies).length }} deps</span>
+                @endif
+                @if (ws[1].devDependencies)
+                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--amber-subtle); color: var(--amber);">{{ Object.keys(ws[1].devDependencies).length }} dev</span>
+                @endif
+              </div>
+            </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Package grid -->
-    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));">
-      @foreach (pkgs as pkg)
-      <a href="/package?name={{ pkg.domain }}" class="block rounded-xl p-4 border border-[var(--border)] transition-all" style="background: var(--bg-subtle);" onmouseover="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-muted)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-subtle)'">
-        <div class="flex items-start justify-between mb-2">
-          <div>
-            <span class="mono text-sm font-medium">{{ pkg.label }}</span>
-            @if (pkg.version)
-            <span class="mono text-xs ml-1.5" style="color: var(--fg-subtle);">{{ pkg.version }}</span>
-            @endif
-          </div>
-          @if (pkg.downloads > 0)
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--accent-subtle); color: var(--accent);">{{ formatNum(pkg.downloads) }}</span>
+    <!-- Search and filters -->
+    <div class="flex items-center gap-3 mb-4">
+      <div class="relative flex-1">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fg-subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="search-input" placeholder="Search packages..." id="searchInput" oninput="filterPackages()" />
+      </div>
+      <div class="flex gap-1.5">
+        <button class="filter-btn active" onclick="setSourceFilter('all')" data-source="all">All</button>
+        <button class="filter-btn" onclick="setSourceFilter('pantry')" data-source="pantry">Pantry</button>
+        <button class="filter-btn" onclick="setSourceFilter('npm')" data-source="npm">npm</button>
+      </div>
+    </div>
+
+    <!-- Package table header -->
+    <div class="pkg-row border-b border-[var(--border)]" style="padding-top: 6px; padding-bottom: 6px; cursor: default;">
+      <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Package</span>
+      <span class="mono text-xs uppercase tracking-wider font-medium text-right" style="color: var(--fg-subtle);">Version</span>
+      <span class="mono text-xs uppercase tracking-wider font-medium text-right" style="color: var(--fg-subtle);">Source</span>
+      <span class="mono text-xs uppercase tracking-wider font-medium text-right" style="color: var(--fg-subtle);">Depth</span>
+      <span class="mono text-xs uppercase tracking-wider font-medium text-right" style="color: var(--fg-subtle);">Transitive</span>
+      <span class="mono text-xs uppercase tracking-wider font-medium text-right" style="color: var(--fg-subtle);">Used</span>
+    </div>
+
+    <!-- Package list -->
+    <div id="packageList">
+      @foreach (packageList as pkg)
+      <a href="/package/{{ pkg.name }}" class="pkg-row" data-name="{{ pkg.name }}" data-source="{{ pkg.source }}">
+        <div class="flex items-center gap-2">
+          <span class="mono text-sm">{{ pkg.name }}</span>
+          @if (pkg.hasBin)
+          <span class="mono text-xs px-1 py-0.5 rounded" style="background: var(--accent-subtle); color: var(--accent);">bin</span>
+          @endif
+          @if (pkg.isLinked)
+          <span class="mono text-xs px-1 py-0.5 rounded" style="background: var(--purple-subtle); color: var(--purple);">link</span>
           @endif
         </div>
-        @if (pkg.desc)
-        <p class="text-sm leading-relaxed mb-2.5" style="color: var(--fg-muted);">{{ pkg.desc }}</p>
-        @endif
-        <div class="flex items-center gap-2 flex-wrap">
-          @if (pkg.versionCount > 0)
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ pkg.versionCount }} versions</span>
-          @endif
-          @if (pkg.hasDarwin)
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">macOS</span>
-          @endif
-          @if (pkg.hasLinux)
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">Linux</span>
-          @endif
-        </div>
+        <span class="mono text-xs text-right" style="color: var(--fg-muted);">{{ pkg.version }}</span>
+        <span class="mono text-xs text-right">
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded" style="background: {!! pkg.source === 'pantry' ? 'var(--green-subtle)' : 'var(--amber-subtle)' !!}; color: {!! pkg.source === 'pantry' ? 'var(--green)' : 'var(--amber)' !!};">{{ pkg.source }}</span>
+        </span>
+        <span class="mono text-xs text-right" style="color: var(--fg-subtle);">{{ pkg.depth }}</span>
+        <span class="mono text-xs text-right" style="color: var(--fg-muted);">{{ pkg.transitive }}</span>
+        <span class="mono text-xs text-right" style="color: var(--fg-subtle);">{{ pkg.dependents }}</span>
       </a>
       @endforeach
     </div>
   </main>
+
+  <script>
+    let currentSource = 'all'
+
+    function setSourceFilter(source) {
+      currentSource = source
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.source === source)
+      })
+      filterPackages()
+    }
+
+    function filterPackages() {
+      const query = document.getElementById('searchInput').value.toLowerCase()
+      const rows = document.querySelectorAll('#packageList .pkg-row')
+      rows.forEach(row => {
+        const name = row.dataset.name.toLowerCase()
+        const source = row.dataset.source
+        const matchesSearch = !query || name.includes(query)
+        const matchesSource = currentSource === 'all' || source === currentSource
+        row.style.display = matchesSearch && matchesSource ? '' : 'none'
+      })
+    }
+  </script>
 
 </body>
 </html>

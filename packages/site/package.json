@@ -10,7 +10,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@stacksjs/stx": "link:@stacksjs/stx"
+    "@stacksjs/stx": "^0.2.6"
   },
   "devDependencies": {
     "bun-types": "latest",

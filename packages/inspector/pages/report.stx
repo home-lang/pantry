@@ -1,0 +1,416 @@
+<script server>
+  const path = require('node:path')
+  const fs = require('node:fs')
+
+  let projectRoot = process.env.PANTRY_PROJECT_ROOT || process.cwd()
+  let searchDir = projectRoot
+  while (searchDir !== '/') {
+    if (fs.existsSync(path.join(searchDir, 'pantry.lock'))) {
+      projectRoot = searchDir
+      break
+    }
+    searchDir = path.dirname(searchDir)
+  }
+
+  const lockPath = path.join(projectRoot, 'pantry.lock')
+  let lockData = { workspaces: {}, packages: {} }
+  if (fs.existsSync(lockPath)) {
+    try { lockData = JSON.parse(fs.readFileSync(lockPath, 'utf-8')) } catch {}
+  }
+
+  const workspaces = Object.entries(lockData.workspaces || {})
+  const allPackages = Object.entries(lockData.packages || {})
+
+  // Build dependency graph
+  const depGraph = {}
+  const reverseDepGraph = {}
+  allPackages.forEach(([key, pkg]) => {
+    const name = pkg.name || key
+    const deps = Object.keys(pkg.dependencies || {})
+    depGraph[name] = deps
+    deps.forEach(d => {
+      if (!reverseDepGraph[d]) reverseDepGraph[d] = []
+      reverseDepGraph[d].push(name)
+    })
+  })
+
+  // Transitive deps
+  function getTransitiveDeps(name, visited) {
+    if (visited.has(name)) return visited
+    visited.add(name)
+    const deps = depGraph[name] || []
+    deps.forEach(d => getTransitiveDeps(d, visited))
+    return visited
+  }
+
+  // Packages with peer deps
+  const peerDepPkgs = allPackages.filter(([, p]) => p.peerDependencies && Object.keys(p.peerDependencies).length > 0).map(([, p]) => ({ name: p.name, peerDeps: Object.entries(p.peerDependencies || {}), count: Object.keys(p.peerDependencies || {}).length })).sort((a, b) => b.count - a.count)
+
+  // Packages with bin entries
+  const binPkgs = allPackages.filter(([, p]) => p.bin && Object.keys(p.bin).length > 0).map(([, p]) => ({ name: p.name, bins: Object.keys(p.bin || {}), count: Object.keys(p.bin || {}).length })).sort((a, b) => b.count - a.count)
+
+  // Source breakdown
+  const pantryCount = allPackages.filter(([, p]) => p.source === 'pantry').length
+  const npmCount = allPackages.filter(([, p]) => p.source === 'npm').length
+  const linkedCount = allPackages.filter(([, p]) => (p.version || '').startsWith('link:')).length
+
+  // Depth analysis
+  const depths = {}
+  const queue = []
+  workspaces.forEach(([, ws]) => {
+    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
+    Object.keys(allDeps).forEach(d => {
+      if (depths[d] === undefined) { depths[d] = 1; queue.push(d) }
+    })
+  })
+  while (queue.length > 0) {
+    const current = queue.shift()
+    const pkg = allPackages.find(([, v]) => v.name === current)
+    if (pkg) {
+      Object.keys(pkg[1].dependencies || {}).forEach(d => {
+        if (depths[d] === undefined) { depths[d] = depths[current] + 1; queue.push(d) }
+      })
+    }
+  }
+
+  // Packages only used as transitive deps (not direct workspace deps)
+  const directDeps = new Set()
+  workspaces.forEach(([, ws]) => {
+    Object.keys({ ...ws.dependencies, ...ws.devDependencies }).forEach(d => directDeps.add(d))
+  })
+  const transitivOnly = allPackages.filter(([, p]) => !directDeps.has(p.name)).map(([, p]) => p.name)
+
+  // "Why installed" traces for transitive-only packages
+  function findPathToWorkspace(pkgName) {
+    const visited = new Set()
+    const path = [pkgName]
+    let current = pkgName
+    while (current && !directDeps.has(current)) {
+      visited.add(current)
+      const parent = (reverseDepGraph[current] || []).find(p => !visited.has(p))
+      if (!parent) break
+      path.unshift(parent)
+      current = parent
+    }
+    return path
+  }
+
+  const whyInstalled = transitivOnly.slice(0, 20).map(name => ({
+    name,
+    path: findPathToWorkspace(name)
+  }))
+
+  // Duplicate versions (different packages resolving same base name)
+  const nameVersions = {}
+  allPackages.forEach(([key, pkg]) => {
+    const base = (pkg.name || key).replace(/@[^/]+$/, '')
+    if (!nameVersions[base]) nameVersions[base] = []
+    nameVersions[base].push({ name: pkg.name || key, version: pkg.version })
+  })
+  const duplicateVersions = Object.entries(nameVersions).filter(([, versions]) => versions.length > 1).map(([base, versions]) => ({ base, versions, count: versions.length })).sort((a, b) => b.count - a.count)
+
+  // Most depended on
+  const mostDepended = Object.entries(reverseDepGraph).map(([name, dependents]) => ({ name, count: dependents.length, dependents })).sort((a, b) => b.count - a.count).slice(0, 15)
+
+  const maxDep = mostDepended.length > 0 ? mostDepended[0].count : 1
+  const projectName = path.basename(projectRoot)
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Report - {{ projectName }} - Pantry Inspector</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-sans@1/index.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@1/index.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: oklch(0.171 0 0); --bg-subtle: oklch(0.198 0 0); --bg-muted: oklch(0.236 0 0); --bg-elevated: oklch(0.266 0 0);
+      --fg: oklch(0.982 0 0); --fg-muted: oklch(0.749 0 0); --fg-subtle: oklch(0.673 0 0);
+      --border: oklch(0.269 0 0); --border-hover: oklch(0.371 0 0);
+      --accent: oklch(0.787 0.128 230.318); --accent-subtle: oklch(0.787 0.128 230.318 / 0.12);
+      --green: oklch(0.792 0.153 166.95); --green-subtle: oklch(0.792 0.153 166.95 / 0.12);
+      --amber: oklch(0.828 0.165 84.429); --amber-subtle: oklch(0.828 0.165 84.429 / 0.12);
+      --purple: oklch(0.78 0.148 286.067); --purple-subtle: oklch(0.78 0.148 286.067 / 0.12);
+      --red: oklch(0.704 0.177 14.75); --red-subtle: oklch(0.704 0.177 14.75 / 0.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: 'Geist Variable', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
+    body { min-height: 100vh; line-height: 1.6; }
+    a { color: inherit; text-decoration: none; }
+    .mono { font-family: 'Geist Mono Variable', monospace; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    ::selection { background-color: var(--fg-muted); color: var(--bg-subtle); }
+    * { scrollbar-color: var(--border) var(--bg); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .tab { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-family: 'Geist Mono Variable', monospace; font-weight: 500; border: 1px solid transparent; cursor: pointer; transition: all 0.15s; color: var(--fg-subtle); background: transparent; }
+    .tab:hover { color: var(--fg-muted); }
+    .tab.active { color: var(--fg); background: var(--bg-subtle); border-color: var(--border); }
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-[var(--border)]">
+    <div class="absolute inset-0" style="background: oklch(0.171 0 0 / 0.8); backdrop-filter: blur(12px);"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+      <div class="flex items-center gap-5">
+        <a href="/" class="flex items-center gap-1 mono text-lg font-medium" style="color: var(--fg);">
+          <span style="color: var(--accent);">pantry</span>
+          <span class="font-normal text-sm" style="color: var(--fg-subtle);">inspector</span>
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="/" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Grid
+          </a>
+          <a href="/graph" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+            Graph
+          </a>
+          <a href="/report" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[var(--border)] transition-colors" style="color: var(--fg); background: var(--bg-subtle);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Report
+          </a>
+        </nav>
+      </div>
+      <div class="mono text-xs" style="color: var(--fg-subtle);">{{ projectName }}</div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-16 fade-in">
+    <div class="mb-6">
+      <h1 class="mono text-xl font-medium tracking-tight">Dependency Report</h1>
+      <p class="text-sm mt-1" style="color: var(--fg-muted);">Analysis of {{ allPackages.length }} packages across {{ workspaces.length }} workspaces</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 mb-6 flex-wrap">
+      <button class="tab active" onclick="showSection('dependencies')">Dependencies</button>
+      <button class="tab" onclick="showSection('why')">Why Installed</button>
+      <button class="tab" onclick="showSection('binaries')">Binaries</button>
+      <button class="tab" onclick="showSection('peers')">Peer Deps</button>
+      @if (duplicateVersions.length > 0)
+      <button class="tab" onclick="showSection('duplicates')">Duplicates</button>
+      @endif
+    </div>
+
+    <!-- Dependencies section -->
+    <div class="section active" id="section-dependencies">
+      <div class="grid grid-cols-2 gap-6">
+        <!-- Most depended on -->
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3.5 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Most Depended On</span>
+            <p class="text-xs mt-1" style="color: var(--fg-subtle);">Packages that other packages in this project depend on</p>
+          </div>
+          <div class="p-4 overflow-y-auto" style="max-height: 32rem;">
+            <div class="flex flex-col gap-2.5">
+              @foreach (mostDepended as pkg)
+              <div>
+                <div class="flex justify-between mb-1">
+                  <a href="/package/{{ pkg.name }}" class="mono text-xs transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg-muted)'">{{ pkg.name }}</a>
+                  <span class="mono text-xs" style="color: var(--fg-subtle);">{{ pkg.count }} dependents</span>
+                </div>
+                <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--bg-muted);">
+                  <div class="h-full rounded-full" style="width: {!! Math.round(pkg.count / maxDep * 100) !!}%; background: var(--green);"></div>
+                </div>
+              </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        <!-- Source breakdown -->
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3.5 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Source Breakdown</span>
+          </div>
+          <div class="p-4">
+            <div class="flex flex-col gap-4">
+              <div class="flex items-center justify-between py-3 px-4 rounded-lg" style="background: var(--bg-muted);">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full" style="background: var(--green);"></span>
+                  <span class="mono text-sm">Pantry</span>
+                </div>
+                <span class="mono text-lg font-semibold">{{ pantryCount }}</span>
+              </div>
+              <div class="flex items-center justify-between py-3 px-4 rounded-lg" style="background: var(--bg-muted);">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full" style="background: var(--amber);"></span>
+                  <span class="mono text-sm">npm</span>
+                </div>
+                <span class="mono text-lg font-semibold">{{ npmCount }}</span>
+              </div>
+              @if (linkedCount > 0)
+              <div class="flex items-center justify-between py-3 px-4 rounded-lg" style="background: var(--bg-muted);">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full" style="background: var(--purple);"></span>
+                  <span class="mono text-sm">Linked</span>
+                </div>
+                <span class="mono text-lg font-semibold">{{ linkedCount }}</span>
+              </div>
+              @endif
+            </div>
+
+            <div class="mt-6">
+              <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Direct vs Transitive</span>
+              <div class="flex items-center justify-between py-3 px-4 rounded-lg mt-3" style="background: var(--bg-muted);">
+                <span class="mono text-sm" style="color: var(--fg-muted);">Direct dependencies</span>
+                <span class="mono text-sm font-medium">{{ directDeps.size }}</span>
+              </div>
+              <div class="flex items-center justify-between py-3 px-4 rounded-lg mt-2" style="background: var(--bg-muted);">
+                <span class="mono text-sm" style="color: var(--fg-muted);">Transitive only</span>
+                <span class="mono text-sm font-medium">{{ transitivOnly.length }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Why Installed section -->
+    <div class="section" id="section-why">
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Why Is This Installed?</span>
+          <p class="text-xs mt-1" style="color: var(--fg-subtle);">Dependency paths showing why transitive packages are in your project</p>
+        </div>
+        <div class="p-4">
+          @if (whyInstalled.length > 0)
+          <div class="flex flex-col gap-3">
+            @foreach (whyInstalled as item)
+            <div class="py-2.5 px-3 rounded-lg" style="background: var(--bg-muted);">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                @for (let i = 0; i < item.path.length; i++)
+                @if (i > 0)
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fg-subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                @endif
+                <a href="/package/{{ item.path[i] }}" class="mono text-xs px-1.5 py-0.5 rounded transition-colors" style="background: {!! i === item.path.length - 1 ? 'var(--accent-subtle)' : 'var(--bg-subtle)' !!}; color: {!! i === item.path.length - 1 ? 'var(--accent)' : 'var(--fg-muted)' !!};" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='{!! i === item.path.length - 1 ? 'var(--accent)' : 'var(--fg-muted)' !!}'">{{ item.path[i] }}</a>
+                @endfor
+              </div>
+            </div>
+            @endforeach
+          </div>
+          @else
+          <p class="text-sm text-center py-8" style="color: var(--fg-subtle);">All packages are direct dependencies</p>
+          @endif
+        </div>
+      </div>
+    </div>
+
+    <!-- Binaries section -->
+    <div class="section" id="section-binaries">
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Packages with Binaries</span>
+          <p class="text-xs mt-1" style="color: var(--fg-subtle);">{{ binPkgs.length }} packages provide CLI binaries</p>
+        </div>
+        @if (binPkgs.length > 0)
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="border-b border-[var(--border)]">
+              <th class="text-left px-3 py-2 mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Package</th>
+              <th class="text-left px-3 py-2 mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Binaries</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (binPkgs as pkg)
+            <tr class="border-b border-[var(--border)] transition-colors" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+              <td class="px-3 py-2.5">
+                <a href="/package/{{ pkg.name }}" class="mono text-sm transition-colors" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg)'">{{ pkg.name }}</a>
+              </td>
+              <td class="px-3 py-2.5">
+                <div class="flex gap-1.5 flex-wrap">
+                  @foreach (pkg.bins as bin)
+                  <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--accent-subtle); color: var(--accent);">{{ bin }}</span>
+                  @endforeach
+                </div>
+              </td>
+            </tr>
+            @endforeach
+          </tbody>
+        </table>
+        @else
+        <p class="text-sm text-center py-8" style="color: var(--fg-subtle);">No packages with binaries</p>
+        @endif
+      </div>
+    </div>
+
+    <!-- Peer Deps section -->
+    <div class="section" id="section-peers">
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Peer Dependencies</span>
+          <p class="text-xs mt-1" style="color: var(--fg-subtle);">{{ peerDepPkgs.length }} packages declare peer dependencies</p>
+        </div>
+        @if (peerDepPkgs.length > 0)
+        <div class="p-4">
+          <div class="flex flex-col gap-3">
+            @foreach (peerDepPkgs as pkg)
+            <div class="py-2.5 px-3 rounded-lg" style="background: var(--bg-muted);">
+              <div class="flex items-center justify-between mb-2">
+                <a href="/package/{{ pkg.name }}" class="mono text-sm font-medium transition-colors" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg)'">{{ pkg.name }}</a>
+                <span class="mono text-xs" style="color: var(--fg-subtle);">{{ pkg.count }} peers</span>
+              </div>
+              <div class="flex gap-1.5 flex-wrap">
+                @foreach (pkg.peerDeps as dep)
+                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--amber-subtle); color: var(--amber);">{{ dep[0] }}</span>
+                @endforeach
+              </div>
+            </div>
+            @endforeach
+          </div>
+        </div>
+        @else
+        <p class="text-sm text-center py-8" style="color: var(--fg-subtle);">No packages with peer dependencies</p>
+        @endif
+      </div>
+    </div>
+
+    <!-- Duplicates section -->
+    @if (duplicateVersions.length > 0)
+    <div class="section" id="section-duplicates">
+      <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b border-[var(--border)]">
+          <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Multiple Versions</span>
+          <p class="text-xs mt-1" style="color: var(--fg-subtle);">Packages with multiple version resolutions</p>
+        </div>
+        <div class="p-4">
+          <div class="flex flex-col gap-3">
+            @foreach (duplicateVersions as dup)
+            <div class="py-2.5 px-3 rounded-lg" style="background: var(--bg-muted);">
+              <span class="mono text-sm font-medium">{{ dup.base }}</span>
+              <div class="flex gap-1.5 flex-wrap mt-2">
+                @foreach (dup.versions as v)
+                <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: var(--red-subtle); color: var(--red);">{{ v.version }}</span>
+                @endforeach
+              </div>
+            </div>
+            @endforeach
+          </div>
+        </div>
+      </div>
+    </div>
+    @endif
+  </main>
+
+  <script>
+    function showSection(name) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'))
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
+      document.getElementById('section-' + name).classList.add('active')
+      event.target.classList.add('active')
+    }
+  </script>
+
+</body>
+</html>

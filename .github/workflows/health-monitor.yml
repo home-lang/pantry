@@ -52,12 +52,15 @@ jobs:
         run: |
           SIX_HOURS_AGO=$(date -u -d '6 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
 
+          # Count failures excluding health-monitor itself to avoid self-referential counting
           FAIL_COUNT=$(gh api \
             "repos/${{ github.repository }}/actions/runs?status=failure&created=>=$SIX_HOURS_AGO&per_page=100" \
-            --jq '.total_count' 2>/dev/null || echo "0")
+            --jq '[.workflow_runs[] | select(.name != "Health Monitor")] | length' 2>/dev/null || echo "0")
 
           echo "count=$FAIL_COUNT" >> "$GITHUB_OUTPUT"
-          if [ "$FAIL_COUNT" -gt 15 ]; then
+          # Threshold: update-pantry + update-packages run every 20min each = 36 runs/6h total
+          # Alert only if >50% are failing (sustained breakage, not transient)
+          if [ "$FAIL_COUNT" -gt 30 ]; then
             echo "status=elevated" >> "$GITHUB_OUTPUT"
           else
             echo "status=normal" >> "$GITHUB_OUTPUT"
@@ -71,9 +74,11 @@ jobs:
           STALE_ITEMS=""
           NOW=$(date -u +%s)
 
-          # Check update-pantry — should run every 20min, alert if >2h stale
+          # Check update-pantry — should run every 20min
+          # But only alert if there are NO runs at all (not even failures) in the last 2h.
+          # If the workflow is running but failing, the failure check handles it.
           LAST_PANTRY=$(gh api \
-            "repos/${{ github.repository }}/actions/workflows/update-pantry.yml/runs?status=success&per_page=1" \
+            "repos/${{ github.repository }}/actions/workflows/update-pantry.yml/runs?per_page=1" \
             --jq '.workflow_runs[0].updated_at // empty' 2>/dev/null || echo "")
           if [ -n "$LAST_PANTRY" ] && [ "$LAST_PANTRY" != "null" ]; then
             PANTRY_TS=$(date -u -d "$LAST_PANTRY" +%s 2>/dev/null || echo "")
@@ -85,9 +90,9 @@ jobs:
             fi
           fi
 
-          # Check sync-binaries — runs every 6h, alert if >12h stale
+          # Check sync-binaries — runs every 6h, alert if >12h stale (any run, not just success)
           LAST_SYNC=$(gh api \
-            "repos/${{ github.repository }}/actions/workflows/sync-binaries.yml/runs?status=success&per_page=1" \
+            "repos/${{ github.repository }}/actions/workflows/sync-binaries.yml/runs?per_page=1" \
             --jq '.workflow_runs[0].updated_at // empty' 2>/dev/null || echo "")
           if [ -n "$LAST_SYNC" ] && [ "$LAST_SYNC" != "null" ]; then
             SYNC_TS=$(date -u -d "$LAST_SYNC" +%s 2>/dev/null || echo "")
@@ -137,8 +142,44 @@ jobs:
             echo "healthy=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Send failure alert
+      - name: Rate-limit failure alerts
+        id: ratelimit
         if: steps.overall.outputs.healthy == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Only send unhealthy alerts at most once per 2 hours to avoid alert fatigue.
+          # Check if we already sent an alert recently by looking at recent health-monitor
+          # runs that were successful (meaning they completed, including the alert step).
+          # We use a simple heuristic: check the run annotations/titles for "Health Alert"
+          # by looking at the last few runs' timing.
+          ONE_HOUR_AGO=$(date -u -d '2 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
+
+          # Count recent health monitor runs - if this is the first failure after a healthy
+          # period, always send. Otherwise, only send every 2h.
+          RECENT_HEALTHY=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/health-monitor.yml/runs?created=>=$ONE_HOUR_AGO&per_page=10" \
+            --jq '[.workflow_runs[1:] | .[] | select(.conclusion == "success")] | length' 2>/dev/null || echo "0")
+
+          # If there was a healthy run in the last 2h, this is a new incident — always alert
+          if [ "$RECENT_HEALTHY" -gt 0 ]; then
+            echo "send=true" >> "$GITHUB_OUTPUT"
+            echo "New incident detected (was healthy recently), sending alert"
+          else
+            # Ongoing incident — only alert on the hour mark (minute 0-29 of even hours)
+            HOUR=$(date -u +%-H)
+            MIN=$(date -u +%-M)
+            if [ "$MIN" -lt 30 ] && [ $((HOUR % 2)) -eq 0 ]; then
+              echo "send=true" >> "$GITHUB_OUTPUT"
+              echo "Ongoing incident, sending periodic alert"
+            else
+              echo "send=false" >> "$GITHUB_OUTPUT"
+              echo "Ongoing incident, suppressing duplicate alert (last alert was recent)"
+            fi
+          fi
+
+      - name: Send failure alert
+        if: steps.overall.outputs.healthy == 'false' && steps.ratelimit.outputs.send == 'true'
         uses: ./.github/actions/discord-notify
         with:
           title: Pantry Health Alert

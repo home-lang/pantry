@@ -1,56 +1,131 @@
 <script server>
-  const REGISTRY = 'https://registry.pantry.dev'
+  const path = require('node:path')
+  const fs = require('node:fs')
   const pkgName = name || ''
 
-  const formatNum = (n) => {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
-    return String(n)
+  let projectRoot = process.env.PANTRY_PROJECT_ROOT || process.cwd()
+  let searchDir = projectRoot
+  while (searchDir !== '/') {
+    if (fs.existsSync(path.join(searchDir, 'pantry.lock'))) {
+      projectRoot = searchDir
+      break
+    }
+    searchDir = path.dirname(searchDir)
   }
 
-  // Fetch package data in parallel
-  const [metaRes, statsRes, timelineRes] = await Promise.allSettled([
-    fetch(`${REGISTRY}/binaries/${pkgName}/metadata.json`, { signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : null),
-    fetch(`${REGISTRY}/analytics/${pkgName}`, { signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : null),
-    fetch(`${REGISTRY}/analytics/${pkgName}/timeline?days=30`, { signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : null),
-  ])
+  const lockPath = path.join(projectRoot, 'pantry.lock')
+  let lockData = { workspaces: {}, packages: {} }
+  if (fs.existsSync(lockPath)) {
+    try { lockData = JSON.parse(fs.readFileSync(lockPath, 'utf-8')) } catch {}
+  }
 
-  const meta = metaRes.status === 'fulfilled' ? metaRes.value : null
-  const stats = statsRes.status === 'fulfilled' ? statsRes.value : null
-  const timelineData = timelineRes.status === 'fulfilled' ? timelineRes.value : null
-  const notFound = !meta
+  const allPackages = Object.entries(lockData.packages || {})
+  const workspaces = Object.entries(lockData.workspaces || {})
 
-  const versions = meta ? Object.keys(meta.versions || {}) : []
-  const latestVersion = meta?.latestVersion || versions[0] || 'unknown'
-  const latestData = meta?.versions?.[latestVersion] || {}
-  const platforms = Object.keys(latestData.platforms || {})
-  const versionCount = versions.length
-  const platformCount = platforms.length
+  // Find this package
+  const pkgEntry = allPackages.find(([, v]) => v.name === pkgName)
+  const pkg = pkgEntry ? pkgEntry[1] : null
+  const found = !!pkg
 
-  const totalDownloads = stats?.totalDownloads || 0
-  const weeklyDownloads = stats?.weeklyDownloads || 0
-  const monthlyDownloads = stats?.monthlyDownloads || 0
-  const versionDownloads = stats?.versionDownloads || {}
-
-  const sortedVersionDownloads = Object.entries(versionDownloads).sort((a, b) => Number(b[1]) - Number(a[1]))
-
-  const platformLabels = platforms.map(p => {
-    if (p.includes('darwin') && p.includes('arm64')) return { label: 'macOS (Apple Silicon)', os: 'darwin' }
-    if (p.includes('darwin')) return { label: 'macOS (Intel)', os: 'darwin' }
-    if (p.includes('linux') && (p.includes('arm64') || p.includes('aarch64'))) return { label: 'Linux (ARM64)', os: 'linux' }
-    if (p.includes('linux')) return { label: 'Linux (x86_64)', os: 'linux' }
-    return { label: p, os: '' }
+  // Build reverse dep graph
+  const reverseDepGraph = {}
+  allPackages.forEach(([key, p]) => {
+    Object.keys(p.dependencies || {}).forEach(d => {
+      if (!reverseDepGraph[d]) reverseDepGraph[d] = []
+      reverseDepGraph[d].push(p.name || key)
+    })
   })
 
-  const tl = (timelineData?.timeline || []).map(d => ({
-    date: d.date || '',
-    downloads: d.count || d.downloads || 0,
-  }))
-  const maxDl = tl.length > 0 ? Math.max(...tl.map(d => d.downloads), 1) : 1
-  const bars = tl.map(d => ({
-    ...d,
-    pct: Math.max((d.downloads / maxDl) * 100, 2),
-  }))
+  // Also check workspace deps
+  workspaces.forEach(([wsPath, ws]) => {
+    const wsName = ws.name || wsPath || 'root'
+    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
+    Object.keys(allDeps).forEach(d => {
+      if (!reverseDepGraph[d]) reverseDepGraph[d] = []
+      if (!reverseDepGraph[d].includes(wsName)) reverseDepGraph[d].push(wsName)
+    })
+  })
+
+  const dependencies = pkg ? Object.entries(pkg.dependencies || {}) : []
+  const peerDependencies = pkg ? Object.entries(pkg.peerDependencies || {}) : []
+  const dependents = reverseDepGraph[pkgName] || []
+  const bins = pkg && pkg.bin ? Object.entries(pkg.bin) : []
+  const source = pkg ? pkg.source : 'unknown'
+  const version = pkg ? (pkg.version || '').replace(/^\^|~/, '') : ''
+  const isLinked = (version || '').startsWith('link:')
+
+  // Compute transitive deps
+  function getTransitiveDeps(name, visited) {
+    if (visited.has(name)) return visited
+    visited.add(name)
+    const p = allPackages.find(([, v]) => v.name === name)
+    if (p) {
+      Object.keys(p[1].dependencies || {}).forEach(d => getTransitiveDeps(d, visited))
+    }
+    return visited
+  }
+
+  const transitiveDeps = new Set()
+  if (pkg) {
+    getTransitiveDeps(pkgName, transitiveDeps)
+    transitiveDeps.delete(pkgName)
+  }
+
+  // Compute depth
+  const depths = {}
+  const queue = []
+  workspaces.forEach(([, ws]) => {
+    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
+    Object.keys(allDeps).forEach(d => {
+      if (depths[d] === undefined) { depths[d] = 1; queue.push(d) }
+    })
+  })
+  while (queue.length > 0) {
+    const current = queue.shift()
+    const p = allPackages.find(([, v]) => v.name === current)
+    if (p) {
+      Object.keys(p[1].dependencies || {}).forEach(d => {
+        if (depths[d] === undefined) { depths[d] = depths[current] + 1; queue.push(d) }
+      })
+    }
+  }
+  const depth = depths[pkgName] || 0
+
+  // Build "why installed" path
+  const directDeps = new Set()
+  workspaces.forEach(([, ws]) => {
+    Object.keys({ ...ws.dependencies, ...ws.devDependencies }).forEach(d => directDeps.add(d))
+  })
+
+  const whyPath = []
+  if (!directDeps.has(pkgName)) {
+    const visited = new Set()
+    let current = pkgName
+    whyPath.push(current)
+    while (current && !directDeps.has(current)) {
+      visited.add(current)
+      const parent = (reverseDepGraph[current] || []).find(p => !visited.has(p))
+      if (!parent) break
+      whyPath.unshift(parent)
+      current = parent
+    }
+  }
+
+  // Which workspace(s) pull this in
+  const fromWorkspaces = []
+  workspaces.forEach(([wsPath, ws]) => {
+    const wsName = ws.name || wsPath || 'root'
+    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
+    if (allDeps[pkgName]) {
+      fromWorkspaces.push({
+        name: wsName,
+        isDev: !!(ws.devDependencies && ws.devDependencies[pkgName]),
+        constraint: allDeps[pkgName]
+      })
+    }
+  })
+
+  const projectName = path.basename(projectRoot)
 </script>
 
 <!DOCTYPE html>
@@ -58,229 +133,253 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ pkgName }} - Pantry Inspector</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <title>{{ pkgName }} - {{ projectName }} - Pantry Inspector</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-sans@1/index.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@1/index.min.css" rel="stylesheet" />
   <style>
     :root {
-      --bg: oklch(0.145 0 0); --bg-subtle: oklch(0.178 0 0); --bg-muted: oklch(0.215 0 0);
-      --fg: oklch(0.965 0 0); --fg-muted: oklch(0.72 0 0); --fg-subtle: oklch(0.55 0 0);
-      --border: oklch(0.255 0 0); --border-hover: oklch(0.36 0 0);
-      --accent: oklch(0.72 0.19 250); --accent-subtle: oklch(0.72 0.19 250 / 0.12);
-      --green: oklch(0.72 0.17 155); --green-subtle: oklch(0.72 0.17 155 / 0.12);
-      --amber: oklch(0.80 0.16 80);
-      --bg-elevated: oklch(0.255 0 0);
+      --bg: oklch(0.171 0 0); --bg-subtle: oklch(0.198 0 0); --bg-muted: oklch(0.236 0 0); --bg-elevated: oklch(0.266 0 0);
+      --fg: oklch(0.982 0 0); --fg-muted: oklch(0.749 0 0); --fg-subtle: oklch(0.673 0 0);
+      --border: oklch(0.269 0 0); --border-hover: oklch(0.371 0 0);
+      --accent: oklch(0.787 0.128 230.318); --accent-subtle: oklch(0.787 0.128 230.318 / 0.12);
+      --green: oklch(0.792 0.153 166.95); --green-subtle: oklch(0.792 0.153 166.95 / 0.12);
+      --amber: oklch(0.828 0.165 84.429); --amber-subtle: oklch(0.828 0.165 84.429 / 0.12);
+      --purple: oklch(0.78 0.148 286.067); --purple-subtle: oklch(0.78 0.148 286.067 / 0.12);
+      --red: oklch(0.704 0.177 14.75); --red-subtle: oklch(0.704 0.177 14.75 / 0.12);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
-    body { min-height: 100vh; }
+    html { font-family: 'Geist Variable', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
+    body { min-height: 100vh; line-height: 1.6; }
     a { color: inherit; text-decoration: none; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
+    .mono { font-family: 'Geist Mono Variable', monospace; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    ::selection { background-color: var(--fg-muted); color: var(--bg-subtle); }
+    * { scrollbar-color: var(--border) var(--bg); }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-    .fade-in { animation: fadeIn 0.2s ease-out; }
-    .chart-bar { flex: 1; border-radius: 2px 2px 0 0; min-width: 3px; transition: opacity 0.1s; opacity: 0.6; cursor: crosshair; }
-    .chart-bar:hover { opacity: 1; }
-    .tooltip-trigger { position: relative; }
-    .tooltip-trigger:hover .tooltip { display: block; }
-    .tooltip { display: none; position: absolute; bottom: calc(100% + 0.5rem); left: 50%; transform: translateX(-50%); border-radius: 0.375rem; padding: 0.375rem 0.625rem; font-size: 0.6875rem; white-space: nowrap; z-index: 10; pointer-events: none; background: var(--bg-elevated); border: 1px solid var(--border); }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
   </style>
 </head>
 <body>
 
   <!-- Header -->
-  <header class="sticky top-0 z-50 border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(16px) saturate(1.5);">
-    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+  <header class="sticky top-0 z-50 border-b border-[var(--border)]">
+    <div class="absolute inset-0" style="background: oklch(0.171 0 0 / 0.8); backdrop-filter: blur(12px);"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
       <div class="flex items-center gap-5">
-        <a href="/" class="flex items-center gap-2">
-          <span class="font-bold text-base tracking-tight" style="color: var(--accent);">pantry</span>
-          <span class="font-normal text-base" style="color: var(--fg-subtle);">inspector</span>
+        <a href="/" class="flex items-center gap-1 mono text-lg font-medium" style="color: var(--fg);">
+          <span style="color: var(--accent);">pantry</span>
+          <span class="font-normal text-sm" style="color: var(--fg-subtle);">inspector</span>
         </a>
         <nav class="flex items-center gap-1">
-          <a href="/" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-[var(--border)]" style="color: var(--fg); background: var(--bg-subtle);">
+          <a href="/" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            Packages
+            Grid
           </a>
-          <a href="/analytics" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Analytics
-          </a>
-          <a href="/dependencies" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
+          <a href="/graph" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
-            Dependencies
+            Graph
+          </a>
+          <a href="/report" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Report
           </a>
         </nav>
       </div>
+      <div class="mono text-xs" style="color: var(--fg-subtle);">{{ projectName }}</div>
     </div>
   </header>
 
-  <main class="max-w-6xl mx-auto px-6 pt-8 pb-16 fade-in">
-    <!-- Breadcrumb -->
-    <a href="/" class="text-sm transition-colors mb-5 inline-block" style="color: var(--fg-subtle);" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-subtle)'">&larr; All Packages</a>
-
-    @if (notFound)
-    <div class="text-center py-16">
-      <h1 class="text-2xl font-semibold mb-3">Package not found</h1>
-      <p class="text-base mb-4" style="color: var(--fg-muted);">The package &ldquo;{{ pkgName }}&rdquo; could not be found.</p>
-      <a href="/" class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium border border-[var(--border)] transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">Browse all packages</a>
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-16 fade-in">
+    @if (!found)
+    <div class="rounded-lg p-8 border border-[var(--border)] text-center" style="background: var(--bg-subtle);">
+      <p class="text-lg font-medium mb-2">Package not found</p>
+      <p class="text-sm" style="color: var(--fg-muted);">{{ pkgName }} was not found in the lockfile</p>
+      <a href="/" class="mono inline-flex items-center gap-1.5 px-4 py-2 mt-4 rounded-md text-sm" style="background: var(--accent-subtle); color: var(--accent);">Back to overview</a>
     </div>
-    @endif
-
-    @if (!notFound)
+    @else
     <!-- Package header -->
-    <div class="flex items-start justify-between mb-8">
+    <div class="flex items-start justify-between mb-6">
       <div>
-        <div class="flex items-center gap-3 mb-2">
-          <h1 class="mono text-2xl font-semibold tracking-tight">{{ pkgName }}</h1>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style="background: var(--accent-subtle); color: var(--accent);">{{ latestVersion }}</span>
+        <div class="flex items-center gap-3 mb-1">
+          <h1 class="mono text-xl font-medium tracking-tight">{{ pkgName }}</h1>
+          @if (version)
+          <span class="mono text-sm px-2 py-0.5 rounded" style="background: var(--bg-muted); color: var(--fg-muted);">{{ version }}</span>
+          @endif
+          <span class="mono text-xs px-2 py-0.5 rounded" style="background: {!! source === 'pantry' ? 'var(--green-subtle)' : 'var(--amber-subtle)' !!}; color: {!! source === 'pantry' ? 'var(--green)' : 'var(--amber)' !!};">{{ source }}</span>
+          @if (isLinked)
+          <span class="mono text-xs px-2 py-0.5 rounded" style="background: var(--purple-subtle); color: var(--purple);">linked</span>
+          @endif
         </div>
-        <div class="flex items-center gap-4 text-sm" style="color: var(--fg-muted);">
-          <span>{{ versionCount }} versions</span>
-          <span style="color: var(--border);">&middot;</span>
-          <span>{{ platformCount }} platforms</span>
-        </div>
+        <p class="text-sm" style="color: var(--fg-muted);">Depth {{ depth }} in the dependency tree</p>
       </div>
-      <div class="rounded-xl px-4 py-2.5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <code class="text-sm" style="color: var(--accent);">pantry install {{ pkgName }}</code>
+      <a href="/" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border border-[var(--border)] transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-4 gap-3 mb-6">
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Direct Deps</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ dependencies.length }}</p>
+      </div>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Transitive Deps</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ transitiveDeps.size }}</p>
+      </div>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Used By</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ dependents.length }}</p>
+      </div>
+      <div class="rounded-lg p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="mono text-xs uppercase tracking-wider font-medium mb-1" style="color: var(--fg-subtle);">Depth</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ depth }}</p>
       </div>
     </div>
 
-    <!-- Stats cards -->
-    <div class="grid grid-cols-4 gap-3 mb-8">
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Total Downloads</p>
-        <p class="text-2xl font-semibold mono leading-tight">{{ formatNum(totalDownloads) }}</p>
-      </div>
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Monthly</p>
-        <p class="text-2xl font-semibold mono leading-tight">{{ formatNum(monthlyDownloads) }}</p>
-      </div>
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Weekly</p>
-        <p class="text-2xl font-semibold mono leading-tight">{{ formatNum(weeklyDownloads) }}</p>
-      </div>
-      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Latest</p>
-        <p class="text-lg font-semibold mono leading-tight">{{ latestVersion }}</p>
-      </div>
-    </div>
-
-    <!-- 2-column layout -->
-    <div class="grid gap-6" style="grid-template-columns: 1fr 22rem;">
-      <!-- Left column -->
-      <div class="flex flex-col gap-6">
-        <!-- Download timeline -->
-        @if (bars.length > 0)
-        <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
-          <div class="flex items-center justify-between mb-4">
-            <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Downloads &mdash; Last 30 Days</span>
-            <span class="text-xs" style="color: var(--fg-subtle);">{{ formatNum(bars.reduce((s, b) => s + b.downloads, 0)) }} total</span>
+    <div class="grid grid-cols-3 gap-6">
+      <!-- Main content -->
+      <div class="col-span-2 flex flex-col gap-6">
+        <!-- Why installed -->
+        @if (whyPath.length > 1)
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Why Installed</span>
           </div>
-          <div class="flex items-end gap-0.5" style="height: 7rem;">
-            @foreach (bars as bar)
-            <div class="chart-bar tooltip-trigger" style="height: {!! bar.pct !!}%; background: var(--accent);">
-              <div class="tooltip">{{ bar.date }}: {{ bar.downloads }} downloads</div>
-            </div>
-            @endforeach
-          </div>
-          @if (bars.length > 1)
-          <div class="flex justify-between mt-1.5">
-            <span class="text-xs" style="color: var(--fg-subtle);">{{ bars[0].date }}</span>
-            <span class="text-xs" style="color: var(--fg-subtle);">{{ bars[bars.length - 1].date }}</span>
-          </div>
-          @endif
-        </div>
-        @endif
-
-        <!-- All versions -->
-        @if (versionCount > 0)
-        <div class="rounded-xl border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
-          <div class="px-4 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
-            <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">All Versions</span>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ versionCount }}</span>
-          </div>
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="border-b border-[var(--border)]">
-                <th class="text-left px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Version</th>
-                <th class="text-right px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Downloads</th>
-                <th class="text-right px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @foreach (versions as ver)
-              <tr class="border-b border-[var(--border)]" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
-                <td class="px-3 py-2.5"><span class="mono text-sm">{{ ver }}</span></td>
-                <td class="text-right px-3 py-2.5">
-                  @if (versionDownloads[ver])
-                  <span style="color: var(--fg-muted);">{{ formatNum(Number(versionDownloads[ver])) }}</span>
-                  @else
-                  <span style="color: var(--fg-subtle);">&mdash;</span>
-                  @endif
-                </td>
-                <td class="text-right px-3 py-2.5">
-                  @if (ver === latestVersion)
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--green-subtle); color: var(--green);">latest</span>
-                  @endif
-                </td>
-              </tr>
-              @endforeach
-            </tbody>
-          </table>
-        </div>
-        @endif
-      </div>
-
-      <!-- Right sidebar -->
-      <div class="flex flex-col gap-4">
-        <!-- Install commands -->
-        <div class="rounded-xl p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
-          <p class="text-xs uppercase tracking-wider font-medium mb-2.5" style="color: var(--fg-subtle);">Install</p>
-          <div class="rounded-md px-3 py-2.5 border border-[var(--border)]" style="background: var(--bg);">
-            <code class="text-sm break-all" style="color: var(--accent);">pantry install {{ pkgName }}</code>
-          </div>
-          @if (versionCount > 1)
-          <div class="rounded-md px-3 py-2.5 border border-[var(--border)] mt-1.5" style="background: var(--bg);">
-            <code class="text-sm break-all" style="color: var(--fg-muted);">pantry install {{ pkgName }}@{{ latestVersion }}</code>
-          </div>
-          @endif
-        </div>
-
-        <!-- Platforms -->
-        @if (platformCount > 0)
-        <div class="rounded-xl p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
-          <p class="text-xs uppercase tracking-wider font-medium mb-2.5" style="color: var(--fg-subtle);">Platforms</p>
-          <div class="flex flex-col gap-1.5">
-            @foreach (platformLabels as pl)
-            <div class="flex items-center gap-2 rounded-md px-2 py-1.5" style="background: var(--bg);">
-              @if (pl.os === 'darwin')
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: var(--fg-muted);"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83"/><path d="M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11"/></svg>
-              @else
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: var(--amber);"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a.424.424 0 00-.11.135c-.26.268-.45.6-.663.839-.199.199-.485.267-.797.4-.313.136-.658.269-.864.68-.09.189-.136.394-.132.602 0 .199.027.4.055.536.058.399.116.728.04.97-.249.68-.28 1.145-.106 1.484.174.334.535.47.94.601.81.2 1.91.135 2.774.6.926.466 1.866.67 2.616.47.526-.116.97-.464 1.208-.946.587-.003 1.23-.269 2.26-.334.699-.04 1.241.027 1.903.09.04.01.084.01.12.01.221 0 .436-.027.647-.082.58.547 1.234.629 1.882.398.595-.21 1.1-.694 1.353-1.282.06-.135.098-.284.12-.433.646-.04.973-.404 1.168-.89.09-.185.138-.388.138-.6 0-.07-.007-.14-.022-.21.3-.545.202-1.17-.11-1.726-.318-.573-.77-1.053-1.055-1.317-.31-.297-.543-.554-.67-.829-.137-.3-.177-.665-.127-1.06.047-.38.054-.82-.02-1.34-.074-.522-.178-1.071-.324-1.641-.29-1.13-.714-2.32-1.286-3.4-.55-1.046-1.3-1.97-2.23-2.7a.417.417 0 00-.186-.117C14.238.458 13.39.002 12.504 0z"/></svg>
+          <div class="p-4">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              @for (let i = 0; i < whyPath.length; i++)
+              @if (i > 0)
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--fg-subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               @endif
-              <span class="text-sm" style="color: var(--fg-muted);">{{ pl.label }}</span>
+              <a href="/package/{{ whyPath[i] }}" class="mono text-xs px-2 py-1 rounded transition-colors" style="background: {!! whyPath[i] === pkgName ? 'var(--accent-subtle)' : 'var(--bg-muted)' !!}; color: {!! whyPath[i] === pkgName ? 'var(--accent)' : 'var(--fg-muted)' !!};">{{ whyPath[i] }}</a>
+              @endfor
             </div>
-            @endforeach
           </div>
         </div>
         @endif
 
-        <!-- Top versions by downloads -->
-        @if (sortedVersionDownloads.length > 0)
-        <div class="rounded-xl p-4 border border-[var(--border)]" style="background: var(--bg-subtle);">
-          <p class="text-xs uppercase tracking-wider font-medium mb-2.5" style="color: var(--fg-subtle);">Top Versions by Downloads</p>
-          <div class="flex flex-col gap-2">
-            @for (let i = 0; i < Math.min(sortedVersionDownloads.length, 5); i++)
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <span class="mono" style="color: var(--fg-muted);">{{ sortedVersionDownloads[i][0] }}</span>
-                <span style="color: var(--fg-subtle);">{{ formatNum(Number(sortedVersionDownloads[i][1])) }}</span>
+        <!-- From workspaces -->
+        @if (fromWorkspaces.length > 0)
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Referenced By Workspaces</span>
+          </div>
+          <div class="p-4">
+            <div class="flex flex-col gap-2">
+              @foreach (fromWorkspaces as ws)
+              <div class="flex items-center justify-between py-2 px-3 rounded-lg" style="background: var(--bg-muted);">
+                <span class="mono text-sm">{{ ws.name }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="mono text-xs" style="color: var(--fg-subtle);">{{ ws.constraint }}</span>
+                  <span class="mono text-xs px-1.5 py-0.5 rounded" style="background: {!! ws.isDev ? 'var(--amber-subtle)' : 'var(--green-subtle)' !!}; color: {!! ws.isDev ? 'var(--amber)' : 'var(--green)' !!};">{!! ws.isDev ? 'dev' : 'prod' !!}</span>
+                </div>
               </div>
-              <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--bg-muted);">
-                <div class="h-full rounded-full" style="width: {!! totalDownloads > 0 ? Math.round(Number(sortedVersionDownloads[i][1]) / totalDownloads * 100) : 0 !!}%; background: var(--accent);"></div>
-              </div>
+              @endforeach
             </div>
-            @endfor
+          </div>
+        </div>
+        @endif
+
+        <!-- Dependencies -->
+        @if (dependencies.length > 0)
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Dependencies</span>
+            <span class="mono text-xs ml-2 px-1.5 py-0.5 rounded" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ dependencies.length }}</span>
+          </div>
+          <div class="p-4">
+            <div class="flex flex-col gap-1.5">
+              @foreach (dependencies as dep)
+              <a href="/package/{{ dep[0] }}" class="flex items-center justify-between py-1.5 px-3 rounded-md transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.background='var(--bg-muted)';this.style.color='var(--accent)'" onmouseout="this.style.background='transparent';this.style.color='var(--fg-muted)'">
+                <span class="mono text-sm">{{ dep[0] }}</span>
+                <span class="mono text-xs" style="color: var(--fg-subtle);">{{ dep[1] }}</span>
+              </a>
+              @endforeach
+            </div>
+          </div>
+        </div>
+        @endif
+
+        <!-- Peer dependencies -->
+        @if (peerDependencies.length > 0)
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Peer Dependencies</span>
+            <span class="mono text-xs ml-2 px-1.5 py-0.5 rounded" style="background: var(--amber-subtle); color: var(--amber);">{{ peerDependencies.length }}</span>
+          </div>
+          <div class="p-4">
+            <div class="flex flex-col gap-1.5">
+              @foreach (peerDependencies as dep)
+              <a href="/package/{{ dep[0] }}" class="flex items-center justify-between py-1.5 px-3 rounded-md transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.background='var(--bg-muted)';this.style.color='var(--accent)'" onmouseout="this.style.background='transparent';this.style.color='var(--fg-muted)'">
+                <span class="mono text-sm">{{ dep[0] }}</span>
+                <span class="mono text-xs" style="color: var(--fg-subtle);">{{ dep[1] }}</span>
+              </a>
+              @endforeach
+            </div>
+          </div>
+        </div>
+        @endif
+      </div>
+
+      <!-- Sidebar -->
+      <div class="flex flex-col gap-4">
+        <!-- Used by -->
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Used By</span>
+            <span class="mono text-xs ml-2 px-1.5 py-0.5 rounded" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ dependents.length }}</span>
+          </div>
+          <div class="p-3">
+            @if (dependents.length > 0)
+            <div class="flex flex-col gap-1">
+              @foreach (dependents as dep)
+              <a href="/package/{{ dep }}" class="mono text-xs py-1 px-2 rounded-md transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.background='var(--bg-muted)';this.style.color='var(--accent)'" onmouseout="this.style.background='transparent';this.style.color='var(--fg-muted)'">{{ dep }}</a>
+              @endforeach
+            </div>
+            @else
+            <p class="text-xs py-2 text-center" style="color: var(--fg-subtle);">Not used by any other package</p>
+            @endif
+          </div>
+        </div>
+
+        <!-- Binaries -->
+        @if (bins.length > 0)
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Binaries</span>
+          </div>
+          <div class="p-3">
+            <div class="flex flex-col gap-1.5">
+              @foreach (bins as bin)
+              <div class="flex items-center justify-between py-1 px-2 rounded-md" style="background: var(--bg-muted);">
+                <span class="mono text-xs" style="color: var(--accent);">{{ bin[0] }}</span>
+                <span class="mono text-xs truncate ml-2" style="color: var(--fg-subtle); max-width: 140px;">{{ bin[1] }}</span>
+              </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+        @endif
+
+        <!-- Transitive tree -->
+        @if (transitiveDeps.size > 0)
+        <div class="rounded-lg border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+          <div class="px-4 py-3 border-b border-[var(--border)]">
+            <span class="mono text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">All Transitive Deps</span>
+            <span class="mono text-xs ml-2 px-1.5 py-0.5 rounded" style="background: var(--purple-subtle); color: var(--purple);">{{ transitiveDeps.size }}</span>
+          </div>
+          <div class="p-3 overflow-y-auto" style="max-height: 20rem;">
+            <div class="flex flex-col gap-0.5">
+              @foreach (Array.from(transitiveDeps).sort() as dep)
+              <a href="/package/{{ dep }}" class="mono text-xs py-0.5 px-2 rounded-md transition-colors" style="color: var(--fg-subtle);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg-subtle)'">{{ dep }}</a>
+              @endforeach
+            </div>
           </div>
         </div>
         @endif

@@ -1,0 +1,373 @@
+<script server>
+  const path = require('node:path')
+  const fs = require('node:fs')
+
+  let projectRoot = process.env.PANTRY_PROJECT_ROOT || process.cwd()
+  let searchDir = projectRoot
+  while (searchDir !== '/') {
+    if (fs.existsSync(path.join(searchDir, 'pantry.lock'))) {
+      projectRoot = searchDir
+      break
+    }
+    searchDir = path.dirname(searchDir)
+  }
+
+  const lockPath = path.join(projectRoot, 'pantry.lock')
+  let lockData = { workspaces: {}, packages: {} }
+  if (fs.existsSync(lockPath)) {
+    try { lockData = JSON.parse(fs.readFileSync(lockPath, 'utf-8')) } catch {}
+  }
+
+  const workspaces = Object.entries(lockData.workspaces || {})
+  const allPackages = Object.entries(lockData.packages || {})
+
+  // Build nodes and edges for the dependency graph
+  const nodes = []
+  const edges = []
+  const nodeSet = new Set()
+
+  // Add workspace nodes
+  workspaces.forEach(([wsPath, ws]) => {
+    const name = ws.name || wsPath || 'root'
+    if (!nodeSet.has(name)) {
+      nodeSet.add(name)
+      nodes.push({ id: name, type: 'workspace', depCount: Object.keys({ ...ws.dependencies, ...ws.devDependencies }).length })
+    }
+    const allDeps = { ...ws.dependencies, ...ws.devDependencies }
+    Object.keys(allDeps).forEach(dep => {
+      edges.push({ from: name, to: dep, type: ws.devDependencies && ws.devDependencies[dep] ? 'dev' : 'prod' })
+    })
+  })
+
+  // Add package nodes
+  allPackages.forEach(([key, pkg]) => {
+    const name = pkg.name || key
+    if (!nodeSet.has(name)) {
+      nodeSet.add(name)
+      nodes.push({ id: name, type: pkg.source || 'unknown', depCount: Object.keys(pkg.dependencies || {}).length })
+    }
+    Object.keys(pkg.dependencies || {}).forEach(dep => {
+      edges.push({ from: name, to: dep, type: 'prod' })
+      if (!nodeSet.has(dep)) {
+        nodeSet.add(dep)
+        nodes.push({ id: dep, type: 'unknown', depCount: 0 })
+      }
+    })
+  })
+
+  // Compute in-degree for sizing
+  const inDegree = {}
+  edges.forEach(e => { inDegree[e.to] = (inDegree[e.to] || 0) + 1 })
+  nodes.forEach(n => { n.inDegree = inDegree[n.id] || 0 })
+
+  const projectName = path.basename(projectRoot)
+  const nodesJSON = JSON.stringify(nodes)
+  const edgesJSON = JSON.stringify(edges)
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Graph - {{ projectName }} - Pantry Inspector</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-sans@1/index.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/@fontsource-variable/geist-mono@1/index.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: oklch(0.171 0 0); --bg-subtle: oklch(0.198 0 0); --bg-muted: oklch(0.236 0 0); --bg-elevated: oklch(0.266 0 0);
+      --fg: oklch(0.982 0 0); --fg-muted: oklch(0.749 0 0); --fg-subtle: oklch(0.673 0 0);
+      --border: oklch(0.269 0 0); --border-hover: oklch(0.371 0 0);
+      --accent: oklch(0.787 0.128 230.318); --accent-subtle: oklch(0.787 0.128 230.318 / 0.12);
+      --green: oklch(0.792 0.153 166.95); --amber: oklch(0.828 0.165 84.429); --purple: oklch(0.78 0.148 286.067);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: 'Geist Variable', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
+    body { min-height: 100vh; line-height: 1.6; overflow: hidden; }
+    a { color: inherit; text-decoration: none; }
+    .mono { font-family: 'Geist Mono Variable', monospace; }
+    canvas { display: block; }
+    #tooltip { position: fixed; pointer-events: none; padding: 8px 12px; border-radius: 8px; font-family: 'Geist Mono Variable', monospace; font-size: 12px; background: var(--bg-elevated); border: 1px solid var(--border); color: var(--fg); opacity: 0; transition: opacity 0.15s; z-index: 100; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-[var(--border)]">
+    <div class="absolute inset-0" style="background: oklch(0.171 0 0 / 0.8); backdrop-filter: blur(12px);"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
+      <div class="flex items-center gap-5">
+        <a href="/" class="flex items-center gap-1 mono text-lg font-medium" style="color: var(--fg);">
+          <span style="color: var(--accent);">pantry</span>
+          <span class="font-normal text-sm" style="color: var(--fg-subtle);">inspector</span>
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="/" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Grid
+          </a>
+          <a href="/graph" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-[var(--border)] transition-colors" style="color: var(--fg); background: var(--bg-subtle);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+            Graph
+          </a>
+          <a href="/report" class="mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-transparent transition-colors" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Report
+          </a>
+        </nav>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex gap-1.5">
+          <button class="mono inline-flex items-center px-2 py-1 rounded text-xs border border-[var(--border)] cursor-pointer" style="background: var(--bg-subtle); color: var(--fg-muted);" onclick="resetView()" title="Reset view">Reset</button>
+        </div>
+        <div class="mono text-xs" style="color: var(--fg-subtle);">{{ nodes.length }} nodes / {{ edges.length }} edges</div>
+      </div>
+    </div>
+  </header>
+
+  <canvas id="graphCanvas"></canvas>
+  <div id="tooltip"></div>
+
+  <script>
+    const nodes = {{{ nodesJSON }}}
+    const edges = {{{ edgesJSON }}}
+
+    const canvas = document.getElementById('graphCanvas')
+    const ctx = canvas.getContext('2d')
+    const tooltip = document.getElementById('tooltip')
+
+    let width, height
+    let offsetX = 0, offsetY = 0, scale = 1
+    let dragging = false, dragStartX, dragStartY
+    let hoveredNode = null
+    let animFrame
+
+    // Color palette matching CSS vars
+    const colors = {
+      workspace: '#8ec8f6',
+      pantry: '#78d5b3',
+      npm: '#d4a845',
+      unknown: '#a78bda',
+      edge: 'rgba(255,255,255,0.06)',
+      edgeHighlight: 'rgba(142, 200, 246, 0.4)',
+      edgeDev: 'rgba(255,255,255,0.03)',
+    }
+
+    function resize() {
+      width = window.innerWidth
+      height = window.innerHeight - 56
+      canvas.width = width * devicePixelRatio
+      canvas.height = height * devicePixelRatio
+      canvas.style.width = width + 'px'
+      canvas.style.height = height + 'px'
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
+    }
+
+    // Force-directed layout
+    function initLayout() {
+      const nodeMap = {}
+      nodes.forEach((n, i) => {
+        const angle = (i / nodes.length) * Math.PI * 2
+        const r = 200 + Math.random() * 300
+        n.x = width / 2 + Math.cos(angle) * r
+        n.y = height / 2 + Math.sin(angle) * r
+        n.vx = 0
+        n.vy = 0
+        n.radius = Math.max(3, Math.min(14, 4 + n.inDegree * 1.5))
+        nodeMap[n.id] = n
+      })
+
+      // Run simulation
+      const iterations = 120
+      for (let iter = 0; iter < iterations; iter++) {
+        const alpha = 1 - iter / iterations
+
+        // Repulsion
+        for (let i = 0; i < nodes.length; i++) {
+          for (let j = i + 1; j < nodes.length; j++) {
+            let dx = nodes[j].x - nodes[i].x
+            let dy = nodes[j].y - nodes[i].y
+            let dist = Math.sqrt(dx * dx + dy * dy) || 1
+            let force = (800 * alpha) / (dist * dist)
+            let fx = dx / dist * force
+            let fy = dy / dist * force
+            nodes[i].vx -= fx
+            nodes[i].vy -= fy
+            nodes[j].vx += fx
+            nodes[j].vy += fy
+          }
+        }
+
+        // Attraction (edges)
+        edges.forEach(e => {
+          const a = nodeMap[e.from]
+          const b = nodeMap[e.to]
+          if (!a || !b) return
+          let dx = b.x - a.x
+          let dy = b.y - a.y
+          let dist = Math.sqrt(dx * dx + dy * dy) || 1
+          let force = (dist - 80) * 0.005 * alpha
+          let fx = dx / dist * force
+          let fy = dy / dist * force
+          a.vx += fx
+          a.vy += fy
+          b.vx -= fx
+          b.vy -= fy
+        })
+
+        // Center gravity
+        nodes.forEach(n => {
+          n.vx += (width / 2 - n.x) * 0.001 * alpha
+          n.vy += (height / 2 - n.y) * 0.001 * alpha
+          n.x += n.vx * 0.8
+          n.y += n.vy * 0.8
+          n.vx *= 0.9
+          n.vy *= 0.9
+        })
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height)
+      ctx.save()
+      ctx.translate(offsetX, offsetY)
+      ctx.scale(scale, scale)
+
+      const nodeMap = {}
+      nodes.forEach(n => { nodeMap[n.id] = n })
+
+      // Draw edges
+      edges.forEach(e => {
+        const a = nodeMap[e.from]
+        const b = nodeMap[e.to]
+        if (!a || !b) return
+        const isHighlighted = hoveredNode && (hoveredNode.id === e.from || hoveredNode.id === e.to)
+        ctx.beginPath()
+        ctx.moveTo(a.x, a.y)
+        ctx.lineTo(b.x, b.y)
+        ctx.strokeStyle = isHighlighted ? colors.edgeHighlight : (e.type === 'dev' ? colors.edgeDev : colors.edge)
+        ctx.lineWidth = isHighlighted ? 1.5 : 0.5
+        ctx.stroke()
+      })
+
+      // Draw nodes
+      nodes.forEach(n => {
+        const isHovered = hoveredNode && hoveredNode.id === n.id
+        const isConnected = hoveredNode && edges.some(e => (e.from === hoveredNode.id && e.to === n.id) || (e.to === hoveredNode.id && e.from === n.id))
+        const dimmed = hoveredNode && !isHovered && !isConnected
+
+        ctx.beginPath()
+        ctx.arc(n.x, n.y, n.radius * (isHovered ? 1.3 : 1), 0, Math.PI * 2)
+        ctx.fillStyle = dimmed ? 'rgba(255,255,255,0.08)' : (colors[n.type] || colors.unknown)
+        ctx.globalAlpha = dimmed ? 0.3 : 1
+        ctx.fill()
+        ctx.globalAlpha = 1
+
+        // Labels for workspace nodes or hovered
+        if (n.type === 'workspace' || isHovered || (isConnected && scale > 0.7)) {
+          ctx.font = `${isHovered ? 11 : 10}px 'Geist Mono Variable', monospace`
+          ctx.fillStyle = dimmed ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.85)'
+          ctx.textAlign = 'center'
+          ctx.fillText(n.id, n.x, n.y - n.radius - 4)
+        }
+      })
+
+      ctx.restore()
+    }
+
+    function getNodeAt(mx, my) {
+      const sx = (mx - offsetX) / scale
+      const sy = (my - offsetY) / scale
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const n = nodes[i]
+        const dx = n.x - sx
+        const dy = n.y - sy
+        if (dx * dx + dy * dy < (n.radius + 4) * (n.radius + 4)) return n
+      }
+      return null
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect()
+      const mx = e.clientX - rect.left
+      const my = e.clientY - rect.top
+
+      if (dragging) {
+        offsetX += e.clientX - dragStartX
+        offsetY += e.clientY - dragStartY
+        dragStartX = e.clientX
+        dragStartY = e.clientY
+        draw()
+        return
+      }
+
+      const node = getNodeAt(mx, my)
+      if (node !== hoveredNode) {
+        hoveredNode = node
+        draw()
+        if (node) {
+          const deps = edges.filter(e => e.from === node.id).length
+          const dependents = edges.filter(e => e.to === node.id).length
+          tooltip.innerHTML = `<strong>${node.id}</strong><br><span style="color:${colors[node.type]}">${node.type}</span> &middot; ${deps} deps &middot; ${dependents} dependents`
+          tooltip.style.opacity = '1'
+          tooltip.style.left = (e.clientX + 12) + 'px'
+          tooltip.style.top = (e.clientY + 12) + 'px'
+        } else {
+          tooltip.style.opacity = '0'
+        }
+      } else if (node) {
+        tooltip.style.left = (e.clientX + 12) + 'px'
+        tooltip.style.top = (e.clientY + 12) + 'px'
+      }
+    })
+
+    canvas.addEventListener('mousedown', e => {
+      dragging = true
+      dragStartX = e.clientX
+      dragStartY = e.clientY
+      canvas.style.cursor = 'grabbing'
+    })
+
+    canvas.addEventListener('mouseup', () => {
+      dragging = false
+      canvas.style.cursor = 'default'
+    })
+
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault()
+      const rect = canvas.getBoundingClientRect()
+      const mx = e.clientX - rect.left
+      const my = e.clientY - rect.top
+      const zoom = e.deltaY > 0 ? 0.9 : 1.1
+      const newScale = Math.max(0.1, Math.min(5, scale * zoom))
+      offsetX = mx - (mx - offsetX) * (newScale / scale)
+      offsetY = my - (my - offsetY) * (newScale / scale)
+      scale = newScale
+      draw()
+    }, { passive: false })
+
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect()
+      const node = getNodeAt(e.clientX - rect.left, e.clientY - rect.top)
+      if (node) {
+        window.location.href = '/package/' + node.id
+      }
+    })
+
+    function resetView() {
+      offsetX = 0
+      offsetY = 0
+      scale = 1
+      draw()
+    }
+
+    window.addEventListener('resize', () => { resize(); draw() })
+
+    resize()
+    initLayout()
+    draw()
+  </script>
+
+</body>
+</html>

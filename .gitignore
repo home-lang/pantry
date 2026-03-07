@@ -30,3 +30,4 @@ packages/pantry/test/clean-integration-*
 packages/zig/dump.rdb
 packages/ts-pantry/bin/ts-pantry
 github-rate-limit.json
+/packages/inspector/.stx
