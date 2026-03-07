@@ -1,0 +1,71 @@
+<script server>
+  const count = (results || []).length
+  const hasResults = count > 0
+  const hasQuery = (query || '').length > 0
+</script>
+
+<section style="padding: 3rem 1.5rem 5rem;">
+  <div class="container" style="max-width: 48rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+      <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em;">search</h1>
+    </div>
+
+    <!-- Search form -->
+    <form action="/search" method="get" style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
+      <input
+        type="text"
+        name="q"
+        value="{{ query }}"
+        placeholder="search packages..."
+        autofocus
+        aria-label="Search packages"
+        style="flex: 1; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem 1rem; color: var(--fg); font-size: 0.9375rem; outline: none; transition: border-color 0.2s;"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+      />
+      <button type="submit" style="background: var(--accent); color: var(--bg); border: none; border-radius: 0.5rem; padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+        search
+      </button>
+    </form>
+
+    @if (!hasQuery)
+    <p style="color: var(--fg-subtle); font-size: 0.875rem; text-align: center; padding: 3rem 0;">Start typing to search packages</p>
+    @endif
+
+    @if (hasQuery && !hasResults)
+    <div style="text-align: center; padding: 3rem 0;">
+      <p style="color: var(--fg-muted); font-size: 0.9375rem; margin-bottom: 0.5rem;">No packages found for &ldquo;{{ query }}&rdquo;</p>
+      <p style="color: var(--fg-subtle); font-size: 0.8125rem;">Try a different search term or browse popular packages on the <a href="/" style="color: var(--accent);">homepage</a>.</p>
+    </div>
+    @endif
+
+    @if (hasResults)
+    <!-- Results count -->
+    <p style="font-size: 0.75rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;" role="status" aria-live="polite">
+      @if (count === 1)
+      Found 1 package
+      @else
+      Found {{ count }} packages
+      @endif
+    </p>
+
+    <!-- Results list -->
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      @foreach (results as result)
+      <a href="/package/{{ result.name }}" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem 1.25rem; transition: border-color 0.15s, background 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-muted)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-subtle)'">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 500;">{{ result.name }}</span>
+          @if (result.version)
+          <span style="font-size: 0.6875rem; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace;">{{ result.version }}</span>
+          @endif
+        </div>
+        @if (result.description)
+        <p style="font-size: 0.8125rem; color: var(--fg-muted); margin: 0;">{{ result.description }}</p>
+        @endif
+      </a>
+      @endforeach
+    </div>
+    @endif
+  </div>
+</section>

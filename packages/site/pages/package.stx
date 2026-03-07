@@ -1,0 +1,121 @@
+<script server>
+  const versionCount = (versions || []).length
+  const platformCount = (platforms || []).length
+  const totalDownloads = (stats || {}).totalDownloads || 0
+
+  const formatNumber = (n) => {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
+    return String(n)
+  }
+
+  const formattedDownloads = formatNumber(totalDownloads)
+
+  const platformLabels = (platforms || []).map(p => {
+    if (p.includes('darwin-arm64')) return 'macOS (Apple Silicon)'
+    if (p.includes('darwin-x86-64') || p.includes('darwin-x64')) return 'macOS (Intel)'
+    if (p.includes('linux-arm64') || p.includes('linux-aarch64')) return 'Linux (ARM64)'
+    if (p.includes('linux-x86-64') || p.includes('linux-x64')) return 'Linux (x86_64)'
+    return p
+  })
+
+  const tl = timeline || []
+  const maxDownloads = tl.length > 0 ? Math.max(...tl.map(d => d.downloads || 0), 1) : 1
+  const timelineBars = tl.map(d => ({
+    date: d.date || '',
+    downloads: d.downloads || 0,
+    heightPct: Math.max(((d.downloads || 0) / maxDownloads) * 100, 2),
+  }))
+</script>
+
+<section style="padding: 3rem 1.5rem 5rem;">
+  <div class="container" style="max-width: 48rem;">
+    <!-- Back link -->
+    <a href="/" style="display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--fg-subtle); margin-bottom: 1.5rem; transition: color 0.15s;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-subtle)'">&larr; back</a>
+
+    @if (notFound)
+    <div style="text-align: center; padding: 4rem 0;">
+      <h1 style="font-size: 1.75rem; font-weight: 600; margin-bottom: 0.75rem;">Package not found</h1>
+      <p style="color: var(--fg-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">The package &ldquo;{{ name }}&rdquo; could not be found in the registry.</p>
+      <a href="/" style="color: var(--accent); font-size: 0.875rem;">Browse all packages</a>
+    </div>
+    @endif
+
+    @if (!notFound)
+    <!-- Package header -->
+    <div style="margin-bottom: 2rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; font-family: 'JetBrains Mono', monospace;">{{ name }}</h1>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; font-size: 0.8125rem; color: var(--fg-muted);">
+        <span style="background: var(--bg-muted); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">{{ latestVersion }}</span>
+        <span>{{ versionCount }} versions</span>
+        <span>{{ platformCount }} platforms</span>
+      </div>
+    </div>
+
+    <!-- Install command -->
+    <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem 1.25rem; margin-bottom: 2rem;">
+      <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.5rem;">Install</p>
+      <code style="font-size: 0.875rem; color: var(--accent);">pantry install {{ name }}</code>
+    </div>
+
+    <!-- Stats cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin-bottom: 2rem;">
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
+        <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.25rem;">Downloads</p>
+        <p style="font-size: 1.5rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">{{ formattedDownloads }}</p>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
+        <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.25rem;">Latest</p>
+        <p style="font-size: 1.5rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">{{ latestVersion }}</p>
+      </div>
+      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
+        <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.25rem;">Versions</p>
+        <p style="font-size: 1.5rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">{{ versionCount }}</p>
+      </div>
+    </div>
+
+    <!-- Platforms -->
+    @if (platformCount > 0)
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Platforms</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+        @foreach (platformLabels as label)
+        <span style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 0.75rem; font-size: 0.8125rem; color: var(--fg-muted);">{{ label }}</span>
+        @endforeach
+      </div>
+    </div>
+    @endif
+
+    <!-- Versions list -->
+    @if (versionCount > 0)
+    <div style="margin-bottom: 2rem;">
+      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">All Versions</h2>
+      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+        @foreach (versions as ver)
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: 0.375rem; transition: background 0.1s;" onmouseover="this.style.background='var(--bg-subtle)'" onmouseout="this.style.background='transparent'">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">{{ ver }}</span>
+          @if (ver === latestVersion)
+          <span style="font-size: 0.6875rem; color: var(--accent); background: color-mix(in oklch, var(--accent), transparent 85%); padding: 0.125rem 0.5rem; border-radius: 9999px;">latest</span>
+          @endif
+        </div>
+        @endforeach
+      </div>
+    </div>
+    @endif
+
+    <!-- Download timeline -->
+    @if (timelineBars.length > 0)
+    <div>
+      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Downloads (Last 30 Days)</h2>
+      <div style="display: flex; align-items: flex-end; gap: 2px; height: 6rem; padding: 0.5rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem;">
+        @foreach (timelineBars as bar)
+        <div style="flex: 1; background: var(--accent); border-radius: 2px 2px 0 0; height: {!! bar.heightPct !!}%; opacity: 0.7; transition: opacity 0.15s;" title="{{ bar.date }}: {{ bar.downloads }} downloads" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"></div>
+        @endforeach
+      </div>
+    </div>
+    @endif
+    @endif
+  </div>
+</section>

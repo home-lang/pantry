@@ -45,6 +45,17 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/site": {
+      "name": "@stacksjs/pantry-site",
+      "version": "0.1.0",
+      "dependencies": {
+        "@stacksjs/stx": "link:@stacksjs/stx",
+      },
+      "devDependencies": {
+        "bun-types": "latest",
+        "typescript": "^5.7.0",
+      },
+    },
     "packages/ts-pantry": {
       "name": "ts-pantry",
       "version": "0.8.3",
@@ -113,7 +124,11 @@
 
     "@stacksjs/logsmith": ["@stacksjs/logsmith@0.2.1", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.6", "pickier": "^0.1.7" }, "bin": { "logsmith": "dist/bin/cli.js", "@stacksjs/logsmith": "dist/bin/cli.js" } }, "sha512-JbAnn0dWZDEBjks7qRd/L0kWbsD3Qi0uSFmCPkEU9fH0+eP6Fdl7mtnok2oVDUaNitWu97OJZHlFe/MV2ilgnA=="],
 
+    "@stacksjs/pantry-site": ["@stacksjs/pantry-site@workspace:packages/site"],
+
     "@stacksjs/registry": ["@stacksjs/registry@workspace:packages/registry"],
+
+    "@stacksjs/stx": ["@stacksjs/stx@link:@stacksjs/stx", { "bin": { "stx": "./dist/cli.js" } }],
 
     "@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.1.11", "", { "dependencies": { "fast-xml-parser": "^5.3.5", "ts-cloud-aws-types": "0.1.11", "ts-cloud-core": "0.1.11", "ts-cloud-types": "0.1.11" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-WgKwgRdxV4cAXJjc6l7/xFgIFriijErBEbyPn+Hd6aNRhFxu6cJ9OeEkT3p3YvEOc9Pt8DL5SO1RhXcq8otphw=="],
 

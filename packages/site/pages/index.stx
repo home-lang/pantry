@@ -1,0 +1,88 @@
+<script server>
+  const pkgCount = totalPackages || 0
+  const pkgs = packages || []
+</script>
+
+<!-- Hero -->
+<section style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 3.5rem - 6rem); padding: 4rem 1.5rem; text-align: center;">
+  <div style="max-width: 48rem;">
+    <h1 style="font-size: clamp(3rem, 8vw, 5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 1rem;">
+      <span style="color: var(--accent);">pantry</span>
+    </h1>
+    <p style="font-size: clamp(1rem, 2.5vw, 1.25rem); color: var(--fg-muted); max-width: 36rem; margin: 0 auto 2.5rem;">
+      a fast, modern package manager for your system
+    </p>
+
+    <!-- Search -->
+    <form action="/search" method="get" style="display: flex; gap: 0.5rem; max-width: 28rem; margin: 0 auto 1.5rem;">
+      <input
+        type="text"
+        name="q"
+        placeholder="search packages..."
+        autofocus
+        aria-label="Search packages"
+        style="flex: 1; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem 1rem; color: var(--fg); font-size: 0.9375rem; outline: none; transition: border-color 0.2s;"
+        onfocus="this.style.borderColor='var(--accent)'"
+        onblur="this.style.borderColor='var(--border)'"
+      />
+      <button type="submit" style="background: var(--accent); color: var(--bg); border: none; border-radius: 0.5rem; padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+        search
+      </button>
+    </form>
+
+    <!-- Install hint -->
+    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 3rem;">
+      <code style="font-size: 0.8125rem; color: var(--fg-subtle); background: var(--bg-subtle); padding: 0.375rem 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border);">curl -fsSL https://get.pantry.dev | sh</code>
+    </div>
+  </div>
+</section>
+
+<!-- Featured packages -->
+<section style="padding: 0 1.5rem 4rem;">
+  <div class="container">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500;">Popular Packages</h2>
+      @if (pkgCount > 0)
+      <span style="font-size: 0.75rem; color: var(--fg-subtle);">{{ pkgCount }} packages available</span>
+      @endif
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.75rem;">
+      @foreach (pkgs as pkg)
+      <a href="/package/{{ pkg.domain }}" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem 1.25rem; transition: border-color 0.15s, background 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-muted)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-subtle)'">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.375rem;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 500;">{{ pkg.label }}</span>
+          @if (pkg.version)
+          <span style="font-size: 0.6875rem; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace;">{{ pkg.version }}</span>
+          @endif
+        </div>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted); margin: 0;">{{ pkg.desc }}</p>
+        @if (pkg.versionCount > 0)
+        <p style="font-size: 0.6875rem; color: var(--fg-subtle); margin-top: 0.375rem;">{{ pkg.versionCount }} versions</p>
+        @endif
+      </a>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- Get involved -->
+<section style="padding: 0 1.5rem 5rem;">
+  <div class="container">
+    <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1.5rem;">Get Involved</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.75rem;">
+      <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
+        <h3 style="font-size: 0.9375rem; font-weight: 500; margin-bottom: 0.375rem;">Contribute</h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Help improve pantry on GitHub</p>
+      </a>
+      <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
+        <h3 style="font-size: 0.9375rem; font-weight: 500; margin-bottom: 0.375rem;">Chat</h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Join the community on Discord</p>
+      </a>
+      <a href="https://bsky.app/profile/stacksjs.org" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
+        <h3 style="font-size: 0.9375rem; font-weight: 500; margin-bottom: 0.375rem;">Follow</h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Follow updates on Bluesky</p>
+      </a>
+    </div>
+  </div>
+</section>

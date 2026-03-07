@@ -1,0 +1,19 @@
+{
+  "name": "@stacksjs/pantry-site",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "pantry.dev — A fast, modern package manager for your system",
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "start": "bun run src/server.ts",
+    "typecheck": "bun --bun tsc --noEmit"
+  },
+  "dependencies": {
+    "@stacksjs/stx": "link:@stacksjs/stx"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.7.0"
+  }
+}
