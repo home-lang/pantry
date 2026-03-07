@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/docuum`
  * @programs `docuum`
- * @version `0.26.0` (6 versions available)
+ * @version `0.26.1` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/docuum`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "docuum"
  * console.log(pkg.description) // "Docuum performs least recently used (LRU) evict..."
  * console.log(pkg.programs)    // ["docuum"]
- * console.log(pkg.versions[0]) // "0.26.0" (latest)
+ * console.log(pkg.versions[0]) // "0.26.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/docuum.md
@@ -60,6 +60,7 @@ export const cratesiodocuumPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.26.1',
     '0.26.0',
     '0.25.1',
     '0.25.0',
