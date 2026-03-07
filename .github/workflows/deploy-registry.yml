@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'packages/registry/src/**'
+      - 'packages/registry/dashboard/**'
   workflow_dispatch:
 
 jobs:
