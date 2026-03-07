@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
+- `1.11.0`
 - `1.10.0`
 - `1.9.0`
 - `1.8.0`
@@ -37,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.10.0`
+**Latest Version**: `1.11.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +catb.org/wumpus@1.10.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +catb.org/wumpus@1.11.0 -- $SHELL -i
 ```
 
 ## Usage Examples

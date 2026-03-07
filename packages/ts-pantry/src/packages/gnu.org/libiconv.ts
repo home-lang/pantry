@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/libiconv`
  * @programs `iconv`
- * @version `1.18.0` (2 versions available)
+ * @version `1.19.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/libiconv`
@@ -16,7 +16,7 @@
  * const pkg = pantry.gnuorglibiconv
  * console.log(pkg.name)        // "iconv"
  * console.log(pkg.programs)    // ["iconv"]
- * console.log(pkg.versions[0]) // "1.18.0" (latest)
+ * console.log(pkg.versions[0]) // "1.19.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/libiconv.md
@@ -67,6 +67,7 @@ export const gnuorglibiconvPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.19.0',
     '1.18.0',
     '1.17.0',
   ] as const,

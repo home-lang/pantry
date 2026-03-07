@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
+- `10.4.0`
 - `10.3.0`
 - `10.2.0`
 - `10.1.0`
@@ -38,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.3.0`
+**Latest Version**: `10.4.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/fd-find@10.3.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/fd-find@10.4.0 -- $SHELL -i
 ```
 
 ## Usage Examples

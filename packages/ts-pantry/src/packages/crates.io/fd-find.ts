@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/fd-find`
  * @programs `fd`
- * @version `10.3.0` (9 versions available)
+ * @version `10.4.0` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/fd-find`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "fd"
  * console.log(pkg.description) // "A simple, fast and user-friendly alternative to..."
  * console.log(pkg.programs)    // ["fd"]
- * console.log(pkg.versions[0]) // "10.3.0" (latest)
+ * console.log(pkg.versions[0]) // "10.4.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/fd-find.md
@@ -60,6 +60,7 @@ export const cratesiofdfindPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.4.0',
     '10.3.0',
     '10.2.0',
     '10.1.0',

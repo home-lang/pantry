@@ -3,7 +3,7 @@
  *
  * @domain `catb.org/wumpus`
  * @programs `wumpus`, `superhack`
- * @version `1.10.0` (6 versions available)
+ * @version `1.11.0` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install catb.org/wumpus`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "wumpus"
  * console.log(pkg.description) // "Exact clone of the ancient BASIC Hunt the Wumpu..."
  * console.log(pkg.programs)    // ["wumpus", "superhack"]
- * console.log(pkg.versions[0]) // "1.10.0" (latest)
+ * console.log(pkg.versions[0]) // "1.11.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/catb-org/wumpus.md
@@ -62,6 +62,7 @@ export const catborgwumpusPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.11.0',
     '1.10.0',
     '1.9.0',
     '1.8.0',
