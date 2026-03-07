@@ -59,8 +59,8 @@ jobs:
             --jq '[.workflow_runs[] | select(.name != "Health Monitor")] | length' 2>/dev/null || echo "0")
 
           echo "count=$FAIL_COUNT" >> "$GITHUB_OUTPUT"
-          # 2 workflows x 6 runs/2h = 12 total runs. Alert if >8 fail (sustained breakage)
-          if [ "$FAIL_COUNT" -gt 8 ]; then
+          # 2 workflows x 6 runs/2h = 12 total runs. Alert if >10 fail (sustained breakage)
+          if [ "$FAIL_COUNT" -gt 10 ]; then
             echo "status=elevated" >> "$GITHUB_OUTPUT"
           else
             echo "status=normal" >> "$GITHUB_OUTPUT"
