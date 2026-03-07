@@ -31,10 +31,26 @@ jobs:
             cd /opt/pantry-registry/repo
             git pull origin main
             cd packages/registry
+
+            # Debug: check what systemd runs and if dashboard files exist
+            echo "=== systemd service ==="
+            sudo systemctl cat pantry-registry 2>/dev/null || echo "No systemd unit found"
+            echo "=== dashboard files ==="
+            ls -la dashboard/pages/ 2>/dev/null || echo "No dashboard directory"
+            echo "=== server.ts dashboard route check ==="
+            grep -c "handleDashboard\|/dashboard" src/server.ts || echo "No dashboard routes"
+
             ~/.bun/bin/bun install --production
             sudo systemctl restart pantry-registry
             sleep 2
+            echo "=== local health check ==="
             curl -sf http://localhost:3000/health || echo "Health check failed"
+            echo ""
+            echo "=== local dashboard check ==="
+            curl -sf -o /dev/null -w "HTTP %{http_code}" http://localhost:3000/dashboard || echo " - Dashboard failed"
+            echo ""
+            echo "=== local dashboard/login check ==="
+            curl -sf http://localhost:3000/dashboard/login 2>/dev/null | head -5 || echo "Login page failed"
           EOF
 
       - name: Verify deployment
