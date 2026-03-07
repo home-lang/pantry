@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 41 versions</summary>
+<summary>Show all 42 versions</summary>
 
+- `2.60.0`
 - `2.59.0`
 - `2.58.0`
 - `2.57.1`, `2.57.0`
@@ -58,13 +59,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.59.0`
+**Latest Version**: `2.60.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/fastfetch-cli/fastfetch@2.59.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/fastfetch-cli/fastfetch@2.60.0 -- $SHELL -i
 ```
 
 ## Usage Examples

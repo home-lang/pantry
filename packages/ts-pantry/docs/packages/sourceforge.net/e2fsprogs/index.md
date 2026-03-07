@@ -29,19 +29,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4 versions</summary>
+<summary>Show all 5 versions</summary>
 
-- `1.47.3`, `1.47.2`, `1.47.1`, `1.47.0`
+- `1.47.4`, `1.47.3`, `1.47.2`, `1.47.1`, `1.47.0`
 
 </details>
 
-**Latest Version**: `1.47.3`
+**Latest Version**: `1.47.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +sourceforge.net/e2fsprogs@1.47.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +sourceforge.net/e2fsprogs@1.47.4 -- $SHELL -i
 ```
 
 ## Dependencies

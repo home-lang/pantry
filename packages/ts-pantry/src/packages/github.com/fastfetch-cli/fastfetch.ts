@@ -3,7 +3,7 @@
  *
  * @domain `github.com/fastfetch-cli/fastfetch`
  * @programs `fastfetch`, `flashfetch`
- * @version `2.59.0` (41 versions available)
+ * @version `2.60.0` (42 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/fastfetch-cli/fastfetch`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "fastfetch"
  * console.log(pkg.description) // "A maintained, feature-rich and performance orie..."
  * console.log(pkg.programs)    // ["fastfetch", "flashfetch"]
- * console.log(pkg.versions[0]) // "2.59.0" (latest)
+ * console.log(pkg.versions[0]) // "2.60.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/fastfetch-cli/fastfetch.md
@@ -81,6 +81,7 @@ export const fastfetchPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.60.0',
     '2.59.0',
     '2.58.0',
     '2.57.1',
