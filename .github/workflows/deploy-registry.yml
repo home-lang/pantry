@@ -36,7 +36,7 @@ jobs:
 
             sudo git pull origin main
             cd packages/registry
-            sudo /root/.bun/bin/bun install --production
+            sudo /root/.bun/bin/bun install
             sudo systemctl restart pantry-registry
             sleep 2
             curl -sf http://localhost:3000/health || echo "Health check failed"
