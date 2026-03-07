@@ -274,7 +274,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       expect(html).toContain('Sign In')
     })
 
-    it('POST /dashboard/login with valid token sets cookie and redirects', async () => {
+    it('POST /dashboard/login with valid token sets cookie and redirects with token param', async () => {
       const formData = new FormData()
       formData.set('token', TEST_TOKEN)
 
@@ -284,12 +284,26 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
         redirect: 'manual',
       })
       expect(res.status).toBe(302)
-      expect(res.headers.get('location')).toBe('/dashboard')
+      expect(res.headers.get('location')).toContain('/dashboard?token=')
 
       const cookie = res.headers.get('set-cookie')
       expect(cookie).toContain('pantry_token=')
       expect(cookie).toContain('HttpOnly')
       expect(cookie).toContain('SameSite=Strict')
+    })
+
+    it('supports auth via query parameter (CloudFront compatible)', async () => {
+      const res = await fetch(`${baseUrl}/dashboard?token=${TEST_TOKEN}`)
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toBe('text/html')
+    })
+
+    it('supports auth via Authorization header', async () => {
+      const res = await fetch(`${baseUrl}/dashboard`, {
+        headers: { 'Authorization': `Bearer ${TEST_TOKEN}` },
+      })
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toBe('text/html')
     })
 
     it('POST /dashboard/login with invalid token shows error', async () => {

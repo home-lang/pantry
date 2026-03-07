@@ -1012,10 +1012,23 @@ async function handleBinaryProxy(
  */
 const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
 
-function getDashboardAuth(req: Request): boolean {
+function getDashboardAuth(req: Request, url?: URL): boolean {
+  // Check cookie first (direct access / cookie-forwarding CDN)
   const cookieHeader = req.headers.get('cookie') || ''
-  const match = cookieHeader.match(/pantry_token=([^;]+)/)
-  return match ? match[1] === DASHBOARD_TOKEN : false
+  const cookieMatch = cookieHeader.match(/pantry_token=([^;]+)/)
+  if (cookieMatch && cookieMatch[1] === DASHBOARD_TOKEN) return true
+
+  // Check Authorization header (CloudFront forwards this)
+  const authHeader = req.headers.get('authorization') || ''
+  if (authHeader.startsWith('Bearer ') && authHeader.slice(7) === DASHBOARD_TOKEN) return true
+
+  // Check query parameter (CloudFront forwards query strings)
+  if (url) {
+    const tokenParam = url.searchParams.get('token')
+    if (tokenParam === DASHBOARD_TOKEN) return true
+  }
+
+  return false
 }
 
 async function handleDashboard(
@@ -1053,7 +1066,7 @@ async function handleDashboard(
           status: 302,
           headers: {
             ...noCacheHeaders,
-            'Location': '/dashboard',
+            'Location': `/dashboard?token=${encodeURIComponent(token)}`,
             'Set-Cookie': `pantry_token=${token}; Path=/dashboard; HttpOnly; SameSite=Strict; Max-Age=86400`,
           },
         })
@@ -1066,7 +1079,7 @@ async function handleDashboard(
   }
 
   // Auth gate for all other dashboard routes
-  if (!getDashboardAuth(req)) {
+  if (!getDashboardAuth(req, url)) {
     return new Response(null, {
       status: 302,
       headers: { ...noCacheHeaders, 'Location': '/dashboard/login' },
