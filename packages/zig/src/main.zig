@@ -1374,6 +1374,54 @@ fn logsAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn inspectorAction(_: *cli.BaseCommand.ParseContext) !void {
+    const port = "3002";
+    const url = "http://localhost:" ++ port;
+
+    style.print("\n  " ++ style.cyan ++ "pantry" ++ style.reset ++ " inspector\n\n", .{});
+    style.print("  Starting at " ++ style.cyan ++ url ++ style.reset ++ "\n\n", .{});
+
+    // Find the inspector pages directory
+    const home = io_helper.getenv("HOME") orelse "/tmp";
+    var inspector_dir: ?[]const u8 = null;
+
+    // Try development path first
+    if (io_helper.openDir("packages/inspector/pages", .{})) |dir| {
+        var d = dir;
+        d.close(io_helper.io);
+        inspector_dir = "packages/inspector/pages";
+    } else |_| {}
+
+    // Try installed path
+    if (inspector_dir == null) {
+        var buf: [1024]u8 = undefined;
+        const installed_path = std.fmt.bufPrint(&buf, "{s}/.local/share/pantry/inspector/pages", .{home}) catch {
+            style.print("Error: Could not find inspector pages directory\n", .{});
+            std.process.exit(1);
+        };
+        if (io_helper.openDir(installed_path, .{})) |dir| {
+            var d = dir;
+            d.close(io_helper.io);
+            inspector_dir = installed_path;
+        } else |_| {
+            style.print("Error: Could not find inspector pages directory\n", .{});
+            style.print("  Looked in: packages/inspector/pages\n", .{});
+            style.print("  Looked in: {s}\n", .{installed_path});
+            std.process.exit(1);
+        }
+    }
+
+    // Open browser in background
+    _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "open", url } }) catch {};
+
+    // Launch stx dev server (blocking)
+    _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "stx", "dev", inspector_dir.?, "--port", port } }) catch |err| {
+        style.print("Error: Could not start inspector server: {any}\n", .{err});
+        style.print("Make sure 'stx' is installed (bun install -g bun-plugin-stx).\n", .{});
+        std.process.exit(1);
+    };
+}
+
 fn inspectAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -2022,6 +2070,10 @@ fn printHelp() void {
     style.print("      " ++ style.cyan ++ "shim" ++ style.reset ++ "                Create a shim for a command\n", .{});
     style.print("      " ++ style.cyan ++ "shim:list" ++ style.reset ++ "           List all shims\n", .{});
     style.print("      " ++ style.cyan ++ "shim:remove" ++ style.reset ++ "         Remove a shim\n\n", .{});
+
+    // Inspector
+    style.print("    " ++ bold_cyan ++ "Inspector:" ++ style.reset ++ "\n", .{});
+    style.print("      " ++ style.cyan ++ "inspector" ++ style.reset ++ "           Open the package inspector UI in your browser\n\n", .{});
 
     // Other
     style.print("    " ++ bold_cyan ++ "Other:" ++ style.reset ++ "\n", .{});
@@ -2916,6 +2968,14 @@ pub fn main() !void {
 
     _ = logs_cmd.setAction(logsAction);
     _ = try root.addCommand(logs_cmd);
+
+    // ========================================================================
+    // Inspector Command (Package Inspector UI)
+    // ========================================================================
+    var inspector_cmd = try cli.BaseCommand.init(allocator, "inspector", "Open the package inspector UI in your browser");
+
+    _ = inspector_cmd.setAction(inspectorAction);
+    _ = try root.addCommand(inspector_cmd);
 
     // ========================================================================
     // Inspect Command (Service Inspection)

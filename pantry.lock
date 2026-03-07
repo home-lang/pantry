@@ -1,77 +1,276 @@
 {
   "version": "1.0.0",
   "lockfileVersion": 1,
-  "generatedAt": "1772144943",
+  "workspaces": {
+    "packages/site": {
+      "name": "@stacksjs/pantry-site",
+      "version": "0.1.0",
+      "dependencies": {
+        "@stacksjs/stx": "link:@stacksjs/stx"
+      },
+      "devDependencies": {
+        "typescript": "^5.7.0",
+        "bun-types": "latest"
+      }
+    },
+    "": {
+      "name": "pantry",
+      "dependencies": {
+        "@stacksjs/ts-cloud": "^0.1.11"
+      },
+      "devDependencies": {
+        "better-dx": "^0.2.6"
+      }
+    },
+    "packages/benchmark": {
+      "name": "@pantry/benchmark",
+      "version": "0.8.3",
+      "devDependencies": {
+        "mitata": "^1.0.34"
+      }
+    },
+    "packages/ts-pantry": {
+      "name": "ts-pantry",
+      "version": "0.8.3",
+      "dependencies": {
+        "@stacksjs/ts-cloud": "^0.1.2",
+        "bunfig": "^0.15.6",
+        "ts-web-scraper": "^0.1.1"
+      },
+      "devDependencies": {
+        "better-dx": "^0.2.6"
+      }
+    },
+    "packages/action": {
+      "name": "pantry-installer",
+      "version": "0.8.3",
+      "dependencies": {
+        "@actions/io": "^1.1.3",
+        "@actions/exec": "^1.1.1",
+        "@actions/github": "^6.0.1",
+        "@actions/core": "^1.11.1"
+      },
+      "devDependencies": {
+        "better-dx": "^0.2.6"
+      }
+    },
+    "packages/registry": {
+      "name": "@stacksjs/registry",
+      "version": "0.8.3",
+      "dependencies": {
+        "@cwcss/crosswind": "^0.1.6"
+      },
+      "devDependencies": {
+        "typescript": "^5.7.0",
+        "bun-types": "latest"
+      }
+    }
+  },
   "packages": {
+    "ziglang.org@0.15.1": {
+      "name": "ziglang.org",
+      "version": "0.15.1",
+      "source": "pantry"
+    },
     "bunfig@^0.15.6": {
       "name": "bunfig",
       "version": "^0.15.6",
-      "source": "pkgx"
+      "source": "npm",
+      "dependencies": {
+        "@stacksjs/clapp": "^0.2.0",
+        "@stacksjs/clarity": "^0.3.24"
+      },
+      "bin": {
+        "bunfig": "./bin/cli.js"
+      }
     },
     "ts-web-scraper@^0.1.1": {
       "name": "ts-web-scraper",
       "version": "^0.1.1",
-      "source": "pkgx"
+      "source": "npm",
+      "bin": {
+        "scraper": "./dist/bin/cli.js"
+      }
     },
     "better-dx@^0.2.6": {
       "name": "better-dx",
       "version": "^0.2.6",
-      "source": "pkgx"
+      "source": "npm",
+      "peerDependencies": {
+        "@stacksjs/logsmith": "^0.2.1",
+        "@stacksjs/bunpress": "^0.1.0",
+        "bun-plugin-dtsx": "0.9.9",
+        "@stacksjs/bumpx": "^0.2.4",
+        "ts-error-handling": "^0.1.0",
+        "bun-git-hooks": "^0.3.1",
+        "@stacksjs/gitlint": "^0.1.5",
+        "pickier": "^0.1.9",
+        "bunfig": "^0.15.6",
+        "typescript": "^5.9.3",
+        "buddy-bot": "^0.9.12",
+        "@types/bun": "^1.3.2",
+        "@stacksjs/clarity": "^0.3.24"
+      },
+      "bin": {
+        "better-dx": "./dist/bin/cli.js",
+        "dx": "./dist/bin/cli.js"
+      }
     },
     "zig-cli@link:zig-cli": {
       "name": "zig-cli",
       "version": "link:zig-cli",
-      "source": "pkgx"
+      "source": "npm"
     },
     "zig-config@link:zig-config": {
       "name": "zig-config",
       "version": "link:zig-config",
-      "source": "pkgx"
+      "source": "npm"
     },
-    "npm:@actions/core@^1.11.1": {
-      "name": "npm:@actions/core",
-      "version": "^1.11.1",
-      "source": "pkgx"
+    "zig-bump@link:zig-bump": {
+      "name": "zig-bump",
+      "version": "link:zig-bump",
+      "source": "npm"
     },
-    "typescript@^5.7.0": {
-      "name": "typescript",
-      "version": "^5.7.0",
-      "source": "pkgx"
+    "bun@1.3.9": {
+      "name": "bun",
+      "version": "1.3.9",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/bun/-/bun-1.3.9.tgz",
+      "integrity": "sha512-v5hkh1us7sMNjfimWE70flYbD5I1/qWQaqmJ45q2qk5H/7muQVa478LSVRSFyGTBUBog2LsPQnfIRdjyWJRY+A==",
+      "bin": {
+        "bunx": "bin/bunx.exe",
+        "bun": "bin/bun.exe"
+      }
     },
-    "npm:@actions/io@^1.1.3": {
-      "name": "npm:@actions/io",
-      "version": "^1.1.3",
-      "source": "pkgx"
+    "@actions/core@1.11.1": {
+      "name": "@actions/core",
+      "version": "1.11.1",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/@actions/core/-/core-1.11.1.tgz",
+      "integrity": "sha512-hXJCSrkwfA46Vd9Z3q4cpEpHB1rL5NG04+/rbqW9d3+CSvtB1tYe8UTpAlixa1vj0m/ULglfEK2UKxMGxCxv5A==",
+      "dependencies": {
+        "@actions/http-client": "^2.0.1",
+        "@actions/exec": "^1.1.1"
+      }
+    },
+    "@stacksjs/ts-cloud@0.1.11": {
+      "name": "@stacksjs/ts-cloud",
+      "version": "0.1.11",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/@stacksjs/ts-cloud/-/ts-cloud-0.1.11.tgz",
+      "integrity": "sha512-WgKwgRdxV4cAXJjc6l7/xFgIFriijErBEbyPn+Hd6aNRhFxu6cJ9OeEkT3p3YvEOc9Pt8DL5SO1RhXcq8otphw==",
+      "dependencies": {
+        "fast-xml-parser": "^5.3.5",
+        "@stacksjs/ts-cloud-types": "0.1.7",
+        "@stacksjs/ts-cloud-core": "0.1.7",
+        "@stacksjs/ts-cloud-aws-types": "0.1.7"
+      },
+      "bin": {
+        "cloud": "./dist/bin/cli.js"
+      }
     },
     "bun-types@latest": {
       "name": "bun-types",
       "version": "latest",
-      "source": "pkgx"
+      "source": "npm",
+      "dependencies": {
+        "@types/node": "*"
+      }
     },
-    "npm:@stacksjs/ts-cloud@^0.1.2": {
-      "name": "npm:@stacksjs/ts-cloud",
-      "version": "^0.1.2",
-      "source": "pkgx"
+    "typescript@^5.7.0": {
+      "name": "typescript",
+      "version": "^5.7.0",
+      "source": "npm",
+      "bin": {
+        "tsc": "./bin/tsc",
+        "tsserver": "./bin/tsserver"
+      }
     },
-    "npm:@actions/exec@^1.1.1": {
-      "name": "npm:@actions/exec",
-      "version": "^1.1.1",
-      "source": "pkgx"
+    "@cwcss/crosswind@0.1.6": {
+      "name": "@cwcss/crosswind",
+      "version": "0.1.6",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/@cwcss/crosswind/-/crosswind-0.1.6.tgz",
+      "integrity": "sha512-4NxFRgSSu8YQnLDj21kmUVxmwduCAvsrj3zOn5bKsaKvT/S+pBkHTl5+44d5cradQ872a+QCOOPVoEFmppsdYA==",
+      "dependencies": {
+        "@stacksjs/clapp": "^0.2.0",
+        "bunfig": "^0.15.0"
+      },
+      "bin": {
+        "crosswind": "./dist/bin/cli.js"
+      }
     },
-    "npm:@actions/github@^6.0.1": {
-      "name": "npm:@actions/github",
-      "version": "^6.0.1",
-      "source": "pkgx"
+    "@stacksjs/stx@link:@stacksjs/stx": {
+      "name": "@stacksjs/stx",
+      "version": "link:@stacksjs/stx",
+      "source": "npm"
+    },
+    "@actions/exec@1.1.1": {
+      "name": "@actions/exec",
+      "version": "1.1.1",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/@actions/exec/-/exec-1.1.1.tgz",
+      "integrity": "sha512-+sCcHHbVdk93a0XT19ECtO/gIXoxvdsgQLzb2fE2/5sIZmWQuluYyjPQtrtTHdU1YzTZ7bAPN4sITq2xi1679w==",
+      "dependencies": {
+        "@actions/io": "^1.0.1"
+      }
+    },
+    "@actions/io@1.1.3": {
+      "name": "@actions/io",
+      "version": "1.1.3",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/@actions/io/-/io-1.1.3.tgz",
+      "integrity": "sha512-wi9JjgKLYS7U/z8PPbco+PvTb/nRWjeoFlJ1Qer83k/3C5PHQi28hiVdeE2kHXmIL99mQFawx8qt/JPjZilJ8Q=="
     },
     "mitata@^1.0.34": {
       "name": "mitata",
       "version": "^1.0.34",
-      "source": "pkgx"
+      "source": "npm"
     },
     "zig-test-framework@link:zig-test-framework": {
       "name": "zig-test-framework",
       "version": "link:zig-test-framework",
-      "source": "pkgx"
+      "source": "npm"
+    },
+    "better-dx@^0.2.0": {
+      "name": "better-dx",
+      "version": "^0.2.0",
+      "source": "npm",
+      "peerDependencies": {
+        "@stacksjs/logsmith": "^0.2.1",
+        "@stacksjs/bunpress": "^0.1.0",
+        "bun-plugin-dtsx": "0.9.9",
+        "@stacksjs/bumpx": "^0.2.4",
+        "ts-error-handling": "^0.1.0",
+        "bun-git-hooks": "^0.3.1",
+        "@stacksjs/gitlint": "^0.1.5",
+        "pickier": "^0.1.9",
+        "bunfig": "^0.15.6",
+        "typescript": "^5.9.3",
+        "buddy-bot": "^0.9.12",
+        "@types/bun": "^1.3.2",
+        "@stacksjs/clarity": "^0.3.24"
+      },
+      "bin": {
+        "better-dx": "./dist/bin/cli.js",
+        "dx": "./dist/bin/cli.js"
+      }
+    },
+    "@actions/github@6.0.1": {
+      "name": "@actions/github",
+      "version": "6.0.1",
+      "source": "npm",
+      "resolved": "https://registry.npmjs.org/@actions/github/-/github-6.0.1.tgz",
+      "integrity": "sha512-xbZVcaqD4XnQAe35qSQqskb3SqIAfRyLBrHMd/8TuL7hJSz2QtbDwnNM8zWx4zO5l2fnGtseNE3MbEvD7BxVMw==",
+      "dependencies": {
+        "@actions/http-client": "^2.2.0",
+        "@octokit/request": "^8.4.1",
+        "@octokit/request-error": "^5.1.1",
+        "@octokit/core": "^5.0.1",
+        "undici": "^5.28.5",
+        "@octokit/plugin-rest-endpoint-methods": "^10.4.0",
+        "@octokit/plugin-paginate-rest": "^9.2.2"
+      }
     }
   }
 }

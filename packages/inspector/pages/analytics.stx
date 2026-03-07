@@ -1,0 +1,203 @@
+<script server>
+  const REGISTRY = 'https://registry.pantry.dev'
+
+  const formatNum = (n) => {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
+    return String(n)
+  }
+
+  // Fetch analytics data
+  const [topRes, installRes, errorRes] = await Promise.allSettled([
+    fetch(`${REGISTRY}/analytics/top?limit=50`, { signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : {}),
+    fetch(`${REGISTRY}/api/analytics/install/30d.json`, { signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : {}),
+    fetch(`${REGISTRY}/api/analytics/build-error/30d.json`, { signal: AbortSignal.timeout(8000) }).then(r => r.ok ? r.json() : {}),
+  ])
+
+  const topPackages = topRes.status === 'fulfilled' ? (topRes.value.packages || []) : []
+  const installData = installRes.status === 'fulfilled' ? (installRes.value.items || []) : []
+  const buildErrors = errorRes.status === 'fulfilled' ? (errorRes.value.items || []) : []
+
+  const totalInstalls = installData.reduce((sum, d) => sum + Number(d.count || 0), 0)
+  const totalErrors = buildErrors.reduce((sum, d) => sum + Number(d.count || 0), 0)
+  const maxDownloads = topPackages.length > 0 ? Math.max(...topPackages.map(p => p.downloads || p.totalDownloads || 0), 1) : 1
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analytics - Pantry Inspector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: oklch(0.145 0 0); --bg-subtle: oklch(0.178 0 0); --bg-muted: oklch(0.215 0 0);
+      --fg: oklch(0.965 0 0); --fg-muted: oklch(0.72 0 0); --fg-subtle: oklch(0.55 0 0);
+      --border: oklch(0.255 0 0); --border-hover: oklch(0.36 0 0);
+      --accent: oklch(0.72 0.19 250); --accent-subtle: oklch(0.72 0.19 250 / 0.12);
+      --green: oklch(0.72 0.17 155); --green-subtle: oklch(0.72 0.17 155 / 0.12);
+      --red: oklch(0.65 0.2 25); --red-subtle: oklch(0.65 0.2 25 / 0.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
+    body { min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.2s ease-out; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(16px) saturate(1.5);">
+    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+      <div class="flex items-center gap-5">
+        <a href="/" class="flex items-center gap-2">
+          <span class="font-bold text-base tracking-tight" style="color: var(--accent);">pantry</span>
+          <span class="font-normal text-base" style="color: var(--fg-subtle);">inspector</span>
+        </a>
+        <nav class="flex items-center gap-1">
+          <a href="/" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Packages
+          </a>
+          <a href="/analytics" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-[var(--border)]" style="color: var(--fg); background: var(--bg-subtle);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+          <a href="/dependencies" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+            Dependencies
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 pt-8 pb-16 fade-in">
+    <div class="mb-8">
+      <h1 class="text-xl font-semibold tracking-tight">Analytics</h1>
+      <p class="text-sm mt-1" style="color: var(--fg-muted);">Download trends and package statistics (30 day window)</p>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="grid grid-cols-3 gap-3 mb-8">
+      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Tracked Packages</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ topPackages.length }}</p>
+      </div>
+      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Installs (30d)</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--green);">{{ formatNum(totalInstalls) }}</p>
+      </div>
+      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Build Errors (30d)</p>
+        <p class="text-2xl font-semibold mono leading-tight" style="color: var(--red);">{{ formatNum(totalErrors) }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-6">
+      <!-- Top packages by downloads -->
+      <div class="rounded-xl border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b border-[var(--border)]">
+          <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Top Packages by Downloads</span>
+        </div>
+        <div class="p-4">
+          @if (topPackages.length > 0)
+          <div class="flex flex-col gap-2.5">
+            @for (let i = 0; i < Math.min(topPackages.length, 15); i++)
+            <div>
+              <div class="flex justify-between mb-1">
+                <a href="/package?name={{ topPackages[i].name || topPackages[i].packageName }}" class="mono text-xs transition-colors" style="color: var(--fg-muted);" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg-muted)'">{{ topPackages[i].name || topPackages[i].packageName }}</a>
+                <span class="text-xs" style="color: var(--fg-subtle);">{{ formatNum(topPackages[i].downloads || topPackages[i].totalDownloads || 0) }}</span>
+              </div>
+              <div class="h-1.5 rounded-full overflow-hidden" style="background: var(--bg-muted);">
+                <div class="h-full rounded-full" style="width: {!! Math.round((topPackages[i].downloads || topPackages[i].totalDownloads || 0) / maxDownloads * 100) !!}%; background: var(--accent);"></div>
+              </div>
+            </div>
+            @endfor
+          </div>
+          @else
+          <p class="text-sm text-center py-8" style="color: var(--fg-subtle);">No download data available</p>
+          @endif
+        </div>
+      </div>
+
+      <!-- Install activity table -->
+      <div class="rounded-xl border border-[var(--border)] overflow-hidden" style="background: var(--bg-subtle);">
+        <div class="px-4 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
+          <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Install Activity (30d)</span>
+          @if (installData.length > 0)
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--green-subtle); color: var(--green);">{{ installData.length }} packages</span>
+          @endif
+        </div>
+        @if (installData.length > 0)
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="border-b border-[var(--border)]">
+              <th class="text-left px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle); width: 2rem;">#</th>
+              <th class="text-left px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Package</th>
+              <th class="text-right px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Installs</th>
+              <th class="text-right px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (let i = 0; i < Math.min(installData.length, 15); i++)
+            <tr class="border-b border-[var(--border)]" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+              <td class="px-3 py-2.5 text-sm" style="color: var(--fg-subtle);">{{ i + 1 }}</td>
+              <td class="px-3 py-2.5">
+                <a href="/package?name={{ installData[i].formula }}" class="mono text-sm transition-colors" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--fg)'">{{ installData[i].formula }}</a>
+              </td>
+              <td class="text-right px-3 py-2.5 text-sm" style="color: var(--fg-muted);">{{ formatNum(Number(installData[i].count || 0)) }}</td>
+              <td class="text-right px-3 py-2.5">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ installData[i].percent || '0' }}%</span>
+              </td>
+            </tr>
+            @endfor
+          </tbody>
+        </table>
+        @else
+        <div class="p-8 text-center">
+          <p class="text-sm" style="color: var(--fg-subtle);">No install data available</p>
+        </div>
+        @endif
+      </div>
+    </div>
+
+    <!-- Build errors -->
+    @if (buildErrors.length > 0)
+    <div class="rounded-xl border border-[var(--border)] overflow-hidden mt-6" style="background: var(--bg-subtle);">
+      <div class="px-4 py-3.5 border-b border-[var(--border)] flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Build Errors (30d)</span>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--red-subtle); color: var(--red);">{{ buildErrors.length }} packages</span>
+      </div>
+      <table class="w-full border-collapse">
+        <thead>
+          <tr class="border-b border-[var(--border)]">
+            <th class="text-left px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle); width: 2rem;">#</th>
+            <th class="text-left px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Package</th>
+            <th class="text-right px-3 py-2 text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Errors</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (let i = 0; i < Math.min(buildErrors.length, 10); i++)
+          <tr class="border-b border-[var(--border)]" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+            <td class="px-3 py-2.5 text-sm" style="color: var(--fg-subtle);">{{ i + 1 }}</td>
+            <td class="px-3 py-2.5">
+              <a href="/package?name={{ buildErrors[i].formula }}" class="mono text-sm" style="color: var(--red);">{{ buildErrors[i].formula }}</a>
+            </td>
+            <td class="text-right px-3 py-2.5 text-sm" style="color: var(--fg-muted);">{{ formatNum(Number(buildErrors[i].count || 0)) }}</td>
+          </tr>
+          @endfor
+        </tbody>
+      </table>
+    </div>
+    @endif
+  </main>
+
+</body>
+</html>

@@ -1,0 +1,216 @@
+<script server>
+  const REGISTRY = 'https://registry.pantry.dev'
+
+  const formatNum = (n) => {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
+    return String(n)
+  }
+
+  // Fetch top packages from analytics
+  const topRes = await fetch(`${REGISTRY}/analytics/top?limit=100`, { signal: AbortSignal.timeout(8000) }).catch(() => null)
+  const topData = topRes ? await topRes.json().catch(() => ({})) : {}
+  const topPackages = topData.packages || []
+
+  // Featured packages with metadata
+  const FEATURED = [
+    { domain: 'curl.se', label: 'curl', desc: 'Command line data transfer' },
+    { domain: 'python.org', label: 'Python', desc: 'Programming language' },
+    { domain: 'nodejs.org', label: 'Node.js', desc: 'JavaScript runtime' },
+    { domain: 'go.dev', label: 'Go', desc: 'Programming language' },
+    { domain: 'ruby-lang.org', label: 'Ruby', desc: 'Programming language' },
+    { domain: 'cmake.org', label: 'CMake', desc: 'Build system generator' },
+    { domain: 'openssl.org', label: 'OpenSSL', desc: 'TLS/SSL toolkit' },
+    { domain: 'redis.io', label: 'Redis', desc: 'In-memory data store' },
+    { domain: 'postgresql.org', label: 'PostgreSQL', desc: 'Relational database' },
+    { domain: 'nginx.org', label: 'nginx', desc: 'Web server & reverse proxy' },
+    { domain: 'sqlite.org', label: 'SQLite', desc: 'Embedded SQL database' },
+    { domain: 'ffmpeg.org', label: 'FFmpeg', desc: 'Multimedia framework' },
+    { domain: 'rust-lang.org', label: 'Rust', desc: 'Systems programming language' },
+    { domain: 'git-scm.com', label: 'Git', desc: 'Version control system' },
+    { domain: 'vim.org', label: 'Vim', desc: 'Terminal text editor' },
+    { domain: 'gnupg.org', label: 'GnuPG', desc: 'Privacy encryption' },
+    { domain: 'tmux.github.io', label: 'tmux', desc: 'Terminal multiplexer' },
+    { domain: 'jqlang.github.io', label: 'jq', desc: 'JSON processor' },
+    { domain: 'github.com/sharkdp/bat', label: 'bat', desc: 'cat with syntax highlighting' },
+    { domain: 'github.com/BurntSushi/ripgrep', label: 'ripgrep', desc: 'Fast recursive search' },
+  ]
+
+  // Enrich featured packages with version/platform data
+  const enrichResults = await Promise.allSettled(
+    FEATURED.map(async (pkg) => {
+      const meta = await fetch(`${REGISTRY}/binaries/${pkg.domain}/metadata.json`, { signal: AbortSignal.timeout(5000) }).then(r => r.ok ? r.json() : null).catch(() => null)
+      const topEntry = topPackages.find(t => t.name === pkg.domain || t.packageName === pkg.domain)
+      return {
+        ...pkg,
+        version: meta?.latestVersion || null,
+        versionCount: meta?.versions ? Object.keys(meta.versions).length : 0,
+        downloads: topEntry?.downloads || topEntry?.totalDownloads || 0,
+        platforms: meta?.versions?.[meta?.latestVersion]?.platforms ? Object.keys(meta.versions[meta.latestVersion].platforms) : [],
+        hasDarwin: meta?.versions?.[meta?.latestVersion]?.platforms ? Object.keys(meta.versions[meta.latestVersion].platforms).some(p => p.includes('darwin')) : false,
+        hasLinux: meta?.versions?.[meta?.latestVersion]?.platforms ? Object.keys(meta.versions[meta.latestVersion].platforms).some(p => p.includes('linux')) : false,
+      }
+    })
+  )
+
+  const pkgs = enrichResults.map((r, i) =>
+    r.status === 'fulfilled' ? r.value : { ...FEATURED[i], version: null, versionCount: 0, downloads: 0, platforms: [], hasDarwin: false, hasLinux: false }
+  ).sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
+
+  const total = pkgs.length
+  const totalDownloads = topPackages.reduce((sum, p) => sum + (p.downloads || p.totalDownloads || 0), 0)
+  const trackedCount = topPackages.length
+
+  const platformCounts = {}
+  pkgs.forEach(p => {
+    (p.platforms || []).forEach(pl => {
+      const key = pl.includes('darwin') ? 'macOS' : pl.includes('linux') ? 'Linux' : pl
+      platformCounts[key] = (platformCounts[key] || 0) + 1
+    })
+  })
+  const platformEntries = Object.entries(platformCounts).sort((a, b) => b[1] - a[1])
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pantry Inspector</title>
+  <meta name="description" content="Explore, inspect, and analyze pantry packages" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: oklch(0.145 0 0);
+      --bg-subtle: oklch(0.178 0 0);
+      --bg-muted: oklch(0.215 0 0);
+      --fg: oklch(0.965 0 0);
+      --fg-muted: oklch(0.72 0 0);
+      --fg-subtle: oklch(0.55 0 0);
+      --border: oklch(0.255 0 0);
+      --border-hover: oklch(0.36 0 0);
+      --accent: oklch(0.72 0.19 250);
+      --accent-hover: oklch(0.80 0.19 250);
+      --accent-subtle: oklch(0.72 0.19 250 / 0.12);
+      --amber: oklch(0.80 0.16 80);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; font-size: 15px; }
+    body { min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.2s ease-out; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 border-b border-[var(--border)]" style="background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(16px) saturate(1.5);">
+    <div class="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
+      <div class="flex items-center gap-5">
+        <a href="/" class="flex items-center gap-2">
+          <span class="font-bold text-base tracking-tight" style="color: var(--accent);">pantry</span>
+          <span class="font-normal text-base" style="color: var(--fg-subtle);">inspector</span>
+        </a>
+        <nav class="flex items-center gap-1" aria-label="main navigation">
+          <a href="/" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-[var(--border)]" style="color: var(--fg); background: var(--bg-subtle);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Packages
+          </a>
+          <a href="/analytics" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Analytics
+          </a>
+          <a href="/dependencies" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-medium border border-transparent" style="color: var(--fg-muted);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg>
+            Dependencies
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-6 pt-8 pb-16 fade-in">
+    <!-- Stats row -->
+    <div class="grid grid-cols-3 gap-3 mb-8">
+      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Featured Packages</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ total }}</p>
+      </div>
+      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Total Downloads</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ formatNum(totalDownloads) }}</p>
+      </div>
+      <div class="rounded-xl p-5 border border-[var(--border)]" style="background: var(--bg-subtle);">
+        <p class="text-xs uppercase tracking-wider font-medium mb-1.5" style="color: var(--fg-subtle);">Tracked Packages</p>
+        <p class="text-2xl font-semibold mono leading-tight">{{ trackedCount }}</p>
+      </div>
+    </div>
+
+    <!-- Platform distribution bar -->
+    @if (platformEntries.length > 0)
+    <div class="rounded-xl px-5 py-4 border border-[var(--border)] mb-8" style="background: var(--bg-subtle);">
+      <span class="text-xs uppercase tracking-wider font-medium" style="color: var(--fg-subtle);">Platform Distribution</span>
+      <div class="flex gap-0.5 h-2 rounded-full overflow-hidden mt-3 mb-3">
+        @foreach (platformEntries as entry)
+        <div style="flex: {{ entry[1] }}; background: {!! entry[0] === 'macOS' ? 'var(--accent)' : 'var(--amber)' !!};" title="{{ entry[0] }}: {{ entry[1] }} packages"></div>
+        @endforeach
+      </div>
+      <div class="flex gap-6 text-xs">
+        @foreach (platformEntries as entry)
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full" style="background: {!! entry[0] === 'macOS' ? 'var(--accent)' : 'var(--amber)' !!};"></span>
+          <span style="color: var(--fg-muted);">{{ entry[0] }}</span>
+          <span style="color: var(--fg-subtle);">{{ entry[1] }}</span>
+        </div>
+        @endforeach
+      </div>
+    </div>
+    @endif
+
+    <!-- Section header -->
+    <div class="flex items-center gap-3 mb-5">
+      <h2 class="text-base font-semibold">Packages</h2>
+      <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ total }}</span>
+    </div>
+
+    <!-- Package grid -->
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));">
+      @foreach (pkgs as pkg)
+      <a href="/package?name={{ pkg.domain }}" class="block rounded-xl p-4 border border-[var(--border)] transition-all" style="background: var(--bg-subtle);" onmouseover="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-muted)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-subtle)'">
+        <div class="flex items-start justify-between mb-2">
+          <div>
+            <span class="mono text-sm font-medium">{{ pkg.label }}</span>
+            @if (pkg.version)
+            <span class="mono text-xs ml-1.5" style="color: var(--fg-subtle);">{{ pkg.version }}</span>
+            @endif
+          </div>
+          @if (pkg.downloads > 0)
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--accent-subtle); color: var(--accent);">{{ formatNum(pkg.downloads) }}</span>
+          @endif
+        </div>
+        @if (pkg.desc)
+        <p class="text-sm leading-relaxed mb-2.5" style="color: var(--fg-muted);">{{ pkg.desc }}</p>
+        @endif
+        <div class="flex items-center gap-2 flex-wrap">
+          @if (pkg.versionCount > 0)
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">{{ pkg.versionCount }} versions</span>
+          @endif
+          @if (pkg.hasDarwin)
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">macOS</span>
+          @endif
+          @if (pkg.hasLinux)
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style="background: var(--bg-muted); color: var(--fg-subtle);">Linux</span>
+          @endif
+        </div>
+      </a>
+      @endforeach
+    </div>
+  </main>
+
+</body>
+</html>
