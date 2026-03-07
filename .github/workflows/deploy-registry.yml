@@ -28,29 +28,18 @@ jobs:
           ssh-keyscan -H 54.243.196.101 >> ~/.ssh/known_hosts 2>/dev/null
 
           ssh -o StrictHostKeyChecking=no ec2-user@54.243.196.101 << 'EOF'
+            set -e
             cd /opt/pantry-registry/repo
-            git pull origin main
+
+            # Fix git ownership (repo owned by root, SSH user is ec2-user)
+            git config --global --add safe.directory /opt/pantry-registry/repo
+
+            sudo git pull origin main
             cd packages/registry
-
-            # Debug: check what systemd runs and if dashboard files exist
-            echo "=== systemd service ==="
-            sudo systemctl cat pantry-registry 2>/dev/null || echo "No systemd unit found"
-            echo "=== dashboard files ==="
-            ls -la dashboard/pages/ 2>/dev/null || echo "No dashboard directory"
-            echo "=== server.ts dashboard route check ==="
-            grep -c "handleDashboard\|/dashboard" src/server.ts || echo "No dashboard routes"
-
-            ~/.bun/bin/bun install --production
+            sudo /root/.bun/bin/bun install --production
             sudo systemctl restart pantry-registry
             sleep 2
-            echo "=== local health check ==="
             curl -sf http://localhost:3000/health || echo "Health check failed"
-            echo ""
-            echo "=== local dashboard check ==="
-            curl -sf -o /dev/null -w "HTTP %{http_code}" http://localhost:3000/dashboard || echo " - Dashboard failed"
-            echo ""
-            echo "=== local dashboard/login check ==="
-            curl -sf http://localhost:3000/dashboard/login 2>/dev/null | head -5 || echo "Login page failed"
           EOF
 
       - name: Verify deployment
