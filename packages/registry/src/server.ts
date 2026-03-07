@@ -6,6 +6,7 @@ import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from '
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
 import { S3Client } from './storage/aws-client'
+import { CSSGenerator, defaultConfig } from '@cwcss/crosswind'
 
 /**
  * Lightweight .stx template renderer — processes server scripts, directives and expressions.
@@ -46,7 +47,40 @@ async function stxRender(filePath: string, props: Record<string, unknown> = {}):
 
   // 2. Process directives
   templateContent = processBlock(templateContent, ctx)
+
+  // 3. Generate and inject Crosswind CSS from Tailwind utility classes
+  templateContent = injectCrosswindCSS(templateContent)
+
   return templateContent
+}
+
+/**
+ * Extract Tailwind class names from HTML, generate CSS via Crosswind, and inject <style> into <head>
+ */
+function injectCrosswindCSS(html: string): string {
+  const classRegex = /class\s*=\s*["']([^"']+)["']/gi
+  const classNames = new Set<string>()
+  let m: RegExpExecArray | null
+  while ((m = classRegex.exec(html)) !== null) {
+    for (const cls of m[1].split(/\s+/)) {
+      if (cls) classNames.add(cls)
+    }
+  }
+  if (classNames.size === 0) return html
+
+  const gen = new CSSGenerator(defaultConfig)
+  for (const cls of classNames) {
+    try { gen.generate(cls) }
+    catch { /* skip unknown classes */ }
+  }
+  const css = gen.toCSS(true, true)
+  if (!css) return html
+
+  const styleTag = `<style data-crosswind="generated">${css}</style>`
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${styleTag}\n</head>`)
+  }
+  return `${styleTag}\n${html}`
 }
 
 function processBlock(template: string, ctx: Record<string, any>): string {

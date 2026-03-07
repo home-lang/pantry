@@ -25,7 +25,9 @@
     "test:commit-publish": "bun test src/commit-publish.test.ts",
     "typecheck": "bun --bun tsc --noEmit"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@cwcss/crosswind": "^0.1.6"
+  },
   "devDependencies": {
     "bun-types": "latest",
     "typescript": "^5.7.0"
