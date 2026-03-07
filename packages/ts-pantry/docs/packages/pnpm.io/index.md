@@ -26,8 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 202 versions</summary>
+<summary>Show all 203 versions</summary>
 
+- `10.31.0`
 - `10.30.3`, `10.30.2`, `10.30.1`, `10.30.0`
 - `10.29.3`, `10.29.2`, `10.29.1`
 - `10.28.2`, `10.28.1`, `10.28.0`
@@ -110,13 +111,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.30.3`
+**Latest Version**: `10.31.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pnpm.io@10.30.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pnpm.io@10.31.0 -- $SHELL -i
 ```
 
 ## Dependencies
