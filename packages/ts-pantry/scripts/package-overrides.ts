@@ -6945,14 +6945,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3.10<3.14'
       }
-      // Remove pydantic version pin from requirements so pip installs latest with pre-built wheels
       if (recipe.build?.script && Array.isArray(recipe.build.script)) {
-        const idx = recipe.build.script.findIndex((s: RecipeScriptStep) =>
+        // Remove pydantic version pin so pip installs latest with pre-built wheels
+        const pipIdx = recipe.build.script.findIndex((s: RecipeScriptStep) =>
           typeof s === 'string' && s.includes('pip install -r $REQS'))
-        if (idx !== -1) {
-          recipe.build.script.splice(idx, 0,
+        if (pipIdx !== -1) {
+          recipe.build.script.splice(pipIdx, 0,
             '"$__real_sed" -i \'s/pydantic==.*/pydantic/\' "$REQS" 2>/dev/null || sed -i \'s/pydantic==.*/pydantic/\' "$REQS" 2>/dev/null || true')
         }
+        // Replace python-venv-stubber.sh (pkgx utility we don't have) with inline equivalent
+        recipe.build.script = recipe.build.script.map((s: RecipeScriptStep) => {
+          if (typeof s === 'string' && s.includes('python-venv-stubber.sh')) {
+            return [
+              'mkdir -p "{{prefix}}/bin"',
+              'cat > "{{prefix}}/bin/text-generation-webui" << \'STUBEOF\'',
+              '#!/bin/sh',
+              'VENV_DIR="$(cd "$(dirname "$0")/../venv" && pwd)"',
+              'export PATH="$VENV_DIR/bin:$PATH"',
+              'export VIRTUAL_ENV="$VENV_DIR"',
+              'exec python "$VENV_DIR/bin/text-generation-webui" "$@"',
+              'STUBEOF',
+              'chmod +x "{{prefix}}/bin/text-generation-webui"',
+            ].join('\n')
+          }
+          return s
+        })
       }
     },
   },
