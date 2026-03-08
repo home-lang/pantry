@@ -1785,12 +1785,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['nodejs.org']) {
         recipe.dependencies['nodejs.org'] = '~20'
       }
-      // npm install with legacy peer deps
+      // npm install with legacy peer deps (must be on same line, not newline)
       if (Array.isArray(recipe.build?.script)) {
         for (const step of recipe.build.script) {
           if (typeof step === 'string' && step.includes('npm install')) {
             const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = `${step}\n      --legacy-peer-deps`
+            recipe.build.script[idx] = `${step} --legacy-peer-deps`
           }
         }
       }
@@ -4977,6 +4977,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'string' && step.includes('sqlite3_analyzer')) return false
           return true
         })
+        // Fix tclsh resolution: use built tclsh instead of system tclsh (macOS has 8.5.9)
+        for (const step of recipe.build.script) {
+          if (typeof step === 'object' && step.run) {
+            const fixTclsh = (s: string) => s.replace(/^tclsh /m, '"$PREFIX/bin/tclsh" ')
+            if (typeof step.run === 'string') {
+              step.run = fixTclsh(step.run)
+            } else if (Array.isArray(step.run)) {
+              step.run = step.run.map((s: string) => typeof s === 'string' ? fixTclsh(s) : s)
+            }
+          }
+        }
         // Fix sed -i BSD compat + make glob patterns resilient to empty matches
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
@@ -7621,9 +7632,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
             } else if (Array.isArray(step.run)) {
               step.run = step.run.map((s: string) => typeof s === 'string' ? fixSedInPlace(s) : s)
             }
-            // Remove cmake fixup step that references HDF5 libs (HDF5 is disabled)
+            // Remove steps referencing HDF5 (disabled) or $PKGX_DIR/pkgx.prefix (pkgx-specific, undefined in our buildkit)
             const runText = Array.isArray(step.run) ? step.run.join(' ') : String(step.run)
-            if (runText.includes('hdf5') || runText.includes('HDF5')) {
+            const propText = typeof step.prop === 'string' ? step.prop : ''
+            const fullText = runText + ' ' + propText
+            if (fullText.includes('hdf5') || fullText.includes('HDF5') || fullText.includes('PKGX_DIR') || fullText.includes('pkgx.prefix')) {
               recipe.build.script.splice(i, 1)
               i--
             }
