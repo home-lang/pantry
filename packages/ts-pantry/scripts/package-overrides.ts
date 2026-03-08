@@ -6935,13 +6935,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // github.com/luvit/luv duplicate removed — primary override at line ~5152 has more comprehensive fix
 
-  // ─── github.com/oobabooga/text-generation-webui — pin Python <3.14 ───
+  // ─── github.com/oobabooga/text-generation-webui — pin Python <3.14 + fix pydantic wheel ───
   // pydantic-core uses PyO3 0.24 which doesn't support Python 3.14
+  // Also: requirements pin pydantic==2.11.0 → pydantic-core==2.33.0 which has no pre-built wheel
+  // for cp312/macOS-arm64. Remove pin so pip installs latest pydantic with pre-built wheels.
 
   'github.com/oobabooga/text-generation-webui': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.dependencies?.['python.org']) {
         recipe.dependencies['python.org'] = '>=3.10<3.14'
+      }
+      // Remove pydantic version pin from requirements so pip installs latest with pre-built wheels
+      if (recipe.build?.script && Array.isArray(recipe.build.script)) {
+        const idx = recipe.build.script.findIndex((s: RecipeScriptStep) =>
+          typeof s === 'string' && s.includes('pip install -r $REQS'))
+        if (idx !== -1) {
+          recipe.build.script.splice(idx, 0,
+            '"$__real_sed" -i \'s/pydantic==.*/pydantic/\' "$REQS" 2>/dev/null || sed -i \'s/pydantic==.*/pydantic/\' "$REQS" 2>/dev/null || true')
+        }
       }
     },
   },
