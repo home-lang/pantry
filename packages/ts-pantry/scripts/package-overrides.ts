@@ -2559,6 +2559,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── nmap.org — fix required_argument undeclared on macOS ───────────────
+  'nmap.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // nmap.cc uses required_argument without including <getopt.h> on some versions
+          'export CXXFLAGS="${CXXFLAGS:-} -include getopt.h"',
+          'export CFLAGS="${CFLAGS:-} -include getopt.h"',
+        ],
+      },
+    },
+  },
+
+  // ─── sftpgo.com — .gtpl files need renaming (pkgx renders Go templates, we don't) ───
+  'sftpgo.com': {
+    prependScript: [
+      // pkgx brewkit renders .gtpl (Go template) files and strips the extension.
+      // Our buildkit copies them as-is, so recipe references like props/sftpgo.env fail.
+      // Rename all .gtpl files to remove the extension.
+      'for f in props/*.gtpl; do [ -f "$f" ] && cp "$f" "${f%.gtpl}"; done',
+    ],
+  },
+
   // ─── strace.io — BROKEN: v6.2.0 incompatible with modern kernel headers ────
   // io_uring struct field renames (resv1/resv2/pad) + caps.rsv size mismatch
   // Would need strace 6.13+ to build against current CI kernel headers
@@ -7184,6 +7207,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
     // Through symlink chains (.bin/erl → bin/erl → lib/erlang/bin/erl), $0 stays as the
     // outermost path, so dyn_erl can't be found and it falls back to hardcoded build paths.
     // Fix: resolve $0 through symlinks so dirname gives the real script location.
+    platforms: {
+      linux: {
+        prependScript: [
+          // Bypass cc_wrapper: assembler rejects `.base64` pseudo-op injected by wrapper
+          'export CC=/usr/bin/gcc',
+          'export CXX=/usr/bin/g++',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (!recipe.build) return
       const script = Array.isArray(recipe.build.script) ? recipe.build.script : (recipe.build.script ? [recipe.build.script] : [])
