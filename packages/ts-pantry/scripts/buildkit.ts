@@ -573,6 +573,16 @@ export function generateBuildScript(
   // Fix CMake compatibility: modern CMake (3.27+) rejects cmake_minimum_required(VERSION < 3.5)
   // This env var tells CMake to accept older minimum versions (fixes vid.stab, qhull, soxr, etc.)
   sections.push('export CMAKE_POLICY_VERSION_MINIMUM=3.5')
+  // Define PKGX_DIR — pkgx-specific variable referenced by ~15 YAML recipes in sed commands.
+  // In pkgx, it's the base package directory. In our buildkit, use deps dir as equivalent.
+  // Without this, `sed "s|$PKGX_DIR|...|g"` gets an empty pattern and fails.
+  // Derive from first dep path (they're all under /tmp/buildkit-deps/), fallback to /tmp/buildkit-deps
+  const firstDepPrefix = Object.entries(depPaths).find(([k]) => k.endsWith('.prefix'))?.[1]
+  const pkgxDir = firstDepPrefix
+    ? firstDepPrefix.split('/').slice(0, 3).join('/') // /tmp/buildkit-deps
+    : '/tmp/buildkit-deps'
+  sections.push(`export PKGX_DIR="${pkgxDir}"`)
+  sections.push(`export pkgx_dir="${pkgxDir}"`)
   sections.push('')
 
   // Environment from YAML recipe (overrides defaults above)

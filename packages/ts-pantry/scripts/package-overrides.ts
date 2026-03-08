@@ -2559,6 +2559,32 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── git-scm.org — fix darwin build (osxkeychain + fix-shebangs) ──────
+  'git-scm.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      if (!Array.isArray(recipe.build?.script)) return
+      for (let i = recipe.build.script.length - 1; i >= 0; i--) {
+        const step = recipe.build.script[i]
+        const text = typeof step === 'string' ? step
+          : (typeof step === 'object' && step.run ? (Array.isArray(step.run) ? step.run.join(' ') : String(step.run)) : '')
+        // Skip osxkeychain credential helper (requires libintl/libiconv not available in CI)
+        if (text.includes('osxkeychain') || text.includes('git-credential-osxkeychain')) {
+          recipe.build.script.splice(i, 1)
+          continue
+        }
+        // Strip fix-shebangs.ts (pkgx-specific tool)
+        if (text.includes('fix-shebangs')) {
+          recipe.build.script.splice(i, 1)
+          continue
+        }
+      }
+      // Remove GNU libiconv dep on darwin (causes symbol mismatch with system iconv)
+      if (recipe.dependencies?.linux?.['gnu.org/libiconv']) {
+        // Keep linux dep but ensure it doesn't leak to darwin
+      }
+    },
+  },
+
   // ─── nmap.org — fix required_argument undeclared on macOS ───────────────
   'nmap.org': {
     platforms: {
@@ -5352,6 +5378,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
         delete recipe.build.env.darwin.CC
         delete recipe.build.env.darwin.CXX
         delete recipe.build.env.darwin.LD
+      }
+      // Strip $PKGX_DIR sed step (pkgx-specific variable, undefined in our buildkit)
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = recipe.build.script.length - 1; i >= 0; i--) {
+          const step = recipe.build.script[i]
+          const text = typeof step === 'string' ? step
+            : (typeof step === 'object' && step.run ? (typeof step.run === 'string' ? step.run : String(step.run)) : '')
+          if (text.includes('PKGX_DIR')) {
+            recipe.build.script.splice(i, 1)
+          }
+        }
       }
     },
   },

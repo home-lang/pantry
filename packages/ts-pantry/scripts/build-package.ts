@@ -447,6 +447,44 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     delete normalizedRecipe.build.dependencies['gnu.org/libtool']
   }
 
+  // Strip pkgx-specific steps from build scripts. These reference tools/vars that don't
+  // exist in our buildkit: fix-shebangs.ts (pkgx shebang fixer), $PKGX_DIR, {{pkgx.prefix}}
+  if (Array.isArray(normalizedRecipe.build?.script)) {
+    for (let i = normalizedRecipe.build.script.length - 1; i >= 0; i--) {
+      const step = normalizedRecipe.build.script[i]
+      let text = ''
+      if (typeof step === 'string') {
+        text = step
+      } else if (typeof step === 'object' && step !== null) {
+        const runText = typeof step.run === 'string' ? step.run
+          : (Array.isArray(step.run) ? step.run.join(' ') : '')
+        const propText = typeof step.prop === 'string' ? step.prop : ''
+        text = runText + ' ' + propText
+      }
+      // Remove steps that are entirely fix-shebangs calls
+      if (/^\s*fix-shebangs\.ts\b/.test(text.trim()) || /^\s*run:\s*fix-shebangs\.ts\b/.test(text.trim())) {
+        normalizedRecipe.build.script.splice(i, 1)
+        continue
+      }
+      // For multi-line steps or steps with other content, strip just the fix-shebangs lines
+      if (typeof step === 'string' && text.includes('fix-shebangs.ts')) {
+        normalizedRecipe.build.script[i] = step.split('\n')
+          .filter((line: string) => !line.trim().startsWith('fix-shebangs.ts'))
+          .join('\n')
+      }
+      if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('fix-shebangs.ts')) {
+        step.run = step.run.split('\n')
+          .filter((line: string) => !line.trim().startsWith('fix-shebangs.ts'))
+          .join('\n')
+      }
+      if (typeof step === 'object' && Array.isArray(step.run)) {
+        step.run = step.run.filter((line: string) =>
+          typeof line !== 'string' || !line.trim().startsWith('fix-shebangs.ts')
+        )
+      }
+    }
+  }
+
   // gnu.org/readline from S3 breaks system tools on Linux. S3 readline's libreadline.so.8
   // needs libtinfo.so.6 (from ncurses), but system tools like gawk pick up S3 readline via
   // LD_LIBRARY_PATH and can't resolve the UP/BC termcap symbols. System readline (from
