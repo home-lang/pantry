@@ -227,6 +227,31 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
 }
 
+// Build domain→versions lookup from ts-pantry package metadata for version validation
+const _knownVersions = new Map<string, Set<string>>()
+try {
+  const pantryPkgsPath = resolve(
+    typeof import.meta.dirname === 'string' ? import.meta.dirname : dirname(fileURLToPath(import.meta.url)),
+    '../../ts-pantry/src/packages/index.ts',
+  )
+  const { pantry: pantryPkgs } = await import(pantryPkgsPath)
+  for (const val of Object.values(pantryPkgs as Record<string, any>)) {
+    if (val && typeof val === 'object' && typeof val.domain === 'string' && Array.isArray(val.versions)) {
+      _knownVersions.set(val.domain, new Set(val.versions))
+    }
+  }
+  console.log(`Loaded ${_knownVersions.size} packages for version validation`)
+}
+catch (err) {
+  console.warn('Could not load ts-pantry package metadata for version validation:', err)
+}
+
+function isKnownVersion(domain: string, version: string): boolean {
+  const versions = _knownVersions.get(domain)
+  if (!versions) return false // Unknown package — don't track
+  return versions.has(version)
+}
+
 // Resolve dashboard pages directory relative to this file
 const __dirname = typeof import.meta.dirname === 'string'
   ? import.meta.dirname
@@ -480,12 +505,14 @@ export function createHandler(
         if (rest && !rest.includes('/') && req.method === 'GET') {
           const metadata = await registry.getPackage(packageName, rest)
           if (!metadata) {
-            // Track this missing version request asynchronously
-            analyticsStorage.trackMissingVersion(
-              packageName,
-              rest,
-              req.headers.get('user-agent') || undefined,
-            ).catch(() => {}) // fire-and-forget
+            // Only track if this is a real version that exists but hasn't been built yet
+            if (isKnownVersion(packageName, rest)) {
+              analyticsStorage.trackMissingVersion(
+                packageName,
+                rest,
+                req.headers.get('user-agent') || undefined,
+              ).catch(() => {}) // fire-and-forget
+            }
             return Response.json(
               { error: 'Package version not found' },
               { status: 404, headers: corsHeaders },
