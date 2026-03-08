@@ -1079,6 +1079,13 @@ async function handleDashboard(
   }
   const htmlHeaders = { ...noCacheHeaders, 'Content-Type': 'text/html' }
 
+  // Helper to build dashboard URLs that preserve the auth token
+  const tokenParam = url.searchParams.get('token') || ''
+  const tokenFromCookie = (req.headers.get('cookie') || '').match(/pantry_token=([^;]+)/)?.[1] || ''
+  const activeToken = tokenParam || tokenFromCookie
+  const qs = activeToken ? `?token=${encodeURIComponent(activeToken)}` : ''
+  const qsAmp = activeToken ? `&token=${encodeURIComponent(activeToken)}` : ''
+
   // Logout
   if (path === '/dashboard/logout') {
     return new Response(null, {
@@ -1086,7 +1093,7 @@ async function handleDashboard(
       headers: {
         ...noCacheHeaders,
         'Location': '/dashboard/login',
-        'Set-Cookie': 'pantry_token=; Path=/dashboard; HttpOnly; SameSite=Strict; Max-Age=0',
+        'Set-Cookie': 'pantry_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
       },
     })
   }
@@ -1102,7 +1109,7 @@ async function handleDashboard(
           headers: {
             ...noCacheHeaders,
             'Location': `/dashboard?token=${encodeURIComponent(token)}`,
-            'Set-Cookie': `pantry_token=${token}; Path=/dashboard; HttpOnly; SameSite=Strict; Max-Age=86400`,
+            'Set-Cookie': `pantry_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`,
           },
         })
       }
@@ -1148,7 +1155,7 @@ async function handleDashboard(
       analytics.getPackageStats(packageName),
       analytics.getDownloadTimeline(packageName, 30),
     ])
-    const html = await stxRender(`${DASHBOARD_DIR}/package.stx`, { packageName, stats, timeline })
+    const html = await stxRender(`${DASHBOARD_DIR}/package.stx`, { packageName, stats, timeline, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1156,7 +1163,7 @@ async function handleDashboard(
   if (path === '/dashboard/requested-versions') {
     const allRequests = await analytics.getAllMissingVersionRequests(200)
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await stxRender(`${DASHBOARD_DIR}/requested-versions.stx`, { requests: allRequests, page, perPage: 25 })
+    const html = await stxRender(`${DASHBOARD_DIR}/requested-versions.stx`, { requests: allRequests, page, perPage: 25, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1164,7 +1171,7 @@ async function handleDashboard(
   if (path === '/dashboard' || path === '/dashboard/') {
     const topPackages = await analytics.getTopPackages(100)
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await stxRender(`${DASHBOARD_DIR}/overview.stx`, { packages: topPackages, page, perPage: 25 })
+    const html = await stxRender(`${DASHBOARD_DIR}/overview.stx`, { packages: topPackages, page, perPage: 25, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
