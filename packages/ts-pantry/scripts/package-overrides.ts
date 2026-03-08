@@ -6979,33 +6979,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/VikParuchuri/surya — widen Python version ───
   // Recipe has python.org ~3.11 (build dep), S3 has 3.12.0. Surya supports 3.12.
   'github.com/VikParuchuri/surya': {
+    supportedPlatforms: ['darwin-arm64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3.11<3.14'
-      }
-      // Poetry's isolated build envs use old packaging on Linux (missing packaging.licenses).
-      // Replace poetry commands with pip equivalents using --no-build-isolation.
-      if (Array.isArray(recipe.build?.script)) {
-        recipe.build.script = recipe.build.script.map((s: RecipeScriptStep) => {
-          if (typeof s === 'string') {
-            if (s.trim() === 'poetry install') {
-              return 'pip install --no-build-isolation .'
-            }
-            if (s.includes('poetry add')) {
-              // poetry add 'pkg==ver' → pip install 'pkg==ver'
-              return s.replace('poetry add', 'pip install')
-            }
-            if (s.includes('poetry config --local installer.no-binary')) {
-              // poetry config --local installer.no-binary opencv-python → export PIP_NO_BINARY=opencv-python
-              const pkg = s.split('installer.no-binary').pop()?.trim() || ''
-              return `export PIP_NO_BINARY="${pkg}"`
-            }
-            if (s.includes('poetry lock')) {
-              return '# poetry lock not needed with pip'
-            }
-          }
-          return s
-        })
       }
     },
   },
