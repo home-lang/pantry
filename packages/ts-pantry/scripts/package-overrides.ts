@@ -6983,16 +6983,29 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3.11<3.14'
       }
-      // Upgrade packaging after bkpyvenv stage — system Python's old packaging
-      // lacks packaging.licenses module needed by poetry on Linux
+      // Poetry's isolated build envs use old packaging on Linux (missing packaging.licenses).
+      // Replace poetry commands with pip equivalents using --no-build-isolation.
       if (Array.isArray(recipe.build?.script)) {
-        const stageIdx = recipe.build.script.findIndex(
-          (s: RecipeScriptStep) => typeof s === 'string' && s.includes('bkpyvenv stage'),
-        )
-        if (stageIdx !== -1) {
-          recipe.build.script.splice(stageIdx + 1, 0,
-            'pip install --upgrade packaging 2>/dev/null || true')
-        }
+        recipe.build.script = recipe.build.script.map((s: RecipeScriptStep) => {
+          if (typeof s === 'string') {
+            if (s.trim() === 'poetry install') {
+              return 'pip install --no-build-isolation .'
+            }
+            if (s.includes('poetry add')) {
+              // poetry add 'pkg==ver' → pip install 'pkg==ver'
+              return s.replace('poetry add', 'pip install')
+            }
+            if (s.includes('poetry config --local installer.no-binary')) {
+              // poetry config --local installer.no-binary opencv-python → export PIP_NO_BINARY=opencv-python
+              const pkg = s.split('installer.no-binary').pop()?.trim() || ''
+              return `export PIP_NO_BINARY="${pkg}"`
+            }
+            if (s.includes('poetry lock')) {
+              return '# poetry lock not needed with pip'
+            }
+          }
+          return s
+        })
       }
     },
   },
