@@ -6972,6 +6972,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.dependencies?.['python.org']) {
         recipe.build.dependencies['python.org'] = '>=3.11<3.14'
       }
+      // Upgrade packaging after bkpyvenv stage — system Python's old packaging
+      // lacks packaging.licenses module needed by poetry on Linux
+      if (Array.isArray(recipe.build?.script)) {
+        const stageIdx = recipe.build.script.findIndex(
+          (s: RecipeScriptStep) => typeof s === 'string' && s.includes('bkpyvenv stage'),
+        )
+        if (stageIdx !== -1) {
+          recipe.build.script.splice(stageIdx + 1, 0,
+            'pip install --upgrade packaging 2>/dev/null || true')
+        }
+      }
     },
   },
 
