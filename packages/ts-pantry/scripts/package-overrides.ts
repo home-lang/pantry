@@ -6935,6 +6935,17 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   // github.com/luvit/luv duplicate removed — primary override at line ~5152 has more comprehensive fix
 
+  // ─── github.com/oobabooga/text-generation-webui — pin Python <3.14 ───
+  // pydantic-core uses PyO3 0.24 which doesn't support Python 3.14
+
+  'github.com/oobabooga/text-generation-webui': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3.10<3.14'
+      }
+    },
+  },
+
   // ─── github.com/pressly/sup — fix go mod init missing module name ───
 
   'github.com/pressly/sup': {

@@ -1208,7 +1208,7 @@ Options:
     // info-zip.org/unzip removed — distributableUrl override to working SourceForge URL
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
-    'github.com/oobabooga/text-generation-webui', // pydantic-core uses PyO3 0.24 incompatible with Python 3.14 (CI)
+    // github.com/oobabooga/text-generation-webui removed — pinned Python <3.14 in override
     // psycopg.org/psycopg3 removed — widened Python version constraint in override
     'sourceware.org/dm', // GitLab download URLs return 404
     // llm.datasette.io removed — widened Python version constraint in override
