@@ -1331,7 +1331,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
   const yamlBuildDeps = extractYamlDeps(normalizedRecipe.build?.dependencies, platform)
-  const yamlRuntimeDeps = extractYamlDeps(recipe.dependencies, platform)
+  const yamlRuntimeDeps = extractYamlDeps(normalizedRecipe.dependencies, platform)
   if (yamlBuildDeps.length > 0) {
     console.log(`\nYAML build dependencies: ${yamlBuildDeps.join(', ')}`)
   }
