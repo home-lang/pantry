@@ -253,7 +253,30 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   'aspell.net': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          // Disable NLS to avoid linking with -lintl (gettext/libintl not available on darwin)
+          'export CPPFLAGS="${CPPFLAGS:-} -DENABLE_NLS=0"',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Add --disable-nls on darwin to avoid libintl dependency
+      if (recipe.build?.script) {
+        const fixConfigure = (s: string) => s.replace(
+          /\.\/configure\s+--prefix/,
+          './configure --disable-nls --prefix',
+        )
+        if (typeof recipe.build.script === 'string') {
+          recipe.build.script = fixConfigure(recipe.build.script)
+        } else if (Array.isArray(recipe.build.script)) {
+          recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
+            if (typeof step === 'string') return fixConfigure(step)
+            return step
+          })
+        }
+      }
       // Fix in-script curl URL from ftp.gnu.org to ftpmirror
       // Also make dictionary download loop fault-tolerant (individual dict failures shouldn't fail the build)
       if (recipe.build?.script) {
