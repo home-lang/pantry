@@ -6564,9 +6564,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
       linux: {
         prependScript: [
           'sudo apt-get install -y libssl-dev pkg-config 2>/dev/null || true',
+          // Remove any S3-built openssl from deps to avoid header/lib version mismatch
+          // (curl_sys compiles against newer headers but links older system lib)
+          'rm -rf /tmp/buildkit-deps/openssl.org 2>/dev/null || true',
           'export OPENSSL_DIR="/usr"',
           'export OPENSSL_LIB_DIR="/usr/lib/x86_64-linux-gnu"',
           'export OPENSSL_INCLUDE_DIR="/usr/include"',
+          'export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH:-}"',
         ],
       },
     },

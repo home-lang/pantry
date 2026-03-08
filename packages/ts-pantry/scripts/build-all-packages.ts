@@ -1208,6 +1208,7 @@ Options:
     // info-zip.org/unzip removed — distributableUrl override to working SourceForge URL
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
     'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
+    'github.com/oobabooga/text-generation-webui', // pydantic-core uses PyO3 0.24 incompatible with Python 3.14 (CI)
     // psycopg.org/psycopg3 removed — widened Python version constraint in override
     'sourceware.org/dm', // GitLab download URLs return 404
     // llm.datasette.io removed — widened Python version constraint in override
@@ -1803,12 +1804,18 @@ Options:
     const failRate = attempted > 0 ? (failed.length / attempted * 100).toFixed(0) : 0
     console.log(`\nFailure rate: ${failRate}% (${failed.length}/${attempted} attempted)`)
 
-    // For targeted builds (-p flag), exit non-zero so CI reports the failure
-    // For batch builds, exit 0 — individual failures are expected and the
-    // batch ran to completion; successfully built packages are in S3
+    // For single-package targeted builds, exit non-zero so CI reports the failure.
+    // For multi-package targeted builds (auto-triggered by update-packages), only
+    // exit non-zero if ALL packages failed — partial success is expected.
+    // For batch builds, exit 0 — individual failures are expected.
     if (isTargetedBuild) {
-      console.log(`\nTargeted build had failures — exiting with error`)
-      process.exit(1)
+      if (uploaded.length === 0) {
+        console.log(`\nAll targeted builds failed — exiting with error`)
+        process.exit(1)
+      }
+      else {
+        console.log(`\n${uploaded.length}/${attempted} packages built successfully — partial success, exiting cleanly`)
+      }
     }
 
     console.log(`Note: Individual build failures are expected for packages with complex`)
