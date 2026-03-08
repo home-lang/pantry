@@ -2,7 +2,7 @@
  * **casdoor** - pkgx package
  *
  * @domain `casdoor.org`
- * @version `2.349.0` (212 versions available)
+ * @version `2.349.0` (213 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install casdoor.org`
@@ -61,6 +61,7 @@ export const casdoororgPackage = {
   */
   versions: [
     '2.349.0',
+    '2.348.0',
     '2.347.0',
     '2.346.0',
     '2.345.0',
