@@ -614,6 +614,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'rpm.org/rpm': ['<6.1.0'],
   // xmlstar 1.6.1 fails on darwin; only version
   'sourceforge.net/xmlstar': ['*'],
+  // strace 6.2.0 incompatible with modern kernel headers (btrfs.o compile error); only version
+  'strace.io': ['*'],
+  // podlators — version discovery regex doesn't match v-prefixed filenames; 5.1.0 tarball removed from server
+  'eyrie.org/eagle/podlators': ['*'],
   // mitmproxy 11.1.x bpf-linker failure on linux (eBPF requires bpf-linker tool); 12.0+ works
   'mitmproxy.org': ['11.1.0', '11.1.1', '11.1.2', '11.1.3'],
   // littlecms 2.12.0 fails on darwin; 2.16.0+ works

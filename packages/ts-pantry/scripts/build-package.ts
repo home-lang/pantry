@@ -433,6 +433,20 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     delete normalizedRecipe.build.dependencies['cmake.org']
   }
 
+  // gnu.org/autoconf from S3 has broken $PREFIX literal in the Perl source (line 38:
+  // "$PREFIX'/share/autoconf'"). This causes "syntax error" in autoconf for any package
+  // that uses it as a build dep. Use system autoconf instead (pre-installed on CI runners).
+  // Also remove automake/libtool S3 deps since they depend on the broken autoconf.
+  if (normalizedRecipe.build?.dependencies?.['gnu.org/autoconf']) {
+    delete normalizedRecipe.build.dependencies['gnu.org/autoconf']
+  }
+  if (normalizedRecipe.build?.dependencies?.['gnu.org/automake']) {
+    delete normalizedRecipe.build.dependencies['gnu.org/automake']
+  }
+  if (normalizedRecipe.build?.dependencies?.['gnu.org/libtool']) {
+    delete normalizedRecipe.build.dependencies['gnu.org/libtool']
+  }
+
   // gnu.org/readline from S3 breaks system tools on Linux. S3 readline's libreadline.so.8
   // needs libtinfo.so.6 (from ncurses), but system tools like gawk pick up S3 readline via
   // LD_LIBRARY_PATH and can't resolve the UP/BC termcap symbols. System readline (from

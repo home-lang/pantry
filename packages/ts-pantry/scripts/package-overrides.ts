@@ -255,15 +255,24 @@ export const packageOverrides: Record<string, PackageOverride> = {
   'aspell.net': {
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Fix in-script curl URL from ftp.gnu.org to ftpmirror
+      // Also make dictionary download loop fault-tolerant (individual dict failures shouldn't fail the build)
       if (recipe.build?.script) {
-        const fixFtpUrls = (s: string) => s.replace(/ftp\.gnu\.org/g, 'ftpmirror.gnu.org')
+        const fixScript = (s: string) => {
+          s = s.replace(/ftp\.gnu\.org/g, 'ftpmirror.gnu.org')
+          // Make the for loop fault-tolerant: wrap curl+tar+configure+make in a subshell with || true
+          s = s.replace(
+            /for url in "\$\{urls\[@\]\}"; do\n([\s\S]*?)done/,
+            'for url in "${urls[@]}"; do\n      (\n$1    ) || echo "WARN: Failed to install dict $url, continuing..."\n    done',
+          )
+          return s
+        }
         if (typeof recipe.build.script === 'string') {
-          recipe.build.script = fixFtpUrls(recipe.build.script)
+          recipe.build.script = fixScript(recipe.build.script)
         } else if (Array.isArray(recipe.build.script)) {
           recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
-            if (typeof step === 'string') return fixFtpUrls(step)
+            if (typeof step === 'string') return fixScript(step)
             if (typeof step === 'object' && typeof step.run === 'string') {
-              step.run = fixFtpUrls(step.run)
+              step.run = fixScript(step.run)
             }
             return step
           })
@@ -2527,6 +2536,26 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (!recipe.build) recipe.build = {}
       if (!recipe.build.dependencies) recipe.build.dependencies = {}
       recipe.build.dependencies['github.com/json-c/json-c'] = '*'
+    },
+  },
+
+  // ─── cocogitto.io — fix Cargo workspace virtual manifest ─────────────────
+  'cocogitto.io': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Root Cargo.toml is a workspace (virtual manifest), not a package.
+      // Replace `cargo install --path .` with explicit build + copy.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string' && step.includes('cargo install --path .')) {
+            recipe.build.script[i] = [
+              'cargo build --release',
+              'mkdir -p {{prefix}}/bin',
+              'cp target/release/cog {{prefix}}/bin/',
+            ].join('\n')
+          }
+        }
+      }
     },
   },
 
@@ -6383,22 +6412,42 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── fishshell.com — fix cmake prefix quote + sed -i BSD ─────────────
 
   'fishshell.com': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // msgfmt (from gettext dep) needs its own shared libraries during the Rust build
+          'for _d in /tmp/buildkit-deps/gnu.org/gettext/*/lib; do [ -d "$_d" ] && export LD_LIBRARY_PATH="$_d${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; done',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a.replace(/^(-DCMAKE_INSTALL_PREFIX=)"([^"]+)"$/, '$1$2'),
         )
       }
+      // Strip $PKGX_DIR sed step (pkgx-specific, undefined in our buildkit)
       // Fix sed -i BSD compat
       if (Array.isArray(recipe.build?.script)) {
-        for (const step of recipe.build.script) {
-          if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
-            const idx = recipe.build.script.indexOf(step)
-            recipe.build.script[idx] = step.replaceAll('sed -i ', 'sed -i.bak ')
+        for (let i = recipe.build.script.length - 1; i >= 0; i--) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'string') {
+            if (step.includes('PKGX_DIR')) {
+              recipe.build.script.splice(i, 1)
+              continue
+            }
+            if (step.includes('sed -i') && !step.includes('sed -i.bak')) {
+              recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
+            }
           }
-          if (typeof step === 'object' && step.run && typeof step.run === 'string'
-            && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
-            step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
+          if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+            if (step.run.includes('PKGX_DIR')) {
+              recipe.build.script.splice(i, 1)
+              continue
+            }
+            if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
+              step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
+            }
           }
         }
       }
@@ -8412,8 +8461,35 @@ export const packageOverrides: Record<string, PackageOverride> = {
     distributableUrl: 'https://deb.debian.org/debian/pool/main/x/x264/x264_0.164.3095+gitbaee400.orig.tar.gz',
   },
 
-  // ─── strace.io — supportedPlatforms linux-only ────────────────────────
+  // ─── sourceware.org/bzip2 — fix nullglob + ls *.dylib interaction on darwin ─
+  'sourceware.org/bzip2': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Under shopt -s nullglob, `ls *.dylib` with no matches expands glob to nothing,
+      // so `ls` lists the current dir (non-empty), condition is true, then `rm *.dylib`
+      // also expands to nothing → `rm` fails with no arguments.
+      // Fix: use find instead of ls/rm with glob.
+      if (Array.isArray(recipe.build?.script)) {
+        for (let i = 0; i < recipe.build.script.length; i++) {
+          const step = recipe.build.script[i]
+          if (typeof step === 'object' && step.run && typeof step.run === 'string'
+            && step.run.includes('ls') && step.run.includes('.dylib')) {
+            step.run = step.run.replace(
+              /if \[ -n "\$\(ls [^)]+\.dylib\)" \]; then\s*\n\s*rm [^\n]+\.dylib\s*\n\s*fi/,
+              'find {{prefix}}/lib -name "*.dylib" -delete 2>/dev/null || true',
+            )
+          }
+        }
+      }
+    },
+  },
 
+  // ─── openldap.org/liblmdb — fix version tag format (LMDB_ prefix, not v) ──
+  'openldap.org/liblmdb': {
+    distributableUrl: 'https://git.openldap.org/openldap/openldap/-/archive/LMDB_{{version}}/openldap-LMDB_{{version}}.tar.gz',
+  },
+
+  // ─── strace.io — supportedPlatforms linux-only ────────────────────────
+  // v6.2.0 incompatible with modern kernel headers (btrfs.o compile error)
   'strace.io': {
     supportedPlatforms: ['linux/x86-64'],
   },
