@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/killport`
  * @programs `killport`
- * @version `1.1.0` (4 versions available)
+ * @version `2.0.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/killport`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "killport"
  * console.log(pkg.description) // "A command-line tool to easily kill processes ru..."
  * console.log(pkg.programs)    // ["killport"]
- * console.log(pkg.versions[0]) // "1.1.0" (latest)
+ * console.log(pkg.versions[0]) // "2.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/killport.md
@@ -60,6 +60,7 @@ export const cratesiokillportPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.0',
     '1.1.0',
     '1.0.0',
     '0.9.2',
