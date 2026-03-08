@@ -436,7 +436,7 @@ export function createHandler(
       }
 
       // Package routes
-      const packageMatch = path.match(/^\/packages\/(@?[^/]+(?:\/[^/]+)?)(?:\/(.+))?$/)
+      const packageMatch = path.match(/^\/packages\/(@[^/]+\/[^/]+|[^/]+)(?:\/(.+))?$/)
       if (packageMatch) {
         const packageName = decodeURIComponent(packageMatch[1])
         const rest = packageMatch[2]
