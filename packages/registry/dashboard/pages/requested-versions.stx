@@ -1,17 +1,31 @@
 <script server>
   const allRequests = props.requests || []
-  const page = props.page || 1
-  const perPage = props.perPage || 25
+  const filter = props.filter || 'known'
   const qs = props.qs || ''
   const qsAmp = props.qsAmp || ''
-  const totalRequests = allRequests.length
-  const totalPages = Math.max(1, Math.ceil(totalRequests / perPage))
+
+  const knownRequests = allRequests.filter(r => r.isKnownVersion)
+  const unknownRequests = allRequests.filter(r => !r.isKnownVersion)
+  const filtered = filter === 'known' ? knownRequests : filter === 'unknown' ? unknownRequests : allRequests
+
+  const page = props.page || 1
+  const perPage = props.perPage || 25
+  const totalFiltered = filtered.length
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / perPage))
   const startIdx = (page - 1) * perPage
-  const pagedRequests = allRequests.slice(startIdx, startIdx + perPage)
-  const totalRequestCount = allRequests.reduce((sum, r) => sum + (r.requestCount || 0), 0)
-  const uniquePackages = new Set(allRequests.map(r => r.packageName)).size
+  const pagedRequests = filtered.slice(startIdx, startIdx + perPage)
+
+  const totalKnownCount = knownRequests.reduce((sum, r) => sum + (r.requestCount || 0), 0)
+  const totalUnknownCount = unknownRequests.reduce((sum, r) => sum + (r.requestCount || 0), 0)
+  const uniquePackages = new Set(filtered.map(r => r.packageName)).size
 
   const formatDate = (iso) => !iso ? 'N/A' : new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+
+  const filterBase = '/dashboard/requested-versions'
+  const knownUrl = filterBase + qs + (qs ? '&' : '?') + 'filter=known'
+  const unknownUrl = filterBase + qs + (qs ? '&' : '?') + 'filter=unknown'
+  const allUrl = filterBase + qs + (qs ? '&' : '?') + 'filter=all'
+  const pageBase = filterBase + '?filter=' + filter + (qsAmp || '')
 </script>
 
 <!DOCTYPE html>
@@ -36,33 +50,78 @@
 
   <main class="max-w-7xl mx-auto px-6 py-8">
     <h1 class="text-2xl font-bold mb-2">Requested Versions</h1>
-    <p class="text-slate-400 mb-6 text-sm">Versions requested via the CLI that are not yet built in the registry. These represent potential build targets.</p>
+    <p class="text-slate-400 mb-6 text-sm">Versions requested via the CLI that are not yet in the registry.</p>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
       <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div class="text-sm text-slate-400 mb-1">Total Requests</div>
-        <div class="text-2xl font-bold">{{ totalRequestCount.toLocaleString() }}</div>
+        <div class="text-sm text-slate-400 mb-1">Known Versions</div>
+        <div class="text-2xl font-bold text-emerald-400">{{ knownRequests.length }}</div>
+        <div class="text-xs text-slate-500 mt-1">{{ totalKnownCount.toLocaleString() }} total requests</div>
       </div>
       <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div class="text-sm text-slate-400 mb-1">Unique Versions</div>
-        <div class="text-2xl font-bold">{{ totalRequests.toLocaleString() }}</div>
+        <div class="text-sm text-slate-400 mb-1">Unknown Versions</div>
+        <div class="text-2xl font-bold text-red-400">{{ unknownRequests.length }}</div>
+        <div class="text-xs text-slate-500 mt-1">{{ totalUnknownCount.toLocaleString() }} total requests</div>
       </div>
       <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div class="text-sm text-slate-400 mb-1">Unique Packages</div>
-        <div class="text-2xl font-bold">{{ uniquePackages.toLocaleString() }}</div>
+        <div class="text-sm text-slate-400 mb-1">Showing</div>
+        <div class="text-2xl font-bold">{{ totalFiltered }}</div>
+        <div class="text-xs text-slate-500 mt-1">{{ uniquePackages }} unique packages</div>
       </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">All Requests</div>
+        <div class="text-2xl font-bold">{{ allRequests.length }}</div>
+        <div class="text-xs text-slate-500 mt-1">{{ (totalKnownCount + totalUnknownCount).toLocaleString() }} total hits</div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 mb-4">
+      @if (filter === 'known')
+        <span class="px-3 py-1.5 bg-emerald-600 text-white rounded text-sm font-medium">Known</span>
+      @else
+        <a href="{{ knownUrl }}" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-sm hover:bg-slate-600">Known</a>
+      @endif
+      @if (filter === 'unknown')
+        <span class="px-3 py-1.5 bg-red-600 text-white rounded text-sm font-medium">Unknown</span>
+      @else
+        <a href="{{ unknownUrl }}" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-sm hover:bg-slate-600">Unknown</a>
+      @endif
+      @if (filter === 'all')
+        <span class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm font-medium">All</span>
+      @else
+        <a href="{{ allUrl }}" class="px-3 py-1.5 bg-slate-700 text-slate-300 rounded text-sm hover:bg-slate-600">All</a>
+      @endif
     </div>
 
     <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
       <div class="px-6 py-4 border-b border-slate-700 flex items-center justify-between">
-        <h2 class="text-lg font-semibold">Missing Versions (by request count)</h2>
+        <h2 class="text-lg font-semibold">
+          @if (filter === 'known')
+            Unbuilt Versions (exist upstream, not in registry)
+          @endif
+          @if (filter === 'unknown')
+            Unknown Versions (not in any known package definition)
+          @endif
+          @if (filter === 'all')
+            All Requested Versions
+          @endif
+        </h2>
         <span class="text-sm text-slate-400">Page {{ page }} of {{ totalPages }}</span>
       </div>
 
-      @if (totalRequests === 0)
+      @if (totalFiltered === 0)
         <div class="px-6 py-12 text-center text-slate-400">
-          <p class="text-lg mb-2">No version requests recorded yet</p>
-          <p class="text-sm">When users request versions that don't exist in the registry, they'll appear here.</p>
+          @if (filter === 'known')
+            <p class="text-lg mb-2">No known unbuilt versions requested yet</p>
+            <p class="text-sm">When users request real versions that haven't been built, they'll appear here.</p>
+          @endif
+          @if (filter === 'unknown')
+            <p class="text-lg mb-2">No unknown version requests</p>
+            <p class="text-sm">Requests for versions that don't exist in any package definition will appear here.</p>
+          @endif
+          @if (filter === 'all')
+            <p class="text-lg mb-2">No version requests recorded yet</p>
+          @endif
         </div>
       @else
         <table class="w-full">
@@ -83,7 +142,11 @@
                   <a href="/dashboard/package/{{ encodeURIComponent(req.packageName) }}{{ qs }}" class="text-blue-400 hover:text-blue-300">{{ req.packageName }}</a>
                 </td>
                 <td class="py-3 px-4">
-                  <span class="bg-slate-700 text-slate-200 px-2 py-0.5 rounded text-sm font-mono">{{ req.version }}</span>
+                  @if (req.isKnownVersion)
+                    <span class="bg-emerald-900 text-emerald-300 border border-emerald-700 px-2 py-0.5 rounded text-sm font-mono">{{ req.version }}</span>
+                  @else
+                    <span class="bg-red-900 text-red-300 border border-red-700 px-2 py-0.5 rounded text-sm font-mono">{{ req.version }}</span>
+                  @endif
                 </td>
                 <td class="py-3 px-4 text-right font-semibold">{{ (req.requestCount || 0).toLocaleString() }}</td>
                 <td class="py-3 px-4 text-right text-slate-400 text-sm">{{ formatDate(req.lastRequestedAt) }}</td>
@@ -95,17 +158,17 @@
         @if (totalPages > 1)
           <div class="px-6 py-3 border-t border-slate-700 flex items-center justify-center gap-2">
             @if (page > 1)
-              <a href="/dashboard/requested-versions?page={{ page - 1 }}{{ qsAmp }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">Previous</a>
+              <a href="{{ pageBase }}&page={{ page - 1 }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">Previous</a>
             @endif
             @for (let i = 1; i <= totalPages; i++)
               @if (i === page)
                 <span class="px-3 py-1 bg-blue-600 rounded text-sm font-bold">{{ i }}</span>
               @else
-                <a href="/dashboard/requested-versions?page={{ i }}{{ qsAmp }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">{{ i }}</a>
+                <a href="{{ pageBase }}&page={{ i }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">{{ i }}</a>
               @endif
             @endfor
             @if (page < totalPages)
-              <a href="/dashboard/requested-versions?page={{ page + 1 }}{{ qsAmp }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">Next</a>
+              <a href="{{ pageBase }}&page={{ page + 1 }}" class="px-3 py-1 bg-slate-700 rounded text-sm hover:bg-slate-600">Next</a>
             @endif
           </div>
         @endif

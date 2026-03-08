@@ -505,14 +505,13 @@ export function createHandler(
         if (rest && !rest.includes('/') && req.method === 'GET') {
           const metadata = await registry.getPackage(packageName, rest)
           if (!metadata) {
-            // Only track if this is a real version that exists but hasn't been built yet
-            if (isKnownVersion(packageName, rest)) {
-              analyticsStorage.trackMissingVersion(
-                packageName,
-                rest,
-                req.headers.get('user-agent') || undefined,
-              ).catch(() => {}) // fire-and-forget
-            }
+            // Track all missing version requests, tagging whether the version is known
+            analyticsStorage.trackMissingVersion(
+              packageName,
+              rest,
+              req.headers.get('user-agent') || undefined,
+              isKnownVersion(packageName, rest),
+            ).catch(() => {}) // fire-and-forget
             return Response.json(
               { error: 'Package version not found' },
               { status: 404, headers: corsHeaders },
@@ -1188,9 +1187,10 @@ async function handleDashboard(
 
   // Requested versions page
   if (path === '/dashboard/requested-versions') {
-    const allRequests = await analytics.getAllMissingVersionRequests(200)
+    const allRequests = await analytics.getAllMissingVersionRequests(500)
+    const filter = url.searchParams.get('filter') || 'known'
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await stxRender(`${DASHBOARD_DIR}/requested-versions.stx`, { requests: allRequests, page, perPage: 25, qs, qsAmp })
+    const html = await stxRender(`${DASHBOARD_DIR}/requested-versions.stx`, { requests: allRequests, filter, page, perPage: 25, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 

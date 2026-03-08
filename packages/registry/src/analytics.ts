@@ -53,7 +53,7 @@ export interface InstallAnalyticsResult {
 export interface AnalyticsStorage {
   trackDownload(event: DownloadEvent): Promise<void>
   trackEvent(event: AnalyticsEvent): Promise<void>
-  trackMissingVersion(packageName: string, version: string, userAgent?: string): Promise<void>
+  trackMissingVersion(packageName: string, version: string, userAgent?: string, isKnownVersion?: boolean): Promise<void>
   getMissingVersionRequests(packageName: string, limit?: number): Promise<MissingVersionRequest[]>
   getAllMissingVersionRequests(limit?: number): Promise<MissingVersionRequest[]>
   getPackageStats(packageName: string): Promise<PackageStats | null>
@@ -381,7 +381,7 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
     return buildInstallAnalyticsResult(aggregated, startDate, endDate, category)
   }
 
-  async trackMissingVersion(packageName: string, version: string, _userAgent?: string): Promise<void> {
+  async trackMissingVersion(packageName: string, version: string, _userAgent?: string, isKnownVersion?: boolean): Promise<void> {
     const now = new Date()
     const ttl = Math.floor(now.getTime() / 1000) + 90 * 24 * 60 * 60 // 90 days TTL
 
@@ -392,7 +392,7 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
         PK: { S: `VERSION_REQUEST#${packageName}` },
         SK: { S: `VERSION#${version}` },
       },
-      UpdateExpression: 'SET requestCount = if_not_exists(requestCount, :zero) + :one, lastRequestedAt = :ts, packageName = :name, version = :ver, #t = :ttl',
+      UpdateExpression: 'SET requestCount = if_not_exists(requestCount, :zero) + :one, lastRequestedAt = :ts, packageName = :name, version = :ver, #t = :ttl, isKnownVersion = :known',
       ExpressionAttributeNames: {
         '#t': 'ttl',
       },
@@ -403,6 +403,7 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
         ':name': { S: packageName },
         ':ver': { S: version },
         ':ttl': { N: String(ttl) },
+        ':known': { BOOL: isKnownVersion ?? false },
       },
     })
   }
@@ -424,6 +425,7 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
         version: data.version,
         requestCount: data.requestCount || 0,
         lastRequestedAt: data.lastRequestedAt || '',
+        isKnownVersion: data.isKnownVersion ?? false,
       }
     })
 
@@ -449,6 +451,7 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
         version: data.version,
         requestCount: data.requestCount || 0,
         lastRequestedAt: data.lastRequestedAt || '',
+        isKnownVersion: data.isKnownVersion ?? false,
       }
     })
 
@@ -581,7 +584,7 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     return buildInstallAnalyticsResult(aggregated, startDate, endDate, category)
   }
 
-  async trackMissingVersion(packageName: string, version: string, _userAgent?: string): Promise<void> {
+  async trackMissingVersion(packageName: string, version: string, _userAgent?: string, isKnownVersion?: boolean): Promise<void> {
     const key = `${packageName}@${version}`
     const existing = this.missingVersionRequests.get(key)
     if (existing) {
@@ -593,6 +596,7 @@ export class InMemoryAnalytics implements AnalyticsStorage {
         version,
         requestCount: 1,
         lastRequestedAt: new Date().toISOString(),
+        isKnownVersion: isKnownVersion ?? false,
       })
     }
   }

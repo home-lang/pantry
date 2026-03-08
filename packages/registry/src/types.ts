@@ -129,6 +129,7 @@ export interface MissingVersionRequest {
   version: string
   requestCount: number
   lastRequestedAt: string
+  isKnownVersion?: boolean
 }
 
 /**
