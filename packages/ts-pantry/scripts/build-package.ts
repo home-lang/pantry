@@ -583,15 +583,7 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
     }
   }
 
-  // 3. Prepend script steps (run before existing build script)
-  if (override.prependScript && override.prependScript.length > 0) {
-    if (!normalizedRecipe.build) normalizedRecipe.build = {}
-    const existing = normalizedRecipe.build.script
-    const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
-    normalizedRecipe.build.script = [...override.prependScript as RecipeScriptStep[], ...existingArray]
-  }
-
-  // 4. Apply platform-specific overrides
+  // 3. Apply platform-specific overrides (env, distributable)
   const platformOverride = os === 'linux' ? override.platforms?.linux
     : os === 'darwin' ? override.platforms?.darwin
     : null
@@ -615,24 +607,35 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
         normalizedRecipe.build.env[os][key] = value
       }
     }
-
-    // Platform prependScript
-    if (platformOverride.prependScript && platformOverride.prependScript.length > 0) {
-      if (!normalizedRecipe.build) normalizedRecipe.build = {}
-      const existing = normalizedRecipe.build.script
-      const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
-      normalizedRecipe.build.script = [...platformOverride.prependScript as RecipeScriptStep[], ...existingArray]
-    }
   }
 
-  // 5. Override recipe platforms if supportedPlatforms is specified
+  // 4. Override recipe platforms if supportedPlatforms is specified
   if (override.supportedPlatforms) {
     normalizedRecipe.platforms = override.supportedPlatforms
   }
 
-  // 6. Apply modifyRecipe callback for complex mutations
+  // 5. Apply modifyRecipe callback for complex mutations
+  // Run BEFORE prependScript so that prependScript always prepends to the final script
+  // (modifyRecipe may replace the entire build script, e.g. pre-built binary downloads)
   if (override.modifyRecipe) {
     override.modifyRecipe(normalizedRecipe, platform)
+  }
+
+  // 6. Prepend script steps (run before existing build script)
+  // Applied last so they always appear at the start, even after modifyRecipe replaces the script
+  if (override.prependScript && override.prependScript.length > 0) {
+    if (!normalizedRecipe.build) normalizedRecipe.build = {}
+    const existing = normalizedRecipe.build.script
+    const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
+    normalizedRecipe.build.script = [...override.prependScript as RecipeScriptStep[], ...existingArray]
+  }
+
+  // 7. Platform-specific prependScript (also after modifyRecipe)
+  if (platformOverride?.prependScript && platformOverride.prependScript.length > 0) {
+    if (!normalizedRecipe.build) normalizedRecipe.build = {}
+    const existing = normalizedRecipe.build.script
+    const existingArray = Array.isArray(existing) ? existing : (existing ? [existing] : [])
+    normalizedRecipe.build.script = [...platformOverride.prependScript as RecipeScriptStep[], ...existingArray]
   }
 }
 
