@@ -2,7 +2,7 @@
  * **zotregistry** - pkgx package
  *
  * @domain `zotregistry.dev`
- * @version `2.1.14` (2 versions available)
+ * @version `2.1.15` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install zotregistry.dev`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.zotregistrydev
  * console.log(pkg.name)        // "zotregistry"
- * console.log(pkg.versions[0]) // "2.1.14" (latest)
+ * console.log(pkg.versions[0]) // "2.1.15" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/zotregistry-dev.md
@@ -59,6 +59,7 @@ export const zotregistrydevPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.1.15',
     '2.1.14',
     '2.1.13',
   ] as const,
