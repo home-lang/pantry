@@ -1350,7 +1350,11 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       const domain = parseDep(dep)
       if (domain && !removedDeps.has(domain)) depByDomain.set(domain, dep)
     }
-    // Second pass: YAML deps — merge constraints when both build and runtime specify them
+    // Second pass: YAML deps from normalizedRecipe (after overrides) take precedence.
+    // When an override changes a constraint (e.g., python.org: ~3.10 → >=3.10<3.14),
+    // the overridden value should REPLACE the TS dep constraint, not merge with it.
+    // Only merge when both build AND runtime YAML deps specify different constraints
+    // for the same domain (e.g., build: ">=2.3" + runtime: "<4" → ">=2.3<4").
     for (const dep of [...yamlBuildDeps, ...yamlRuntimeDeps]) {
       const domain = parseDep(dep)
       if (!domain || removedDeps.has(domain)) continue
@@ -1358,11 +1362,16 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       if (existing) {
         const existingConstraint = parseDepConstraint(existing)
         const newConstraint = parseDepConstraint(dep)
-        if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
-          // Merge constraints: e.g., ">=2.3" + "<4" → ">=2.3<4"
+        // Check if the existing entry came from TS deps (pre-override) vs YAML deps
+        const existingIsFromTs = tsDeps.includes(existing)
+        if (existingIsFromTs) {
+          // Override replaces TS constraint entirely
+          depByDomain.set(domain, dep)
+        } else if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
+          // Both from YAML (build + runtime) — merge constraints
           depByDomain.set(domain, `${domain} ${existingConstraint}${newConstraint}`)
-          continue
         }
+        continue
       }
       depByDomain.set(domain, dep)
     }
