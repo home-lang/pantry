@@ -1080,7 +1080,10 @@ Options:
     'yarnpkg.com', 'go.dev', 'deno.land', 'python.org',
   ])
 
-  allPackages = allPackages.filter(p => !preBuiltDomains.has(p.domain))
+  // Skip pre-built filter for targeted builds (-p) — allow building specific pre-built packages
+  if (!values.package) {
+    allPackages = allPackages.filter(p => !preBuiltDomains.has(p.domain))
+  }
 
   // Filter to packages that actually have build scripts (skip metadata-only packages)
   // Skip this filter for targeted builds (-p) since the parser may miss some build scripts
@@ -1510,7 +1513,7 @@ Options:
     // github.com/mas-cli/mas removed — clean .build dir before swift build in override
     'github.com/unsignedapps/swift-create-xcframework', // posix_spawn conflict in swift-llbuild
     // github.com/nvbn/thefuck removed — widened python version constraint in override
-    'github.com/npiv/chatblade', // tiktoken requires Rust pyo3-ffi compilation that fails on Python 3.14
+    // github.com/npiv/chatblade removed — pinned Python >=3.10<3.14 in override (tiktoken PyO3)
     // github.com/stub42/pytz removed — widened python version constraint in override
     // github.com/mattrobenolt/jinja2-cli removed — widened python version constraint in override
     // github.com/pressly/sup removed — fixed go mod init in override
@@ -1518,7 +1521,7 @@ Options:
     // github.com/a7ex/xcresultparser removed — SDKROOT fix for ncurses unctrl.h conflict
     // github.com/peripheryapp/periphery removed — pre-built binary from artifactbundle.zip
     'github.com/coqui-ai/TTS', // Requires Python <3.11 — CI has 3.14, heavy ML deps
-    'github.com/VikParuchuri/surya', // Requires Python ~3.11 with pytorch, incompatible with 3.14
+    // github.com/VikParuchuri/surya removed — widened Python to >=3.11<3.14 in override
     // github.com/awslabs/llrt removed — pre-built binary from GitHub releases
     // github.com/glauth/glauth removed — pre-built binary download from GitHub releases
     // github.com/shaka-project/shaka-packager removed — pre-built binary download from GitHub releases
@@ -1527,28 +1530,28 @@ Options:
     // github.com/OSGeo/libgeotiff removed — proj.org available on darwin
     // github.com/allure-framework/allure2 removed — fixed strip-components in override
     // man-db.gitlab.io/man-db removed — override fixes rm/rmdir under set -e, linux-only
-    'aws.amazon.com/sam', // Needs Python <3.14, CI has 3.14.3 and Python 3.13 not in S3
+    // aws.amazon.com/sam removed — widened Python to >=3.12<3.14, removed rust dep in override
     // github.com/Diniboy1123/usque removed — pre-built binary download from GitHub releases
     // github.com/essembeh/gnome-extensions-cli removed — widened python version in override
     // github.com/sindresorhus/macos-term-size removed — fixed build script for renamed binary + skip codesign
-    'eyrie.org/eagle/podlators', // GitHub tags (release/5.01) don't match archive site filenames (v6.0.2)
+    // eyrie.org/eagle/podlators removed — distributableUrl override fixes tag/filename mismatch
     // github.com/thkukuk/libnsl removed — added system libtirpc-dev install + linux-only supportedPlatforms
     // --- Failures from sync run 22422991817 ---
     // github.com/p7zip-project/p7zip removed — fixed version tag format in override
     // github.com/google/re2 removed — fixed date-based version tag in override
     // github.com/saagarjha/unxip removed — existing override limits to darwin/aarch64, tag resolution works
     // videolan.org/x265 removed — patched CMakeLists.txt to use CMP0025/CMP0054 NEW policy
-    'snaplet.dev/cli', // better-sqlite3 node-gyp fails with Node 24 (modifyRecipe can't override S3 dep)
+    // snaplet.dev/cli removed — pinned Node to ~20 LTS in override
     // ceph.com/cephadm removed — replaced sed shebang patching with python3 -m zipapp
     // opensearch.org removed — openjdk.org override now downloads pre-built Temurin JDK
     // pulumi.io removed — installed uv + skipped python SDK step (Go binaries built separately)
     // nx.dev removed — successfully built and uploaded
     // gnu.org/texinfo removed — builds on darwin, linux gnulib issue is tolerable
     'gnu.org/guile', // scmconfig.h circular dep — even with bootstrap cp and CC bypass, still fails
-    'sourceforge.net/libtirpc', // cc wrapper confuses libtool — shared lib .so not produced (only .a)
+    // sourceforge.net/libtirpc removed — bypass cc wrapper with explicit CC/CXX on linux
     // sourceforge.net/xmlstar removed — use system libxml2/libxslt instead of S3 2.15
     // werf.io removed — added exclude_graphdriver_btrfs build tag in override
-    'github.com/aws/aws-sdk-cpp', // cc wrapper breaks stdlib.h include path (fatal error: stdlib.h: No such file or directory)
+    // github.com/aws/aws-sdk-cpp removed — bypass cc wrapper with explicit CC/CXX on linux
     // projen.io removed — JS-only packaging via jsii-pacmak (skip Python/Java)
     // opendap.org removed — moved ac_cv_sizeof cache vars from ARGS to env exports
     // aws.amazon.com/cli removed — upgraded flit_core + --no-build-isolation for Python 3.14
@@ -1557,14 +1560,14 @@ Options:
     // modal.com removed — upgraded grpcio-tools pin from 1.59.2 to >=1.68.0 for Python 3.13+ compat
     // rucio.cern.ch/rucio-client removed — stripped C-extension extras from pip install
     // mypy-lang.org removed — pinned pathspec<0.12 in override (0.12+ removed GitWildMatchPatternError)
-    'tcl-lang.org', // Complex 6-component build — tcltls/itk4 steps fail even after removing system Tcl 8.x
+    // tcl-lang.org removed — stripped failing tcltls/itk4 sub-builds, kept core Tcl+Tk+critcl+tcllib
     // github.com/luvit/luv removed — fixed stray cmake prefix quote + LUA_INSTALL_DIR override
     // musepack.net removed — added --allow-multiple-definition to cmake linker flags
     'tcl-lang.org/expect', // SourceForge download mirror unreachable
     // --- Failures from verification builds (2026-02-26) ---
     // poppler.freedesktop.org removed — disabled NSS3/GPGME deps, removed gpgme/nss from deps in override
     'freedesktop.org/appstream', // meson build fails — complex dep chain (libfyaml, systemd, etc)
-    'unidata.ucar.edu/netcdf', // system libxml2 headers incompatible (globals.h unknown type names)
+    // unidata.ucar.edu/netcdf removed — disabled libxml2/DAP in cmake override
     // lavinmq.com removed — limited to darwin/aarch64 (Crystal only in S3 for that platform)
     'vapoursynth.com', // Needs python.org ~3.11 (S3 has 3.14) + zimg dep
     'github.com/kdave/btrfs-progs', // Needs kernel headers + e2fsprogs (complex Linux-only)

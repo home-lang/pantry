@@ -2451,6 +2451,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
         prependScript: [
           // Install system kerberos headers (instead of relying on kerberos.org from S3)
           'sudo apt-get install -y libkrb5-dev 2>/dev/null || true',
+          // Bypass cc wrapper — confuses libtool, prevents shared lib (.so) creation
+          'export CC=/usr/bin/gcc',
+          'export CXX=/usr/bin/g++',
         ],
       },
     },
@@ -4962,8 +4965,19 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Remove x.org/x11 and x.org/exts deps (not in S3)
       if (recipe.dependencies?.['x.org/x11']) delete recipe.dependencies['x.org/x11']
       if (recipe.dependencies?.['x.org/exts']) delete recipe.dependencies['x.org/exts']
-      // Fix sed -i BSD compat + make glob patterns resilient to empty matches
+      // Strip tcltls and itk4 sub-builds — they fail (tcltls: openssl compat, itk4: missing install-sh)
+      // Core Tcl + Tk + critcl + tcllib are the most useful parts
       if (Array.isArray(recipe.build?.script)) {
+        recipe.build.script = recipe.build.script.filter((step: RecipeScriptStep) => {
+          if (typeof step === 'object' && step['working-directory']) {
+            const wd = step['working-directory']
+            if (wd === 'tcltls' || wd === 'itk4') return false
+          }
+          // Also remove the sqlite3_analyzer rm (may not exist without tcltls)
+          if (typeof step === 'string' && step.includes('sqlite3_analyzer')) return false
+          return true
+        })
+        // Fix sed -i BSD compat + make glob patterns resilient to empty matches
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'object' && step.run && typeof step.run === 'string') {
@@ -4971,7 +4985,6 @@ export const packageOverrides: Record<string, PackageOverride> = {
               step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
                 .replace(/sed -i -f /g, 'sed -i.bak -f ')
             }
-            // Make glob-based sed resilient: use bash nullglob or || true
             if (step.run.includes('sed ') && (step.run.includes('*.sh') || step.run.includes('*/'))) {
               step.run = `shopt -s nullglob; ${step.run}; shopt -u nullglob`
             }
@@ -4987,6 +5000,13 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = s
           }
         }
+      }
+      // Remove tcltls/itk4 env vars
+      if (recipe.build?.env) {
+        delete recipe.build.env.res_tcltls
+        delete recipe.build.env.res_itk4
+        delete recipe.build.env.TLS_ARGS
+        delete recipe.build.env.ITK4_ARGS
       }
     },
   },
@@ -6227,6 +6247,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── github.com/aws/aws-sdk-cpp — fix cmake prefix quote ─────────────
 
   'github.com/aws/aws-sdk-cpp': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Bypass cc wrapper on Linux — it strips -isystem /usr/include which breaks
+          // GCC's #include_next <stdlib.h> chain (fatal error: stdlib.h not found)
+          'export CC=/usr/bin/gcc',
+          'export CXX=/usr/bin/g++',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         // Fix cmake prefix quote
@@ -6711,9 +6741,9 @@ export const packageOverrides: Record<string, PackageOverride> = {
       'python3 -m pip install --break-system-packages "setuptools<78" 2>/dev/null || true',
     ],
     modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Widen python version (CI has 3.14, recipe wants <3.12)
+      // Widen python version but cap at <3.14 — tiktoken uses PyO3 which doesn't support 3.14
       if (recipe.dependencies?.['python.org']) {
-        recipe.dependencies['python.org'] = '>=3<3.15'
+        recipe.dependencies['python.org'] = '>=3.10<3.14'
       }
     },
   },
@@ -6934,6 +6964,31 @@ export const packageOverrides: Record<string, PackageOverride> = {
   },
 
   // github.com/luvit/luv duplicate removed — primary override at line ~5152 has more comprehensive fix
+
+  // ─── github.com/VikParuchuri/surya — widen Python version ───
+  // Recipe has python.org ~3.11 (build dep), S3 has 3.12.0. Surya supports 3.12.
+  'github.com/VikParuchuri/surya': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3.11<3.14'
+      }
+    },
+  },
+
+  // ─── aws.amazon.com/sam — widen Python version ───
+  // Recipe has python.org ~3.13 (build dep), S3 has 3.12.0 and 3.14.3.
+  // SAM CLI works with Python 3.12. Remove rust dep (not needed for pip install).
+  'aws.amazon.com/sam': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      if (recipe.build?.dependencies?.['python.org']) {
+        recipe.build.dependencies['python.org'] = '>=3.12<3.14'
+      }
+      // Remove rust-lang.org build dep — SAM CLI is pure Python, rust is for optional cryptography wheel
+      if (recipe.build?.dependencies?.['rust-lang.org']) {
+        delete recipe.build.dependencies['rust-lang.org']
+      }
+    },
+  },
 
   // ─── github.com/oobabooga/text-generation-webui — pin Python <3.14 + fix pydantic wheel ───
   // pydantic-core uses PyO3 0.24 which doesn't support Python 3.14
@@ -7522,10 +7577,16 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
         delete recipe.dependencies['hdfgroup.org/HDF5']
       }
-      // Add -DENABLE_HDF5=OFF to cmake ARGS
+      // Remove libxml2 dep — causes incompatible headers (globals.h unknown types)
+      if (recipe.dependencies?.['gnome.org/libxml2']) {
+        delete recipe.dependencies['gnome.org/libxml2']
+      }
+      // Add cmake flags to disable HDF5, NetCDF4, and libxml2/DAP
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('-DENABLE_HDF5=OFF')
         recipe.build.env.ARGS.push('-DENABLE_NETCDF_4=OFF')
+        recipe.build.env.ARGS.push('-DENABLE_LIBXML2=OFF')
+        recipe.build.env.ARGS.push('-DENABLE_DAP=OFF')
       }
       // Fix sed -i (BSD requires suffix) in cmake fixup steps
       // Must handle: string runs, array runs, and sed -E -i -f patterns
