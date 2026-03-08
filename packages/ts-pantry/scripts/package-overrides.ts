@@ -4418,10 +4418,11 @@ export const packageOverrides: Record<string, PackageOverride> = {
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
         )
       }
-      // Disable Arrow format support (arrow dep chain is broken)
+      // Disable Arrow format support (arrow dep chain is broken) and JPEG12 (missing J12SAMPLE type)
       if (Array.isArray(recipe.build?.env?.ARGS)) {
         recipe.build.env.ARGS.push('-DGDAL_USE_ARROW=OFF')
         recipe.build.env.ARGS.push('-DGDAL_USE_PARQUET=OFF')
+        recipe.build.env.ARGS.push('-DGDAL_USE_JPEG12_INTERNAL=OFF')
         // Fix stray quote in cmake prefix (ARGS variant)
         recipe.build.env.ARGS = recipe.build.env.ARGS.map((a: string) =>
           a === '-DCMAKE_INSTALL_PREFIX="{{prefix}}' ? '-DCMAKE_INSTALL_PREFIX={{prefix}}' : a,
@@ -7116,7 +7117,7 @@ export const packageOverrides: Record<string, PackageOverride> = {
         )
         if (venvIdx >= 0) {
           recipe.build.script.splice(venvIdx, 0,
-            'python3 -m pip install --break-system-packages poetry-core "setuptools<78" wheel 2>/dev/null || true',
+            'python3 -m pip install --break-system-packages poetry poetry-core "setuptools<78" wheel 2>/dev/null || true',
           )
         }
       }
@@ -8653,6 +8654,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.dependencies?.['kerberos.org']) delete recipe.dependencies['kerberos.org']
       // Remove scons.org build dep — use system scons via pip
       if (recipe.build?.dependencies?.['scons.org']) delete recipe.build.dependencies['scons.org']
+      // Remove GSSAPI= from ARGS (references kerberos dep path which is now gone)
+      if (Array.isArray(recipe.build?.env?.ARGS)) {
+        recipe.build.env.ARGS = recipe.build.env.ARGS.filter((a: string) => !a.startsWith('GSSAPI='))
+      }
     },
     platforms: {
       linux: {
