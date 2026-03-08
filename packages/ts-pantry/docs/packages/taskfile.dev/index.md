@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 42 versions</summary>
+<summary>Show all 43 versions</summary>
 
-- `3.49.0`
+- `3.49.1`, `3.49.0`
 - `3.48.0`
 - `3.47.0`
 - `3.46.4`, `3.46.3`, `3.46.2`, `3.46.1`
@@ -53,13 +53,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.49.0`
+**Latest Version**: `3.49.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +taskfile.dev@3.49.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +taskfile.dev@3.49.1 -- $SHELL -i
 ```
 
 ## Usage Examples
