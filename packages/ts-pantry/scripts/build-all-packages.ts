@@ -1207,7 +1207,7 @@ Options:
     // frei0r.dyne.org removed — switched to GitHub source (upstream tarball was corrupt)
     // info-zip.org/unzip removed — distributableUrl override to working SourceForge URL
     // practical-scheme.net/gauche removed — distributableUrl override with underscore format
-    'openinterpreter.com', // tiktoken 0.7.0 uses PyO3 incompatible with Python 3.14 (CI), dep resolver ignores version constraints
+    // openinterpreter.com removed — pinned Python >=3.10<3.13 in override (S3 has 3.12.0)
     // github.com/oobabooga/text-generation-webui removed — pinned Python <3.14 in override
     // psycopg.org/psycopg3 removed — widened Python version constraint in override
     'sourceware.org/dm', // GitLab download URLs return 404
@@ -1244,7 +1244,7 @@ Options:
 
     'jetporch.com', // Dead project, GitHub repo/tags removed
     // libsdl.org/SDL_image removed — SKIP_VERSIONS >= 3.0.0 excludes SDL3 tags, distributableUrl for SDL2
-    'gource.io', // configure fails: sdl2/SDL2_image not found (deps not in pkg-config)
+    // gource.io removed — SDL2 and deps now available in S3 and CI
     'xpra.org', // Wrong strip regex (/^xpra /) + massive Linux-only dep chain
     'qt.io', // Hardcoded single version 5.15.10, massive build
     // hdfgroup.org/HDF5 removed — fixed distributable URL for all version tag formats
