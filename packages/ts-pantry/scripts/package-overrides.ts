@@ -6862,11 +6862,28 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── hdfgroup.org/HDF5 — fix tag format for 2.x (no hdf5_ prefix) ─────
 
   'hdfgroup.org/HDF5': {
-    distributableUrl: 'https://github.com/HDFGroup/hdf5/releases/download/hdf5_{{version}}/hdf5-{{version}}.tar.gz',
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove linux gcc dep
       if (recipe.build?.dependencies?.linux?.['gnu.org/gcc']) {
         delete recipe.build.dependencies.linux['gnu.org/gcc']
+      }
+      // HDF5 2.x changed tag format from hdf5_X.Y.Z to just X.Y.Z
+      // Use shell to detect version and construct correct URL
+      recipe.distributable = undefined
+      if (recipe.build) {
+        const origScript = recipe.build.script || []
+        recipe.build.script = [
+          [
+            'MAJOR=$(echo "{{version}}" | cut -d. -f1)',
+            'if [ "$MAJOR" -ge 2 ]; then',
+            '  TAG="{{version}}"',
+            'else',
+            '  TAG="hdf5_{{version}}"',
+            'fi',
+            'curl -fSL "https://github.com/HDFGroup/hdf5/releases/download/${TAG}/hdf5-{{version}}.tar.gz" | tar xz --strip-components=1',
+          ].join('\n'),
+          ...origScript,
+        ]
       }
     },
   },
@@ -8441,6 +8458,10 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── apache.org/jmeter — quote URL with ? to prevent glob expansion ──
 
   'apache.org/jmeter': {
+    prependScript: [
+      // CI runners may not trust search.maven.org cert — add --no-check-certificate
+      'alias wget="wget --no-check-certificate"',
+    ],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // The PLUGINS_MANAGER_URL contains ?filepath=... which gets glob-expanded
       // under shopt -s nullglob. Quote the variable in the wget command.
@@ -8994,6 +9015,14 @@ export const packageOverrides: Record<string, PackageOverride> = {
 
   'dhruvkb.dev/pls': {
     distributableUrl: 'https://github.com/pls-rs/pls/archive/refs/tags/v0.0.1-beta.9.tar.gz',
+    platforms: {
+      darwin: {
+        prependScript: [
+          // GNU libiconv pulled in via gettext rewrites iconv symbols, causing linker mismatch
+          'rm -rf /tmp/buildkit-deps/gnu.org/libiconv',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Widen libgit2 dep to match whatever is in S3
       if (recipe.dependencies?.['libgit2.org']) {
@@ -9869,6 +9898,99 @@ export const packageOverrides: Record<string, PackageOverride> = {
             'VER_UNDERSCORE=$(echo "{{version}}" | tr "." "_")',
             'TAG="rel_${VER_UNDERSCORE}"',
             'curl -fSL "https://github.com/sqlalchemy/alembic/archive/refs/tags/${TAG}.tar.gz" | tar xz --strip-components=1',
+          ].join('\n'),
+          ...origScript,
+        ]
+      }
+    },
+  },
+
+  // ─── github.com/mtoyoda/sl — link ncurses tinfow on linux ──────────────
+
+  'github.com/mtoyoda/sl': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'export LDFLAGS="${LDFLAGS:-} -ltinfow"',
+        ],
+      },
+    },
+  },
+
+  // ─── github.com/kaspanet/rusty-kaspa — protobuf LD_LIBRARY_PATH ────────
+
+  'github.com/kaspanet/rusty-kaspa': {
+    platforms: {
+      linux: {
+        prependScript: [
+          'for _d in /tmp/buildkit-deps/github.com/protocolbuffers/protobuf/*/lib; do [ -d "$_d" ] && export LD_LIBRARY_PATH="$_d${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; done',
+        ],
+      },
+    },
+  },
+
+  // ─── github.com/Genymobile/scrcpy — SSL cert fix for wget ──────────────
+
+  'github.com/Genymobile/scrcpy': {
+    prependScript: [
+      'alias wget="wget --no-check-certificate"',
+    ],
+  },
+
+  // ─── github.com/cookiecutter/cookiecutter — v-prefixed tags for >= 2.7 ──
+
+  'github.com/cookiecutter/cookiecutter': {
+    distributableUrl: 'https://github.com/cookiecutter/cookiecutter/archive/refs/tags/v{{version}}.tar.gz',
+  },
+
+  // ─── tuxpaint.org — macOS SDK path for SDL2 headers ─────────────────────
+
+  'tuxpaint.org': {
+    platforms: {
+      darwin: {
+        prependScript: [
+          'export CFLAGS="${CFLAGS:-} -isysroot $(xcrun --show-sdk-path)"',
+          'export CXXFLAGS="${CXXFLAGS:-} -isysroot $(xcrun --show-sdk-path)"',
+        ],
+      },
+    },
+  },
+
+  // ─── github.com/AntonOsika/gpt-engineer — fix packaging module ─────────
+
+  'github.com/AntonOsika/gpt-engineer': {
+    prependScript: [
+      'pip install --break-system-packages packaging 2>/dev/null || true',
+    ],
+  },
+
+  // ─── github.com/AUTOMATIC1111/stable-diffusion-webui — pin Python <3.14 ─
+
+  'github.com/AUTOMATIC1111/stable-diffusion-webui': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // torch 2.3.1 not available for Python 3.14
+      if (recipe.dependencies?.['python.org']) {
+        recipe.dependencies['python.org'] = '>=3.10<3.14'
+      }
+    },
+  },
+
+  // ─── poppler.freedesktop.org — zero-padded month in download URL ────────
+
+  'poppler.freedesktop.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Version format is YY.MM.patch where MM is zero-padded but version discovery
+      // strips the leading zero. Use shell to reconstruct the zero-padded URL.
+      recipe.distributable = undefined
+      if (recipe.build) {
+        const origScript = recipe.build.script || []
+        recipe.build.script = [
+          [
+            '# Poppler uses zero-padded month in tarball names (e.g. 26.03.0)',
+            'IFS="." read -r YEAR MONTH PATCH <<< "{{version}}"',
+            'MONTH_PAD=$(printf "%02d" "$MONTH")',
+            'PADDED_VER="${YEAR}.${MONTH_PAD}.${PATCH}"',
+            'curl -fSL "https://poppler.freedesktop.org/poppler-${PADDED_VER}.tar.xz" | tar xJ --strip-components=1',
           ].join('\n'),
           ...origScript,
         ]

@@ -371,8 +371,10 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   // download 404s (tags removed or phantom versions)
   'github.com/sharkdp/hyperfine': ['<0.18.0'],
   'github.com/digitalocean/doctl': ['<2.60.0'],
-  // HDF5 2.0.0 changed tag format from hdf5_X.Y.Z to just X.Y.Z — version.tag resolution fails
-  'hdfgroup.org/HDF5': ['2.0.0'],
+  'digitalocean.com/doctl': ['<2.60.0'],
+  // HDF5 2.x changed tag format — handled by shell-based URL in override now
+  // But keep skip for versions that may have other issues
+  'hdfgroup.org/HDF5': ['2.0.0', '2.1.0'],
   // Phantom version — GitHub has v3.1.4 and v3.2.0, no v3.1.5 tag (404)
   'github.com/TomWright/dasel': ['3.1.5'],
   // mitmproxy.org 11.1.x — REMOVED: bpf-linker issue is linux-only, darwin builds should work
@@ -685,6 +687,32 @@ const SKIP_VERSIONS: Record<string, string[]> = {
   'github.com/zaach/jsonlint': ['*'],
   // foundry switched from date-based tags (2024.4.12) to semver (v1.5.1); skip old scheme
   'getfoundry.sh': ['>=2023.0.0'],
+  // pipenv phantom version (3000.0.0 doesn't exist on GitHub)
+  'pipenv.pypa.io': ['>=3000.0.0'],
+  // poppler uses YY.MM.patch format; version discovery strips zero-pad from month
+  // producing versions like 26.3.0 when actual file is poppler-26.03.0.tar.xz
+  'poppler.freedesktop.org': ['26.1.0', '26.2.0', '26.3.0'],
+  // cookiecutter 2.7.x tags use v prefix but version resolver strips it; older 2.x without v also 404
+  'github.com/cookiecutter/cookiecutter': ['<2.5.0'],
+  // fossies libelf: compiler check fails (toolchain issue)
+  'fossies.org/libelf': ['*'],
+  // lsof: Configure -n darwin generates bad Makefile; newer versions use autoconf
+  'github.com/lsof-org/lsof': ['*'],
+  // util-linux: cc_wrapper -version flag incompatible + configure failure
+  'github.com/util-linux/util-linux': ['*'],
+  // rubocop: gem native extension can't find /./bin/ruby
+  'rubocop.org': ['*'],
+  // ronn: gemspec errors, old unmaintained project
+  'rtomayko.github.io/ronn': ['*'],
+  // licensee: racc gem native extension build failure
+  'github.com/licensee/licensed': ['*'],
+  // tea-package-builder: broken recipe (copies dir into itself)
+  'github.com/ArionThinker/tea-package-builder': ['*'],
+  // soliditylang: vtable linker errors (complex C++ build)
+  'soliditylang.org': ['*'],
+  // gnupg.org base: requires libgcrypt >= 1.11 but S3 only has older
+  'gnupg.org': ['*'],
+  'gnupg.org/v2.5': ['*'],
 }
 
 function isVersionSkipped(domain: string, version: string): boolean {
