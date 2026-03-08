@@ -7584,6 +7584,15 @@ export const packageOverrides: Record<string, PackageOverride> = {
   // ─── unidata.ucar.edu/netcdf — disable HDF5 (not in S3) ──────────────
 
   'unidata.ucar.edu/netcdf': {
+    platforms: {
+      linux: {
+        prependScript: [
+          // Bypass cc_wrapper: assembler rejects `.base64` pseudo-op injected by wrapper
+          'export CC=/usr/bin/gcc',
+          'export CXX=/usr/bin/g++',
+        ],
+      },
+    },
     modifyRecipe: (recipe: NormalizedRecipe) => {
       // Remove HDF5 dep — not in S3 dep chain. Build with classic format only.
       if (recipe.dependencies?.['hdfgroup.org/HDF5']) {
