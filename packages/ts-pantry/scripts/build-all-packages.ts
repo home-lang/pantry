@@ -1194,6 +1194,8 @@ Options:
   //     handles leading-zero normalization via API lookup (resolveGitHubTag)
   const knownBrokenDomains = new Set([
     'gnu.org/gcc/libgomp', // GCC sub-package — requires compiling all of GCC (~225s+ before failing), too resource-intensive for CI
+    'gnu.org/gcc', // Building GCC from source requires existing GCC; on darwin clang lacks -print-multi-os-directory
+    'gnu.org/gcc/libstdcxx', // Requires full GCC build, dep file I/O issues in CI
     // apache.org/subversion removed — skip serf/kerberos/swig, build svn core only
     // apache.org/serf removed — use system scons, skip kerberos
     // argoproj.github.io/cd removed — fixed v3 module path + cmd entry point
