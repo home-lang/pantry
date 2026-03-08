@@ -3,7 +3,7 @@
  *
  * @domain `github.com/gosom/google-maps-scraper`
  * @programs `google-maps-scraper`
- * @version `1.10.1` (51 versions available)
+ * @version `1.10.2` (52 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/gosom/google-maps-scraper`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "google-maps-scraper"
  * console.log(pkg.description) // "scrape data  data from Google Maps. Extracts da..."
  * console.log(pkg.programs)    // ["google-maps-scraper"]
- * console.log(pkg.versions[0]) // "1.10.1" (latest)
+ * console.log(pkg.versions[0]) // "1.10.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/gosom/google-maps-scraper.md
@@ -74,6 +74,7 @@ export const googlemapsscraperPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.10.2',
     '1.10.1',
     '1.10.0',
     '1.9.2',
