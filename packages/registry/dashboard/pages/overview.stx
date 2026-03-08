@@ -22,7 +22,8 @@
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <a href="/dashboard" class="text-xl font-bold text-white hover:text-slate-300">Pantry Dashboard</a>
       <div class="flex items-center gap-4">
-        <a href="/dashboard" class="text-slate-300 hover:text-white text-sm">Overview</a>
+        <a href="/dashboard" class="text-white text-sm font-semibold">Overview</a>
+        <a href="/dashboard/requested-versions" class="text-slate-300 hover:text-white text-sm">Requested Versions</a>
         <a href="/health" class="text-slate-400 hover:text-white text-sm">Health</a>
         <a href="/dashboard/logout" class="text-slate-400 hover:text-red-400 text-sm">Logout</a>
       </div>

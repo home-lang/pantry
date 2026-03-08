@@ -55,6 +55,7 @@ export interface AnalyticsStorage {
   trackEvent(event: AnalyticsEvent): Promise<void>
   trackMissingVersion(packageName: string, version: string, userAgent?: string): Promise<void>
   getMissingVersionRequests(packageName: string, limit?: number): Promise<MissingVersionRequest[]>
+  getAllMissingVersionRequests(limit?: number): Promise<MissingVersionRequest[]>
   getPackageStats(packageName: string): Promise<PackageStats | null>
   getTopPackages(limit?: number): Promise<Array<{ name: string, downloads: number }>>
   getDownloadTimeline(packageName: string, days?: number): Promise<Array<{ date: string, count: number }>>
@@ -431,6 +432,31 @@ export class DynamoDBAnalytics implements AnalyticsStorage {
     return requests.slice(0, limit)
   }
 
+  async getAllMissingVersionRequests(limit = 100): Promise<MissingVersionRequest[]> {
+    // Scan for all VERSION_REQUEST# items
+    const result = await this.db.scan({
+      TableName: this.tableName,
+      FilterExpression: 'begins_with(PK, :prefix)',
+      ExpressionAttributeValues: {
+        ':prefix': { S: 'VERSION_REQUEST#' },
+      },
+    })
+
+    const requests: MissingVersionRequest[] = result.Items.map((item) => {
+      const data = DynamoDBClient.unmarshal(item)
+      return {
+        packageName: data.packageName,
+        version: data.version,
+        requestCount: data.requestCount || 0,
+        lastRequestedAt: data.lastRequestedAt || '',
+      }
+    })
+
+    // Sort by request count descending
+    requests.sort((a, b) => b.requestCount - a.requestCount)
+    return requests.slice(0, limit)
+  }
+
   async getInstallAnalytics(days: 30 | 90 | 365): Promise<InstallAnalyticsResult> {
     return this.getCategoryAnalytics('install', days)
   }
@@ -578,6 +604,12 @@ export class InMemoryAnalytics implements AnalyticsStorage {
         results.push(req)
       }
     }
+    results.sort((a, b) => b.requestCount - a.requestCount)
+    return results.slice(0, limit)
+  }
+
+  async getAllMissingVersionRequests(limit = 100): Promise<MissingVersionRequest[]> {
+    const results = Array.from(this.missingVersionRequests.values())
     results.sort((a, b) => b.requestCount - a.requestCount)
     return results.slice(0, limit)
   }

@@ -574,6 +574,7 @@ export function createServer(
     console.log('  GET  /binaries/{domain}/{ver}/{plat}/*  - Tarball/checksum')
     console.log('Dashboard:')
     console.log('  GET  /dashboard                 - Analytics overview')
+    console.log('  GET  /dashboard/requested-versions - Missing version requests')
     console.log('  GET  /dashboard/package/{name}   - Package detail')
     console.log('  GET  /dashboard/login            - Login')
   }
@@ -1126,6 +1127,11 @@ async function handleDashboard(
     return Response.json({ packages: topPackages }, { headers: noCacheHeaders })
   }
 
+  if (path === '/dashboard/api/requested-versions') {
+    const allRequests = await analytics.getAllMissingVersionRequests(200)
+    return Response.json({ requests: allRequests }, { headers: noCacheHeaders })
+  }
+
   if (path.startsWith('/dashboard/api/package/')) {
     const packageName = decodeURIComponent(path.replace('/dashboard/api/package/', ''))
     const [stats, timeline] = await Promise.all([
@@ -1143,6 +1149,14 @@ async function handleDashboard(
       analytics.getDownloadTimeline(packageName, 30),
     ])
     const html = await stxRender(`${DASHBOARD_DIR}/package.stx`, { packageName, stats, timeline })
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  // Requested versions page
+  if (path === '/dashboard/requested-versions') {
+    const allRequests = await analytics.getAllMissingVersionRequests(200)
+    const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
+    const html = await stxRender(`${DASHBOARD_DIR}/requested-versions.stx`, { requests: allRequests, page, perPage: 25 })
     return new Response(html, { headers: htmlHeaders })
   }
 
