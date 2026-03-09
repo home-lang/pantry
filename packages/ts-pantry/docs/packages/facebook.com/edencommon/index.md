@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 129 versions</summary>
+<summary>Show all 130 versions</summary>
 
-- `2026.3.2.0`
+- `2026.3.9.0`, `2026.3.2.0`
 - `2026.2.23.0`, `2026.2.16.0`, `2026.2.9.0`, `2026.2.2.0`
 - `2026.1.26.0`, `2026.1.19.0`, `2026.1.12.0`, `2026.1.5.0`
 - `2025.12.29.0`, `2025.12.22.0`, `2025.12.15.0`, `2025.12.1.0`
@@ -62,13 +62,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `2026.3.2.0`
+**Latest Version**: `2026.3.9.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +facebook.com/edencommon@2026.3.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +facebook.com/edencommon@2026.3.9.0 -- $SHELL -i
 ```
 
 ## Dependencies
