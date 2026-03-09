@@ -3,7 +3,7 @@
  *
  * @domain `operatorframework.io/operator-sdk`
  * @programs `operator-sdk`
- * @version `1.42.0` (17 versions available)
+ * @version `1.42.1` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install operatorframework.io/operator-sdk`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "operator-sdk"
  * console.log(pkg.description) // "SDK for building Kubernetes applications. Provi..."
  * console.log(pkg.programs)    // ["operator-sdk"]
- * console.log(pkg.versions[0]) // "1.42.0" (latest)
+ * console.log(pkg.versions[0]) // "1.42.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/operatorframework-io/operator-sdk.md
@@ -75,6 +75,7 @@ export const operatorframeworkiooperatorsdkPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.42.1',
     '1.42.0',
     '1.41.1',
     '1.41.0',
