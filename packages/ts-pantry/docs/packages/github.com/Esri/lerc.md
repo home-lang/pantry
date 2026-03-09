@@ -25,19 +25,20 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 1 versions</summary>
+<summary>Show all 2 versions</summary>
 
+- `4.1.0`
 - `4.0.0`
 
 </details>
 
-**Latest Version**: `4.0.0`
+**Latest Version**: `4.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/Esri/lerc@4.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/Esri/lerc@4.1.0 -- $SHELL -i
 ```
 
 ## Usage Examples

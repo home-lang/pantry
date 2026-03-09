@@ -2,7 +2,7 @@
  * **SDL_mixer** - pkgx package
  *
  * @domain `libsdl.org/SDL_mixer`
- * @version `2.8.1` (1 versions available)
+ * @version `3.2.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install libsdl.org/SDL_mixer`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.libsdlorgsdl_mixer
  * console.log(pkg.name)        // "SDL_mixer"
- * console.log(pkg.versions[0]) // "2.8.1" (latest)
+ * console.log(pkg.versions[0]) // "3.2.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/libsdl-org/SDL_mixer.md
@@ -61,6 +61,7 @@ export const libsdlorgsdl_mixerPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.2.0',
     '2.8.1',
   ] as const,
   aliases: [] as const,

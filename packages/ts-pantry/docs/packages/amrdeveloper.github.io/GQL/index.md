@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 36 versions</summary>
+<summary>Show all 37 versions</summary>
 
+- `0.43.0`
 - `0.42.0`
 - `0.41.0`
 - `0.40.0`
@@ -64,13 +65,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.42.0`
+**Latest Version**: `0.43.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +amrdeveloper.github.io/GQL@0.42.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +amrdeveloper.github.io/GQL@0.43.0 -- $SHELL -i
 ```
 
 ## Dependencies

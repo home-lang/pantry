@@ -2,7 +2,7 @@
  * **lerc** - Limited Error Raster Compression
  *
  * @domain `github.com/Esri/lerc`
- * @version `4.0.0` (1 versions available)
+ * @version `4.1.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/Esri/lerc`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcomesrilerc
  * console.log(pkg.name)        // "lerc"
  * console.log(pkg.description) // "Limited Error Raster Compression"
- * console.log(pkg.versions[0]) // "4.0.0" (latest)
+ * console.log(pkg.versions[0]) // "4.1.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/Esri/lerc.md
@@ -60,6 +60,7 @@ export const lercPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.1.0',
     '4.0.0',
   ] as const,
   aliases: [] as const,
