@@ -2,7 +2,7 @@ const std = @import("std");
 const testing = std.testing;
 const lib = @import("lib");
 const oidc = lib.auth.oidc;
-const io_helper = @import("../io_helper.zig");
+const io_helper = lib.io_helper;
 /// Get current timespec (Zig 0.16 compatible)
 fn getTimespec() std.c.timespec {
     return io_helper.clockGettime();

@@ -42,14 +42,7 @@ fn installSingleWorkspaceDep(
     const parser = @import("../../../deps/parser.zig");
     const pkg_registry = @import("../../../packages/generated.zig");
 
-    const clean_name = if (std.mem.startsWith(u8, dep.name, "auto:"))
-        dep.name[5..]
-    else if (std.mem.startsWith(u8, dep.name, "npm:"))
-        dep.name[4..]
-    else if (std.mem.startsWith(u8, dep.name, "local:"))
-        dep.name[6..]
-    else
-        dep.name;
+    const clean_name = helpers.normalizePackageName(dep.name);
 
     const is_npm_package = std.mem.startsWith(u8, dep.name, "npm:") or
         std.mem.startsWith(u8, dep.name, "auto:");
@@ -385,7 +378,7 @@ pub fn installWorkspaceCommandWithOptions(
             for (deps) |dep| {
                 if (std.mem.startsWith(u8, dep.version, "workspace:")) continue;
 
-                const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
+                const clean_dep_name = helpers.normalizePackageName(dep.name);
                 var key_buf: [512]u8 = undefined;
                 const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, dep.version }) catch
                     try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, dep.version });
@@ -485,7 +478,7 @@ pub fn installWorkspaceCommandWithOptions(
                 }
 
                 // Create a unique key for this dependency (stack buffer to avoid heap alloc per dep)
-                const clean_dep_name = helpers.stripDisplayPrefix(resolved_dep.name);
+                const clean_dep_name = helpers.normalizePackageName(resolved_dep.name);
                 var key_buf: [512]u8 = undefined;
                 const dep_key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ clean_dep_name, resolved_dep.version }) catch
                     try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_dep_name, resolved_dep.version });
@@ -627,14 +620,7 @@ pub fn installWorkspaceCommandWithOptions(
     for (all_deps) |dep| {
         if (!helpers.isLocalDependency(dep)) continue;
 
-        const clean_name = if (std.mem.startsWith(u8, dep.name, "auto:"))
-            dep.name[5..]
-        else if (std.mem.startsWith(u8, dep.name, "npm:"))
-            dep.name[4..]
-        else if (std.mem.startsWith(u8, dep.name, "local:"))
-            dep.name[6..]
-        else
-            dep.name;
+        const clean_name = helpers.normalizePackageName(dep.name);
 
         // Resolve the local path (handles link:, ~/, absolute, and relative paths)
         const local_path = if (helpers.isLinkDependency(dep.version)) lp: {
@@ -925,7 +911,7 @@ pub fn installWorkspaceCommandWithOptions(
     // --- Add package entries with resolved data ---
     const pkg_registry = @import("../../../packages/generated.zig");
     for (all_deps_buffer[0..all_deps_count]) |dep| {
-        const clean_dep_name = helpers.stripDisplayPrefix(dep.name);
+        const clean_dep_name = helpers.normalizePackageName(dep.name);
 
         // Determine the correct source
         const lock_source: lib.packages.PackageSource = if (dep.source != .registry)

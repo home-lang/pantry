@@ -463,7 +463,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     const i = ctx.next.fetchAdd(1, .monotonic);
                     if (i >= ctx.deps.len) break;
 
-                    const clean_name = helpers.stripDisplayPrefix(ctx.deps[i].name);
+                    const clean_name = helpers.normalizePackageName(ctx.deps[i].name);
 
                     // Skip packages that match lockfile and exist at destination
                     // (bypassed when --force is set)
@@ -785,7 +785,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Add successful packages to pantry.lock and record in checkpoint
         for (install_results) |result| {
             if (result.success and result.name.len > 0) {
-                const clean_name = helpers.stripDisplayPrefix(result.name);
+                const clean_name = helpers.normalizePackageName(result.name);
                 const resolved_url = try std.fmt.allocPrint(allocator, "registry:{s}@{s}", .{ clean_name, result.version });
                 defer allocator.free(resolved_url);
                 try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, null);

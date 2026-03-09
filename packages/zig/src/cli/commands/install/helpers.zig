@@ -192,12 +192,21 @@ pub fn isLocalDependency(dep: lib.deps.parser.PackageDependency) bool {
         isLocalPath(dep.version);
 }
 
-/// Strip display prefixes like "auto:", "npm:", and "local:" from package names for output
+pub fn normalizePackageName(name: []const u8) []const u8 {
+    if (std.mem.startsWith(u8, name, "auto:")) {
+        return name[5..];
+    } else if (std.mem.startsWith(u8, name, "npm:")) {
+        return name[4..];
+    } else if (std.mem.startsWith(u8, name, "local:")) {
+        return name[6..];
+    }
+    return name;
+}
+
+/// Strip display prefixes like "auto:" and "local:" from package names for output
 pub fn stripDisplayPrefix(name: []const u8) []const u8 {
     if (std.mem.startsWith(u8, name, "auto:")) {
         return name[5..]; // Skip "auto:"
-    } else if (std.mem.startsWith(u8, name, "npm:")) {
-        return name[4..]; // Skip "npm:"
     } else if (std.mem.startsWith(u8, name, "local:")) {
         return name[6..]; // Skip "local:"
     }
@@ -248,8 +257,7 @@ pub fn canSkipFromLockfile(
     _: std.mem.Allocator,
     modules_dir: []const u8,
 ) bool {
-    // Clean name (strip auto:, npm:, local: prefixes)
-    const clean_name = stripDisplayPrefix(dep_name);
+    const clean_name = normalizePackageName(dep_name);
 
     // Find any lockfile entry with matching name
     var found = false;
@@ -329,7 +337,7 @@ pub fn installSinglePackage(
 
     // Validate package exists in registry (strip "auto:" prefix for lookups)
     const pkg_registry = @import("../../../packages/generated.zig");
-    const stripped_name = stripDisplayPrefix(dep.name);
+    const stripped_name = normalizePackageName(dep.name);
     // Resolve well-known package aliases (e.g. "meilisearch" -> "meilisearch.com")
     const lookup_name = resolvePackageAlias(stripped_name);
     const pkg_info = pkg_registry.getPackageByName(lookup_name);
@@ -1299,6 +1307,14 @@ test "stripDisplayPrefix" {
     try std.testing.expectEqualStrings("foo", stripDisplayPrefix("auto:foo"));
     try std.testing.expectEqualStrings("bar", stripDisplayPrefix("local:bar"));
     try std.testing.expectEqualStrings("baz", stripDisplayPrefix("baz"));
+    try std.testing.expectEqualStrings("npm:lodash", stripDisplayPrefix("npm:lodash"));
+}
+
+test "normalizePackageName" {
+    try std.testing.expectEqualStrings("foo", normalizePackageName("auto:foo"));
+    try std.testing.expectEqualStrings("bar", normalizePackageName("local:bar"));
+    try std.testing.expectEqualStrings("lodash", normalizePackageName("npm:lodash"));
+    try std.testing.expectEqualStrings("baz", normalizePackageName("baz"));
 }
 
 test "canSkipFromLockfile - no matching entry" {
