@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 48 versions</summary>
+<summary>Show all 49 versions</summary>
 
-- `0.96.0`
+- `0.96.1`, `0.96.0`
 - `0.95.1`, `0.95.0`
 - `0.94.1`, `0.94.0`
 - `0.93.2`, `0.93.1`, `0.93.0`
@@ -68,13 +68,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.96.0`
+**Latest Version**: `0.96.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +iroh.computer@0.96.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +iroh.computer@0.96.1 -- $SHELL -i
 ```
 
 ## Usage Examples
