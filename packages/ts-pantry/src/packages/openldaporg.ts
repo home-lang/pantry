@@ -3,7 +3,7 @@
  *
  * @domain `openldap.org`
  * @programs `ldapcompare`, `ldapdelete`, `ldapexop`, `ldapmodify`, `ldapmodrdn`, ... (+5 more)
- * @version `2.6.12` (14 versions available)
+ * @version `2.6.13` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openldap.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ldap"
  * console.log(pkg.description) // "Open source suite of directory software"
  * console.log(pkg.programs)    // ["ldapcompare", "ldapdelete", ...]
- * console.log(pkg.versions[0]) // "2.6.12" (latest)
+ * console.log(pkg.versions[0]) // "2.6.13" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/openldap-org.md
@@ -86,6 +86,7 @@ export const openldaporgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.6.13',
     '2.6.12',
     '2.6.10',
     '2.6.9',

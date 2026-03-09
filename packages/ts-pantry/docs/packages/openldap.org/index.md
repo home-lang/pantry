@@ -34,20 +34,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
-- `2.6.12`, `2.6.10`, `2.6.9`, `2.6.8`, `2.6.7`, `2.6.6`, `2.6.5`, `2.6.4`
+- `2.6.13`, `2.6.12`, `2.6.10`, `2.6.9`, `2.6.8`, `2.6.7`, `2.6.6`, `2.6.5`, `2.6.4`
 - `2.5.20`, `2.5.19`, `2.5.18`, `2.5.17`, `2.5.16`, `2.5.15`
 
 </details>
 
-**Latest Version**: `2.6.12`
+**Latest Version**: `2.6.13`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +openldap.org@2.6.12 -- $SHELL -i
+sh <(curl https://pkgx.sh) +openldap.org@2.6.13 -- $SHELL -i
 ```
 
 ## Dependencies
