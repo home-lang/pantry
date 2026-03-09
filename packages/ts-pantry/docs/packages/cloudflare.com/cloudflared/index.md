@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 40 versions</summary>
+<summary>Show all 41 versions</summary>
 
+- `2026.3.0`
 - `2026.2.0`
 - `2026.1.2`, `2026.1.1`
 - `2025.11.1`, `2025.11.0`
@@ -53,13 +54,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2026.2.0`
+**Latest Version**: `2026.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cloudflare.com/cloudflared@2026.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cloudflare.com/cloudflared@2026.3.0 -- $SHELL -i
 ```
 
 ## Usage Examples
