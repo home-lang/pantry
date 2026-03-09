@@ -2,26 +2,6 @@
   "version": "1.0.0",
   "lockfileVersion": 1,
   "workspaces": {
-    "packages/site": {
-      "name": "@stacksjs/pantry-site",
-      "version": "0.1.0",
-      "dependencies": {
-        "@stacksjs/stx": "link:@stacksjs/stx"
-      },
-      "devDependencies": {
-        "typescript": "^5.7.0",
-        "bun-types": "latest"
-      }
-    },
-    "": {
-      "name": "pantry",
-      "dependencies": {
-        "@stacksjs/ts-cloud": "^0.1.11"
-      },
-      "devDependencies": {
-        "better-dx": "^0.2.6"
-      }
-    },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
       "version": "0.8.3",
@@ -41,14 +21,29 @@
         "better-dx": "^0.2.6"
       }
     },
-    "packages/action": {
-      "name": "pantry-installer",
-      "version": "0.8.3",
+    "packages/inspector": {
+      "name": "@stacksjs/pantry-inspector",
+      "version": "0.1.0",
+      "devDependencies": {
+        "typescript": "^5.7.0",
+        "bun-types": "latest"
+      }
+    },
+    "packages/site": {
+      "name": "@stacksjs/pantry-site",
+      "version": "0.1.0",
       "dependencies": {
-        "@actions/io": "^1.1.3",
-        "@actions/exec": "^1.1.1",
-        "@actions/github": "^6.0.1",
-        "@actions/core": "^1.11.1"
+        "@stacksjs/stx": "^0.2.6"
+      },
+      "devDependencies": {
+        "typescript": "^5.7.0",
+        "bun-types": "latest"
+      }
+    },
+    "": {
+      "name": "pantry",
+      "dependencies": {
+        "@stacksjs/ts-cloud": "^0.1.11"
       },
       "devDependencies": {
         "better-dx": "^0.2.6"
@@ -64,6 +59,19 @@
         "typescript": "^5.7.0",
         "bun-types": "latest"
       }
+    },
+    "packages/action": {
+      "name": "pantry-installer",
+      "version": "0.8.3",
+      "dependencies": {
+        "@actions/io": "^1.1.3",
+        "@actions/exec": "^1.1.1",
+        "@actions/github": "^6.0.1",
+        "@actions/core": "^1.11.1"
+      },
+      "devDependencies": {
+        "better-dx": "^0.2.6"
+      }
     }
   },
   "packages": {
@@ -71,6 +79,20 @@
       "name": "ziglang.org",
       "version": "0.15.1",
       "source": "pantry"
+    },
+    "@actions/github@^6.0.1": {
+      "name": "@actions/github",
+      "version": "^6.0.1",
+      "source": "npm",
+      "dependencies": {
+        "@actions/http-client": "^2.2.0",
+        "@octokit/request": "^8.4.1",
+        "@octokit/request-error": "^5.1.1",
+        "@octokit/core": "^5.0.1",
+        "undici": "^5.28.5",
+        "@octokit/plugin-rest-endpoint-methods": "^10.4.0",
+        "@octokit/plugin-paginate-rest": "^9.2.2"
+      }
     },
     "bunfig@^0.15.6": {
       "name": "bunfig",
@@ -135,46 +157,9 @@
       "name": "bun",
       "version": "1.3.9",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/bun/-/bun-1.3.9.tgz",
-      "integrity": "sha512-v5hkh1us7sMNjfimWE70flYbD5I1/qWQaqmJ45q2qk5H/7muQVa478LSVRSFyGTBUBog2LsPQnfIRdjyWJRY+A==",
       "bin": {
         "bunx": "bin/bunx.exe",
         "bun": "bin/bun.exe"
-      }
-    },
-    "@actions/core@1.11.1": {
-      "name": "@actions/core",
-      "version": "1.11.1",
-      "source": "npm",
-      "resolved": "https://registry.npmjs.org/@actions/core/-/core-1.11.1.tgz",
-      "integrity": "sha512-hXJCSrkwfA46Vd9Z3q4cpEpHB1rL5NG04+/rbqW9d3+CSvtB1tYe8UTpAlixa1vj0m/ULglfEK2UKxMGxCxv5A==",
-      "dependencies": {
-        "@actions/http-client": "^2.0.1",
-        "@actions/exec": "^1.1.1"
-      }
-    },
-    "@stacksjs/ts-cloud@0.1.11": {
-      "name": "@stacksjs/ts-cloud",
-      "version": "0.1.11",
-      "source": "npm",
-      "resolved": "https://registry.npmjs.org/@stacksjs/ts-cloud/-/ts-cloud-0.1.11.tgz",
-      "integrity": "sha512-WgKwgRdxV4cAXJjc6l7/xFgIFriijErBEbyPn+Hd6aNRhFxu6cJ9OeEkT3p3YvEOc9Pt8DL5SO1RhXcq8otphw==",
-      "dependencies": {
-        "fast-xml-parser": "^5.3.5",
-        "@stacksjs/ts-cloud-types": "0.1.7",
-        "@stacksjs/ts-cloud-core": "0.1.7",
-        "@stacksjs/ts-cloud-aws-types": "0.1.7"
-      },
-      "bin": {
-        "cloud": "./dist/bin/cli.js"
-      }
-    },
-    "bun-types@latest": {
-      "name": "bun-types",
-      "version": "latest",
-      "source": "npm",
-      "dependencies": {
-        "@types/node": "*"
       }
     },
     "typescript@^5.7.0": {
@@ -186,12 +171,32 @@
         "tsserver": "./bin/tsserver"
       }
     },
-    "@cwcss/crosswind@0.1.6": {
-      "name": "@cwcss/crosswind",
-      "version": "0.1.6",
+    "bun-types@latest": {
+      "name": "bun-types",
+      "version": "latest",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/@cwcss/crosswind/-/crosswind-0.1.6.tgz",
-      "integrity": "sha512-4NxFRgSSu8YQnLDj21kmUVxmwduCAvsrj3zOn5bKsaKvT/S+pBkHTl5+44d5cradQ872a+QCOOPVoEFmppsdYA==",
+      "dependencies": {
+        "@types/node": "*"
+      }
+    },
+    "@actions/core@^1.11.1": {
+      "name": "@actions/core",
+      "version": "^1.11.1",
+      "source": "npm",
+      "dependencies": {
+        "@actions/http-client": "^2.0.1",
+        "@actions/exec": "^1.1.1"
+      }
+    },
+    "@actions/io@^1.1.3": {
+      "name": "@actions/io",
+      "version": "^1.1.3",
+      "source": "npm"
+    },
+    "@cwcss/crosswind@^0.1.6": {
+      "name": "@cwcss/crosswind",
+      "version": "^0.1.6",
+      "source": "npm",
       "dependencies": {
         "@stacksjs/clapp": "^0.2.0",
         "bunfig": "^0.15.0"
@@ -200,27 +205,43 @@
         "crosswind": "./dist/bin/cli.js"
       }
     },
-    "@stacksjs/stx@link:@stacksjs/stx": {
-      "name": "@stacksjs/stx",
-      "version": "link:@stacksjs/stx",
-      "source": "npm"
-    },
-    "@actions/exec@1.1.1": {
-      "name": "@actions/exec",
-      "version": "1.1.1",
+    "@stacksjs/ts-cloud@^0.1.2": {
+      "name": "@stacksjs/ts-cloud",
+      "version": "^0.1.2",
       "source": "npm",
-      "resolved": "https://registry.npmjs.org/@actions/exec/-/exec-1.1.1.tgz",
-      "integrity": "sha512-+sCcHHbVdk93a0XT19ECtO/gIXoxvdsgQLzb2fE2/5sIZmWQuluYyjPQtrtTHdU1YzTZ7bAPN4sITq2xi1679w==",
+      "dependencies": {
+        "fast-xml-parser": "^5.3.5",
+        "@stacksjs/ts-cloud-types": "0.1.7",
+        "@stacksjs/ts-cloud-core": "0.1.7",
+        "@stacksjs/ts-cloud-aws-types": "0.1.7"
+      },
+      "bin": {
+        "cloud": "./dist/bin/cli.js"
+      }
+    },
+    "@stacksjs/stx@^0.2.6": {
+      "name": "@stacksjs/stx",
+      "version": "^0.2.6",
+      "source": "npm",
+      "dependencies": {
+        "ts-syntax-highlighter": "^0.2.1",
+        "@stacksjs/desktop": "0.2.6",
+        "@stacksjs/sanitizer": "0.2.6",
+        "@stacksjs/clapp": "^0.2.0",
+        "bun-plugin-stx": "0.2.6",
+        "bunfig": "^0.15.6"
+      },
+      "bin": {
+        "stx": "./dist/cli.js"
+      }
+    },
+    "@actions/exec@^1.1.1": {
+      "name": "@actions/exec",
+      "version": "^1.1.1",
+      "source": "npm",
       "dependencies": {
         "@actions/io": "^1.0.1"
       }
-    },
-    "@actions/io@1.1.3": {
-      "name": "@actions/io",
-      "version": "1.1.3",
-      "source": "npm",
-      "resolved": "https://registry.npmjs.org/@actions/io/-/io-1.1.3.tgz",
-      "integrity": "sha512-wi9JjgKLYS7U/z8PPbco+PvTb/nRWjeoFlJ1Qer83k/3C5PHQi28hiVdeE2kHXmIL99mQFawx8qt/JPjZilJ8Q=="
     },
     "mitata@^1.0.34": {
       "name": "mitata",
@@ -254,22 +275,6 @@
       "bin": {
         "better-dx": "./dist/bin/cli.js",
         "dx": "./dist/bin/cli.js"
-      }
-    },
-    "@actions/github@6.0.1": {
-      "name": "@actions/github",
-      "version": "6.0.1",
-      "source": "npm",
-      "resolved": "https://registry.npmjs.org/@actions/github/-/github-6.0.1.tgz",
-      "integrity": "sha512-xbZVcaqD4XnQAe35qSQqskb3SqIAfRyLBrHMd/8TuL7hJSz2QtbDwnNM8zWx4zO5l2fnGtseNE3MbEvD7BxVMw==",
-      "dependencies": {
-        "@actions/http-client": "^2.2.0",
-        "@octokit/request": "^8.4.1",
-        "@octokit/request-error": "^5.1.1",
-        "@octokit/core": "^5.0.1",
-        "undici": "^5.28.5",
-        "@octokit/plugin-rest-endpoint-methods": "^10.4.0",
-        "@octokit/plugin-paginate-rest": "^9.2.2"
       }
     }
   }
