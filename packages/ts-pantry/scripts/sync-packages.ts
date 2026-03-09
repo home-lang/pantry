@@ -502,7 +502,6 @@ exec node "$(dirname "$0")/yarn.js" "$@"
       return data.tag_name.replace(/^v?/, '')
     },
     getImportantVersions: async () => {
-      // Only latest stable matters for memcached (single release line)
       const response = await fetch('https://api.github.com/repos/memcached/memcached/releases?per_page=10', { headers: githubHeaders() })
       const data = await response.json() as Array<{ tag_name: string, prerelease: boolean }>
       const latest = data.find(r => !r.prerelease)
@@ -518,7 +517,6 @@ exec node "$(dirname "$0")/yarn.js" "$@"
       execSync(`curl -fSL -o "${buildDir}/memcached.tar.gz" "${url}"`, { stdio: 'inherit' })
       execSync(`cd "${buildDir}" && tar -xf memcached.tar.gz --strip-components=1`, { stdio: 'pipe' })
 
-      // Install libevent dependency
       const { os } = detectPlatform()
       if (os === 'linux') {
         try { execSync('sudo apt-get install -y libevent-dev 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
@@ -526,14 +524,49 @@ exec node "$(dirname "$0")/yarn.js" "$@"
         try { execSync('brew install libevent 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
       }
 
-      console.log(`   Compiling Memcached...`)
-      const cpuCount = require('os').cpus().length
+      console.log('   Compiling Memcached...')
+      const { cpus } = await import('node:os')
       const configureFlags = os === 'darwin'
         ? `--prefix="${destDir}" --with-libevent=$(brew --prefix libevent)`
         : `--prefix="${destDir}"`
       execSync(`cd "${buildDir}" && ./configure ${configureFlags}`, { stdio: 'inherit' })
-      execSync(`cd "${buildDir}" && make -j${cpuCount}`, { stdio: 'inherit' })
+      execSync(`cd "${buildDir}" && make -j${cpus().length}`, { stdio: 'inherit' })
       execSync(`cd "${buildDir}" && make install`, { stdio: 'inherit' })
+
+      rmSync(buildDir, { recursive: true, force: true })
+    },
+  },
+
+  'github.com/mail-os/mail': {
+    domain: 'github.com/mail-os/mail',
+    name: 'mail',
+    needsCompile: true,
+    getLatestVersion: async () => {
+      const response = await fetch('https://api.github.com/repos/mail-os/mail/tags?per_page=10', { headers: githubHeaders() })
+      if (!response.ok) return '0.0.2'
+      const data = await response.json() as Array<{ name: string }>
+      return data[0]?.name?.replace(/^v?/, '') || '0.0.2'
+    },
+    getImportantVersions: async () => {
+      const response = await fetch('https://api.github.com/repos/mail-os/mail/tags?per_page=10', { headers: githubHeaders() })
+      if (!response.ok) return ['0.0.2', '0.0.1']
+      const data = await response.json() as Array<{ name: string }>
+      const versions = data
+        .map(tag => tag.name.replace(/^v?/, ''))
+        .filter(Boolean)
+        .slice(0, 2)
+      return versions.length > 0 ? versions : ['0.0.2', '0.0.1']
+    },
+    download: async (version, platform, destDir) => {
+      const buildDir = '/tmp/mail-build'
+      rmSync(buildDir, { recursive: true, force: true })
+      mkdirSync(buildDir, { recursive: true })
+
+      console.log('   Cloning mail source...')
+      execSync(`git clone --depth 1 --branch "v${version}" https://github.com/mail-os/mail.git "${buildDir}"`, { stdio: 'inherit' })
+
+      console.log('   Compiling Mail...')
+      execSync(`cd "${buildDir}/packages/zig" && zig build -Doptimize=ReleaseFast --prefix "${destDir}"`, { stdio: 'inherit' })
 
       rmSync(buildDir, { recursive: true, force: true })
     },
@@ -806,7 +839,7 @@ Options:
 
 Available packages:
   bun.sh, nodejs.org, meilisearch.com, redis.io, postgresql.org, mysql.com,
-  memcached.org, typesense.org, min.io, valkey.io,
+  memcached.org, github.com/mail-os/mail, typesense.org, min.io, valkey.io,
   getcomposer.org, pnpm.io, yarnpkg.com, go.dev, deno.land, python.org
 
   Note: php.net should be built separately (use bundle-php.sh)

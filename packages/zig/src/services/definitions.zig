@@ -1278,6 +1278,19 @@ pub const Services = struct {
         };
     }
 
+    pub fn mail(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
+        const env_vars = std.StringHashMap([]const u8).init(allocator);
+        return ServiceConfig{
+            .name = try allocator.dupe(u8, "mail"),
+            .display_name = try allocator.dupe(u8, "Mail"),
+            .description = try allocator.dupe(u8, "SMTP and IMAP mail server"),
+            .start_command = try std.fmt.allocPrint(allocator, "mail serve --host 0.0.0.0 --port {d}", .{port}),
+            .env_vars = env_vars,
+            .port = port,
+            .health_check = try std.fmt.allocPrint(allocator, "mail --help > /dev/null", .{}),
+        };
+    }
+
     /// Ollama service (AI model server)
     pub fn ollama(allocator: std.mem.Allocator, port: u16) !ServiceConfig {
         var env_vars = std.StringHashMap([]const u8).init(allocator);
@@ -1566,6 +1579,7 @@ pub const Services = struct {
         if (std.mem.eql(u8, service_name, "gitea")) return 3001;
         if (std.mem.eql(u8, service_name, "mailpit")) return 8025;
         if (std.mem.eql(u8, service_name, "ollama")) return 11434;
+        if (std.mem.eql(u8, service_name, "mail")) return 2525;
 
         // DNS & Network
         if (std.mem.eql(u8, service_name, "dnsmasq")) return 5353;
@@ -1612,9 +1626,23 @@ test "Service definitions" {
     defer redis.deinit(allocator);
     try std.testing.expectEqualStrings("redis", redis.name);
 
+    // Test Memcached
+    var memcached = try Services.memcached(allocator, 11211);
+    defer memcached.deinit(allocator);
+    try std.testing.expectEqualStrings("memcached", memcached.name);
+    try std.testing.expect(memcached.port.? == 11211);
+
+    // Test Mail
+    var mail = try Services.mail(allocator, 2525);
+    defer mail.deinit(allocator);
+    try std.testing.expectEqualStrings("mail", mail.name);
+    try std.testing.expect(mail.port.? == 2525);
+
     // Test default port
     try std.testing.expect(Services.getDefaultPort("postgresql").? == 5432);
     try std.testing.expect(Services.getDefaultPort("redis").? == 6379);
+    try std.testing.expect(Services.getDefaultPort("memcached").? == 11211);
+    try std.testing.expect(Services.getDefaultPort("mail").? == 2525);
 }
 
 test "Service status" {

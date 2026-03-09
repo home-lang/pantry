@@ -1,0 +1,28 @@
+distributable:
+  url: https://memcached.org/files/memcached-{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: memcached/memcached/tags
+  strip: /^v/
+
+dependencies:
+  libevent.org: '*'
+
+provides:
+  - bin/memcached
+
+build:
+  dependencies:
+    freedesktop.org/pkg-config: '*'
+  script:
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }}
+    - make install
+  env:
+    ARGS:
+      - --prefix={{prefix}}
+      - --with-libevent={{deps.libevent.org.prefix}}
+
+test:
+  - memcached -h

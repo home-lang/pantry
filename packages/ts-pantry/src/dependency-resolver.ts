@@ -510,6 +510,15 @@ async function readPackageInfo(packageName: string): Promise<Partial<PkgxPackage
     // Import the package index to get access to the generated packages
     const { packages } = await import('./packages/index.js').catch(() => import('./index.js'))
 
+    const exactPkg = (packages as any)[packageName]
+
+    if (exactPkg) {
+      return {
+        dependencies: exactPkg.dependencies || [],
+        companions: exactPkg.companions || [],
+      }
+    }
+
     // Convert domain to package key (e.g., bun.sh -> bunsh, github.com/user/repo -> githubcomuserrepo)
     const packageKey = packageName.replace(/[^a-z0-9]/gi, '').toLowerCase()
 

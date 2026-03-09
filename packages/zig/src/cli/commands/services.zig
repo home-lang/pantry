@@ -205,6 +205,7 @@ pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
     style.print("  {s: <16} LocalStack                   (port 4566)\n", .{"localstack"});
     style.print("  {s: <16} Verdaccio                    (port 4873)\n", .{"verdaccio"});
     style.print("  {s: <16} Gitea                        (port 3001)\n", .{"gitea"});
+    style.print("  {s: <16} Mail                         (port 2525)\n", .{"mail"});
     style.print("  {s: <16} Mailpit                      (port 8025)\n", .{"mailpit"});
     style.print("  {s: <16} Ollama                       (port 11434)\n", .{"ollama"});
 
@@ -797,6 +798,8 @@ pub fn getServiceConfig(allocator: std.mem.Allocator, name: []const u8, project_
         return try Services.verdaccio(allocator, port);
     } else if (std.mem.eql(u8, name, "gitea")) {
         return try Services.gitea(allocator, port);
+    } else if (std.mem.eql(u8, name, "mail")) {
+        return try Services.mail(allocator, port);
     } else if (std.mem.eql(u8, name, "mailpit")) {
         return try Services.mailpit(allocator, port);
     } else if (std.mem.eql(u8, name, "ollama")) {
@@ -952,6 +955,8 @@ pub fn getServiceConfigWithPort(allocator: std.mem.Allocator, name: []const u8, 
         return try Services.verdaccio(allocator, port);
     } else if (std.mem.eql(u8, name, "gitea")) {
         return try Services.gitea(allocator, port);
+    } else if (std.mem.eql(u8, name, "mail")) {
+        return try Services.mail(allocator, port);
     } else if (std.mem.eql(u8, name, "mailpit")) {
         return try Services.mailpit(allocator, port);
     } else if (std.mem.eql(u8, name, "ollama")) {
