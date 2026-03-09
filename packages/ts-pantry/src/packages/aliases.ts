@@ -1405,6 +1405,7 @@ export const aliases: Record<string, string> = {
   'tokei': 'crates.io/tokei',
   'tokesura': 'github.com/kevinmichaelchen/tokesura',
   'toml-cli': 'github.com/MinseokOh/toml-cli',
+  'toml11': 'github.com/ToruNiina/toml11',
   'tools': 'golang.org/tools',
   'topgrade': 'crates.io/topgrade',
   'tox': 'tox.wiki',

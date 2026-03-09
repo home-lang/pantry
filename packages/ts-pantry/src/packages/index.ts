@@ -486,6 +486,7 @@ import { par2cmdlinePackage } from './github.com/Parchive/par2cmdline'
 import { swiftgenPackage } from './github.com/SwiftGen/SwiftGen'
 import { expectedPackage } from './github.com/TartanLlama/expected'
 import { daselPackage } from './github.com/TomWright/dasel'
+import { toml11Package } from './github.com/ToruNiina/toml11'
 import { saml2awsPackage } from './github.com/Versent/saml2aws'
 import { suryaPackage } from './github.com/VikParuchuri/surya'
 import { oci2gitPackage } from './github.com/Virviil/oci2git'
@@ -2489,6 +2490,8 @@ export interface Pantry {
   githubcomtartanllama: typeof expectedPackage
 
   githubcomtomwright: typeof daselPackage
+
+  githubcomtoruniina: typeof toml11Package
 
   githubcomversent: typeof saml2awsPackage
   surya: typeof suryaPackage
@@ -5501,6 +5504,7 @@ export interface Pantry {
   speexdsp: typeof speexdspPackage
   rav1e: typeof rav1ePackage
   pyparsing: typeof pyparsingPackage
+  toml11: typeof toml11Package
   tmux: typeof tmuxPackage
   neofetch: typeof neofetchPackage
   migrate: typeof migratePackage
@@ -6878,6 +6882,8 @@ export const pantry: Pantry = {
   githubcomtartanllama: expectedPackage,
 
   githubcomtomwright: daselPackage,
+
+  githubcomtoruniina: toml11Package,
 
   githubcomversent: saml2awsPackage,
   surya: suryaPackage,
@@ -9890,6 +9896,7 @@ export const pantry: Pantry = {
   speexdsp: speexdspPackage,
   rav1e: rav1ePackage,
   pyparsing: pyparsingPackage,
+  toml11: toml11Package,
   tmux: tmuxPackage,
   neofetch: neofetchPackage,
   migrate: migratePackage,
