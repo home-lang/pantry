@@ -746,6 +746,7 @@ export const aliases: Record<string, string> = {
   'libraw': 'libraw.org',
   'librdkafka': 'github.com/confluentinc/librdkafka',
   'libreplaygain': 'musepack.net/libreplaygain',
+  'librepo': 'rpm.org/librepo',
   'librttopo': 'git.osgeo.org/gitea/rttopo/librttopo',
   'libsamplerate': 'github.com/libsndfile/libsamplerate',
   'libsass': 'sass-lang.com/libsass',

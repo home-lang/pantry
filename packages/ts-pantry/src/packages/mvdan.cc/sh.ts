@@ -3,7 +3,7 @@
  *
  * @domain `mvdan.cc/sh`
  * @programs `shfmt`
- * @version `3.12.0` (5 versions available)
+ * @version `3.13.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install mvdan.cc/sh`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "shfmt"
  * console.log(pkg.description) // "A shell parser, formatter, and interpreter with..."
  * console.log(pkg.programs)    // ["shfmt"]
- * console.log(pkg.versions[0]) // "3.12.0" (latest)
+ * console.log(pkg.versions[0]) // "3.13.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/mvdan-cc/sh.md
@@ -68,6 +68,7 @@ export const mvdanccshPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.13.0',
     '3.12.0',
     '3.11.0',
     '3.10.0',

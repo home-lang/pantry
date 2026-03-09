@@ -25,19 +25,20 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 1 versions</summary>
+<summary>Show all 2 versions</summary>
 
+- `0.36.0`
 - `0.35.0`
 
 </details>
 
-**Latest Version**: `0.35.0`
+**Latest Version**: `0.36.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/zsh-users/zsh-completions@0.35.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/zsh-users/zsh-completions@0.36.0 -- $SHELL -i
 ```
 
 ## Dependencies

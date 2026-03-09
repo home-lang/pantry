@@ -3,7 +3,7 @@
  *
  * @domain `perl.org`
  * @programs `corelist`, `cpan`, `enc2xs`, `encguess`, `h2ph`, ... (+25 more)
- * @version `5.42.0` (16 versions available)
+ * @version `5.42.1` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install perl.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "perl"
  * console.log(pkg.description) // "Highly capable, feature-rich programming language"
  * console.log(pkg.programs)    // ["corelist", "cpan", ...]
- * console.log(pkg.versions[0]) // "5.42.0" (latest)
+ * console.log(pkg.versions[0]) // "5.42.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/perl-org.md
@@ -99,6 +99,7 @@ export const perlorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.42.1',
     '5.42.0',
     '5.40.2',
     '5.40.1',

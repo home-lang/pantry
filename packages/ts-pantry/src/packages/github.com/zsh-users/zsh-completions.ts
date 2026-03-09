@@ -2,7 +2,7 @@
  * **zsh-completions** - Additional completion definitions for Zsh.
  *
  * @domain `github.com/zsh-users/zsh-completions`
- * @version `0.35.0` (1 versions available)
+ * @version `0.36.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/zsh-users/zsh-completions`
@@ -15,7 +15,7 @@
  * const pkg = pantry.githubcomzshuserszshcompletions
  * console.log(pkg.name)        // "zsh-completions"
  * console.log(pkg.description) // "Additional completion definitions for Zsh."
- * console.log(pkg.versions[0]) // "0.35.0" (latest)
+ * console.log(pkg.versions[0]) // "0.36.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/zsh-users/zsh-completions.md
@@ -59,6 +59,7 @@ export const zshcompletionsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.36.0',
     '0.35.0',
   ] as const,
   aliases: [] as const,

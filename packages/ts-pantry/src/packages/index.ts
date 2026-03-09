@@ -1397,6 +1397,7 @@ import { riverbankcomputingcomsipPackage } from './riverbankcomputing.com/sip'
 import { robotframeworkorgPackage } from './robotframeworkorg'
 import { rockdabootgithubiolibpslPackage } from './rockdaboot.github.io/libpsl'
 import { rometoolsPackage } from './rometools'
+import { rpmorglibrepoPackage } from './rpm.org/librepo'
 import { rpmorgpoptPackage } from './rpm.org/popt'
 import { rpmorgrpmsequoiaPackage } from './rpm.org/rpm-sequoia'
 import { rpmorgrpmPackage } from './rpm.org/rpm'
@@ -4050,6 +4051,8 @@ export interface Pantry {
   rockdabootgithubiolibpsl: typeof rockdabootgithubiolibpslPackage
   rometools: typeof rometoolsPackage
 
+  rpmorglibrepo: typeof rpmorglibrepoPackage
+
   rpmorgpopt: typeof rpmorgpoptPackage
   rpm_sequoia: typeof rpmorgrpmsequoiaPackage
   rpmorgrpmsequoia: typeof rpmorgrpmsequoiaPackage
@@ -4454,6 +4457,7 @@ export interface Pantry {
   fswatch: typeof emcrisostomogithubiofswatchPackage
   libsolv: typeof opensuseorglibsolvPackage
   cog: typeof cocogittoioPackage
+  librepo: typeof rpmorglibrepoPackage
   popt: typeof rpmorgpoptPackage
   rpm: typeof rpmorgrpmPackage
   'rpm-sequoia': typeof rpmorgrpmsequoiaPackage
@@ -8436,6 +8440,8 @@ export const pantry: Pantry = {
   rockdabootgithubiolibpsl: rockdabootgithubiolibpslPackage,
   rometools: rometoolsPackage,
 
+  rpmorglibrepo: rpmorglibrepoPackage,
+
   rpmorgpopt: rpmorgpoptPackage,
   rpm_sequoia: rpmorgrpmsequoiaPackage,
   rpmorgrpmsequoia: rpmorgrpmsequoiaPackage,
@@ -8840,6 +8846,7 @@ export const pantry: Pantry = {
   fswatch: emcrisostomogithubiofswatchPackage,
   libsolv: opensuseorglibsolvPackage,
   cog: cocogittoioPackage,
+  librepo: rpmorglibrepoPackage,
   popt: rpmorgpoptPackage,
   rpm: rpmorgrpmPackage,
   'rpm-sequoia': rpmorgrpmsequoiaPackage,

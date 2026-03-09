@@ -3,7 +3,7 @@
  *
  * @domain `vlang.io`
  * @programs `v`
- * @version `0.5.0` (17 versions available)
+ * @version `0.5.1` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install vlang.io`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "v"
  * console.log(pkg.description) // "Simple, fast, safe, compiled language for devel..."
  * console.log(pkg.programs)    // ["v"]
- * console.log(pkg.versions[0]) // "0.5.0" (latest)
+ * console.log(pkg.versions[0]) // "0.5.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/vlang-io.md
@@ -60,6 +60,7 @@ export const vlangioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.5.1',
     '0.5.0',
     '0.4.12',
     '0.4.11',
