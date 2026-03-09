@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-09T15:39:29.583Z
+ * Generated on 2026-03-09T16:40:46.159Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1657 total)
+ * List of all known packages (1658 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -532,6 +532,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/SwiftGen/SwiftGen',
   'github.com/TartanLlama/expected',
   'github.com/TomWright/dasel',
+  'github.com/ToruNiina/toml11',
   'github.com/Versent/saml2aws',
   'github.com/VikParuchuri/surya',
   'github.com/Virviil/oci2git',
