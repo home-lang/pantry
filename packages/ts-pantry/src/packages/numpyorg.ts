@@ -3,7 +3,7 @@
  *
  * @domain `numpy.org`
  * @programs `f2py`
- * @version `2.4.2` (26 versions available)
+ * @version `2.4.3` (27 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install numpy.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "f2py"
  * console.log(pkg.description) // "The fundamental package for scientific computin..."
  * console.log(pkg.programs)    // ["f2py"]
- * console.log(pkg.versions[0]) // "2.4.2" (latest)
+ * console.log(pkg.versions[0]) // "2.4.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/numpy-org.md
@@ -77,6 +77,7 @@ export const numpyorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.4.3',
     '2.4.2',
     '2.4.1',
     '2.4.0',
