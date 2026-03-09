@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-05T23:10:58.858Z
+ * Generated on 2026-03-09T15:39:29.583Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1654 total)
+ * List of all known packages (1657 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -722,6 +722,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'github.com/luvit/luv',
   'github.com/maaslalani/invoice',
   'github.com/mac-cain13/R.swift',
+  'github.com/mail-os/mail',
   'github.com/mamba-org/mamba',
   'github.com/mamba-org/micro',
   'github.com/markuskimius/SDL2_Pango',
@@ -1198,6 +1199,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'maven.apache.org',
   'mcmc-jags.sourceforge.io',
   'meilisearch.com',
+  'memcached.org',
   'mercure.rocks',
   'mercurial-scm.org',
   'mergestat.com/mergestat-lite',
@@ -1441,6 +1443,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'robotframework.org',
   'rockdaboot.github.io/libpsl',
   'rome.tools',
+  'rpm.org/librepo',
   'rpm.org/popt',
   'rpm.org/rpm',
   'rpm.org/rpm-sequoia',
