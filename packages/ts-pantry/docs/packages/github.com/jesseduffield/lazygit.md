@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 39 versions</summary>
+<summary>Show all 40 versions</summary>
 
+- `0.60.0`
 - `0.59.0`
 - `0.58.1`, `0.58.0`
 - `0.57.0`
@@ -53,13 +54,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.59.0`
+**Latest Version**: `0.60.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/jesseduffield/lazygit@0.59.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/jesseduffield/lazygit@0.60.0 -- $SHELL -i
 ```
 
 ## Dependencies
