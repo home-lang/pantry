@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 65 versions</summary>
+<summary>Show all 66 versions</summary>
 
+- `12.1.0`
 - `12.0.3`, `12.0.2`, `12.0.1`, `12.0.0`
 - `11.20.3`, `11.20.2`, `11.20.1`, `11.20.0`
 - `11.19.1`, `11.19.0`
@@ -63,13 +64,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `12.0.3`
+**Latest Version**: `12.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +flywaydb.org@12.0.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +flywaydb.org@12.1.0 -- $SHELL -i
 ```
 
 ## Dependencies

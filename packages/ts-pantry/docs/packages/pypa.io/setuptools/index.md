@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 70 versions</summary>
+<summary>Show all 71 versions</summary>
 
-- `82.0.0`
+- `82.0.1`, `82.0.0`
 - `81.0.0`
 - `80.10.2`, `80.10.1`
 - `80.9.0`
@@ -75,13 +75,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `82.0.0`
+**Latest Version**: `82.0.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pypa.io/setuptools@82.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pypa.io/setuptools@82.0.1 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -2,7 +2,7 @@
  * **setuptools** - Official project repository for the Setuptools build system
  *
  * @domain `pypa.io/setuptools`
- * @version `82.0.0` (70 versions available)
+ * @version `82.0.1` (71 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pypa.io/setuptools`
@@ -16,7 +16,7 @@
  * const pkg = pantry.pypaiosetuptools
  * console.log(pkg.name)        // "setuptools"
  * console.log(pkg.description) // "Official project repository for the Setuptools ..."
- * console.log(pkg.versions[0]) // "82.0.0" (latest)
+ * console.log(pkg.versions[0]) // "82.0.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pypa-io/setuptools.md
@@ -60,6 +60,7 @@ export const pypaiosetuptoolsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '82.0.1',
     '82.0.0',
     '81.0.0',
     '80.10.2',
