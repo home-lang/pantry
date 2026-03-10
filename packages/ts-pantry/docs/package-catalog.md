@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-10T16:49:06.959Z
+- **Last Updated**: 2026-03-10T17:42:37.124Z
 
 ## Table of Contents
 
@@ -54,7 +54,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[luajit.org](./packages/luajit.org/index.md)** () | Mirror of the LuaJIT git repository | luajit, luajit-&lbrace;&lbrace;version.marketing&rbrace;&rbrace;. | 2.1.0 (+0) | `pkgx luajit` |
 | **[nodejs.org](./packages/nodejs.org/index.md)** () | Platform built on V8 to build network applications | node | 25.8.0 (+175) | `pkgx node` |
 | **[perl.org](./packages/perl.org/index.md)** () | Highly capable, feature-rich programming language | corelist, cpan, enc2xs, ... (+27) | 5.42.1 (+16) | `pkgx perl` |
-| **[php.net](./packages/php.net/index.md)** () | General-purpose scripting language | pear, pecl, phar, ... (+5) | 8.5.3 (+96) | `pkgx php` |
+| **[php.net](./packages/php.net/index.md)** () | General-purpose scripting language | pear, pecl, phar, ... (+5) | 8.5.3 (+97) | `pkgx php` |
 | **[python.org](./packages/python.org/index.md)** (py) | The Python programming language | python, python&lbrace;&lbrace; version.major &rbrace;&rbrace;, python&lbrace;&lbrace; version.marketing &rbrace;&rbrace; | 3.14.3 (+168) | `pkgx py` |
 | **[ruby-lang.org](./packages/ruby-lang.org/index.md)** (ruby) | Powerful, clean, object-oriented scripting language | erb, irb, rake, ... (+3) | 4.0.1 (+51) | `pkgx ruby` |
 | **[rust-lang.org](./packages/rust-lang.org/index.md)** () | Empowering everyone to build reliable and efficient software. | cargo-clippy, cargo-fmt, clippy-driver, ... (+7) | 1.94.0 (+42) | `pkgx rust` |
