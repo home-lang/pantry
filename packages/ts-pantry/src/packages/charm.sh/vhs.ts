@@ -3,7 +3,7 @@
  *
  * @domain `charm.sh/vhs`
  * @programs `vhs`
- * @version `0.10.0` (14 versions available)
+ * @version `0.11.0` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install charm.sh/vhs`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "vhs"
  * console.log(pkg.description) // "Your CLI home video recorder 📼"
  * console.log(pkg.programs)    // ["vhs"]
- * console.log(pkg.versions[0]) // "0.10.0" (latest)
+ * console.log(pkg.versions[0]) // "0.11.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/charm-sh/vhs.md
@@ -75,6 +75,7 @@ export const charmshvhsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.11.0',
     '0.10.0',
     '0.9.0',
     '0.8.0',

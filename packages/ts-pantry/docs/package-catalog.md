@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-10T18:34:42.944Z
+- **Last Updated**: 2026-03-10T19:29:43.474Z
 
 ## Table of Contents
 
@@ -100,7 +100,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.6.0 (+25) | `pkgx postgrest` |
 | **[redis.io](./packages/redis.io/index.md)** () | Redis is an in-memory database that persists on disk. The data model is key-value, but many diffe... | redis-server, redis-cli, redis-benchmark | 8.6.0 (+59) | `pkgx redis` |
 | **[sqlite.org](./packages/sqlite.org/index.md)** (sqlite) | Official Git mirror of the SQLite source tree | sqlite3 | 3.52.0 (+32) | `pkgx sqlite` |
-| **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+66) | `pkgx surreal` |
+| **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+67) | `pkgx surreal` |
 | **[turso.tech](./packages/turso.tech/index.md)** () | Command line interface to Turso. | turso | 1.0.17 (+95) | `pkgx turso` |
 | **[valkey.io](./packages/valkey.io/index.md)** () | A flexible distributed key-value datastore that is optimized for caching and other realtime workl... | valkey-server, valkey-cli, valkey-benchmark | 9.0.3 (+25) | `pkgx valkey` |
 
@@ -249,7 +249,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.111.0 (+43) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
-| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.131 (+2808) | `pkgx vi` |
+| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.132 (+2809) | `pkgx vi` |
 | **[wezfurlong.org/wezterm](./packages/wezfurlong.org/wezterm/index.md)** () | A GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemente... | wezterm | 2024.2.3 (+0) | `pkgx wezterm` |
 
 ## CLI Tools & Utilities

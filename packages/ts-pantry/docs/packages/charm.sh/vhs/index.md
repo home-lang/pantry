@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 14 versions</summary>
+<summary>Show all 15 versions</summary>
 
+- `0.11.0`
 - `0.10.0`
 - `0.9.0`
 - `0.8.0`
@@ -41,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.10.0`
+**Latest Version**: `0.11.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +charm.sh/vhs@0.10.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +charm.sh/vhs@0.11.0 -- $SHELL -i
 ```
 
 ## Dependencies
