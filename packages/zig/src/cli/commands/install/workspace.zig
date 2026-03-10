@@ -540,6 +540,8 @@ pub fn installWorkspaceCommandWithOptions(
 
     style.printInstalling(all_deps_count);
 
+    var install_timer = std.time.Timer.start() catch null;
+
     // Create workspace environment
     const home = try lib.Paths.home(allocator);
     defer allocator.free(home);
@@ -712,7 +714,12 @@ pub fn installWorkspaceCommandWithOptions(
             continue;
         };
 
-        style.printLinked(clean_name, dep.version);
+        // Strip "link:" prefix from version for cleaner display
+        const display_version = if (std.mem.startsWith(u8, dep.version, "link:"))
+            dep.version[5..]
+        else
+            dep.version;
+        style.printLinked(clean_name, display_version);
         success_count += 1;
     }
 
@@ -1174,7 +1181,8 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     // Summary
-    style.printWorkspaceComplete(success_count, failed_count);
+    const elapsed_ms: u64 = if (install_timer) |*t| t.read() / std.time.ns_per_ms else 0;
+    style.printWorkspaceComplete(success_count, failed_count, elapsed_ms);
 
     return .{ .exit_code = 0 };
 }

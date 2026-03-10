@@ -276,15 +276,15 @@ pub fn printWorkspaceLinked(count: usize) void {
     print("{s}Linked {d} workspace package(s){s}\n", .{ blue, count, reset });
 }
 
-/// Print workspace complete summary
-pub fn printWorkspaceComplete(success: usize, failed: usize) void {
+/// Print workspace complete summary with elapsed time
+pub fn printWorkspaceComplete(success: usize, failed: usize, elapsed_ms: u64) void {
     print("\n{s}{s}{s} Workspace setup complete! Installed {d} package(s)", .{
         green, check, reset, success,
     });
     if (failed > 0) {
         print(", {s}{d} failed{s}", .{ red, failed, reset });
     }
-    print("\n", .{});
+    print(" {s}({d}ms){s}\n", .{ dim, elapsed_ms, reset });
 }
 
 // ── Global ──────────────────────────────────────────────────────────────────
