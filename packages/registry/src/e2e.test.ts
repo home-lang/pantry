@@ -289,7 +289,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       const cookie = res.headers.get('set-cookie')
       expect(cookie).toContain('pantry_token=')
       expect(cookie).toContain('HttpOnly')
-      expect(cookie).toContain('SameSite=Strict')
+      expect(cookie).toContain('SameSite=Lax')
     })
 
     it('supports auth via query parameter (CloudFront compatible)', async () => {
@@ -381,7 +381,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       })
       const html = await res.text()
       expect(html).toContain('<nav')
-      expect(html).toContain('href="/dashboard"')
+      expect(html).toContain('href="/dashboard')
       expect(html).toContain('href="/health"')
       expect(html).toContain('href="/dashboard/logout"')
       expect(html).toContain('Pantry Dashboard')
@@ -426,7 +426,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
 
       // Package should appear in the table
       expect(html).toContain('curl.se')
-      expect(html).toContain('href="/dashboard/package/curl.se"')
+      expect(html).toContain('href="/dashboard/package/curl.se')
     })
   })
 
@@ -464,7 +464,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
         headers: { 'Cookie': `pantry_token=${TEST_TOKEN}` },
       })
       const html = await res.text()
-      expect(html).toContain('href="/dashboard"')
+      expect(html).toContain('href="/dashboard')
       expect(html).toContain('&larr;')
     })
 

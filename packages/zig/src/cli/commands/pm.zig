@@ -250,7 +250,7 @@ pub fn versionCommand(allocator: std.mem.Allocator, args: []const []const u8) !C
     else if (std.mem.eql(u8, bump_type, "minor"))
         try std.fmt.allocPrint(allocator, "{d}.{d}.0", .{ major, minor + 1 })
     else if (std.mem.eql(u8, bump_type, "major"))
-        try std.fmt.allocPrint(allocator, "{d}.0.0", .{ major + 1 })
+        try std.fmt.allocPrint(allocator, "{d}.0.0", .{major + 1})
     else if (std.mem.eql(u8, bump_type, "premajor"))
         try std.fmt.allocPrint(allocator, "{d}.0.0-{s}.0", .{ major + 1, preid orelse "alpha" })
     else if (std.mem.eql(u8, bump_type, "preminor"))
