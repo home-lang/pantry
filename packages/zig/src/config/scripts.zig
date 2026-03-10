@@ -168,20 +168,11 @@ fn parseScriptsFromContent(allocator: std.mem.Allocator, content: []const u8, is
     return result;
 }
 
-/// Read file content using POSIX operations (cross-platform reliable)
+/// Read file content (cross-platform)
 fn readFileContent(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
-    const fd = try std.posix.openat(std.posix.AT.FDCWD, path, .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
-    defer std.posix.close(fd);
-
-    var content = std.ArrayList(u8){};
-    errdefer content.deinit(allocator);
-    var buf: [8192]u8 = undefined;
-    while (true) {
-        const n = try std.posix.read(fd, &buf);
-        if (n == 0) break;
-        try content.appendSlice(allocator, buf[0..n]);
-    }
-    return try content.toOwnedSlice(allocator);
+    const file = try std.fs.cwd().openFile(path, .{});
+    defer file.close();
+    return try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
 }
 
 /// Find and load scripts from a project directory

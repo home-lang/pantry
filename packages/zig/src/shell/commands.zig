@@ -1824,13 +1824,8 @@ pub const ShellCommands = struct {
                 io_helper.makePath(parent) catch {};
             }
 
-            const fd = try std.posix.openat(
-                std.posix.AT.FDCWD,
-                full_path,
-                .{ .ACCMODE = .RDWR, .CREAT = true, .CLOEXEC = true },
-                0o644,
-            );
-            std.posix.close(fd);
+            const file = try std.fs.cwd().createFile(full_path, .{});
+            file.close();
             style.print("  ✓ SQLite database initialized at {s}\n", .{sqlite_path});
             return;
         };
