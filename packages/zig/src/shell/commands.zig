@@ -1762,20 +1762,20 @@ pub const ShellCommands = struct {
             self.allocator.free(result.stdout);
         }
 
-        const json_str = json_output orelse return;
+        const json_str = json_output orelse return null;
 
         // Parse JSON to extract services.database
-        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, json_str, .{}) catch return;
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, json_str, .{}) catch return null;
         defer parsed.deinit();
 
         const root = parsed.value;
-        if (root != .object) return;
+        if (root != .object) return null;
 
-        const services = root.object.get("services") orelse return;
-        if (services != .object) return;
+        const services = root.object.get("services") orelse return null;
+        if (services != .object) return null;
 
-        const database = services.object.get("database") orelse return;
-        if (database != .object) return;
+        const database = services.object.get("database") orelse return null;
+        if (database != .object) return null;
 
         var config = DatabaseConfig{};
         const db_obj = database.object;
