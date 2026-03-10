@@ -3371,6 +3371,22 @@ export const packageOverrides: Record<string, PackageOverride> = {
       },
     },
     modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Version format is YY.MM.patch where MM is zero-padded but version discovery
+      // strips the leading zero. Use shell to reconstruct the zero-padded URL.
+      recipe.distributable = undefined
+      if (recipe.build) {
+        const origScript = recipe.build.script || []
+        recipe.build.script = [
+          [
+            '# Poppler uses zero-padded month in tarball names (e.g. 26.03.0)',
+            'IFS="." read -r YEAR MONTH PATCH <<< "{{version}}"',
+            'MONTH_PAD=$(printf "%02d" "$MONTH")',
+            'PADDED_VER="${YEAR}.${MONTH_PAD}.${PATCH}"',
+            'curl -fSL "https://poppler.freedesktop.org/poppler-${PADDED_VER}.tar.xz" | tar xJ --strip-components=1',
+          ].join('\n'),
+          ...origScript,
+        ]
+      }
       // Remove gobject-introspection build dep
       if (recipe.build?.dependencies?.['gnome.org/gobject-introspection']) {
         delete recipe.build.dependencies['gnome.org/gobject-introspection']
@@ -9980,26 +9996,4 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
-  // ─── poppler.freedesktop.org — zero-padded month in download URL ────────
-
-  'poppler.freedesktop.org': {
-    modifyRecipe: (recipe: NormalizedRecipe) => {
-      // Version format is YY.MM.patch where MM is zero-padded but version discovery
-      // strips the leading zero. Use shell to reconstruct the zero-padded URL.
-      recipe.distributable = undefined
-      if (recipe.build) {
-        const origScript = recipe.build.script || []
-        recipe.build.script = [
-          [
-            '# Poppler uses zero-padded month in tarball names (e.g. 26.03.0)',
-            'IFS="." read -r YEAR MONTH PATCH <<< "{{version}}"',
-            'MONTH_PAD=$(printf "%02d" "$MONTH")',
-            'PADDED_VER="${YEAR}.${MONTH_PAD}.${PATCH}"',
-            'curl -fSL "https://poppler.freedesktop.org/poppler-${PADDED_VER}.tar.xz" | tar xJ --strip-components=1',
-          ].join('\n'),
-          ...origScript,
-        ]
-      }
-    },
-  },
 }

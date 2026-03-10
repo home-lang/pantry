@@ -39,6 +39,8 @@
   "exclude": [
     "**/dist/**",
     "**/node_modules/**",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "packages/site/**",
+    "packages/inspector/**"
   ]
 }

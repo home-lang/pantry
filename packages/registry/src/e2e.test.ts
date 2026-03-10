@@ -86,7 +86,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       expect(res.headers.get('content-type')).toBe('application/json')
       expect(res.headers.get('cache-control')).toBe('public, max-age=300')
 
-      const body = await res.json()
+      const body = await res.json() as any
       expect(body.name).toBe('curl.se')
       expect(body.versions['8.12.0']).toBeDefined()
       expect(body.versions['8.12.0'].platforms['darwin-arm64'].tarball).toContain('curl.se-8.12.0.tar.gz')
@@ -95,7 +95,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
     it('returns 404 for non-existent domain metadata', async () => {
       const res = await fetch(`${baseUrl}/binaries/nonexistent.org/metadata.json`)
       expect(res.status).toBe(404)
-      const body = await res.json()
+      const body = await res.json() as any
       expect(body.error).toBe('Not found')
     })
   })
@@ -171,7 +171,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       // Verify via analytics API
       const statsRes = await fetch(`${baseUrl}/analytics/curl.se`)
       expect(statsRes.status).toBe(200)
-      const stats = await statsRes.json()
+      const stats = await statsRes.json() as any
       expect(stats.totalDownloads).toBe(1)
       expect(stats.versionDownloads['8.12.0']).toBe(1)
     })
@@ -184,7 +184,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       await new Promise(r => setTimeout(r, 100))
 
       const statsRes = await fetch(`${baseUrl}/analytics/curl.se`)
-      const stats = await statsRes.json()
+      const stats = await statsRes.json() as any
       expect(stats.totalDownloads).toBe(3)
       expect(stats.versionDownloads['8.12.0']).toBe(3)
     })
@@ -204,7 +204,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
 
       const topRes = await fetch(`${baseUrl}/analytics/top?limit=10`)
       expect(topRes.status).toBe(200)
-      const top = await topRes.json()
+      const top = await topRes.json() as any
       expect(top.packages.length).toBeGreaterThanOrEqual(1)
       expect(top.packages[0].name).toBe('curl.se')
       expect(top.packages[0].downloads).toBe(1)
@@ -216,7 +216,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
 
       const timelineRes = await fetch(`${baseUrl}/analytics/curl.se/timeline?days=7`)
       expect(timelineRes.status).toBe(200)
-      const timeline = await timelineRes.json()
+      const timeline = await timelineRes.json() as any
       expect(timeline.packageName).toBe('curl.se')
       // Should have today in the timeline
       const todayEntry = timeline.timeline.find((d: any) => d.date === today())
@@ -230,7 +230,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
 
       const catRes = await fetch(`${baseUrl}/api/analytics/install/30d.json`)
       expect(catRes.status).toBe(200)
-      const catData = await catRes.json()
+      const catData = await catRes.json() as any
       expect(catData.category).toBe('install')
       expect(catData.total_count).toBeGreaterThanOrEqual(1)
       // curl.se should be in the items
@@ -529,7 +529,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
         headers: { 'Cookie': `pantry_token=${TEST_TOKEN}` },
       })
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body = await res.json() as any
       expect(body.packages).toBeDefined()
       expect(Array.isArray(body.packages)).toBe(true)
     })
@@ -542,7 +542,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
         headers: { 'Cookie': `pantry_token=${TEST_TOKEN}` },
       })
       expect(res.status).toBe(200)
-      const body = await res.json()
+      const body = await res.json() as any
       expect(body.stats).toBeDefined()
       expect(body.timeline).toBeDefined()
       expect(body.stats.totalDownloads).toBe(1)
@@ -563,7 +563,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       // Step 1: CLI fetches metadata (like `pantry install curl`)
       const metaRes = await fetch(`${baseUrl}/binaries/curl.se/metadata.json`)
       expect(metaRes.status).toBe(200)
-      const meta = await metaRes.json()
+      const meta = await metaRes.json() as any
       const tarballPath = meta.versions['8.12.0'].platforms['darwin-arm64'].tarball
       expect(tarballPath).toBeDefined()
 
@@ -584,13 +584,13 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       // Step 4: Verify analytics were recorded
       const statsRes = await fetch(`${baseUrl}/analytics/curl.se`)
       expect(statsRes.status).toBe(200)
-      const stats = await statsRes.json()
+      const stats = await statsRes.json() as any
       expect(stats.totalDownloads).toBe(1)
       expect(stats.versionDownloads['8.12.0']).toBe(1)
 
       // Step 5: Verify top packages endpoint
       const topRes = await fetch(`${baseUrl}/analytics/top`)
-      const top = await topRes.json()
+      const top = await topRes.json() as any
       expect(top.packages.some((p: any) => p.name === 'curl.se')).toBe(true)
 
       // Step 6: Verify dashboard shows the data
@@ -663,7 +663,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       await new Promise(r => setTimeout(r, 200))
 
       const statsRes = await fetch(`${baseUrl}/analytics/curl.se`)
-      const stats = await statsRes.json()
+      const stats = await statsRes.json() as any
       expect(stats.totalDownloads).toBe(10)
     })
 

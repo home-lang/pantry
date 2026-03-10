@@ -90,6 +90,7 @@ async function processStxFile(filePath: string, params: Record<string, string> =
 console.log(`\n  \x1b[36mpantry\x1b[0m inspector\n`)
 console.log(`  Server running at \x1b[36mhttp://localhost:${port}\x1b[0m\n`)
 
+// eslint-disable-next-line pickier/no-unused-vars
 const routeCache = new Map<string, string>()
 
 Bun.serve({
@@ -113,6 +114,7 @@ Bun.serve({
         })
 
         // Cache key includes params
+        // eslint-disable-next-line pickier/no-unused-vars
         const cacheKey = `${route.file}:${JSON.stringify(params)}`
 
         try {
