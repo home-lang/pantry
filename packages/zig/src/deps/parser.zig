@@ -371,7 +371,7 @@ pub fn inferDependencies(
         // Pantry native formats
         .pantry_json, .pantry_jsonc => try parseZigPackageJson(allocator, deps_file.path),
         // TypeScript config files - execute with Bun/Node
-        .config_deps_ts, .pantry_config_ts => try parseTsConfigFile(allocator, deps_file.path),
+        .config_deps_ts, .dotconfig_deps_ts, .pantry_config_ts, .dotconfig_pantry_ts => try parseTsConfigFile(allocator, deps_file.path),
         .pantry_yaml, .pantry_yml, .deps_yaml, .deps_yml, .dependencies_yaml, .pkgx_yaml => try parseDepsFile(allocator, deps_file.path),
         // Other package manager formats (fallback)
         .package_json, .package_jsonc, .zig_json => try parseZigPackageJson(allocator, deps_file.path),

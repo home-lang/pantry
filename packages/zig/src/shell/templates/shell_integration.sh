@@ -7,7 +7,7 @@ __PANTRY_CACHE_FILE="${HOME}/.pantry/cache/shell-env.cache"
 __PANTRY_DEP_FILES=(
     "pantry.json" "pantry.jsonc" "pantry.yaml" "pantry.yml"
     "deps.yaml" "deps.yml" "dependencies.yaml" "dependencies.yml"
-    "pkgx.yaml" "pkgx.yml" "config/deps.ts" "pantry.config.ts" "pantry.config.js"
+    "pkgx.yaml" "pkgx.yml" "config/deps.ts" ".config/deps.ts" "pantry.config.ts" ".config/pantry.ts" "pantry.config.js"
     "package.json" "pyproject.toml" "requirements.txt" "Cargo.toml"
     "go.mod" "Gemfile" "deno.json" "composer.json"
 )
@@ -128,35 +128,63 @@ __pantry_switch_environment() {
         fi
     fi
 
-    # Quick single-dir check: any dep file here?
-    local dep_file
-    dep_file=$(__pantry_find_dep_here "$PWD") || return 0
-
-    # SHELL-SIDE CACHE: Check without spawning any binary (~0ms)
+    # SHELL-SIDE CACHE: Check for this dir first (covers subdirs cached from parent lookups)
     if __pantry_cache_lookup "$PWD"; then
-        __pantry_activate "$REPLY" "$PWD" "$dep_file"
+        local dep_file
+        dep_file=$(__pantry_find_dep_here "$PWD") || dep_file=""
+        __pantry_activate "$REPLY" "$PWD" "${dep_file:-}"
         return 0
     fi
 
-    # BINARY LOOKUP: Only on cache miss (~50ms, first visit to a project)
+    # Quick single-dir check: any dep file here?
+    local dep_file
+    dep_file=$(__pantry_find_dep_here "$PWD")
+    if [[ $? -ne 0 ]]; then
+        # No dep file in current dir - still check binary (walks parent dirs)
+        # but only if we haven't already checked recently (avoid repeated lookups)
+        [[ "$__PANTRY_LAST_NO_ENV" == "$PWD" ]] && return 0
+    fi
+
+    # BINARY LOOKUP: Walks up parent dirs, checks Zig-side cache (~50ms, first visit)
     [[ "$__PANTRY_DEBUG" == "1" ]] && echo "[PANTRY DEBUG] Running shell:lookup for $PWD" >&2
     local lookup_result
     lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
 
     if [[ $? -eq 0 && -n "$lookup_result" ]]; then
         local env_dir="${lookup_result%%|*}"
+        local project_dir="${lookup_result#*|}"
         if [[ -d "$env_dir/bin" ]]; then
-            __pantry_cache_write "$PWD" "$env_dir" "$dep_file" "$(__pantry_mtime "$dep_file")"
-            __pantry_activate "$env_dir" "$PWD" "$dep_file"
+            # Cache this dir AND the project root for fast lookups
+            local mtime="0"
+            [[ -n "$dep_file" ]] && mtime="$(__pantry_mtime "$dep_file")"
+            __pantry_cache_write "$PWD" "$env_dir" "${dep_file:-}" "$mtime"
+            [[ "$PWD" != "$project_dir" ]] && __pantry_cache_write "$project_dir" "$env_dir" "${dep_file:-}" "$mtime"
+            __pantry_activate "$env_dir" "${project_dir:-$PWD}" "${dep_file:-}"
             return 0
         fi
     fi
 
-    # No env found - hint once per dir per session (don't auto-install, too slow for cd)
-    if [[ "$__PANTRY_LAST_HINT" != "$PWD" ]]; then
-        __PANTRY_LAST_HINT="$PWD"
-        printf "\033[2mpantry: run \`pantry install\` to set up this project\033[0m\n" >&2
+    # No env found but dep file exists - auto-install unless PANTRY_NO_AUTO_INSTALL is set
+    if [[ -n "$dep_file" && -z "$PANTRY_NO_AUTO_INSTALL" ]]; then
+        if pantry install 2>&1; then
+            # Retry lookup after install
+            lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
+            if [[ $? -eq 0 && -n "$lookup_result" ]]; then
+                local env_dir="${lookup_result%%|*}"
+                local project_dir="${lookup_result#*|}"
+                if [[ -d "$env_dir/bin" ]]; then
+                    local mtime="$(__pantry_mtime "$dep_file")"
+                    __pantry_cache_write "$PWD" "$env_dir" "$dep_file" "$mtime"
+                    [[ "$PWD" != "$project_dir" ]] && __pantry_cache_write "$project_dir" "$env_dir" "$dep_file" "$mtime"
+                    __pantry_activate "$env_dir" "${project_dir:-$PWD}" "$dep_file"
+                    return 0
+                fi
+            fi
+        fi
     fi
+
+    # Remember this dir to skip repeated lookups
+    __PANTRY_LAST_NO_ENV="$PWD"
 }
 
 

@@ -16,7 +16,9 @@ pub const DepsFile = struct {
         dependencies_yaml,
         pkgx_yaml,
         config_deps_ts, // config/deps.ts (typed TS config - needs runtime)
+        dotconfig_deps_ts, // .config/deps.ts
         pantry_config_ts, // pantry.config.ts (needs runtime)
+        dotconfig_pantry_ts, // .config/pantry.ts
         package_json, // package.json (npm/bun/yarn compatible)
         package_jsonc, // Zig package.jsonc
         zig_json, // zig.json
@@ -52,7 +54,9 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
         "dependencies.yaml",
         "pkgx.yaml",
         "config/deps.ts", // config/deps.ts (typed TS config - needs runtime)
+        ".config/deps.ts", // .config/deps.ts
         "pantry.config.ts", // pantry.config.ts (needs runtime)
+        ".config/pantry.ts", // .config/pantry.ts
         // Other package manager formats (lower priority, fallback only)
         "package.json", // package.json (npm/bun/yarn compatible)
         "package.jsonc", // Zig package.jsonc
@@ -123,8 +127,10 @@ pub fn isDepsFile(filename: []const u8) bool {
         if (std.mem.eql(u8, filename, deps_file)) return true;
     }
 
-    // Also check for config/deps.ts pattern
+    // Also check for config/deps.ts and .config/ patterns
     if (std.mem.endsWith(u8, filename, "config/deps.ts")) return true;
+    if (std.mem.endsWith(u8, filename, ".config/deps.ts")) return true;
+    if (std.mem.endsWith(u8, filename, ".config/pantry.ts")) return true;
 
     return false;
 }
@@ -136,8 +142,10 @@ pub fn inferFormat(filename: []const u8) ?DepsFile.FileFormat {
     if (std.mem.eql(u8, filename, "pantry.jsonc")) return .pantry_jsonc;
     if (std.mem.eql(u8, filename, "pantry.yaml")) return .pantry_yaml;
     if (std.mem.eql(u8, filename, "pantry.yml")) return .pantry_yml;
+    if (std.mem.endsWith(u8, filename, ".config/deps.ts")) return .dotconfig_deps_ts;
     if (std.mem.endsWith(u8, filename, "config/deps.ts")) return .config_deps_ts;
     if (std.mem.eql(u8, filename, "pantry.config.ts")) return .pantry_config_ts;
+    if (std.mem.endsWith(u8, filename, ".config/pantry.ts")) return .dotconfig_pantry_ts;
     if (std.mem.eql(u8, filename, "deps.yaml")) return .deps_yaml;
     if (std.mem.eql(u8, filename, "deps.yml")) return .deps_yml;
     if (std.mem.eql(u8, filename, "dependencies.yaml")) return .dependencies_yaml;

@@ -870,6 +870,39 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             checkpoint.cleanup();
         }
 
+        // Update env cache so shell:lookup finds this env on next cd (no binary re-scan needed)
+        {
+            const env_cache_mod = lib.cache.env_cache;
+            var env_cache = lib.cache.EnvCache.initWithPersistence(allocator) catch null;
+            if (env_cache) |*ec| {
+                defer ec.deinit();
+
+                const project_hash_for_cache = string.md5Hash(proj_dir);
+                const dep_mtime: i128 = if (deps_file_path) |path| blk: {
+                    const f = io_helper.cwd().openFile(io_helper.io, path, .{}) catch break :blk 0;
+                    defer f.close(io_helper.io);
+                    const fstat = f.stat(io_helper.io) catch break :blk 0;
+                    break :blk @divFloor(fstat.mtime.toNanoseconds(), std.time.ns_per_s);
+                } else 0;
+
+                const now = @as(i64, @intCast((io_helper.clockGettime()).sec));
+                const entry = allocator.create(env_cache_mod.Entry) catch null;
+                if (entry) |e| {
+                    e.* = .{
+                        .hash = project_hash_for_cache,
+                        .dep_file = allocator.dupe(u8, deps_file_path orelse "") catch "",
+                        .dep_mtime = dep_mtime,
+                        .path = allocator.dupe(u8, env_dir) catch "",
+                        .env_vars = std.StringHashMap([]const u8).init(allocator),
+                        .created_at = now,
+                        .cached_at = now,
+                        .last_validated = now,
+                    };
+                    ec.put(e) catch {};
+                }
+            }
+        }
+
         return .{ .exit_code = 0 };
     }
 

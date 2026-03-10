@@ -205,10 +205,23 @@ fn installSingleWorkspaceDep(
             .source = .github,
             .repo = repo_owned,
         };
-    } else lib.packages.PackageSpec{
-        .name = clean_name,
-        .version = dep.version,
-        .source = pkg_source,
+    } else blk: {
+        // Check if this is a zig package - route through ziglang.org direct download
+        const is_zig_package = std.mem.eql(u8, clean_name, "zig") or
+            std.mem.eql(u8, clean_name, "ziglang") or
+            std.mem.eql(u8, clean_name, "ziglang.org");
+        if (is_zig_package) {
+            break :blk lib.packages.PackageSpec{
+                .name = "zig",
+                .version = dep.version,
+                .source = .ziglang,
+            };
+        }
+        break :blk lib.packages.PackageSpec{
+            .name = clean_name,
+            .version = dep.version,
+            .source = pkg_source,
+        };
     };
     defer if (repo_owned) |r| allocator.free(r);
 
@@ -321,8 +334,10 @@ pub fn installWorkspaceCommandWithOptions(
         // No package.json or failed to read, continue without catalogs
     }
 
-    style.printWorkspaceHeader(workspace_config.name);
-    style.printWorkspaceMembers(workspace_config.members.len);
+    if (options.verbose) {
+        style.printWorkspaceHeader(workspace_config.name);
+        style.printWorkspaceMembers(workspace_config.members.len);
+    }
 
     if (workspace_config.members.len == 0) {
         return .{
@@ -403,7 +418,7 @@ pub fn installWorkspaceCommandWithOptions(
             continue;
         }
 
-        style.printWorkspaceMember(member.name);
+        if (options.verbose) style.printWorkspaceMember(member.name);
 
         // Load dependencies for this member
         var member_deps: ?[]parser.PackageDependency = null;
@@ -498,13 +513,13 @@ pub fn installWorkspaceCommandWithOptions(
                     all_deps_count += 1;
                 }
             }
-            style.printWorkspaceMemberDeps(deps.len);
+            if (options.verbose) style.printWorkspaceMemberDeps(deps.len);
         } else {
-            style.printWorkspaceMemberNoDeps();
+            if (options.verbose) style.printWorkspaceMemberNoDeps();
         }
     }
 
-    style.print("\n", .{});
+    if (options.verbose) style.print("\n", .{});
 
     if (all_deps_count == 0) {
         style.print("{s}{s}{s} No dependencies to install\n", .{ style.green, style.check, style.reset });

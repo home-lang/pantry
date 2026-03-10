@@ -1715,7 +1715,9 @@ pub const Installer = struct {
         }
 
         if (!downloaded) {
-            style.print("  Error: package {s}@{s} not found in registry\n", .{ spec.name, spec.version });
+            if (!options.quiet) {
+                style.print("  Error: package {s}@{s} not found in registry\n", .{ spec.name, spec.version });
+            }
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
@@ -2173,7 +2175,9 @@ pub const Installer = struct {
         }
 
         if (!downloaded) {
-            style.print("  Error: package {s}@{s} not found in registry\n", .{ spec.name, spec.version });
+            if (!options.quiet) {
+                style.print("  Error: package {s}@{s} not found in registry\n", .{ spec.name, spec.version });
+            }
             return error.DownloadFailed;
         }
         defer self.allocator.free(archive_path);
