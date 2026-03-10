@@ -1,0 +1,148 @@
+name: Sync Zig Versions
+
+on:
+  schedule:
+    # Check for new zig versions every 6 hours
+    - cron: '30 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      include-dev:
+        description: 'Include latest dev/master version'
+        required: false
+        type: boolean
+        default: true
+      force:
+        description: 'Force re-upload even if already in S3'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  AWS_REGION: us-east-1
+  S3_BUCKET: pantry-registry
+
+jobs:
+  build:
+    name: Build zig (${{ matrix.platform.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - os: macos-15
+            name: darwin-arm64
+          - os: ubuntu-latest
+            name: linux-x86-64
+    runs-on: ${{ matrix.platform.os }}
+    permissions:
+      contents: read
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0-dev.2565+684032671
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build stable zig versions
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/ts-pantry
+
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+          ARGS="-b $S3_BUCKET -r $AWS_REGION --platform ${{ matrix.platform.name }} --multi-version --max-versions 5 -p ziglang.org"
+
+          if [ "$FORCE" = "true" ]; then
+            ARGS="$ARGS --force"
+          fi
+
+          echo "Building stable zig versions..."
+          bun scripts/build-all-packages.ts $ARGS
+        timeout-minutes: 30
+
+      - name: Build dev zig version
+        if: github.event.inputs.include-dev != 'false'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd packages/ts-pantry
+
+          # Fetch latest dev version from ziglang.org
+          DEV_VERSION=$(curl -s https://ziglang.org/download/index.json | jq -r '.master.version // empty')
+
+          if [ -z "$DEV_VERSION" ]; then
+            echo "No dev version found, skipping"
+            exit 0
+          fi
+
+          echo "Latest zig dev version: $DEV_VERSION"
+
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+
+          # Check if already in S3
+          if [ "$FORCE" != "true" ]; then
+            EXISTS=$(bun -e "
+              const { S3Client } = await import('./scripts/s3-client.ts');
+              const s3 = new S3Client('$AWS_REGION');
+              try {
+                const m = JSON.parse(await s3.getObject('$S3_BUCKET', 'binaries/ziglang.org/metadata.json'));
+                console.log(m.versions?.['$DEV_VERSION']?.platforms?.['${{ matrix.platform.name }}'] ? 'yes' : 'no');
+              } catch { console.log('no'); }
+            " 2>/dev/null || echo "no")
+
+            if [ "$EXISTS" = "yes" ]; then
+              echo "Dev version $DEV_VERSION already in S3, skipping"
+              exit 0
+            fi
+          fi
+
+          echo "Building ziglang.org@${DEV_VERSION}..."
+          BUILD_DIR="/tmp/buildkit-build-ziglang.org"
+          PREFIX="/tmp/buildkit-install-ziglang.org"
+          DEPS_DIR="/tmp/buildkit-deps"
+          mkdir -p "$BUILD_DIR" "$PREFIX" "$DEPS_DIR"
+
+          bun scripts/build-package.ts \
+            -p ziglang.org \
+            -v "$DEV_VERSION" \
+            --platform ${{ matrix.platform.name }} \
+            --build-dir "$BUILD_DIR" \
+            --prefix "$PREFIX" \
+            --deps-dir "$DEPS_DIR" \
+            -b $S3_BUCKET \
+            -r $AWS_REGION || echo "Failed to build zig dev version $DEV_VERSION"
+        timeout-minutes: 20
+
+  notify:
+    name: Discord notification
+    needs: build
+    if: always() && needs.build.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: "Sync Zig — Failed"
+          description: "Failed to sync zig versions"
+          status: failure
+          fields: |
+            [
+              {"name": "Include Dev", "value": "${{ github.event.inputs.include-dev || 'true' }}", "inline": true},
+              {"name": "Force", "value": "${{ github.event.inputs.force || 'false' }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

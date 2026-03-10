@@ -310,6 +310,49 @@ pub fn installPackageWorker(task_ptr: *types.InstallTask) void {
     task_ptr.result.* = result;
 }
 
+/// Handle install errors with recovery suggestions
+fn handleInstallError(
+    allocator: std.mem.Allocator,
+    err: anyerror,
+    lookup_name: []const u8,
+    version: []const u8,
+    quiet: bool,
+) types.InstallTaskResult {
+    const recovery_mod = @import("../../../install/recovery.zig");
+
+    const context_msg = std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ lookup_name, version }) catch null;
+    defer if (context_msg) |m| allocator.free(m);
+
+    const suggestion = if (context_msg) |m|
+        (recovery_mod.RecoverySuggestion.suggest(allocator, err, m) catch null)
+    else
+        null;
+
+    const is_package_not_found = switch (err) {
+        error.PackageNotFound => true,
+        else => false,
+    };
+
+    if (suggestion) |s| {
+        if (!quiet or is_package_not_found) {
+            s.print();
+        }
+    }
+
+    const error_msg = if (is_package_not_found)
+        (std.fmt.allocPrint(allocator, "not found in registry", .{}) catch null)
+    else
+        (std.fmt.allocPrint(allocator, "failed: {}", .{err}) catch null);
+
+    return .{
+        .name = lookup_name,
+        .version = version,
+        .success = false,
+        .error_msg = error_msg,
+        .install_time_ms = 0,
+    };
+}
+
 /// Install a single package (used by both sequential and concurrent installers)
 pub fn installSinglePackage(
     allocator: std.mem.Allocator,
@@ -346,7 +389,6 @@ pub fn installSinglePackage(
     const is_zig_package = std.mem.eql(u8, lookup_name, "zig") or
         std.mem.eql(u8, lookup_name, "ziglang") or
         std.mem.eql(u8, lookup_name, "ziglang.org");
-    const is_zig_dev = lib.install.downloader.isZigDevVersion(dep.version);
 
     // Check if this is a git dependency (git+https://, git+ssh://, git://)
     const is_git_dep = std.mem.startsWith(u8, dep.version, "git+") or
@@ -395,13 +437,6 @@ pub fn installSinglePackage(
             .version = gh_ref.ref,
             .source = .github,
             .repo = try allocator.dupe(u8, repo_str),
-        };
-    } else if (is_zig_package and is_zig_dev) blk: {
-        // Zig dev version - use ziglang.org direct download (not in registry)
-        break :blk lib.packages.PackageSpec{
-            .name = "zig",
-            .version = dep.version,
-            .source = .ziglang,
         };
     } else blk: {
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
@@ -461,7 +496,6 @@ pub fn installSinglePackage(
 
     // Check offline mode first
     const offline_mod = @import("../../../install/offline.zig");
-    const recovery_mod = @import("../../../install/recovery.zig");
 
     const is_offline = offline_mod.isOfflineMode();
 
@@ -511,39 +545,37 @@ pub fn installSinglePackage(
         .project_root = proj_dir,
         .quiet = true,
     }) catch |err| {
-        // Provide recovery suggestions on error
-        const context_msg = try std.fmt.allocPrint(allocator, "Failed to install {s}@{s}", .{ lookup_name, dep.version });
-        defer allocator.free(context_msg);
-        const suggestion = try recovery_mod.RecoverySuggestion.suggest(
-            allocator,
-            err,
-            context_msg,
-        );
-        // Note: don't free suggestion.message — it's either a static string or context_msg (freed above)
-
-        // Always print suggestions for package not found (even in quiet mode)
-        const is_package_not_found = switch (err) {
-            error.PackageNotFound => true,
-            else => false,
-        };
-
-        if (!options.quiet or is_package_not_found) {
-            suggestion.print();
+        // For zig packages not found in registry, fall back to direct ziglang.org download
+        if (is_zig_package) {
+            const zig_fallback_spec = lib.packages.PackageSpec{
+                .name = "zig",
+                .version = dep.version,
+                .source = .ziglang,
+            };
+            var fallback_result = shared_installer.install(zig_fallback_spec, .{
+                .project_root = proj_dir,
+                .quiet = true,
+            }) catch {
+                // Fall through to normal error handling below
+                return handleInstallError(allocator, err, lookup_name, dep.version, options.quiet);
+            };
+            // Fallback succeeded
+            const installed_ver = allocator.dupe(u8, fallback_result.version) catch dep.version;
+            const install_path = allocator.dupe(u8, fallback_result.install_path) catch "";
+            _ = install_path;
+            fallback_result.deinit(allocator);
+            const end_ts = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
+            return .{
+                .name = lookup_name,
+                .version = installed_ver,
+                .success = true,
+                .error_msg = null,
+                .install_time_ms = @intCast(end_time - start_time),
+            };
         }
 
-        // Provide human-readable error messages
-        const error_msg = if (is_package_not_found)
-            try std.fmt.allocPrint(allocator, "not found in registry (npm packages not yet supported)", .{})
-        else
-            try std.fmt.allocPrint(allocator, "failed: {}", .{err});
-
-        return .{
-            .name = lookup_name,
-            .version = dep.version,
-            .success = false,
-            .error_msg = error_msg,
-            .install_time_ms = 0,
-        };
+        return handleInstallError(allocator, err, lookup_name, dep.version, options.quiet);
     };
 
     // Duplicate the version and install path strings before deinit

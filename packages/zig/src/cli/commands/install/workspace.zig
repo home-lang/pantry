@@ -216,6 +216,31 @@ fn installSingleWorkspaceDep(
         .project_root = workspace_root,
         .quiet = true,
     }) catch |err| {
+        // For zig packages not found in registry, fall back to direct ziglang.org download
+        const is_zig_package = std.mem.eql(u8, clean_name, "zig") or
+            std.mem.eql(u8, clean_name, "ziglang") or
+            std.mem.eql(u8, clean_name, "ziglang.org");
+        if (is_zig_package) {
+            const zig_spec = lib.packages.PackageSpec{
+                .name = "zig",
+                .version = dep.version,
+                .source = .ziglang,
+            };
+            var fallback = shared_installer.install(zig_spec, .{
+                .project_root = workspace_root,
+                .quiet = true,
+            }) catch {
+                return .{
+                    .name = clean_name,
+                    .version = dep.version,
+                    .success = false,
+                    .error_msg = std.fmt.allocPrint(allocator, "{any}", .{err}) catch null,
+                };
+            };
+            const ver = allocator.dupe(u8, fallback.version) catch dep.version;
+            fallback.deinit(allocator);
+            return .{ .name = clean_name, .version = ver, .success = true, .error_msg = null };
+        }
         return .{
             .name = clean_name,
             .version = dep.version,

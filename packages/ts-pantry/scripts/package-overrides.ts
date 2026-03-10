@@ -9996,4 +9996,42 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── Zig ─────────────────────────────────────────────────────────────
+
+  'ziglang.org': {
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      // Dev versions (e.g. 0.16.0-dev.2736+3b515fbed) use /builds/ endpoint
+      // Stable versions use /download/{version}/ endpoint
+      // Override the build script to handle both cases
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          'VERSION="{{version}}"',
+          'case "{{hw.platform}}+{{hw.arch}}" in',
+          '  darwin+aarch64) PLATFORM="aarch64-macos" ;;',
+          '  darwin+x86-64)  PLATFORM="x86_64-macos"  ;;',
+          '  linux+aarch64)  PLATFORM="aarch64-linux" ;;',
+          '  linux+x86-64)   PLATFORM="x86_64-linux"  ;;',
+          'esac',
+          '',
+          '# Dev versions use /builds/, stable use /download/{version}/',
+          'if echo "$VERSION" | grep -q "\\-dev"; then',
+          '  URL="https://ziglang.org/builds/zig-${PLATFORM}-${VERSION}.tar.xz"',
+          'else',
+          '  URL="https://ziglang.org/download/${VERSION}/zig-${PLATFORM}-${VERSION}.tar.xz"',
+          'fi',
+          '',
+          'curl -Lfo zig.tar.xz "$URL"',
+          'tar Jxf zig.tar.xz',
+          '',
+          'install -Dm755 "zig-${PLATFORM}-${VERSION}/zig" "{{prefix}}/bin/zig"',
+          'cp -a "zig-${PLATFORM}-${VERSION}/lib" "{{prefix}}"',
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
 }
