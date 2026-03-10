@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 199 versions</summary>
+<summary>Show all 200 versions</summary>
 
+- `13.0.0`
 - `12.23.1`, `12.23.0`
 - `12.22.0`
 - `12.21.0`
@@ -139,13 +140,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `12.23.1`
+**Latest Version**: `13.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cnquery.io@12.23.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cnquery.io@13.0.0 -- $SHELL -i
 ```
 
 ## Usage Examples

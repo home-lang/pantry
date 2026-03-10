@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 22 versions</summary>
+<summary>Show all 23 versions</summary>
 
-- `6.0.0`
+- `6.0.1`, `6.0.0`
 - `5.2.0`
 - `5.1.0`
 - `5.0.2`, `5.0.1`, `5.0.0`
@@ -44,13 +44,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `6.0.0`
+**Latest Version**: `6.0.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/mas-cli/mas@6.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/mas-cli/mas@6.0.1 -- $SHELL -i
 ```
 
 ## Usage Examples

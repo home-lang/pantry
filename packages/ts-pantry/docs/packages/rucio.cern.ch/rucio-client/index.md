@@ -26,9 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 50 versions</summary>
+<summary>Show all 51 versions</summary>
 
-- `39.4.0`
+- `39.4.1`, `39.4.0`
 - `39.3.1`, `39.3.0`
 - `39.2.0`
 - `39.1.0`
@@ -67,13 +67,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `39.4.0`
+**Latest Version**: `39.4.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +rucio.cern.ch/rucio-client@39.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +rucio.cern.ch/rucio-client@39.4.1 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 37 versions</summary>
+<summary>Show all 38 versions</summary>
 
+- `4.16.0`
 - `4.15.0`
 - `4.14.0`
 - `4.13.0`
@@ -67,13 +68,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.15.0`
+**Latest Version**: `4.16.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +seaweedfs.com@4.15.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +seaweedfs.com@4.16.0 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -2,7 +2,7 @@
  * **fast_float** - Fast and exact implementation of the C++ from_chars functions for number types: 4x to 10x faster than strtod, part of GCC 12, Chromium, Redis and WebKit/Safari
  *
  * @domain `github.com/fastfloat/fast_float`
- * @version `8.2.3` (12 versions available)
+ * @version `8.2.4` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/fastfloat/fast_float`
@@ -15,7 +15,7 @@
  * const pkg = pantry.githubcomfastfloatfast_float
  * console.log(pkg.name)        // "fast_float"
  * console.log(pkg.description) // "Fast and exact implementation of the C++ from_c..."
- * console.log(pkg.versions[0]) // "8.2.3" (latest)
+ * console.log(pkg.versions[0]) // "8.2.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/fastfloat/fast_float.md
@@ -59,6 +59,7 @@ export const fast_floatPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.2.4',
     '8.2.3',
     '8.2.2',
     '8.2.1',

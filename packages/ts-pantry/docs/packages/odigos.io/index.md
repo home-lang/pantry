@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 292 versions</summary>
+<summary>Show all 293 versions</summary>
 
-- `1.20.1`, `1.20.0`
+- `1.20.2`, `1.20.1`, `1.20.0`
 - `1.19.1`, `1.19.0`
 - `1.18.0`
 - `1.17.9`, `1.17.8`, `1.17.7`, `1.17.6`, `1.17.5`, `1.17.4`, `1.17.3`, `1.17.2`, `1.17.1`, `1.17.0`
@@ -51,13 +51,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.20.1`
+**Latest Version**: `1.20.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +odigos.io@1.20.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +odigos.io@1.20.2 -- $SHELL -i
 ```
 
 ## Usage Examples

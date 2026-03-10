@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-10T14:44:02.723Z
+- **Last Updated**: 2026-03-10T16:49:06.959Z
 
 ## Table of Contents
 
@@ -288,7 +288,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[gnu.org/wget](./packages/gnu.org/wget/index.md)** () | Internet file retriever | wget | 1.25.0 (+3) | `pkgx wget` |
 | **[htop.dev](./packages/htop.dev/index.md)** () | Improved top (interactive process viewer) | htop | 3.4.1 (+4) | `pkgx htop` |
 | **[httpie.io](./packages/httpie.io/index.md)** () | 🥧 HTTPie CLI — modern, user-friendly command-line HTTP client for the API era. JSON support, col... | http, httpie, https | 3.2.4 (+3) | `pkgx httpie` |
-| **[ohmyposh.dev](./packages/ohmyposh.dev/index.md)** () | The most customisable and low-latency cross platform/shell prompt renderer | oh-my-posh | 29.7.1 (+382) | `pkgx oh-my-posh` |
+| **[ohmyposh.dev](./packages/ohmyposh.dev/index.md)** () | The most customisable and low-latency cross platform/shell prompt renderer | oh-my-posh | 29.8.0 (+383) | `pkgx oh-my-posh` |
 | **[starship.rs](./packages/starship.rs/index.md)** () | ☄🌌️ The minimal, blazing-fast, and infinitely customizable prompt for any shell! | starship | 1.24.2 (+23) | `pkgx starship` |
 | **[stedolan.github.io/jq](./packages/stedolan.github.io/jq/index.md)** () | Lightweight and flexible command-line JSON processor | jq | 1.8.1 (+4) | `pkgx jq` |
 | **[tree-sitter.github.io](./packages/tree-sitter.github.io/index.md)** () | Parser generator tool and incremental parsing library | tree-sitter | 0.26.6 (+37) | `pkgx tree-sitter` |
@@ -308,7 +308,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[gnu.org/wget](./packages/gnu.org/wget/index.md)** () | Internet file retriever | wget | 1.25.0 (+3) | `pkgx wget` |
 | **[httpie.io](./packages/httpie.io/index.md)** () | 🥧 HTTPie CLI — modern, user-friendly command-line HTTP client for the API era. JSON support, col... | http, httpie, https | 3.2.4 (+3) | `pkgx httpie` |
 | **[mosh.org](./packages/mosh.org/index.md)** () | Remote terminal application | mosh-client, mosh-server | 1.4.0 (+0) | `pkgx mosh` |
-| **[nginx.org](./packages/nginx.org/index.md)** () | HTTP(S) server and reverse proxy, and IMAP/POP3 proxy server | nginx | 1.29.5 (+25) | `pkgx nginx` |
+| **[nginx.org](./packages/nginx.org/index.md)** () | HTTP(S) server and reverse proxy, and IMAP/POP3 proxy server | nginx | 1.29.6 (+26) | `pkgx nginx` |
 | **[rsync.samba.org](./packages/rsync.samba.org/index.md)** () | An open source utility that provides fast incremental file transfer. It also has useful features ... | rsync, rsync-ssl | 3.4.1 (+3) | `pkgx rsync` |
 | **[traefik.io](./packages/traefik.io/index.md)** () | The Cloud Native Application Proxy | traefik | 3.6.10 (+92) | `pkgx traefik` |
 

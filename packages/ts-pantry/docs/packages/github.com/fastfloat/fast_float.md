@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
-- `8.2.3`, `8.2.2`, `8.2.1`, `8.2.0`
+- `8.2.4`, `8.2.3`, `8.2.2`, `8.2.1`, `8.2.0`
 - `8.1.0`
 - `8.0.2`, `8.0.1`, `8.0.0`
 - `7.0.0`
@@ -35,13 +35,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `8.2.3`
+**Latest Version**: `8.2.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/fastfloat/fast_float@8.2.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/fastfloat/fast_float@8.2.4 -- $SHELL -i
 ```
 
 ## Usage Examples

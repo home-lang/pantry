@@ -2,7 +2,7 @@
  * **cli** - pkgx package
  *
  * @domain `kiro.dev/cli`
- * @version `1.27.1` (3 versions available)
+ * @version `1.27.2` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install kiro.dev/cli`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.kirodevcli
  * console.log(pkg.name)        // "cli"
- * console.log(pkg.versions[0]) // "1.27.1" (latest)
+ * console.log(pkg.versions[0]) // "1.27.2" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/kiro-dev/cli.md
@@ -58,6 +58,7 @@ export const kirodevcliPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.27.2',
     '1.27.1',
     '1.27.0',
     '1.26.2',

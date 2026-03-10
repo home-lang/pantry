@@ -632,6 +632,7 @@ import { horcruxPackage } from './github.com/jesseduffield/horcrux'
 import { lazydockerPackage } from './github.com/jesseduffield/lazydocker'
 import { lazygitPackage } from './github.com/jesseduffield/lazygit'
 import { screenresolutionPackage } from './github.com/jhford/screenresolution'
+import { jjPackage } from './github.com/jj-vcs/jj'
 import { internetarchivePackage } from './github.com/jjjake/internetarchive'
 import { awslogsPackage } from './github.com/jorgebastida/awslogs'
 import { sourcekittenPackage } from './github.com/jpsim/SourceKitten'
@@ -2782,6 +2783,8 @@ export interface Pantry {
   githubcomjesseduffield2: typeof lazygitPackage
 
   githubcomjhford: typeof screenresolutionPackage
+  jj: typeof jjPackage
+  githubcomjjvcs: typeof jjPackage
   internetarchive: typeof internetarchivePackage
   githubcomjjjake: typeof internetarchivePackage
 
@@ -7174,6 +7177,8 @@ export const pantry: Pantry = {
   githubcomjesseduffield2: lazygitPackage,
 
   githubcomjhford: screenresolutionPackage,
+  jj: jjPackage,
+  githubcomjjvcs: jjPackage,
   internetarchive: internetarchivePackage,
   githubcomjjjake: internetarchivePackage,
 
