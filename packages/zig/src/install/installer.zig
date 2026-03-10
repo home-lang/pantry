@@ -1681,7 +1681,28 @@ pub const Installer = struct {
         else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
-        } else null;
+        } else blk: {
+            // Fallback: construct URL directly from known pattern when S3 lookup fails
+            // (e.g., when curl subprocess can't run or registry is temporarily unreachable)
+            const platform = comptime plat: {
+                const os_str = switch (@import("builtin").os.tag) {
+                    .macos => "darwin",
+                    .linux => "linux",
+                    else => "linux",
+                };
+                const arch_str = switch (@import("builtin").cpu.arch) {
+                    .aarch64 => "arm64",
+                    .x86_64 => "x86-64",
+                    else => "x86-64",
+                };
+                break :plat os_str ++ "-" ++ arch_str;
+            };
+            break :blk std.fmt.allocPrint(
+                self.allocator,
+                "https://registry.pantry.dev/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
+                .{ domain, spec.version, platform, domain, spec.version },
+            ) catch null;
+        };
 
         if (s3_url) |url| {
             const temp_archive_path = try std.fmt.allocPrint(
@@ -2141,7 +2162,27 @@ pub const Installer = struct {
         else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
-        } else null;
+        } else blk: {
+            // Fallback: construct URL directly from known pattern when S3 lookup fails
+            const platform = comptime plat: {
+                const os_str = switch (@import("builtin").os.tag) {
+                    .macos => "darwin",
+                    .linux => "linux",
+                    else => "linux",
+                };
+                const arch_str = switch (@import("builtin").cpu.arch) {
+                    .aarch64 => "arm64",
+                    .x86_64 => "x86-64",
+                    else => "x86-64",
+                };
+                break :plat os_str ++ "-" ++ arch_str;
+            };
+            break :blk std.fmt.allocPrint(
+                self.allocator,
+                "https://registry.pantry.dev/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
+                .{ domain, spec.version, platform, domain, spec.version },
+            ) catch null;
+        };
 
         if (s3_url) |url| {
             const temp_archive_path = try std.fmt.allocPrint(
