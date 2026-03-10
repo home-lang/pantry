@@ -203,6 +203,17 @@ export async function run(): Promise<void> {
       core.info('Project dependencies installation completed')
     }
 
+    // Add pantry/.bin to PATH so installed package binaries are available
+    const cwd = process.cwd()
+    const pantryBinDir = path.join(cwd, 'pantry', '.bin')
+    core.addPath(pantryBinDir)
+    core.info(`Added ${pantryBinDir} to PATH`)
+
+    // Also add global pantry bin if it exists
+    const homeDir = os.homedir()
+    const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
+    core.addPath(globalPantryBin)
+
     core.info('pantry setup completed successfully')
   }
   catch (error) {

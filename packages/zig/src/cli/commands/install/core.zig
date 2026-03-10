@@ -1204,6 +1204,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
     if (failed_count > 0) {
         style.printFailureCount(failed_count);
+        return .{ .exit_code = 1 };
     }
 
     return .{ .exit_code = 0 };

@@ -77,7 +77,10 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
     // Native HTTP download — no curl subprocess, no fork/exec overhead.
     // Uses std.http.Client with native TLS, redirect following, and connection pooling.
-    var stream = io_helper.httpStreamGet(allocator, url) catch return error.NetworkError;
+    var stream = io_helper.httpStreamGet(allocator, url) catch {
+        // Fallback to curl when native HTTP client fails (e.g., TLS issues on CI)
+        return downloadFileWithCurl(allocator, url, dest_path, quiet);
+    };
     defer stream.deinit();
 
     const total_bytes = stream.contentLength();
@@ -176,6 +179,21 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     // Clear progress line (let caller print final status)
     if (!quiet and shown_progress) {
         style.clearLine();
+    }
+}
+
+/// Fallback download using curl subprocess (for CI environments where native TLS may fail).
+fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
+    const curl = "/usr/bin/curl";
+    const args_quiet = [_][]const u8{ curl, "-sfSL", "--connect-timeout", "30", "--retry", "3", "-o", dest_path, url };
+    const args_verbose = [_][]const u8{ curl, "-fSL", "--connect-timeout", "30", "--retry", "3", "-o", dest_path, url };
+
+    const result = io_helper.childRun(allocator, if (quiet) &args_quiet else &args_verbose) catch return error.NetworkError;
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term != .exited or result.term.exited != 0) {
+        return error.HttpRequestFailed;
     }
 }
 
