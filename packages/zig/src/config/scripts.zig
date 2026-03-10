@@ -1,5 +1,6 @@
 const std = @import("std");
 const zig_config = @import("zig-config");
+const io_helper = @import("../io_helper.zig");
 
 /// Strip single-line (//) and multi-line (/* */) comments from JSONC content
 fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const u8 {
@@ -170,9 +171,7 @@ fn parseScriptsFromContent(allocator: std.mem.Allocator, content: []const u8, is
 
 /// Read file content (cross-platform)
 fn readFileContent(allocator: std.mem.Allocator, path: []const u8) ![]const u8 {
-    const file = try std.fs.cwd().openFile(path, .{});
-    defer file.close();
-    return try file.readToEndAlloc(allocator, 10 * 1024 * 1024);
+    return io_helper.readFileAlloc(allocator, path, 10 * 1024 * 1024);
 }
 
 /// Find and load scripts from a project directory

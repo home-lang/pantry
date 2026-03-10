@@ -1824,8 +1824,8 @@ pub const ShellCommands = struct {
                 io_helper.makePath(parent) catch {};
             }
 
-            const file = try std.fs.cwd().createFile(full_path, .{});
-            file.close();
+            const file = io_helper.createFile(full_path, .{}) catch |err| return err;
+            file.close(io_helper.io);
             style.print("  ✓ SQLite database initialized at {s}\n", .{sqlite_path});
             return;
         };
