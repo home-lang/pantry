@@ -1317,10 +1317,10 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   console.log(`Description: ${pkg.description}`)
   console.log(`Available versions: ${pkg.versions.length}`)
 
-  // Validate version is available
+  // Validate version is available (warn but allow unknown versions for dev builds)
   if (!pkg.versions.includes(version)) {
     console.log(`\nAvailable versions: ${pkg.versions.slice(0, 10).join(', ')}...`)
-    throw new Error(`Version ${version} not found. Latest: ${pkg.versions[0]}`)
+    console.log(`⚠️  Version ${version} not in TS definition — proceeding anyway (may be a dev/pre-release version)`)
   }
 
   // Show dependencies

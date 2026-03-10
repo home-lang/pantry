@@ -1743,7 +1743,26 @@ Options:
 
     if (multiVersion) {
       // Multi-version mode: build multiple important versions per package
-      const versions = selectImportantVersions(pkg, maxVersions)
+      let versions = selectImportantVersions(pkg, maxVersions)
+
+      // For ziglang.org, build ALL versions + latest dev from ziglang.org index
+      if (pkg.domain === 'ziglang.org') {
+        // Use all stable versions from the TS definition
+        versions = pkg.versions.filter(v => v !== '999.999.999' && v !== '0.0.0' && !isVersionSkipped(pkg.domain, v))
+        // Also fetch latest dev version from ziglang.org
+        try {
+          const resp = await fetch('https://ziglang.org/download/index.json')
+          if (resp.ok) {
+            const index = await resp.json() as Record<string, { version?: string }>
+            const devVersion = index.master?.version
+            if (devVersion && !versions.includes(devVersion)) {
+              versions.unshift(devVersion) // dev first
+              console.log(`   Including dev version: ${devVersion}`)
+            }
+          }
+        } catch { /* ignore fetch errors */ }
+      }
+
       console.log(`\n📦 ${pkg.domain}: building ${versions.length} versions [${versions.join(', ')}]`)
 
       for (const ver of versions) {
