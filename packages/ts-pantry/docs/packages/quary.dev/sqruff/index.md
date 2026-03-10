@@ -26,9 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 102 versions</summary>
+<summary>Show all 103 versions</summary>
 
-- `0.35.3`, `0.35.2`
+- `0.35.4`, `0.35.3`, `0.35.2`
 - `0.34.1`, `0.34.0`
 - `0.33.0`
 - `0.32.0`
@@ -60,13 +60,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.35.3`
+**Latest Version**: `0.35.4`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +quary.dev/sqruff@0.35.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +quary.dev/sqruff@0.35.4 -- $SHELL -i
 ```
 
 ## Dependencies
