@@ -540,7 +540,8 @@ pub fn installWorkspaceCommandWithOptions(
 
     style.printInstalling(all_deps_count);
 
-    var install_timer = std.time.Timer.start() catch null;
+    const install_start_ts = io_helper.clockGettime();
+    const install_start_ms = @as(i64, @intCast(install_start_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_start_ts.nsec)), 1_000_000);
 
     // Create workspace environment
     const home = try lib.Paths.home(allocator);
@@ -1181,7 +1182,9 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     // Summary
-    const elapsed_ms: u64 = if (install_timer) |*t| t.read() / std.time.ns_per_ms else 0;
+    const install_end_ts = io_helper.clockGettime();
+    const install_end_ms = @as(i64, @intCast(install_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_end_ts.nsec)), 1_000_000);
+    const elapsed_ms: u64 = @intCast(@max(0, install_end_ms - install_start_ms));
     style.printWorkspaceComplete(success_count, failed_count, elapsed_ms);
 
     return .{ .exit_code = 0 };
