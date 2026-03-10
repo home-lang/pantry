@@ -27,21 +27,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 17 versions</summary>
+<summary>Show all 18 versions</summary>
 
-- `3.8.5`, `3.8.4`, `3.8.3`, `3.8.2`, `3.8.1`, `3.8.0`
+- `3.8.6`, `3.8.5`, `3.8.4`, `3.8.3`, `3.8.2`, `3.8.1`, `3.8.0`
 - `3.7.9`, `3.7.8`, `3.7.7`, `3.7.6`, `3.7.5`, `3.7.4`, `3.7.3`, `3.7.2`, `3.7.1`, `3.7.0`
 - `3.6.2`
 
 </details>
 
-**Latest Version**: `3.8.5`
+**Latest Version**: `3.8.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +libarchive.org@3.8.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +libarchive.org@3.8.6 -- $SHELL -i
 ```
 
 ## Dependencies

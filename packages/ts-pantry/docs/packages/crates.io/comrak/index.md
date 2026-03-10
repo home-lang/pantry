@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 29 versions</summary>
+<summary>Show all 30 versions</summary>
 
+- `0.51.0`
 - `0.50.0`
 - `0.49.0`
 - `0.48.0`
@@ -57,13 +58,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.50.0`
+**Latest Version**: `0.51.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/comrak@0.50.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/comrak@0.51.0 -- $SHELL -i
 ```
 
 ## Usage Examples

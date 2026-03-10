@@ -3,7 +3,7 @@
  *
  * @domain `libarchive.org`
  * @programs `bsdcat`, `bsdcpio`, `bsdtar`
- * @version `3.8.5` (17 versions available)
+ * @version `3.8.6` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install libarchive.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "libarchive"
  * console.log(pkg.description) // "Multi-format archive and compression library"
  * console.log(pkg.programs)    // ["bsdcat", "bsdcpio", ...]
- * console.log(pkg.versions[0]) // "3.8.5" (latest)
+ * console.log(pkg.versions[0]) // "3.8.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/libarchive-org.md
@@ -76,6 +76,7 @@ export const libarchiveorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.8.6',
     '3.8.5',
     '3.8.4',
     '3.8.3',
