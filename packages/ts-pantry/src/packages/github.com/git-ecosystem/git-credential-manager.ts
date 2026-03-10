@@ -3,7 +3,7 @@
  *
  * @domain `github.com/git-ecosystem/git-credential-manager`
  * @programs `git-credential-manager`
- * @version `2.7.2` (4 versions available)
+ * @version `2.7.3` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/git-ecosystem/git-credential-manager`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "git-credential-manager"
  * console.log(pkg.description) // "Secure, cross-platform Git credential storage w..."
  * console.log(pkg.programs)    // ["git-credential-manager"]
- * console.log(pkg.versions[0]) // "2.7.2" (latest)
+ * console.log(pkg.versions[0]) // "2.7.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/git-ecosystem/git-credential-manager.md
@@ -79,6 +79,7 @@ export const gitcredentialmanagerPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.7.3',
     '2.7.2',
     '2.7.1',
     '2.7.0',
