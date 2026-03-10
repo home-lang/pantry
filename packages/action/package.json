@@ -1,8 +1,9 @@
 {
-  "name": "pantry-installer",
-  "version": "0.8.4",
-  "description": "GitHub Action to install packages using pantry.",
-  "author": "Stacks.js <hello@stacks.js.org>",
+  "name": "pantry-setup",
+  "version": "0.8.3",
+  "private": true,
+  "description": "GitHub Action to install pantry from pre-built binaries",
+  "author": "home-lang",
   "license": "MIT",
   "homepage": "https://github.com/home-lang/pantry#readme",
   "repository": {
@@ -15,16 +16,10 @@
   "keywords": [
     "github-action",
     "pantry",
-    "pkgx",
     "package-manager",
-    "ci-cd",
-    "installer"
+    "setup"
   ],
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "pantry-installer": "dist/index.js"
-  },
   "scripts": {
     "build": "bun run build.ts",
     "prepare": "bun run build",
@@ -33,8 +28,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
-    "@actions/github": "^6.0.1",
-    "@actions/io": "^1.1.3"
+    "@actions/tool-cache": "^2.0.1"
   },
   "devDependencies": {
     "better-dx": "^0.2.6"

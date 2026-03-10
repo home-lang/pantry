@@ -1,14 +1,13 @@
-/**
- * Input parameters for the pantry-installer GitHub Action
- */
 export interface ActionInputs {
-  /**
-   * Space-separated list of packages to install
-   */
+  version: string
   packages: string
-
-  /**
-   * Path to pantry config file
-   */
   configPath: string
+  setupOnly: boolean
+}
+
+export interface Platform {
+  os: 'darwin' | 'linux' | 'windows'
+  arch: 'x64' | 'arm64'
+  binaryName: string
+  assetName: string
 }
