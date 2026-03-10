@@ -134,10 +134,11 @@ export async function run(): Promise<void> {
       setupOnly: core.getInput('setup-only') === 'true',
     }
 
-    core.info(`Setting up pantry (version: ${inputs.version})`)
-
     const platform = detectPlatform()
     core.info(`Detected platform: ${platform.os}-${platform.arch}`)
+
+    // Setup Pantry
+    core.info(`Setting up pantry (version: ${inputs.version})`)
 
     // Resolve version
     const resolvedVersion = await resolveVersion(inputs.version)
