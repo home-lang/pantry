@@ -10,168 +10,195 @@ const CommandResult = common.CommandResult;
 const string = lib.string;
 
 pub fn devShellcodeCommand(allocator: std.mem.Allocator) !CommandResult {
-    // Generate minimal, performant shell integration code with instant deactivation
+    // Generate minimal, performant shell integration code
+    // Key design: shell-side cache avoids spawning binary on every cd
     const shellcode =
         \\
-        \\# pantry shell integration - minimal and performant
+        \\# pantry shell integration - optimized for instant cd
+        \\# Shell-side cache: ~/.pantry/cache/shell-env.cache (plain text, no binary needed)
+        \\
+        \\__PANTRY_CACHE_FILE="${HOME}/.pantry/cache/shell-env.cache"
         \\
         \\# Dependency file names to check (keep in sync with Zig detector)
-        \\__LP_DEP_FILES=(
-        \\  "config/deps.ts" "pantry.config.ts" "pantry.config.js" "dependencies.yaml" "dependencies.yml"
-        \\  "pantry.yaml" "pantry.yml" "deps.yaml" "deps.yml" "pkgx.yaml" "pkgx.yml" "package.json"
-        \\  "pyproject.toml" "requirements.txt" "Cargo.toml" "go.mod" "Gemfile" "deno.json"
+        \\__PANTRY_DEP_FILES=(
+        \\  "pantry.json" "pantry.jsonc" "pantry.yaml" "pantry.yml"
+        \\  "deps.yaml" "deps.yml" "dependencies.yaml" "dependencies.yml"
+        \\  "pkgx.yaml" "pkgx.yml" "config/deps.ts" "pantry.config.ts" "pantry.config.js"
+        \\  "package.json" "pyproject.toml" "requirements.txt" "Cargo.toml"
+        \\  "go.mod" "Gemfile" "deno.json" "composer.json"
         \\)
         \\
-        \\# Find dependency file in current directory or parents
-        \\__lp_find_dep_file() {
-        \\  local dir="$1"
-        \\  local depth=0
-        \\  local max_depth=10  # Don't search more than 10 levels up
+        \\# Get file modification time (cross-platform, cached detection)
+        \\if stat -f %m / >/dev/null 2>&1; then
+        \\  __pantry_mtime() { stat -f %m "$1" 2>/dev/null || echo 0; }
+        \\else
+        \\  __pantry_mtime() { stat -c %Y "$1" 2>/dev/null || echo 0; }
+        \\fi
         \\
-        \\  while [[ "$dir" != "/" && $depth -lt $max_depth ]]; do
-        \\    for fname in "${__LP_DEP_FILES[@]}"; do
+        \\# Remove a path component from PATH (pure bash, no sed/subprocess)
+        \\__pantry_path_remove() {
+        \\  local p=":${PATH}:" remove=":$1:"
+        \\  p="${p//$remove/:}"
+        \\  p="${p#:}"; p="${p%:}"
+        \\  PATH="$p"
+        \\}
+        \\
+        \\# Find dependency file in current directory only (fast single-dir check)
+        \\__pantry_find_dep_here() {
+        \\  local dir="$1"
+        \\  for fname in "${__PANTRY_DEP_FILES[@]}"; do
+        \\    if [[ -f "$dir/$fname" ]]; then
+        \\      echo "$dir/$fname"
+        \\      return 0
+        \\    fi
+        \\  done
+        \\  return 1
+        \\}
+        \\
+        \\# Find dependency file walking up parents (max 10 levels)
+        \\__pantry_find_dep_file() {
+        \\  local dir="$1" depth=0
+        \\  while [[ "$dir" != "/" && $depth -lt 10 ]]; do
+        \\    for fname in "${__PANTRY_DEP_FILES[@]}"; do
         \\      if [[ -f "$dir/$fname" ]]; then
         \\        echo "$dir/$fname"
         \\        return 0
         \\      fi
         \\    done
-        \\    dir=$(dirname "$dir")
+        \\    dir="${dir%/*}"
+        \\    [[ -z "$dir" ]] && dir="/"
         \\    ((depth++))
         \\  done
         \\  return 1
         \\}
         \\
-        \\# Get file modification time (cross-platform)
-        \\__lp_mtime() {
-        \\  local f="$1"
-        \\  if stat -f %m "$f" >/dev/null 2>&1; then
-        \\    stat -f %m "$f"  # macOS/BSD
-        \\  elif stat -c %Y "$f" >/dev/null 2>&1; then
-        \\    stat -c %Y "$f"  # Linux
-        \\  else
-        \\    echo 0
+        \\# Shell-side cache lookup (pure shell, zero subprocesses)
+        \\# Format: dir|env_dir|dep_file|mtime (one entry per line)
+        \\__pantry_cache_lookup() {
+        \\  [[ -f "$__PANTRY_CACHE_FILE" ]] || return 1
+        \\  local line cached_dir env_dir dep_file cached_mtime
+        \\  while IFS='|' read -r cached_dir env_dir dep_file cached_mtime; do
+        \\    [[ "$cached_dir" == "$1" ]] || continue
+        \\    # Validate: env bin dir still exists
+        \\    [[ -d "$env_dir/bin" ]] || return 1
+        \\    # Validate: dep file mtime unchanged
+        \\    if [[ -n "$dep_file" && -f "$dep_file" ]]; then
+        \\      [[ "$(__pantry_mtime "$dep_file")" == "$cached_mtime" ]] || return 1
+        \\    fi
+        \\    REPLY="$env_dir"
+        \\    return 0
+        \\  done < "$__PANTRY_CACHE_FILE"
+        \\  return 1
+        \\}
+        \\
+        \\# Write/update shell-side cache entry
+        \\__pantry_cache_write() {
+        \\  local dir="$1" env_dir="$2" dep_file="$3" mtime="$4"
+        \\  mkdir -p "${__PANTRY_CACHE_FILE%/*}" 2>/dev/null
+        \\  local tmp="${__PANTRY_CACHE_FILE}.$$"
+        \\  if [[ -f "$__PANTRY_CACHE_FILE" ]]; then
+        \\    # Remove stale entry for this dir, keep last 50
+        \\    while IFS='|' read -r d rest; do
+        \\      [[ "$d" != "$dir" ]] && echo "$d|$rest"
+        \\    done < "$__PANTRY_CACHE_FILE" | tail -49 > "$tmp"
         \\  fi
+        \\  echo "${dir}|${env_dir}|${dep_file}|${mtime}" >> "$tmp"
+        \\  mv -f "$tmp" "$__PANTRY_CACHE_FILE" 2>/dev/null
+        \\}
+        \\
+        \\# Activate an environment (set PATH + env vars)
+        \\__pantry_activate() {
+        \\  local env_dir="$1" project_dir="$2" dep_file="$3"
+        \\  export PANTRY_CURRENT_PROJECT="$project_dir"
+        \\  export PANTRY_ENV_BIN_PATH="$env_dir/bin"
+        \\  export PANTRY_ENV_DIR="$env_dir"
+        \\  export PANTRY_DEP_FILE="$dep_file"
+        \\  export PANTRY_DEP_MTIME="$(__pantry_mtime "$dep_file")"
+        \\  # Add env bin to PATH (avoid duplicates)
+        \\  [[ ":$PATH:" != *":$env_dir/bin:"* ]] && PATH="$env_dir/bin:$PATH"
+        \\  # Add pantry/.bin if it exists (project-local tool wrappers)
+        \\  if [[ -d "$project_dir/pantry/.bin" ]]; then
+        \\    export PANTRY_BIN_PATH="$project_dir/pantry/.bin"
+        \\    [[ ":$PATH:" != *":$PANTRY_BIN_PATH:"* ]] && PATH="$PANTRY_BIN_PATH:$PATH"
+        \\  fi
+        \\  export PATH
+        \\}
+        \\
+        \\# Deactivate current environment
+        \\__pantry_deactivate() {
+        \\  [[ -n "$PANTRY_ENV_BIN_PATH" ]] && __pantry_path_remove "$PANTRY_ENV_BIN_PATH"
+        \\  [[ -n "$PANTRY_BIN_PATH" ]] && __pantry_path_remove "$PANTRY_BIN_PATH"
+        \\  export PATH
+        \\  unset PANTRY_CURRENT_PROJECT PANTRY_ENV_BIN_PATH PANTRY_ENV_DIR PANTRY_BIN_PATH PANTRY_DEP_FILE PANTRY_DEP_MTIME
         \\}
         \\
         \\pantry_chpwd() {
         \\  # SUPER FAST: Skip if PWD hasn't changed
-        \\  if [[ "$__LP_LAST_PWD" == "$PWD" ]]; then
-        \\    return 0
-        \\  fi
-        \\  export __LP_LAST_PWD="$PWD"
+        \\  [[ "$__PANTRY_LAST_PWD" == "$PWD" ]] && return 0
+        \\  __PANTRY_LAST_PWD="$PWD"
         \\
-        \\  # INSTANT DEACTIVATION: Check if we've left a project
-        \\  if [[ -n "$pantry_CURRENT_PROJECT" ]]; then
-        \\    # We had a project - check if we've left it
-        \\    if [[ "$PWD" != "$pantry_CURRENT_PROJECT"* ]]; then
-        \\      # Left the project - deactivate instantly (no subprocess calls!)
-        \\      if [[ -n "$pantry_ENV_BIN_PATH" ]]; then
-        \\        PATH=$(echo "$PATH" | sed "s|$pantry_ENV_BIN_PATH:||g; s|:$pantry_ENV_BIN_PATH||g; s|^$pantry_ENV_BIN_PATH$||g")
-        \\        export PATH
-        \\      fi
-        \\      unset pantry_CURRENT_PROJECT pantry_ENV_BIN_PATH pantry_DEP_FILE pantry_DEP_MTIME
-        \\      # IMPORTANT: Return immediately after deactivation - don't search for new projects!
-        \\      # Only search when entering a directory, not when leaving
-        \\      return 0
-        \\    fi
-        \\
-        \\    # Still in same project - check if dependency file changed
-        \\    if [[ -n "$pantry_DEP_FILE" && -f "$pantry_DEP_FILE" ]]; then
-        \\      local current_mtime=$(__lp_mtime "$pantry_DEP_FILE")
-        \\      if [[ "$current_mtime" != "$pantry_DEP_MTIME" ]]; then
-        \\        # Dependency file changed! Force re-activation
-        \\        # Deactivate first
-        \\        if [[ -n "$pantry_ENV_BIN_PATH" ]]; then
-        \\          PATH=$(echo "$PATH" | sed "s|$pantry_ENV_BIN_PATH:||g; s|:$pantry_ENV_BIN_PATH||g; s|^$pantry_ENV_BIN_PATH$||g")
-        \\        fi
-        \\        unset pantry_CURRENT_PROJECT pantry_ENV_BIN_PATH pantry_DEP_FILE pantry_DEP_MTIME
-        \\        # Fall through to re-activation below
+        \\  # ULTRA FAST: Still in same project (exact match or subdirectory)
+        \\  if [[ -n "$PANTRY_CURRENT_PROJECT" ]]; then
+        \\    if [[ "$PWD" == "$PANTRY_CURRENT_PROJECT" || "$PWD" == "$PANTRY_CURRENT_PROJECT/"* ]]; then
+        \\      # Still in project - check if dep file changed
+        \\      if [[ -n "$PANTRY_DEP_FILE" && -f "$PANTRY_DEP_FILE" ]]; then
+        \\        local m="$(__pantry_mtime "$PANTRY_DEP_FILE")"
+        \\        [[ "$m" == "$PANTRY_DEP_MTIME" ]] && return 0
+        \\        # Dep file changed - deactivate and re-detect below
+        \\        __pantry_deactivate
         \\      else
-        \\        # No changes - skip lookup
         \\        return 0
         \\      fi
         \\    else
-        \\      # No dependency file tracked or file deleted - skip lookup
+        \\      # Left the project - instant deactivation (no subprocess!)
+        \\      __pantry_deactivate
         \\      return 0
         \\    fi
         \\  fi
         \\
-        \\  # If we're not in a project, do a quick check before expensive file search
-        \\  # Only search for dependency files if we're likely in a project directory
-        \\  if [[ -z "$pantry_CURRENT_PROJECT" ]]; then
-        \\    # Not in any project - do a fast single-directory check first
-        \\    local has_dep_file=0
-        \\    for fname in "${__LP_DEP_FILES[@]}"; do
-        \\      if [[ -f "$PWD/$fname" ]]; then
-        \\        has_dep_file=1
-        \\        break
-        \\      fi
-        \\    done
+        \\  # Quick single-dir check: any dep file here?
+        \\  local dep_file
+        \\  dep_file=$(__pantry_find_dep_here "$PWD") || return 0
         \\
-        \\    # If no dep file in current dir, don't bother searching parents
-        \\    if [[ $has_dep_file -eq 0 ]]; then
-        \\      return 0
-        \\    fi
-        \\  fi
-        \\
-        \\  # FAST PATH: Check if we have a dependency file (only if needed)
-        \\  local dep_file=$(__lp_find_dep_file "$PWD")
-        \\  if [[ -z "$dep_file" ]]; then
-        \\    # No dependency file found - skip expensive lookup
+        \\  # SHELL-SIDE CACHE: Check without spawning any binary (~0ms)
+        \\  if __pantry_cache_lookup "$PWD"; then
+        \\    __pantry_activate "$REPLY" "$PWD" "$dep_file"
         \\    return 0
         \\  fi
         \\
-        \\  # Not in a project (or dep file changed) - find environment by hash
-        \\  # Call Zig binary to get environment path for this project
-        \\  local env_lookup
-        \\  env_lookup=$(pantry env:lookup "$PWD" 2>/dev/null)
-        \\
-        \\  if [[ -n "$env_lookup" ]]; then
-        \\    # env_lookup format: "env_dir|dep_file"
-        \\    local env_dir env_dep_file
-        \\    IFS='|' read -r env_dir env_dep_file <<< "$env_lookup"
-        \\
+        \\  # BINARY LOOKUP: Only on cache miss (~50ms, first visit to a project)
+        \\  local lookup_result
+        \\  lookup_result=$(pantry shell:lookup "$PWD" 2>/dev/null)
+        \\  if [[ $? -eq 0 && -n "$lookup_result" ]]; then
+        \\    local env_dir="${lookup_result%%|*}"
         \\    if [[ -d "$env_dir/bin" ]]; then
-        \\      # Activate environment
-        \\      export PATH="$env_dir/bin:$PATH"
-        \\      export pantry_ENV_BIN_PATH="$env_dir/bin"
-        \\      export pantry_CURRENT_PROJECT="$PWD"
-        \\      export pantry_DEP_FILE="$dep_file"
-        \\      export pantry_DEP_MTIME=$(__lp_mtime "$dep_file")
+        \\      __pantry_cache_write "$PWD" "$env_dir" "$dep_file" "$(__pantry_mtime "$dep_file")"
+        \\      __pantry_activate "$env_dir" "$PWD" "$dep_file"
+        \\      return 0
         \\    fi
-        \\  else
-        \\    # No environment found - auto-install if we have a dep file
-        \\    if [[ -n "$dep_file" ]]; then
-        \\      if pantry install; then
-        \\        # Retry lookup after install
-        \\        env_lookup=$(pantry env:lookup "$PWD" 2>/dev/null)
-        \\        if [[ -n "$env_lookup" ]]; then
-        \\          local env_dir env_dep_file
-        \\          IFS='|' read -r env_dir env_dep_file <<< "$env_lookup"
-        \\          if [[ -d "$env_dir/bin" ]]; then
-        \\            export PATH="$env_dir/bin:$PATH"
-        \\            export pantry_ENV_BIN_PATH="$env_dir/bin"
-        \\            export pantry_CURRENT_PROJECT="$PWD"
-        \\            export pantry_DEP_FILE="$dep_file"
-        \\            export pantry_DEP_MTIME=$(__lp_mtime "$dep_file")
-        \\          fi
-        \\        fi
-        \\      fi
-        \\    fi
+        \\  fi
+        \\
+        \\  # No env found - deps detected but not installed. Don't auto-install (too slow for cd).
+        \\  # Only show hint once per directory per shell session
+        \\  if [[ "$__PANTRY_LAST_HINT" != "$PWD" ]]; then
+        \\    __PANTRY_LAST_HINT="$PWD"
+        \\    printf "\033[2mpantry: run \`pantry install\` to set up this project\033[0m\n" >&2
         \\  fi
         \\}
         \\
-        \\# Add to chpwd hooks for zsh
+        \\# Hook registration
         \\if [[ -n "$ZSH_VERSION" ]]; then
         \\  if [[ -z "${chpwd_functions[(r)pantry_chpwd]}" ]]; then
         \\    chpwd_functions+=(pantry_chpwd)
         \\  fi
         \\elif [[ -n "$BASH_VERSION" ]]; then
-        \\  # Bash: use PROMPT_COMMAND
-        \\  if [[ "$PROMPT_COMMAND" != *"pantry_chpwd"* ]]; then
-        \\    PROMPT_COMMAND="pantry_chpwd;$PROMPT_COMMAND"
-        \\  fi
+        \\  [[ "$PROMPT_COMMAND" != *"pantry_chpwd"* ]] && PROMPT_COMMAND="pantry_chpwd;$PROMPT_COMMAND"
         \\fi
+        \\
+        \\# Add global packages to PATH
+        \\[[ -d "$HOME/.local/share/pantry/global/bin" ]] && \
+        \\  [[ ":$PATH:" != *":$HOME/.local/share/pantry/global/bin:"* ]] && \
+        \\  PATH="$HOME/.local/share/pantry/global/bin:$PATH" && export PATH
         \\
         \\# Run on shell start
         \\pantry_chpwd
