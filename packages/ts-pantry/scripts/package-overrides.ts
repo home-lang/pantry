@@ -10016,9 +10016,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           '  linux+x86-64)   PLATFORM="x86_64-linux"  ;;',
           'esac',
           '',
-          '# Dev versions use /builds/, stable use /download/{version}/',
+          '# Dev versions (sanitized: + replaced with _ for S3) need original version for download',
+          '# Restore + from _ in dev versions for the download URL',
+          'DOWNLOAD_VERSION="$VERSION"',
           'if echo "$VERSION" | grep -q "\\-dev"; then',
-          '  URL="https://ziglang.org/builds/zig-${PLATFORM}-${VERSION}.tar.xz"',
+          '  DOWNLOAD_VERSION=$(echo "$VERSION" | sed "s/_/+/")',
+          '  URL="https://ziglang.org/builds/zig-${PLATFORM}-${DOWNLOAD_VERSION}.tar.xz"',
           'else',
           '  URL="https://ziglang.org/download/${VERSION}/zig-${PLATFORM}-${VERSION}.tar.xz"',
           'fi',
@@ -10026,8 +10029,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           'curl -Lfo zig.tar.xz "$URL"',
           'tar Jxf zig.tar.xz',
           '',
-          'install -Dm755 "zig-${PLATFORM}-${VERSION}/zig" "{{prefix}}/bin/zig"',
-          'cp -a "zig-${PLATFORM}-${VERSION}/lib" "{{prefix}}"',
+          'install -Dm755 "zig-${PLATFORM}-${DOWNLOAD_VERSION}/zig" "{{prefix}}/bin/zig"',
+          'cp -a "zig-${PLATFORM}-${DOWNLOAD_VERSION}/lib" "{{prefix}}"',
         ]
         recipe.build.env = {}
       }

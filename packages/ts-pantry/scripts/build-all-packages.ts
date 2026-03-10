@@ -1044,6 +1044,8 @@ async function buildAndUpload(
     console.error(`   ❌ Failed packaging/upload: ${error.message}`)
     try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
     try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+    // Also clean artifacts to prevent stale tarballs leaking to next iteration
+    try { execSync(`rm -rf "${artifactsDir}"/*`, { stdio: 'pipe' }) } catch {}
     return { status: 'failed', error: error.message }
   }
 }
@@ -1745,10 +1747,17 @@ Options:
       // Multi-version mode: build multiple important versions per package
       let versions = selectImportantVersions(pkg, maxVersions)
 
-      // For ziglang.org, build ALL versions + latest dev from ziglang.org index
+      // For ziglang.org, build ALL versions >= 0.14.1 + latest dev from ziglang.org index
       if (pkg.domain === 'ziglang.org') {
-        // Use all stable versions from the TS definition
-        versions = pkg.versions.filter(v => v !== '999.999.999' && v !== '0.0.0' && !isVersionSkipped(pkg.domain, v))
+        // Use stable versions >= 0.14.1 (older versions use different URL platform naming)
+        versions = pkg.versions.filter(v => {
+          if (v === '999.999.999' || v === '0.0.0') return false
+          if (isVersionSkipped(pkg.domain, v)) return false
+          // Skip versions < 0.14.1 (different platform naming in URLs)
+          const parts = v.split('.').map(Number)
+          if (parts[0] === 0 && (parts[1] < 14 || (parts[1] === 14 && (parts[2] || 0) < 1))) return false
+          return true
+        })
         // Also fetch latest dev version from ziglang.org
         try {
           const resp = await fetch('https://ziglang.org/download/index.json')
@@ -1756,8 +1765,10 @@ Options:
             const index = await resp.json() as Record<string, { version?: string }>
             const devVersion = index.master?.version
             if (devVersion && !versions.includes(devVersion)) {
-              versions.unshift(devVersion) // dev first
-              console.log(`   Including dev version: ${devVersion}`)
+              // Sanitize + in dev versions for S3 compatibility (+ breaks S3 URL signing)
+              const sanitizedDev = devVersion.replace(/\+/g, '_')
+              versions.unshift(sanitizedDev)
+              console.log(`   Including dev version: ${devVersion} (as ${sanitizedDev})`)
             }
           }
         } catch { /* ignore fetch errors */ }
@@ -1769,8 +1780,11 @@ Options:
         const elapsed2 = Date.now() - batchStartTime
         if (elapsed2 > BATCH_TIME_BUDGET_MS) break
 
-        // Create a modified package with this specific version as target
-        const versionPkg = { ...pkg, latestVersion: ver }
+        // Clean artifacts dir between iterations to prevent stale tarballs leaking
+        try { execSync('rm -rf /tmp/buildkit-artifacts/*', { stdio: 'pipe' }) } catch {}
+
+        // Create a modified package with ONLY this version (prevent fallback to other versions)
+        const versionPkg = { ...pkg, latestVersion: ver, versions: [ver] }
         const result = await buildAndUpload(versionPkg, bucket, region, platform, force)
         const key = `${pkg.domain}@${ver}`
         results[key] = { ...result, version: ver }
