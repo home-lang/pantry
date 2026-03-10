@@ -346,6 +346,8 @@ pub fn installSinglePackage(
     const is_zig_package = std.mem.eql(u8, lookup_name, "zig") or
         std.mem.eql(u8, lookup_name, "ziglang") or
         std.mem.eql(u8, lookup_name, "ziglang.org");
+    const is_zig_dev = lib.install.downloader.isZigDevVersion(dep.version);
+
     // Check if this is a git dependency (git+https://, git+ssh://, git://)
     const is_git_dep = std.mem.startsWith(u8, dep.version, "git+") or
         std.mem.startsWith(u8, dep.version, "git://") or
@@ -394,8 +396,8 @@ pub fn installSinglePackage(
             .source = .github,
             .repo = try allocator.dupe(u8, repo_str),
         };
-    } else if (is_zig_package) blk: {
-        // Zig package (stable or dev) - always use ziglang.org direct download
+    } else if (is_zig_package and is_zig_dev) blk: {
+        // Zig dev version - use ziglang.org direct download (not in registry)
         break :blk lib.packages.PackageSpec{
             .name = "zig",
             .version = dep.version,
