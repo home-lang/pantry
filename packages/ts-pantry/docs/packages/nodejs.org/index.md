@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 176 versions</summary>
+<summary>Show all 177 versions</summary>
 
-- `25.8.0`
+- `25.8.1`, `25.8.0`
 - `25.7.0`
 - `25.6.1`, `25.6.0`
 - `25.5.0`
@@ -144,13 +144,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `25.8.0`
+**Latest Version**: `25.8.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +nodejs.org@25.8.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +nodejs.org@25.8.1 -- $SHELL -i
 ```
 
 ## Dependencies
