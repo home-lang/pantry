@@ -2,7 +2,7 @@
  * **getmonero** - pkgx package
  *
  * @domain `getmonero.org`
- * @version `0.18.4.5` (5 versions available)
+ * @version `0.18.4.6` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install getmonero.org`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.getmoneroorg
  * console.log(pkg.name)        // "getmonero"
- * console.log(pkg.versions[0]) // "0.18.4.5" (latest)
+ * console.log(pkg.versions[0]) // "0.18.4.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/getmonero-org.md
@@ -72,6 +72,7 @@ export const getmoneroorgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.18.4.6',
     '0.18.4.5',
     '0.18.4.4',
     '0.18.4.3',
