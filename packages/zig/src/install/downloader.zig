@@ -75,10 +75,9 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
-    // Native HTTP download — no curl subprocess, no fork/exec overhead.
-    // Uses std.http.Client with native TLS, redirect following, and connection pooling.
+    // Native HTTP download using Zig's std.http.Client with native TLS.
     var stream = io_helper.httpStreamGet(allocator, url) catch {
-        // Fallback to curl when native HTTP client fails (e.g., TLS issues on CI)
+        // Fallback to curl only if native client can't establish connection
         return downloadFileWithCurl(allocator, url, dest_path, quiet);
     };
     defer stream.deinit();
@@ -93,7 +92,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     var file_writer = file.writerStreaming(io_helper.io, &file_buf);
 
     // Stream response body to file with progress tracking
-    var transfer_buf: [16384]u8 = undefined; // 16KB transfer buffer for chunked progress
+    var transfer_buf: [16384]u8 = undefined;
     const body_reader = stream.reader(&transfer_buf);
 
     const start_ts = io_helper.clockGettime();
@@ -105,7 +104,11 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     while (true) {
         const n = body_reader.stream(&file_writer.interface, .unlimited) catch |err| switch (err) {
             error.EndOfStream => break,
-            else => return error.HttpRequestFailed,
+            else => {
+                // Native HTTP stream failed mid-download — close file and fall back to curl
+                file_writer.flush() catch {};
+                return downloadFileWithCurl(allocator, url, dest_path, quiet);
+            },
         };
         bytes_downloaded += n;
 
@@ -176,25 +179,40 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     // Flush remaining buffered data to disk
     file_writer.flush() catch return error.FileWriteFailed;
 
+    // Verify download completeness: if Content-Length was provided, check downloaded bytes match
+    if (total_bytes) |expected| {
+        if (bytes_downloaded != expected) {
+            // Truncated download — fall back to curl
+            return downloadFileWithCurl(allocator, url, dest_path, quiet);
+        }
+    }
+
     // Clear progress line (let caller print final status)
     if (!quiet and shown_progress) {
         style.clearLine();
     }
 }
 
-/// Fallback download using curl subprocess (for CI environments where native TLS may fail).
+/// Download using curl subprocess — reliable across all platforms and CI environments.
 fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
-    const curl = "/usr/bin/curl";
-    const args_quiet = [_][]const u8{ curl, "-sfSL", "--connect-timeout", "30", "--retry", "3", "-o", dest_path, url };
-    const args_verbose = [_][]const u8{ curl, "-fSL", "--connect-timeout", "30", "--retry", "3", "-o", dest_path, url };
+    // Try curl from PATH first, then /usr/bin/curl as fallback
+    const curl_paths = [_][]const u8{ "curl", "/usr/bin/curl" };
 
-    const result = io_helper.childRun(allocator, if (quiet) &args_quiet else &args_verbose) catch return error.NetworkError;
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    for (curl_paths) |curl| {
+        const args_quiet = [_][]const u8{ curl, "-sfSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
+        const args_verbose = [_][]const u8{ curl, "-fSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
 
-    if (result.term != .exited or result.term.exited != 0) {
-        return error.HttpRequestFailed;
+        const result = io_helper.childRun(allocator, if (quiet) &args_quiet else &args_verbose) catch continue;
+        defer allocator.free(result.stdout);
+        defer allocator.free(result.stderr);
+
+        if (result.term != .exited or result.term.exited != 0) {
+            return error.HttpRequestFailed;
+        }
+        return;
     }
+
+    return error.NetworkError;
 }
 
 /// Check if a version string looks like a Zig dev version
@@ -371,7 +389,7 @@ pub fn lookupS3Registry(
 
     // Fetch metadata using curl subprocess (more reliable than Zig HTTP client)
     const curl_result = io_helper.childRun(allocator, &[_][]const u8{
-        "/usr/bin/curl", "-sfL", "--connect-timeout", "5", metadata_url,
+        "curl", "-sfL", "--connect-timeout", "5", "--max-time", "15", metadata_url,
     }) catch return null;
     defer allocator.free(curl_result.stdout);
     defer allocator.free(curl_result.stderr);
