@@ -9,7 +9,7 @@ const types = @import("types.zig");
 const helpers = @import("helpers.zig");
 const workspace = @import("workspace.zig");
 const global = @import("global.zig");
-const version_options = @import("version");
+
 const lockfile_hooks = @import("lockfile_hooks.zig");
 const offline = @import("../../../install/offline.zig");
 const recovery = @import("../../../install/recovery.zig");
@@ -81,9 +81,6 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     const end_ts = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-    const pantry_version = version_options.version;
-    const pantry_hash = version_options.commit_hash;
-    style.printHeader("install", pantry_version, pantry_hash);
     style.printUpToDate(checked_count, elapsed_ms);
     return .{ .exit_code = 0 };
 }
@@ -833,16 +830,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
-        // Get Pantry version and hash for display
-        const pantry_version = version_options.version;
-        const pantry_hash = version_options.commit_hash;
-
         const total_deps = deps.len;
         const end_ts = io_helper.clockGettime();
         const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
         const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-
-        style.printHeader("install", pantry_version, pantry_hash);
         if (success_count > 0) {
             style.printSummary(success_count, total_deps, elapsed_ms);
         } else {
@@ -938,11 +929,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     // Start timing (millisecond precision)
     const start_ts2 = io_helper.clockGettime();
     const start_time = @as(i64, @intCast(start_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts2.nsec, 1_000_000)));
-
-    // Print header with Pantry version info
-    const pantry_version = version_options.version;
-    const pantry_hash = version_options.commit_hash;
-    style.printHeader("install", pantry_version, pantry_hash);
 
     style.printInstalling(args.len);
 

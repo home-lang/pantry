@@ -30,7 +30,7 @@ pantry is a comprehensive dependency management solution that bridges the gap be
 
 At its core, pantry leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows.
 
-Learn more in the docs: [Why pantry](https://pantry.sh/why), [Quick Start](https://pantry.sh/quickstart).
+Learn more in the docs: [Why pantry](https://pantry.dev/why), [Quick Start](https://pantry.dev/quickstart).
 
 ## Features
 
@@ -100,76 +100,41 @@ Modern development requires managing dependencies at multiple levels - from syst
 - ✅ **Consistent Experience** — Same commands and behavior across all platforms
 - ✅ **Smart Defaults** — Sensible installation paths and configuration out of the box
 
-[Read more about why we created pantry](https://github.com/home-lang/pantry/tree/main/docs/why.md)
-
-## Development
-
-### Scripts
-
-pantry includes several utility scripts for development and maintenance:
-
-#### Dynamic PHP Version Management
-
-```bash
-# Get latest PHP versions from ts-pkgx registry
-bun scripts/get-php-versions.ts
-
-# Check if there are new PHP versions available
-bun scripts/check-php-updates.ts
-
-# These scripts
-# - Fetch latest PHP versions dynamically
-# - Generates configuration descriptions
-# - Check if rebuilds are needed
-# - Output JSON for GitHub Actions
-# - Create markdown tables for documentation
-```
+[Read more about why we created pantry](https://pantry.dev/why)
 
 ## Installation
 
-Get started with pantry through your preferred package manager:
-
 ```bash
-# Install with Bun (recommended)
-bun add -g ts-pantry
-
-# Or with npm
-npm install -g ts-pantry
-
-# Or with yarn
-yarn global add ts-pantry
-
-# Or with pnpm
-pnpm add -g ts-pantry
+curl -fsSL https://pantry.dev | bash
 ```
 
-See [Installation Guide](https://pantry.sh/install) for more options.
+That's it. This downloads the latest pre-built binary for your platform, installs it to `~/.local/bin`, and configures your PATH.
+
+To install a specific version:
+
+```bash
+export PANTRY_VERSION=0.8.7 && curl -fsSL https://pantry.dev | bash
+```
+
+To install to a custom location:
+
+```bash
+export PANTRY_INSTALL_DIR=/usr/local/bin && curl -fsSL https://pantry.dev | bash
+```
 
 ## Quick Start
 
-pantry is designed to handle both system setup and project management seamlessly! 🎯
-
-### System Setup (First Time)
-
-Bootstrap your development environment with everything you need:
+After installing, bootstrap your shell integration:
 
 ```bash
-# Complete system setup - installs to /usr/local by default
-./pantry bootstrap
-
-# Or for a custom installation path
-./pantry bootstrap --path ~/.local --verbose
-
-# Skip specific components if needed
-./pantry bootstrap --skip-bun --skip-shell-integration
+pantry bootstrap
 ```
 
-The bootstrap command sets up your entire development foundation:
+This sets up:
 
-- ✅ Install Bun (JavaScript runtime)
-- ✅ Configure your PATH automatically
-- ✅ Set up shell integration for project auto-activation
-- ✅ Provide clear next steps
+- Shell integration for automatic project environment activation
+- PATH configuration
+- Global tool management
 
 ### System-Wide Tool Management
 
@@ -224,7 +189,7 @@ cd ..
 # → 🔄 Environment deactivated
 ```
 
-Learn more: [Environment Management](https://pantry.sh/features/environment-management), [Package Management](https://pantry.sh/features/package-management), [Configuration](https://pantry.sh/config), [FAQ](https://pantry.sh/faq).
+Learn more: [Environment Management](https://pantry.dev/features/environment-management), [Package Management](https://pantry.dev/features/package-management), [Configuration](https://pantry.dev/config), [FAQ](https://pantry.dev/faq).
 
 **Supported Project Files:**
 
@@ -471,7 +436,7 @@ const config: PantryConfig = {
 export default config
 ```
 
-See [Configuration Guide](https://github.com/home-lang/pantry/tree/main/docs/config.md) for all options.
+See [Configuration Guide](https://pantry.dev/config) for all options.
 
 ## GitHub Action
 
@@ -492,13 +457,13 @@ See [GitHub Action Documentation](https://github.com/home-lang/pantry/tree/main/
 
 Explore advanced dependency management topics:
 
-- [Commit Publishing](https://pantry.sh/features/commit-publishing) _(pkg-pr-new alternative)_
-- [Service Management](https://pantry.sh/features/service-management)
-- [Project Environment Configuration](https://pantry.sh/features/package-management)
-- [Custom Shims and Tool Management](https://pantry.sh/advanced/custom-shims)
-- [Cross-platform Compatibility](https://pantry.sh/advanced/cross-platform)
-- [Performance Optimization](https://pantry.sh/advanced/performance)
-- [API Reference](https://pantry.sh/api/reference)
+- [Commit Publishing](https://pantry.dev/features/commit-publishing) _(pkg-pr-new alternative)_
+- [Service Management](https://pantry.dev/features/service-management)
+- [Project Environment Configuration](https://pantry.dev/features/package-management)
+- [Custom Shims and Tool Management](https://pantry.dev/advanced/custom-shims)
+- [Cross-platform Compatibility](https://pantry.dev/advanced/cross-platform)
+- [Performance Optimization](https://pantry.dev/advanced/performance)
+- [API Reference](https://pantry.dev/api/reference)
 
 ## Comparing to Alternatives
 

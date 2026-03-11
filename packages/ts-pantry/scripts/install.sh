@@ -2,10 +2,10 @@
 # Pantry Install Script
 #
 # One-liner install:
-#   curl -fsSL https://pantry-registry.s3.us-east-1.amazonaws.com/install.sh | bash
+#   curl -fsSL https://pantry.dev | bash
 #
 # With custom bucket:
-#   curl -fsSL https://pantry-registry.s3.us-east-1.amazonaws.com/install.sh | PANTRY_BUCKET=my-bucket bash
+#   curl -fsSL https://pantry.dev | PANTRY_BUCKET=my-bucket bash
 #
 # NO DEPENDENCIES REQUIRED - just bash and curl (pre-installed on Mac/Linux)
 
