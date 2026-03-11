@@ -198,22 +198,43 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 
 /// Download using curl subprocess — reliable across all platforms and CI environments.
 fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
-    // Try curl from PATH first, then /usr/bin/curl as fallback
+    // Try curl with different paths and methods
     const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
 
+    // Method 1: try std.process.run (captures stdout/stderr via pipes)
     for (curl_paths) |curl| {
-        const args_quiet = [_][]const u8{ curl, "-sfSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
-        const args_verbose = [_][]const u8{ curl, "-fSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
+        const args = [_][]const u8{ curl, "-fSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
 
-        const result = io_helper.childRun(allocator, if (quiet) &args_quiet else &args_verbose) catch continue;
+        const result = io_helper.childRun(allocator, &args) catch |err| {
+            if (!quiet) {
+                style.print("  {s}(curl spawn failed [{s}]: {s}){s}\n", .{ style.dim, curl, @errorName(err), style.reset });
+            }
+            continue;
+        };
         defer allocator.free(result.stdout);
         defer allocator.free(result.stderr);
 
         if (result.term != .exited or result.term.exited != 0) {
-            // Try next curl path instead of failing immediately
+            if (!quiet) {
+                const code: u16 = if (result.term == .exited) result.term.exited else 0;
+                style.print("  {s}(curl exit {d} [{s}]){s}\n", .{ style.dim, code, curl, style.reset });
+            }
             continue;
         }
         return;
+    }
+
+    // Method 2: try std.process.Child.spawn with inherited stdio (avoids pipe issues)
+    for (curl_paths) |curl| {
+        const args = [_][]const u8{ curl, "-fSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
+        var child = std.process.spawn(io_helper.getIo(), .{
+            .argv = &args,
+        }) catch continue;
+
+        const term = child.wait(io_helper.getIo()) catch continue;
+        if (term == .exited and term.exited == 0) {
+            return;
+        }
     }
 
     return error.NetworkError;
