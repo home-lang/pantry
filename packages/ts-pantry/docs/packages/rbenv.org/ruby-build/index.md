@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 64 versions</summary>
+<summary>Show all 65 versions</summary>
 
+- `20260311.0.0`
 - `20260222.0.0`
 - `20260121.0.0`
 - `20260114.0.0`
@@ -94,13 +95,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `20260222.0.0`
+**Latest Version**: `20260311.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +rbenv.org/ruby-build@20260222.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +rbenv.org/ruby-build@20260311.0.0 -- $SHELL -i
 ```
 
 ## Dependencies
