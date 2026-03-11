@@ -867,6 +867,75 @@ fn extractPkgDir(path: []const u8) ?[]const u8 {
     return null;
 }
 
+/// Final pass: scan ALL installed packages under {proj_dir}/{modules_dir}/
+/// and ensure every executable in bin/ or sbin/ has a symlink in .bin/.
+/// This is the "belt and suspenders" fix — even if per-package symlink
+/// creation failed or was skipped, this pass catches everything.
+pub fn ensureBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, modules_dir: []const u8) void {
+    const bin_link_dir = std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ proj_dir, modules_dir }) catch return;
+    defer allocator.free(bin_link_dir);
+    io_helper.makePath(bin_link_dir) catch return;
+
+    const pantry_dir = std.fmt.allocPrint(allocator, "{s}/{s}", .{ proj_dir, modules_dir }) catch return;
+    defer allocator.free(pantry_dir);
+
+    // Walk the pantry directory tree looking for bin/ and sbin/ directories.
+    // Handles arbitrary nesting depth (e.g. php.net/v8.5.3/bin/ or github.com/org/pkg/v1.0.0/bin/).
+    scanForBinDirs(allocator, pantry_dir, bin_link_dir, 0);
+}
+
+/// Recursively scan a directory for bin/ and sbin/ subdirectories.
+/// When found, symlink all executables into bin_link_dir.
+/// max_depth prevents infinite recursion (packages nest at most ~4 levels deep).
+fn scanForBinDirs(allocator: std.mem.Allocator, dir_path: []const u8, bin_link_dir: []const u8, depth: usize) void {
+    if (depth > 6) return; // Safety limit
+
+    var dir = io_helper.openDirAbsoluteForIteration(dir_path) catch return;
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .directory) continue;
+        if (std.mem.startsWith(u8, entry.name, ".")) continue;
+
+        const child_path = std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir_path, entry.name }) catch continue;
+        defer allocator.free(child_path);
+
+        if (std.mem.eql(u8, entry.name, "bin") or std.mem.eql(u8, entry.name, "sbin")) {
+            // Found a bin directory — symlink its executables
+            symlinkBinEntries(allocator, child_path, bin_link_dir);
+        } else {
+            // Recurse into subdirectory
+            scanForBinDirs(allocator, child_path, bin_link_dir, depth + 1);
+        }
+    }
+}
+
+/// Symlink all executable files from a bin directory into bin_link_dir.
+fn symlinkBinEntries(allocator: std.mem.Allocator, bin_dir: []const u8, bin_link_dir: []const u8) void {
+    var dir = io_helper.openDirAbsoluteForIteration(bin_dir) catch return;
+    defer dir.close();
+
+    var iter = dir.iterate();
+    while (iter.next() catch null) |entry| {
+        if (entry.kind != .file and entry.kind != .sym_link) continue;
+        if (std.mem.eql(u8, entry.name, "..") or std.mem.indexOfScalar(u8, entry.name, '/') != null) continue;
+
+        const bin_src = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_dir, entry.name }) catch continue;
+        defer allocator.free(bin_src);
+        const bin_dst = std.fmt.allocPrint(allocator, "{s}/{s}", .{ bin_link_dir, entry.name }) catch continue;
+        defer allocator.free(bin_dst);
+
+        // Don't overwrite existing symlinks (first-installed wins)
+        io_helper.accessAbsolute(bin_dst, .{}) catch {
+            // Doesn't exist — create it
+            makeExecutable(bin_src);
+            io_helper.symLink(bin_src, bin_dst) catch {};
+            continue;
+        };
+    }
+}
+
 /// Update package.json with a new dependency
 /// Creates package.json if it doesn't exist, preserves all existing fields
 pub fn addDependencyToPackageJson(

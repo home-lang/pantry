@@ -823,6 +823,9 @@ pub fn installWorkspaceCommandWithOptions(
         }
     }
 
+    // Ensure pantry/.bin has symlinks for all installed package binaries
+    helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
+
     // Generate workspace lockfile
     const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});
     defer allocator.free(lockfile_path);

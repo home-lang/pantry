@@ -1857,8 +1857,8 @@ pub const Installer = struct {
     fn getProjectPackageDir(self: *Installer, project_root: []const u8, domain: []const u8, version: []const u8) ![]const u8 {
         return std.fmt.allocPrint(
             self.allocator,
-            "{s}/pantry/{s}/v{s}",
-            .{ project_root, domain, version },
+            "{s}/{s}/{s}/v{s}",
+            .{ project_root, self.modules_dir, domain, version },
         );
     }
 

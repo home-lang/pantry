@@ -801,9 +801,10 @@ pub fn symLink(target: []const u8, link_path: []const u8) !void {
         .linux => {
             const rc = std.os.linux.symlinkat(&target_buf, std.os.linux.AT.FDCWD, &link_buf);
             if (rc != 0) {
-                // Check for EEXIST (17 on Linux)
-                const errno_val: u16 = @truncate(rc);
-                if (errno_val == 17) return error.PathAlreadyExists;
+                // rc is negative errno as usize on error
+                const signed: isize = @bitCast(rc);
+                const errno_val: u16 = @intCast(@as(usize, @intCast(-signed)));
+                if (errno_val == 17) return error.PathAlreadyExists; // EEXIST
                 return error.SymLinkError;
             }
         },

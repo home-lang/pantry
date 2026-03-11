@@ -722,6 +722,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             success_count += 1;
         }
 
+        // Final pass: ensure pantry/.bin has symlinks for all installed package binaries.
+        // This catches any packages where per-package symlink creation was skipped or failed.
+        helpers.ensureBinSymlinks(allocator, proj_dir, opts.modules_dir);
+
         // Generate lockfile
         const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
         defer allocator.free(lockfile_path);
@@ -1121,6 +1125,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             style.printWarn("Failed to update package.json: {}\n", .{err});
         };
     }
+
+    // Ensure pantry/.bin has symlinks for all installed package binaries
+    helpers.ensureBinSymlinks(allocator, project_root, opts.modules_dir);
 
     // Generate/update lockfile for installed packages
     if (installed_packages.items.len > 0) {
