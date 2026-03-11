@@ -3,7 +3,7 @@
  *
  * @domain `certbot.eff.org`
  * @programs `certbot`
- * @version `5.3.1` (26 versions available)
+ * @version `5.4.0` (27 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install certbot.eff.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "certbot"
  * console.log(pkg.description) // "Certbot is EFF's tool to obtain certs from Let'..."
  * console.log(pkg.programs)    // ["certbot"]
- * console.log(pkg.versions[0]) // "5.3.1" (latest)
+ * console.log(pkg.versions[0]) // "5.4.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/certbot-eff-org.md
@@ -68,6 +68,7 @@ export const certbotefforgPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.4.0',
     '5.3.1',
     '5.3.0',
     '5.2.2',
