@@ -1699,7 +1699,7 @@ pub const Installer = struct {
             };
             break :blk std.fmt.allocPrint(
                 self.allocator,
-                "https://registry.pantry.dev/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
+                "https://pantry-registry.s3.amazonaws.com/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
                 .{ domain, spec.version, platform, domain, spec.version },
             ) catch null;
         };
@@ -2186,7 +2186,7 @@ pub const Installer = struct {
             };
             break :blk std.fmt.allocPrint(
                 self.allocator,
-                "https://registry.pantry.dev/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
+                "https://pantry-registry.s3.amazonaws.com/binaries/{s}/{s}/{s}/{s}-{s}.tar.gz",
                 .{ domain, spec.version, platform, domain, spec.version },
             ) catch null;
         };

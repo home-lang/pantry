@@ -400,7 +400,7 @@ fn querySystemVersions(allocator: std.mem.Allocator, name: []const u8, constrain
 
     const metadata_url = std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/binaries/{s}/metadata.json",
+        "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
         .{domain},
     ) catch return null;
     defer allocator.free(metadata_url);

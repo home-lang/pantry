@@ -328,7 +328,7 @@ fn updateSystemPackage(
     // Query S3 metadata for this domain
     const metadata_url = try std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/binaries/{s}/metadata.json",
+        "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
         .{domain},
     );
     defer allocator.free(metadata_url);

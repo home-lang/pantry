@@ -124,7 +124,7 @@ fn lookupViaDynamoDB(allocator: std.mem.Allocator, name: []const u8, platform: [
 fn lookupViaS3Metadata(allocator: std.mem.Allocator, name: []const u8, platform: []const u8) ?PantryPackageInfo {
     const metadata_url = std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/binaries/{s}/metadata.json",
+        "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
         .{name},
     ) catch return null;
     defer allocator.free(metadata_url);
@@ -165,7 +165,7 @@ fn lookupViaS3Metadata(allocator: std.mem.Allocator, name: []const u8, platform:
 
     const tarball_url = std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/{s}",
+        "https://pantry-registry.s3.amazonaws.com/{s}",
         .{tarball_path},
     ) catch {
         allocator.free(s3_path);
@@ -187,7 +187,7 @@ fn lookupViaS3Metadata(allocator: std.mem.Allocator, name: []const u8, platform:
 fn resolveFromMetadataUrl(allocator: std.mem.Allocator, s3_path: []const u8, version: []const u8, platform: []const u8) ?PantryPackageInfo {
     const metadata_url = std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/{s}",
+        "https://pantry-registry.s3.amazonaws.com/{s}",
         .{s3_path},
     ) catch return null;
     defer allocator.free(metadata_url);
@@ -218,7 +218,7 @@ fn resolveFromMetadataUrl(allocator: std.mem.Allocator, s3_path: []const u8, ver
 
     const tarball_url = std.fmt.allocPrint(
         allocator,
-        "https://registry.pantry.dev/{s}",
+        "https://pantry-registry.s3.amazonaws.com/{s}",
         .{tarball_path},
     ) catch return null;
 
