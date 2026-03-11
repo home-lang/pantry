@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/md-tui`
  * @programs `mdt`, `md-tui`
- * @version `0.9.4` (15 versions available)
+ * @version `0.9.5` (16 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/md-tui`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "md-tui"
  * console.log(pkg.description) // "Markdown renderer in the terminal"
  * console.log(pkg.programs)    // ["mdt", "md-tui"]
- * console.log(pkg.versions[0]) // "0.9.4" (latest)
+ * console.log(pkg.versions[0]) // "0.9.5" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/md-tui.md
@@ -61,6 +61,7 @@ export const cratesiomdtuiPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.9.5',
     '0.9.4',
     '0.9.3',
     '0.9.2',
