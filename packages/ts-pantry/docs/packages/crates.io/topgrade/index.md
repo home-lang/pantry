@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 22 versions</summary>
 
+- `17.1.0`
 - `17.0.0`
 - `16.9.0`
 - `16.8.0`
@@ -43,13 +44,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `17.0.0`
+**Latest Version**: `17.1.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/topgrade@17.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/topgrade@17.1.0 -- $SHELL -i
 ```
 
 ## Usage Examples
