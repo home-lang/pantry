@@ -3,7 +3,7 @@
  *
  * @domain `github.com/ggerganov/llama.cpp`
  * @programs `llama-cli`, `llama.cpp`, `convert.py`
- * @version `8265.0.0` (4570 versions available)
+ * @version `8265.0.0` (4571 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/ggerganov/llama.cpp`
@@ -83,6 +83,7 @@ export const llamacppPackage = {
   */
   versions: [
     '8265.0.0',
+    '8263.0.0',
     '8262.0.0',
     '8261.0.0',
     '8260.0.0',
