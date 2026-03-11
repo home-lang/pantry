@@ -3,7 +3,7 @@
  *
  * @domain `fly.io`
  * @programs `fly`, `flyctl`
- * @version `0.4.20` (508 versions available)
+ * @version `0.4.21` (509 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install fly.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fly"
  * console.log(pkg.description) // "Command line tools for fly.io services"
  * console.log(pkg.programs)    // ["fly", "flyctl"]
- * console.log(pkg.versions[0]) // "0.4.20" (latest)
+ * console.log(pkg.versions[0]) // "0.4.21" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/fly-io.md
@@ -69,6 +69,7 @@ export const flyioPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.4.21',
     '0.4.20',
     '0.4.19',
     '0.4.18',
