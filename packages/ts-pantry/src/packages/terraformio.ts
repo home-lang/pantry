@@ -3,7 +3,7 @@
  *
  * @domain `terraform.io`
  * @programs `terraform`
- * @version `1.14.6` (88 versions available)
+ * @version `1.14.7` (89 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install terraform.io`
@@ -23,7 +23,7 @@
  * console.log(pkg.name)        // "terraform"
  * console.log(pkg.description) // "Terraform enables you to safely and predictably..."
  * console.log(pkg.programs)    // ["terraform"]
- * console.log(pkg.versions[0]) // "1.14.6" (latest)
+ * console.log(pkg.versions[0]) // "1.14.7" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/terraform-io.md
@@ -73,6 +73,7 @@ export const terraformPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.14.7',
     '1.14.6',
     '1.14.5',
     '1.14.4',
