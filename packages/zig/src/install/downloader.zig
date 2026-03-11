@@ -76,8 +76,11 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     }
 
     // Native HTTP download using Zig's std.http.Client with native TLS.
-    var stream = io_helper.httpStreamGet(allocator, url) catch {
+    var stream = io_helper.httpStreamGet(allocator, url) catch |err| {
         // Fallback to curl only if native client can't establish connection
+        if (!quiet) {
+            style.print("  {s}(native http failed: {s}, trying curl){s}\n", .{ style.dim, @errorName(err), style.reset });
+        }
         return downloadFileWithCurl(allocator, url, dest_path, quiet);
     };
     defer stream.deinit();
@@ -196,7 +199,7 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
 /// Download using curl subprocess — reliable across all platforms and CI environments.
 fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path: []const u8, quiet: bool) !void {
     // Try curl from PATH first, then /usr/bin/curl as fallback
-    const curl_paths = [_][]const u8{ "curl", "/usr/bin/curl" };
+    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
 
     for (curl_paths) |curl| {
         const args_quiet = [_][]const u8{ curl, "-sfSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
@@ -207,7 +210,8 @@ fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path
         defer allocator.free(result.stderr);
 
         if (result.term != .exited or result.term.exited != 0) {
-            return error.HttpRequestFailed;
+            // Try next curl path instead of failing immediately
+            continue;
         }
         return;
     }
@@ -388,16 +392,42 @@ pub fn lookupS3Registry(
     ) catch return null;
 
     // Fetch metadata using curl subprocess (more reliable than Zig HTTP client)
-    const curl_result = io_helper.childRun(allocator, &[_][]const u8{
-        "curl", "-sfL", "--connect-timeout", "5", "--max-time", "15", metadata_url,
-    }) catch return null;
-    defer allocator.free(curl_result.stdout);
-    defer allocator.free(curl_result.stderr);
+    // Try multiple curl paths for CI compatibility
+    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
+    var metadata_response: []const u8 = "";
+    var curl_stderr: []const u8 = "";
+    var found_curl = false;
 
-    if (curl_result.term != .exited or curl_result.term.exited != 0) return null;
-    if (curl_result.stdout.len == 0) return null;
+    for (curl_paths) |curl_bin| {
+        const curl_result = io_helper.childRun(allocator, &[_][]const u8{
+            curl_bin, "-sfL", "--connect-timeout", "10", "--max-time", "30", metadata_url,
+        }) catch continue;
 
-    const metadata_response = curl_result.stdout;
+        if (curl_result.term != .exited or curl_result.term.exited != 0) {
+            allocator.free(curl_result.stdout);
+            allocator.free(curl_result.stderr);
+            continue;
+        }
+
+        metadata_response = curl_result.stdout;
+        curl_stderr = curl_result.stderr;
+        found_curl = true;
+        break;
+    }
+
+    if (!found_curl) {
+        // All curl paths failed — try native Zig HTTP as last resort
+        const native_response = io_helper.httpGet(allocator, metadata_url) catch return null;
+        if (native_response.len == 0) {
+            allocator.free(native_response);
+            return null;
+        }
+        metadata_response = native_response;
+    }
+    defer allocator.free(metadata_response);
+    defer if (found_curl) allocator.free(curl_stderr);
+
+    if (metadata_response.len == 0) return null;
 
     // Parse metadata JSON
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch return null;

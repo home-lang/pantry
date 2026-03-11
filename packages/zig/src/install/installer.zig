@@ -1717,7 +1717,10 @@ pub const Installer = struct {
                         break :blk false;
                     };
                 } else {
-                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
+                        if (!options.quiet) {
+                            style.print("  {s}(download error: {s}, url: {s}){s}\n", .{ style.dim, @errorName(err), url, style.reset });
+                        }
                         break :blk false;
                     };
                 }
@@ -1732,6 +1735,10 @@ pub const Installer = struct {
             } else {
                 self.allocator.free(temp_archive_path);
                 self.allocator.free(@constCast(url));
+            }
+        } else {
+            if (!options.quiet) {
+                style.print("  {s}(no URL resolved for {s}@{s}){s}\n", .{ style.dim, spec.name, spec.version, style.reset });
             }
         }
 
@@ -2137,7 +2144,7 @@ pub const Installer = struct {
             return global_pkg_dir;
         }
 
-        // Not in global cache - download and install to global location
+        // Not in global cache - download and install to global location (installFromNetwork)
         const home = try Paths.home(self.allocator);
         defer self.allocator.free(home);
 
@@ -2197,7 +2204,10 @@ pub const Installer = struct {
                         break :blk false;
                     };
                 } else {
-                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
+                        if (!options.quiet) {
+                            style.print("  {s}(network download error: {s}, url: {s}){s}\n", .{ style.dim, @errorName(err), url, style.reset });
+                        }
                         break :blk false;
                     };
                 }
@@ -2212,6 +2222,10 @@ pub const Installer = struct {
             } else {
                 self.allocator.free(temp_archive_path);
                 self.allocator.free(@constCast(url));
+            }
+        } else {
+            if (!options.quiet) {
+                style.print("  {s}(no URL resolved for {s}@{s} via network){s}\n", .{ style.dim, spec.name, spec.version, style.reset });
             }
         }
 
