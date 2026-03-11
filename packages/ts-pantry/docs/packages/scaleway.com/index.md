@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 22 versions</summary>
 
+- `2.53.0`
 - `2.52.0`
 - `2.51.0`
 - `2.50.0`
@@ -51,13 +52,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.52.0`
+**Latest Version**: `2.53.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +scaleway.com@2.52.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +scaleway.com@2.53.0 -- $SHELL -i
 ```
 
 ## Usage Examples

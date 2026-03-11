@@ -707,6 +707,7 @@ export const aliases: Record<string, string> = {
   'libcython': 'cython.org/libcython',
   'libde265': 'github.com/strukturag/libde265',
   'libdeflate': 'github.com/ebiggers/libdeflate',
+  'libdnf5': 'rpm.org/libdnf5',
   'libdrm': 'dri.freedesktop.org',
   'libelf': 'fossies.org/libelf',
   'libepoxy': 'github.com/anholt/libepoxy',

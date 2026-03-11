@@ -1399,6 +1399,7 @@ import { riverbankcomputingcomsipPackage } from './riverbankcomputing.com/sip'
 import { robotframeworkorgPackage } from './robotframeworkorg'
 import { rockdabootgithubiolibpslPackage } from './rockdaboot.github.io/libpsl'
 import { rometoolsPackage } from './rometools'
+import { rpmorglibdnf5Package } from './rpm.org/libdnf5'
 import { rpmorglibrepoPackage } from './rpm.org/librepo'
 import { rpmorgpoptPackage } from './rpm.org/popt'
 import { rpmorgrpmsequoiaPackage } from './rpm.org/rpm-sequoia'
@@ -4057,6 +4058,8 @@ export interface Pantry {
   rockdabootgithubiolibpsl: typeof rockdabootgithubiolibpslPackage
   rometools: typeof rometoolsPackage
 
+  rpmorglibdnf5: typeof rpmorglibdnf5Package
+
   rpmorglibrepo: typeof rpmorglibrepoPackage
 
   rpmorgpopt: typeof rpmorgpoptPackage
@@ -4467,6 +4470,7 @@ export interface Pantry {
   popt: typeof rpmorgpoptPackage
   rpm: typeof rpmorgrpmPackage
   'rpm-sequoia': typeof rpmorgrpmsequoiaPackage
+  libdnf5: typeof rpmorglibdnf5Package
   'kube-linter': typeof kubelinterioPackage
   localstack: typeof localstackcloudcliPackage
   awslocal: typeof localstackcloudawsclilocalPackage
@@ -8451,6 +8455,8 @@ export const pantry: Pantry = {
   rockdabootgithubiolibpsl: rockdabootgithubiolibpslPackage,
   rometools: rometoolsPackage,
 
+  rpmorglibdnf5: rpmorglibdnf5Package,
+
   rpmorglibrepo: rpmorglibrepoPackage,
 
   rpmorgpopt: rpmorgpoptPackage,
@@ -8861,6 +8867,7 @@ export const pantry: Pantry = {
   popt: rpmorgpoptPackage,
   rpm: rpmorgrpmPackage,
   'rpm-sequoia': rpmorgrpmsequoiaPackage,
+  libdnf5: rpmorglibdnf5Package,
   'kube-linter': kubelinterioPackage,
   localstack: localstackcloudcliPackage,
   awslocal: localstackcloudawsclilocalPackage,
