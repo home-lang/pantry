@@ -1562,6 +1562,7 @@ import { vclustercomPackage } from './vclustercom'
 import { vektragithubiomockeryPackage } from './vektra.github.io/mockery'
 import { veleroioPackage } from './veleroio'
 import { veracodecomgenirPackage } from './veracode.com/gen-ir'
+import { vercelcomnextPackage } from './vercel.com/next'
 import { vercelcompkgPackage } from './vercel.com/pkg'
 import { versitycomversitygwPackage } from './versity.com/versitygw'
 import { viaductaiksopsPackage } from './viaduct.ai/ksops'
@@ -4294,6 +4295,8 @@ export interface Pantry {
   gen_ir: typeof veracodecomgenirPackage
   veracodecomgenir: typeof veracodecomgenirPackage
 
+  vercelcomnext: typeof vercelcomnextPackage
+
   vercelcompkg: typeof vercelcompkgPackage
 
   versitycomversitygw: typeof versitycomversitygwPackage
@@ -6052,6 +6055,7 @@ export interface Pantry {
   himalaya: typeof pimalayaorghimalayaPackage
   vips: typeof libvipsorgPackage
   perl: typeof perlorgPackage
+  next: typeof vercelcomnextPackage
   pkg: typeof vercelcompkgPackage
   curl: typeof curlPackage
   rg: typeof ripgrepPackage
@@ -8691,6 +8695,8 @@ export const pantry: Pantry = {
   gen_ir: veracodecomgenirPackage,
   veracodecomgenir: veracodecomgenirPackage,
 
+  vercelcomnext: vercelcomnextPackage,
+
   vercelcompkg: vercelcompkgPackage,
 
   versitycomversitygw: versitycomversitygwPackage,
@@ -10449,6 +10455,7 @@ export const pantry: Pantry = {
   himalaya: pimalayaorghimalayaPackage,
   vips: libvipsorgPackage,
   perl: perlorgPackage,
+  next: vercelcomnextPackage,
   pkg: vercelcompkgPackage,
   curl: curlPackage,
   rg: ripgrepPackage,

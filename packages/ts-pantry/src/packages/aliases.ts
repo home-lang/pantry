@@ -921,6 +921,7 @@ export const aliases: Record<string, string> = {
   'nettle': 'gnu.org/nettle',
   'networkx': 'networkx.org',
   'nex': 'github.com/blynn/nex',
+  'next': 'vercel.com/next',
   'nghttp2': 'nghttp2.org',
   'nginx': 'nginx.org',
   'nim-lang': 'nim-lang.org',
