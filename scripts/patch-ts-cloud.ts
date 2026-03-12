@@ -41,3 +41,34 @@ for (const target of targets) {
   mkdirSync(resolve(target, '..'), { recursive: true })
   symlinkSync(srcPkg, target)
 }
+
+// ---- Patch @stacksjs/stx ----
+// The npm version of stx doesn't include renderTemplate (added after 0.2.6).
+// Clone source and symlink it, same approach as ts-cloud.
+const stxTmpDir = resolve(root, '.cache', 'stx')
+const stxSrcPkg = resolve(stxTmpDir, 'packages', 'stx')
+
+if (!existsSync(resolve(stxSrcPkg, 'package.json'))) {
+  rmSync(stxTmpDir, { recursive: true, force: true })
+  mkdirSync(resolve(root, '.cache'), { recursive: true })
+  execSync(`git clone --depth 1 https://github.com/stacksjs/stx.git ${stxTmpDir}`, { stdio: 'inherit' })
+  execSync('bun install', { cwd: stxTmpDir, stdio: 'inherit' })
+}
+
+// Patch stx exports: ./dist/ -> ./src/, .d.ts -> .ts, .js -> .ts
+const stxPkgJsonPath = resolve(stxSrcPkg, 'package.json')
+if (existsSync(stxPkgJsonPath)) {
+  const stxContent = readFileSync(stxPkgJsonPath, 'utf-8')
+    .replaceAll('"./dist/', '"./src/')
+    .replaceAll('.d.ts"', '.ts"')
+    .replaceAll('.js"', '.ts"')
+  writeFileSync(stxPkgJsonPath, stxContent)
+}
+
+// Symlink stx into node_modules
+const stxTarget = resolve(root, 'node_modules', '@stacksjs', 'stx')
+if (existsSync(stxTarget)) {
+  rmSync(stxTarget, { recursive: true, force: true })
+}
+mkdirSync(resolve(stxTarget, '..'), { recursive: true })
+symlinkSync(stxSrcPkg, stxTarget)
