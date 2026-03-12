@@ -53,7 +53,8 @@ jobs:
             # Fix git ownership
             git config --global --add safe.directory /opt/pantry-registry/repo
 
-            sudo git pull origin main
+            sudo git fetch origin main
+            sudo git reset --hard origin/main
 
             # Incremental install — only postinstall re-patches stx/ts-cloud if needed
             sudo /root/.bun/bin/bun install
