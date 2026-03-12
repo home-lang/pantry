@@ -19,6 +19,9 @@
       ],
       "@stacksjs/ts-cloud/aws": [
         "./packages/registry/app/ts-cloud-aws.ts"
+      ],
+      "@ts-cloud/core": [
+        "./.cache/ts-cloud/packages/core/src"
       ]
     },
     "resolveJsonModule": true,
@@ -40,6 +43,7 @@
     "**/dist/**",
     "**/node_modules/**",
     "**/*.d.ts",
+    ".cache/**",
     "packages/site/**",
     "packages/inspector/**"
   ]

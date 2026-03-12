@@ -1,4 +1,4 @@
-import type { CloudConfig } from '@stacksjs/ts-cloud'
+import type { CloudConfig } from '@ts-cloud/core'
 
 const config: CloudConfig = {
   project: {
