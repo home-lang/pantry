@@ -3,73 +3,73 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-2">
       <h1 class="text-3xl font-semibold tracking-tight">privacy policy</h1>
-      <a href="/" class="text-[0.8125rem] text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors">&larr; back</a>
+      <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
     </div>
-    <p class="text-xs text-[var(--fg-subtle)] mb-10">Last updated: March 2026</p>
+    <p class="text-xs mb-10" style="color: var(--fg-subtle);">Last updated: March 2026</p>
 
     <article class="flex flex-col gap-8">
       <!-- Welcome -->
       <div>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
           Your privacy matters. pantry is committed to being transparent about how we collect and use data. This policy explains what information is collected when you use pantry.dev and the pantry CLI.
         </p>
       </div>
 
       <!-- Website data -->
       <div>
-        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Website Data</h2>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Website Data</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
           The pantry.dev website does not use cookies or client-side tracking. We do not use third-party analytics services. The site is served through CloudFront CDN, which may log standard access data (IP addresses, user agents) as part of normal CDN operation.
         </p>
       </div>
 
       <!-- CLI data -->
       <div>
-        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">CLI Data</h2>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed mb-3">
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">CLI Data</h2>
+        <p class="leading-relaxed mb-3" style="font-size: 0.9375rem; color: var(--fg-muted);">
           When you install a package using the pantry CLI, the following data is collected by the registry:
         </p>
         <div class="flex flex-col gap-2 pl-2">
-          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span>Package name and version downloaded</span>
           </div>
-          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span>Platform (e.g. darwin-arm64, linux-x86-64)</span>
           </div>
-          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span>Timestamp of the download</span>
           </div>
         </div>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed mt-3">
+        <p class="leading-relaxed mt-3" style="font-size: 0.9375rem; color: var(--fg-muted);">
           This data is used solely for aggregate download statistics displayed on package pages. We do not collect personally identifiable information through the CLI.
         </p>
       </div>
 
       <!-- Data retention -->
       <div>
-        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Data Retention</h2>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Data Retention</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
           Download statistics are retained indefinitely as aggregate counts. CDN access logs are retained according to AWS CloudFront's default policies and are not used for user tracking.
         </p>
       </div>
 
       <!-- Your rights -->
       <div>
-        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Your Rights</h2>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Your Rights</h2>
         <div class="flex flex-col gap-2 pl-2">
-          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span>Access &mdash; request a copy of any data associated with you</span>
           </div>
-          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span>Deletion &mdash; request deletion of any personal data</span>
           </div>
-          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span>Correction &mdash; request corrections to inaccurate data</span>
           </div>
         </div>
@@ -77,16 +77,16 @@
 
       <!-- Contact -->
       <div>
-        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Contact</h2>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
-          For privacy-related inquiries, please <a href="https://github.com/nicholasgasior/pantry/issues" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">open a GitHub issue</a> or reach out to us on <a href="https://discord.gg/stacksjs" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">Discord</a>.
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Contact</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          For privacy-related inquiries, please <a href="https://github.com/nicholasgasior/pantry/issues" class="hvr-accent" style="color: var(--accent);">open a GitHub issue</a> or reach out to us on <a href="https://discord.gg/stacksjs" class="hvr-accent" style="color: var(--accent);">Discord</a>.
         </p>
       </div>
 
       <!-- Changes -->
       <div>
-        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Changes</h2>
-        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Changes</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
           This privacy policy may be updated from time to time. Changes will be reflected on this page with an updated revision date.
         </p>
       </div>

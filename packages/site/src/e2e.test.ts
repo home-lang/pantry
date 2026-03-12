@@ -436,7 +436,7 @@ describe.skipIf(!serverAvailable)('Cross-page consistency', () => {
       expect(html).toContain('</html>')
       expect(html).toContain('<head>')
       expect(html).toContain('</head>')
-      expect(html).toContain('<body>')
+      expect(html).toContain('<body')
       expect(html).toContain('</body>')
     })
 

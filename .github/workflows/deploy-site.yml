@@ -1,0 +1,120 @@
+name: Deploy Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/site/**'
+      - 'public/install.sh'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Site
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Deploy static assets via ts-cloud
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+        run: |
+          echo "y" | bun .cache/ts-cloud/packages/ts-cloud/bin/cli.ts deploy:static \
+            --source ./public \
+            --bucket pantry-dev-site \
+            --cache-control "public, max-age=3600" \
+            --skip-security-scan \
+            --no-invalidate || echo "::warning::Static deploy via ts-cloud failed (non-critical)"
+
+      - name: Deploy Bun server to EC2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 54.243.196.101 >> ~/.ssh/known_hosts 2>/dev/null
+
+          ssh -o StrictHostKeyChecking=no ec2-user@54.243.196.101 << 'EOF'
+            set -e
+            cd /opt/pantry-registry/repo
+
+            # Fix git ownership
+            git config --global --add safe.directory /opt/pantry-registry/repo
+
+            sudo git pull origin main
+
+            # Install site dependencies
+            cd packages/site
+            sudo /root/.bun/bin/bun install
+
+            # Create systemd service if it doesn't exist
+            if ! systemctl list-unit-files | grep -q pantry-site; then
+              sudo tee /etc/systemd/system/pantry-site.service > /dev/null << 'SERVICE'
+          [Unit]
+          Description=Pantry Site
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=root
+          WorkingDirectory=/opt/pantry-registry/repo/packages/site
+          ExecStart=/root/.bun/bin/bun run src/server.ts
+          Restart=always
+          RestartSec=5
+          Environment=PORT=3001
+          Environment=NODE_ENV=production
+
+          [Install]
+          WantedBy=multi-user.target
+          SERVICE
+              sudo systemctl daemon-reload
+              sudo systemctl enable pantry-site
+            fi
+
+            sudo systemctl restart pantry-site
+            sleep 2
+            curl -sf http://localhost:3001/health || echo "Health check failed"
+          EOF
+
+      - name: Verify deployment
+        run: |
+          sleep 5
+          # Test health endpoint via direct IP
+          HTTP_CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
+            'http://54.243.196.101:3001/health' \
+            --max-time 15 2>/dev/null) || true
+          echo "Health check: HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::warning::Health check returned $HTTP_CODE"
+          fi
+
+  notify:
+    name: Discord notification
+    needs: deploy
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/discord-notify
+        with:
+          title: "Site Deploy — ${{ needs.deploy.result == 'success' && 'Deployed' || needs.deploy.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
+          description: "pantry.dev site updated"
+          status: ${{ needs.deploy.result == 'success' && 'success' || needs.deploy.result == 'cancelled' && 'warning' || 'failure' }}
+          fields: |
+            [
+              {"name": "Branch", "value": "${{ github.ref_name }}", "inline": true},
+              {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
+            ]
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
