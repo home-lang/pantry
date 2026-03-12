@@ -3,7 +3,7 @@
  *
  * @domain `github.com/psf/black`
  * @programs `black`, `blackd`
- * @version `26.3.0` (24 versions available)
+ * @version `26.3.1` (25 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/psf/black`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "black"
  * console.log(pkg.description) // "The uncompromising Python code formatter"
  * console.log(pkg.programs)    // ["black", "blackd"]
- * console.log(pkg.versions[0]) // "26.3.0" (latest)
+ * console.log(pkg.versions[0]) // "26.3.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/psf/black.md
@@ -76,6 +76,7 @@ export const blackPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '26.3.1',
     '26.3.0',
     '26.1.0',
     '25.12.0',

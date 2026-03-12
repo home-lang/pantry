@@ -26,9 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 24 versions</summary>
+<summary>Show all 25 versions</summary>
 
-- `26.3.0`
+- `26.3.1`, `26.3.0`
 - `26.1.0`
 - `25.12.0`
 - `25.11.0`
@@ -49,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `26.3.0`
+**Latest Version**: `26.3.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/psf/black@26.3.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/psf/black@26.3.1 -- $SHELL -i
 ```
 
 ## Dependencies

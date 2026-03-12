@@ -27,9 +27,14 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4583 versions</summary>
+<summary>Show all 4588 versions</summary>
 
+- `8287.0.0`
+- `8286.0.0`
 - `8284.0.0`
+- `8281.0.0`
+- `8280.0.0`
+- `8279.0.0`
 - `8278.0.0`
 - `8277.0.0`
 - `8276.0.0`
@@ -4615,13 +4620,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `8284.0.0`
+**Latest Version**: `8287.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/ggerganov/llama.cpp@8284.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/ggerganov/llama.cpp@8287.0.0 -- $SHELL -i
 ```
 
 ## Dependencies

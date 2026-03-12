@@ -2,7 +2,7 @@
  * **libsolv** - pkgx package
  *
  * @domain `opensuse.org/libsolv`
- * @version `0.7.35` (1 versions available)
+ * @version `0.7.36` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install opensuse.org/libsolv`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.opensuseorglibsolv
  * console.log(pkg.name)        // "libsolv"
- * console.log(pkg.versions[0]) // "0.7.35" (latest)
+ * console.log(pkg.versions[0]) // "0.7.36" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/opensuse-org/libsolv.md
@@ -70,6 +70,7 @@ export const opensuseorglibsolvPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.7.36',
     '0.7.35',
   ] as const,
   aliases: [] as const,
