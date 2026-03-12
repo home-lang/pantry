@@ -55,8 +55,10 @@ jobs:
 
             sudo git pull origin main
 
-            # Install site dependencies
-            cd packages/site
+            # Update bun to latest
+            sudo /root/.bun/bin/bun upgrade 2>/dev/null || true
+
+            # Install dependencies from repo root (monorepo lockfile)
             sudo /root/.bun/bin/bun install
 
             # Create systemd service if it doesn't exist
@@ -91,7 +93,8 @@ jobs:
 
             # Zero-downtime restart:
             # 1. Start new instance on temp port to verify it works
-            sudo bash -c 'PORT=3002 timeout 10 /root/.bun/bin/bun run src/server.ts &'
+            cd packages/site
+            sudo bash -c 'cd /opt/pantry-registry/repo/packages/site && PORT=3002 timeout 10 /root/.bun/bin/bun run src/server.ts &'
             sleep 3
 
             if curl -sf http://localhost:3002/health > /dev/null 2>&1; then
