@@ -56,9 +56,10 @@ jobs:
             sudo git pull origin main
 
             # Update bun to latest
-            sudo /root/.bun/bin/bun upgrade 2>/dev/null || true
+            curl -fsSL https://bun.sh/install | sudo bash 2>/dev/null || true
 
-            # Install dependencies from repo root (monorepo lockfile)
+            # Clean stale deps and install fresh from repo root
+            sudo rm -rf node_modules packages/site/node_modules
             sudo /root/.bun/bin/bun install
 
             # Create systemd service if it doesn't exist
