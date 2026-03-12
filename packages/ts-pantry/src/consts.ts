@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-12T16:43:26.262Z
+ * Generated on 2026-03-12T22:35:18.231Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1661 total)
+ * List of all known packages (1662 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -1445,6 +1445,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'robotframework.org',
   'rockdaboot.github.io/libpsl',
   'rome.tools',
+  'rpm.org/dnf5',
   'rpm.org/libdnf5',
   'rpm.org/librepo',
   'rpm.org/popt',
