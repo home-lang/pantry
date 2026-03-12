@@ -1113,7 +1113,28 @@ fn publishSingleToNpm(
             else => "Error",
         };
 
-        const error_summary = if (response.error_details) |d| (d.summary orelse response.message orelse "Unknown error") else (response.message orelse "Unknown error");
+        const error_summary = blk: {
+            if (response.error_details) |d| {
+                if (d.summary) |s| break :blk s;
+            }
+            // Fallback: try to extract a readable message from the raw response body
+            if (response.message) |msg| {
+                // If it's JSON, try to pull out "error" field directly
+                if (std.json.parseFromSlice(std.json.Value, allocator, msg, .{})) |parsed| {
+                    defer parsed.deinit();
+                    if (parsed.value == .object) {
+                        if (parsed.value.object.get("error")) |err_val| {
+                            if (err_val == .string and err_val.string.len > 0) {
+                                break :blk allocator.dupe(u8, err_val.string) catch msg;
+                            }
+                        }
+                    }
+                } else |_| {}
+                // Not JSON or no error field — show raw body (truncated)
+                if (msg.len > 0 and msg.len < 1024) break :blk msg;
+            }
+            break :blk "Unknown error";
+        };
 
         style.print("\n{d} {s}: {s}/{s}\n", .{ response.status_code, status_text, registry_url, metadata.name });
         style.print(" - {s}\n", .{error_summary});
