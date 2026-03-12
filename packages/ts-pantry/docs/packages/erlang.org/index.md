@@ -33,9 +33,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 99 versions</summary>
+<summary>Show all 100 versions</summary>
 
-- `28.4.0`
+- `28.4.1`, `28.4.0`
 - `28.3.3`, `28.3.2`, `28.3.1`, `28.3.0`
 - `28.2.0`
 - `28.1.1`, `28.1.0`
@@ -53,13 +53,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `28.4.0`
+**Latest Version**: `28.4.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +erlang.org@28.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +erlang.org@28.4.1 -- $SHELL -i
 ```
 
 ## Dependencies
