@@ -275,6 +275,7 @@ export const aliases: Record<string, string> = {
   'distlib': 'pypa.io/distlib',
   'diun': 'crazymax.dev/diun',
   'dive': 'github.com/wagoodman/dive',
+  'dnf5': 'rpm.org/dnf5',
   'dnsmasq': 'thekelleys.org.uk/dnsmasq',
   'docbook': 'docbook.org',
   'docbook-xsl': 'docbook.org/xsl',
