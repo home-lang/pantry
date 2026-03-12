@@ -21,6 +21,7 @@ pub const bold = "\x1b[1m";
 pub const italic = "\x1b[3m";
 pub const dim_italic = "\x1b[2;3m";
 pub const bold_cyan = "\x1b[1;36m";
+pub const green_bold = "\x1b[32;1m";
 pub const reset = "\x1b[0m";
 
 // ── Symbols (Bun-style: + for added, - for removed) ────────────────────────
@@ -121,12 +122,14 @@ pub fn printHeader(command: []const u8, version: []const u8, hash: []const u8) v
     });
 }
 
-/// Print the "all up to date" summary
+/// Print the "all up to date" summary (bun-style)
 pub fn printUpToDate(pkg_count: usize, elapsed_ms: f64) void {
-    const label = if (pkg_count == 1) "package" else "packages";
-    print("\n{s}{d}{s} {s} up to date {s}[{s}{d:.0}ms{s}]{s}\n", .{
-        green, pkg_count, reset,      label,
-        dim,   bold,      elapsed_ms, reset,
+    const pkg_label = if (pkg_count == 1) "package" else "packages";
+    const install_label = if (pkg_count == 1) "install" else "installs";
+    print("\nChecked {s}{d}{s} {s} across {s}{d}{s} {s} {s}(no changes) [{s}{d:.0}{s}ms]{s}\n", .{
+        green_bold, pkg_count, reset, install_label,
+        green_bold, pkg_count, reset, pkg_label,
+        dim, bold, elapsed_ms, dim,
         reset,
     });
 }
