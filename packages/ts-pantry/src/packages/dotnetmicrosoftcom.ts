@@ -3,7 +3,7 @@
  *
  * @domain `dotnet.microsoft.com`
  * @programs `dotnet`
- * @version `10.0.103` (50 versions available)
+ * @version `10.0.201` (52 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install dotnet.microsoft.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "dotnet"
  * console.log(pkg.description) // "Home of .NET's Virtual Monolithic Repository wh..."
  * console.log(pkg.programs)    // ["dotnet"]
- * console.log(pkg.versions[0]) // "10.0.103" (latest)
+ * console.log(pkg.versions[0]) // "10.0.201" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/dotnet-microsoft-com.md
@@ -77,6 +77,8 @@ export const dotnetmicrosoftcomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.0.201',
+    '10.0.105',
     '10.0.103',
     '10.0.102',
     '10.0.101',

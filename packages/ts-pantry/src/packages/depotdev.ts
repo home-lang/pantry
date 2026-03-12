@@ -3,7 +3,7 @@
  *
  * @domain `depot.dev`
  * @programs `depot`
- * @version `2.101.17` (91 versions available)
+ * @version `2.101.18` (92 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install depot.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "depot"
  * console.log(pkg.description) // "🖥️ Depot CLI, build your Docker images in the ..."
  * console.log(pkg.programs)    // ["depot"]
- * console.log(pkg.versions[0]) // "2.101.17" (latest)
+ * console.log(pkg.versions[0]) // "2.101.18" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/depot-dev.md
@@ -69,6 +69,7 @@ export const depotdevPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.101.18',
     '2.101.17',
     '2.101.16',
     '2.101.15',

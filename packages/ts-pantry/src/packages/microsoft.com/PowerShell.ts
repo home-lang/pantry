@@ -3,7 +3,7 @@
  *
  * @domain `microsoft.com/PowerShell`
  * @programs `pwsh`
- * @version `7.5.4` (12 versions available)
+ * @version `7.5.4` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install microsoft.com/PowerShell`
@@ -82,6 +82,7 @@ export const microsoftcompowershellPackage = {
     '7.5.2',
     '7.5.1',
     '7.5.0',
+    '7.4.14',
     '7.4.13',
     '7.4.12',
     '7.4.11',
