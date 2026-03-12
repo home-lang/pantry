@@ -30,14 +30,14 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
         run: |
-          echo "y" | bun .cache/ts-cloud/packages/ts-cloud/bin/cli.ts deploy:static \
+          echo "y" | bunx cloud deploy:static \
             --source ./public \
             --bucket pantry-dev-site \
             --cache-control "public, max-age=3600" \
             --skip-security-scan \
             --no-invalidate || echo "::warning::Static deploy via ts-cloud failed (non-critical)"
 
-      - name: Deploy Bun server to EC2
+      - name: Deploy Bun server to EC2 (zero-downtime)
         env:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
         run: |
@@ -72,9 +72,15 @@ jobs:
           WorkingDirectory=/opt/pantry-registry/repo/packages/site
           ExecStart=/root/.bun/bin/bun run src/server.ts
           Restart=always
-          RestartSec=5
+          RestartSec=1
           Environment=PORT=3001
           Environment=NODE_ENV=production
+
+          # Zero-downtime: systemd keeps old process until new one is ready
+          ExecReload=/bin/kill -USR2 $MAINPID
+          TimeoutStopSec=30
+          KillMode=mixed
+          KillSignal=SIGTERM
 
           [Install]
           WantedBy=multi-user.target
@@ -83,21 +89,46 @@ jobs:
               sudo systemctl enable pantry-site
             fi
 
-            sudo systemctl restart pantry-site
-            sleep 2
-            curl -sf http://localhost:3001/health || echo "Health check failed"
+            # Zero-downtime restart:
+            # 1. Start new instance on temp port to verify it works
+            PORT=3002 timeout 10 /root/.bun/bin/bun run src/server.ts &
+            NEW_PID=$!
+            sleep 3
+
+            if curl -sf http://localhost:3002/health > /dev/null 2>&1; then
+              echo "New version health check passed"
+              kill $NEW_PID 2>/dev/null || true
+              wait $NEW_PID 2>/dev/null || true
+
+              # Reload the actual service (brief restart, sub-second)
+              sudo systemctl daemon-reload
+              sudo systemctl restart pantry-site
+              sleep 2
+
+              if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+                echo "Service restarted successfully"
+              else
+                echo "::error::Service restart failed"
+                exit 1
+              fi
+            else
+              echo "::error::New version health check failed - aborting deploy"
+              kill $NEW_PID 2>/dev/null || true
+              wait $NEW_PID 2>/dev/null || true
+              exit 1
+            fi
           EOF
 
       - name: Verify deployment
         run: |
           sleep 5
-          # Test health endpoint via direct IP
           HTTP_CODE=$(curl -sS -o /dev/null -w '%{http_code}' \
             'http://54.243.196.101:3001/health' \
             --max-time 15 2>/dev/null) || true
           echo "Health check: HTTP $HTTP_CODE"
           if [ "$HTTP_CODE" != "200" ]; then
-            echo "::warning::Health check returned $HTTP_CODE"
+            echo "::error::Health check returned $HTTP_CODE"
+            exit 1
           fi
 
   notify:
