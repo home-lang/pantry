@@ -55,9 +55,8 @@ jobs:
 
             sudo git pull origin main
 
-            # Clean stale deps and install fresh (postinstall patches stx + ts-cloud)
-            sudo rm -rf node_modules packages/site/node_modules .cache
-            sudo /root/.bun/bin/bun install --force
+            # Incremental install — only postinstall re-patches stx/ts-cloud if needed
+            sudo /root/.bun/bin/bun install
 
             # Create systemd service if it doesn't exist
             if ! systemctl list-unit-files | grep -q pantry-site; then

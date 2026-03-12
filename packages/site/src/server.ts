@@ -190,17 +190,22 @@ async function handleSearch(query: string): Promise<Response> {
 }
 
 async function handlePackage(name: string): Promise<Response> {
-  const [meta, stats, timeline] = await Promise.all([
+  const [meta, stats, timeline, pkgInfo] = await Promise.all([
     registryFetch(`/binaries/${name}/metadata.json`),
     registryFetch(`/analytics/${name}`),
     registryFetch(`/analytics/${name}/timeline?days=30`),
+    registryFetch(`/packages/${name}`),
   ])
 
-  if (!meta) {
+  // No data from either source
+  if (!meta && !pkgInfo) {
     const html = await renderPage('package.stx', {
       name,
       notFound: true,
       meta: null,
+      latestVersion: '',
+      versions: [],
+      platforms: [],
       stats: null,
       timeline: [],
       title: `${name} - not found`,
@@ -208,19 +213,36 @@ async function handlePackage(name: string): Promise<Response> {
     return htmlResponse(html, 404)
   }
 
-  const versions = Object.keys(meta.versions || {})
-  const latestVersion = meta.latestVersion || versions[0] || 'unknown'
-  const latestData = meta.versions?.[latestVersion] || {}
-  const platforms = Object.keys(latestData.platforms || {})
+  // Binary metadata available (pantry-built package)
+  if (meta) {
+    const versions = Object.keys(meta.versions || {})
+    const latestVersion = meta.latestVersion || versions[0] || 'unknown'
+    const latestData = meta.versions?.[latestVersion] || {}
+    const platforms = Object.keys(latestData.platforms || {})
 
+    const html = await renderPage('package.stx', {
+      name,
+      notFound: false,
+      meta,
+      latestVersion,
+      versions,
+      platforms,
+      stats: stats || { totalDownloads: 0, versionDownloads: {} },
+      timeline: timeline?.timeline || [],
+      title: name,
+    })
+    return htmlResponse(html)
+  }
+
+  // Registry-only package (npm, no pantry binaries yet)
   const html = await renderPage('package.stx', {
     name,
     notFound: false,
-    meta,
-    latestVersion,
-    versions,
-    platforms,
-    stats: stats || { totalDownloads: 0, versionDownloads: {} },
+    meta: pkgInfo,
+    latestVersion: pkgInfo.version || 'unknown',
+    versions: pkgInfo.version ? [pkgInfo.version] : [],
+    platforms: [],
+    stats: stats || { totalDownloads: pkgInfo.downloads || 0, versionDownloads: {} },
     timeline: timeline?.timeline || [],
     title: name,
   })

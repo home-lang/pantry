@@ -10,12 +10,16 @@ const root = resolve(import.meta.dir, '..')
 const tmpDir = resolve(root, '.cache', 'ts-cloud')
 const srcPkg = resolve(tmpDir, 'packages', 'ts-cloud')
 
-// Clone source if not already cached
+// Clone source if not already cached, otherwise pull latest
 if (!existsSync(resolve(srcPkg, 'package.json'))) {
   rmSync(tmpDir, { recursive: true, force: true })
   mkdirSync(resolve(root, '.cache'), { recursive: true })
   execSync(`git clone --depth 1 https://github.com/stacksjs/ts-cloud.git ${tmpDir}`, { stdio: 'inherit' })
   execSync('bun install', { cwd: tmpDir, stdio: 'inherit' })
+}
+else {
+  try { execSync('git pull --depth 1 origin main', { cwd: tmpDir, stdio: 'pipe' }) }
+  catch { /* offline or unchanged — use cached */ }
 }
 
 // Patch exports: ./dist/ -> ./src/, .d.ts -> .ts, .js -> .ts
@@ -54,6 +58,10 @@ if (!existsSync(resolve(stxSrcPkg, 'package.json'))) {
   execSync(`git clone --depth 1 https://github.com/stacksjs/stx.git ${stxTmpDir}`, { stdio: 'inherit' })
   // Skip bun install — stx has deps (ts-cloud) that aren't on npm.
   // We only need the source files for renderTemplate imports.
+}
+else {
+  try { execSync('git pull --depth 1 origin main', { cwd: stxTmpDir, stdio: 'pipe' }) }
+  catch { /* offline or unchanged — use cached */ }
 }
 
 // Patch stx exports: ./dist/ -> ./src/, .d.ts -> .ts, .js -> .ts
