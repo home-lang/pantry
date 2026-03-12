@@ -25,11 +25,11 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 54 versions</summary>
+<summary>Show all 55 versions</summary>
 
 - `4.1.3`, `4.1.1`, `4.1.0`
 - `4.0.5`, `4.0.4`, `4.0.3`, `4.0.2`, `4.0.1`, `4.0.0`
-- `3.20.0`
+- `3.20.1`, `3.20.0`
 - `3.19.5`, `3.19.4`, `3.19.3`, `3.19.2`, `3.19.1`, `3.19.0`
 - `3.18.6`, `3.18.5`, `3.18.4`, `3.18.3`, `3.18.2`, `3.18.1`, `3.18.0`
 - `3.17.4`, `3.17.3`, `3.17.2`, `3.17.1`, `3.17.0`
