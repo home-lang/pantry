@@ -127,9 +127,9 @@ pub fn printUpToDate(pkg_count: usize, elapsed_ms: f64) void {
     const pkg_label = if (pkg_count == 1) "package" else "packages";
     const install_label = if (pkg_count == 1) "install" else "installs";
     print("\nChecked {s}{d}{s} {s} across {s}{d}{s} {s} {s}(no changes) [{s}{d:.0}{s}ms]{s}\n", .{
-        green_bold, pkg_count, reset, install_label,
-        green_bold, pkg_count, reset, pkg_label,
-        dim, bold, elapsed_ms, dim,
+        green_bold, pkg_count, reset,      install_label,
+        green_bold, pkg_count, reset,      pkg_label,
+        dim,        bold,      elapsed_ms, dim,
         reset,
     });
 }
