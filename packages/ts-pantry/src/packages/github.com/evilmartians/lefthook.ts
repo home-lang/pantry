@@ -3,7 +3,7 @@
  *
  * @domain `github.com/evilmartians/lefthook`
  * @programs `lefthook`
- * @version `2.1.3` (150 versions available)
+ * @version `2.1.4` (151 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/evilmartians/lefthook`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "lefthook"
  * console.log(pkg.description) // "Fast and powerful Git hooks manager for any typ..."
  * console.log(pkg.programs)    // ["lefthook"]
- * console.log(pkg.versions[0]) // "2.1.3" (latest)
+ * console.log(pkg.versions[0]) // "2.1.4" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/evilmartians/lefthook.md
@@ -68,6 +68,7 @@ export const lefthookPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.1.4',
     '2.1.3',
     '2.1.2',
     '2.1.1',

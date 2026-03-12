@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 95 versions</summary>
+<summary>Show all 96 versions</summary>
 
+- `0.294.0`
 - `0.293.0`
 - `0.292.0`
 - `0.291.0`
@@ -109,13 +110,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.293.0`
+**Latest Version**: `0.294.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +databricks.com@0.293.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +databricks.com@0.294.0 -- $SHELL -i
 ```
 
 ## Usage Examples

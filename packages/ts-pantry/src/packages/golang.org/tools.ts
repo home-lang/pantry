@@ -2,7 +2,7 @@
  * **tools** - pkgx package
  *
  * @domain `golang.org/tools`
- * @version `0.42.0` (4 versions available)
+ * @version `0.43.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install golang.org/tools`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.golangorgtools
  * console.log(pkg.name)        // "tools"
- * console.log(pkg.versions[0]) // "0.42.0" (latest)
+ * console.log(pkg.versions[0]) // "0.43.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/golang-org/tools.md
@@ -58,6 +58,7 @@ export const golangorgtoolsPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.43.0',
     '0.42.0',
     '0.41.0',
     '0.40.0',
