@@ -52,7 +52,8 @@ if (!existsSync(resolve(stxSrcPkg, 'package.json'))) {
   rmSync(stxTmpDir, { recursive: true, force: true })
   mkdirSync(resolve(root, '.cache'), { recursive: true })
   execSync(`git clone --depth 1 https://github.com/stacksjs/stx.git ${stxTmpDir}`, { stdio: 'inherit' })
-  execSync('bun install', { cwd: stxTmpDir, stdio: 'inherit' })
+  // Skip bun install — stx has deps (ts-cloud) that aren't on npm.
+  // We only need the source files for renderTemplate imports.
 }
 
 // Patch stx exports: ./dist/ -> ./src/, .d.ts -> .ts, .js -> .ts
