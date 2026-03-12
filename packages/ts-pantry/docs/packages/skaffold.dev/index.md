@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 19 versions</summary>
+<summary>Show all 20 versions</summary>
 
+- `2.18.0`
 - `2.17.3`, `2.17.2`, `2.17.1`, `2.17.0`
 - `2.16.1`, `2.16.0`
 - `2.15.0`
@@ -40,13 +41,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.17.3`
+**Latest Version**: `2.18.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +skaffold.dev@2.17.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +skaffold.dev@2.18.0 -- $SHELL -i
 ```
 
 ## Usage Examples
