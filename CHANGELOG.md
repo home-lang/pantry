@@ -1,3 +1,90 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.9...v0.8.10)
+
+### 🐛 Bug Fixes
+
+- ensure pantry/.bin symlinks are always created after install ([91d762d](https://github.com/home-lang/pantry/commit/91d762d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.10 ([42ba19e](https://github.com/home-lang/pantry/commit/42ba19e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([2d90d7a](https://github.com/home-lang/pantry/commit/2d90d7a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update helm ([1e657bb](https://github.com/home-lang/pantry/commit/1e657bb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([b81d142](https://github.com/home-lang/pantry/commit/b81d142)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update helm ([5078936](https://github.com/home-lang/pantry/commit/5078936)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update code-server, LLaMA.cpp, spec-kit ([1a84fa7](https://github.com/home-lang/pantry/commit/1a84fa7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp ([681c3ed](https://github.com/home-lang/pantry/commit/681c3ed)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update filelock ([4e98c67](https://github.com/home-lang/pantry/commit/4e98c67)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, md-tui, rtx-cli, mise, podman and 1 other dep ([feab695](https://github.com/home-lang/pantry/commit/feab695)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, fly, LLaMA.cpp, node-build and 3 other deps ([14ef3f4](https://github.com/home-lang/pantry/commit/14ef3f4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([ef9c63e](https://github.com/home-lang/pantry/commit/ef9c63e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cirrus ([5174ece](https://github.com/home-lang/pantry/commit/5174ece)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gitu, databricks, LLaMA.cpp, scw and 1 other dep ([7901f5f](https://github.com/home-lang/pantry/commit/7901f5f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([3ab29d3](https://github.com/home-lang/pantry/commit/3ab29d3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([edb78bb](https://github.com/home-lang/pantry/commit/edb78bb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update topgrade ([9d5f243](https://github.com/home-lang/pantry/commit/9d5f243)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp, vals, jupyter and 4 other deps ([fcfe987](https://github.com/home-lang/pantry/commit/fcfe987)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- use local action path instead of pantry-setup repo ([4b7edde](https://github.com/home-lang/pantry/commit/4b7edde)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ignore claude config in linter ([d4d6757](https://github.com/home-lang/pantry/commit/d4d6757)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ng, certbot, deno, LLaMA.cpp, werf ([2968176](https://github.com/home-lang/pantry/commit/2968176)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add claude code guidelines ([c240c5c](https://github.com/home-lang/pantry/commit/c240c5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ruby-build ([c8fa244](https://github.com/home-lang/pantry/commit/c8fa244)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-workflows, LLaMA.cpp ([4e500b4](https://github.com/home-lang/pantry/commit/4e500b4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, nomad, odigos ([cee2d7e](https://github.com/home-lang/pantry/commit/cee2d7e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update encore, LLaMA.cpp, node, SeaweedFS ([e7c53de](https://github.com/home-lang/pantry/commit/e7c53de)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a202bac](https://github.com/home-lang/pantry/commit/a202bac)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([fbc91a9](https://github.com/home-lang/pantry/commit/fbc91a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ssl3 ([49df2d3](https://github.com/home-lang/pantry/commit/49df2d3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update getmonero ([7ec7d27](https://github.com/home-lang/pantry/commit/7ec7d27)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update code-server, LLaMA.cpp, nullclaw and 4 other deps ([21707a2](https://github.com/home-lang/pantry/commit/21707a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.9...HEAD)
+
+### 🐛 Bug Fixes
+
+- ensure pantry/.bin symlinks are always created after install ([91d762d](https://github.com/home-lang/pantry/commit/91d762d)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([2d90d7a](https://github.com/home-lang/pantry/commit/2d90d7a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update helm ([1e657bb](https://github.com/home-lang/pantry/commit/1e657bb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([b81d142](https://github.com/home-lang/pantry/commit/b81d142)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update helm ([5078936](https://github.com/home-lang/pantry/commit/5078936)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update code-server, LLaMA.cpp, spec-kit ([1a84fa7](https://github.com/home-lang/pantry/commit/1a84fa7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws-sdk-cpp ([681c3ed](https://github.com/home-lang/pantry/commit/681c3ed)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update filelock ([4e98c67](https://github.com/home-lang/pantry/commit/4e98c67)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, md-tui, rtx-cli, mise, podman and 1 other dep ([feab695](https://github.com/home-lang/pantry/commit/feab695)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, fly, LLaMA.cpp, node-build and 3 other deps ([14ef3f4](https://github.com/home-lang/pantry/commit/14ef3f4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update vim ([ef9c63e](https://github.com/home-lang/pantry/commit/ef9c63e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cirrus ([5174ece](https://github.com/home-lang/pantry/commit/5174ece)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update gitu, databricks, LLaMA.cpp, scw and 1 other dep ([7901f5f](https://github.com/home-lang/pantry/commit/7901f5f)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([3ab29d3](https://github.com/home-lang/pantry/commit/3ab29d3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([edb78bb](https://github.com/home-lang/pantry/commit/edb78bb)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update topgrade ([9d5f243](https://github.com/home-lang/pantry/commit/9d5f243)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp, vals, jupyter and 4 other deps ([fcfe987](https://github.com/home-lang/pantry/commit/fcfe987)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- use local action path instead of pantry-setup repo ([4b7edde](https://github.com/home-lang/pantry/commit/4b7edde)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- ignore claude config in linter ([d4d6757](https://github.com/home-lang/pantry/commit/d4d6757)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ng, certbot, deno, LLaMA.cpp, werf ([2968176](https://github.com/home-lang/pantry/commit/2968176)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add claude code guidelines ([c240c5c](https://github.com/home-lang/pantry/commit/c240c5c)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ruby-build ([c8fa244](https://github.com/home-lang/pantry/commit/c8fa244)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update argo-workflows, LLaMA.cpp ([4e500b4](https://github.com/home-lang/pantry/commit/4e500b4)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp, nomad, odigos ([cee2d7e](https://github.com/home-lang/pantry/commit/cee2d7e)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update encore, LLaMA.cpp, node, SeaweedFS ([e7c53de](https://github.com/home-lang/pantry/commit/e7c53de)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([a202bac](https://github.com/home-lang/pantry/commit/a202bac)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update LLaMA.cpp ([fbc91a9](https://github.com/home-lang/pantry/commit/fbc91a9)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ssl3 ([49df2d3](https://github.com/home-lang/pantry/commit/49df2d3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update getmonero ([7ec7d27](https://github.com/home-lang/pantry/commit/7ec7d27)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update code-server, LLaMA.cpp, nullclaw and 4 other deps ([21707a2](https://github.com/home-lang/pantry/commit/21707a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.3...v0.8.4)
 
 ### 🚀 Features
