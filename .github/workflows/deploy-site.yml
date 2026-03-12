@@ -91,14 +91,13 @@ jobs:
 
             # Zero-downtime restart:
             # 1. Start new instance on temp port to verify it works
-            PORT=3002 timeout 10 /root/.bun/bin/bun run src/server.ts &
-            NEW_PID=$!
+            sudo bash -c 'PORT=3002 timeout 10 /root/.bun/bin/bun run src/server.ts &'
             sleep 3
 
             if curl -sf http://localhost:3002/health > /dev/null 2>&1; then
               echo "New version health check passed"
-              kill $NEW_PID 2>/dev/null || true
-              wait $NEW_PID 2>/dev/null || true
+              sudo pkill -f "PORT=3002.*server.ts" 2>/dev/null || true
+              sleep 1
 
               # Reload the actual service (brief restart, sub-second)
               sudo systemctl daemon-reload
@@ -113,8 +112,7 @@ jobs:
               fi
             else
               echo "::error::New version health check failed - aborting deploy"
-              kill $NEW_PID 2>/dev/null || true
-              wait $NEW_PID 2>/dev/null || true
+              sudo pkill -f "PORT=3002.*server.ts" 2>/dev/null || true
               exit 1
             fi
           EOF
