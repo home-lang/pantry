@@ -28,61 +28,61 @@
   }))
 </script>
 
-<section style="padding: 3rem 1.5rem 5rem;">
-  <div class="container" style="max-width: 48rem;">
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-3xl mx-auto">
     <!-- Back link -->
-    <a href="/" style="display: inline-flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--fg-subtle); margin-bottom: 1.5rem; transition: color 0.15s;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-subtle)'">&larr; back</a>
+    <a href="/" class="inline-flex items-center gap-1.5 mb-6 hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
 
     @if (notFound)
-    <div style="text-align: center; padding: 4rem 0;">
-      <h1 style="font-size: 1.75rem; font-weight: 600; margin-bottom: 0.75rem;">Package not found</h1>
-      <p style="color: var(--fg-muted); font-size: 0.9375rem; margin-bottom: 1.5rem;">The package &ldquo;{{ name }}&rdquo; could not be found in the registry.</p>
-      <a href="/" style="color: var(--accent); font-size: 0.875rem;">Browse all packages</a>
+    <div class="text-center py-16">
+      <h1 class="text-3xl font-semibold mb-3">Package not found</h1>
+      <p class="mb-6" style="color: var(--fg-muted); font-size: 0.9375rem;">The package &ldquo;{{ name }}&rdquo; could not be found in the registry.</p>
+      <a href="/" class="text-sm hvr-accent" style="color: var(--accent);">Browse all packages</a>
     </div>
     @endif
 
     @if (!notFound)
     <!-- Package header -->
-    <div style="margin-bottom: 2rem;">
-      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-        <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em; font-family: 'JetBrains Mono', monospace;">{{ name }}</h1>
+    <div class="mb-8 animate-fade-in">
+      <div class="flex items-center gap-3 mb-2">
+        <h1 class="text-3xl font-semibold tracking-tight font-mono">{{ name }}</h1>
       </div>
-      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; font-size: 0.8125rem; color: var(--fg-muted);">
-        <span style="background: var(--bg-muted); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">{{ latestVersion }}</span>
+      <div class="flex flex-wrap items-center gap-3" style="font-size: 0.8125rem; color: var(--fg-muted);">
+        <span class="bg-[var(--bg-muted)] px-2 py-1 rounded font-mono text-xs">{{ latestVersion }}</span>
         <span>{{ versionCount }} versions</span>
         <span>{{ platformCount }} platforms</span>
       </div>
     </div>
 
     <!-- Install command -->
-    <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem 1.25rem; margin-bottom: 2rem;">
-      <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.5rem;">Install</p>
-      <code style="font-size: 0.875rem; color: var(--accent);">pantry install {{ name }}</code>
+    <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 mb-8 animate-fade-in-delay">
+      <p class="uppercase tracking-widest mb-2" style="font-size: 0.6875rem; color: var(--fg-subtle);">Install</p>
+      <code class="text-sm" style="color: var(--accent);">pantry install {{ name }}</code>
     </div>
 
     <!-- Stats cards -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.75rem; margin-bottom: 2rem;">
-      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
-        <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.25rem;">Downloads</p>
-        <p style="font-size: 1.5rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">{{ formattedDownloads }}</p>
+    <div class="grid gap-3 mb-8" style="grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));">
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Downloads</p>
+        <p class="text-2xl font-semibold font-mono">{{ formattedDownloads }}</p>
       </div>
-      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
-        <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.25rem;">Latest</p>
-        <p style="font-size: 1.5rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">{{ latestVersion }}</p>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Latest</p>
+        <p class="text-2xl font-semibold font-mono">{{ latestVersion }}</p>
       </div>
-      <div style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem;">
-        <p style="font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); margin-bottom: 0.25rem;">Versions</p>
-        <p style="font-size: 1.5rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;">{{ versionCount }}</p>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Versions</p>
+        <p class="text-2xl font-semibold font-mono">{{ versionCount }}</p>
       </div>
     </div>
 
     <!-- Platforms -->
     @if (platformCount > 0)
-    <div style="margin-bottom: 2rem;">
-      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Platforms</h2>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+    <div class="mb-8">
+      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Platforms</h2>
+      <div class="flex flex-wrap gap-2">
         @foreach (platformLabels as label)
-        <span style="background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 0.75rem; font-size: 0.8125rem; color: var(--fg-muted);">{{ label }}</span>
+        <span class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5" style="font-size: 0.8125rem; color: var(--fg-muted);">{{ label }}</span>
         @endforeach
       </div>
     </div>
@@ -90,14 +90,14 @@
 
     <!-- Versions list -->
     @if (versionCount > 0)
-    <div style="margin-bottom: 2rem;">
-      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">All Versions</h2>
-      <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+    <div class="mb-8">
+      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">All Versions</h2>
+      <div class="flex flex-col gap-1">
         @foreach (versions as ver)
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; border-radius: 0.375rem; transition: background 0.1s;" onmouseover="this.style.background='var(--bg-subtle)'" onmouseout="this.style.background='transparent'">
-          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">{{ ver }}</span>
+        <div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[var(--bg-subtle)] transition-colors">
+          <span class="font-mono" style="font-size: 0.8125rem;">{{ ver }}</span>
           @if (ver === latestVersion)
-          <span style="font-size: 0.6875rem; color: var(--accent); background: color-mix(in oklch, var(--accent), transparent 85%); padding: 0.125rem 0.5rem; border-radius: 9999px;">latest</span>
+          <span class="rounded-full px-2 py-0.5" style="font-size: 0.6875rem; color: var(--accent); background: color-mix(in oklch, var(--accent), transparent 85%);">latest</span>
           @endif
         </div>
         @endforeach
@@ -108,10 +108,10 @@
     <!-- Download timeline -->
     @if (timelineBars.length > 0)
     <div>
-      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Downloads (Last 30 Days)</h2>
-      <div style="display: flex; align-items: flex-end; gap: 2px; height: 6rem; padding: 0.5rem; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem;">
+      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Downloads (Last 30 Days)</h2>
+      <div class="flex items-end h-24 p-2 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg" style="gap: 2px;">
         @foreach (timelineBars as bar)
-        <div style="flex: 1; background: var(--accent); border-radius: 2px 2px 0 0; height: {!! bar.heightPct !!}%; opacity: 0.7; transition: opacity 0.15s;" title="{{ bar.date }}: {{ bar.downloads }} downloads" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"></div>
+        <div class="flex-1 rounded-t-sm opacity-70 hover:opacity-100 transition-opacity" style="background: var(--accent); height: {!! bar.heightPct !!}%;" title="{{ bar.date }}: {{ bar.downloads }} downloads"></div>
         @endforeach
       </div>
     </div>

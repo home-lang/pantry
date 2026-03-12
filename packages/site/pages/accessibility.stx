@@ -1,53 +1,53 @@
-<section style="padding: 3rem 1.5rem 5rem;">
-  <div class="container" style="max-width: 42rem;">
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-2xl mx-auto">
     <!-- Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem;">
-      <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em;">accessibility</h1>
-      <a href="/" style="font-size: 0.8125rem; color: var(--fg-subtle); transition: color 0.15s;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-subtle)'">&larr; back</a>
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-3xl font-semibold tracking-tight">accessibility</h1>
+      <a href="/" class="text-[0.8125rem] text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors">&larr; back</a>
     </div>
 
-    <article style="display: flex; flex-direction: column; gap: 2rem;">
+    <article class="flex flex-col gap-8">
       <!-- Welcome -->
       <div>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
           We want pantry.dev to be accessible to everyone. We are committed to ensuring that our website and tools meet modern accessibility standards and can be used by people with diverse abilities.
         </p>
       </div>
 
       <!-- Our approach -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Our Approach</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-          We strive to conform to <a href="https://www.w3.org/WAI/WCAG21/quickref/" style="color: var(--accent);">WCAG 2.1 Level AA</a> guidelines. Our site is built with semantic HTML, proper heading hierarchy, and ARIA labels where appropriate.
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Our Approach</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+          We strive to conform to <a href="https://www.w3.org/WAI/WCAG21/quickref/" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">WCAG 2.1 Level AA</a> guidelines. Our site is built with semantic HTML, proper heading hierarchy, and ARIA labels where appropriate.
         </p>
       </div>
 
       <!-- Measures -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Measures</h2>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.5rem;">
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Measures</h2>
+        <div class="flex flex-col gap-2 pl-2">
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Keyboard navigation &mdash; all interactive elements are reachable and operable via keyboard</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Screen reader support &mdash; semantic HTML and ARIA labels provide meaningful context</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Color contrast &mdash; text and interactive elements meet WCAG AA contrast requirements</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Skip links &mdash; skip-to-content link available for bypassing repeated navigation</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Responsive design &mdash; content adapts to different screen sizes and zoom levels</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Focus indicators &mdash; visible focus styles on all interactive elements</span>
           </div>
         </div>
@@ -55,17 +55,17 @@
 
       <!-- Known limitations -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Known Limitations</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Known Limitations</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
           We are continually working to improve accessibility. If you encounter any barriers, please let us know. Some areas we are actively improving include enhanced screen reader announcements for dynamic content and improved mobile navigation.
         </p>
       </div>
 
       <!-- Contact -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Contact</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-          If you experience any accessibility issues or have suggestions for improvement, please <a href="https://github.com/nicholasgasior/pantry/issues" style="color: var(--accent);">open a GitHub issue</a> with the <code style="background: var(--bg-subtle); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.8125rem;">accessibility</code> label, or reach out on <a href="https://discord.gg/stacksjs" style="color: var(--accent);">Discord</a>.
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Contact</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+          If you experience any accessibility issues or have suggestions for improvement, please <a href="https://github.com/nicholasgasior/pantry/issues" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">open a GitHub issue</a> with the <code class="bg-[var(--bg-subtle)] px-1.5 py-0.5 rounded text-[0.8125rem]">accessibility</code> label, or reach out on <a href="https://discord.gg/stacksjs" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">Discord</a>.
         </p>
       </div>
     </article>

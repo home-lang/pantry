@@ -1,75 +1,75 @@
-<section style="padding: 3rem 1.5rem 5rem;">
-  <div class="container" style="max-width: 42rem;">
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-2xl mx-auto">
     <!-- Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-      <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em;">privacy policy</h1>
-      <a href="/" style="font-size: 0.8125rem; color: var(--fg-subtle); transition: color 0.15s;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-subtle)'">&larr; back</a>
+    <div class="flex items-center justify-between mb-2">
+      <h1 class="text-3xl font-semibold tracking-tight">privacy policy</h1>
+      <a href="/" class="text-[0.8125rem] text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors">&larr; back</a>
     </div>
-    <p style="font-size: 0.75rem; color: var(--fg-subtle); margin-bottom: 2.5rem;">Last updated: March 2026</p>
+    <p class="text-xs text-[var(--fg-subtle)] mb-10">Last updated: March 2026</p>
 
-    <article style="display: flex; flex-direction: column; gap: 2rem;">
+    <article class="flex flex-col gap-8">
       <!-- Welcome -->
       <div>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
           Your privacy matters. pantry is committed to being transparent about how we collect and use data. This policy explains what information is collected when you use pantry.dev and the pantry CLI.
         </p>
       </div>
 
       <!-- Website data -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Website Data</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Website Data</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
           The pantry.dev website does not use cookies or client-side tracking. We do not use third-party analytics services. The site is served through CloudFront CDN, which may log standard access data (IP addresses, user agents) as part of normal CDN operation.
         </p>
       </div>
 
       <!-- CLI data -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">CLI Data</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7; margin-bottom: 0.75rem;">
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">CLI Data</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed mb-3">
           When you install a package using the pantry CLI, the following data is collected by the registry:
         </p>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.5rem;">
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+        <div class="flex flex-col gap-2 pl-2">
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Package name and version downloaded</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Platform (e.g. darwin-arm64, linux-x86-64)</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Timestamp of the download</span>
           </div>
         </div>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7; margin-top: 0.75rem;">
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed mt-3">
           This data is used solely for aggregate download statistics displayed on package pages. We do not collect personally identifiable information through the CLI.
         </p>
       </div>
 
       <!-- Data retention -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Data Retention</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Data Retention</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
           Download statistics are retained indefinitely as aggregate counts. CDN access logs are retained according to AWS CloudFront's default policies and are not used for user tracking.
         </p>
       </div>
 
       <!-- Your rights -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Your Rights</h2>
-        <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-left: 0.5rem;">
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Your Rights</h2>
+        <div class="flex flex-col gap-2 pl-2">
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Access &mdash; request a copy of any data associated with you</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Deletion &mdash; request deletion of any personal data</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+            <span class="text-[var(--fg-subtle)] shrink-0">&mdash;</span>
             <span>Correction &mdash; request corrections to inaccurate data</span>
           </div>
         </div>
@@ -77,16 +77,16 @@
 
       <!-- Contact -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Contact</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-          For privacy-related inquiries, please <a href="https://github.com/nicholasgasior/pantry/issues" style="color: var(--accent);">open a GitHub issue</a> or reach out to us on <a href="https://discord.gg/stacksjs" style="color: var(--accent);">Discord</a>.
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Contact</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+          For privacy-related inquiries, please <a href="https://github.com/nicholasgasior/pantry/issues" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">open a GitHub issue</a> or reach out to us on <a href="https://discord.gg/stacksjs" class="text-[var(--accent)] hover:text-[var(--accent-hover)]">Discord</a>.
         </p>
       </div>
 
       <!-- Changes -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Changes</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <h2 class="text-xs uppercase tracking-[0.15em] text-[var(--fg-subtle)] font-medium mb-4">Changes</h2>
+        <p class="text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
           This privacy policy may be updated from time to time. Changes will be reflected on this page with an updated revision date.
         </p>
       </div>

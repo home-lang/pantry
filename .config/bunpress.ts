@@ -15,7 +15,7 @@ const config = {
         { text: 'Headwind CSS', link: 'https://headwind.sh' },
         { text: 'Clarity Logging', link: 'https://clarity.sh' },
         { text: 'BunPress Docs', link: 'https://bunpress.sh' },
-        { text: 'Stacks Framework', link: 'https://stacksjs.org' },
+        { text: 'Stacks Framework', link: 'https://stacksjs.com' },
       ],
     },
     { text: 'GitHub', link: 'https://github.com/home-lang/pantry' },

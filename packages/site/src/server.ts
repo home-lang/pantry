@@ -57,6 +57,15 @@ Bun.serve({
     const path = url.pathname
 
     try {
+      // CLI user-agent detection — serve install script for curl/wget/etc.
+      const ua = req.headers.get('user-agent') || ''
+      const isCLI = /^(curl|wget|httpie|fetch|libfetch|powershell)/i.test(ua) || !ua
+
+      if (isCLI && (path === '/' || path === '')) {
+        const script = await Bun.file(resolve(__dirname, '../../../public/install.sh')).text()
+        return new Response(script, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+      }
+
       // Static health check
       if (path === '/health') {
         return Response.json({ status: 'ok', timestamp: new Date().toISOString() })
@@ -115,6 +124,7 @@ async function renderPage(file: string, context: Record<string, unknown> = {}): 
   return renderTemplate(`${PAGES_DIR}/${file}`, {
     context: { ...context, title },
     layout: LAYOUT,
+    options: { componentsDir: resolve(__dirname, '../components') },
     injectCSS: true,
   })
 }

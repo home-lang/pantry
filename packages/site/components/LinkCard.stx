@@ -1,0 +1,4 @@
+<a href="{{ props.href }}" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+  <h3 class="text-[0.9375rem] font-medium mb-1">{{ props.title }}</h3>
+  <p class="text-[0.8125rem] text-[var(--fg-muted)]">{{ props.description }}</p>
+</a>

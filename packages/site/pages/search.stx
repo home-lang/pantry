@@ -4,45 +4,46 @@
   const hasQuery = (query || '').length > 0
 </script>
 
-<section style="padding: 3rem 1.5rem 5rem;">
-  <div class="container" style="max-width: 48rem;">
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-3xl mx-auto">
     <!-- Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
-      <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em;">search</h1>
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-semibold tracking-tight">search</h1>
     </div>
 
     <!-- Search form -->
-    <form action="/search" method="get" style="display: flex; gap: 0.5rem; margin-bottom: 2rem;">
-      <input
-        type="text"
-        name="q"
-        value="{{ query }}"
-        placeholder="search packages..."
-        autofocus
-        aria-label="Search packages"
-        style="flex: 1; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem 1rem; color: var(--fg); font-size: 0.9375rem; outline: none; transition: border-color 0.2s;"
-        onfocus="this.style.borderColor='var(--accent)'"
-        onblur="this.style.borderColor='var(--border)'"
-      />
-      <button type="submit" style="background: var(--accent); color: var(--bg); border: none; border-radius: 0.5rem; padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+    <form action="/search" method="get" class="flex gap-2 mb-8">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          name="q"
+          value="{{ query }}"
+          placeholder="search packages..."
+          autofocus
+          aria-label="Search packages"
+          class="w-full bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
+          style="color: var(--fg); font-size: 0.9375rem;"
+        />
+      </div>
+      <button type="submit" class="rounded-lg px-5 py-3 font-medium text-sm cursor-pointer transition-colors" style="background: var(--accent); color: var(--bg);">
         search
       </button>
     </form>
 
     @if (!hasQuery)
-    <p style="color: var(--fg-subtle); font-size: 0.875rem; text-align: center; padding: 3rem 0;">Start typing to search packages</p>
+    <p class="text-sm text-center py-12" style="color: var(--fg-subtle);">Start typing to search packages</p>
     @endif
 
     @if (hasQuery && !hasResults)
-    <div style="text-align: center; padding: 3rem 0;">
-      <p style="color: var(--fg-muted); font-size: 0.9375rem; margin-bottom: 0.5rem;">No packages found for &ldquo;{{ query }}&rdquo;</p>
-      <p style="color: var(--fg-subtle); font-size: 0.8125rem;">Try a different search term or browse popular packages on the <a href="/" style="color: var(--accent);">homepage</a>.</p>
+    <div class="text-center py-12">
+      <p class="mb-2" style="color: var(--fg-muted); font-size: 0.9375rem;">No packages found for &ldquo;{{ query }}&rdquo;</p>
+      <p style="color: var(--fg-subtle); font-size: 0.8125rem;">Try a different search term or browse popular packages on the <a href="/" class="hvr-accent" style="color: var(--accent);">homepage</a>.</p>
     </div>
     @endif
 
     @if (hasResults)
     <!-- Results count -->
-    <p style="font-size: 0.75rem; color: var(--fg-subtle); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem;" role="status" aria-live="polite">
+    <p class="text-xs uppercase tracking-widest mb-4" style="color: var(--fg-subtle);" role="status" aria-live="polite">
       @if (count === 1)
       Found 1 package
       @else
@@ -51,17 +52,17 @@
     </p>
 
     <!-- Results list -->
-    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+    <div class="flex flex-col gap-2">
       @foreach (results as result)
-      <a href="/package/{{ result.name }}" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem 1.25rem; transition: border-color 0.15s, background 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-muted)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-subtle)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
-          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 500;">{{ result.name }}</span>
+      <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <div class="flex items-center justify-between mb-1">
+          <span class="font-mono text-sm font-medium">{{ result.name }}</span>
           @if (result.version)
-          <span style="font-size: 0.6875rem; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace;">{{ result.version }}</span>
+          <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ result.version }}</span>
           @endif
         </div>
         @if (result.description)
-        <p style="font-size: 0.8125rem; color: var(--fg-muted); margin: 0;">{{ result.description }}</p>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">{{ result.description }}</p>
         @endif
       </a>
       @endforeach

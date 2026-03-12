@@ -1,0 +1,8 @@
+<div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5">
+  @if (props.label)
+  <p class="text-[0.6875rem] uppercase tracking-widest text-[var(--fg-subtle)] mb-2">{{ props.label }}</p>
+  @endif
+  <div class="flex items-center justify-between gap-3">
+    <code class="text-sm text-[var(--accent)]">{{ props.command }}</code>
+  </div>
+</div>

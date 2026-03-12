@@ -1,0 +1,4 @@
+<div class="flex gap-3 text-[0.9375rem] text-[var(--fg-muted)] leading-relaxed">
+  <span class="text-[var(--accent)] shrink-0 font-mono text-[0.8125rem]">{{ props.number }}.</span>
+  <span>{!! props.content !!}</span>
+</div>

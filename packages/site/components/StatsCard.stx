@@ -1,0 +1,4 @@
+<div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+  <p class="text-[0.6875rem] uppercase tracking-widest text-[var(--fg-subtle)] mb-1">{{ props.label }}</p>
+  <p class="text-2xl font-semibold font-mono">{{ props.value }}</p>
+</div>

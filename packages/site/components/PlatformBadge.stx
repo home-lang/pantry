@@ -1,0 +1,1 @@
+<span class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 text-[0.8125rem] text-[var(--fg-muted)]">{{ props.label }}</span>

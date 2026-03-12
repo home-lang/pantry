@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.8.10",
   "description": "A library & CLI for managing packages",
-  "author": "Chris Breuer <chris@stacksjs.org>",
+  "author": "Chris Breuer <chris@stacksjs.com>",
   "license": "MIT",
   "homepage": "https://github.com/home-lang/pantry/tree/main/packages/ts-pantry#readme",
   "repository": {

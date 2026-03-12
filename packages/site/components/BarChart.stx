@@ -1,0 +1,9 @@
+<div class="flex items-end gap-[2px] h-24 p-2 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg">
+  @foreach (props.bars as bar)
+  <div
+    class="flex-1 bg-[var(--accent)] rounded-t-sm opacity-70 hover:opacity-100 transition-opacity"
+    style="height: {!! bar.heightPct !!}%"
+    title="{{ bar.date }}: {{ bar.downloads }} downloads"
+  ></div>
+  @endforeach
+</div>

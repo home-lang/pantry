@@ -1,0 +1,6 @@
+<div class="flex items-center justify-between mb-4">
+  <h2 class="text-xs uppercase tracking-widest text-[var(--fg-subtle)] font-medium">{{ props.title }}</h2>
+  @if (props.count)
+  <span class="text-xs text-[var(--fg-subtle)]">{{ props.count }}</span>
+  @endif
+</div>

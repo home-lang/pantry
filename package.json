@@ -4,7 +4,7 @@
   "version": "0.8.10",
   "private": true,
   "description": "A performant, universal package manager. Like Homebrew, but faster.",
-  "author": "Chris Breuer <chris@stacksjs.org>",
+  "author": "Chris Breuer <chris@stacksjs.com>",
   "license": "MIT",
   "homepage": "https://github.com/home-lang/pantry#readme",
   "repository": {

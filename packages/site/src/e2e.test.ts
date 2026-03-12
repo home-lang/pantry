@@ -55,6 +55,32 @@ afterAll(() => {
 })
 
 // ============================================================================
+// curl | bash detection
+// ============================================================================
+
+describe.skipIf(!serverAvailable)('curl detection', () => {
+  it('returns install script for curl user-agent', async () => {
+    const res = await fetch(baseUrl, { headers: { 'User-Agent': 'curl/8.0' } })
+    expect(res.headers.get('content-type')).toContain('text/plain')
+    const text = await res.text()
+    expect(text).toContain('#!/bin/bash')
+    expect(text).toContain('Pantry Installer')
+  })
+
+  it('returns install script for wget user-agent', async () => {
+    const res = await fetch(baseUrl, { headers: { 'User-Agent': 'Wget/1.21' } })
+    expect(res.headers.get('content-type')).toContain('text/plain')
+    const text = await res.text()
+    expect(text).toContain('#!/bin/bash')
+  })
+
+  it('returns HTML for browser user-agent', async () => {
+    const res = await fetch(baseUrl, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' } })
+    expect(res.headers.get('content-type')).toContain('text/html')
+  })
+})
+
+// ============================================================================
 // Health check
 // ============================================================================
 

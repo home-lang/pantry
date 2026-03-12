@@ -4,61 +4,64 @@
 </script>
 
 <!-- Hero -->
-<section style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 3.5rem - 6rem); padding: 4rem 1.5rem; text-align: center;">
-  <div style="max-width: 48rem;">
-    <h1 style="font-size: clamp(3rem, 8vw, 5rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin-bottom: 1rem;">
+<section class="flex flex-col items-center justify-center px-6 py-16 text-center" style="min-height: calc(100vh - 3.5rem - 6rem);">
+  <div class="max-w-3xl animate-fade-in">
+    <h1 class="font-bold tracking-tight leading-none mb-4" style="font-size: clamp(3rem, 8vw, 5rem);">
       <span style="color: var(--accent);">pantry</span>
     </h1>
-    <p style="font-size: clamp(1rem, 2.5vw, 1.25rem); color: var(--fg-muted); max-width: 36rem; margin: 0 auto 2.5rem;">
+    <p class="max-w-xl mx-auto mb-10" style="font-size: clamp(1rem, 2.5vw, 1.25rem); color: var(--fg-muted);">
       a fast, modern package manager for your system
     </p>
 
     <!-- Search -->
-    <form action="/search" method="get" style="display: flex; gap: 0.5rem; max-width: 28rem; margin: 0 auto 1.5rem;">
-      <input
-        type="text"
-        name="q"
-        placeholder="search packages..."
-        autofocus
-        aria-label="Search packages"
-        style="flex: 1; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem 1rem; color: var(--fg); font-size: 0.9375rem; outline: none; transition: border-color 0.2s;"
-        onfocus="this.style.borderColor='var(--accent)'"
-        onblur="this.style.borderColor='var(--border)'"
-      />
-      <button type="submit" style="background: var(--accent); color: var(--bg); border: none; border-radius: 0.5rem; padding: 0.75rem 1.25rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+    <form action="/search" method="get" class="flex gap-2 max-w-md mx-auto mb-6 animate-fade-in-delay">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          name="q"
+          placeholder="search packages..."
+          autofocus
+          aria-label="Search packages"
+          class="w-full bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
+          style="color: var(--fg); font-size: 0.9375rem;"
+          id="search-input"
+        />
+        <kbd class="hidden sm:inline-flex absolute right-3 top-1/2 -translate-y-1/2 bg-[var(--bg-muted)] border border-[var(--border)] rounded px-1.5 py-0.5 pointer-events-none" style="font-size: 0.6875rem; color: var(--fg-subtle);">/</kbd>
+      </div>
+      <button type="submit" class="rounded-lg px-5 py-3 font-medium text-sm cursor-pointer transition-colors" style="background: var(--accent); color: var(--bg);">
         search
       </button>
     </form>
 
     <!-- Install hint -->
-    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 3rem;">
-      <code style="font-size: 0.8125rem; color: var(--fg-subtle); background: var(--bg-subtle); padding: 0.375rem 0.75rem; border-radius: 0.375rem; border: 1px solid var(--border);">curl -fsSL https://get.pantry.dev | sh</code>
+    <div class="flex items-center justify-center gap-2 mb-12 animate-fade-in-delay-2">
+      <code class="bg-[var(--bg-subtle)] px-3 py-1.5 rounded-md border border-[var(--border)]" style="font-size: 0.8125rem; color: var(--fg-subtle);">curl -fsSL https://get.pantry.dev | sh</code>
     </div>
   </div>
 </section>
 
 <!-- Featured packages -->
-<section style="padding: 0 1.5rem 4rem;">
-  <div class="container">
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500;">Popular Packages</h2>
+<section class="px-6 pb-16">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Popular Packages</h2>
       @if (pkgCount > 0)
-      <span style="font-size: 0.75rem; color: var(--fg-subtle);">{{ pkgCount }} packages available</span>
+      <span class="text-xs" style="color: var(--fg-subtle);">{{ pkgCount }} packages available</span>
       @endif
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.75rem;">
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
       @foreach (pkgs as pkg)
-      <a href="/package/{{ pkg.domain }}" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem 1.25rem; transition: border-color 0.15s, background 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)';this.style.background='var(--bg-muted)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg-subtle)'">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.375rem;">
-          <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.875rem; font-weight: 500;">{{ pkg.label }}</span>
+      <a href="/package/{{ pkg.domain }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="font-mono text-sm font-medium">{{ pkg.label }}</span>
           @if (pkg.version)
-          <span style="font-size: 0.6875rem; color: var(--fg-subtle); font-family: 'JetBrains Mono', monospace;">{{ pkg.version }}</span>
+          <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ pkg.version }}</span>
           @endif
         </div>
-        <p style="font-size: 0.8125rem; color: var(--fg-muted); margin: 0;">{{ pkg.desc }}</p>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">{{ pkg.desc }}</p>
         @if (pkg.versionCount > 0)
-        <p style="font-size: 0.6875rem; color: var(--fg-subtle); margin-top: 0.375rem;">{{ pkg.versionCount }} versions</p>
+        <p class="mt-1.5" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ pkg.versionCount }} versions</p>
         @endif
       </a>
       @endforeach
@@ -67,22 +70,31 @@
 </section>
 
 <!-- Get involved -->
-<section style="padding: 0 1.5rem 5rem;">
-  <div class="container">
-    <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1.5rem;">Get Involved</h2>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); gap: 0.75rem;">
-      <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
-        <h3 style="font-size: 0.9375rem; font-weight: 500; margin-bottom: 0.375rem;">Contribute</h3>
+<section class="px-6 pb-20">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-xs uppercase tracking-widest font-medium mb-6" style="color: var(--fg-subtle);">Get Involved</h2>
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
+      <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <h3 class="font-medium mb-1" style="font-size: 0.9375rem;">Contribute</h3>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">Help improve pantry on GitHub</p>
       </a>
-      <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
-        <h3 style="font-size: 0.9375rem; font-weight: 500; margin-bottom: 0.375rem;">Chat</h3>
+      <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <h3 class="font-medium mb-1" style="font-size: 0.9375rem;">Chat</h3>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">Join the community on Discord</p>
       </a>
-      <a href="https://bsky.app/profile/stacksjs.org" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
-        <h3 style="font-size: 0.9375rem; font-weight: 500; margin-bottom: 0.375rem;">Follow</h3>
+      <a href="https://bsky.app/profile/stacksjs.com" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <h3 class="font-medium mb-1" style="font-size: 0.9375rem;">Follow</h3>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">Follow updates on Bluesky</p>
       </a>
     </div>
   </div>
 </section>
+
+<script>
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+      e.preventDefault()
+      document.getElementById('search-input')?.focus()
+    }
+  })
+</script>

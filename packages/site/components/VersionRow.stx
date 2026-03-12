@@ -1,0 +1,6 @@
+<div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[var(--bg-subtle)] transition-colors">
+  <span class="font-mono text-[0.8125rem]">{{ props.version }}</span>
+  @if (props.isLatest)
+  <span class="text-[0.6875rem] text-[var(--accent)] bg-[var(--accent)]/15 px-2 py-0.5 rounded-full">latest</span>
+  @endif
+</div>

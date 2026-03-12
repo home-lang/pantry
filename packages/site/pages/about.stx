@@ -1,33 +1,33 @@
-<section style="padding: 3rem 1.5rem 5rem;">
-  <div class="container" style="max-width: 42rem;">
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-2xl mx-auto">
     <!-- Header -->
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem;">
-      <h1 style="font-size: 1.75rem; font-weight: 600; letter-spacing: -0.02em;">about</h1>
-      <a href="/" style="font-size: 0.8125rem; color: var(--fg-subtle); transition: color 0.15s;" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg-subtle)'">&larr; back</a>
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-3xl font-semibold tracking-tight">about</h1>
+      <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
     </div>
 
-    <article style="display: flex; flex-direction: column; gap: 2.5rem;">
+    <article class="flex flex-col gap-10">
       <!-- What we are -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">What We Are</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">What We Are</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
           pantry is a fast, modern package manager for your system. It lets you install, update, and manage pre-built binaries for open source tools &mdash; like curl, Python, Node.js, Go, and hundreds more &mdash; with a single command.
         </p>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7; margin-top: 0.75rem;">
-          Every package is built from source via <a href="https://github.com/pkgxdev/pantry" style="color: var(--accent);">pkgx pantry</a> recipes, compiled for macOS and Linux (both x86_64 and ARM64), and distributed as tarballs through our CDN-backed registry.
+        <p class="leading-relaxed mt-3" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          Every package is built from source via <a href="https://github.com/pkgxdev/pantry" class="hvr-accent" style="color: var(--accent);">pkgx pantry</a> recipes, compiled for macOS and Linux (both x86_64 and ARM64), and distributed as tarballs through our CDN-backed registry.
         </p>
       </div>
 
       <!-- What we are not -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">What We Are Not</h2>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">What We Are Not</h2>
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span><strong style="color: var(--fg);">Not a language package manager</strong> &mdash; pantry installs system-level binaries, not library dependencies. Use npm, pip, cargo, or go modules for language packages.</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--fg-subtle); flex-shrink: 0;">&mdash;</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
             <span><strong style="color: var(--fg);">Not a replacement for Homebrew</strong> &mdash; pantry focuses on fast, reproducible binary installation without compiling from source on your machine.</span>
           </div>
         </div>
@@ -35,22 +35,22 @@
 
       <!-- How it works -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">How It Works</h2>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--accent); flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">1.</span>
-            <span>Packages are defined as YAML recipes in the <a href="https://github.com/pkgxdev/pantry" style="color: var(--accent);">pkgx pantry</a></span>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">How It Works</h2>
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0 font-mono" style="color: var(--accent); font-size: 0.8125rem;">1.</span>
+            <span>Packages are defined as YAML recipes in the <a href="https://github.com/pkgxdev/pantry" class="hvr-accent" style="color: var(--accent);">pkgx pantry</a></span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--accent); flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">2.</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0 font-mono" style="color: var(--accent); font-size: 0.8125rem;">2.</span>
             <span>Our CI builds packages for all supported platforms and uploads tarballs to S3</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--accent); flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">3.</span>
-            <span>The <a href="https://registry.pantry.dev" style="color: var(--accent);">registry</a> serves metadata and binary downloads via CloudFront CDN</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0 font-mono" style="color: var(--accent); font-size: 0.8125rem;">3.</span>
+            <span>The <a href="https://registry.pantry.dev" class="hvr-accent" style="color: var(--accent);">registry</a> serves metadata and binary downloads via CloudFront CDN</span>
           </div>
-          <div style="display: flex; gap: 0.75rem; font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-            <span style="color: var(--accent); flex-shrink: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">4.</span>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0 font-mono" style="color: var(--accent); font-size: 0.8125rem;">4.</span>
             <span>The CLI downloads, extracts, and symlinks binaries into your PATH &mdash; instant installs</span>
           </div>
         </div>
@@ -58,34 +58,34 @@
 
       <!-- CLI built with Zig -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Built With Zig</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-          The pantry CLI is written in <a href="https://ziglang.org" style="color: var(--accent);">Zig</a> for maximum performance and minimal overhead. It has zero runtime dependencies, starts instantly, and uses parallel downloads to install packages as fast as your connection allows.
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Built With Zig</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          The pantry CLI is written in <a href="https://ziglang.org" class="hvr-accent" style="color: var(--accent);">Zig</a> for maximum performance and minimal overhead. It has zero runtime dependencies, starts instantly, and uses parallel downloads to install packages as fast as your connection allows.
         </p>
       </div>
 
       <!-- Team -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Team</h2>
-        <p style="font-size: 0.9375rem; color: var(--fg-muted); line-height: 1.7;">
-          pantry is built and maintained by the <a href="https://stacksjs.org" style="color: var(--accent);">Stacks.js</a> team. We believe in open source, developer experience, and tools that just work.
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Team</h2>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          pantry is built and maintained by the <a href="https://stacksjs.com" class="hvr-accent" style="color: var(--accent);">Stacks.js</a> team. We believe in open source, developer experience, and tools that just work.
         </p>
       </div>
 
       <!-- Get involved -->
       <div>
-        <h2 style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--fg-subtle); font-weight: 500; margin-bottom: 1rem;">Get Involved</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.75rem;">
-          <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
-            <h3 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Contribute</h3>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Get Involved</h2>
+        <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));">
+          <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+            <h3 class="text-sm font-medium mb-1">Contribute</h3>
             <p style="font-size: 0.8125rem; color: var(--fg-muted);">Help improve pantry on GitHub</p>
           </a>
-          <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
-            <h3 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Chat</h3>
+          <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+            <h3 class="text-sm font-medium mb-1">Chat</h3>
             <p style="font-size: 0.8125rem; color: var(--fg-muted);">Join the community on Discord</p>
           </a>
-          <a href="https://bsky.app/profile/stacksjs.org" target="_blank" rel="noopener" style="display: block; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; transition: border-color 0.15s;" onmouseover="this.style.borderColor='var(--border-hover)'" onmouseout="this.style.borderColor='var(--border)'">
-            <h3 style="font-size: 0.875rem; font-weight: 500; margin-bottom: 0.25rem;">Follow</h3>
+          <a href="https://bsky.app/profile/stacksjs.com" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+            <h3 class="text-sm font-medium mb-1">Follow</h3>
             <p style="font-size: 0.8125rem; color: var(--fg-muted);">Follow updates on Bluesky</p>
           </a>
         </div>

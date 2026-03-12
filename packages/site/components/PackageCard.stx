@@ -1,0 +1,12 @@
+<a href="/package/{{ props.domain }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+  <div class="flex items-center justify-between mb-1.5">
+    <span class="font-mono text-sm font-medium">{{ props.label }}</span>
+    @if (props.version)
+    <span class="text-[0.6875rem] text-[var(--fg-subtle)] font-mono">{{ props.version }}</span>
+    @endif
+  </div>
+  <p class="text-[0.8125rem] text-[var(--fg-muted)]">{{ props.desc }}</p>
+  @if (props.versionCount > 0)
+  <p class="text-[0.6875rem] text-[var(--fg-subtle)] mt-1.5">{{ props.versionCount }} versions</p>
+  @endif
+</a>

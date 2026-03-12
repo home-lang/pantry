@@ -1,0 +1,19 @@
+<button
+  type="button"
+  class="text-[var(--fg-subtle)] hover:text-[var(--fg)] transition-colors text-xs px-2 py-1 rounded border border-transparent hover:border-[var(--border)]"
+  aria-label="Copy to clipboard"
+>
+  copy
+</button>
+
+<script client>
+  const btn = $el
+  btn.addEventListener('click', () => {
+    const code = btn.closest('div')?.querySelector('code')?.textContent
+    if (code) {
+      navigator.clipboard.writeText(code)
+      btn.textContent = 'copied!'
+      setTimeout(() => { btn.textContent = 'copy' }, 2000)
+    }
+  })
+</script>

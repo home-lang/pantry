@@ -1,0 +1,27 @@
+<form action="/search" method="get" class="flex gap-2 max-w-md mx-auto">
+  <div class="relative flex-1">
+    <input
+      type="text"
+      name="q"
+      value="{{ props.value || '' }}"
+      placeholder="search packages..."
+      autofocus
+      aria-label="Search packages"
+      class="w-full bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-4 py-3 text-[var(--fg)] text-[0.9375rem] outline-none transition-colors focus:border-[var(--accent)]"
+      id="search-input"
+    />
+    <kbd class="hidden sm:inline-flex absolute right-3 top-1/2 -translate-y-1/2 text-[0.6875rem] text-[var(--fg-subtle)] bg-[var(--bg-muted)] border border-[var(--border)] rounded px-1.5 py-0.5 pointer-events-none">/</kbd>
+  </div>
+  <button type="submit" class="bg-[var(--accent)] text-[var(--bg)] rounded-lg px-5 py-3 font-medium text-sm cursor-pointer hover:bg-[var(--accent-hover)] transition-colors">
+    search
+  </button>
+</form>
+
+<script client>
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+      e.preventDefault()
+      document.getElementById('search-input')?.focus()
+    }
+  })
+</script>
