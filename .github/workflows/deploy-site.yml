@@ -55,12 +55,13 @@ jobs:
 
             sudo git pull origin main
 
-            # Update bun to latest
-            curl -fsSL https://bun.sh/install | sudo bash 2>/dev/null || true
-
             # Clean stale deps and install fresh from repo root
             sudo rm -rf node_modules packages/site/node_modules
-            sudo /root/.bun/bin/bun install
+            sudo /root/.bun/bin/bun install --force
+
+            # Debug: verify stx has renderTemplate
+            echo "stx version: $(cat node_modules/@stacksjs/stx/package.json | grep version)"
+            grep -c "renderTemplate" node_modules/@stacksjs/stx/dist/index.js || echo "renderTemplate NOT found in stx dist"
 
             # Create systemd service if it doesn't exist
             if ! systemctl list-unit-files | grep -q pantry-site; then
