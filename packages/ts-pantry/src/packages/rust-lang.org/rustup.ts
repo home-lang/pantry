@@ -3,7 +3,7 @@
  *
  * @domain `rust-lang.org/rustup`
  * @programs `rustup`, `rustup-init`
- * @version `1.28.2` (5 versions available)
+ * @version `1.29.0` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install rust-lang.org/rustup`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "rustup"
  * console.log(pkg.description) // "The Rust toolchain installer"
  * console.log(pkg.programs)    // ["rustup", "rustup-init"]
- * console.log(pkg.versions[0]) // "1.28.2" (latest)
+ * console.log(pkg.versions[0]) // "1.29.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/rust-lang-org/rustup.md
@@ -70,6 +70,7 @@ export const rustlangorgrustupPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.29.0',
     '1.28.2',
     '1.28.1',
     '1.28.0',
