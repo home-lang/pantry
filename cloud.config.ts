@@ -28,6 +28,8 @@ const config: CloudConfig = {
     main: {
       root: './public',
       domain: 'pantry.dev',
+      bucket: 'pantry-dev-site',
+      installScript: './public/install.sh',
     },
   },
 }
