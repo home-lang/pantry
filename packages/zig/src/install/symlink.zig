@@ -67,7 +67,7 @@ pub fn createBinarySymlinkFromPath(
 
     // Check if symlink already exists from a different package — don't overwrite
     if (symlinkOwnedByDifferentPackage(allocator, symlink_path, bin_path)) {
-        style.print("  ~ Skipped {s} (already provided by another package)\n", .{bin_name});
+        if (!style.isCI()) style.print("  ~ Skipped {s} (already provided by another package)\n", .{bin_name});
         return;
     }
 
@@ -76,11 +76,11 @@ pub fn createBinarySymlinkFromPath(
 
     // Create symlink (cross-platform)
     createSymlinkCrossPlatform(bin_path, symlink_path) catch |err| {
-        style.print("  ✗ Failed to create symlink: {}\n", .{err});
+        if (!style.isCI()) style.print("  ✗ Failed to create symlink: {}\n", .{err});
         return error.SymlinkCreationFailed;
     };
 
-    style.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, bin_path });
+    if (!style.isCI()) style.print("  ✓ Created symlink: {s} -> {s}\n", .{ bin_name, bin_path });
 }
 
 /// Check if an existing symlink points to a different package than the one we're installing.
@@ -170,7 +170,7 @@ pub fn createVersionSymlink(
         return error.SymlinkCreationFailed;
     };
 
-    style.print("  ✓ Version symlink: v{s} -> v{s}\n", .{ major_version, full_version });
+    if (!style.isCI()) style.print("  ✓ Version symlink: v{s} -> v{s}\n", .{ major_version, full_version });
 }
 
 /// Result of discovering binaries - contains bin name and its full path
@@ -341,13 +341,13 @@ pub fn createPackageSymlinks(
     }
 
     if (binaries.len == 0) {
-        style.print("  ! No binaries found in {s}\n", .{package_dir});
+        if (!style.isCI()) style.print("  ! No binaries found in {s}\n", .{package_dir});
         // Even without binaries, still create version symlink for libraries
     } else {
         // Create symlinks for each binary using the discovered paths
         for (binaries) |bin_info| {
             createBinarySymlinkFromPath(allocator, bin_info.name, bin_info.path, install_base) catch |err| {
-                style.print("  ! Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
+                if (!style.isCI()) style.print("  ! Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
     }
@@ -356,7 +356,7 @@ pub fn createPackageSymlinks(
     var parts = std.mem.splitScalar(u8, version, '.');
     if (parts.next()) |major| {
         createVersionSymlink(allocator, package_name, version, major, install_base) catch |err| {
-            style.print("  ! Failed to create version symlink: {}\n", .{err});
+            if (!style.isCI()) style.print("  ! Failed to create version symlink: {}\n", .{err});
         };
     }
 }
@@ -402,7 +402,7 @@ pub fn removePackageSymlinks(
         }
 
         io_helper.deleteFile(symlink_path) catch |err| {
-            style.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });
+            if (!style.isCI()) style.print("  ! Failed to remove symlink {s}: {}\n", .{ bin_info.name, err });
         };
     }
 
@@ -534,7 +534,7 @@ fn createScriptShim(
             @memcpy(chmod_buf[0..unix_shim_path.len], unix_shim_path);
             chmod_buf[unix_shim_path.len] = 0;
             const result = std.c.chmod(&chmod_buf, 0o755);
-            if (result != 0) {
+            if (result != 0 and !style.isCI()) {
                 style.print("Warning: Failed to make {s} executable\n", .{unix_shim_path});
             }
         }

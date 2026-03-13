@@ -347,7 +347,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         // Check if this is a local path dependency
         const is_local_path = std.mem.startsWith(u8, spec.version, "~/") or
@@ -435,7 +436,8 @@ pub const Installer = struct {
         // Atomically check+insert to prevent circular dependency loops (race-free)
         if (!try self.installing_stack.tryPut(install_key)) {
             // Already being installed in the call stack - skip to avoid infinite loop
-            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            const end_ts_ = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, resolved_spec.name),
                 .version = try self.allocator.dupe(u8, resolved_spec.version),
@@ -469,7 +471,8 @@ pub const Installer = struct {
             }
         }
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, resolved_spec.name),
@@ -486,7 +489,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         // Expand ~ to home directory if needed
         var local_path: []const u8 = undefined;
@@ -555,7 +559,7 @@ pub const Installer = struct {
 
             const symlink_module = @import("symlink.zig");
             symlink_module.createSymlinkCrossPlatform(target, modules_bin) catch |err| {
-                style.print("Warning: Failed to create symlink {s} -> {s}: {}\n", .{ modules_bin, target, err });
+                if (!style.isCI()) style.print("Warning: Failed to create symlink {s} -> {s}: {}\n", .{ modules_bin, target, err });
             };
 
             break :blk modules_bin;
@@ -563,7 +567,8 @@ pub const Installer = struct {
             break :blk try self.allocator.dupe(u8, abs_local_path);
         };
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
 
         if (!options.quiet) {
             style.print("  ✓ linked to {s}\n", .{local_path});
@@ -584,7 +589,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         if (spec.repo == null) {
             return error.InvalidGitHubSpec;
@@ -616,7 +622,8 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            const end_ts_ = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -627,14 +634,16 @@ pub const Installer = struct {
         }
 
         if (!options.quiet) {
-            style.print("  → Cloning from GitHub: {s}#{s}\n", .{ repo, spec.version });
+            if (!style.isCI()) style.print("  → Cloning from GitHub: {s}#{s}\n", .{ repo, spec.version });
         }
 
         // Create temp directory for cloning
+        const home_dir = try Paths.home(self.allocator);
+        defer self.allocator.free(home_dir);
         const temp_dir = try std.fmt.allocPrint(
             self.allocator,
             "{s}/.pantry/.tmp/github-{s}-{s}",
-            .{ try Paths.home(self.allocator), spec.name, spec.version },
+            .{ home_dir, spec.name, spec.version },
         );
         defer {
             self.allocator.free(temp_dir);
@@ -653,7 +662,7 @@ pub const Installer = struct {
         var clone_result = try io_helper.childRun(self.allocator, &[_][]const u8{ "git", "clone", "--depth", "1", "--branch", spec.version, clone_url, temp_dir });
 
         // If the branch-specific clone failed, try without branch (use default branch)
-        if (clone_result.term.exited != 0) {
+        if (clone_result.term != .exited or clone_result.term.exited != 0) {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
 
@@ -664,8 +673,8 @@ pub const Installer = struct {
             self.allocator.free(clone_result.stderr);
         }
 
-        if (clone_result.term.exited != 0) {
-            if (!options.quiet) {
+        if (clone_result.term != .exited or clone_result.term.exited != 0) {
+            if (!options.quiet and !style.isCI()) {
                 style.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
             }
             return error.GitCloneFailed;
@@ -696,7 +705,8 @@ pub const Installer = struct {
             try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
         }
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -713,7 +723,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         const git_url_raw = spec.url orelse return error.InvalidGitUrl;
 
@@ -749,7 +760,8 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            const end_ts_ = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -760,7 +772,7 @@ pub const Installer = struct {
         }
 
         if (!options.quiet) {
-            style.print("  → Cloning from git: {s}#{s}\n", .{ git_url, ref });
+            if (!style.isCI()) style.print("  → Cloning from git: {s}#{s}\n", .{ git_url, ref });
         }
 
         // Create temp directory for cloning
@@ -782,7 +794,7 @@ pub const Installer = struct {
         });
 
         // If branch-specific clone failed, try without branch
-        if (clone_result.term.exited != 0) {
+        if (clone_result.term != .exited or clone_result.term.exited != 0) {
             self.allocator.free(clone_result.stdout);
             self.allocator.free(clone_result.stderr);
             clone_result = try io_helper.childRun(self.allocator, &[_][]const u8{
@@ -794,8 +806,8 @@ pub const Installer = struct {
             self.allocator.free(clone_result.stderr);
         }
 
-        if (clone_result.term.exited != 0) {
-            if (!options.quiet) {
+        if (clone_result.term != .exited or clone_result.term.exited != 0) {
+            if (!options.quiet and !style.isCI()) {
                 style.print("  ✗ Failed to clone: {s}\n", .{clone_result.stderr});
             }
             return error.GitCloneFailed;
@@ -819,7 +831,8 @@ pub const Installer = struct {
             try self.createProjectSymlinks(project_root, spec.name, spec.version, install_dir);
         }
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
             .version = try self.allocator.dupe(u8, spec.version),
@@ -835,7 +848,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         const download_url = spec.url orelse return error.NoUrlProvided;
 
@@ -869,7 +883,8 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            const end_ts_ = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -931,7 +946,8 @@ pub const Installer = struct {
             try self.createNpmShims(project_root, spec.name, install_dir);
         }
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
             .version = try self.allocator.dupe(u8, spec.version),
@@ -947,7 +963,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         const tarball_url = spec.url orelse return error.NoTarballUrl;
 
@@ -974,7 +991,8 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            const end_ts_ = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -1073,7 +1091,8 @@ pub const Installer = struct {
             }
         }
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -1263,11 +1282,10 @@ pub const Installer = struct {
         }
 
         // Parallel resolution: use work-stealing thread pool scaled to CPU cores
-        // Cap at 8 threads to prevent thread explosion on high-core CI runners
-        // (each thread can recursively resolve more deps which also spawn threads)
+        // Cap spawned threads at 7 (+ main thread = 8 total) to prevent thread explosion
         const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, @min(collected.items.len, 8));
-        const thread_count = max_threads;
+        const max_spawned = if (cpu_count > 1) cpu_count - 1 else 1; // Reserve 1 for main thread
+        const thread_count = @min(max_spawned, @min(collected.items.len, 7));
 
         var next_idx = std.atomic.Value(usize).init(0);
         var ctx = TransitiveDepThreadCtx{
@@ -1636,7 +1654,8 @@ pub const Installer = struct {
         spec: PackageSpec,
         options: InstallOptions,
     ) !InstallResult {
-        const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const start_ts_ = io_helper.clockGettime();
+        const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
         // Determine install location
         const install_dir = if (options.project_root) |project_root| blk: {
@@ -1663,7 +1682,8 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
-            const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+            const end_ts_ = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
                 .name = try self.allocator.dupe(u8, spec.name),
                 .version = try self.allocator.dupe(u8, spec.version),
@@ -1808,11 +1828,12 @@ pub const Installer = struct {
             // Remove existing symlink if it exists
             io_helper.deleteFile(zig_link) catch {};
             io_helper.symLink(zig_binary, zig_link) catch |err| {
-                style.print("Warning: Failed to create zig symlink: {}\n", .{err});
+                if (!style.isCI()) style.print("Warning: Failed to create zig symlink: {}\n", .{err});
             };
         }
 
-        const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
+        const end_ts_ = io_helper.clockGettime();
+        const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -1860,7 +1881,7 @@ pub const Installer = struct {
             self.data_dir,
         ) catch |err| {
             // Log error but don't fail the install
-            style.print("Warning: Failed to create symlinks: {}\n", .{err});
+            if (!style.isCI()) style.print("Warning: Failed to create symlinks: {}\n", .{err});
         };
 
         return install_path;
@@ -2178,7 +2199,7 @@ pub const Installer = struct {
             // Check if source exists
             io_helper.accessAbsolute(source, .{}) catch |err| {
                 if (err == error.FileNotFound) {
-                    style.print("Warning: Program not found: {s}\n", .{source});
+                    if (!style.isCI()) style.print("Warning: Program not found: {s}\n", .{source});
                     continue;
                 }
                 return err;
@@ -2189,7 +2210,7 @@ pub const Installer = struct {
 
             // Create symlink
             io_helper.symLink(source, link) catch |err| {
-                style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+                if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
 
@@ -2267,7 +2288,7 @@ pub const Installer = struct {
                         // Check if source exists
                         io_helper.accessAbsolute(source, .{}) catch |err| {
                             if (err == error.FileNotFound) {
-                                style.print("Warning: Bin not found: {s}\n", .{source});
+                                if (!style.isCI()) style.print("Warning: Bin not found: {s}\n", .{source});
                                 continue;
                             }
                             return err;
@@ -2278,7 +2299,7 @@ pub const Installer = struct {
 
                         // Create symlink
                         io_helper.symLink(source, link) catch |err| {
-                            style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
+                            if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_name, err });
                             continue;
                         };
 
@@ -2321,7 +2342,7 @@ pub const Installer = struct {
 
             // Create symlink using absolute paths
             io_helper.symLink(bin_info.path, link) catch |err| {
-                style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
+                if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ bin_info.name, err });
             };
         }
 
@@ -2600,7 +2621,7 @@ pub const Installer = struct {
             // Check if source exists
             io_helper.accessAbsolute(source, .{}) catch |err| {
                 if (err == error.FileNotFound) {
-                    style.print("Warning: Program not found: {s}\n", .{source});
+                    if (!style.isCI()) style.print("Warning: Program not found: {s}\n", .{source});
                     continue;
                 }
                 return err;
@@ -2611,7 +2632,7 @@ pub const Installer = struct {
 
             // Create symlink
             io_helper.symLink(source, link) catch |err| {
-                style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
+                if (!style.isCI()) style.print("Warning: Failed to create symlink for {s}: {}\n", .{ program, err });
             };
         }
     }
@@ -2831,7 +2852,7 @@ pub const Installer = struct {
         path_buf[path.len] = 0;
         const result = std.c.chmod(&path_buf, 0o755);
         if (result != 0) {
-            style.print("Warning: chmod +x failed for {s}\n", .{path});
+            if (!style.isCI()) style.print("Warning: chmod +x failed for {s}\n", .{path});
         }
     }
 
@@ -2873,7 +2894,7 @@ pub const Installer = struct {
 
                 // Install the actual dependency
                 self.installDependency(actual_dep, options) catch |err| {
-                    style.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
+                    if (!style.isCI()) style.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
                     if (!is_optional and !has_critical_failure) {
                         has_critical_failure = true;
                         first_error = err;
@@ -2882,7 +2903,7 @@ pub const Installer = struct {
             } else {
                 // Regular dependency
                 self.installDependency(dep_str, options) catch |err| {
-                    style.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
+                    if (!style.isCI()) style.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
                     if (!is_optional and !has_critical_failure) {
                         has_critical_failure = true;
                         first_error = err;
@@ -2952,7 +2973,7 @@ pub const Installer = struct {
 
         // Resolve version
         const resolved_version = semver.resolveVersion(domain, version) orelse {
-            style.print("  ! Could not resolve version for {s}{s}\n", .{ name, version });
+            if (!style.isCI()) style.print("  ! Could not resolve version for {s}{s}\n", .{ name, version });
             return error.VersionNotFound;
         };
 
@@ -2968,11 +2989,11 @@ pub const Installer = struct {
                 .version = resolved_version,
             };
 
-            style.print("    → Installing dependency: {s}@{s}\n", .{ name, resolved_version });
+            if (!style.isCI()) style.print("    → Installing dependency: {s}@{s}\n", .{ name, resolved_version });
 
             // Install the dependency (this will recursively install its dependencies)
             const result = self.install(spec, options) catch |e| {
-                style.print("  ! Failed to install dependency: {}\n", .{e});
+                if (!style.isCI()) style.print("  ! Failed to install dependency: {}\n", .{e});
                 return e;
             };
             var mut_result = result;
@@ -2982,7 +3003,7 @@ pub const Installer = struct {
         check_dir.close(io_helper.io);
 
         // Already installed, skip
-        style.print("    ✓ Dependency already installed: {s}@{s}\n", .{ name, resolved_version });
+        if (!style.isCI()) style.print("    ✓ Dependency already installed: {s}@{s}\n", .{ name, resolved_version });
     }
 };
 
