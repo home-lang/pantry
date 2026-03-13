@@ -1,3 +1,112 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.10...v0.8.11)
+
+### 🚀 Features
+
+- update cloud.config.ts with full infrastructure config ([18b5619](https://github.com/home-lang/pantry/commit/18b5619)) _(by Chris <chrisbreuer93@gmail.com>)_
+- rewrite pantry.dev UI with crosswind + deploy workflow ([855d3ed](https://github.com/home-lang/pantry/commit/855d3ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- use git fetch + reset on EC2 to handle rebased commits ([7c89e03](https://github.com/home-lang/pantry/commit/7c89e03)) _(by Chris <chrisbreuer93@gmail.com>)_
+- show registry-only packages + speed up deploys ([8648a18](https://github.com/home-lang/pantry/commit/8648a18)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify deployment via SSH since port 3001 not publicly exposed ([bbe4f3e](https://github.com/home-lang/pantry/commit/bbe4f3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- skip bun install for stx clone (ts-cloud dep not on npm) ([72cd281](https://github.com/home-lang/pantry/commit/72cd281)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch stx from source (renderTemplate not in npm 0.2.6) ([d1f5684](https://github.com/home-lang/pantry/commit/d1f5684)) _(by Chris <chrisbreuer93@gmail.com>)_
+- force reinstall deps and add stx debug output ([28bef30](https://github.com/home-lang/pantry/commit/28bef30)) _(by Chris <chrisbreuer93@gmail.com>)_
+- clean node_modules and upgrade bun on EC2 before deploy ([cbd2a3a](https://github.com/home-lang/pantry/commit/cbd2a3a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install deps from repo root and update bun on EC2 ([368920b](https://github.com/home-lang/pantry/commit/368920b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use sudo for zero-downtime health check on EC2 ([83ce5a1](https://github.com/home-lang/pantry/commit/83ce5a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use bunx cloud for deployment, zero-downtime restarts ([1782fca](https://github.com/home-lang/pantry/commit/1782fca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- import CloudConfig from @ts-cloud/core and exclude .cache from typecheck ([2024ad8](https://github.com/home-lang/pantry/commit/2024ad8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ts-cloud import and bump to @stacksjs/ts-cloud@0.2.2 ([0791625](https://github.com/home-lang/pantry/commit/0791625)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve CI failures in style.zig format, zig-config hash, and cloud config typecheck ([25759e1](https://github.com/home-lang/pantry/commit/25759e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.11 ([26335ae](https://github.com/home-lang/pantry/commit/26335ae)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([b305fd6](https://github.com/home-lang/pantry/commit/b305fd6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update nak, LLaMA.cpp, shaka-packager, vale ([83a4cd6](https://github.com/home-lang/pantry/commit/83a4cd6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([0cec2f0](https://github.com/home-lang/pantry/commit/0cec2f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9a8aad1](https://github.com/home-lang/pantry/commit/9a8aad1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ruff, ruff, glib, firebase, opencode.ai ([4102f78](https://github.com/home-lang/pantry/commit/4102f78)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([303a9c3](https://github.com/home-lang/pantry/commit/303a9c3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oc ([e263c85](https://github.com/home-lang/pantry/commit/e263c85)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, vim ([52c16b0](https://github.com/home-lang/pantry/commit/52c16b0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([0d6af3e](https://github.com/home-lang/pantry/commit/0d6af3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update aws-sdk-cpp, stripe ([0992e27](https://github.com/home-lang/pantry/commit/0992e27)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ducker, erlang, systemd ([8eae303](https://github.com/home-lang/pantry/commit/8eae303)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, erlang, skaffold, vim ([9431e17](https://github.com/home-lang/pantry/commit/9431e17)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update erlang, pwsh, vim ([3c4ef77](https://github.com/home-lang/pantry/commit/3c4ef77)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, depot, dotnet, LLaMA.cpp, pwsh ([51cdc23](https://github.com/home-lang/pantry/commit/51cdc23)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp ([1da3887](https://github.com/home-lang/pantry/commit/1da3887)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update linux-headers, pulumi, rustup, vim ([6b399a2](https://github.com/home-lang/pantry/commit/6b399a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([b09585c](https://github.com/home-lang/pantry/commit/b09585c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery, databricks, depot, flux and 6 other deps ([b23753d](https://github.com/home-lang/pantry/commit/b23753d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update swagger-codegen, vite ([fd13551](https://github.com/home-lang/pantry/commit/fd13551)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add proper claude code guidelines ([8943446](https://github.com/home-lang/pantry/commit/8943446)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update talhelper, bytebase, gh, depot and 8 other deps ([dcbd6b2](https://github.com/home-lang/pantry/commit/dcbd6b2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([72d73c0](https://github.com/home-lang/pantry/commit/72d73c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- improve error response ([84cd1ac](https://github.com/home-lang/pantry/commit/84cd1ac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.10...HEAD)
+
+### 🚀 Features
+
+- update cloud.config.ts with full infrastructure config ([18b5619](https://github.com/home-lang/pantry/commit/18b5619)) _(by Chris <chrisbreuer93@gmail.com>)_
+- rewrite pantry.dev UI with crosswind + deploy workflow ([855d3ed](https://github.com/home-lang/pantry/commit/855d3ed)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- use git fetch + reset on EC2 to handle rebased commits ([7c89e03](https://github.com/home-lang/pantry/commit/7c89e03)) _(by Chris <chrisbreuer93@gmail.com>)_
+- show registry-only packages + speed up deploys ([8648a18](https://github.com/home-lang/pantry/commit/8648a18)) _(by Chris <chrisbreuer93@gmail.com>)_
+- verify deployment via SSH since port 3001 not publicly exposed ([bbe4f3e](https://github.com/home-lang/pantry/commit/bbe4f3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- skip bun install for stx clone (ts-cloud dep not on npm) ([72cd281](https://github.com/home-lang/pantry/commit/72cd281)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch stx from source (renderTemplate not in npm 0.2.6) ([d1f5684](https://github.com/home-lang/pantry/commit/d1f5684)) _(by Chris <chrisbreuer93@gmail.com>)_
+- force reinstall deps and add stx debug output ([28bef30](https://github.com/home-lang/pantry/commit/28bef30)) _(by Chris <chrisbreuer93@gmail.com>)_
+- clean node_modules and upgrade bun on EC2 before deploy ([cbd2a3a](https://github.com/home-lang/pantry/commit/cbd2a3a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install deps from repo root and update bun on EC2 ([368920b](https://github.com/home-lang/pantry/commit/368920b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use sudo for zero-downtime health check on EC2 ([83ce5a1](https://github.com/home-lang/pantry/commit/83ce5a1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use bunx cloud for deployment, zero-downtime restarts ([1782fca](https://github.com/home-lang/pantry/commit/1782fca)) _(by Chris <chrisbreuer93@gmail.com>)_
+- import CloudConfig from @ts-cloud/core and exclude .cache from typecheck ([2024ad8](https://github.com/home-lang/pantry/commit/2024ad8)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update ts-cloud import and bump to @stacksjs/ts-cloud@0.2.2 ([0791625](https://github.com/home-lang/pantry/commit/0791625)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- resolve CI failures in style.zig format, zig-config hash, and cloud config typecheck ([25759e1](https://github.com/home-lang/pantry/commit/25759e1)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### 🧹 Chores
+
+- wip ([b305fd6](https://github.com/home-lang/pantry/commit/b305fd6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update nak, LLaMA.cpp, shaka-packager, vale ([83a4cd6](https://github.com/home-lang/pantry/commit/83a4cd6)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([0cec2f0](https://github.com/home-lang/pantry/commit/0cec2f0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([9a8aad1](https://github.com/home-lang/pantry/commit/9a8aad1)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update ruff, ruff, glib, firebase, opencode.ai ([4102f78](https://github.com/home-lang/pantry/commit/4102f78)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([303a9c3](https://github.com/home-lang/pantry/commit/303a9c3)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update oc ([e263c85](https://github.com/home-lang/pantry/commit/e263c85)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update browser-use, vim ([52c16b0](https://github.com/home-lang/pantry/commit/52c16b0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- wip ([0d6af3e](https://github.com/home-lang/pantry/commit/0d6af3e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update aws-sdk-cpp, stripe ([0992e27](https://github.com/home-lang/pantry/commit/0992e27)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update ducker, erlang, systemd ([8eae303](https://github.com/home-lang/pantry/commit/8eae303)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update aws/cli, erlang, skaffold, vim ([9431e17](https://github.com/home-lang/pantry/commit/9431e17)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update erlang, pwsh, vim ([3c4ef77](https://github.com/home-lang/pantry/commit/3c4ef77)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update crush, depot, dotnet, LLaMA.cpp, pwsh ([51cdc23](https://github.com/home-lang/pantry/commit/51cdc23)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update casdoor, LLaMA.cpp ([1da3887](https://github.com/home-lang/pantry/commit/1da3887)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update linux-headers, pulumi, rustup, vim ([6b399a2](https://github.com/home-lang/pantry/commit/6b399a2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([b09585c](https://github.com/home-lang/pantry/commit/b09585c)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update cnquery, databricks, depot, flux and 6 other deps ([b23753d](https://github.com/home-lang/pantry/commit/b23753d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update swagger-codegen, vite ([fd13551](https://github.com/home-lang/pantry/commit/fd13551)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- add proper claude code guidelines ([8943446](https://github.com/home-lang/pantry/commit/8943446)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+- update talhelper, bytebase, gh, depot and 8 other deps ([dcbd6b2](https://github.com/home-lang/pantry/commit/dcbd6b2)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([72d73c0](https://github.com/home-lang/pantry/commit/72d73c0)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- improve error response ([84cd1ac](https://github.com/home-lang/pantry/commit/84cd1ac)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.9...v0.8.10)
 
 ### 🐛 Bug Fixes
