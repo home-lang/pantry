@@ -26,21 +26,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 5 versions</summary>
+<summary>Show all 6 versions</summary>
 
-- `3.6.0`
+- `3.6.1`, `3.6.0`
 - `3.5.0`
 - `3.4.2`, `3.4.1`, `3.4.0`
 
 </details>
 
-**Latest Version**: `3.6.0`
+**Latest Version**: `3.6.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/shaka-project/shaka-packager@3.6.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/shaka-project/shaka-packager@3.6.1 -- $SHELL -i
 ```
 
 ## Dependencies
