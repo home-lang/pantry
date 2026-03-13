@@ -29,6 +29,8 @@ pub const InstallOptions = struct {
     quiet: bool = false,
     /// Inline progress options for parallel installation display
     inline_progress: ?downloader.InlineProgressOptions = null,
+    /// Skip transitive dependency resolution (caller handles it)
+    skip_transitive_resolution: bool = false,
 };
 
 /// Installation result
@@ -227,6 +229,60 @@ pub const Installer = struct {
     custom_registry_url: ?[]const u8 = null,
     /// Install directory name (default: "pantry", configurable via pantry.toml)
     modules_dir: []const u8 = "pantry",
+    /// In-memory cache of hoisted packages: name → installed version (avoids repeated filesystem checks)
+    hoisted_versions: *HoisteVersionCache,
+
+    /// Thread-safe cache tracking which packages are installed at the hoisted level.
+    /// Eliminates redundant filesystem checks when the same transitive dep is encountered
+    /// dozens of times in a dependency tree.
+    const HoisteVersionCache = struct {
+        map: std.StringHashMap([]const u8),
+        mutex: io_helper.Mutex,
+        alloc: std.mem.Allocator,
+
+        fn init(allocator: std.mem.Allocator) HoisteVersionCache {
+            return .{
+                .map = std.StringHashMap([]const u8).init(allocator),
+                .mutex = .{},
+                .alloc = allocator,
+            };
+        }
+
+        fn deinit(self: *HoisteVersionCache) void {
+            var it = self.map.iterator();
+            while (it.next()) |entry| {
+                self.alloc.free(entry.key_ptr.*);
+                self.alloc.free(entry.value_ptr.*);
+            }
+            self.map.deinit();
+        }
+
+        /// Check if a package is already hoisted with a version satisfying the constraint.
+        fn checkSatisfies(self: *HoisteVersionCache, name: []const u8, version_constraint: []const u8) bool {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            const installed_version = self.map.get(name) orelse return false;
+            const npm_zig = @import("../registry/npm.zig");
+            const constraint = npm_zig.SemverConstraint.parse(version_constraint) catch return true;
+            return constraint.satisfies(installed_version);
+        }
+
+        /// Record a package as installed at the hoisted level.
+        fn put(self: *HoisteVersionCache, name: []const u8, version: []const u8) void {
+            self.mutex.lock();
+            defer self.mutex.unlock();
+            if (self.map.contains(name)) return; // First version wins (hoisted)
+            const owned_name = self.alloc.dupe(u8, name) catch return;
+            const owned_version = self.alloc.dupe(u8, version) catch {
+                self.alloc.free(owned_name);
+                return;
+            };
+            self.map.put(owned_name, owned_version) catch {
+                self.alloc.free(owned_name);
+                self.alloc.free(owned_version);
+            };
+        }
+    };
 
     pub fn init(allocator: std.mem.Allocator, pkg_cache: *PackageCache) !Installer {
         const data_dir = try Paths.data(allocator);
@@ -238,12 +294,16 @@ pub const Installer = struct {
         const npm_cache = try allocator.create(NpmCache);
         npm_cache.* = NpmCache.init(allocator);
 
+        const hoisted_versions = try allocator.create(HoisteVersionCache);
+        hoisted_versions.* = HoisteVersionCache.init(allocator);
+
         return .{
             .cache = pkg_cache,
             .data_dir = data_dir,
             .allocator = allocator,
             .installing_stack = installing_stack,
             .npm_cache = npm_cache,
+            .hoisted_versions = hoisted_versions,
         };
     }
 
@@ -260,6 +320,8 @@ pub const Installer = struct {
         self.allocator.destroy(self.installing_stack);
         self.npm_cache.deinit();
         self.allocator.destroy(self.npm_cache);
+        self.hoisted_versions.deinit();
+        self.allocator.destroy(self.hoisted_versions);
     }
 
     /// Install a package
@@ -959,11 +1021,19 @@ pub const Installer = struct {
             try self.createNpmShims(project_root, spec.name, install_dir);
         }
 
+        // Record in hoisted cache so future encounters skip filesystem checks
+        if (options.project_root != null) {
+            self.hoisted_versions.put(spec.name, spec.version);
+        }
+
         // Resolve transitive dependencies (dependencies + peerDependencies)
-        if (options.project_root) |project_root| {
-            self.resolveTransitiveDeps(install_dir, project_root, 0) catch |err| {
-                style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ spec.name, err });
-            };
+        // Skip if the caller will handle transitive resolution (e.g. installTransitiveDepInner)
+        if (!options.skip_transitive_resolution) {
+            if (options.project_root) |project_root| {
+                self.resolveTransitiveDeps(install_dir, project_root, 0) catch |err| {
+                    style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ spec.name, err });
+                };
+            }
         }
 
         const end_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
@@ -987,8 +1057,52 @@ pub const Installer = struct {
         integrity: ?[]const u8 = null, // sha512-... or shasum
     };
 
+    /// Collected dependency entry for batch processing.
+    const CollectedDep = struct {
+        name: []const u8, // owned (allocator.dupe)
+        version: []const u8, // owned (allocator.dupe)
+        is_optional: bool,
+    };
+
+    /// Thread context for parallel transitive dependency resolution.
+    const TransitiveDepThreadCtx = struct {
+        installer: *Installer,
+        deps: []const CollectedDep,
+        project_root: []const u8,
+        parent_dir: []const u8,
+        depth: u32,
+        next: *std.atomic.Value(usize),
+
+        fn worker(ctx: *TransitiveDepThreadCtx) void {
+            while (true) {
+                const i = ctx.next.fetchAdd(1, .monotonic);
+                if (i >= ctx.deps.len) break;
+
+                const dep = ctx.deps[i];
+                if (dep.is_optional) {
+                    ctx.installer.installOptionalTransitiveDep(
+                        dep.name,
+                        dep.version,
+                        ctx.project_root,
+                        ctx.parent_dir,
+                        ctx.depth,
+                    );
+                } else {
+                    ctx.installer.installTransitiveDep(
+                        dep.name,
+                        dep.version,
+                        ctx.project_root,
+                        ctx.parent_dir,
+                        ctx.depth,
+                    );
+                }
+            }
+        }
+    };
+
     /// Read an installed package's package.json and install its dependencies + peerDependencies.
     /// Skips devDependencies (standard npm behavior for transitive packages).
+    /// Uses parallel resolution when there are multiple deps to install.
     fn resolveTransitiveDeps(
         self: *Installer,
         package_dir: []const u8,
@@ -1024,6 +1138,16 @@ pub const Installer = struct {
         // Read peerDependenciesMeta for optional peer detection
         const peer_meta = parsed.value.object.get("peerDependenciesMeta");
 
+        // Collect all deps first, then install in parallel
+        var collected: std.ArrayList(CollectedDep) = .empty;
+        defer {
+            for (collected.items) |dep| {
+                self.allocator.free(@constCast(dep.name));
+                self.allocator.free(@constCast(dep.version));
+            }
+            collected.deinit(self.allocator);
+        }
+
         for (sections) |section_key| {
             const deps_val = parsed.value.object.get(section_key) orelse continue;
             if (deps_val != .object) continue;
@@ -1035,12 +1159,33 @@ pub const Installer = struct {
                 const dep_name = entry.key_ptr.*;
                 const dep_version_val = entry.value_ptr.*;
 
-                const dep_version = if (dep_version_val == .string) dep_version_val.string else "latest";
+                var dep_version: []const u8 = if (dep_version_val == .string) dep_version_val.string else "latest";
 
                 // Skip workspace references (monorepo internal deps)
                 if (std.mem.startsWith(u8, dep_version, "workspace:")) continue;
 
-                // Check peerDependenciesMeta for optional peers
+                // Handle npm aliases: "npm:actual-package@^1.0.0" → resolve actual name + constraint
+                var actual_name: []const u8 = dep_name;
+                if (std.mem.startsWith(u8, dep_version, "npm:")) {
+                    const alias_spec = dep_version[4..]; // strip "npm:"
+                    // Find last '@' to split name@version (handle scoped packages like @scope/pkg@^1.0)
+                    if (std.mem.lastIndexOf(u8, alias_spec, "@")) |at_idx| {
+                        if (at_idx > 0) {
+                            actual_name = alias_spec[0..at_idx];
+                            dep_version = alias_spec[at_idx + 1 ..];
+                        }
+                    } else {
+                        // No version in alias, just a package name
+                        actual_name = alias_spec;
+                        dep_version = "latest";
+                    }
+                }
+
+                // Fast path: check in-memory hoisted cache before any I/O
+                if (self.hoisted_versions.checkSatisfies(actual_name, dep_version)) continue;
+
+                // Determine if this is an optional peer dependency
+                var is_optional = false;
                 if (is_peer_section) {
                     if (peer_meta) |meta| {
                         if (meta == .object) {
@@ -1048,9 +1193,7 @@ pub const Installer = struct {
                                 if (dep_meta == .object) {
                                     if (dep_meta.object.get("optional")) |opt_val| {
                                         if (opt_val == .bool and opt_val.bool) {
-                                            // Optional peer — install if possible, don't warn on failure
-                                            self.installOptionalTransitiveDep(dep_name, dep_version, project_root, package_dir, depth + 1);
-                                            continue;
+                                            is_optional = true;
                                         }
                                     }
                                 }
@@ -1059,7 +1202,70 @@ pub const Installer = struct {
                     }
                 }
 
-                self.installTransitiveDep(dep_name, dep_version, project_root, package_dir, depth + 1);
+                collected.append(self.allocator, .{
+                    .name = self.allocator.dupe(u8, actual_name) catch continue,
+                    .version = self.allocator.dupe(u8, dep_version) catch continue,
+                    .is_optional = is_optional,
+                }) catch continue;
+            }
+        }
+
+        if (collected.items.len == 0) return;
+
+        // For small dep lists or deep recursion, install serially (thread overhead not worth it)
+        if (collected.items.len <= 3 or depth >= 3) {
+            for (collected.items) |dep| {
+                if (dep.is_optional) {
+                    self.installOptionalTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
+                } else {
+                    self.installTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
+                }
+            }
+            return;
+        }
+
+        // Parallel resolution: use work-stealing thread pool scaled to CPU cores
+        const cpu_count = std.Thread.getCpuCount() catch 4;
+        const max_threads = @min(cpu_count, @min(collected.items.len, 32));
+        const thread_count = max_threads;
+
+        var next_idx = std.atomic.Value(usize).init(0);
+        var ctx = TransitiveDepThreadCtx{
+            .installer = self,
+            .deps = collected.items,
+            .project_root = project_root,
+            .parent_dir = package_dir,
+            .depth = depth + 1,
+            .next = &next_idx,
+        };
+
+        var threads = self.allocator.alloc(?std.Thread, thread_count) catch {
+            // Fallback to serial if thread alloc fails
+            for (collected.items) |dep| {
+                if (dep.is_optional) {
+                    self.installOptionalTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
+                } else {
+                    self.installTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
+                }
+            }
+            return;
+        };
+        defer self.allocator.free(threads);
+        for (threads) |*t| t.* = null;
+
+        // Spawn worker threads (main thread also participates)
+        for (0..thread_count) |t| {
+            threads[t] = std.Thread.spawn(.{}, TransitiveDepThreadCtx.worker, .{&ctx}) catch null;
+        }
+
+        // Main thread participates as worker too
+        ctx.worker();
+
+        // Join all threads
+        for (threads) |*t| {
+            if (t.*) |thread| {
+                thread.join();
+                t.* = null;
             }
         }
     }
@@ -1103,6 +1309,9 @@ pub const Installer = struct {
         parent_package_dir: []const u8,
         depth: u32,
     ) !void {
+        // 0. Fast path: check in-memory hoisted cache (no filesystem I/O needed)
+        if (self.hoisted_versions.checkSatisfies(name, version_constraint)) return;
+
         // 1. Check if already installed at hoisted location (use stack buffer for path check)
         var exist_buf: [std.fs.max_path_bytes]u8 = undefined;
         const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/{s}/{s}", .{ project_root, self.modules_dir, name }) catch
@@ -1136,7 +1345,11 @@ pub const Installer = struct {
 
             const npm_zig = @import("../registry/npm.zig");
             const constraint = npm_zig.SemverConstraint.parse(version_constraint) catch return;
-            if (constraint.satisfies(ver_val.string)) return; // Existing version satisfies → skip
+            if (constraint.satisfies(ver_val.string)) {
+                // Cache this result so future lookups skip filesystem entirely
+                self.hoisted_versions.put(name, ver_val.string);
+                return;
+            }
 
             // Version conflict: install nested under the parent package instead
             install_root = parent_package_dir;
@@ -1149,37 +1362,9 @@ pub const Installer = struct {
         if (!try self.installing_stack.tryPut(install_key)) return;
         defer self.installing_stack.remove(install_key);
 
-        // 3. Try Pantry DynamoDB registry first
-        const helpers_mod = @import("../cli/commands/install/helpers.zig");
-        if (helpers_mod.lookupPantryRegistry(self.allocator, name) catch null) |info| {
-            var pantry_info = info;
-            defer pantry_info.deinit(self.allocator);
-
-            style.print("    + {s}@{s}\n", .{ name, pantry_info.version });
-
-            const spec = PackageSpec{
-                .name = name,
-                .version = try self.allocator.dupe(u8, pantry_info.version),
-                .source = .npm,
-                .url = try self.allocator.dupe(u8, pantry_info.tarball_url),
-            };
-            defer self.allocator.free(spec.version);
-            defer self.allocator.free(spec.url.?);
-
-            var result = try self.installFromNpm(spec, .{
-                .project_root = install_root,
-                .quiet = true,
-            });
-
-            // Recurse into this dep's deps
-            self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {
-                style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
-            };
-            result.deinit(self.allocator);
-            return;
-        }
-
-        // 4. Fall back to npm registry
+        // 3. Resolve via npm registry directly
+        // (Skip Pantry DynamoDB/S3 lookup for transitive deps — spawning `aws` CLI subprocess
+        //  per dep is extremely slow and npm packages are never in Pantry's registry anyway)
         const npm_info = try self.resolveNpmPackage(name, version_constraint);
         defer self.allocator.free(npm_info.version);
         defer self.allocator.free(npm_info.tarball_url);
@@ -1196,6 +1381,7 @@ pub const Installer = struct {
         var result = try self.installFromNpm(spec, .{
             .project_root = install_root,
             .quiet = true,
+            .skip_transitive_resolution = true, // We handle recursion here
         });
 
         // Recurse into this dep's deps
@@ -1233,13 +1419,26 @@ pub const Installer = struct {
             const npm_url = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ registry_base, name });
             defer self.allocator.free(npm_url);
 
-            const response_body = io_helper.httpGet(self.allocator, npm_url) catch
-                return error.NpmRegistryUnavailable;
+            // Retry up to 3 times with brief backoff for transient failures
+            var response_body: ?[]const u8 = null;
+            var attempt: u32 = 0;
+            while (attempt < 3) : (attempt += 1) {
+                response_body = io_helper.httpGet(self.allocator, npm_url) catch {
+                    if (attempt < 2) {
+                        // Brief backoff: 100ms, 300ms
+                        io_helper.nanosleep(0, (attempt + 1) * 100 * std.time.ns_per_ms);
+                        continue;
+                    }
+                    return error.NpmRegistryUnavailable;
+                };
+                break;
+            }
+            const body = response_body orelse return error.NpmRegistryUnavailable;
 
             // Store in L1 cache for other threads/constraints (cache takes ownership via dupe)
-            self.npm_cache.putRegistryJson(name, response_body);
+            self.npm_cache.putRegistryJson(name, body);
 
-            break :blk response_body;
+            break :blk body;
         };
         defer self.allocator.free(npm_response);
 
