@@ -299,6 +299,18 @@ pub fn findDepsAndWorkspaceFile(allocator: std.mem.Allocator, start_dir: []const
     return result;
 }
 
+/// Resolve the effective project root for a given directory.
+/// In a workspace, returns the workspace root (packages are hoisted there, like Bun).
+/// Otherwise, returns a dupe of `cwd`. Caller must free the result.
+pub fn resolveProjectRoot(allocator: std.mem.Allocator, cwd: []const u8) ![]const u8 {
+    const ws_file = findWorkspaceFile(allocator, cwd) catch null;
+    if (ws_file) |ws| {
+        defer allocator.free(ws.path);
+        return ws.root_dir; // Already allocated
+    }
+    return try allocator.dupe(u8, cwd);
+}
+
 test "findDepsFile" {
     const allocator = std.testing.allocator;
 

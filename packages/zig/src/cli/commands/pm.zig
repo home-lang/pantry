@@ -38,13 +38,17 @@ pub fn binCommand(allocator: std.mem.Allocator, global: bool) !CommandResult {
         return CommandResult.success(allocator, null);
     }
 
-    // Local bin: <cwd>/node_modules/.bin or <cwd>/pantry/.bin
+    // Local bin: <root>/node_modules/.bin or <root>/pantry/.bin
+    // In a workspace, the root is the workspace root (packages are hoisted there)
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
+    const effective_root = try @import("../../deps/detector.zig").resolveProjectRoot(allocator, cwd);
+    defer allocator.free(effective_root);
+
     const dirs = [_][]const u8{ "node_modules/.bin", "pantry/.bin" };
     for (dirs) |dir| {
-        const bin_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dir });
+        const bin_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ effective_root, dir });
         defer allocator.free(bin_path);
 
         io_helper.cwd().access(io_helper.io, bin_path, .{}) catch continue;
@@ -53,7 +57,7 @@ pub fn binCommand(allocator: std.mem.Allocator, global: bool) !CommandResult {
     }
 
     // Default to node_modules/.bin even if it doesn't exist yet
-    const default_path = try std.fmt.allocPrint(allocator, "{s}/node_modules/.bin", .{cwd});
+    const default_path = try std.fmt.allocPrint(allocator, "{s}/node_modules/.bin", .{effective_root});
     style.print("{s}\n", .{default_path});
     allocator.free(default_path);
     return CommandResult.success(allocator, null);

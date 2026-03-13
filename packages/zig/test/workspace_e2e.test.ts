@@ -475,7 +475,7 @@ describe('Workspace install - CLI E2E', () => {
     }
   })
 
-  it('creates per-member pantry symlinks to root', () => {
+  it('does NOT create per-member pantry dirs (hoisted like Bun)', () => {
     if (!pantryAvailable) return
 
     createBasicWorkspace(dir, {
@@ -487,18 +487,16 @@ describe('Workspace install - CLI E2E', () => {
 
     runPantry(['install'], dir)
 
-    const rootPantry = join(dir, 'pantry')
-
-    // After fix: each member should have a pantry/ symlink pointing to root pantry/
+    // Packages should be hoisted to root pantry/ — no per-member pantry/ dirs.
+    // This matches Bun's behavior: everything hoisted to root node_modules/.
     for (const memberPath of ['packages/app', 'packages/lib']) {
       const memberPantry = join(dir, memberPath, 'pantry')
-      if (existsSync(memberPantry)) {
-        if (isSymlink(memberPantry)) {
-          // Good — it's a symlink. Verify it points to root
-          const target = readlinkSync(memberPantry)
-          expect(target).toBe(rootPantry)
-        }
-        // If it's a real directory, the fix hasn't been applied yet
+      if (existsSync(memberPantry) && !isSymlink(memberPantry)) {
+        // A real directory means packages were installed to the wrong place
+        const contents = listDir(memberPantry)
+        // .bin is OK (might be stale), but actual packages mean the bug is present
+        const hasPackages = contents.some(f => f !== '.bin')
+        expect(hasPackages).toBe(false)
       }
     }
   })

@@ -35,6 +35,10 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
+    // Resolve workspace root — packages are hoisted there
+    const effective_root = try detector.resolveProjectRoot(allocator, cwd);
+    defer allocator.free(effective_root);
+
     // Find dependency file
     const deps_file = (try detector.findDepsFile(allocator, cwd)) orelse {
         return CommandResult.err(allocator, "No dependency file found");
@@ -55,7 +59,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     for (deps) |dep| {
         if (std.mem.eql(u8, dep.name, package_name)) {
             // Get installed version
-            const installed = getPackageVersion(allocator, cwd, dep.name) orelse dep.version;
+            const installed = getPackageVersion(allocator, effective_root, dep.name) orelse dep.version;
             const free_installed = !std.mem.eql(u8, installed, dep.version);
             defer if (free_installed) allocator.free(installed);
 
@@ -95,7 +99,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         var current_path = std.ArrayList(DependencyPath).init(allocator);
 
         // Add the direct dep as the first entry
-        const dep_version = getPackageVersion(allocator, cwd, dep.name) orelse (allocator.dupe(u8, dep.version) catch continue);
+        const dep_version = getPackageVersion(allocator, effective_root, dep.name) orelse (allocator.dupe(u8, dep.version) catch continue);
 
         try current_path.append(.{
             .package = try allocator.dupe(u8, dep.name),
@@ -140,11 +144,18 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     if (paths.items.len == 0) {
-        // Also check if the package simply exists in node_modules (installed but not tracked)
-        const check_path = try std.fmt.allocPrint(allocator, "{s}/node_modules/{s}", .{ cwd, package_name });
-        defer allocator.free(check_path);
+        // Also check if the package simply exists in node_modules/ or pantry/ (installed but not tracked)
+        var found_installed = false;
+        const check_dirs = [_][]const u8{ "node_modules", "pantry" };
+        for (check_dirs) |check_dir| {
+            const check_path = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_root, check_dir, package_name });
+            defer allocator.free(check_path);
+            io_helper.accessAbsolute(check_path, .{}) catch continue;
+            found_installed = true;
+            break;
+        }
 
-        io_helper.accessAbsolute(check_path, .{}) catch {
+        if (!found_installed) {
             const message = try std.fmt.allocPrint(
                 allocator,
                 "Package '{s}' is not installed (directly or transitively)",
@@ -154,11 +165,11 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
                 .exit_code = 1,
                 .message = message,
             };
-        };
+        }
 
         // Package exists but we couldn't trace the path
         style.print("\n{s}📦 {s}{s}\n\n", .{ style.bold, package_name, style.reset });
-        style.print("This package is installed in node_modules but the dependency chain could not be traced.\n", .{});
+        style.print("This package is installed but the dependency chain could not be traced.\n", .{});
         style.print("It may be a transitive dependency installed by your package manager.\n\n", .{});
 
         return CommandResult.success(allocator, null);

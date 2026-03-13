@@ -2251,52 +2251,26 @@ pub const ShellCommands = struct {
     }
 
     fn detectProjectRoot(self: *ShellCommands, pwd: []const u8) !?[]const u8 {
-        // Known dependency files to look for (ordered by priority)
-        const dep_files = [_][]const u8{
-            "config/deps.ts",
-            "pantry.json",
-            "pantry.jsonc",
-            "pantry.yaml",
-            "pantry.yml",
-            "deps.yaml",
-            "deps.yml",
-            "dependencies.yaml",
-            "pkgx.yaml",
-            "package.json",
-            "Cargo.toml",
-            "go.mod",
-            "pyproject.toml",
-            "requirements.txt",
-            "Gemfile",
-            "composer.json",
-        };
+        const detector = @import("../deps/detector.zig");
 
-        var current_dir = try self.allocator.dupe(u8, pwd);
-        defer self.allocator.free(current_dir);
+        // Use the combined detector which finds both deps file and workspace file
+        // in a single directory walk. If we're inside a workspace, the workspace
+        // root takes precedence — packages and .bin are hoisted there (like Bun).
+        const result = try detector.findDepsAndWorkspaceFile(self.allocator, pwd);
 
-        while (true) {
-            // Check for any dependency file
-            for (dep_files) |dep_file| {
-                const file_path = try std.fs.path.join(self.allocator, &[_][]const u8{
-                    current_dir,
-                    dep_file,
-                });
-                defer self.allocator.free(file_path);
+        // Workspace root takes precedence (packages are hoisted there)
+        if (result.workspace_file) |ws| {
+            self.allocator.free(ws.path);
+            // Free deps_file if we also found one
+            if (result.deps_file) |df| self.allocator.free(df.path);
+            return ws.root_dir; // Already allocated
+        }
 
-                io_helper.cwd().access(io_helper.io, file_path, .{}) catch continue;
-
-                // Found a dependency file!
-                return try self.allocator.dupe(u8, current_dir);
-            }
-
-            // Move up directory tree
-            const parent = std.fs.path.dirname(current_dir) orelse break;
-            if (std.mem.eql(u8, parent, current_dir)) break; // Reached root
-
-            // Duplicate parent before freeing current_dir since parent points into current_dir
-            const new_dir = try self.allocator.dupe(u8, parent);
-            self.allocator.free(current_dir);
-            current_dir = new_dir;
+        // No workspace — use the directory containing the deps file
+        if (result.deps_file) |df| {
+            defer self.allocator.free(df.path);
+            const dir = std.fs.path.dirname(df.path) orelse return null;
+            return try self.allocator.dupe(u8, dir);
         }
 
         return null;

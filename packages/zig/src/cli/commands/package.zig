@@ -391,8 +391,12 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
+    // Resolve effective project root — in a workspace, packages are at workspace root
+    const effective_root = try @import("../../deps/detector.zig").resolveProjectRoot(allocator, cwd);
+    defer allocator.free(effective_root);
+
     // Build paths - packages are in pantry/
-    const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{cwd});
+    const pantry_dir = try std.fmt.allocPrint(allocator, "{s}/pantry", .{effective_root});
     defer allocator.free(pantry_dir);
 
     const bin_dir = try std.fmt.allocPrint(allocator, "{s}/.bin", .{pantry_dir});
@@ -401,7 +405,7 @@ pub fn uninstallCommand(allocator: std.mem.Allocator, args: []const []const u8) 
     // Load package registry to map names to domains
     const pkg_registry = @import("../../packages/generated.zig");
 
-    const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{cwd});
+    const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{effective_root});
     defer allocator.free(lockfile_path);
 
     style.print("{s}➤{s} Uninstalling {d} package(s)...\n", .{ style.green, style.reset, args.len });

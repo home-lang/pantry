@@ -118,8 +118,13 @@ pub fn runScriptCommandWithOptions(
     // Load pantry.toml to get modules directory name
     const pantry_config = lib.config.loadPantryToml(allocator, cwd) catch lib.config.PantryConfig{};
 
+    // Determine the effective project root for PATH — in a workspace, packages
+    // are hoisted to the workspace root, so .bin is there, not in the member dir.
+    const effective_root = try @import("../../deps/detector.zig").resolveProjectRoot(allocator, cwd);
+    defer allocator.free(effective_root);
+
     // Set up command wrapper with pantry/.bin in PATH
-    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ cwd, pantry_config.install.modules_dir });
+    const pantry_bin = try std.fmt.allocPrint(allocator, "{s}/{s}/.bin", .{ effective_root, pantry_config.install.modules_dir });
     defer allocator.free(pantry_bin);
 
     // Get current PATH and prepend pantry/.bin

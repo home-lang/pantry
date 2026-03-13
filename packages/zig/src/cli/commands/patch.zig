@@ -44,11 +44,15 @@ fn preparePatch(allocator: std.mem.Allocator, package_spec: []const u8) !Command
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
+    // Resolve workspace root — packages are hoisted there
+    const effective_root = try @import("../../deps/detector.zig").resolveProjectRoot(allocator, cwd);
+    defer allocator.free(effective_root);
+
     // Find the package in node_modules/ or pantry/
     const dirs = [_][]const u8{ "node_modules", "pantry" };
     var source_dir: ?[]const u8 = null;
     for (dirs) |dir| {
-        const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ cwd, dir, package_spec }) catch continue;
+        const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_root, dir, package_spec }) catch continue;
         io_helper.cwd().access(io_helper.io, pkg_dir, .{}) catch {
             allocator.free(pkg_dir);
             continue;
@@ -65,7 +69,7 @@ fn preparePatch(allocator: std.mem.Allocator, package_spec: []const u8) !Command
                 break :blk package_spec[0..pos];
             } else package_spec;
 
-            const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ cwd, dir, clean_name }) catch continue;
+            const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_root, dir, clean_name }) catch continue;
             io_helper.cwd().access(io_helper.io, pkg_dir, .{}) catch {
                 allocator.free(pkg_dir);
                 continue;

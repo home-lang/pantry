@@ -30,12 +30,15 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
         style.print("{s}   Executable: {s}{s}\n\n", .{ style.dim, executable_name, style.reset });
     }
 
-    // Get current working directory
+    // Get current working directory, then resolve workspace root
     var cwd_buf: [std.fs.max_path_bytes]u8 = undefined;
     const cwd = try io_helper.realpath(".", &cwd_buf);
 
-    // Check local bin first
-    const local_bin = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry", ".bin", executable_name });
+    const effective_root = try @import("../../deps/detector.zig").resolveProjectRoot(allocator, cwd);
+    defer allocator.free(effective_root);
+
+    // Check local bin first (at workspace root if in workspace)
+    const local_bin = try std.fs.path.join(allocator, &[_][]const u8{ effective_root, "pantry", ".bin", executable_name });
     defer allocator.free(local_bin);
 
     const found_local = blk: {
