@@ -268,8 +268,46 @@ async function handlePackage(name: string): Promise<Response> {
   return htmlResponse(html)
 }
 
+/** Lazily built set of doc page paths for link rewriting */
+let docsPageCache: Set<string> | null = null
+
+async function getDocsPages(docsDir: string): Promise<Set<string>> {
+  if (docsPageCache) return docsPageCache
+  const pages = new Set<string>(['/'])
+  const { readdir } = await import('node:fs/promises')
+
+  async function scan(dir: string, prefix: string) {
+    try {
+      const entries = await readdir(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.html') && entry.name !== '404.html') {
+          const name = entry.name.replace('.html', '')
+          pages.add(name === 'index' ? prefix || '/' : `${prefix}/${name}`)
+        }
+        else if (entry.isDirectory() && !entry.name.startsWith('.')) {
+          await scan(resolve(dir, entry.name), `${prefix}/${entry.name}`)
+        }
+      }
+    }
+    catch { /* ignore missing dirs */ }
+  }
+
+  await scan(docsDir, '')
+  docsPageCache = pages
+  return pages
+}
+
+function rewriteDocsLinks(html: string, docsPages: Set<string>): string {
+  return html.replace(/href="(\/[^"]*?)"/g, (_match, href) => {
+    if (docsPages.has(href)) {
+      return `href="/docs${href === '/' ? '' : href}"`
+    }
+    return _match
+  })
+}
+
 async function handleDocs(reqPath: string): Promise<Response> {
-  const docsDir = resolve(__dirname, '../../../dist')
+  const docsDir = resolve(__dirname, '../../../dist/.bunpress')
   const subPath = reqPath === '/docs' || reqPath === '/docs/'
     ? '/index.html'
     : reqPath.replace('/docs', '')
@@ -284,8 +322,21 @@ async function handleDocs(reqPath: string): Promise<Response> {
     const file = Bun.file(candidate)
     if (await file.exists()) {
       const ext = candidate.split('.').pop()
+
+      // For HTML files, rewrite internal links to include /docs prefix
+      if (ext === 'html') {
+        const docsPages = await getDocsPages(docsDir)
+        let html = await file.text()
+        html = rewriteDocsLinks(html, docsPages)
+        return new Response(html, {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600',
+          },
+        })
+      }
+
       const contentTypes: Record<string, string> = {
-        html: 'text/html; charset=utf-8',
         css: 'text/css; charset=utf-8',
         js: 'application/javascript; charset=utf-8',
         json: 'application/json',
@@ -308,7 +359,10 @@ async function handleDocs(reqPath: string): Promise<Response> {
   // Fallback to docs index
   const indexFile = Bun.file(resolve(docsDir, 'index.html'))
   if (await indexFile.exists()) {
-    return new Response(indexFile, {
+    const docsPages = await getDocsPages(docsDir)
+    let html = await indexFile.text()
+    html = rewriteDocsLinks(html, docsPages)
+    return new Response(html, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   }
