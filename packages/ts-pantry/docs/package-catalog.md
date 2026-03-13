@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-13T18:08:29.485Z
+- **Last Updated**: 2026-03-13T19:08:43.777Z
 
 ## Table of Contents
 
@@ -444,7 +444,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[htop.dev](./packages/htop.dev/index.md)** () | Improved top (interactive process viewer) | htop | 3.4.1 (+4) | `pkgx htop` |
 | **[rsync.samba.org](./packages/rsync.samba.org/index.md)** () | An open source utility that provides fast incremental file transfer. It also has useful features ... | rsync, rsync-ssl | 3.4.1 (+3) | `pkgx rsync` |
 | **[strace.io](./packages/strace.io/index.md)** () | strace is a diagnostic, debugging and instructional userspace utility for Linux | strace | 6.2.0 (+0) | `pkgx strace` |
-| **[systemd.io](./packages/systemd.io/index.md)** () | The systemd System and Service Manager | busctl, coredumpctl, hostnamectl, ... (+52) | 257.12.0 (+32) | `pkgx systemd` |
+| **[systemd.io](./packages/systemd.io/index.md)** () | The systemd System and Service Manager | busctl, coredumpctl, hostnamectl, ... (+52) | 257.13.0 (+33) | `pkgx systemd` |
 | **[tcpdump.org](./packages/tcpdump.org/index.md)** () | the LIBpcap interface to various kernel packet capture mechanism | pcap-config | 1.10.6 (+2) | `pkgx pcap-config` |
 
 ## Scientific Computing
