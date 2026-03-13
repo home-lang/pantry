@@ -27,9 +27,11 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4595 versions</summary>
+<summary>Show all 4597 versions</summary>
 
 - `8305.0.0`
+- `8303.0.0`
+- `8301.0.0`
 - `8300.0.0`
 - `8299.0.0`
 - `8297.0.0`
