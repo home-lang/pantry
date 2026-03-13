@@ -21,9 +21,11 @@ pub fn createSymlinkCrossPlatform(target_path: []const u8, link_path: []const u8
         // On Unix systems, create actual symlink using io_helper
         io_helper.symLink(target_path, link_path) catch |err| switch (err) {
             error.PathAlreadyExists => {
-                // Delete existing and retry
-                try io_helper.deleteFile(link_path);
-                try io_helper.symLink(target_path, link_path);
+                // Delete existing and retry (race-safe: if delete fails, another thread won)
+                io_helper.deleteFile(link_path) catch {};
+                io_helper.symLink(target_path, link_path) catch {
+                    // Another thread created it — that's fine
+                };
             },
             else => return err,
         };

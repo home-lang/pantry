@@ -35,7 +35,7 @@
 
     <!-- Install hint -->
     <div class="flex items-center justify-center gap-2 mb-12 animate-fade-in-delay-2">
-      <code class="bg-[var(--bg-subtle)] px-3 py-1.5 rounded-md border border-[var(--border)]" style="font-size: 0.8125rem; color: var(--fg-subtle);">curl -fsSL https://get.pantry.dev | sh</code>
+      <code class="bg-[var(--bg-subtle)] px-3 py-1.5 rounded-md border border-[var(--border)]" style="font-size: 0.8125rem; color: var(--fg-subtle);">curl -fsSL https://pantry.dev | sh</code>
     </div>
   </div>
 </section>

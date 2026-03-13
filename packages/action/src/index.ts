@@ -125,6 +125,25 @@ async function downloadAndInstall(version: string, platform: Platform): Promise<
   return extractedDir
 }
 
+async function runWithRetry(cmd: string, args: string[], env: Record<string, string | undefined>, retries = 2): Promise<void> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await exec.exec(cmd, args, { env })
+      return
+    }
+    catch (err) {
+      if (attempt < retries) {
+        const delay = (attempt + 1) * 5000
+        core.warning(`${cmd} ${args.join(' ')} failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay / 1000}s...`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+      else {
+        throw err
+      }
+    }
+  }
+}
+
 export async function run(): Promise<void> {
   try {
     const inputs: ActionInputs = {
@@ -180,26 +199,22 @@ export async function run(): Promise<void> {
     }
 
     // Install packages if specified
+    const installEnv = {
+      ...process.env,
+      PANTRY_VERBOSE: 'true',
+      NO_COLOR: '1',
+    }
+
     if (inputs.packages) {
       core.info(`Installing packages: ${inputs.packages}`)
       const args = ['install', ...inputs.packages.split(/\s+/).filter(Boolean)]
-      await exec.exec('pantry', args, {
-        env: {
-          ...process.env,
-          PANTRY_VERBOSE: 'true',
-        },
-      })
+      await runWithRetry('pantry', args, installEnv)
       core.info('Package installation completed')
     }
     else {
       // Run pantry install to auto-detect from pantry.json/package.json
       core.info('Installing project dependencies using pantry...')
-      await exec.exec('pantry', ['install'], {
-        env: {
-          ...process.env,
-          PANTRY_VERBOSE: 'true',
-        },
-      })
+      await runWithRetry('pantry', ['install'], installEnv)
       core.info('Project dependencies installation completed')
     }
 

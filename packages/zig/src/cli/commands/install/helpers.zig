@@ -512,20 +512,25 @@ pub fn installSinglePackage(
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {
             // Try Pantry S3/DynamoDB registry first, then fall back to npm
+            // Skip Pantry lookup for scoped npm packages (@scope/name) — they're never in Pantry
             // Uses the shared installer's resolveNpmPackage which handles semver ranges,
             // dist-tags, and deduplication via InstallingStack
-            if (lookupPantryRegistry(allocator, lookup_name) catch |err| lkup: {
-                style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, lookup_name, err, style.reset });
-                break :lkup null;
-            }) |info| {
-                var pantry_info = info;
-                defer pantry_info.deinit(allocator);
+            const pantry_info: ?PantryPackageInfo = if (std.mem.startsWith(u8, lookup_name, "@"))
+                null
+            else
+                lookupPantryRegistry(allocator, lookup_name) catch |err| lkup: {
+                    style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, lookup_name, err, style.reset });
+                    break :lkup null;
+                };
+            if (pantry_info) |info| {
+                var p_info = info;
+                defer p_info.deinit(allocator);
 
                 break :blk lib.packages.PackageSpec{
                     .name = lookup_name,
-                    .version = try allocator.dupe(u8, pantry_info.version),
+                    .version = try allocator.dupe(u8, p_info.version),
                     .source = .npm,
-                    .url = try allocator.dupe(u8, pantry_info.tarball_url),
+                    .url = try allocator.dupe(u8, p_info.tarball_url),
                 };
             }
 

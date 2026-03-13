@@ -233,6 +233,9 @@ pub const Installer = struct {
     hoisted_versions: *HoisteVersionCache,
     /// Lockfile for lockfile-first resolution (skip npm registry queries when locked)
     lockfile: ?*@import("../deps/resolution/lockfile.zig").LockFile = null,
+    /// Shared HTTP client for connection pooling (reuses TCP/TLS connections across requests)
+    /// std.http.Client has a built-in 32-connection pool with mutex protection.
+    http_client: *std.http.Client,
 
     /// Thread-safe cache tracking which packages are installed at the hoisted level.
     /// Eliminates redundant filesystem checks when the same transitive dep is encountered
@@ -299,6 +302,10 @@ pub const Installer = struct {
         const hoisted_versions = try allocator.create(HoisteVersionCache);
         hoisted_versions.* = HoisteVersionCache.init(allocator);
 
+        // Shared HTTP client — connection pool (32 slots) reuses TCP/TLS across all requests
+        const http_client = try allocator.create(std.http.Client);
+        http_client.* = .{ .allocator = allocator, .io = io_helper.io };
+
         return .{
             .cache = pkg_cache,
             .data_dir = data_dir,
@@ -306,6 +313,7 @@ pub const Installer = struct {
             .installing_stack = installing_stack,
             .npm_cache = npm_cache,
             .hoisted_versions = hoisted_versions,
+            .http_client = http_client,
         };
     }
 
@@ -329,6 +337,8 @@ pub const Installer = struct {
         self.allocator.destroy(self.npm_cache);
         self.hoisted_versions.deinit();
         self.allocator.destroy(self.hoisted_versions);
+        self.http_client.deinit();
+        self.allocator.destroy(self.http_client);
     }
 
     /// Install a package
@@ -974,39 +984,71 @@ pub const Installer = struct {
             };
         }
 
-        // Download tarball directly into memory (skip temp file — avoids disk write + re-read)
-        const tarball_data = io_helper.httpGet(self.allocator, tarball_url) catch {
-            if (!options.quiet) {
-                style.print("  ✗ Failed to download: {s}\n", .{tarball_url});
-            }
-            return error.DownloadFailed;
-        };
-        defer self.allocator.free(tarball_data);
+        // Content-addressed tarball cache: check if we already have this tarball on disk
+        const cached_tarball = self.cache.get(spec.name, spec.version) catch null;
+        const tarball_data = if (cached_tarball) |meta|
+            io_helper.readFileAlloc(self.allocator, meta.cache_path, 256 * 1024 * 1024) catch null
+        else
+            null;
 
-        if (tarball_data.len == 0) {
-            if (!options.quiet) {
-                style.print("  ✗ Empty tarball: {s}\n", .{tarball_url});
+        const tarball_bytes = tarball_data orelse blk: {
+            // Download tarball via shared connection pool with retry (handles transient failures)
+            var downloaded: ?[]const u8 = null;
+            var dl_attempt: u32 = 0;
+            while (dl_attempt < 3) : (dl_attempt += 1) {
+                downloaded = io_helper.httpGetWithClient(self.http_client, self.allocator, tarball_url) catch {
+                    if (dl_attempt < 2) {
+                        io_helper.nanosleep(0, (dl_attempt + 1) * 200 * std.time.ns_per_ms);
+                        continue;
+                    }
+                    if (!options.quiet) {
+                        style.print("  ✗ Failed to download: {s}\n", .{tarball_url});
+                    }
+                    return error.DownloadFailed;
+                };
+                if (downloaded) |d| {
+                    if (d.len > 0) break;
+                    self.allocator.free(d);
+                    downloaded = null;
+                }
             }
-            return error.DownloadFailed;
-        }
+
+            const dl = downloaded orelse {
+                if (!options.quiet) {
+                    style.print("  ✗ Empty tarball: {s}\n", .{tarball_url});
+                }
+                return error.DownloadFailed;
+            };
+
+            // Store in content-addressed cache for future installs
+            var checksum: [32]u8 = undefined;
+            std.crypto.hash.sha2.Sha256.hash(dl, &checksum, .{});
+            self.cache.put(spec.name, spec.version, tarball_url, checksum, dl) catch {};
+
+            break :blk dl;
+        };
+        defer self.allocator.free(tarball_bytes);
 
         // Create install directory
         try io_helper.makePath(install_dir);
 
-        // Extract tarball directly from memory — npm tarballs have a 'package' directory inside
+        // Extract tarball from memory — npm tarballs have a 'package' directory inside
         {
             var dest = try io_helper.cwd().openDir(io_helper.io, install_dir, .{});
             defer dest.close(io_helper.io);
 
-            var input_reader: std.Io.Reader = .fixed(tarball_data);
+            var input_reader: std.Io.Reader = .fixed(tarball_bytes);
             var window_buf: [65536]u8 = undefined;
             var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
             std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{
                 .strip_components = 1,
-            }) catch |err| {
+            }) catch {
+                // Extraction failed — possibly corrupted download, skip non-fatally
                 if (!options.quiet) {
-                    style.print("  ✗ Failed to extract tarball: {}\n", .{err});
+                    style.print("  ✗ Failed to extract {s} — skipping\n", .{spec.name});
                 }
+                // Clean up partial extraction
+                io_helper.deleteTree(install_dir) catch {};
                 return error.ExtractionFailed;
             };
         }
@@ -1208,7 +1250,8 @@ pub const Installer = struct {
         if (collected.items.len == 0) return;
 
         // For small dep lists or deep recursion, install serially (thread overhead not worth it)
-        if (collected.items.len <= 3 or depth >= 3) {
+        // At depth >= 2, go serial to prevent thread explosion from recursive spawning
+        if (collected.items.len <= 3 or depth >= 2) {
             for (collected.items) |dep| {
                 if (dep.is_optional) {
                     self.installOptionalTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
@@ -1220,8 +1263,10 @@ pub const Installer = struct {
         }
 
         // Parallel resolution: use work-stealing thread pool scaled to CPU cores
+        // Cap at 8 threads to prevent thread explosion on high-core CI runners
+        // (each thread can recursively resolve more deps which also spawn threads)
         const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, @min(collected.items.len, 32));
+        const max_threads = @min(cpu_count, @min(collected.items.len, 8));
         const thread_count = max_threads;
 
         var next_idx = std.atomic.Value(usize).init(0);
@@ -1448,10 +1493,11 @@ pub const Installer = struct {
             defer self.allocator.free(npm_url);
 
             // Retry up to 3 times with brief backoff for transient failures
+            // Uses shared HTTP client for connection pooling (reuses TCP/TLS connections)
             var response_body: ?[]const u8 = null;
             var attempt: u32 = 0;
             while (attempt < 3) : (attempt += 1) {
-                response_body = io_helper.httpGet(self.allocator, npm_url) catch {
+                response_body = io_helper.httpGetWithClient(self.http_client, self.allocator, npm_url) catch {
                     if (attempt < 2) {
                         // Brief backoff: 100ms, 300ms
                         io_helper.nanosleep(0, (attempt + 1) * 100 * std.time.ns_per_ms);

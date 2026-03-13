@@ -1432,3 +1432,30 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
 
     return stream;
 }
+
+/// Like `httpGet`, but reuses an existing `std.http.Client` for connection pooling.
+/// The caller retains ownership of `client` — do NOT deinit it here.
+pub fn httpGetWithClient(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8) ![]u8 {
+    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+    errdefer alloc_writer.deinit();
+
+    var redirect_buf: [8192]u8 = undefined;
+
+    const result = client.fetch(.{
+        .location = .{ .url = url },
+        .response_writer = &alloc_writer.writer,
+        .redirect_buffer = &redirect_buf,
+        .redirect_behavior = @enumFromInt(10),
+    }) catch {
+        return error.HttpRequestFailed;
+    };
+
+    if (result.status != .ok) {
+        return error.HttpRequestFailed;
+    }
+
+    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+    const owned = try allocator.dupe(u8, data);
+    alloc_writer.deinit();
+    return owned;
+}

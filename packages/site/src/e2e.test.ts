@@ -129,7 +129,7 @@ describe.skipIf(!serverAvailable)('Homepage', () => {
 
   it('has install command hint', async () => {
     const html = await (await fetch(baseUrl)).text()
-    expect(html).toContain('curl -fsSL https://get.pantry.dev | sh')
+    expect(html).toContain('curl -fsSL https://pantry.dev | sh')
   })
 
   it('has featured packages section', async () => {

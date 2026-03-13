@@ -436,8 +436,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Install remote packages in parallel using threads
         // (link: and local deps are skipped by installSinglePackage and handled below)
+        // Cap at 8 threads — each top-level install can spawn sub-threads for transitive deps
         const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, 32);
+        const max_threads = @min(cpu_count, 8);
         const thread_count = @min(deps_to_install.len, max_threads);
         var threads = try allocator.alloc(?std.Thread, max_threads);
         defer allocator.free(threads);
