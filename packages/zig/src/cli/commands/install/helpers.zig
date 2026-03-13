@@ -314,10 +314,49 @@ pub fn resolveLinkVersion(allocator: std.mem.Allocator, version: []const u8) !?[
     return try link_cmds.resolveLinkPath(allocator, link_name);
 }
 
+/// Pre-built set of package names from a lockfile for O(1) lookup.
+/// Build once with `buildLockfileNameSet`, then use with `canSkipFromLockfileWithNameSet`.
+pub const LockfileNameSet = std.StringHashMap(void);
+
+/// Build a set of package names from lockfile entries for O(1) lookups.
+/// The lockfile keys are "name@resolved_version", so we extract the name part.
+/// Caller must call `deinit()` on the returned set when done.
+pub fn buildLockfileNameSet(
+    lockfile_packages: *const std.StringHashMap(lib.packages.LockfileEntry),
+    allocator: std.mem.Allocator,
+) LockfileNameSet {
+    var name_set = LockfileNameSet.init(allocator);
+    var it = lockfile_packages.iterator();
+    while (it.next()) |entry| {
+        // Use the name from the value (already parsed, reliable)
+        name_set.put(entry.value_ptr.name, {}) catch {};
+    }
+    return name_set;
+}
+
+/// Fast version of canSkipFromLockfile that uses a pre-built name set for O(1) lookup.
+pub fn canSkipFromLockfileWithNameSet(
+    name_set: *const LockfileNameSet,
+    dep_name: []const u8,
+    proj_dir: []const u8,
+    modules_dir: []const u8,
+) bool {
+    const clean_name = normalizePackageName(dep_name);
+    if (!name_set.contains(clean_name)) return false;
+
+    // Check if destination directory actually exists
+    var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/{s}/{s}", .{ proj_dir, modules_dir, clean_name }) catch return false;
+    io_helper.accessAbsolute(dest_dir, .{}) catch return false;
+
+    return true;
+}
+
 /// Check if a package can be skipped based on the lockfile.
 /// Returns true if the lockfile has an entry with a matching name AND the destination directory exists.
 /// The lockfile keys are "name@resolved_version" while dep files have constraints like "^4.17.21",
 /// so we match by name (iterating entries) rather than by exact key.
+/// NOTE: For hot loops, prefer buildLockfileNameSet + canSkipFromLockfileWithNameSet for O(1) lookup.
 pub fn canSkipFromLockfile(
     lockfile_packages: *const std.StringHashMap(lib.packages.LockfileEntry),
     dep_name: []const u8,

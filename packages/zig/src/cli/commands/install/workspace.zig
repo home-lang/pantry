@@ -262,15 +262,16 @@ const WorkspaceThreadContext = struct {
     workspace_root: []const u8,
     shared_installer: *install.Installer,
     lockfile_packages: ?*const std.StringHashMap(lib.packages.LockfileEntry),
+    lockfile_name_set: ?*const helpers.LockfileNameSet,
 
     fn worker(ctx: *WorkspaceThreadContext) void {
         while (true) {
             const i = ctx.next.fetchAdd(1, .monotonic);
             if (i >= ctx.deps.len) break;
 
-            // Skip packages that match lockfile and exist at destination
-            if (ctx.lockfile_packages) |lf_pkgs| {
-                if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.workspace_root, ctx.alloc, ctx.shared_installer.modules_dir)) {
+            // Skip packages that match lockfile and exist at destination (O(1) via name set)
+            if (ctx.lockfile_name_set) |ns| {
+                if (helpers.canSkipFromLockfileWithNameSet(ns, ctx.deps[i].name, ctx.workspace_root, ctx.shared_installer.modules_dir)) {
                     const clean = helpers.stripDisplayPrefix(ctx.deps[i].name);
                     ctx.results[i] = .{
                         .name = clean,
@@ -577,6 +578,15 @@ pub fn installWorkspaceCommandWithOptions(
     allocator.free(shared_installer.data_dir);
     shared_installer.data_dir = try allocator.dupe(u8, env_dir);
     shared_installer.modules_dir = options.modules_dir;
+
+    // Wire up resolution lockfile for lockfile-first resolution (avoids npm registry queries for locked packages)
+    const lockfile_hooks = @import("lockfile_hooks.zig");
+    var ws_resolution_lockfile = lockfile_hooks.loadOrCreateLockfile(allocator, workspace_root) catch null;
+    defer if (ws_resolution_lockfile) |*lf| lf.deinit();
+    if (ws_resolution_lockfile) |*lf| {
+        shared_installer.setLockfile(lf);
+    }
+
     defer shared_installer.deinit();
 
     var success_count: usize = 0;
@@ -628,11 +638,17 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     // Check if all packages can be skipped (lockfile + destination match)
+    // Build name set once for O(1) lookups instead of O(n) iteration per dep
     var ws_skipped_count: usize = 0;
+    var ws_name_set: ?helpers.LockfileNameSet = null;
+    defer if (ws_name_set) |*ns| ns.deinit();
     if (existing_lockfile) |*lf| {
-        for (all_deps) |dep| {
-            if (helpers.canSkipFromLockfile(&lf.packages, dep.name, dep.version, workspace_root, allocator, options.modules_dir)) {
-                ws_skipped_count += 1;
+        ws_name_set = helpers.buildLockfileNameSet(&lf.packages, allocator);
+        if (ws_name_set) |*ns| {
+            for (all_deps) |dep| {
+                if (helpers.canSkipFromLockfileWithNameSet(ns, dep.name, workspace_root, options.modules_dir)) {
+                    ws_skipped_count += 1;
+                }
             }
         }
     }
@@ -765,6 +781,7 @@ pub fn installWorkspaceCommandWithOptions(
             .workspace_root = workspace_root,
             .shared_installer = &shared_installer,
             .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
+            .lockfile_name_set = if (ws_name_set) |*ns| ns else null,
         };
 
         // Spawn worker threads scaled to CPU count

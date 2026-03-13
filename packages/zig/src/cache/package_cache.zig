@@ -124,7 +124,11 @@ pub const PackageCache = struct {
             return true;
         }
 
-        return false;
+        // Disk fallback: check if tarball file exists at deterministic path
+        const cache_path = self.getCachePath(name, version) catch return false;
+        defer self.allocator.free(cache_path);
+        io_helper.access(cache_path, .{}) catch return false;
+        return true;
     }
 
     /// Get cached package metadata
@@ -147,7 +151,43 @@ pub const PackageCache = struct {
             return meta.*;
         }
 
-        return null;
+        // Disk fallback: the in-memory map is empty on fresh process start,
+        // but tarball files persist on disk at deterministic paths.
+        // Check if the file exists on disk and reconstruct metadata.
+        const cache_path = self.getCachePath(name, version) catch return null;
+        io_helper.access(cache_path, .{}) catch {
+            self.allocator.free(cache_path);
+            return null;
+        };
+
+        // File exists on disk — reconstruct metadata and cache it in-memory
+        const now = @as(i64, @intCast(io_helper.clockGettime().sec));
+        const metadata = PackageMetadata{
+            .name = self.allocator.dupe(u8, name) catch {
+                self.allocator.free(cache_path);
+                return null;
+            },
+            .version = self.allocator.dupe(u8, version) catch |err| {
+                self.allocator.free(cache_path);
+                return err;
+            },
+            .url = self.allocator.dupe(u8, "") catch {
+                self.allocator.free(cache_path);
+                return null;
+            },
+            .checksum = [_]u8{0} ** 32,
+            .downloaded_at = now,
+            .last_accessed = now,
+            .size = 0,
+            .uncompressed_size = 0,
+            .cache_path = cache_path,
+        };
+
+        // Store in in-memory map for future lookups (avoids repeated disk checks)
+        const map_key = getCacheKey(self.allocator, name, version) catch return metadata;
+        self.metadata.put(map_key, metadata) catch {};
+
+        return metadata;
     }
 
     /// Store package in cache

@@ -55,16 +55,24 @@ pub const LockFile = struct {
     version: []const u8,
     packages: std.StringHashMap(LockedPackage),
     allocator: std.mem.Allocator,
+    /// Name-to-key index for O(1) lookups by package name.
+    /// Built lazily on first getLockedVersion call.
+    /// Keys/values point into `packages` hashmap memory (not separately allocated).
+    name_index: std.StringHashMap([]const u8),
 
     pub fn init(allocator: std.mem.Allocator) LockFile {
         return .{
             .version = LOCK_FILE_VERSION,
             .packages = std.StringHashMap(LockedPackage).init(allocator),
             .allocator = allocator,
+            .name_index = std.StringHashMap([]const u8).init(allocator),
         };
     }
 
     pub fn deinit(self: *LockFile) void {
+        // name_index values point into packages map, no separate free needed
+        self.name_index.deinit();
+
         var it = self.packages.iterator();
         while (it.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
@@ -430,10 +438,29 @@ pub const LockedVersion = struct {
 /// Get locked version for a package if it exists in lockfile
 /// This is the key function for deterministic installs
 pub fn getLockedVersion(lock_file: *LockFile, name: []const u8) ?LockedVersion {
-    // Search through all packages to find one matching the name
+    // Fast path: try common key patterns first (O(1) hashmap lookup)
+    // Keys are typically "{name}@{version}" — we don't know the version, but
+    // we can iterate the hashmap with early exit on name match.
+    // For large lockfiles, build a name→key index on first miss for O(1) subsequent lookups.
+
+    // Check the name index first (populated after first full scan)
+    if (lock_file.name_index.get(name)) |key| {
+        if (lock_file.packages.get(key)) |pkg| {
+            return LockedVersion{
+                .version = pkg.version,
+                .resolved = pkg.resolved,
+                .integrity = pkg.integrity,
+            };
+        }
+    }
+
+    // Fallback: linear scan (first call only — builds index for future lookups)
     var it = lock_file.packages.iterator();
     while (it.next()) |entry| {
         const pkg = entry.value_ptr.*;
+        // Build index entry for every package we see
+        lock_file.name_index.put(pkg.name, entry.key_ptr.*) catch {};
+
         if (std.mem.eql(u8, pkg.name, name)) {
             return LockedVersion{
                 .version = pkg.version,

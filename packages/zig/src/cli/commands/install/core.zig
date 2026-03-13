@@ -27,39 +27,78 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     const parser = @import("../../../deps/parser.zig");
     const lockfile_reader = @import("../../../packages/lockfile.zig");
 
-    // 0. If we're in a workspace, skip the fast path entirely — workspace installs
-    //    need the full slow path to resolve workspace root, member linking, etc.
-    const ws_check = detector.findWorkspaceFile(allocator, cwd) catch null;
-    if (ws_check) |ws| {
-        allocator.free(ws.path);
-        allocator.free(ws.root_dir);
-        return null;
-    }
+    // 0. Detect workspace context — use workspace root for lockfile/dir checks
+    var ws_root_alloc: ?[]const u8 = null;
+    defer if (ws_root_alloc) |d| allocator.free(d);
+    var ws_path_alloc: ?[]const u8 = null;
+    defer if (ws_path_alloc) |p| allocator.free(p);
 
-    // 1. Find dep file in CWD only (no walking up directories — that's the slow path's job)
+    const effective_dir = blk: {
+        const ws_check = detector.findWorkspaceFile(allocator, cwd) catch null;
+        if (ws_check) |ws| {
+            ws_path_alloc = ws.path;
+            ws_root_alloc = ws.root_dir;
+            break :blk ws.root_dir;
+        }
+        break :blk cwd;
+    };
+    const is_workspace = ws_root_alloc != null;
+
+    // 1. Find dep file (use effective_dir for lockfile, CWD for dep file discovery)
     const dep_file_names = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json" };
     var dep_path: ?[]const u8 = null;
     defer if (dep_path) |p| allocator.free(p);
 
-    for (dep_file_names) |name| {
-        const full = try std.fs.path.join(allocator, &[_][]const u8{ cwd, name });
-        io_helper.accessAbsolute(full, .{}) catch {
-            allocator.free(full);
-            continue;
-        };
-        dep_path = full;
-        break;
+    if (!is_workspace) {
+        // Non-workspace: find dep file in CWD only
+        for (dep_file_names) |name| {
+            const full = try std.fs.path.join(allocator, &[_][]const u8{ cwd, name });
+            io_helper.accessAbsolute(full, .{}) catch {
+                allocator.free(full);
+                continue;
+            };
+            dep_path = full;
+            break;
+        }
     }
-    const found_path = dep_path orelse return null;
 
-    // 2. Check lockfile exists and read it
-    const lockfile_path = try std.fs.path.join(allocator, &[_][]const u8{ cwd, "pantry.lock" });
+    // 2. Check lockfile exists and read it (at effective_dir for workspaces)
+    const lockfile_path = try std.fs.path.join(allocator, &[_][]const u8{ effective_dir, "pantry.lock" });
     defer allocator.free(lockfile_path);
 
     var lockfile = lockfile_reader.readLockfile(allocator, lockfile_path) catch return null;
     defer lockfile.deinit(allocator);
 
     if (lockfile.packages.count() == 0) return null;
+
+    if (is_workspace) {
+        // Workspace fast path: verify all lockfile packages exist on disk
+        var all_exist = true;
+        var ws_iter = lockfile.packages.iterator();
+        while (ws_iter.next()) |entry| {
+            var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const dest = std.fmt.bufPrint(&dest_buf, "{s}/{s}/{s}", .{ effective_dir, modules_dir, entry.value_ptr.name }) catch {
+                all_exist = false;
+                break;
+            };
+            io_helper.accessAbsolute(dest, .{}) catch {
+                all_exist = false;
+                break;
+            };
+        }
+
+        if (all_exist) {
+            const end_ts = io_helper.clockGettime();
+            const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
+            const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+            style.printUpToDate(lockfile.packages.count(), elapsed_ms);
+            return .{ .exit_code = 0 };
+        }
+        return null; // Not up to date, fall through to slow path
+    }
+
+    // Non-workspace path: check deps against lockfile
+    const found_path = dep_path orelse return null;
 
     // 3. Parse dep file to get dependency list
     const format = detector.inferFormat(std.fs.path.basename(found_path)) orelse return null;
@@ -75,10 +114,13 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
 
     if (deps.len == 0) return null;
 
-    // 4. Check all deps against lockfile + verify dirs exist
+    // 4. Check all deps against lockfile + verify dirs exist (O(1) per dep via name set)
+    var name_set = helpers.buildLockfileNameSet(&lockfile.packages, allocator);
+    defer name_set.deinit();
+
     var checked_count: usize = 0;
     for (deps) |dep| {
-        if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator, modules_dir)) {
+        if (!helpers.canSkipFromLockfileWithNameSet(&name_set, dep.name, cwd, modules_dir)) {
             return null; // At least one package needs work → fall through to slow path
         }
         checked_count += 1;
