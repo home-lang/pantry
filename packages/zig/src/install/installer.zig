@@ -1337,7 +1337,7 @@ pub const Installer = struct {
         depth: u32,
     ) void {
         self.installTransitiveDepInner(name, version_constraint, project_root, parent_package_dir, depth) catch |err| {
-            style.print("    ! {s}: {}\n", .{ name, err });
+            if (!style.isCI()) style.print("    ! {s}: {}\n", .{ name, err });
         };
     }
 
@@ -1421,15 +1421,13 @@ pub const Installer = struct {
             .skip_transitive_resolution = true, // We handle recursion here
         });
 
-        // Only print if actually installed (not already cached/installed)
-        if (!result.from_cache) {
+        // Only print if actually installed (not already cached/installed), and suppress in CI
+        if (!result.from_cache and !style.isCI()) {
             style.print("    + {s}@{s}\n", .{ name, npm_info.version });
         }
 
         // Recurse into this dep's deps
-        self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {
-            style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ name, err });
-        };
+        self.resolveTransitiveDeps(result.install_path, project_root, depth) catch {};
         result.deinit(self.allocator);
     }
 
@@ -1993,10 +1991,7 @@ pub const Installer = struct {
                         break :blk false;
                     };
                 } else {
-                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
-                        if (!options.quiet) {
-                            style.print("  {s}(download error: {s}, url: {s}){s}\n", .{ style.dim, @errorName(err), url, style.reset });
-                        }
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
                         break :blk false;
                     };
                 }
@@ -2382,7 +2377,7 @@ pub const Installer = struct {
                 bin_value.string,
                 shim_dir,
             ) catch |err| {
-                style.print("Warning: Failed to create shim: {}\n", .{err});
+                if (!style.isCI()) style.print("Warning: Failed to create shim: {}\n", .{err});
             };
         } else if (bin_value == .object) {
             // Multiple binaries
@@ -2392,7 +2387,7 @@ pub const Installer = struct {
                 bin_value,
                 shim_dir,
             ) catch |err| {
-                style.print("Warning: Failed to create shims: {}\n", .{err});
+                if (!style.isCI()) style.print("Warning: Failed to create shims: {}\n", .{err});
             };
         }
     }
@@ -2480,10 +2475,7 @@ pub const Installer = struct {
                         break :blk false;
                     };
                 } else {
-                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch |err| {
-                        if (!options.quiet) {
-                            style.print("  {s}(network download error: {s}, url: {s}){s}\n", .{ style.dim, @errorName(err), url, style.reset });
-                        }
+                    downloader.downloadFileQuiet(self.allocator, url, temp_archive_path, options.quiet) catch {
                         break :blk false;
                     };
                 }

@@ -48,7 +48,7 @@ pub fn createBinaryWrapper(
 ) !void {
     // Verify binary exists
     io_helper.cwd().access(io_helper.io, binary_path, .{}) catch {
-        style.print("  ✗ Binary not found: {s}\n", .{binary_path});
+        if (!style.isCI()) style.print("  ✗ Binary not found: {s}\n", .{binary_path});
         return error.BinaryNotFound;
     };
 

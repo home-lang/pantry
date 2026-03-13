@@ -56,7 +56,7 @@ pub fn createBinarySymlinkFromPath(
 
     // Verify target exists
     io_helper.cwd().access(io_helper.io, bin_path, .{}) catch {
-        style.print("  ✗ Binary not found: {s}\n", .{bin_path});
+        if (!style.isCI()) style.print("  ✗ Binary not found: {s}\n", .{bin_path});
         return error.TargetNotFound;
     };
 
@@ -462,7 +462,7 @@ pub fn createShim(
 
     // Verify target exists
     io_helper.cwd().access(io_helper.io, target_path, .{}) catch {
-        style.print("  ✗ Binary not found: {s}\n", .{target_path});
+        if (!style.isCI()) style.print("  ✗ Binary not found: {s}\n", .{target_path});
         return error.TargetNotFound;
     };
 
@@ -476,7 +476,7 @@ pub fn createShim(
             io_helper.deleteFile(shim_path) catch {};
 
             try createSymlinkCrossPlatform(target_path, shim_path);
-            style.print("  ✓ Linked: {s}\n", .{bin_name});
+            if (!style.isCI()) style.print("  ✓ Linked: {s}\n", .{bin_name});
         },
         .node, .shell => {
             // For JS/shell files, create wrapper scripts
@@ -572,7 +572,7 @@ fn createScriptShim(
         cmd_file.close(io_helper.io);
     }
 
-    style.print("  ✓ Shim: {s}\n", .{bin_name});
+    if (!style.isCI()) style.print("  ✓ Shim: {s}\n", .{bin_name});
 }
 
 /// Create shims from a bin config (parsed from package.json)
@@ -597,7 +597,7 @@ pub fn createShimsFromBinConfig(
 
         // Create shim
         createShim(allocator, bin_name, bin_path, shim_dir) catch |err| {
-            style.print("  ! Failed to create shim for {s}: {}\n", .{ bin_name, err });
+            if (!style.isCI()) style.print("  ! Failed to create shim for {s}: {}\n", .{ bin_name, err });
         };
     }
 }

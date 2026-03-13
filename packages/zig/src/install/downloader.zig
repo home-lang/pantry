@@ -112,8 +112,8 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         };
         bytes_downloaded += n;
 
-        // Update progress display (skip if quiet mode)
-        if (!quiet) {
+        // Update progress display (skip if quiet mode or CI)
+        if (!quiet and !style.isCI()) {
             const now_ts = io_helper.clockGettime();
             const now_ms = @as(i64, @intCast(now_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(now_ts.nsec)), 1_000_000);
 
@@ -214,15 +214,14 @@ fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path
         return;
     }
 
-    // Method 2: try std.process.Child.spawn with inherited stdio (avoids pipe issues)
+    // Method 2: retry with childRun (piped output, no stdio leak)
     for (curl_paths) |curl| {
-        const args = [_][]const u8{ curl, "-fsSL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
-        var child = std.process.spawn(io_helper.getIo(), .{
-            .argv = &args,
-        }) catch continue;
+        const args = [_][]const u8{ curl, "-fsL", "--connect-timeout", "30", "--retry", "3", "--max-time", "300", "-o", dest_path, url };
+        const result = io_helper.childRun(allocator, &args) catch continue;
+        defer allocator.free(result.stdout);
+        defer allocator.free(result.stderr);
 
-        const term = child.wait(io_helper.getIo()) catch continue;
-        if (term == .exited and term.exited == 0) {
+        if (result.term == .exited and result.term.exited == 0) {
             return;
         }
     }
