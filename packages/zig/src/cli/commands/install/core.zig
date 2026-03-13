@@ -537,16 +537,29 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             threads[t] = std.Thread.spawn(.{}, ThreadContext.worker, .{&ctx}) catch null;
         }
 
-        // Main thread shows spinner progress
-        var frame: usize = 0;
-        while (next_dep.load(.monotonic) < deps_to_install.len) {
-            const current = @min(next_dep.load(.monotonic), deps_to_install.len);
-            const pkg_name = if (current < deps_to_install.len) helpers.stripDisplayPrefix(deps_to_install[current].name) else "...";
-            style.printProgress(current, deps_to_install.len, pkg_name, frame);
-            frame +%= 1;
-            io_helper.nanosleep(0, 80 * std.time.ns_per_ms);
+        // Main thread shows progress while workers install
+        if (style.isCI()) {
+            // CI mode: print milestone progress (no spinner)
+            var last_reported: usize = 0;
+            while (next_dep.load(.monotonic) < deps_to_install.len) {
+                const current = @min(next_dep.load(.monotonic), deps_to_install.len);
+                if (current > last_reported) {
+                    style.print("  Installing... [{d}/{d}]\n", .{ current, deps_to_install.len });
+                    last_reported = current;
+                }
+                io_helper.nanosleep(0, 200 * std.time.ns_per_ms);
+            }
+        } else {
+            var frame: usize = 0;
+            while (next_dep.load(.monotonic) < deps_to_install.len) {
+                const current = @min(next_dep.load(.monotonic), deps_to_install.len);
+                const pkg_name = if (current < deps_to_install.len) helpers.stripDisplayPrefix(deps_to_install[current].name) else "...";
+                style.printProgress(current, deps_to_install.len, pkg_name, frame);
+                frame +%= 1;
+                io_helper.nanosleep(0, 80 * std.time.ns_per_ms);
+            }
+            style.clearProgress();
         }
-        style.clearProgress();
 
         // Join all threads
         for (threads) |*t| {

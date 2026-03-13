@@ -1423,10 +1423,12 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
     stream.response = stream.req.receiveHead(&stream.redirect_buf) catch return error.HttpRequestFailed;
 
     if (stream.response.head.status != .ok) {
-        // Log the actual status for diagnostics
-        const status_code = @intFromEnum(stream.response.head.status);
+        // Log non-200 status only in interactive mode (CI has too much noise)
         const style = @import("cli/style.zig");
-        style.print("  {s}(http status: {d} for {s}){s}\n", .{ style.dim, status_code, url, style.reset });
+        if (!style.isCI()) {
+            const status_code = @intFromEnum(stream.response.head.status);
+            style.print("  {s}(http status: {d} for {s}){s}\n", .{ style.dim, status_code, url, style.reset });
+        }
         return error.HttpRequestFailed;
     }
 

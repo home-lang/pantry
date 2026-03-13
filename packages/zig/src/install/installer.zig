@@ -1249,9 +1249,9 @@ pub const Installer = struct {
 
         if (collected.items.len == 0) return;
 
-        // For small dep lists or deep recursion, install serially (thread overhead not worth it)
-        // At depth >= 2, go serial to prevent thread explosion from recursive spawning
-        if (collected.items.len <= 3 or depth >= 2) {
+        // Install transitive deps serially — top-level parallel threads already provide concurrency.
+        // Spawning inner thread pools causes thread thrashing (N outer threads × M inner threads).
+        if (collected.items.len <= 3 or depth >= 1) {
             for (collected.items) |dep| {
                 if (dep.is_optional) {
                     self.installOptionalTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
@@ -1408,8 +1408,6 @@ pub const Installer = struct {
         defer self.allocator.free(npm_info.version);
         defer self.allocator.free(npm_info.tarball_url);
 
-        style.print("    + {s}@{s}\n", .{ name, npm_info.version });
-
         const spec = PackageSpec{
             .name = name,
             .version = npm_info.version,
@@ -1422,6 +1420,11 @@ pub const Installer = struct {
             .quiet = true,
             .skip_transitive_resolution = true, // We handle recursion here
         });
+
+        // Only print if actually installed (not already cached/installed)
+        if (!result.from_cache) {
+            style.print("    + {s}@{s}\n", .{ name, npm_info.version });
+        }
 
         // Recurse into this dep's deps
         self.resolveTransitiveDeps(result.install_path, project_root, depth) catch |err| {

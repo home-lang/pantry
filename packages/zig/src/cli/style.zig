@@ -34,6 +34,25 @@ pub const check = "done";
 pub const info = "i";
 pub const link_sym = "~";
 
+// ── Environment Detection ───────────────────────────────────────────────────
+
+/// Detect if running in CI (no interactive terminal). Cached after first check.
+var ci_detected: enum { unknown, yes, no } = .unknown;
+pub fn isCI() bool {
+    if (ci_detected != .unknown) return ci_detected == .yes;
+    // Check common CI environment variables
+    const ci_vars = [_][]const u8{ "CI", "GITHUB_ACTIONS", "NO_COLOR", "BUILDKITE", "CIRCLECI", "GITLAB_CI" };
+    for (ci_vars) |v| {
+        if (io_helper.getEnvVarOwned(std.heap.page_allocator, v) catch null) |val| {
+            std.heap.page_allocator.free(val);
+            ci_detected = .yes;
+            return true;
+        }
+    }
+    ci_detected = .no;
+    return false;
+}
+
 // ── Core Output ─────────────────────────────────────────────────────────────
 
 /// Print to stdout (user-facing output). Thread-safe via write() syscall.
@@ -51,8 +70,9 @@ pub fn print(comptime fmt: []const u8, args: anytype) void {
     };
 }
 
-/// Clear the current line (carriage return + erase to end)
+/// Clear the current line (carriage return + erase to end). No-op in CI.
 pub fn clearLine() void {
+    if (isCI()) return;
     print("\r\x1b[K", .{});
 }
 
@@ -175,8 +195,9 @@ pub fn printFailureCount(count: usize) void {
 const spinner_frames = [_][]const u8{ "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" };
 
 /// Print a single-line spinner with package name and progress counter.
-/// Overwrites the current line each call.
+/// Overwrites the current line each call. Suppressed in CI (causes log noise).
 pub fn printProgress(current: usize, total: usize, pkg_name: []const u8, frame: usize) void {
+    if (isCI()) return;
     const spinner = spinner_frames[frame % spinner_frames.len];
     print("\r\x1b[K{s}{s}{s} {s}{s}{s} {s}[{d}/{d}]{s}", .{
         cyan,  spinner,  reset,

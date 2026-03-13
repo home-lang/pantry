@@ -271,12 +271,11 @@ pub fn normalizePackageName(name: []const u8) []const u8 {
     return name;
 }
 
-/// Strip display prefixes like "auto:", "npm:", and "local:" from package names for output
+/// Strip internal routing prefixes ("auto:", "local:") from package names for display.
+/// "npm:" is preserved because it conveys the source to the user.
 pub fn stripDisplayPrefix(name: []const u8) []const u8 {
     if (std.mem.startsWith(u8, name, "auto:")) {
         return name[5..];
-    } else if (std.mem.startsWith(u8, name, "npm:")) {
-        return name[4..];
     } else if (std.mem.startsWith(u8, name, "local:")) {
         return name[6..];
     }
@@ -512,10 +511,12 @@ pub fn installSinglePackage(
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {
             // Try Pantry S3/DynamoDB registry first, then fall back to npm
-            // Skip Pantry lookup for scoped npm packages (@scope/name) — they're never in Pantry
-            // Uses the shared installer's resolveNpmPackage which handles semver ranges,
-            // dist-tags, and deduplication via InstallingStack
-            const pantry_info: ?PantryPackageInfo = if (std.mem.startsWith(u8, lookup_name, "@"))
+            // Skip Pantry lookup for packages that are clearly npm-only:
+            //   - Scoped packages (@scope/name) — never in Pantry
+            //   - Non-domain names (no '.') — Pantry only has domain-style packages like redis.io
+            // This avoids spawning `aws` CLI subprocesses for npm packages
+            const is_domain_style = std.mem.indexOfScalar(u8, lookup_name, '.') != null;
+            const pantry_info: ?PantryPackageInfo = if (!is_domain_style)
                 null
             else
                 lookupPantryRegistry(allocator, lookup_name) catch |err| lkup: {
