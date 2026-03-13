@@ -1184,6 +1184,39 @@ pub fn installWorkspaceCommandWithOptions(
         style.printWorkspaceLinked(linked_count);
     }
 
+    // Create per-member pantry/ symlinks to workspace root packages.
+    // This ensures packages can be resolved from within any workspace member
+    // (important for tools that look for packages relative to CWD).
+    for (workspace_config.members) |member| {
+        const member_pantry = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ member.abs_path, options.modules_dir });
+        defer allocator.free(member_pantry);
+
+        // Check if it's already a symlink
+        var link_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const is_symlink = if (io_helper.readLink(member_pantry, &link_buf)) |_| true else |_| false;
+
+        if (is_symlink) {
+            // Remove and recreate to ensure it points to the right place
+            io_helper.deleteFile(member_pantry) catch {};
+        } else {
+            // Check if it exists as a real directory
+            io_helper.accessAbsolute(member_pantry, .{}) catch {
+                // Doesn't exist — create symlink to workspace root's pantry dir
+                io_helper.symLink(pantry_dir, member_pantry) catch |err| {
+                    style.print("{s}  ! Failed to link {s} pantry: {}{s}\n", .{ style.dim, member.name, err, style.reset });
+                };
+                continue;
+            };
+
+            // Exists as a real directory — remove it and replace with symlink
+            io_helper.deleteTree(member_pantry) catch {};
+        }
+
+        io_helper.symLink(pantry_dir, member_pantry) catch |err| {
+            style.print("{s}  ! Failed to link {s} pantry: {}{s}\n", .{ style.dim, member.name, err, style.reset });
+        };
+    }
+
     // Summary
     const install_end_ts = io_helper.clockGettime();
     const install_end_ms = @as(i64, @intCast(install_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_end_ts.nsec)), 1_000_000);

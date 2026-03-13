@@ -27,6 +27,15 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     const parser = @import("../../../deps/parser.zig");
     const lockfile_reader = @import("../../../packages/lockfile.zig");
 
+    // 0. If we're in a workspace, skip the fast path entirely — workspace installs
+    //    need the full slow path to resolve workspace root, member linking, etc.
+    const ws_check = detector.findWorkspaceFile(allocator, cwd) catch null;
+    if (ws_check) |ws| {
+        allocator.free(ws.path);
+        allocator.free(ws.root_dir);
+        return null;
+    }
+
     // 1. Find dep file in CWD only (no walking up directories — that's the slow path's job)
     const dep_file_names = [_][]const u8{ "pantry.json", "pantry.jsonc", "package.json" };
     var dep_path: ?[]const u8 = null;
@@ -924,6 +933,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     defer allocator.free(cwd);
 
     const project_root = blk: {
+        // Check for workspace context first — named installs should go to workspace root
+        const ws_file = try detector.findWorkspaceFile(allocator, cwd);
+        if (ws_file) |ws| {
+            defer allocator.free(ws.path);
+            // Use workspace root, not the member directory
+            break :blk ws.root_dir; // root_dir is already allocated
+        }
+
         const deps_file = try detector.findDepsFile(allocator, cwd);
         if (deps_file) |df| {
             defer allocator.free(df.path);

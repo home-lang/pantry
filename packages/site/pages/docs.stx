@@ -1,0 +1,168 @@
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-3xl font-semibold tracking-tight">docs</h1>
+      <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
+    </div>
+
+    <article class="flex flex-col gap-12">
+      <!-- Getting started -->
+      <div>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Getting Started</h2>
+        <p class="leading-relaxed mb-4" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          Install pantry with a single command. No dependencies required.
+        </p>
+        <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+          <code class="text-sm" style="color: var(--accent);">curl -fsSL https://pantry.dev | sh</code>
+        </div>
+        <p class="mt-4 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          This downloads the pantry CLI binary for your platform and adds it to your PATH. The CLI is a single static binary with zero runtime dependencies.
+        </p>
+      </div>
+
+      <!-- Basic commands -->
+      <div>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Commands</h2>
+        <div class="flex flex-col gap-4">
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">Install a package</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry install nodejs.org</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Downloads, extracts, and symlinks the package into your PATH.</p>
+          </div>
+
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">Install a specific version</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry install nodejs.org@22.0.0</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Pin a specific version using the @ syntax.</p>
+          </div>
+
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">List installed packages</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry list</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Shows all installed packages and their versions.</p>
+          </div>
+
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">Update packages</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry update</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Updates all installed packages to their latest versions.</p>
+          </div>
+
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">Remove a package</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry remove nodejs.org</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Removes the package and cleans up symlinks.</p>
+          </div>
+
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">Search packages</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry search python</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Search the registry for packages by name.</p>
+          </div>
+
+          <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-xs font-medium" style="color: var(--fg-subtle);">Manage services</p>
+            </div>
+            <code class="text-sm" style="color: var(--accent);">pantry start redis.io</code>
+            <p class="mt-2" style="font-size: 0.8125rem; color: var(--fg-subtle);">Start, stop, and manage background services (Redis, PostgreSQL, etc.).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Workspace support -->
+      <div>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Workspace Support</h2>
+        <p class="leading-relaxed mb-4" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          pantry supports workspace-level dependency management. Add your dependencies to a configuration file and pantry will ensure they are installed when anyone clones your project.
+        </p>
+        <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 mb-4">
+          <p class="text-xs font-medium mb-2" style="color: var(--fg-subtle);">pantry.toml</p>
+          <pre class="text-sm" style="color: var(--fg-muted);"><code>[dependencies]
+nodejs.org = "22"
+python.org = "3.12"
+redis.io = "latest"</code></pre>
+        </div>
+        <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          Then run <code class="text-sm px-1.5 py-0.5 rounded bg-[var(--bg-muted)]" style="color: var(--accent);">pantry install</code> in the project directory to install all workspace dependencies.
+        </p>
+      </div>
+
+      <!-- Configuration -->
+      <div>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Configuration</h2>
+        <p class="leading-relaxed mb-4" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          pantry can be configured via <code class="text-sm px-1.5 py-0.5 rounded bg-[var(--bg-muted)]" style="color: var(--accent);">pantry.toml</code> in your project root or <code class="text-sm px-1.5 py-0.5 rounded bg-[var(--bg-muted)]" style="color: var(--accent);">package.json</code>.
+        </p>
+        <div class="flex flex-col gap-3">
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
+            <span><strong style="color: var(--fg);">pantry.toml</strong> &mdash; Dedicated config file. Supports dependencies, services, and settings.</span>
+          </div>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
+            <span><strong style="color: var(--fg);">package.json</strong> &mdash; Add a <code class="text-xs px-1 py-0.5 rounded bg-[var(--bg-muted)]" style="color: var(--accent);">"pantry"</code> key to your existing package.json.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Package naming -->
+      <div>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Package Names</h2>
+        <p class="leading-relaxed mb-4" style="font-size: 0.9375rem; color: var(--fg-muted);">
+          Packages in pantry are identified by their domain name. This ensures globally unique names without a central namespace registry.
+        </p>
+        <div class="flex flex-col gap-2">
+          <div class="flex items-center gap-3 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-4 py-2.5">
+            <code class="text-sm font-mono" style="color: var(--accent);">nodejs.org</code>
+            <span style="font-size: 0.8125rem; color: var(--fg-subtle);">Node.js</span>
+          </div>
+          <div class="flex items-center gap-3 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-4 py-2.5">
+            <code class="text-sm font-mono" style="color: var(--accent);">python.org</code>
+            <span style="font-size: 0.8125rem; color: var(--fg-subtle);">Python</span>
+          </div>
+          <div class="flex items-center gap-3 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-4 py-2.5">
+            <code class="text-sm font-mono" style="color: var(--accent);">redis.io</code>
+            <span style="font-size: 0.8125rem; color: var(--fg-subtle);">Redis</span>
+          </div>
+          <div class="flex items-center gap-3 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-4 py-2.5">
+            <code class="text-sm font-mono" style="color: var(--accent);">openssl.org</code>
+            <span style="font-size: 0.8125rem; color: var(--fg-subtle);">OpenSSL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Links -->
+      <div>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Resources</h2>
+        <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));">
+          <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+            <h3 class="text-sm font-medium mb-1">GitHub</h3>
+            <p style="font-size: 0.8125rem; color: var(--fg-muted);">Source code and issues</p>
+          </a>
+          <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+            <h3 class="text-sm font-medium mb-1">Discord</h3>
+            <p style="font-size: 0.8125rem; color: var(--fg-muted);">Community chat and support</p>
+          </a>
+          <a href="https://registry.pantry.dev" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+            <h3 class="text-sm font-medium mb-1">Registry API</h3>
+            <p style="font-size: 0.8125rem; color: var(--fg-muted);">Package metadata and downloads</p>
+          </a>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>

@@ -9,9 +9,15 @@
     <h1 class="font-bold tracking-tight leading-none mb-4" style="font-size: clamp(3rem, 8vw, 5rem);">
       <span style="color: var(--accent);">pantry</span>
     </h1>
-    <p class="max-w-xl mx-auto mb-10" style="font-size: clamp(1rem, 2.5vw, 1.25rem); color: var(--fg-muted);">
+    <p class="max-w-xl mx-auto mb-4" style="font-size: clamp(1rem, 2.5vw, 1.25rem); color: var(--fg-muted);">
       a fast, modern package manager for your system
     </p>
+
+    @if (pkgCount > 0)
+    <p class="mb-10" style="font-size: 0.875rem; color: var(--fg-subtle);">
+      <span class="font-semibold font-mono" style="color: var(--accent);">{{ pkgCount }}+</span> packages available
+    </p>
+    @endif
 
     <!-- Search -->
     <form action="/search" method="get" class="flex gap-2 max-w-md mx-auto mb-6 animate-fade-in-delay">
@@ -40,14 +46,77 @@
   </div>
 </section>
 
+<!-- How it works -->
+<section class="px-6 pb-16">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-xs uppercase tracking-widest font-medium mb-8 text-center" style="color: var(--fg-subtle);">How It Works</h2>
+    <div class="grid gap-6" style="grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));">
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-6 text-center">
+        <div class="inline-flex items-center justify-center w-10 h-10 rounded-full mb-4" style="background: color-mix(in oklch, var(--accent), transparent 85%);">
+          <span class="font-mono font-bold" style="color: var(--accent);">1</span>
+        </div>
+        <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Install</h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">One command to install the pantry CLI. No dependencies, no compiling.</p>
+        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">curl -fsSL pantry.dev | sh</code>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-6 text-center">
+        <div class="inline-flex items-center justify-center w-10 h-10 rounded-full mb-4" style="background: color-mix(in oklch, var(--accent), transparent 85%);">
+          <span class="font-mono font-bold" style="color: var(--accent);">2</span>
+        </div>
+        <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Add Packages</h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Install any package from the registry. Pre-built, fast downloads.</p>
+        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">pantry install nodejs.org</code>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-6 text-center">
+        <div class="inline-flex items-center justify-center w-10 h-10 rounded-full mb-4" style="background: color-mix(in oklch, var(--accent), transparent 85%);">
+          <span class="font-mono font-bold" style="color: var(--accent);">3</span>
+        </div>
+        <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Run</h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Binaries are symlinked into your PATH. Just run them.</p>
+        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">node --version</code>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Why pantry -->
+<section class="px-6 pb-16">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-xs uppercase tracking-widest font-medium mb-8 text-center" style="color: var(--fg-subtle);">Why Pantry</h2>
+    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));">
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
+          <span style="color: var(--accent);">&#9889;</span> Fast
+        </h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Written in Zig with parallel downloads. Installs complete in seconds, not minutes.</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
+          <span style="color: var(--accent);">&#127760;</span> Cross-platform
+        </h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">macOS and Linux, both x86_64 and ARM64. Same packages, same commands everywhere.</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
+          <span style="color: var(--accent);">&#128230;</span> Pre-built
+        </h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">No compiling on your machine. Every package is pre-built from source in CI and served from CDN.</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
+          <span style="color: var(--accent);">&#128295;</span> Simple
+        </h3>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">One binary, zero dependencies. No Ruby, no Python, no Xcode CLT required.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Featured packages -->
 <section class="px-6 pb-16">
   <div class="max-w-6xl mx-auto">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Popular Packages</h2>
-      @if (pkgCount > 0)
-      <span class="text-xs" style="color: var(--fg-subtle);">{{ pkgCount }} packages available</span>
-      @endif
     </div>
 
     <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">

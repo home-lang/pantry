@@ -2,6 +2,8 @@
   const count = (results || []).length
   const hasResults = count > 0
   const hasQuery = (query || '').length > 0
+
+  const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org']
 </script>
 
 <section class="py-12 px-6 pb-20">
@@ -31,13 +33,31 @@
     </form>
 
     @if (!hasQuery)
-    <p class="text-sm text-center py-12" style="color: var(--fg-subtle);">Start typing to search packages</p>
+    <div class="text-center py-12">
+      <p class="text-sm mb-6" style="color: var(--fg-subtle);">Start typing to search packages</p>
+      <div>
+        <p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--fg-subtle);">Popular searches</p>
+        <div class="flex flex-wrap justify-center gap-2">
+          @foreach (suggestions as s)
+          <a href="/search?q={{ s }}" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">{{ s }}</a>
+          @endforeach
+        </div>
+      </div>
+    </div>
     @endif
 
     @if (hasQuery && !hasResults)
     <div class="text-center py-12">
       <p class="mb-2" style="color: var(--fg-muted); font-size: 0.9375rem;">No packages found for &ldquo;{{ query }}&rdquo;</p>
-      <p style="color: var(--fg-subtle); font-size: 0.8125rem;">Try a different search term or browse popular packages on the <a href="/" class="hvr-accent" style="color: var(--accent);">homepage</a>.</p>
+      <p class="mb-6" style="color: var(--fg-subtle); font-size: 0.8125rem;">Try a different search term or browse popular packages on the <a href="/" class="hvr-accent" style="color: var(--accent);">homepage</a>.</p>
+      <div>
+        <p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--fg-subtle);">Try these instead</p>
+        <div class="flex flex-wrap justify-center gap-2">
+          @foreach (suggestions as s)
+          <a href="/search?q={{ s }}" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">{{ s }}</a>
+          @endforeach
+        </div>
+      </div>
     </div>
     @endif
 
@@ -57,12 +77,27 @@
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1">
           <span class="font-mono text-sm font-medium">{{ result.name }}</span>
-          @if (result.version)
-          <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ result.version }}</span>
-          @endif
+          <div class="flex items-center gap-2">
+            @if (result.downloads)
+            <span class="flex items-center gap-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              {{ result.downloads }}
+            </span>
+            @endif
+            @if (result.version)
+            <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ result.version }}</span>
+            @endif
+          </div>
         </div>
         @if (result.description)
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">{{ result.description }}</p>
+        @endif
+        @if (result.platforms)
+        <div class="flex flex-wrap gap-1 mt-2">
+          @foreach (result.platforms as plat)
+          <span class="rounded px-1.5 py-0.5 bg-[var(--bg-muted)]" style="font-size: 0.625rem; color: var(--fg-subtle);">{{ plat }}</span>
+          @endforeach
+        </div>
         @endif
       </a>
       @endforeach

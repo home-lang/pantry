@@ -89,6 +89,11 @@ Bun.serve({
         return await handlePackage(name)
       }
 
+      // Docs
+      if (path === '/docs') {
+        return await handleStatic('docs.stx', 'Documentation')
+      }
+
       // About
       if (path === '/about') {
         return await handleStatic('about.stx', 'About')
@@ -176,10 +181,20 @@ async function handleSearch(query: string): Promise<Response> {
     if (metaData && metaData.name) {
       const exists = results.some((r: any) => r.name === metaData.name)
       if (!exists) {
+        const latestVersion = metaData.latestVersion || ''
+        const latestData = metaData.versions?.[latestVersion] || {}
+        const platformKeys = Object.keys(latestData.platforms || {})
+        const platformLabels = platformKeys.map((p: string) => {
+          if (p.includes('darwin')) return 'macOS'
+          if (p.includes('linux')) return 'Linux'
+          return p
+        }).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
+
         results.unshift({
           name: metaData.name,
-          version: metaData.latestVersion,
-          description: `${Object.keys(metaData.versions || {}).length} versions available`,
+          version: latestVersion,
+          description: metaData.description || `${Object.keys(metaData.versions || {}).length} versions available`,
+          platforms: platformLabels,
         })
       }
     }

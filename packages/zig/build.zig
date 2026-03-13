@@ -332,6 +332,22 @@ pub fn build(b: *std.Build) void {
     });
     const run_pm_commands_tests = b.addRunArtifact(pm_commands_tests);
 
+    // Workspace tests (detection, config loading, member discovery, install paths)
+    const workspace_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/workspace_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+            .{ .name = "zig-test-framework", .module = test_framework_mod },
+        },
+    });
+    const workspace_tests = b.addTest(.{
+        .root_module = workspace_test_mod,
+    });
+    const run_workspace_tests = b.addRunArtifact(workspace_tests);
+
     // Shell integration benchmark
     const shell_bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/shell_bench.zig"),
@@ -364,6 +380,7 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_resolution_tests.step);
     test_step.dependOn(&run_publish_commit_tests.step);
     test_step.dependOn(&run_pm_commands_tests.step);
+    test_step.dependOn(&run_workspace_tests.step);
 
     const services_step = b.step("test:services", "Run services tests");
     services_step.dependOn(&run_services_tests.step);
@@ -376,6 +393,9 @@ pub fn build(b: *std.Build) void {
 
     const pm_commands_step = b.step("test:pm", "Run PM commands tests");
     pm_commands_step.dependOn(&run_pm_commands_tests.step);
+
+    const workspace_step = b.step("test:workspace", "Run workspace tests");
+    workspace_step.dependOn(&run_workspace_tests.step);
 
     const test_all_step = b.step("test:all", "Run all tests");
     test_all_step.dependOn(&run_lib_tests.step);

@@ -19,6 +19,12 @@
     return p
   })
 
+  const platformIcons = (platforms || []).map(p => {
+    if (p.includes('darwin')) return 'macOS'
+    if (p.includes('linux')) return 'Linux'
+    return p
+  })
+
   const tl = timeline || []
   const maxDownloads = tl.length > 0 ? Math.max(...tl.map(d => d.downloads || 0), 1) : 1
   const timelineBars = tl.map(d => ({
@@ -26,10 +32,23 @@
     downloads: d.downloads || 0,
     heightPct: Math.max(((d.downloads || 0) / maxDownloads) * 100, 2),
   }))
+
+  const description = (meta || {}).description || ''
+  const homepage = (meta || {}).homepage || ''
+  const source = (meta || {}).source || (meta || {}).repository || ''
+
+  const sortedVersions = [...(versions || [])].reverse()
+  const recentVersions = sortedVersions.slice(0, 10)
+  const hasMoreVersions = sortedVersions.length > 10
+  const remainingVersions = sortedVersions.slice(10)
+
+  const deps = (meta || {}).dependencies || {}
+  const depList = Object.keys(deps)
+  const hasDeps = depList.length > 0
 </script>
 
 <section class="py-12 px-6 pb-20">
-  <div class="max-w-3xl mx-auto">
+  <div class="max-w-4xl mx-auto">
     <!-- Back link -->
     <a href="/" class="inline-flex items-center gap-1.5 mb-6 hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
 
@@ -37,85 +56,220 @@
     <div class="text-center py-16">
       <h1 class="text-3xl font-semibold mb-3">Package not found</h1>
       <p class="mb-6" style="color: var(--fg-muted); font-size: 0.9375rem;">The package &ldquo;{{ name }}&rdquo; could not be found in the registry.</p>
-      <a href="/" class="text-sm hvr-accent" style="color: var(--accent);">Browse all packages</a>
+      <p class="mb-4" style="color: var(--fg-subtle); font-size: 0.8125rem;">Try searching for it or browse popular packages on the homepage.</p>
+      <div class="flex gap-3 justify-center">
+        <a href="/search?q={{ name }}" class="text-sm px-4 py-2 rounded-lg transition-colors" style="background: var(--accent); color: var(--bg);">Search for &ldquo;{{ name }}&rdquo;</a>
+        <a href="/" class="text-sm px-4 py-2 rounded-lg border border-[var(--border)] hvr-fg transition-colors" style="color: var(--fg-muted);">Browse packages</a>
+      </div>
     </div>
     @endif
 
     @if (!notFound)
     <!-- Package header -->
-    <div class="mb-8 animate-fade-in">
-      <div class="flex items-center gap-3 mb-2">
+    <div class="mb-6 animate-fade-in">
+      <div class="flex items-start justify-between gap-4 mb-2">
         <h1 class="text-3xl font-semibold tracking-tight font-mono">{{ name }}</h1>
+        <span class="shrink-0 bg-[var(--bg-muted)] px-2.5 py-1 rounded font-mono text-xs mt-1" style="color: var(--accent);">{{ latestVersion }}</span>
       </div>
-      <div class="flex flex-wrap items-center gap-3" style="font-size: 0.8125rem; color: var(--fg-muted);">
-        <span class="bg-[var(--bg-muted)] px-2 py-1 rounded font-mono text-xs">{{ latestVersion }}</span>
+      @if (description)
+      <p class="mb-3" style="font-size: 0.9375rem; color: var(--fg-muted);">{{ description }}</p>
+      @endif
+      <div class="flex flex-wrap items-center gap-3" style="font-size: 0.8125rem; color: var(--fg-subtle);">
+        @if (homepage)
+        <a href="{{ homepage }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 hvr-accent transition-colors" style="color: var(--accent);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          Homepage
+        </a>
+        @endif
+        @if (source)
+        <a href="{{ source }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 hvr-accent transition-colors" style="color: var(--accent);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          Source
+        </a>
+        @endif
+        <span class="inline-flex items-center gap-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          {{ formattedDownloads }} downloads
+        </span>
         <span>{{ versionCount }} versions</span>
         <span>{{ platformCount }} platforms</span>
       </div>
     </div>
 
-    <!-- Install command -->
-    <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 mb-8 animate-fade-in-delay">
-      <p class="uppercase tracking-widest mb-2" style="font-size: 0.6875rem; color: var(--fg-subtle);">Install</p>
-      <code class="text-sm" style="color: var(--accent);">pantry install {{ name }}</code>
+    <!-- Install commands -->
+    <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 mb-8 animate-fade-in-delay">
+      <p class="uppercase tracking-widest mb-3" style="font-size: 0.6875rem; color: var(--fg-subtle);">Install</p>
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">pantry</span>
+            <code class="text-sm" style="color: var(--accent);">pantry install {{ name }}</code>
+          </div>
+          <button class="copy-btn" data-copy="pantry install {{ name }}">copy</button>
+        </div>
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">brew</span>
+            <code class="text-sm" style="color: var(--fg-muted);">brew install {{ name }}</code>
+          </div>
+          <button class="copy-btn" data-copy="brew install {{ name }}">copy</button>
+        </div>
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">curl</span>
+            <code class="text-sm" style="color: var(--fg-muted);">curl -fsSL pantry.dev | sh -s -- install {{ name }}</code>
+          </div>
+          <button class="copy-btn" data-copy="curl -fsSL pantry.dev | sh -s -- install {{ name }}">copy</button>
+        </div>
+      </div>
     </div>
 
     <!-- Stats cards -->
     <div class="grid gap-3 mb-8" style="grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));">
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Downloads</p>
+        <div class="flex items-center gap-2 mb-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <p class="uppercase tracking-widest" style="font-size: 0.6875rem; color: var(--fg-subtle);">Downloads</p>
+        </div>
         <p class="text-2xl font-semibold font-mono">{{ formattedDownloads }}</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Latest</p>
+        <div class="flex items-center gap-2 mb-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--green);"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+          <p class="uppercase tracking-widest" style="font-size: 0.6875rem; color: var(--fg-subtle);">Latest</p>
+        </div>
         <p class="text-2xl font-semibold font-mono">{{ latestVersion }}</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
-        <p class="uppercase tracking-widest mb-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">Versions</p>
+        <div class="flex items-center gap-2 mb-1">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--yellow);"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <p class="uppercase tracking-widest" style="font-size: 0.6875rem; color: var(--fg-subtle);">Versions</p>
+        </div>
         <p class="text-2xl font-semibold font-mono">{{ versionCount }}</p>
       </div>
     </div>
 
-    <!-- Platforms -->
-    @if (platformCount > 0)
+    <!-- Tabbed content -->
     <div class="mb-8">
-      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Platforms</h2>
-      <div class="flex flex-wrap gap-2">
-        @foreach (platformLabels as label)
-        <span class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5" style="font-size: 0.8125rem; color: var(--fg-muted);">{{ label }}</span>
-        @endforeach
-      </div>
-    </div>
-    @endif
+      <div class="flex border-b border-[var(--border)] mb-6">
+        <input type="radio" name="pkg-tab" id="tab-overview" class="tab-radio" checked />
+        <label for="tab-overview" class="tab-label">Overview</label>
+        <input type="radio" name="pkg-tab" id="tab-versions" class="tab-radio" />
+        <label for="tab-versions" class="tab-label">Versions ({{ versionCount }})</label>
+        <input type="radio" name="pkg-tab" id="tab-platforms" class="tab-radio" />
+        <label for="tab-platforms" class="tab-label">Platforms ({{ platformCount }})</label>
 
-    <!-- Versions list -->
-    @if (versionCount > 0)
-    <div class="mb-8">
-      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">All Versions</h2>
-      <div class="flex flex-col gap-1">
-        @foreach (versions as ver)
-        <div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[var(--bg-subtle)] transition-colors">
-          <span class="font-mono" style="font-size: 0.8125rem;">{{ ver }}</span>
-          @if (ver === latestVersion)
-          <span class="rounded-full px-2 py-0.5" style="font-size: 0.6875rem; color: var(--accent); background: color-mix(in oklch, var(--accent), transparent 85%);">latest</span>
+        <!-- Overview tab content -->
+        <div class="tab-content tab-panel-overview w-full pt-6">
+          <!-- Download timeline -->
+          @if (timelineBars.length > 0)
+          <div class="mb-8">
+            <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Downloads (Last 30 Days)</h2>
+            <div class="flex items-end h-24 p-2 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg" style="gap: 2px;">
+              @foreach (timelineBars as bar)
+              <div class="flex-1 rounded-t-sm opacity-70 hover:opacity-100 transition-opacity" style="background: var(--accent); height: {!! bar.heightPct !!}%;" title="{{ bar.date }}: {{ bar.downloads }} downloads"></div>
+              @endforeach
+            </div>
+          </div>
+          @endif
+
+          <!-- Dependencies -->
+          @if (hasDeps)
+          <div class="mb-8">
+            <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Dependencies</h2>
+            <div class="flex flex-wrap gap-2">
+              @foreach (depList as dep)
+              <a href="/package/{{ dep }}" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">{{ dep }}</a>
+              @endforeach
+            </div>
+          </div>
+          @endif
+
+          <!-- Recent versions preview -->
+          @if (versionCount > 0)
+          <div>
+            <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Recent Versions</h2>
+            <div class="flex flex-col gap-1">
+              @foreach (recentVersions as ver)
+              <div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[var(--bg-subtle)] transition-colors">
+                <span class="font-mono" style="font-size: 0.8125rem;">{{ ver }}</span>
+                @if (ver === latestVersion)
+                <span class="rounded-full px-2 py-0.5" style="font-size: 0.6875rem; color: var(--accent); background: color-mix(in oklch, var(--accent), transparent 85%);">latest</span>
+                @endif
+              </div>
+              @endforeach
+            </div>
+            @if (hasMoreVersions)
+            <p class="mt-2 px-3" style="font-size: 0.75rem; color: var(--fg-subtle);">
+              and {{ remainingVersions.length }} more &mdash; see Versions tab
+            </p>
+            @endif
+          </div>
           @endif
         </div>
-        @endforeach
-      </div>
-    </div>
-    @endif
 
-    <!-- Download timeline -->
-    @if (timelineBars.length > 0)
-    <div>
-      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Downloads (Last 30 Days)</h2>
-      <div class="flex items-end h-24 p-2 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg" style="gap: 2px;">
-        @foreach (timelineBars as bar)
-        <div class="flex-1 rounded-t-sm opacity-70 hover:opacity-100 transition-opacity" style="background: var(--accent); height: {!! bar.heightPct !!}%;" title="{{ bar.date }}: {{ bar.downloads }} downloads"></div>
-        @endforeach
+        <!-- Versions tab content -->
+        <div class="tab-content tab-panel-versions w-full pt-6">
+          @if (versionCount > 0)
+          <div class="flex flex-col gap-1">
+            @foreach (sortedVersions as ver)
+            <div class="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[var(--bg-subtle)] transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="font-mono" style="font-size: 0.8125rem;">{{ ver }}</span>
+                @if (ver === latestVersion)
+                <span class="rounded-full px-2 py-0.5" style="font-size: 0.6875rem; color: var(--accent); background: color-mix(in oklch, var(--accent), transparent 85%);">latest</span>
+                @endif
+              </div>
+              <code class="text-xs" style="color: var(--fg-subtle);">pantry install {{ name }}@{{ ver }}</code>
+            </div>
+            @endforeach
+          </div>
+          @else
+          <p style="font-size: 0.875rem; color: var(--fg-subtle);">No version information available.</p>
+          @endif
+        </div>
+
+        <!-- Platforms tab content -->
+        <div class="tab-content tab-panel-platforms w-full pt-6">
+          @if (platformCount > 0)
+          <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));">
+            @foreach (platformLabels as label)
+            <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 flex items-center gap-3">
+              @if (label.includes('macOS'))
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: var(--fg-subtle);"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              @else
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: var(--fg-subtle);"><path d="M12.504 0c-.155 0-.315.008-.48.021-4.226.333-3.105 4.807-3.17 6.298-.076 1.092-.3 1.953-1.05 3.02-.885 1.051-2.127 2.75-2.716 4.521-.278.832-.41 1.684-.287 2.489a7.29 7.29 0 0 0 .067.443c-.107.26-.18.6-.18.978 0 .897.462 1.685 1.028 1.685.253 0 .481-.098.72-.304.318-.274.695-.588 1.242-.588.547 0 .924.314 1.242.588.239.206.467.304.72.304.256 0 .49-.098.724-.304.32-.274.695-.588 1.24-.588.548 0 .925.314 1.242.588.237.206.467.304.72.304.566 0 1.028-.788 1.028-1.685 0-.385-.073-.722-.18-.978.025-.148.046-.295.066-.443.124-.805-.009-1.657-.287-2.489-.589-1.771-1.831-3.47-2.715-4.521-.752-1.067-.975-1.928-1.051-3.02-.066-1.491 1.056-5.965-3.17-6.298A4.97 4.97 0 0 0 12.504 0z"/></svg>
+              @endif
+              <div>
+                <p class="text-sm font-medium">{{ label }}</p>
+                <p style="font-size: 0.6875rem; color: var(--fg-subtle);">Pre-built binary available</p>
+              </div>
+            </div>
+            @endforeach
+          </div>
+          @else
+          <p style="font-size: 0.875rem; color: var(--fg-subtle);">No platform information available.</p>
+          @endif
+        </div>
       </div>
     </div>
-    @endif
     @endif
   </div>
 </section>
+
+<script>
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.copy-btn')
+    if (!btn) return
+    var text = btn.getAttribute('data-copy')
+    if (!text) return
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = 'copied!'
+      btn.classList.add('copied')
+      setTimeout(function() {
+        btn.textContent = 'copy'
+        btn.classList.remove('copied')
+      }, 2000)
+    })
+  })
+</script>
