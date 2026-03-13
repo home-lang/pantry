@@ -3,7 +3,7 @@
  *
  * @domain `openai.com/openai-python`
  * @programs `openai`
- * @version `2.27.0` (320 versions available)
+ * @version `2.28.0` (321 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install openai.com/openai-python`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "openai"
  * console.log(pkg.description) // "The official Python library for the OpenAI API"
  * console.log(pkg.programs)    // ["openai"]
- * console.log(pkg.versions[0]) // "2.27.0" (latest)
+ * console.log(pkg.versions[0]) // "2.28.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/openai-com/openai-python.md
@@ -68,6 +68,7 @@ export const openaicomopenaipythonPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.28.0',
     '2.27.0',
     '2.26.0',
     '2.25.0',
