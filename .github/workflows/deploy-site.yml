@@ -6,6 +6,8 @@ on:
     paths:
       - 'packages/site/**'
       - 'public/install.sh'
+      - 'docs/**'
+      - '.config/bunpress.ts'
   workflow_dispatch:
 
 jobs:
@@ -58,6 +60,9 @@ jobs:
 
             # Incremental install — only postinstall re-patches stx/ts-cloud if needed
             sudo /root/.bun/bin/bun install
+
+            # Build bunpress docs (served at /docs)
+            sudo /root/.bun/bin/bun run build:docs
 
             # Create systemd service if it doesn't exist
             if ! systemctl list-unit-files | grep -q pantry-site; then

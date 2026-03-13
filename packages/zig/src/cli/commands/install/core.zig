@@ -465,6 +465,16 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         defer shared_installer.deinit();
 
+        // Batch install from lockfile: if lockfile has all packages resolved,
+        // extract them in parallel (skips individual resolution + recursive dep walking)
+        if (shared_installer.installAllFromLockfile(proj_dir)) |batch_count_opt| {
+            if (batch_count_opt) |batch_count| {
+                if (batch_count > 0) {
+                    style.print("{s}{s}{s} Restored {d} packages from lockfile\n", .{ style.green, style.check, style.reset, batch_count });
+                }
+            }
+        } else |_| {}
+
         // Install results storage
         var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
         defer {

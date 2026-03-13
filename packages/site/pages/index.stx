@@ -65,7 +65,7 @@
         </div>
         <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Add Packages</h3>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">Install any package from the registry. Pre-built, fast downloads.</p>
-        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">pantry install nodejs.org</code>
+        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">pantry install bun.sh</code>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-6 text-center">
         <div class="inline-flex items-center justify-center w-10 h-10 rounded-full mb-4" style="background: color-mix(in oklch, var(--accent), transparent 85%);">
@@ -73,7 +73,7 @@
         </div>
         <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Run</h3>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">Binaries are symlinked into your PATH. Just run them.</p>
-        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">node --version</code>
+        <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">bun --version</code>
       </div>
     </div>
   </div>
@@ -123,7 +123,19 @@
       @foreach (pkgs as pkg)
       <a href="/package/{{ pkg.domain }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1.5">
-          <span class="font-mono text-sm font-medium">{{ pkg.label }}</span>
+          <div class="flex items-center gap-2.5">
+            <img
+              src="https://www.google.com/s2/favicons?domain={{ pkg.domain }}&sz=32"
+              alt=""
+              width="18"
+              height="18"
+              loading="lazy"
+              class="rounded-sm"
+              style="opacity: 0.85;"
+              onerror="this.style.display='none'"
+            />
+            <span class="font-mono text-sm font-medium">{{ pkg.label }}</span>
+          </div>
           @if (pkg.version)
           <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ pkg.version }}</span>
           @endif

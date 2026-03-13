@@ -328,6 +328,155 @@ pub const Installer = struct {
         self.lockfile = lf;
     }
 
+    /// Batch install all packages from lockfile in parallel.
+    /// This is the fast path when lockfile exists but modules are missing:
+    /// 1. Flatten lockfile → list of {name, version, tarball_url}
+    /// 2. Filter to only packages not already on disk
+    /// 3. Download/extract in parallel using tarball cache
+    /// Returns number of packages installed, or null if lockfile not available.
+    pub fn installAllFromLockfile(
+        self: *Installer,
+        project_root: []const u8,
+    ) !?usize {
+        const lf = self.lockfile orelse return null;
+
+        // 1. Collect all packages that need installation
+        const PkgEntry = struct {
+            name: []const u8,
+            version: []const u8,
+            tarball_url: []const u8,
+        };
+
+        var to_install: std.ArrayList(PkgEntry) = .empty;
+        defer to_install.deinit(self.allocator);
+
+        var lf_iter = lf.packages.iterator();
+        while (lf_iter.next()) |entry| {
+            const pkg = entry.value_ptr.*;
+            if (pkg.name.len == 0 or pkg.version.len == 0) continue;
+
+            // Check if already installed on disk
+            var dir_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const install_dir = std.fmt.bufPrint(&dir_buf, "{s}/{s}/{s}", .{
+                project_root, self.modules_dir, pkg.name,
+            }) catch continue;
+            io_helper.accessAbsolute(install_dir, .{}) catch {
+                // Not installed — need to extract
+
+                // Build tarball URL from lockfile resolved field or npm convention
+                const url = if (pkg.resolved.len > 0 and !std.mem.startsWith(u8, pkg.resolved, "registry:"))
+                    pkg.resolved
+                else blk: {
+                    // Construct npm tarball URL from name+version
+                    const base_name = if (std.mem.indexOf(u8, pkg.name, "/")) |slash|
+                        pkg.name[slash + 1 ..]
+                    else
+                        pkg.name;
+                    const constructed = std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}/-/{s}-{s}.tgz", .{
+                        pkg.name, base_name, pkg.version,
+                    }) catch continue;
+                    // Store for later free
+                    break :blk constructed;
+                };
+
+                to_install.append(self.allocator, .{
+                    .name = pkg.name,
+                    .version = pkg.version,
+                    .tarball_url = url,
+                }) catch continue;
+                continue;
+            };
+            // Already installed — add to hoisted cache for fast transitive skips
+            self.hoisted_versions.put(pkg.name, pkg.version);
+        }
+
+        if (to_install.items.len == 0) return 0;
+
+        // 2. Install in parallel using thread pool
+        const results = try self.allocator.alloc(bool, to_install.items.len);
+        defer self.allocator.free(results);
+        for (results) |*r| r.* = false;
+
+        const BatchCtx = struct {
+            entries: []const PkgEntry,
+            results: []bool,
+            next: *std.atomic.Value(usize),
+            installer: *Installer,
+            project_root: []const u8,
+
+            fn worker(ctx: *@This()) void {
+                while (true) {
+                    const i = ctx.next.fetchAdd(1, .monotonic);
+                    if (i >= ctx.entries.len) break;
+
+                    const entry = ctx.entries[i];
+                    const spec = PackageSpec{
+                        .name = entry.name,
+                        .version = entry.version,
+                        .source = .npm,
+                        .url = entry.tarball_url,
+                    };
+
+                    var result = ctx.installer.installFromNpm(spec, .{
+                        .project_root = ctx.project_root,
+                        .quiet = true,
+                        .skip_transitive_resolution = true, // We install everything flat
+                    }) catch {
+                        continue;
+                    };
+                    result.deinit(ctx.installer.allocator);
+                    ctx.results[i] = true;
+                }
+            }
+        };
+
+        var next_idx = std.atomic.Value(usize).init(0);
+        var ctx = BatchCtx{
+            .entries = to_install.items,
+            .results = results,
+            .next = &next_idx,
+            .installer = self,
+            .project_root = project_root,
+        };
+
+        const cpu_count = std.Thread.getCpuCount() catch 4;
+        const max_threads = @min(cpu_count, 16);
+        const thread_count = @min(to_install.items.len, max_threads);
+        var threads = try self.allocator.alloc(?std.Thread, max_threads);
+        defer self.allocator.free(threads);
+        for (threads) |*t| t.* = null;
+
+        for (0..thread_count) |t| {
+            threads[t] = std.Thread.spawn(.{}, BatchCtx.worker, .{&ctx}) catch null;
+        }
+
+        // Wait with progress
+        while (next_idx.load(.monotonic) < to_install.items.len) {
+            io_helper.nanosleep(0, 50 * std.time.ns_per_ms);
+        }
+
+        for (threads) |*t| {
+            if (t.*) |thread| {
+                thread.join();
+                t.* = null;
+            }
+        }
+
+        // Count successes and populate hoisted cache
+        var installed: usize = 0;
+        for (to_install.items, 0..) |entry, i| {
+            if (results[i]) {
+                installed += 1;
+                self.hoisted_versions.put(entry.name, entry.version);
+            }
+        }
+
+        // Note: tarball_url strings point into lockfile-owned memory (for lockfile resolved fields)
+        // or are constructed URLs. Constructed URLs are short-lived and freed by ArrayList deinit.
+
+        return installed;
+    }
+
     pub fn deinit(self: *Installer) void {
         self.allocator.free(self.data_dir);
         if (self.custom_registry_url) |url| self.allocator.free(url);

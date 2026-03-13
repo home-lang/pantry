@@ -30,6 +30,7 @@ async function registryFetch(path: string): Promise<any> {
 
 /** Featured packages shown on the homepage */
 const FEATURED_PACKAGES = [
+  { domain: 'bun.sh', label: 'Bun', desc: 'JavaScript runtime & toolkit' },
   { domain: 'curl.se', label: 'curl', desc: 'Command line data transfer' },
   { domain: 'python.org', label: 'Python', desc: 'Programming language' },
   { domain: 'nodejs.org', label: 'Node.js', desc: 'JavaScript runtime' },
@@ -42,6 +43,9 @@ const FEATURED_PACKAGES = [
   { domain: 'nginx.org', label: 'nginx', desc: 'Web server & reverse proxy' },
   { domain: 'sqlite.org', label: 'SQLite', desc: 'Embedded SQL database' },
   { domain: 'ffmpeg.org', label: 'FFmpeg', desc: 'Multimedia framework' },
+  { domain: 'rust-lang.org', label: 'Rust', desc: 'Systems programming language' },
+  { domain: 'deno.land', label: 'Deno', desc: 'Secure JavaScript runtime' },
+  { domain: 'git-scm.org', label: 'Git', desc: 'Version control system' },
 ]
 
 // ============================================================================
@@ -89,9 +93,9 @@ Bun.serve({
         return await handlePackage(name)
       }
 
-      // Docs
-      if (path === '/docs') {
-        return await handleStatic('docs.stx', 'Documentation')
+      // Docs — serve bunpress-built static docs
+      if (path === '/docs' || path.startsWith('/docs/')) {
+        return await handleDocs(path)
       }
 
       // About
@@ -262,6 +266,54 @@ async function handlePackage(name: string): Promise<Response> {
     title: name,
   })
   return htmlResponse(html)
+}
+
+async function handleDocs(reqPath: string): Promise<Response> {
+  const docsDir = resolve(__dirname, '../../../dist')
+  const subPath = reqPath === '/docs' || reqPath === '/docs/'
+    ? '/index.html'
+    : reqPath.replace('/docs', '')
+
+  const candidates = [
+    resolve(docsDir, `.${subPath}`),
+    resolve(docsDir, `.${subPath}.html`),
+    resolve(docsDir, `.${subPath}/index.html`),
+  ]
+
+  for (const candidate of candidates) {
+    const file = Bun.file(candidate)
+    if (await file.exists()) {
+      const ext = candidate.split('.').pop()
+      const contentTypes: Record<string, string> = {
+        html: 'text/html; charset=utf-8',
+        css: 'text/css; charset=utf-8',
+        js: 'application/javascript; charset=utf-8',
+        json: 'application/json',
+        svg: 'image/svg+xml',
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        ico: 'image/x-icon',
+        woff2: 'font/woff2',
+        woff: 'font/woff',
+      }
+      return new Response(file, {
+        headers: {
+          'Content-Type': contentTypes[ext || ''] || 'application/octet-stream',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      })
+    }
+  }
+
+  // Fallback to docs index
+  const indexFile = Bun.file(resolve(docsDir, 'index.html'))
+  if (await indexFile.exists()) {
+    return new Response(indexFile, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
+
+  return new Response('Documentation not found', { status: 404 })
 }
 
 async function handleStatic(file: string, title: string): Promise<Response> {

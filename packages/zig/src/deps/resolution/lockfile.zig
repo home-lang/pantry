@@ -82,6 +82,18 @@ pub const LockFile = struct {
         self.packages.deinit();
     }
 
+    /// Build name→key index for O(1) lookups in getLockedVersion.
+    /// Must be called once after loading/parsing, BEFORE any concurrent access.
+    pub fn buildNameIndex(self: *LockFile) void {
+        var it = self.packages.iterator();
+        while (it.next()) |entry| {
+            const pkg = entry.value_ptr.*;
+            // Map package name → hashmap key (e.g. "react" → "react@16.14.0")
+            // Values point into packages map memory — no separate allocation needed
+            self.name_index.put(pkg.name, entry.key_ptr.*) catch {};
+        }
+    }
+
     /// Add a package to the lock file
     pub fn addPackage(
         self: *LockFile,
@@ -296,6 +308,9 @@ pub const LockFile = struct {
             }
         }
 
+        // Build name index for O(1) lookups (before any concurrent access)
+        lock_file.buildNameIndex();
+
         return lock_file;
     }
 
@@ -435,15 +450,10 @@ pub const LockedVersion = struct {
     integrity: ?[]const u8,
 };
 
-/// Get locked version for a package if it exists in lockfile
-/// This is the key function for deterministic installs
+/// Get locked version for a package if it exists in lockfile.
+/// Thread-safe: uses a pre-built name index (populated via buildNameIndex).
 pub fn getLockedVersion(lock_file: *LockFile, name: []const u8) ?LockedVersion {
-    // Fast path: try common key patterns first (O(1) hashmap lookup)
-    // Keys are typically "{name}@{version}" — we don't know the version, but
-    // we can iterate the hashmap with early exit on name match.
-    // For large lockfiles, build a name→key index on first miss for O(1) subsequent lookups.
-
-    // Check the name index first (populated after first full scan)
+    // Use the name index for O(1) lookup (built at load time via buildNameIndex)
     if (lock_file.name_index.get(name)) |key| {
         if (lock_file.packages.get(key)) |pkg| {
             return LockedVersion{
@@ -454,13 +464,10 @@ pub fn getLockedVersion(lock_file: *LockFile, name: []const u8) ?LockedVersion {
         }
     }
 
-    // Fallback: linear scan (first call only — builds index for future lookups)
+    // Fallback: linear scan (only needed if buildNameIndex wasn't called)
     var it = lock_file.packages.iterator();
     while (it.next()) |entry| {
         const pkg = entry.value_ptr.*;
-        // Build index entry for every package we see
-        lock_file.name_index.put(pkg.name, entry.key_ptr.*) catch {};
-
         if (std.mem.eql(u8, pkg.name, name)) {
             return LockedVersion{
                 .version = pkg.version,
