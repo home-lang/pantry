@@ -2,7 +2,7 @@
  * **libplacebo** - pkgx package
  *
  * @domain `videolan.org/libplacebo`
- * @version `7.360.0` (5 versions available)
+ * @version `7.360.1` (6 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install videolan.org/libplacebo`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.videolanorglibplacebo
  * console.log(pkg.name)        // "libplacebo"
- * console.log(pkg.versions[0]) // "7.360.0" (latest)
+ * console.log(pkg.versions[0]) // "7.360.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/videolan-org/libplacebo.md
@@ -70,6 +70,7 @@ export const videolanorglibplaceboPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.360.1',
     '7.360.0',
     '7.351.0',
     '7.349.0',

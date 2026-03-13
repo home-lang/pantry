@@ -3,7 +3,7 @@
  *
  * @domain `sftpgo.com`
  * @programs `sftpgo`
- * @version `2.7.0` (9 versions available)
+ * @version `2.7.1` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install sftpgo.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "sftpgo"
  * console.log(pkg.description) // "Full-featured and highly configurable SFTP, HTT..."
  * console.log(pkg.programs)    // ["sftpgo"]
- * console.log(pkg.versions[0]) // "2.7.0" (latest)
+ * console.log(pkg.versions[0]) // "2.7.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/sftpgo-com.md
@@ -69,6 +69,7 @@ export const sftpgocomPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.7.1',
     '2.7.0',
     '2.6.6',
     '2.6.5',
