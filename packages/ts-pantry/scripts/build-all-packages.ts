@@ -1277,7 +1277,7 @@ Options:
     'github.com/MaestroError/heif-converter-image', // No proper releases (hardcoded 0.2)
     // microsoft.com/markitdown removed — stable v0.1.x versions now available, widened Python in override
     // snyk.io removed — switched to pre-built binary download from GitHub
-    'github.com/nicholasgasior/gw', // Dead project, no GitHub releases
+    'github.com/home-lang/gw', // Dead project, no GitHub releases
     // foundry-rs.github.io removed — no package.yml exists (phantom entry)
     // wez.github.io/wezterm removed — pre-built binary download (macOS only)
 

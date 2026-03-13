@@ -66,7 +66,7 @@
           />
         </form>
         <a href="/about" class="hvr-fg transition-colors" style="color: var(--fg-muted);">about</a>
-        <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">github</a>
+        <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">github</a>
       </nav>
     </div>
   </header>
@@ -88,7 +88,7 @@
           <a href="/about" class="hvr-fg transition-colors">about</a>
           <a href="/privacy" class="hvr-fg transition-colors">privacy</a>
           <a href="/accessibility" class="hvr-fg transition-colors">accessibility</a>
-          <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors">source</a>
+          <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors">source</a>
           <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="hvr-fg transition-colors">chat</a>
         </nav>
       </div>

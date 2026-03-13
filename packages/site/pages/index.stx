@@ -74,7 +74,7 @@
   <div class="max-w-6xl mx-auto">
     <h2 class="text-xs uppercase tracking-widest font-medium mb-6" style="color: var(--fg-subtle);">Get Involved</h2>
     <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
-      <a href="https://github.com/nicholasgasior/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+      <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <h3 class="font-medium mb-1" style="font-size: 0.9375rem;">Contribute</h3>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">Help improve pantry on GitHub</p>
       </a>

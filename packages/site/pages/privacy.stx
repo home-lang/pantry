@@ -79,7 +79,7 @@
       <div>
         <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Contact</h2>
         <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
-          For privacy-related inquiries, please <a href="https://github.com/nicholasgasior/pantry/issues" class="hvr-accent" style="color: var(--accent);">open a GitHub issue</a> or reach out to us on <a href="https://discord.gg/stacksjs" class="hvr-accent" style="color: var(--accent);">Discord</a>.
+          For privacy-related inquiries, please <a href="https://github.com/home-lang/pantry/issues" class="hvr-accent" style="color: var(--accent);">open a GitHub issue</a> or reach out to us on <a href="https://discord.gg/stacksjs" class="hvr-accent" style="color: var(--accent);">Discord</a>.
         </p>
       </div>
 

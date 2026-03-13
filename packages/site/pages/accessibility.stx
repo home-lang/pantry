@@ -65,7 +65,7 @@
       <div>
         <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">Contact</h2>
         <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
-          If you experience any accessibility issues or have suggestions for improvement, please <a href="https://github.com/nicholasgasior/pantry/issues" class="hvr-accent" style="color: var(--accent);">open a GitHub issue</a> with the <code class="bg-[var(--bg-subtle)] px-1.5 py-0.5 rounded" style="font-size: 0.8125rem;">accessibility</code> label, or reach out on <a href="https://discord.gg/stacksjs" class="hvr-accent" style="color: var(--accent);">Discord</a>.
+          If you experience any accessibility issues or have suggestions for improvement, please <a href="https://github.com/home-lang/pantry/issues" class="hvr-accent" style="color: var(--accent);">open a GitHub issue</a> with the <code class="bg-[var(--bg-subtle)] px-1.5 py-0.5 rounded" style="font-size: 0.8125rem;">accessibility</code> label, or reach out on <a href="https://discord.gg/stacksjs" class="hvr-accent" style="color: var(--accent);">Discord</a>.
         </p>
       </div>
     </article>
