@@ -409,6 +409,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             shared_installer.setRegistryUrl(custom_registry);
         }
 
+        // Wire up lockfile for lockfile-first resolution (skip npm registry on subsequent installs)
+        shared_installer.setLockfile(&lock_file);
+
         defer shared_installer.deinit();
 
         // Install results storage

@@ -231,6 +231,8 @@ pub const Installer = struct {
     modules_dir: []const u8 = "pantry",
     /// In-memory cache of hoisted packages: name → installed version (avoids repeated filesystem checks)
     hoisted_versions: *HoisteVersionCache,
+    /// Lockfile for lockfile-first resolution (skip npm registry queries when locked)
+    lockfile: ?*@import("../deps/resolution/lockfile.zig").LockFile = null,
 
     /// Thread-safe cache tracking which packages are installed at the hoisted level.
     /// Eliminates redundant filesystem checks when the same transitive dep is encountered
@@ -311,6 +313,11 @@ pub const Installer = struct {
     pub fn setRegistryUrl(self: *Installer, url: []const u8) void {
         if (self.custom_registry_url) |old| self.allocator.free(old);
         self.custom_registry_url = self.allocator.dupe(u8, url) catch null;
+    }
+
+    /// Set lockfile for lockfile-first resolution (skips npm registry on subsequent installs)
+    pub fn setLockfile(self: *Installer, lf: *@import("../deps/resolution/lockfile.zig").LockFile) void {
+        self.lockfile = lf;
     }
 
     pub fn deinit(self: *Installer) void {
@@ -950,10 +957,9 @@ pub const Installer = struct {
         };
         errdefer self.allocator.free(install_dir);
 
-        // Check if already installed
+        // Check if already installed (lightweight access check, no dir handle)
         const already_installed = !options.force and blk: {
-            var check_dir = io_helper.cwd().openDir(io_helper.io, install_dir, .{}) catch break :blk false;
-            check_dir.close(io_helper.io);
+            io_helper.accessAbsolute(install_dir, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -968,38 +974,27 @@ pub const Installer = struct {
             };
         }
 
-        // Create temp directory for download
-        const tmp_dir = io_helper.getTempDir();
-        // Sanitize name for temp file (replace / with __ for scoped packages like @actions/core)
-        const safe_name = try std.mem.replaceOwned(u8, self.allocator, spec.name, "/", "__");
-        defer self.allocator.free(safe_name);
-        const tarball_path = try std.fmt.allocPrint(
-            self.allocator,
-            "{s}/pantry-npm-{s}-{s}.tgz",
-            .{ tmp_dir, safe_name, spec.version },
-        );
-        defer {
-            self.allocator.free(tarball_path);
-            io_helper.deleteFile(tarball_path) catch {};
-        }
-
-        // Download tarball using native HTTP (no curl subprocess)
-        io_helper.httpDownloadFile(self.allocator, tarball_url, tarball_path) catch {
+        // Download tarball directly into memory (skip temp file — avoids disk write + re-read)
+        const tarball_data = io_helper.httpGet(self.allocator, tarball_url) catch {
             if (!options.quiet) {
                 style.print("  ✗ Failed to download: {s}\n", .{tarball_url});
             }
             return error.DownloadFailed;
         };
+        defer self.allocator.free(tarball_data);
+
+        if (tarball_data.len == 0) {
+            if (!options.quiet) {
+                style.print("  ✗ Empty tarball: {s}\n", .{tarball_url});
+            }
+            return error.DownloadFailed;
+        }
 
         // Create install directory
         try io_helper.makePath(install_dir);
 
-        // Extract tarball - npm tarballs have a 'package' directory inside
-        // Native Zig tar+gzip extraction with strip_components=1 (no subprocess)
+        // Extract tarball directly from memory — npm tarballs have a 'package' directory inside
         {
-            const tarball_data = try io_helper.readFileAlloc(self.allocator, tarball_path, 500 * 1024 * 1024);
-            defer self.allocator.free(tarball_data);
-
             var dest = try io_helper.cwd().openDir(io_helper.io, install_dir, .{});
             defer dest.close(io_helper.io);
 
@@ -1323,8 +1318,7 @@ pub const Installer = struct {
         var install_root = project_root;
 
         const already_installed = blk: {
-            var check_dir = io_helper.cwd().openDir(io_helper.io, existing_dir, .{}) catch break :blk false;
-            check_dir.close(io_helper.io);
+            io_helper.accessAbsolute(existing_dir, .{}) catch break :blk false;
             break :blk true;
         };
 
@@ -1407,6 +1401,40 @@ pub const Installer = struct {
 
         if (self.npm_cache.getResolution(cache_key, self.allocator)) |cached| {
             return cached;
+        }
+
+        // --- Lockfile-first resolution: skip npm registry entirely if locked ---
+        if (self.lockfile) |lf| {
+            const lockfile_zig = @import("../deps/resolution/lockfile.zig");
+            if (lockfile_zig.getLockedVersion(lf, name)) |locked| {
+                // Verify the locked version satisfies the constraint
+                const npm_zig = @import("../registry/npm.zig");
+                const constraint = npm_zig.SemverConstraint.parse(version_constraint) catch null;
+                const satisfies = if (constraint) |c| c.satisfies(locked.version) else true;
+
+                if (satisfies) {
+                    // Build tarball URL from locked resolved field or npm convention
+                    const tarball_url = if (locked.resolved.len > 0 and !std.mem.startsWith(u8, locked.resolved, "registry:"))
+                        try self.allocator.dupe(u8, locked.resolved)
+                    else
+                        try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}/-/{s}-{s}.tgz", .{
+                            name,
+                            // Strip scope prefix for tarball filename (e.g. @types/node → node)
+                            if (std.mem.indexOf(u8, name, "/")) |slash_idx| name[slash_idx + 1 ..] else name,
+                            locked.version,
+                        });
+
+                    const result = NpmResolution{
+                        .version = try self.allocator.dupe(u8, locked.version),
+                        .tarball_url = tarball_url,
+                        .integrity = if (locked.integrity) |i| (self.allocator.dupe(u8, i) catch null) else null,
+                    };
+
+                    // Cache the lockfile resolution for future lookups
+                    self.npm_cache.putResolution(cache_key, result.version, result.tarball_url, result.integrity);
+                    return result;
+                }
+            }
         }
 
         // --- Level 1 cache: get or fetch raw registry JSON ---
