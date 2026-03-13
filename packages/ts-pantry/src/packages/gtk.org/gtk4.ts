@@ -3,7 +3,7 @@
  *
  * @domain `gtk.org/gtk4`
  * @programs `gtk4-builder-tool`, `gtk4-demo`, `gtk4-demo-application`, `gtk4-encode-symbolic-svg`, `gtk4-launch`, ... (+6 more)
- * @version `4.22.0` (60 versions available)
+ * @version `4.22.1` (61 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install gtk.org/gtk4`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "gtk4"
  * console.log(pkg.description) // "Toolkit for creating graphical user interfaces"
  * console.log(pkg.programs)    // ["gtk4-builder-tool", "gtk4-demo", ...]
- * console.log(pkg.versions[0]) // "4.22.0" (latest)
+ * console.log(pkg.versions[0]) // "4.22.1" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gtk-org/gtk4.md
@@ -112,6 +112,7 @@ export const gtkorggtk4Package = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.22.1',
     '4.22.0',
     '4.21.6',
     '4.21.5',
