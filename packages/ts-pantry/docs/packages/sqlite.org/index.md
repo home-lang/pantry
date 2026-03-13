@@ -31,10 +31,10 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 33 versions</summary>
+<summary>Show all 34 versions</summary>
 
 - `3.52.0`
-- `3.51.2`, `3.51.1`, `3.51.0`
+- `3.51.3`, `3.51.2`, `3.51.1`, `3.51.0`
 - `3.50.4`, `3.50.3`, `3.50.2`, `3.50.1`, `3.50.0`
 - `3.49.2`, `3.49.1`, `3.49.0`
 - `3.48.0`

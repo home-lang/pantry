@@ -3,7 +3,7 @@
  *
  * @domain `pkgx.sh/brewkit`
  * @programs `bk`
- * @version `1.19.2` (68 versions available)
+ * @version `1.19.3` (69 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install pkgx.sh/brewkit`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "brewkit"
  * console.log(pkg.description) // "build infra & `$ bk build`"
  * console.log(pkg.programs)    // ["bk"]
- * console.log(pkg.versions[0]) // "1.19.2" (latest)
+ * console.log(pkg.versions[0]) // "1.19.3" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/pkgx-sh/brewkit.md
@@ -69,6 +69,7 @@ export const pkgxshbrewkitPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.19.3',
     '1.19.2',
     '1.19.1',
     '1.19.0',

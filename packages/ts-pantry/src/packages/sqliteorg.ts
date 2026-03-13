@@ -3,7 +3,7 @@
  *
  * @domain `sqlite.org`
  * @programs `sqlite3`
- * @version `3.52.0` (33 versions available)
+ * @version `3.52.0` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install sqlite.org`
@@ -75,6 +75,7 @@ export const sqlitePackage = {
   */
   versions: [
     '3.52.0',
+    '3.51.3',
     '3.51.2',
     '3.51.1',
     '3.51.0',

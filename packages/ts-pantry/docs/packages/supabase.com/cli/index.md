@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 205 versions</summary>
+<summary>Show all 206 versions</summary>
 
+- `2.78.1`
 - `2.75.0`
 - `2.72.7`
 - `2.67.1`
@@ -130,13 +131,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.75.0`
+**Latest Version**: `2.78.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +supabase.com/cli@2.75.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +supabase.com/cli@2.78.1 -- $SHELL -i
 ```
 
 ## Usage Examples

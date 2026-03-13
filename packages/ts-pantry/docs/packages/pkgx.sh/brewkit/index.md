@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 68 versions</summary>
+<summary>Show all 69 versions</summary>
 
-- `1.19.2`, `1.19.1`, `1.19.0`
+- `1.19.3`, `1.19.2`, `1.19.1`, `1.19.0`
 - `1.18.2`, `1.18.1`, `1.18.0`
 - `1.17.0`
 - `1.16.0`
@@ -60,13 +60,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.19.2`
+**Latest Version**: `1.19.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pkgx.sh/brewkit@1.19.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pkgx.sh/brewkit@1.19.3 -- $SHELL -i
 ```
 
 ## Dependencies
