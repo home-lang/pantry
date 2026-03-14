@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 156 versions</summary>
+<summary>Show all 157 versions</summary>
 
+- `0.18.0`
 - `0.17.7`, `0.17.6`, `0.17.5`, `0.17.4`, `0.17.3`, `0.17.2`, `0.17.1`, `0.17.0`
 - `0.16.3`, `0.16.2`, `0.16.1`, `0.16.0`
 - `0.15.6`, `0.15.5`, `0.15.4`, `0.15.2`, `0.15.1`, `0.15.0`
@@ -48,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.17.7`
+**Latest Version**: `0.18.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +ollama.ai@0.17.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +ollama.ai@0.18.0 -- $SHELL -i
 ```
 
 ## Dependencies
