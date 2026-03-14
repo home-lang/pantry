@@ -1,3 +1,36 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.13...v0.8.14)
+
+### 🚀 Features
+
+- built-in dependency caching in pantry action ([64eb2b7](https://github.com/home-lang/pantry/commit/64eb2b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.14 ([d66a02e](https://github.com/home-lang/pantry/commit/d66a02e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update lockfile ([621d463](https://github.com/home-lang/pantry/commit/621d463)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve CI logs and add pantry dep caching ([1e4fe91](https://github.com/home-lang/pantry/commit/1e4fe91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f35c462](https://github.com/home-lang/pantry/commit/f35c462)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.13...HEAD)
+
+### 🚀 Features
+
+- built-in dependency caching in pantry action ([64eb2b7](https://github.com/home-lang/pantry/commit/64eb2b7)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update lockfile ([621d463](https://github.com/home-lang/pantry/commit/621d463)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve CI logs and add pantry dep caching ([1e4fe91](https://github.com/home-lang/pantry/commit/1e4fe91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- wip ([f35c462](https://github.com/home-lang/pantry/commit/f35c462)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.12...v0.8.13)
 
 ### 🐛 Bug Fixes

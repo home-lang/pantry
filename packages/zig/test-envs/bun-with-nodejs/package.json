@@ -1,6 +1,6 @@
 {
   "name": "bun-with-nodejs",
-  "version": "0.8.13",
+  "version": "0.8.14",
   "packageManager": "bun@1.2.0",
   "description": "Test environment for Bun and Node.js coexistence",
   "engines": {
