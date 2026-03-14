@@ -148,8 +148,16 @@ export async function run(): Promise<void> {
     try {
       const hit = await cache.restoreCache([pantryDir], cacheKey)
       if (hit) {
-        cacheHit = true
-        core.info(`Cache hit: ${cacheKey}`)
+        // Verify cache is valid — .bin dir should exist with actual binaries
+        const binDirExists = fs.existsSync(pantryBinDir)
+        const hasEntries = binDirExists && fs.readdirSync(pantryBinDir).length > 0
+        if (hasEntries) {
+          cacheHit = true
+          core.info(`Cache hit: ${cacheKey}`)
+        }
+        else {
+          core.info('Cache restored but incomplete — reinstalling')
+        }
       }
     }
     catch {
