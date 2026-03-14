@@ -103,9 +103,9 @@ function extractSystemDeps(): string[] {
       content = content.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
       const parsed = JSON.parse(content)
       const deps = parsed.dependencies || {}
-      return Object.keys(deps).filter(name =>
-        // System deps have domain-style names or known aliases
-        name.includes('.') || ['bun', 'zig', 'node', 'python', 'ruby', 'go', 'rust', 'deno'].includes(name),
+      // eslint-disable-next-line no-unused-vars
+      return Object.keys(deps).filter(n =>
+        n.includes('.') || ['bun', 'zig', 'node', 'python', 'ruby', 'go', 'rust', 'deno'].includes(n),
       )
     }
     catch { continue }
