@@ -63,20 +63,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `1.24.0`
+- `1.24.1`, `1.24.0`
 - `1.23.0`
 
 </details>
 
-**Latest Version**: `1.24.0`
+**Latest Version**: `1.24.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnu.org/groff@1.24.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnu.org/groff@1.24.1 -- $SHELL -i
 ```
 
 ## Dependencies
