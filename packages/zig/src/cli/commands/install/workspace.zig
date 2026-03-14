@@ -42,7 +42,8 @@ fn installSingleWorkspaceDep(
     const parser = @import("../../../deps/parser.zig");
     const pkg_registry = @import("../../../packages/generated.zig");
 
-    const clean_name = helpers.normalizePackageName(dep.name);
+    // Resolve aliases (e.g. "bun" -> "bun.sh", "zig" -> "ziglang.org")
+    const clean_name = helpers.resolvePackageAlias(helpers.normalizePackageName(dep.name));
 
     const is_npm_package = std.mem.startsWith(u8, dep.name, "npm:") or
         std.mem.startsWith(u8, dep.name, "auto:");
