@@ -130,13 +130,6 @@ jobs:
         with:
           setup-only: 'true'
 
-      - name: Install Zig
-        run: |
-          cp package.json package.json.bak
-          pantry install ziglang.org
-          mv package.json.bak package.json
-          echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
-
       - name: Setup Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
@@ -147,20 +140,6 @@ jobs:
 
       - name: Build TypeScript packages
         run: bun run build
-
-      - name: Build pantry GitHub Action
-        run: cd packages/action && bun run build
-
-      - name: Bootstrap Zig Dependencies
-        run: |
-          mkdir -p pantry
-          cd pantry
-          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
-
-      - name: Build pantry CLI
-        run: cd packages/zig && zig build
 
       - name: Configure AWS credentials
         run: |
@@ -176,7 +155,7 @@ jobs:
           EOC
 
       - name: Continuous Releases
-        run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
+        run: pantry publish:commit './packages/*'
 
   notify:
     name: discord-failure-alert
