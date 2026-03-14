@@ -95,11 +95,11 @@ function getDownloadUrl(version: string, assetName: string): string {
 async function downloadAndInstall(version: string, platform: Platform): Promise<string> {
   const toolName = 'pantry'
 
-  // Check tool cache first (skip for "latest" since we don't know the exact version yet)
+  // Check tool cache first
   if (version !== 'latest') {
     const cached = tc.find(toolName, version, platform.arch)
     if (cached) {
-      core.info(`Found cached pantry ${version}`)
+      core.info(`Using cached pantry ${version}`)
       return cached
     }
   }
@@ -110,13 +110,11 @@ async function downloadAndInstall(version: string, platform: Platform): Promise<
   const zipPath = await tc.downloadTool(downloadUrl)
   const extractedDir = await tc.extractZip(zipPath)
 
-  // Make binary executable on unix
   if (platform.os !== 'windows') {
     const binaryPath = path.join(extractedDir, platform.binaryName)
     await exec.exec('chmod', ['+x', binaryPath])
   }
 
-  // Cache the tool for future runs
   if (version !== 'latest') {
     const cachedDir = await tc.cacheDir(extractedDir, toolName, version, platform.arch)
     return cachedDir
@@ -125,16 +123,16 @@ async function downloadAndInstall(version: string, platform: Platform): Promise<
   return extractedDir
 }
 
-async function runWithRetry(cmd: string, args: string[], env: Record<string, string | undefined>, retries = 2): Promise<void> {
-  for (let attempt = 0; attempt <= retries; attempt++) {
+async function runPantryInstall(args: string[], env: Record<string, string | undefined>): Promise<void> {
+  for (let attempt = 0; attempt <= 2; attempt++) {
     try {
-      await exec.exec(cmd, args, { env: env as { [key: string]: string } })
+      await exec.exec('pantry', args, { env: env as { [key: string]: string } })
       return
     }
     catch (err) {
-      if (attempt < retries) {
+      if (attempt < 2) {
         const delay = (attempt + 1) * 5000
-        core.warning(`${cmd} ${args.join(' ')} failed (attempt ${attempt + 1}/${retries + 1}), retrying in ${delay / 1000}s...`)
+        core.warning(`pantry ${args.join(' ')} failed (attempt ${attempt + 1}/3), retrying in ${delay / 1000}s...`)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
       else {
@@ -154,117 +152,75 @@ export async function run(): Promise<void> {
     }
 
     const platform = detectPlatform()
-    core.info(`Detected platform: ${platform.os}-${platform.arch}`)
 
-    // Setup Pantry
-    core.info(`Setting up pantry (version: ${inputs.version})`)
-
-    // Resolve version
+    // ── Step 1: Install pantry CLI ──
+    core.startGroup(`Setting up pantry (${inputs.version})`)
     const resolvedVersion = await resolveVersion(inputs.version)
-    core.info(`Resolved version: ${resolvedVersion}`)
-
-    // Download and install
     const installDir = await downloadAndInstall(resolvedVersion, platform)
     const binaryPath = path.join(installDir, platform.binaryName)
-
-    // Add to PATH
     core.addPath(installDir)
-    core.info(`Added ${installDir} to PATH`)
 
-    // Verify installation
     let versionOutput = ''
     await exec.exec(binaryPath, ['--version'], {
-      listeners: {
-        stdout: (data: Buffer) => {
-          versionOutput += data.toString()
-        },
-      },
+      listeners: { stdout: (data: Buffer) => { versionOutput += data.toString() } },
       silent: true,
-    }).catch(() => {
-      core.warning('Could not verify pantry version')
-    })
+    }).catch(() => {})
 
     const installedVersion = versionOutput.trim() || resolvedVersion
-
-    // Set outputs
     core.setOutput('pantry-path', binaryPath)
     core.setOutput('version', installedVersion)
+    core.info(`pantry ${installedVersion} installed`)
+    core.endGroup()
 
-    core.info(`pantry ${installedVersion} is ready`)
-
-    // If setup-only without packages, we're done (just pantry CLI in PATH)
+    // ── Step 2: Install dependencies (if enabled) ──
     if (inputs.setupOnly && !inputs.packages) {
-      core.info('Setup-only mode: skipping package installation')
       return
     }
 
-    // If setup-only with packages, install them and add .bin to PATH
-    if (inputs.setupOnly && inputs.packages) {
-      const installEnv = { ...process.env, PANTRY_VERBOSE: 'true', NO_COLOR: '1' }
-      core.info(`Installing packages: ${inputs.packages}`)
-      const args = ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)]
-      await runWithRetry('pantry', args, installEnv)
-      core.info('Package installation completed')
-
-      const cwd = process.cwd()
-      const pantryBinDir = path.join(cwd, 'pantry', '.bin')
-      core.addPath(pantryBinDir)
-      core.info(`Added ${pantryBinDir} to PATH`)
-
-      const homeDir = os.homedir()
-      const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
-      core.addPath(globalPantryBin)
-      return
-    }
-
-    // Install packages if specified
+    // Set CI env so pantry uses milestone progress (no spinner)
     const installEnv = {
       ...process.env,
-      PANTRY_VERBOSE: 'true',
+      CI: 'true',
       NO_COLOR: '1',
     }
 
-    if (inputs.packages) {
-      core.info(`Installing packages: ${inputs.packages}`)
-      const args = ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)]
-      await runWithRetry('pantry', args, installEnv)
-      core.info('Package installation completed')
-    }
-    else {
-      // Run pantry install to auto-detect from pantry.json/package.json
-      // Use --no-save to avoid modifying package.json (prevents bun install from
-      // trying to resolve pantry system packages like ziglang.org from npm)
-      core.info('Installing project dependencies using pantry...')
-      await runWithRetry('pantry', ['install', '--no-save'], installEnv)
-      core.info('Project dependencies installation completed')
-    }
-
-    // Add pantry/.bin to PATH so installed package binaries are available
+    // Check if pantry/ dir already has installed packages (cache hit from previous job)
     const cwd = process.cwd()
     const pantryBinDir = path.join(cwd, 'pantry', '.bin')
-    core.addPath(pantryBinDir)
-    core.info(`Added ${pantryBinDir} to PATH`)
-
-    // Also add global pantry bin if it exists
     const homeDir = os.homedir()
+
+    if (inputs.packages) {
+      core.startGroup(`Installing packages: ${inputs.packages}`)
+      const args = ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)]
+      await runPantryInstall(args, installEnv)
+      core.endGroup()
+    }
+    else {
+      core.startGroup('Installing project dependencies')
+      await runPantryInstall(['install', '--no-save'], installEnv)
+      core.endGroup()
+    }
+
+    // ── Step 3: Configure PATH ──
+    core.addPath(pantryBinDir)
     const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
     core.addPath(globalPantryBin)
 
-    // Ensure bunx symlink exists (bun and bunx are the same binary)
+    // ── Step 4: Ensure bun is fully configured ──
     const bunPath = path.join(pantryBinDir, 'bun')
     const bunxPath = path.join(pantryBinDir, 'bunx')
     try {
       await exec.exec('test', ['-f', bunPath], { silent: true })
+      // Create bunx symlink (bun and bunx are the same binary)
       await exec.exec('bash', ['-c', `[ -f "${bunxPath}" ] || ln -s "${bunPath}" "${bunxPath}"`], { silent: true })
       // Set BUN_INSTALL so bun's postinstall check passes
       core.exportVariable('BUN_INSTALL', path.dirname(pantryBinDir))
-      core.info('Bun configured')
     }
     catch {
-      // bun not installed via pantry, skip
+      // bun not installed via pantry
     }
 
-    core.info('pantry setup completed successfully')
+    core.info('Setup complete')
   }
   catch (error) {
     core.setFailed(error instanceof Error ? error.message : String(error))
