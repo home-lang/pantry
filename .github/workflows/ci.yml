@@ -22,11 +22,17 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        with:
+          setup-only: 'true'
+          packages: ziglang.org
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - name: Install Dependencies
-        run: bun install
-        env:
-          BUN_INSTALL: ${{ github.workspace }}/pantry/.bin
+        run: $HOME/.bun/bin/bun install
 
       - name: Lint TypeScript/JavaScript
         run: bun run lint
@@ -43,11 +49,17 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        with:
+          setup-only: 'true'
+          packages: ziglang.org
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - name: Install Dependencies
-        run: bun install
-        env:
-          BUN_INSTALL: ${{ github.workspace }}/pantry/.bin
+        run: $HOME/.bun/bin/bun install
 
       - name: Typecheck
         run: bun run typecheck
@@ -60,11 +72,17 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        with:
+          setup-only: 'true'
+          packages: ziglang.org
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - name: Install Dependencies
-        run: bun install
-        env:
-          BUN_INSTALL: ${{ github.workspace }}/pantry/.bin
+        run: $HOME/.bun/bin/bun install
 
       - name: Build TypeScript packages
         run: bun run build
@@ -95,11 +113,17 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        with:
+          setup-only: 'true'
+          packages: ziglang.org
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
       - name: Install Dependencies
-        run: bun install
-        env:
-          BUN_INSTALL: ${{ github.workspace }}/pantry/.bin
+        run: $HOME/.bun/bin/bun install
 
       - name: Build TypeScript packages
         run: bun run build
