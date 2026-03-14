@@ -18,8 +18,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          install: 'true'
 
       - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all

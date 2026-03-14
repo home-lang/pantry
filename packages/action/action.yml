@@ -22,7 +22,7 @@ inputs:
   install:
     description: Run pantry install after setup (reads pantry.jsonc/package.json)
     required: false
-    default: 'false'
+    default: 'true'
 
 outputs:
   pantry-path:
