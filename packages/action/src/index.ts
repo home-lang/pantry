@@ -202,7 +202,7 @@ export async function run(): Promise<void> {
     if (inputs.setupOnly && inputs.packages) {
       const installEnv = { ...process.env, PANTRY_VERBOSE: 'true', NO_COLOR: '1' }
       core.info(`Installing packages: ${inputs.packages}`)
-      const args = ['install', ...inputs.packages.split(/\s+/).filter(Boolean)]
+      const args = ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)]
       await runWithRetry('pantry', args, installEnv)
       core.info('Package installation completed')
 
@@ -226,14 +226,16 @@ export async function run(): Promise<void> {
 
     if (inputs.packages) {
       core.info(`Installing packages: ${inputs.packages}`)
-      const args = ['install', ...inputs.packages.split(/\s+/).filter(Boolean)]
+      const args = ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)]
       await runWithRetry('pantry', args, installEnv)
       core.info('Package installation completed')
     }
     else {
       // Run pantry install to auto-detect from pantry.json/package.json
+      // Use --no-save to avoid modifying package.json (prevents bun install from
+      // trying to resolve pantry system packages like ziglang.org from npm)
       core.info('Installing project dependencies using pantry...')
-      await runWithRetry('pantry', ['install'], installEnv)
+      await runWithRetry('pantry', ['install', '--no-save'], installEnv)
       core.info('Project dependencies installation completed')
     }
 
