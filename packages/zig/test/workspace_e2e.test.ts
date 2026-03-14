@@ -11,7 +11,7 @@
  * or available in PATH.
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test'
-import { mkdirSync, writeFileSync, existsSync, readlinkSync, lstatSync, rmSync, readdirSync } from 'node:fs'
+import { mkdirSync, writeFileSync, readFileSync, existsSync, readlinkSync, lstatSync, rmSync, readdirSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { execSync, spawnSync } from 'node:child_process'
 import { tmpdir } from 'node:os'
@@ -167,7 +167,7 @@ describe('Workspace structure validation', () => {
     })
 
     // Validate root
-    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
+    const rootPkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'))
     expect(rootPkg.name).toBe('my-monorepo')
     expect(rootPkg.workspaces).toEqual(['packages/*'])
 
@@ -175,7 +175,7 @@ describe('Workspace structure validation', () => {
     expect(existsSync(join(ws.members['@my/app'].path, 'package.json'))).toBe(true)
     expect(existsSync(join(ws.members['@my/lib'].path, 'package.json'))).toBe(true)
 
-    const appPkg = JSON.parse(await Bun.file(join(ws.members['@my/app'].path, 'package.json')).text())
+    const appPkg = JSON.parse(readFileSync(join(ws.members['@my/app'].path, 'package.json'), 'utf-8'))
     expect(appPkg.name).toBe('@my/app')
     expect(appPkg.dependencies.express).toBe('^4.0')
   })
@@ -188,7 +188,7 @@ describe('Workspace structure validation', () => {
       ],
     })
 
-    const appPkg = JSON.parse(await Bun.file(join(dir, 'packages/app/package.json')).text())
+    const appPkg = JSON.parse(readFileSync(join(dir, 'packages/app/package.json'), 'utf-8'))
     expect(appPkg.dependencies['@my/lib']).toBe('workspace:*')
     expect(appPkg.dependencies.express).toBe('^4.0')
   })
@@ -216,7 +216,7 @@ describe('Workspace structure validation', () => {
       ],
     })
 
-    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
+    const rootPkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'))
     expect(rootPkg.dependencies.typescript).toBe('^5.0')
   })
 })
@@ -532,7 +532,7 @@ describe('Workspace config format support', () => {
 
     // Validate the structure is correct
     expect(existsSync(join(dir, 'pantry.json'))).toBe(true)
-    const config = JSON.parse(await Bun.file(join(dir, 'pantry.json')).text())
+    const config = JSON.parse(readFileSync(join(dir, 'pantry.json'), 'utf-8'))
     expect(config.workspaces).toEqual(['packages/*'])
   })
 
@@ -545,7 +545,7 @@ describe('Workspace config format support', () => {
       },
     })
 
-    const pkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
+    const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'))
     expect(pkg.workspaces.packages).toEqual(['packages/*'])
     expect(pkg.workspaces.nohoist).toEqual(['**/react-native'])
   })
@@ -562,7 +562,7 @@ describe('Workspace config format support', () => {
 }`)
 
     expect(existsSync(join(dir, 'pantry.jsonc'))).toBe(true)
-    const content = await Bun.file(join(dir, 'pantry.jsonc')).text()
+    const content = readFileSync(join(dir, 'pantry.jsonc'), 'utf-8')
     expect(content).toContain('"workspaces"')
   })
 
@@ -611,7 +611,7 @@ describe('Workspace regressions', () => {
 
     // The root should still be detected as workspace root even when
     // a member has pantry.json (higher-priority dep file)
-    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
+    const rootPkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'))
     expect(rootPkg.workspaces).toBeDefined()
   })
 
@@ -635,12 +635,12 @@ describe('Workspace regressions', () => {
     })
 
     // From root, the root workspace should be detected
-    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
+    const rootPkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'))
     expect(rootPkg.workspaces).toEqual(['packages/*'])
 
     // From sub-monorepo/libs/util, the closest workspace (sub-monorepo) should be detected
     // This tests proper directory-walking behavior
-    const subPkg = JSON.parse(await Bun.file(join(dir, 'packages/sub-monorepo/package.json')).text())
+    const subPkg = JSON.parse(readFileSync(join(dir, 'packages/sub-monorepo/package.json'), 'utf-8'))
     expect(subPkg.workspaces).toEqual(['libs/*'])
   })
 
@@ -658,7 +658,7 @@ describe('Workspace regressions', () => {
       // No "name" field!
     })
 
-    const pkg = JSON.parse(await Bun.file(join(dir, 'packages/unnamed/package.json')).text())
+    const pkg = JSON.parse(readFileSync(join(dir, 'packages/unnamed/package.json'), 'utf-8'))
     expect(pkg.name).toBeUndefined()
     expect(pkg.version).toBe('1.0.0')
   })
