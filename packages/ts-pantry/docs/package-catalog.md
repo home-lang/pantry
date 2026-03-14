@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1399
 - **Categories**: 27
-- **Last Updated**: 2026-03-14T15:49:45.381Z
+- **Last Updated**: 2026-03-14T17:22:17.929Z
 
 ## Table of Contents
 
@@ -249,7 +249,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.111.0 (+43) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
-| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.161 (+2836) | `pkgx vi` |
+| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.162 (+2837) | `pkgx vi` |
 | **[wezfurlong.org/wezterm](./packages/wezfurlong.org/wezterm/index.md)** () | A GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemente... | wezterm | 2024.2.3 (+0) | `pkgx wezterm` |
 
 ## CLI Tools & Utilities
@@ -291,7 +291,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[ohmyposh.dev](./packages/ohmyposh.dev/index.md)** () | The most customisable and low-latency cross platform/shell prompt renderer | oh-my-posh | 29.8.0 (+383) | `pkgx oh-my-posh` |
 | **[starship.rs](./packages/starship.rs/index.md)** () | ☄🌌️ The minimal, blazing-fast, and infinitely customizable prompt for any shell! | starship | 1.24.2 (+23) | `pkgx starship` |
 | **[stedolan.github.io/jq](./packages/stedolan.github.io/jq/index.md)** () | Lightweight and flexible command-line JSON processor | jq | 1.8.1 (+4) | `pkgx jq` |
-| **[tree-sitter.github.io](./packages/tree-sitter.github.io/index.md)** () | Parser generator tool and incremental parsing library | tree-sitter | 0.26.6 (+37) | `pkgx tree-sitter` |
+| **[tree-sitter.github.io](./packages/tree-sitter.github.io/index.md)** () | Parser generator tool and incremental parsing library | tree-sitter | 0.26.7 (+38) | `pkgx tree-sitter` |
 | **[wilfred.me.uk/difftastic](./packages/wilfred.me.uk/difftastic/index.md)** () | a structural diff that understands syntax 🟥🟩 | difft | 0.67.0 (+10) | `pkgx difft` |
 | **[zsh.sourceforge.io](./packages/zsh.sourceforge.io/index.md)** () | UNIX shell (command interpreter) | zsh | 5.9.0 (+0) | `pkgx zsh` |
 

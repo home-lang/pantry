@@ -3,7 +3,7 @@
  *
  * @domain `github.com/a7ex/xcresultparser`
  * @programs `xcresultparser`
- * @version `1.9.4` (21 versions available)
+ * @version `2.0.0` (22 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/a7ex/xcresultparser`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "xcresultparser"
  * console.log(pkg.description) // "Parse the binary xcresult bundle from Xcode bui..."
  * console.log(pkg.programs)    // ["xcresultparser"]
- * console.log(pkg.versions[0]) // "1.9.4" (latest)
+ * console.log(pkg.versions[0]) // "2.0.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/a7ex/xcresultparser.md
@@ -67,6 +67,7 @@ export const xcresultparserPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.0',
     '1.9.4',
     '1.9.3',
     '1.9.2',

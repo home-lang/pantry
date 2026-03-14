@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 22 versions</summary>
 
+- `2.0.0`
 - `1.9.4`, `1.9.3`, `1.9.2`, `1.9.1`, `1.9.0`
 - `1.8.5`, `1.8.4`, `1.8.3`, `1.8.2`, `1.8.1`, `1.8.0`
 - `1.7.2`, `1.7.1`, `1.7.0`
@@ -35,13 +36,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.9.4`
+**Latest Version**: `2.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/a7ex/xcresultparser@1.9.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/a7ex/xcresultparser@2.0.0 -- $SHELL -i
 ```
 
 ## Usage Examples
