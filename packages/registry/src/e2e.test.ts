@@ -654,17 +654,23 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
     })
 
     it('concurrent downloads track correctly', async () => {
+      // Record baseline before concurrent downloads
+      const beforeRes = await fetch(`${baseUrl}/analytics/curl.se`)
+      const before = await beforeRes.json() as any
+      const baseline = before.totalDownloads || 0
+
       const downloads = Array.from({ length: 10 }, () =>
         fetch(`${baseUrl}/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz`),
       )
       const results = await Promise.all(downloads)
       results.forEach(r => expect(r.status).toBe(200))
 
-      await new Promise(r => setTimeout(r, 200))
+      // Wait for all fire-and-forget analytics to complete
+      await new Promise(r => setTimeout(r, 1000))
 
       const statsRes = await fetch(`${baseUrl}/analytics/curl.se`)
       const stats = await statsRes.json() as any
-      expect(stats.totalDownloads).toBe(10)
+      expect(stats.totalDownloads).toBe(baseline + 10)
     })
 
     it('login page with error renders error message in DOM', async () => {
