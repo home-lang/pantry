@@ -1,3 +1,42 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.14...v0.8.15)
+
+### 🐛 Bug Fixes
+
+- reset bun.lock before git pull on registry server ([71f6075](https://github.com/home-lang/pantry/commit/71f6075)) _(by Chris <chrisbreuer93@gmail.com>)_
+- relax concurrent download tracking assertion ([766b80e](https://github.com/home-lang/pantry/commit/766b80e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use GITHUB_TOKEN in version resolution fallback ([2b0cd98](https://github.com/home-lang/pantry/commit/2b0cd98)) _(by Chris <chrisbreuer93@gmail.com>)_
+- concurrent downloads test uses baseline + longer wait ([100138e](https://github.com/home-lang/pantry/commit/100138e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cache key based on lockfile, not deps file ([d972f72](https://github.com/home-lang/pantry/commit/d972f72)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.15 ([3bfe67a](https://github.com/home-lang/pantry/commit/3bfe67a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update registry data (1 file) ([06d8064](https://github.com/home-lang/pantry/commit/06d8064)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update xcresultparser, tree-sitter, vim ([1062b6d](https://github.com/home-lang/pantry/commit/1062b6d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.14...HEAD)
+
+### 🐛 Bug Fixes
+
+- reset bun.lock before git pull on registry server ([71f6075](https://github.com/home-lang/pantry/commit/71f6075)) _(by Chris <chrisbreuer93@gmail.com>)_
+- relax concurrent download tracking assertion ([766b80e](https://github.com/home-lang/pantry/commit/766b80e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use GITHUB_TOKEN in version resolution fallback ([2b0cd98](https://github.com/home-lang/pantry/commit/2b0cd98)) _(by Chris <chrisbreuer93@gmail.com>)_
+- concurrent downloads test uses baseline + longer wait ([100138e](https://github.com/home-lang/pantry/commit/100138e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- cache key based on lockfile, not deps file ([d972f72](https://github.com/home-lang/pantry/commit/d972f72)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update registry data (1 file) ([06d8064](https://github.com/home-lang/pantry/commit/06d8064)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update xcresultparser, tree-sitter, vim ([1062b6d](https://github.com/home-lang/pantry/commit/1062b6d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.13...v0.8.14)
 
 ### 🚀 Features
