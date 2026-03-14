@@ -180,6 +180,32 @@ export async function run(): Promise<void> {
         await exec.exec('pantry', ['install', '--no-save'], {
           env: installEnv as { [key: string]: string },
         })
+
+        // If deps.yaml exists with system deps (bun.sh, ziglang.org, etc.),
+        // install them explicitly — the workspace installer only reads package.json
+        if (fs.existsSync('deps.yaml') || fs.existsSync('deps.yml')) {
+          const depsFile = fs.existsSync('deps.yaml') ? 'deps.yaml' : 'deps.yml'
+          const content = fs.readFileSync(depsFile, 'utf-8')
+          // Extract package names from "dependencies:" section
+          const deps: string[] = []
+          let inDeps = false
+          for (const line of content.split('\n')) {
+            if (line.trim() === 'dependencies:') { inDeps = true; continue }
+            if (inDeps && /^\s+\S/.test(line)) {
+              const name = line.trim().split(':')[0].trim()
+              if (name) deps.push(name)
+            }
+            else if (inDeps && /^\S/.test(line)) { inDeps = false }
+          }
+          if (deps.length > 0) {
+            core.info(`Installing system deps from ${depsFile}: ${deps.join(', ')}`)
+            await exec.exec('pantry', ['install', '--no-save', ...deps], {
+              env: installEnv as { [key: string]: string },
+            }).catch(() => {
+              core.warning('Some system deps failed to install')
+            })
+          }
+        }
         core.endGroup()
       }
 
