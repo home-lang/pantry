@@ -19,7 +19,133 @@ const style = @import("../../style.zig");
 /// is the JS client, while "meilisearch.com" is the server binary).
 pub fn resolvePackageAlias(name: []const u8) []const u8 {
     const aliases = .{
+        // Runtimes & languages
+        .{ "bun", "bun.sh" },
+        .{ "zig", "ziglang.org" },
+        .{ "node", "nodejs.org" },
+        .{ "nodejs", "nodejs.org" },
+        .{ "python", "python.org" },
+        .{ "ruby", "ruby-lang.org" },
+        .{ "go", "go.dev" },
+        .{ "golang", "go.dev" },
+        .{ "rust", "rust-lang.org" },
+        .{ "rustc", "rust-lang.org" },
+        .{ "cargo", "rust-lang.org/cargo" },
+        .{ "rustup", "rust-lang.org/rustup" },
+        .{ "deno", "deno.land" },
+        .{ "java", "openjdk.org" },
+        .{ "kotlin", "kotlinlang.org" },
+        .{ "scala", "scala-lang.org" },
+        .{ "swift", "swift.org" },
+        .{ "dart", "dart.dev" },
+        .{ "flutter", "flutter.dev" },
+        .{ "lua", "lua.org" },
+        .{ "luajit", "luajit.org" },
+        .{ "perl", "perl.org" },
+        .{ "php", "php.net" },
+        .{ "julia", "julialang.org" },
+        .{ "erlang", "erlang.org" },
+        .{ "elixir", "elixir-lang.org" },
+        .{ "nim", "nim-lang.org" },
+        .{ "crystal", "crystal-lang.org" },
+        .{ "haskell", "haskell.org" },
+        .{ "ocaml", "ocaml.org" },
+        // Package managers
+        .{ "npm", "npmjs.com" },
+        .{ "pnpm", "pnpm.io" },
+        .{ "yarn", "yarnpkg.com" },
+        .{ "pip", "pip.pypa.io" },
+        .{ "pipenv", "pipenv.pypa.io" },
+        .{ "poetry", "python-poetry.org" },
+        .{ "gem", "rubygems.org" },
+        .{ "luarocks", "luarocks.org" },
+        .{ "maven", "maven.apache.org" },
+        .{ "gradle", "gradle.org" },
+        .{ "sbt", "scala-sbt.org" },
+        // Databases
+        .{ "redis", "redis.io" },
+        .{ "postgres", "postgresql.org" },
+        .{ "postgresql", "postgresql.org" },
+        .{ "mysql", "mysql.com" },
+        .{ "mariadb", "mariadb.com/server" },
+        .{ "sqlite", "sqlite.org" },
+        .{ "mongodb", "mongodb.com" },
+        .{ "mongo", "mongodb.com" },
+        .{ "memcached", "memcached.org" },
+        // Web servers & proxies
+        .{ "nginx", "nginx.org" },
+        .{ "caddy", "caddyserver.com" },
+        .{ "httpd", "apache.org/httpd" },
+        .{ "apache", "apache.org/httpd" },
+        // Build tools
+        .{ "cmake", "cmake.org" },
+        .{ "ninja", "ninja-build.org" },
+        .{ "meson", "mesonbuild.com" },
+        .{ "make", "gnu.org/make" },
+        // Compilers & toolchains
+        .{ "llvm", "llvm.org" },
+        .{ "clang", "llvm.org" },
+        .{ "clang-format", "llvm.org/clang-format" },
+        .{ "gcc", "gnu.org/gcc" },
+        .{ "protobuf", "protobuf.dev" },
+        .{ "grpc", "grpc.io" },
+        // CLI tools
+        .{ "curl", "curl.se" },
+        .{ "git", "git-scm.org" },
+        .{ "vim", "vim.org" },
+        .{ "neovim", "neovim.io" },
+        .{ "nvim", "neovim.io" },
+        .{ "tmux", "github.com/tmux/tmux" },
+        .{ "fzf", "github.com/junegunn/fzf" },
+        .{ "lazygit", "github.com/jesseduffield/lazygit" },
+        .{ "jq", "jqlang.github.io/jq" },
+        .{ "yq", "github.com/mikefarah/yq" },
+        .{ "gh", "cli.github.com" },
+        .{ "bat", "github.com/sharkdp/bat" },
+        .{ "ripgrep", "github.com/BurntSushi/ripgrep" },
+        .{ "rg", "github.com/BurntSushi/ripgrep" },
+        .{ "fd", "github.com/sharkdp/fd" },
+        .{ "eza", "github.com/eza-community/eza" },
+        .{ "starship", "starship.rs" },
+        .{ "zsh", "zsh.sourceforge.io" },
+        .{ "fish", "fishshell.com" },
+        .{ "httpie", "httpie.io" },
+        // Multimedia
+        .{ "ffmpeg", "ffmpeg.org" },
+        .{ "openssl", "openssl.org" },
+        // DevOps & infra
+        .{ "terraform", "terraform.io" },
+        .{ "vault", "vaultproject.io" },
+        .{ "consul", "consul.io" },
+        .{ "packer", "packer.io" },
+        .{ "helm", "helm.sh" },
+        .{ "ansible", "ansible.com" },
+        .{ "docker-compose", "docker.com/compose" },
+        .{ "docker-buildx", "docker.com/buildx" },
+        .{ "flyctl", "fly.io" },
+        .{ "railway", "railway.app" },
+        .{ "supabase", "supabase.com/cli" },
+        .{ "aws", "aws.amazon.com/cli" },
+        .{ "gcloud", "google.com/gcloud" },
+        // JS/TS tools
+        .{ "typescript", "typescriptlang.org" },
+        .{ "tsc", "typescriptlang.org" },
+        .{ "prettier", "prettier.io" },
+        .{ "biome", "biomejs.dev" },
+        .{ "vite", "vitejs.dev" },
+        .{ "tailwindcss", "tailwindcss.com" },
+        .{ "tailwind", "tailwindcss.com" },
+        .{ "sass", "sass-lang.com/sassc" },
+        .{ "hugo", "gohugo.io" },
+        // Messaging & streaming
+        .{ "kafka", "kafka.apache.org" },
+        .{ "rabbitmq", "rabbitmq.com" },
+        .{ "zookeeper", "apache.org/zookeeper" },
+        // Misc
         .{ "meilisearch", "meilisearch.com" },
+        .{ "goreleaser", "goreleaser.com" },
+        .{ "act", "github.com/nektos/act" },
+        .{ "dive", "github.com/wagoodman/dive" },
     };
     inline for (aliases) |entry| {
         if (std.mem.eql(u8, name, entry[0])) return entry[1];
@@ -65,6 +191,24 @@ pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?Pa
     if (dynamo_result) |info| return info;
 
     // Fallback: try direct S3 metadata.json lookup
+    return lookupViaS3Metadata(allocator, name, platform);
+}
+
+/// Lightweight S3-only lookup (no AWS CLI subprocess, just HTTP).
+/// Used for non-domain packages like "zig-config" that are in our S3 registry
+/// but would be incorrectly skipped by the domain-style check.
+pub fn lookupPantryS3Only(allocator: std.mem.Allocator, name: []const u8) ?PantryPackageInfo {
+    const os_str = comptime switch (@import("builtin").os.tag) {
+        .macos => "darwin",
+        .linux => "linux",
+        else => "linux",
+    };
+    const arch_str = comptime switch (@import("builtin").cpu.arch) {
+        .aarch64 => "arm64",
+        .x86_64 => "x86-64",
+        else => "x86-64",
+    };
+    const platform = os_str ++ "-" ++ arch_str;
     return lookupViaS3Metadata(allocator, name, platform);
 }
 
@@ -549,19 +693,23 @@ pub fn installSinglePackage(
     } else blk: {
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {
-            // Try Pantry S3/DynamoDB registry first, then fall back to npm
-            // Skip Pantry lookup for packages that are clearly npm-only:
-            //   - Scoped packages (@scope/name) — never in Pantry
-            //   - Non-domain names (no '.') — Pantry only has domain-style packages like redis.io
-            // This avoids spawning `aws` CLI subprocesses for npm packages
+            // Try Pantry registry first, then fall back to npm.
+            // For domain-style packages (containing '.'), use full DynamoDB + S3 lookup.
+            // For non-domain packages (like "zig-config"), use lightweight S3-only lookup
+            // to avoid spawning expensive `aws` CLI subprocesses.
+            // Skip entirely for scoped npm packages (@scope/name) — never in Pantry.
+            const is_scoped = lookup_name.len > 0 and lookup_name[0] == '@';
             const is_domain_style = std.mem.indexOfScalar(u8, lookup_name, '.') != null;
-            const pantry_info: ?PantryPackageInfo = if (!is_domain_style)
+            const pantry_info: ?PantryPackageInfo = if (is_scoped)
                 null
-            else
+            else if (is_domain_style)
                 lookupPantryRegistry(allocator, lookup_name) catch |err| lkup: {
                     style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, lookup_name, err, style.reset });
                     break :lkup null;
-                };
+                }
+            else
+                // Non-domain, non-scoped: try lightweight S3 lookup (e.g. zig-config, zig-cli)
+                lookupPantryS3Only(allocator, lookup_name);
             if (pantry_info) |info| {
                 var p_info = info;
                 defer p_info.deinit(allocator);

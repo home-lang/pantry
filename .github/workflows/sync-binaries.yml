@@ -49,15 +49,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Install dependencies
         run: bun install
@@ -115,13 +108,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install dependencies
-        run: bun install
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Discover packages
         id: discover
@@ -159,15 +147,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Install dependencies
         run: bun install
@@ -352,15 +333,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Install dependencies
         run: bun install
@@ -547,7 +521,7 @@ jobs:
         timeout-minutes: 110
 
   notify:
-    name: Discord failure alert
+    name: discord-failure-alert
     needs: [sync-prebuilt, build-targeted, build]
     if: always() && (needs.sync-prebuilt.result == 'failure' || needs.build-targeted.result == 'failure' || needs.build.result == 'failure')
     runs-on: ubuntu-latest

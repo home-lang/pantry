@@ -18,38 +18,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
-
-      - name: Install Dependencies
-        run: bun install
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Lint TypeScript/JavaScript
         run: bun run lint
 
       - name: Format Check Zig Code
         run: |
-          # Format check all Zig files except generated.zig
           find packages/zig/src -name "*.zig" -not -name "generated.zig" -type f -exec zig fmt --check {} +
 
   typecheck:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Install Dependencies
-        run: bun install
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Typecheck
         run: bun run typecheck
@@ -58,18 +46,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
-
-      - name: Install Dependencies
-        run: bun install
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Build TypeScript packages
         run: bun run build
@@ -77,7 +57,7 @@ jobs:
       - name: Build pantry GitHub Action
         run: cd packages/action && bun run build
 
-      - name: Setup pantry
+      - name: Setup pantry (local action)
         uses: ./packages/action
         with:
           setup-only: 'true'
@@ -85,24 +65,14 @@ jobs:
       - name: Unit Test
         run: bun test
 
-      - name: Bootstrap Zig Dependencies
-        run: |
-          mkdir -p pantry
-          cd pantry
-          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
-
       - name: Zig Tests
         run: |
           cd packages/zig
-          # Run standalone unit tests directly (avoids zig build --listen IPC hang in 0.16)
           echo "Running Zig unit tests..."
           zig test src/core/string.zig -lc
           zig test src/core/path.zig -lc
           echo "Zig unit tests passed."
 
-          # Build to verify compilation succeeds
           echo "Building pantry..."
           zig build
 
@@ -111,32 +81,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
-
-      - name: Install Dependencies
-        run: bun install
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Build TypeScript packages
         run: bun run build
 
       - name: Build pantry GitHub Action
         run: cd packages/action && bun run build
-
-      - name: Bootstrap Zig Dependencies
-        run: |
-          mkdir -p pantry
-          cd pantry
-          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
       - name: Build pantry CLI
         run: cd packages/zig && zig build
@@ -158,12 +112,12 @@ jobs:
         run: ./packages/zig/zig-out/bin/pantry publish:commit './packages/*'
 
   notify:
-    name: Discord failure alert
+    name: discord-failure-alert
     needs: [lint, typecheck, test, continuous-release]
     if: always() && (needs.lint.result == 'failure' || needs.typecheck.result == 'failure' || needs.test.result == 'failure' || needs.continuous-release.result == 'failure')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/discord-notify
         with:
           title: "CI — Failed"

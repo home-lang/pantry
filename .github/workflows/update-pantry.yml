@@ -197,7 +197,7 @@ jobs:
           echo "Build workflow triggered successfully"
         timeout-minutes: 2
 
-      - name: Discord failure alert
+      - name: discord-failure-alert
         if: failure()
         uses: ./.github/actions/discord-notify
         with:

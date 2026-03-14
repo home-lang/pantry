@@ -16,18 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: 0.16.0-dev.2565+684032671
-
-      - name: Bootstrap Zig Dependencies
-        run: |
-          mkdir -p pantry
-          cd pantry
-          git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
+      - name: Setup Pantry
+        uses: home-lang/pantry@main
 
       - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all
@@ -90,14 +80,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2.1.2
-
       - name: Setup Pantry
-        uses: ./packages/action
-
-      - name: Install Dependencies
-        run: bun install
+        uses: home-lang/pantry@main
 
       - name: Publish
         run: pantry publish --npm --access public
@@ -105,7 +89,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   notify:
-    name: Discord notification
+    name: discord-notification
     needs: [pantry, npm]
     if: always()
     runs-on: ubuntu-latest

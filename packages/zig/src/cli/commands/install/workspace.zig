@@ -54,20 +54,24 @@ fn installSingleWorkspaceDep(
         .url => .http,
     };
 
-    // For npm/auto packages, try Pantry DynamoDB then npm registry
-    // Skip Pantry lookup for non-domain names (no '.') — Pantry only has domain-style packages
-    // This avoids spawning `aws` CLI subprocesses for npm packages like "react", "webpack", etc.
+    // For npm/auto packages, try Pantry registry then npm registry.
+    // Domain-style: full DynamoDB + S3 lookup. Non-domain: S3-only (lightweight).
+    // Skip entirely for scoped npm packages (@scope/name).
+    const is_scoped = clean_name.len > 0 and clean_name[0] == '@';
     const is_domain_style = std.mem.indexOfScalar(u8, clean_name, '.') != null;
     if (is_npm_package or (pkg_source == .pantry and
         pkg_registry.getPackageByName(clean_name) == null))
     {
-        // Try Pantry DynamoDB registry first (only for domain-style packages like redis.io)
-        if (is_domain_style) {
-        if (helpers.lookupPantryRegistry(allocator, clean_name) catch |err| lkup: {
-            style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, clean_name, err, style.reset });
-            break :lkup null;
-        }) |info| {
-            var pantry_info = info;
+        // Try Pantry registry first
+        const pantry_lookup: ?helpers.PantryPackageInfo = if (is_scoped)
+            null
+        else if (is_domain_style)
+            helpers.lookupPantryRegistry(allocator, clean_name) catch null
+        else
+            helpers.lookupPantryS3Only(allocator, clean_name);
+
+        if (pantry_lookup) |pantry_info_val| {
+            var pantry_info = pantry_info_val;
             defer pantry_info.deinit(allocator);
 
             const npm_spec = lib.packages.PackageSpec{
@@ -113,7 +117,6 @@ fn installSingleWorkspaceDep(
                 .integrity = null,
             };
         }
-        } // is_domain_style
 
         // Fall back to npm registry
         const npm_info = shared_installer.resolveNpmPackage(clean_name, dep.version) catch |err| {

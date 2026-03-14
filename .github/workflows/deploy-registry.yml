@@ -54,7 +54,7 @@ jobs:
           fi
 
   notify:
-    name: Discord notification
+    name: discord-notification
     needs: deploy
     if: always()
     runs-on: ubuntu-latest
