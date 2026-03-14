@@ -31,6 +31,8 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: us-east-1
+          CI: 'true'
+        timeout-minutes: 5
         run: |
           echo "y" | bunx cloud deploy:static \
             --source ./public \
@@ -40,6 +42,7 @@ jobs:
             --no-invalidate || echo "::warning::Static deploy via ts-cloud failed (non-critical)"
 
       - name: Deploy Bun server to EC2 (zero-downtime)
+        timeout-minutes: 10
         env:
           SSH_PRIVATE_KEY: ${{ secrets.REGISTRY_SSH_KEY }}
         run: |

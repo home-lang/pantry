@@ -708,3 +708,39 @@ fn writeFile(path: []const u8, content: []const u8) !void {
 fn makeDirRecursive(path: []const u8) !void {
     try lib.io_helper.makePath(path);
 }
+
+// ============================================================================
+// Package Alias Integration Tests (workspace context)
+// ============================================================================
+
+test "package aliases resolve correctly for common names" {
+    // These aliases are critical for deps.yaml / pantry.jsonc support
+    const helpers = @import("lib").commands.install_commands.helpers;
+
+    // The workspace installer calls resolvePackageAlias on dep names.
+    // Verify the most important aliases that users will put in deps files.
+    try testing.expectEqualStrings("bun.sh", helpers.resolvePackageAlias("bun"));
+    try testing.expectEqualStrings("ziglang.org", helpers.resolvePackageAlias("zig"));
+    try testing.expectEqualStrings("nodejs.org", helpers.resolvePackageAlias("node"));
+    try testing.expectEqualStrings("python.org", helpers.resolvePackageAlias("python"));
+    try testing.expectEqualStrings("go.dev", helpers.resolvePackageAlias("go"));
+    try testing.expectEqualStrings("redis.io", helpers.resolvePackageAlias("redis"));
+    try testing.expectEqualStrings("postgresql.org", helpers.resolvePackageAlias("postgres"));
+
+    // Domain names should pass through (not double-resolve)
+    try testing.expectEqualStrings("bun.sh", helpers.resolvePackageAlias("bun.sh"));
+    try testing.expectEqualStrings("ziglang.org", helpers.resolvePackageAlias("ziglang.org"));
+
+    // Unknown names pass through
+    try testing.expectEqualStrings("zig-config", helpers.resolvePackageAlias("zig-config"));
+    try testing.expectEqualStrings("zig-cli", helpers.resolvePackageAlias("zig-cli"));
+}
+
+test "normalizePackageName strips prefixes correctly" {
+    const helpers = @import("lib").commands.install_commands.helpers;
+
+    try testing.expectEqualStrings("express", helpers.normalizePackageName("npm:express"));
+    try testing.expectEqualStrings("lodash", helpers.normalizePackageName("auto:lodash"));
+    try testing.expectEqualStrings("react", helpers.normalizePackageName("react"));
+    try testing.expectEqualStrings("@scope/pkg", helpers.normalizePackageName("@scope/pkg"));
+}

@@ -506,22 +506,125 @@ test "Default port - postgres alias" {
 // Package Alias Resolution Tests
 // ============================================================================
 
-test "resolvePackageAlias - meilisearch maps to meilisearch.com" {
-    const result = install_helpers.resolvePackageAlias("meilisearch");
-    try std.testing.expectEqualStrings("meilisearch.com", result);
+test "resolvePackageAlias - runtimes and languages" {
+    try std.testing.expectEqualStrings("bun.sh", install_helpers.resolvePackageAlias("bun"));
+    try std.testing.expectEqualStrings("ziglang.org", install_helpers.resolvePackageAlias("zig"));
+    try std.testing.expectEqualStrings("nodejs.org", install_helpers.resolvePackageAlias("node"));
+    try std.testing.expectEqualStrings("nodejs.org", install_helpers.resolvePackageAlias("nodejs"));
+    try std.testing.expectEqualStrings("python.org", install_helpers.resolvePackageAlias("python"));
+    try std.testing.expectEqualStrings("ruby-lang.org", install_helpers.resolvePackageAlias("ruby"));
+    try std.testing.expectEqualStrings("go.dev", install_helpers.resolvePackageAlias("go"));
+    try std.testing.expectEqualStrings("go.dev", install_helpers.resolvePackageAlias("golang"));
+    try std.testing.expectEqualStrings("rust-lang.org", install_helpers.resolvePackageAlias("rust"));
+    try std.testing.expectEqualStrings("rust-lang.org", install_helpers.resolvePackageAlias("rustc"));
+    try std.testing.expectEqualStrings("deno.land", install_helpers.resolvePackageAlias("deno"));
+    try std.testing.expectEqualStrings("swift.org", install_helpers.resolvePackageAlias("swift"));
+    try std.testing.expectEqualStrings("dart.dev", install_helpers.resolvePackageAlias("dart"));
+    try std.testing.expectEqualStrings("flutter.dev", install_helpers.resolvePackageAlias("flutter"));
+    try std.testing.expectEqualStrings("lua.org", install_helpers.resolvePackageAlias("lua"));
+    try std.testing.expectEqualStrings("perl.org", install_helpers.resolvePackageAlias("perl"));
+    try std.testing.expectEqualStrings("php.net", install_helpers.resolvePackageAlias("php"));
+    try std.testing.expectEqualStrings("julialang.org", install_helpers.resolvePackageAlias("julia"));
+    try std.testing.expectEqualStrings("erlang.org", install_helpers.resolvePackageAlias("erlang"));
+    try std.testing.expectEqualStrings("elixir-lang.org", install_helpers.resolvePackageAlias("elixir"));
+    try std.testing.expectEqualStrings("kotlinlang.org", install_helpers.resolvePackageAlias("kotlin"));
+    try std.testing.expectEqualStrings("scala-lang.org", install_helpers.resolvePackageAlias("scala"));
+    try std.testing.expectEqualStrings("nim-lang.org", install_helpers.resolvePackageAlias("nim"));
+    try std.testing.expectEqualStrings("crystal-lang.org", install_helpers.resolvePackageAlias("crystal"));
+    try std.testing.expectEqualStrings("haskell.org", install_helpers.resolvePackageAlias("haskell"));
+}
+
+test "resolvePackageAlias - package managers" {
+    try std.testing.expectEqualStrings("npmjs.com", install_helpers.resolvePackageAlias("npm"));
+    try std.testing.expectEqualStrings("pnpm.io", install_helpers.resolvePackageAlias("pnpm"));
+    try std.testing.expectEqualStrings("yarnpkg.com", install_helpers.resolvePackageAlias("yarn"));
+    try std.testing.expectEqualStrings("pip.pypa.io", install_helpers.resolvePackageAlias("pip"));
+    try std.testing.expectEqualStrings("rubygems.org", install_helpers.resolvePackageAlias("gem"));
+    try std.testing.expectEqualStrings("rust-lang.org/cargo", install_helpers.resolvePackageAlias("cargo"));
+    try std.testing.expectEqualStrings("maven.apache.org", install_helpers.resolvePackageAlias("maven"));
+    try std.testing.expectEqualStrings("gradle.org", install_helpers.resolvePackageAlias("gradle"));
+}
+
+test "resolvePackageAlias - databases" {
+    try std.testing.expectEqualStrings("redis.io", install_helpers.resolvePackageAlias("redis"));
+    try std.testing.expectEqualStrings("postgresql.org", install_helpers.resolvePackageAlias("postgres"));
+    try std.testing.expectEqualStrings("postgresql.org", install_helpers.resolvePackageAlias("postgresql"));
+    try std.testing.expectEqualStrings("mysql.com", install_helpers.resolvePackageAlias("mysql"));
+    try std.testing.expectEqualStrings("sqlite.org", install_helpers.resolvePackageAlias("sqlite"));
+    try std.testing.expectEqualStrings("mongodb.com", install_helpers.resolvePackageAlias("mongodb"));
+    try std.testing.expectEqualStrings("mongodb.com", install_helpers.resolvePackageAlias("mongo"));
+    try std.testing.expectEqualStrings("memcached.org", install_helpers.resolvePackageAlias("memcached"));
+    try std.testing.expectEqualStrings("mariadb.com/server", install_helpers.resolvePackageAlias("mariadb"));
+}
+
+test "resolvePackageAlias - web servers and tools" {
+    try std.testing.expectEqualStrings("nginx.org", install_helpers.resolvePackageAlias("nginx"));
+    try std.testing.expectEqualStrings("caddyserver.com", install_helpers.resolvePackageAlias("caddy"));
+    try std.testing.expectEqualStrings("apache.org/httpd", install_helpers.resolvePackageAlias("httpd"));
+    try std.testing.expectEqualStrings("apache.org/httpd", install_helpers.resolvePackageAlias("apache"));
+    try std.testing.expectEqualStrings("curl.se", install_helpers.resolvePackageAlias("curl"));
+    try std.testing.expectEqualStrings("git-scm.org", install_helpers.resolvePackageAlias("git"));
+}
+
+test "resolvePackageAlias - build tools and compilers" {
+    try std.testing.expectEqualStrings("cmake.org", install_helpers.resolvePackageAlias("cmake"));
+    try std.testing.expectEqualStrings("ninja-build.org", install_helpers.resolvePackageAlias("ninja"));
+    try std.testing.expectEqualStrings("mesonbuild.com", install_helpers.resolvePackageAlias("meson"));
+    try std.testing.expectEqualStrings("llvm.org", install_helpers.resolvePackageAlias("llvm"));
+    try std.testing.expectEqualStrings("llvm.org", install_helpers.resolvePackageAlias("clang"));
+    try std.testing.expectEqualStrings("protobuf.dev", install_helpers.resolvePackageAlias("protobuf"));
+    try std.testing.expectEqualStrings("openssl.org", install_helpers.resolvePackageAlias("openssl"));
+    try std.testing.expectEqualStrings("ffmpeg.org", install_helpers.resolvePackageAlias("ffmpeg"));
+}
+
+test "resolvePackageAlias - CLI tools" {
+    try std.testing.expectEqualStrings("vim.org", install_helpers.resolvePackageAlias("vim"));
+    try std.testing.expectEqualStrings("neovim.io", install_helpers.resolvePackageAlias("neovim"));
+    try std.testing.expectEqualStrings("neovim.io", install_helpers.resolvePackageAlias("nvim"));
+    try std.testing.expectEqualStrings("starship.rs", install_helpers.resolvePackageAlias("starship"));
+    try std.testing.expectEqualStrings("httpie.io", install_helpers.resolvePackageAlias("httpie"));
+}
+
+test "resolvePackageAlias - devops and infra" {
+    try std.testing.expectEqualStrings("terraform.io", install_helpers.resolvePackageAlias("terraform"));
+    try std.testing.expectEqualStrings("vaultproject.io", install_helpers.resolvePackageAlias("vault"));
+    try std.testing.expectEqualStrings("helm.sh", install_helpers.resolvePackageAlias("helm"));
+    try std.testing.expectEqualStrings("ansible.com", install_helpers.resolvePackageAlias("ansible"));
+    try std.testing.expectEqualStrings("aws.amazon.com/cli", install_helpers.resolvePackageAlias("aws"));
+    try std.testing.expectEqualStrings("google.com/gcloud", install_helpers.resolvePackageAlias("gcloud"));
+    try std.testing.expectEqualStrings("supabase.com/cli", install_helpers.resolvePackageAlias("supabase"));
+}
+
+test "resolvePackageAlias - JS/TS ecosystem" {
+    try std.testing.expectEqualStrings("typescriptlang.org", install_helpers.resolvePackageAlias("typescript"));
+    try std.testing.expectEqualStrings("typescriptlang.org", install_helpers.resolvePackageAlias("tsc"));
+    try std.testing.expectEqualStrings("prettier.io", install_helpers.resolvePackageAlias("prettier"));
+    try std.testing.expectEqualStrings("biomejs.dev", install_helpers.resolvePackageAlias("biome"));
+    try std.testing.expectEqualStrings("vitejs.dev", install_helpers.resolvePackageAlias("vite"));
+    try std.testing.expectEqualStrings("tailwindcss.com", install_helpers.resolvePackageAlias("tailwindcss"));
+    try std.testing.expectEqualStrings("tailwindcss.com", install_helpers.resolvePackageAlias("tailwind"));
+    try std.testing.expectEqualStrings("gohugo.io", install_helpers.resolvePackageAlias("hugo"));
+}
+
+test "resolvePackageAlias - messaging" {
+    try std.testing.expectEqualStrings("kafka.apache.org", install_helpers.resolvePackageAlias("kafka"));
+    try std.testing.expectEqualStrings("rabbitmq.com", install_helpers.resolvePackageAlias("rabbitmq"));
+    try std.testing.expectEqualStrings("apache.org/zookeeper", install_helpers.resolvePackageAlias("zookeeper"));
+    try std.testing.expectEqualStrings("meilisearch.com", install_helpers.resolvePackageAlias("meilisearch"));
+}
+
+test "resolvePackageAlias - already-canonical domain names pass through" {
+    try std.testing.expectEqualStrings("bun.sh", install_helpers.resolvePackageAlias("bun.sh"));
+    try std.testing.expectEqualStrings("ziglang.org", install_helpers.resolvePackageAlias("ziglang.org"));
+    try std.testing.expectEqualStrings("nodejs.org", install_helpers.resolvePackageAlias("nodejs.org"));
+    try std.testing.expectEqualStrings("redis.io", install_helpers.resolvePackageAlias("redis.io"));
+    try std.testing.expectEqualStrings("meilisearch.com", install_helpers.resolvePackageAlias("meilisearch.com"));
 }
 
 test "resolvePackageAlias - unknown names pass through unchanged" {
-    try std.testing.expectEqualStrings("redis", install_helpers.resolvePackageAlias("redis"));
-    try std.testing.expectEqualStrings("postgres", install_helpers.resolvePackageAlias("postgres"));
-    try std.testing.expectEqualStrings("bun", install_helpers.resolvePackageAlias("bun"));
-    try std.testing.expectEqualStrings("node", install_helpers.resolvePackageAlias("node"));
-    try std.testing.expectEqualStrings("php", install_helpers.resolvePackageAlias("php"));
-}
-
-test "resolvePackageAlias - already-canonical names pass through" {
-    // meilisearch.com should NOT be double-resolved
-    try std.testing.expectEqualStrings("meilisearch.com", install_helpers.resolvePackageAlias("meilisearch.com"));
+    try std.testing.expectEqualStrings("some-random-pkg", install_helpers.resolvePackageAlias("some-random-pkg"));
+    try std.testing.expectEqualStrings("my-custom-tool", install_helpers.resolvePackageAlias("my-custom-tool"));
+    try std.testing.expectEqualStrings("@scope/package", install_helpers.resolvePackageAlias("@scope/package"));
 }
 
 test "resolvePackageAlias - empty string passes through" {
