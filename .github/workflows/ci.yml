@@ -23,13 +23,8 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
-      - name: Setup Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
       - name: Install Dependencies
-        run: $HOME/.bun/bin/bun install
+        run: bun install
 
       - name: Lint TypeScript/JavaScript
         run: bun run lint
@@ -44,13 +39,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
       - name: Install Dependencies
-        run: $HOME/.bun/bin/bun install
+        run: bun install
 
       - name: Typecheck
         run: bun run typecheck
@@ -64,13 +54,8 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
-      - name: Setup Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
       - name: Install Dependencies
-        run: $HOME/.bun/bin/bun install
+        run: bun install
 
       - name: Build TypeScript packages
         run: bun run build
@@ -102,13 +87,8 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
-      - name: Setup Bun
-        run: |
-          curl -fsSL https://bun.sh/install | bash
-          echo "$HOME/.bun/bin" >> $GITHUB_PATH
-
       - name: Install Dependencies
-        run: $HOME/.bun/bin/bun install
+        run: bun install
 
       - name: Build TypeScript packages
         run: bun run build
