@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
 
       - name: Install dependencies
         run: bun install

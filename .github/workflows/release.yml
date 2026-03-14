@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
 
       - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all
@@ -81,7 +81,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
 
       - name: Publish
         run: pantry publish --npm --access public

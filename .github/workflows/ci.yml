@@ -21,7 +21,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
+
+      - name: Install Dependencies
+        run: bun install
 
       - name: Lint TypeScript/JavaScript
         run: bun run lint
@@ -37,7 +40,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
+
+      - name: Install Dependencies
+        run: bun install
 
       - name: Typecheck
         run: bun run typecheck
@@ -49,7 +55,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
+
+      - name: Install Dependencies
+        run: bun install
 
       - name: Build TypeScript packages
         run: bun run build
@@ -57,7 +66,7 @@ jobs:
       - name: Build pantry GitHub Action
         run: cd packages/action && bun run build
 
-      - name: Setup pantry (local action)
+      - name: Setup pantry (local action test)
         uses: ./packages/action
         with:
           setup-only: 'true'
@@ -84,7 +93,10 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Setup Pantry
-        uses: home-lang/pantry@main
+        uses: ./packages/action
+
+      - name: Install Dependencies
+        run: bun install
 
       - name: Build TypeScript packages
         run: bun run build
