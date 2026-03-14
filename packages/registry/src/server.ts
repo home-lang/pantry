@@ -300,6 +300,10 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * GET  /zig/search?q={query}                 - Search Zig packages
  * POST /zig/publish                          - Publish Zig package
  *
+ * npm bulk resolution:
+ * POST /npm/resolve                    - Resolve all transitive deps from input constraints
+ * GET  /npm/resolve/{specs}            - GET variant (comma-separated name@constraint pairs)
+ *
  * Binary proxy (pantry CLI install):
  * GET  /binaries/{domain}/metadata.json                        - Package metadata (5min cache)
  * GET  /binaries/{domain}/{version}/{platform}/{file}.tar.gz   - Tarball download (24h cache, tracked)
@@ -450,6 +454,14 @@ export function createHandler(
         }
       }
 
+      // npm bulk resolution
+      if (path === '/npm/resolve' && req.method === 'POST') {
+        return handleNpmResolve(req, corsHeaders)
+      }
+      if (path.startsWith('/npm/resolve/') && req.method === 'GET') {
+        return handleNpmResolveGet(path, corsHeaders)
+      }
+
       // Binary proxy routes — proxy pantry binary tarballs from S3
       if (path.startsWith('/binaries/')) {
         return handleBinaryProxy(path, req, analyticsStorage, corsHeaders, binaryStorage)
@@ -595,6 +607,9 @@ export function createServer(
     console.log('  GET  /zig/search?q={query}      - Search Zig packages')
     console.log('  POST /zig/publish               - Publish Zig package')
     console.log('  GET  /health                    - Health check')
+    console.log('npm bulk resolution:')
+    console.log('  POST /npm/resolve               - Resolve transitive deps')
+    console.log('  GET  /npm/resolve/{specs}        - GET variant (name@constraint,...)')
     console.log('Binary proxy (pantry CLI):')
     console.log('  GET  /binaries/{domain}/metadata.json  - Package metadata')
     console.log('  GET  /binaries/{domain}/{ver}/{plat}/*  - Tarball/checksum')
@@ -982,6 +997,509 @@ async function handleCommitPublish(
     { error: 'Unsupported content type' },
     { status: 415, headers: corsHeaders },
   )
+}
+
+// ---------------------------------------------------------------------------
+// npm bulk dependency resolution
+// ---------------------------------------------------------------------------
+
+/** Cache of npm registry metadata (package name -> abbreviated metadata) */
+const npmMetadataCache = new Map<string, { data: any, ts: number }>()
+const NPM_METADATA_TTL = 5 * 60 * 1000 // 5 minutes
+
+/** Cache of full resolution results (input hash -> resolved tree) */
+const npmResolutionCache = new Map<string, { data: any, ts: number }>()
+const NPM_RESOLUTION_TTL = 5 * 60 * 1000 // 5 minutes
+
+async function fetchNpmMetadata(name: string): Promise<any> {
+  const cached = npmMetadataCache.get(name)
+  if (cached && Date.now() - cached.ts < NPM_METADATA_TTL) {
+    return cached.data
+  }
+  // Scoped packages: @scope/name -> @scope%2fname in URL
+  const encodedName = name.startsWith('@') ? `@${encodeURIComponent(name.slice(1))}` : encodeURIComponent(name)
+  const res = await fetch(`https://registry.npmjs.org/${encodedName}`, {
+    headers: { 'Accept': 'application/vnd.npm.install-v1+json' },
+  })
+  if (!res.ok) {
+    throw new Error(`npm registry returned ${res.status} for ${name}`)
+  }
+  const data = await res.json()
+  npmMetadataCache.set(name, { data, ts: Date.now() })
+  return data
+}
+
+/**
+ * Parse a semver version string into [major, minor, patch] numbers.
+ * Returns null for unparseable strings.
+ */
+function parseSemver(v: string): [number, number, number] | null {
+  const m = v.match(/^(\d+)\.(\d+)\.(\d+)/)
+  if (!m) return null
+  return [Number(m[1]), Number(m[2]), Number(m[3])]
+}
+
+/** Compare two semver tuples. Returns <0, 0, or >0. */
+function compareSemver(a: [number, number, number], b: [number, number, number]): number {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i]
+  }
+  return 0
+}
+
+function semverGte(v: [number, number, number], target: [number, number, number]): boolean {
+  return compareSemver(v, target) >= 0
+}
+
+function semverLt(v: [number, number, number], target: [number, number, number]): boolean {
+  return compareSemver(v, target) < 0
+}
+
+/**
+ * Check if version satisfies a single constraint like >=1.2.3, <2.0.0, etc.
+ */
+function satisfiesSingle(version: [number, number, number], constraint: string): boolean {
+  const c = constraint.trim()
+  if (!c || c === '*' || c === 'latest') return true
+
+  const geMatch = c.match(/^>=\s*(\d+\.\d+\.\d+)/)
+  if (geMatch) {
+    const target = parseSemver(geMatch[1])
+    return target ? semverGte(version, target) : false
+  }
+
+  const gtMatch = c.match(/^>\s*(\d+\.\d+\.\d+)/)
+  if (gtMatch) {
+    const target = parseSemver(gtMatch[1])
+    return target ? compareSemver(version, target) > 0 : false
+  }
+
+  const leMatch = c.match(/^<=\s*(\d+\.\d+\.\d+)/)
+  if (leMatch) {
+    const target = parseSemver(leMatch[1])
+    return target ? compareSemver(version, target) <= 0 : false
+  }
+
+  const ltMatch = c.match(/^<\s*(\d+\.\d+\.\d+)/)
+  if (ltMatch) {
+    const target = parseSemver(ltMatch[1])
+    return target ? semverLt(version, target) : false
+  }
+
+  const eqMatch = c.match(/^=?\s*(\d+\.\d+\.\d+)/)
+  if (eqMatch) {
+    const target = parseSemver(eqMatch[1])
+    return target ? compareSemver(version, target) === 0 : false
+  }
+
+  return false
+}
+
+/**
+ * Resolve the best version that satisfies a constraint from a list of available versions.
+ * Supports: ^, ~, >=, >, <=, <, exact, *, latest, x-ranges, || (or), space-separated (and).
+ */
+function resolveVersion(constraint: string, versions: string[], distTags?: Record<string, string>): string | null {
+  const c = constraint.trim()
+
+  // Handle 'latest', '*', or empty
+  if (!c || c === '*' || c === 'latest' || c === '') {
+    return distTags?.latest || versions[versions.length - 1] || null
+  }
+
+  // Handle dist-tag references (e.g. "next", "canary")
+  if (distTags && distTags[c]) {
+    return distTags[c]
+  }
+
+  // Handle npm: alias — npm:actual-package@version
+  if (c.startsWith('npm:')) {
+    // The caller handles alias resolution; this shouldn't normally reach here
+    return null
+  }
+
+  // Handle || (or) ranges: at least one sub-range must match
+  if (c.includes('||')) {
+    const subRanges = c.split('||')
+    let best: [number, number, number] | null = null
+    let bestStr: string | null = null
+    for (const sub of subRanges) {
+      const resolved = resolveVersion(sub.trim(), versions, distTags)
+      if (resolved) {
+        const parsed = parseSemver(resolved)
+        if (parsed && (!best || compareSemver(parsed, best) > 0)) {
+          best = parsed
+          bestStr = resolved
+        }
+      }
+    }
+    return bestStr
+  }
+
+  // Handle caret: ^major.minor.patch
+  const caretMatch = c.match(/^\^(\d+)(?:\.(\d+))?(?:\.(\d+))?/)
+  if (caretMatch) {
+    const major = Number(caretMatch[1])
+    const minor = caretMatch[2] !== undefined ? Number(caretMatch[2]) : 0
+    const patch = caretMatch[3] !== undefined ? Number(caretMatch[3]) : 0
+    const floor: [number, number, number] = [major, minor, patch]
+    let ceiling: [number, number, number]
+    if (major !== 0) {
+      ceiling = [major + 1, 0, 0]
+    } else if (minor !== 0) {
+      ceiling = [0, minor + 1, 0]
+    } else {
+      ceiling = [0, 0, patch + 1]
+    }
+    return findBest(versions, floor, ceiling)
+  }
+
+  // Handle tilde: ~major.minor.patch
+  const tildeMatch = c.match(/^~(\d+)(?:\.(\d+))?(?:\.(\d+))?/)
+  if (tildeMatch) {
+    const major = Number(tildeMatch[1])
+    const minor = tildeMatch[2] !== undefined ? Number(tildeMatch[2]) : 0
+    const patch = tildeMatch[3] !== undefined ? Number(tildeMatch[3]) : 0
+    const floor: [number, number, number] = [major, minor, patch]
+    const ceiling: [number, number, number] = [major, minor + 1, 0]
+    return findBest(versions, floor, ceiling)
+  }
+
+  // Handle x-ranges: 1.x, 1.2.x, 1.x.x
+  const xRangeMatch = c.match(/^(\d+)(?:\.(x|\*|\d+))?(?:\.(x|\*|\d+))?$/)
+  if (xRangeMatch && (c.includes('x') || c.includes('*') || !c.includes('.'))) {
+    const major = Number(xRangeMatch[1])
+    if (!xRangeMatch[2] || xRangeMatch[2] === 'x' || xRangeMatch[2] === '*') {
+      return findBest(versions, [major, 0, 0], [major + 1, 0, 0])
+    }
+    const minor = Number(xRangeMatch[2])
+    if (!xRangeMatch[3] || xRangeMatch[3] === 'x' || xRangeMatch[3] === '*') {
+      return findBest(versions, [major, minor, 0], [major, minor + 1, 0])
+    }
+  }
+
+  // Handle space-separated AND ranges: >=1.0.0 <2.0.0
+  // Split on spaces but keep operators attached to their versions
+  const parts = c.match(/(>=?|<=?|=)?\s*\d+\.\d+\.\d+/g)
+  if (parts && parts.length > 1) {
+    let best: string | null = null
+    let bestParsed: [number, number, number] | null = null
+    for (const v of versions) {
+      const parsed = parseSemver(v)
+      if (!parsed) continue
+      // Skip pre-release versions
+      if (v.includes('-')) continue
+      let allMatch = true
+      for (const part of parts) {
+        if (!satisfiesSingle(parsed, part.trim())) {
+          allMatch = false
+          break
+        }
+      }
+      if (allMatch && (!bestParsed || compareSemver(parsed, bestParsed) > 0)) {
+        best = v
+        bestParsed = parsed
+      }
+    }
+    return best
+  }
+
+  // Handle exact version
+  const exactMatch = c.match(/^=?\s*(\d+\.\d+\.\d+)/)
+  if (exactMatch) {
+    const target = exactMatch[1]
+    return versions.includes(target) ? target : null
+  }
+
+  // Handle single constraint (>=, >, <=, <)
+  if (c.startsWith('>') || c.startsWith('<')) {
+    let best: string | null = null
+    let bestParsed: [number, number, number] | null = null
+    for (const v of versions) {
+      const parsed = parseSemver(v)
+      if (!parsed || v.includes('-')) continue
+      if (satisfiesSingle(parsed, c) && (!bestParsed || compareSemver(parsed, bestParsed) > 0)) {
+        best = v
+        bestParsed = parsed
+      }
+    }
+    return best
+  }
+
+  return null
+}
+
+/** Find highest version in [floor, ceiling) */
+function findBest(versions: string[], floor: [number, number, number], ceiling: [number, number, number]): string | null {
+  let best: string | null = null
+  let bestParsed: [number, number, number] | null = null
+  for (const v of versions) {
+    const parsed = parseSemver(v)
+    if (!parsed) continue
+    // Skip pre-release versions unless explicitly requested
+    if (v.includes('-')) continue
+    if (semverGte(parsed, floor) && semverLt(parsed, ceiling)) {
+      if (!bestParsed || compareSemver(parsed, bestParsed) > 0) {
+        best = v
+        bestParsed = parsed
+      }
+    }
+  }
+  return best
+}
+
+interface ResolvedPackage {
+  version: string
+  tarball: string
+  integrity: string
+  dependencies?: Record<string, string>
+}
+
+/**
+ * Resolve all transitive npm dependencies via BFS.
+ */
+async function resolveNpmDeps(
+  inputDeps: Record<string, string>,
+): Promise<Record<string, ResolvedPackage>> {
+  const resolved = new Map<string, ResolvedPackage>()
+  const visiting = new Set<string>() // circular dep guard
+
+  // Queue items: [packageName, versionConstraint]
+  const queue: Array<[string, string]> = []
+  for (const [name, constraint] of Object.entries(inputDeps)) {
+    queue.push([name, constraint])
+  }
+
+  while (queue.length > 0) {
+    // Process in batches of 20
+    const batch = queue.splice(0, 20)
+    const toFetch: Array<[string, string]> = []
+
+    for (const [name, constraint] of batch) {
+      // Handle npm aliases: "npm:actual-package@^1.0.0"
+      let actualName = name
+      let actualConstraint = constraint
+      if (constraint.startsWith('npm:')) {
+        const aliasMatch = constraint.match(/^npm:(@?[^@]+)@(.+)$/)
+        if (aliasMatch) {
+          actualName = aliasMatch[1]
+          actualConstraint = aliasMatch[2]
+        }
+      }
+
+      // Skip if already resolved or being visited (circular)
+      if (resolved.has(actualName) || visiting.has(actualName)) continue
+
+      // Skip URL/git/file dependencies
+      if (actualConstraint.startsWith('http') || actualConstraint.startsWith('git') || actualConstraint.startsWith('file:')) continue
+
+      visiting.add(actualName)
+      toFetch.push([actualName, actualConstraint])
+    }
+
+    if (toFetch.length === 0) continue
+
+    // Fetch metadata concurrently
+    const results = await Promise.allSettled(
+      toFetch.map(async ([name, constraint]) => {
+        const metadata = await fetchNpmMetadata(name)
+        return { name, constraint, metadata }
+      }),
+    )
+
+    for (const result of results) {
+      if (result.status === 'rejected') continue
+      const { name, constraint, metadata } = result.value
+
+      const allVersions = Object.keys(metadata.versions || {})
+      const bestVersion = resolveVersion(constraint, allVersions, metadata['dist-tags'])
+
+      if (!bestVersion || !metadata.versions[bestVersion]) {
+        visiting.delete(name)
+        continue
+      }
+
+      const versionData = metadata.versions[bestVersion]
+      const dist = versionData.dist || {}
+
+      const entry: ResolvedPackage = {
+        version: bestVersion,
+        tarball: dist.tarball || `https://registry.npmjs.org/${name}/-/${name.split('/').pop()}-${bestVersion}.tgz`,
+        integrity: dist.integrity || dist.shasum || '',
+      }
+
+      // Collect runtime + peer deps (skip dev deps for transitive)
+      const deps: Record<string, string> = {
+        ...(versionData.dependencies || {}),
+        ...(versionData.peerDependencies || {}),
+      }
+
+      // Remove optional peer deps
+      const peerMeta = versionData.peerDependenciesMeta || {}
+      for (const [peerName, meta] of Object.entries(peerMeta)) {
+        if ((meta as any)?.optional) {
+          delete deps[peerName]
+        }
+      }
+
+      if (Object.keys(deps).length > 0) {
+        entry.dependencies = deps
+        // Add transitive deps to queue
+        for (const [depName, depConstraint] of Object.entries(deps)) {
+          if (!resolved.has(depName) && !visiting.has(depName)) {
+            queue.push([depName, depConstraint])
+          }
+        }
+      }
+
+      resolved.set(name, entry)
+    }
+  }
+
+  // Convert to plain object
+  const result: Record<string, ResolvedPackage> = {}
+  for (const [name, entry] of resolved) {
+    result[name] = entry
+  }
+  return result
+}
+
+function hashDeps(deps: Record<string, string>): string {
+  const sorted = Object.entries(deps).sort(([a], [b]) => a.localeCompare(b))
+  // Use a simple string hash
+  const str = JSON.stringify(sorted)
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const chr = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + chr
+    hash |= 0
+  }
+  return hash.toString(36)
+}
+
+async function handleNpmResolve(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    const body = await req.json() as { dependencies?: Record<string, string> }
+    const deps = body?.dependencies
+    if (!deps || typeof deps !== 'object' || Object.keys(deps).length === 0) {
+      return Response.json(
+        { error: 'Missing or empty "dependencies" object in request body' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    // Check resolution cache
+    const cacheKey = hashDeps(deps)
+    const cached = npmResolutionCache.get(cacheKey)
+    if (cached && Date.now() - cached.ts < NPM_RESOLUTION_TTL) {
+      return Response.json(cached.data, {
+        headers: { ...corsHeaders, 'X-Cache': 'HIT' },
+      })
+    }
+
+    const resolved = await resolveNpmDeps(deps)
+    const responseData = { resolved }
+
+    // Cache the result
+    npmResolutionCache.set(cacheKey, { data: responseData, ts: Date.now() })
+
+    // Evict old cache entries periodically
+    if (npmResolutionCache.size > 1000) {
+      const now = Date.now()
+      for (const [key, val] of npmResolutionCache) {
+        if (now - val.ts > NPM_RESOLUTION_TTL) {
+          npmResolutionCache.delete(key)
+        }
+      }
+    }
+
+    return Response.json(responseData, {
+      headers: { ...corsHeaders, 'X-Cache': 'MISS' },
+    })
+  }
+  catch (error) {
+    console.error('npm resolve error:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to resolve npm dependencies' },
+      { status: 500, headers: corsHeaders },
+    )
+  }
+}
+
+async function handleNpmResolveGet(path: string, corsHeaders: Record<string, string>): Promise<Response> {
+  try {
+    // /npm/resolve/react@^16,react-dom@^16
+    const specStr = decodeURIComponent(path.replace('/npm/resolve/', ''))
+    if (!specStr) {
+      return Response.json(
+        { error: 'No package specs provided. Use /npm/resolve/name@constraint,name2@constraint2' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    const deps: Record<string, string> = {}
+    for (const spec of specStr.split(',')) {
+      const trimmed = spec.trim()
+      if (!trimmed) continue
+
+      // Handle scoped packages: @scope/name@^1.0.0
+      let name: string
+      let constraint: string
+      if (trimmed.startsWith('@')) {
+        // Scoped: find the second @ for the version
+        const secondAt = trimmed.indexOf('@', 1)
+        if (secondAt === -1) {
+          name = trimmed
+          constraint = 'latest'
+        } else {
+          name = trimmed.slice(0, secondAt)
+          constraint = trimmed.slice(secondAt + 1)
+        }
+      } else {
+        const atIdx = trimmed.indexOf('@')
+        if (atIdx === -1) {
+          name = trimmed
+          constraint = 'latest'
+        } else {
+          name = trimmed.slice(0, atIdx)
+          constraint = trimmed.slice(atIdx + 1)
+        }
+      }
+      deps[name] = constraint || 'latest'
+    }
+
+    if (Object.keys(deps).length === 0) {
+      return Response.json(
+        { error: 'No valid package specs found' },
+        { status: 400, headers: corsHeaders },
+      )
+    }
+
+    // Check resolution cache
+    const cacheKey = hashDeps(deps)
+    const cached = npmResolutionCache.get(cacheKey)
+    if (cached && Date.now() - cached.ts < NPM_RESOLUTION_TTL) {
+      return Response.json(cached.data, {
+        headers: { ...corsHeaders, 'X-Cache': 'HIT' },
+      })
+    }
+
+    const resolved = await resolveNpmDeps(deps)
+    const responseData = { resolved }
+
+    npmResolutionCache.set(cacheKey, { data: responseData, ts: Date.now() })
+
+    return Response.json(responseData, {
+      headers: { ...corsHeaders, 'X-Cache': 'MISS' },
+    })
+  }
+  catch (error) {
+    console.error('npm resolve GET error:', error)
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to resolve npm dependencies' },
+      { status: 500, headers: corsHeaders },
+    )
+  }
 }
 
 /**

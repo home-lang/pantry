@@ -475,6 +475,21 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         } else |_| {}
 
+        // Pre-resolve all deps via pantry registry bulk endpoint (single HTTP request)
+        // This pre-populates the npm cache so individual resolveNpmPackage() calls
+        // return immediately instead of hitting registry.npmjs.org one by one.
+        if (deps_to_install.len > 0) {
+            var bulk_deps = try allocator.alloc(install.Installer.BulkDep, deps_to_install.len);
+            defer allocator.free(bulk_deps);
+            for (deps_to_install, 0..) |dep, i| {
+                bulk_deps[i] = .{
+                    .name = helpers.normalizePackageName(dep.name),
+                    .version = dep.version,
+                };
+            }
+            shared_installer.bulkResolveViaPantryRegistry(bulk_deps);
+        }
+
         // Install results storage
         var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
         defer {

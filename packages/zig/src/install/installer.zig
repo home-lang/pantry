@@ -328,6 +328,77 @@ pub const Installer = struct {
         self.lockfile = lf;
     }
 
+    /// Pre-resolve all npm dependencies via the pantry registry's bulk resolution endpoint.
+    /// Makes a single HTTP POST to /npm/resolve with all deps, and pre-populates the
+    /// L2 npm cache with resolved versions + tarball URLs. This eliminates individual
+    /// HTTP requests to registry.npmjs.org during transitive resolution.
+    pub const BulkDep = struct { name: []const u8, version: []const u8 };
+
+    pub fn bulkResolveViaPantryRegistry(
+        self: *Installer,
+        deps: []const BulkDep,
+    ) void {
+        if (deps.len == 0) return;
+
+        // Build JSON request body: {"dependencies":{"react":"^16","lodash":"^4",...}}
+        var body_buf: std.ArrayList(u8) = .empty;
+        defer body_buf.deinit(self.allocator);
+        body_buf.appendSlice(self.allocator, "{\"dependencies\":{") catch return;
+
+        var first = true;
+        for (deps) |dep| {
+            if (!first) body_buf.append(self.allocator, ',') catch continue;
+            first = false;
+            body_buf.append(self.allocator, '"') catch continue;
+            body_buf.appendSlice(self.allocator, dep.name) catch continue;
+            body_buf.appendSlice(self.allocator, "\":\"") catch continue;
+            body_buf.appendSlice(self.allocator, dep.version) catch continue;
+            body_buf.append(self.allocator, '"') catch continue;
+        }
+        body_buf.appendSlice(self.allocator, "}}") catch return;
+
+        // POST to our registry's bulk resolver
+        const registry_url = "https://registry.pantry.dev/npm/resolve";
+        const response = io_helper.httpPostJson(self.allocator, registry_url, body_buf.items) catch return;
+        defer self.allocator.free(response);
+
+        if (response.len == 0) return;
+
+        // Parse response and populate L2 npm cache
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, response, .{}) catch return;
+        defer parsed.deinit();
+
+        if (parsed.value != .object) return;
+        const resolved_obj = parsed.value.object.get("resolved") orelse return;
+        if (resolved_obj != .object) return;
+
+        var it = resolved_obj.object.iterator();
+        while (it.next()) |entry| {
+            const pkg_name = entry.key_ptr.*;
+            const pkg_val = entry.value_ptr.*;
+            if (pkg_val != .object) continue;
+
+            const version = if (pkg_val.object.get("version")) |v| (if (v == .string) v.string else continue) else continue;
+            const tarball = if (pkg_val.object.get("tarball")) |t| (if (t == .string) t.string else continue) else continue;
+            const integrity = if (pkg_val.object.get("integrity")) |i| (if (i == .string) i.string else null) else null;
+
+            // Cache as L2 resolution entry for all common constraint patterns
+            // This pre-populates the cache so resolveNpmPackage() returns immediately
+            const cache_keys = [_][]const u8{ "latest", "*", "" };
+            for (cache_keys) |suffix| {
+                const key = std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ pkg_name, suffix }) catch continue;
+                defer self.allocator.free(key);
+                self.npm_cache.putResolution(key, version, tarball, integrity);
+            }
+            // Also cache the exact version
+            {
+                const key = std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ pkg_name, version }) catch continue;
+                defer self.allocator.free(key);
+                self.npm_cache.putResolution(key, version, tarball, integrity);
+            }
+        }
+    }
+
     /// Batch install all packages from lockfile in parallel.
     /// This is the fast path when lockfile exists but modules are missing:
     /// 1. Flatten lockfile → list of {name, version, tarball_url}

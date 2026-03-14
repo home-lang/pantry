@@ -1461,3 +1461,40 @@ pub fn httpGetWithClient(client: *std.http.Client, allocator: std.mem.Allocator,
     alloc_writer.deinit();
     return owned;
 }
+
+/// HTTP POST with JSON body. Returns response body as owned slice.
+pub fn httpPostJson(allocator: std.mem.Allocator, url: []const u8, json_body: []const u8) ![]u8 {
+    var client: std.http.Client = .{
+        .allocator = allocator,
+        .io = io,
+    };
+    defer client.deinit();
+
+    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+    errdefer alloc_writer.deinit();
+
+    var redirect_buf: [8192]u8 = undefined;
+
+    const result = client.fetch(.{
+        .location = .{ .url = url },
+        .method = .POST,
+        .payload = json_body,
+        .response_writer = &alloc_writer.writer,
+        .redirect_buffer = &redirect_buf,
+        .redirect_behavior = @enumFromInt(10),
+        .headers = .{
+            .content_type = .{ .override = "application/json" },
+        },
+    }) catch {
+        return error.HttpRequestFailed;
+    };
+
+    if (result.status != .ok) {
+        return error.HttpRequestFailed;
+    }
+
+    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+    const owned = try allocator.dupe(u8, data);
+    alloc_writer.deinit();
+    return owned;
+}
