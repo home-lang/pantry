@@ -25,21 +25,22 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 4 versions</summary>
 
+- `2.8.0`
 - `2.7.0`
 - `2.6.0`
 - `2.5.0`
 
 </details>
 
-**Latest Version**: `2.7.0`
+**Latest Version**: `2.8.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cisco.com/libsrtp@2.7.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cisco.com/libsrtp@2.8.0 -- $SHELL -i
 ```
 
 ## Dependencies
