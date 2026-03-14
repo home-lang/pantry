@@ -5,7 +5,7 @@
     "": {
       "name": "pantry",
       "dependencies": {
-        "@stacksjs/ts-cloud": "^0.2.2",
+        "@stacksjs/ts-cloud": "^0.2.3",
       },
       "devDependencies": {
         "better-dx": "^0.2.6",
@@ -13,7 +13,7 @@
     },
     "packages/action": {
       "name": "pantry-setup",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "dependencies": {
         "@actions/cache": "^6.0.0",
         "@actions/core": "^1.11.1",
@@ -27,14 +27,14 @@
     },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "devDependencies": {
         "mitata": "^1.0.34",
       },
     },
     "packages/inspector": {
       "name": "@stacksjs/pantry-inspector",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -42,7 +42,7 @@
     },
     "packages/registry": {
       "name": "@stacksjs/registry",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "dependencies": {
         "@cwcss/crosswind": "^0.1.6",
       },
@@ -53,7 +53,7 @@
     },
     "packages/site": {
       "name": "@stacksjs/pantry-site",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "dependencies": {
         "@stacksjs/stx": "^0.2.6",
       },
@@ -64,7 +64,7 @@
     },
     "packages/ts-pantry": {
       "name": "ts-pantry",
-      "version": "0.8.13",
+      "version": "0.8.15",
       "bin": {
         "ts-pantry": "./dist/bin/cli.js",
         "pantry-ts": "./scripts/pantry-cli.ts",
@@ -160,7 +160,7 @@
 
     "@stacksjs/stx": ["@stacksjs/stx@0.2.9", "", { "dependencies": { "@cwcss/crosswind": "^0.1.6", "@stacksjs/clapp": "^0.2.0", "@stacksjs/desktop": "0.2.9", "@stacksjs/sanitizer": "0.2.9", "@stacksjs/ts-craft": "^0.0.2", "bun-plugin-stx": "0.2.9", "bunfig": "^0.15.6", "stx-router": "0.2.9", "ts-syntax-highlighter": "^0.2.1" }, "bin": { "stx": "./dist/cli.js" } }, "sha512-fngyPj8pkS/K8RdDnTCtRq+bYNldyCI3twA9p7xDmMHtoliQr9B5s6PilP7pCEwbmFEI0q0nXcwWaNvOSAkd/Q=="],
 
-    "@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.2.2", "", { "dependencies": { "@stacksjs/ts-xml": "^0.1.0", "@ts-cloud/aws-types": "0.2.2", "@ts-cloud/core": "0.2.2" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-+qswFrydnlB6B80iBqEBwKqm1CViWLawQPYqsGiQlafV+ZQ1AtFA/Bh5iZmKRHY102Gw5NXjAGnj/lZbhbzHzA=="],
+    "@stacksjs/ts-cloud": ["@stacksjs/ts-cloud@0.2.3", "", { "dependencies": { "@stacksjs/ts-xml": "^0.1.0", "@ts-cloud/aws-types": "0.2.3", "@ts-cloud/core": "0.2.3" }, "bin": { "cloud": "./dist/bin/cli.js" } }, "sha512-KHBwsIGgeTYT3f+OF7pU+EcpqKZRICmv6u8MnZz6Tk7wBFb2CPFIRgZvQarpDxxmK0R9KOFEaOV2gFIBa4AgxA=="],
 
     "@stacksjs/ts-cloud-aws-types": ["@stacksjs/ts-cloud-aws-types@0.1.9", "", {}, "sha512-eA6C+jTUl8/LJA3g9pqQdfirgHpjUjyH9hyRRk2hfQewXKuqr61BRQ6riVZm3+LGaFkyra1QlyZCStBrjGLBaA=="],
 
@@ -174,9 +174,9 @@
 
     "@stacksjs/ts-xml": ["@stacksjs/ts-xml@0.1.0", "", { "bin": { "bin-name": "./dist/bin/cli.js" } }, "sha512-YB7FSlFcPqopUOmjK1Qqr5E6QaarerIFJzWfUXOO/EuR1qX+IRRKxOKbWRmCvN72Mnchz8EfXhlvxEK+Zz/mQQ=="],
 
-    "@ts-cloud/aws-types": ["@ts-cloud/aws-types@0.2.2", "", {}, "sha512-KCAUrPcwnrytv+UMULYADdAdn8kDl/rtsKSaqTfW82qoFG0BsL+mhTyvbIjN20XVPWm6N5AG9othbqUOYYX+6Q=="],
+    "@ts-cloud/aws-types": ["@ts-cloud/aws-types@0.2.3", "", {}, "sha512-f12OpxUfRCh3Yf1+yJUPIor5FL8JtlI7/YCHYi715nx6OqH7G4A2LQu/fQbmyiAiKH0vRfKLU03RBDyUsLd9OQ=="],
 
-    "@ts-cloud/core": ["@ts-cloud/core@0.2.2", "", { "dependencies": { "@ts-cloud/aws-types": "0.2.2" } }, "sha512-XXhCgb1RiH1X3wJFx5qWh3I7bfyePaqn/+DLNJLilAIANH08BRGFeeCDV6NQLDob92CkdQKVR/juazQehZPZmw=="],
+    "@ts-cloud/core": ["@ts-cloud/core@0.2.3", "", { "dependencies": { "@ts-cloud/aws-types": "0.2.3" } }, "sha512-SCCKrQFFdjstZ0eevMxCQ0w6JsMjkPj4zJSpNZ206q3Ye27kZmEpwtbJ88W4DVfUb0BI31ErK49JmtZDnRcieQ=="],
 
     "@types/bun": ["@types/bun@1.3.10", "", { "dependencies": { "bun-types": "1.3.10" } }, "sha512-0+rlrUrOrTSskibryHbvQkDOWRJwJZqZlxrUs1u4oOoTln8+WIXBPmAuCF35SWB2z4Zl3E84Nl/D0P7803nigQ=="],
 

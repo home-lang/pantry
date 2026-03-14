@@ -58,6 +58,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "@stacksjs/ts-cloud": "^0.2.2"
+    "@stacksjs/ts-cloud": "^0.2.3"
   }
 }
