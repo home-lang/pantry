@@ -82,8 +82,11 @@ function hashFile(filePath: string): string {
   }
 }
 
-/** Find the deps file that pantry will read */
-function findDepsFile(): string | null {
+/** Find the lockfile for cache key (most accurate indicator of installed state) */
+function findLockfile(): string | null {
+  if (fs.existsSync('pantry.lock'))
+    return 'pantry.lock'
+  // Fall back to deps file if no lockfile yet
   const candidates = ['pantry.jsonc', 'pantry.json', 'deps.yaml', 'deps.yml', 'package.json']
   for (const f of candidates) {
     if (fs.existsSync(f))
@@ -128,8 +131,8 @@ export async function run(): Promise<void> {
       return
 
     // ── Install deps with caching ──
-    const depsFile = findDepsFile()
-    const cacheKey = `pantry-${platform.os}-${platform.arch}-${depsFile ? hashFile(depsFile) : 'pkgs'}-${inputs.packages || 'all'}`
+    const lockfile = findLockfile()
+    const cacheKey = `pantry-${platform.os}-${platform.arch}-${lockfile ? hashFile(lockfile) : 'no-lock'}-${inputs.packages || 'all'}`
     let cacheHit = false
 
     // Try restoring from cache
