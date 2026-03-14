@@ -255,20 +255,14 @@ pub fn access(path: []const u8, flags: Dir.AccessOptions) !void {
     }
     const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
     const fd = std.posix.openat(std.posix.AT.FDCWD, path, open_flags, 0) catch return error.FileNotFound;
-    std.posix.close(fd);
+    _ = std.c.close(fd);
 }
 
 /// Check access to an absolute path
 pub fn accessAbsolute(path: []const u8, flags: Dir.AccessOptions) !void {
     _ = flags;
-    if (comptime is_windows) {
-        const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch return error.FileNotFound;
-        file.close(io);
-        return;
-    }
-    const open_flags: std.posix.O = .{ .ACCMODE = .RDONLY, .CLOEXEC = true };
-    const fd = std.posix.openat(std.posix.AT.FDCWD, path, open_flags, 0) catch return error.FileNotFound;
-    std.posix.close(fd);
+    const file = cwd().openFile(io, path, .{ .mode = .read_only }) catch return error.FileNotFound;
+    file.close(io);
 }
 
 /// Open a directory in the current working directory
@@ -575,7 +569,7 @@ const PosixFsDir = struct {
     }
 
     pub fn close(self: *PosixFsDir) void {
-        std.posix.close(self.fd);
+        _ = std.c.close(self.fd);
     }
 };
 
@@ -1173,7 +1167,7 @@ pub fn randomBytes(buf: []u8) void {
             }
             return;
         };
-        defer std.posix.close(fd);
+        defer _ = std.c.close(fd);
         _ = std.posix.read(fd, buf) catch {
             for (buf, 0..) |*b, i| {
                 b.* = @truncate(i *% 31337 +% 12345);
