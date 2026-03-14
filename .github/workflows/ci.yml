@@ -27,7 +27,9 @@ jobs:
 
       - name: Install Zig
         run: |
-          pantry install --no-save ziglang.org
+          cp package.json package.json.bak
+          pantry install ziglang.org
+          mv package.json.bak package.json
           echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
 
       - name: Setup Bun
@@ -75,7 +77,9 @@ jobs:
 
       - name: Install Zig
         run: |
-          pantry install --no-save ziglang.org
+          cp package.json package.json.bak
+          pantry install ziglang.org
+          mv package.json.bak package.json
           echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
 
       - name: Setup Bun
@@ -128,7 +132,9 @@ jobs:
 
       - name: Install Zig
         run: |
-          pantry install --no-save ziglang.org
+          cp package.json package.json.bak
+          pantry install ziglang.org
+          mv package.json.bak package.json
           echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
 
       - name: Setup Bun
