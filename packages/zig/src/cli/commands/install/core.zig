@@ -820,64 +820,64 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // Generate lockfile (skip entirely when --no-save to avoid unnecessary work)
         if (!opts.no_save) {
-        const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
-        defer allocator.free(lockfile_path);
+            const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
+            defer allocator.free(lockfile_path);
 
-        var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
-        defer lockfile.deinit(allocator);
+            var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
+            defer lockfile.deinit(allocator);
 
-        // Add entries for all installed packages
-        for (deps, 0..) |dep, i| {
-            const source = if (helpers.isLocalDependency(dep))
-                lib.packages.PackageSource.local
-            else if (std.mem.startsWith(u8, dep.name, "github:"))
-                lib.packages.PackageSource.github
-            else if (std.mem.startsWith(u8, dep.name, "npm:"))
-                lib.packages.PackageSource.npm
-            else
-                lib.packages.PackageSource.pantry;
+            // Add entries for all installed packages
+            for (deps, 0..) |dep, i| {
+                const source = if (helpers.isLocalDependency(dep))
+                    lib.packages.PackageSource.local
+                else if (std.mem.startsWith(u8, dep.name, "github:"))
+                    lib.packages.PackageSource.github
+                else if (std.mem.startsWith(u8, dep.name, "npm:"))
+                    lib.packages.PackageSource.npm
+                else
+                    lib.packages.PackageSource.pantry;
 
-            const clean_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
-                dep.name[colon_pos + 1 ..]
-            else
-                dep.name;
+                const clean_name = if (std.mem.indexOf(u8, dep.name, ":")) |colon_pos|
+                    dep.name[colon_pos + 1 ..]
+                else
+                    dep.name;
 
-            // Use the resolved version from install_results if available, otherwise use dep.version
-            const resolved_version = if (i < install_results.len and install_results[i].success and install_results[i].version.len > 0)
-                install_results[i].version
-            else
-                dep.version;
+                // Use the resolved version from install_results if available, otherwise use dep.version
+                const resolved_version = if (i < install_results.len and install_results[i].success and install_results[i].version.len > 0)
+                    install_results[i].version
+                else
+                    dep.version;
 
-            const entry = lib.packages.LockfileEntry{
-                .name = try allocator.dupe(u8, clean_name),
-                .version = try allocator.dupe(u8, resolved_version),
-                .source = source,
-                .url = if (source == .local) try allocator.dupe(u8, dep.version) else null,
-                .resolved = null,
-                .integrity = null,
-                .dependencies = null,
-            };
+                const entry = lib.packages.LockfileEntry{
+                    .name = try allocator.dupe(u8, clean_name),
+                    .version = try allocator.dupe(u8, resolved_version),
+                    .source = source,
+                    .url = if (source == .local) try allocator.dupe(u8, dep.version) else null,
+                    .resolved = null,
+                    .integrity = null,
+                    .dependencies = null,
+                };
 
-            const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, resolved_version });
-            defer allocator.free(key);
-            try lockfile.addEntry(allocator, key, entry);
-        }
+                const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ clean_name, resolved_version });
+                defer allocator.free(key);
+                try lockfile.addEntry(allocator, key, entry);
+            }
 
-        // Write lockfile (unless --frozen-lockfile or --no-save)
-        if (opts.frozen_lockfile) {
-            style.printWarn("Lockfile would be modified but --frozen-lockfile is set\n", .{});
-            return .{
-                .exit_code = 1,
-                .message = try allocator.dupe(u8, "Error: lockfile is out of date (--frozen-lockfile)"),
-            };
-        } else if (!opts.no_save) {
-            style.printLockfileSaving();
-            const lockfile_writer = @import("../../../packages/lockfile.zig");
-            lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
-                style.printWarn("Failed to write lockfile: {}\n", .{err});
-            };
-            style.printLockfileSaved();
-        }
+            // Write lockfile (unless --frozen-lockfile or --no-save)
+            if (opts.frozen_lockfile) {
+                style.printWarn("Lockfile would be modified but --frozen-lockfile is set\n", .{});
+                return .{
+                    .exit_code = 1,
+                    .message = try allocator.dupe(u8, "Error: lockfile is out of date (--frozen-lockfile)"),
+                };
+            } else if (!opts.no_save) {
+                style.printLockfileSaving();
+                const lockfile_writer = @import("../../../packages/lockfile.zig");
+                lockfile_writer.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
+                    style.printWarn("Failed to write lockfile: {}\n", .{err});
+                };
+                style.printLockfileSaved();
+            }
         } // if (!opts.no_save) — skip lockfile generation entirely
 
         // Add successful packages to pantry.lock and record in checkpoint
