@@ -141,7 +141,8 @@ export async function run(): Promise<void> {
 
     // ── Install deps with caching ──
     const lockfile = findLockfile()
-    const cacheKey = `pantry-${platform.os}-${platform.arch}-${lockfile ? hashFile(lockfile) : 'no-lock'}-${inputs.packages || 'all'}`
+    const resolvedVer = ver.trim().split(' ').pop()?.split('(')[0]?.trim() || resolvedVersion
+    const cacheKey = `pantry-v${resolvedVer}-${platform.os}-${platform.arch}-${lockfile ? hashFile(lockfile) : 'no-lock'}-${inputs.packages || 'all'}`
     let cacheHit = false
 
     // Try restoring from cache
