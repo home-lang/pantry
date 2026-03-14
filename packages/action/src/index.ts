@@ -250,15 +250,15 @@ export async function run(): Promise<void> {
     const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
     core.addPath(globalPantryBin)
 
-    // Set BUN_INSTALL to pantry bin dir so bun's postinstall check passes.
-    // Bun's binary validates it was properly installed by checking BUN_INSTALL.
+    // Ensure bunx symlink exists (bun and bunx are the same binary)
     const bunPath = path.join(pantryBinDir, 'bun')
+    const bunxPath = path.join(pantryBinDir, 'bunx')
     try {
       await exec.exec('test', ['-f', bunPath], { silent: true })
-      // Point BUN_INSTALL to the directory containing the bun binary
-      const bunInstallDir = path.dirname(pantryBinDir)
-      core.exportVariable('BUN_INSTALL', bunInstallDir)
-      core.info(`Set BUN_INSTALL=${bunInstallDir}`)
+      await exec.exec('bash', ['-c', `[ -f "${bunxPath}" ] || ln -s "${bunPath}" "${bunxPath}"`], { silent: true })
+      // Set BUN_INSTALL so bun's postinstall check passes
+      core.exportVariable('BUN_INSTALL', path.dirname(pantryBinDir))
+      core.info('Bun configured')
     }
     catch {
       // bun not installed via pantry, skip
