@@ -22,8 +22,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
 
       - name: Install Zig
         run: |
@@ -72,8 +70,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
 
       - name: Install Zig
         run: |
@@ -127,8 +123,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
 
       - name: Setup Bun
         run: |

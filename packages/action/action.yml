@@ -19,8 +19,8 @@ inputs:
     description: Path to pantry config file
     required: false
     default: pantry.config.ts
-  setup-only:
-    description: Only setup pantry binary without running install (useful for publish workflows)
+  install:
+    description: Run pantry install after setup (reads pantry.jsonc/package.json)
     required: false
     default: 'false'
 

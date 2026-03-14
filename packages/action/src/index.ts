@@ -150,7 +150,7 @@ export async function run(): Promise<void> {
       version: core.getInput('version') || 'latest',
       packages: core.getInput('packages') || '',
       configPath: core.getInput('config-path') || 'pantry.config.ts',
-      setupOnly: core.getInput('setup-only') === 'true',
+      setupOnly: core.getInput('install') !== 'true',
     }
 
     const platform = detectPlatform()
