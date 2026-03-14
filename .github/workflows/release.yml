@@ -18,6 +18,16 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        with:
+          packages: ziglang.org
+
+      - name: Bootstrap Zig Dependencies
+        run: |
+          mkdir -p pantry
+          cd pantry
+          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
+          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
+          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
       - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all
@@ -82,6 +92,14 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+
+      - name: Setup Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      - name: Install Dependencies
+        run: $HOME/.bun/bin/bun install
 
       - name: Publish
         run: pantry publish --npm --access public

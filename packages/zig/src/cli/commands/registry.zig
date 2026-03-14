@@ -311,6 +311,11 @@ fn scanForPackages(allocator: std.mem.Allocator, dir_path: []const u8, packages:
             std.mem.eql(u8, entry.name, "dist") or
             std.mem.eql(u8, entry.name, "build") or
             std.mem.eql(u8, entry.name, ".turbo") or
+            std.mem.eql(u8, entry.name, "test-envs") or
+            std.mem.eql(u8, entry.name, "test") or
+            std.mem.eql(u8, entry.name, "tests") or
+            std.mem.eql(u8, entry.name, "fixtures") or
+            std.mem.eql(u8, entry.name, "__tests__") or
             std.mem.startsWith(u8, entry.name, "."))
         {
             continue;

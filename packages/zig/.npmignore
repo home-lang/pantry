@@ -1,0 +1,7 @@
+test-envs/
+test/
+bench/
+zig-out/
+zig-pkg/
+.zig-cache/
+zig-cache/
