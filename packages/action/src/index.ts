@@ -192,9 +192,28 @@ export async function run(): Promise<void> {
 
     core.info(`pantry ${installedVersion} is ready`)
 
-    // If setup-only, we're done
-    if (inputs.setupOnly) {
+    // If setup-only without packages, we're done (just pantry CLI in PATH)
+    if (inputs.setupOnly && !inputs.packages) {
       core.info('Setup-only mode: skipping package installation')
+      return
+    }
+
+    // If setup-only with packages, install them and add .bin to PATH
+    if (inputs.setupOnly && inputs.packages) {
+      const installEnv = { ...process.env, PANTRY_VERBOSE: 'true', NO_COLOR: '1' }
+      core.info(`Installing packages: ${inputs.packages}`)
+      const args = ['install', ...inputs.packages.split(/\s+/).filter(Boolean)]
+      await runWithRetry('pantry', args, installEnv)
+      core.info('Package installation completed')
+
+      const cwd = process.cwd()
+      const pantryBinDir = path.join(cwd, 'pantry', '.bin')
+      core.addPath(pantryBinDir)
+      core.info(`Added ${pantryBinDir} to PATH`)
+
+      const homeDir = os.homedir()
+      const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
+      core.addPath(globalPantryBin)
       return
     }
 

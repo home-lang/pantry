@@ -22,9 +22,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
-          packages: ziglang.org bun.sh
 
       - name: Install Dependencies
         run: bun install --trust
@@ -44,9 +41,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
-          packages: bun.sh
 
       - name: Install Dependencies
         run: bun install --trust
@@ -62,9 +56,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
-          packages: ziglang.org bun.sh
 
       - name: Install Dependencies
         run: bun install --trust
@@ -75,21 +66,8 @@ jobs:
       - name: Build pantry GitHub Action
         run: cd packages/action && bun run build
 
-      - name: Setup pantry (local action test)
-        uses: ./packages/action
-        with:
-          setup-only: 'true'
-
       - name: Unit Test
         run: bun test
-
-      - name: Bootstrap Zig Dependencies
-        run: |
-          mkdir -p pantry
-          cd pantry
-          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
       - name: Zig Tests
         run: |
@@ -111,9 +89,6 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
-        with:
-          setup-only: 'true'
-          packages: ziglang.org bun.sh
 
       - name: Install Dependencies
         run: bun install --trust
@@ -123,14 +98,6 @@ jobs:
 
       - name: Build pantry GitHub Action
         run: cd packages/action && bun run build
-
-      - name: Bootstrap Zig Dependencies
-        run: |
-          mkdir -p pantry
-          cd pantry
-          [ -d zig-cli ] || git clone --depth 1 https://github.com/zig-utils/zig-cli.git
-          [ -d zig-config ] || git clone --depth 1 https://github.com/zig-utils/zig-config.git
-          [ -d zig-test-framework ] || git clone --depth 1 https://github.com/zig-utils/zig-test-framework.git
 
       - name: Build pantry CLI
         run: cd packages/zig && zig build
