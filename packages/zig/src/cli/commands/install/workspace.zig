@@ -55,10 +55,14 @@ fn installSingleWorkspaceDep(
     };
 
     // For npm/auto packages, try Pantry DynamoDB then npm registry
+    // Skip Pantry lookup for non-domain names (no '.') — Pantry only has domain-style packages
+    // This avoids spawning `aws` CLI subprocesses for npm packages like "react", "webpack", etc.
+    const is_domain_style = std.mem.indexOfScalar(u8, clean_name, '.') != null;
     if (is_npm_package or (pkg_source == .pantry and
         pkg_registry.getPackageByName(clean_name) == null))
     {
-        // Try Pantry DynamoDB registry first
+        // Try Pantry DynamoDB registry first (only for domain-style packages like redis.io)
+        if (is_domain_style) {
         if (helpers.lookupPantryRegistry(allocator, clean_name) catch |err| lkup: {
             style.print("{s}  ? {s}: pantry registry lookup failed: {}{s}\n", .{ style.dim, clean_name, err, style.reset });
             break :lkup null;
@@ -109,6 +113,7 @@ fn installSingleWorkspaceDep(
                 .integrity = null,
             };
         }
+        } // is_domain_style
 
         // Fall back to npm registry
         const npm_info = shared_installer.resolveNpmPackage(clean_name, dep.version) catch |err| {
@@ -841,7 +846,10 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     // Ensure pantry/.bin has symlinks for all installed package binaries
-    helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
+    // Only run if there were actual installs (skip expensive dir scan on cache hits)
+    if (success_count > 0) {
+        helpers.ensureBinSymlinks(allocator, workspace_root, options.modules_dir);
+    }
 
     // Generate workspace lockfile
     const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root});

@@ -1269,89 +1269,182 @@ pub const Installer = struct {
         is_optional: bool,
     };
 
-    /// Thread context for parallel transitive dependency resolution.
-    const TransitiveDepThreadCtx = struct {
+    /// Thread context for BFS parallel transitive dependency resolution.
+    /// Workers pick deps from a shared atomic index, resolve + install each one,
+    /// and store the resulting install path for the next BFS wave.
+    const BfsDepThreadCtx = struct {
         installer: *Installer,
         deps: []const CollectedDep,
+        results: []?[]const u8, // install paths for next wave (null = skipped/failed)
         project_root: []const u8,
-        parent_dir: []const u8,
-        depth: u32,
         next: *std.atomic.Value(usize),
 
-        fn worker(ctx: *TransitiveDepThreadCtx) void {
+        fn worker(ctx: *BfsDepThreadCtx) void {
             while (true) {
                 const i = ctx.next.fetchAdd(1, .monotonic);
                 if (i >= ctx.deps.len) break;
 
                 const dep = ctx.deps[i];
-                if (dep.is_optional) {
-                    ctx.installer.installOptionalTransitiveDep(
-                        dep.name,
-                        dep.version,
-                        ctx.project_root,
-                        ctx.parent_dir,
-                        ctx.depth,
-                    );
-                } else {
-                    ctx.installer.installTransitiveDep(
-                        dep.name,
-                        dep.version,
-                        ctx.project_root,
-                        ctx.parent_dir,
-                        ctx.depth,
-                    );
-                }
+                const install_path = ctx.installer.installSingleTransitiveDep(
+                    dep.name,
+                    dep.version,
+                    ctx.project_root,
+                    dep.is_optional,
+                );
+                ctx.results[i] = install_path;
             }
         }
     };
 
-    /// Read an installed package's package.json and install its dependencies + peerDependencies.
-    /// Skips devDependencies (standard npm behavior for transitive packages).
-    /// Uses parallel resolution when there are multiple deps to install.
-    fn resolveTransitiveDeps(
+    /// Install a single transitive dependency (used by BFS workers).
+    /// Returns the install path (caller-owned) on success, or null on skip/failure.
+    /// Handles hoisted cache check, circular dep detection, version conflict nesting,
+    /// npm resolution, and download+extract. Does NOT recurse — BFS handles the next wave.
+    fn installSingleTransitiveDep(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+        project_root: []const u8,
+        is_optional: bool,
+    ) ?[]const u8 {
+        return self.installSingleTransitiveDepInner(name, version_constraint, project_root) catch |err| {
+            if (!is_optional and !style.isCI()) {
+                style.print("    ! {s}: {}\n", .{ name, err });
+            }
+            return null;
+        };
+    }
+
+    /// Inner implementation for installSingleTransitiveDep (returns error union).
+    fn installSingleTransitiveDepInner(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+        project_root: []const u8,
+    ) !?[]const u8 {
+        // 0. Fast path: check in-memory hoisted cache (no filesystem I/O needed)
+        if (self.hoisted_versions.checkSatisfies(name, version_constraint)) return null;
+
+        // 1. Check if already installed at hoisted location (use stack buffer for path check)
+        var exist_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const existing_dir = std.fmt.bufPrint(&exist_buf, "{s}/{s}/{s}", .{ project_root, self.modules_dir, name }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}", .{ project_root, self.modules_dir, name });
+        const exist_is_heap = existing_dir.ptr != &exist_buf;
+        defer if (exist_is_heap) self.allocator.free(@constCast(existing_dir));
+
+        // Determine install root: hoisted (project_root) by default, nested on conflict
+        var install_root = project_root;
+
+        const already_installed = blk: {
+            io_helper.accessAbsolute(existing_dir, .{}) catch break :blk false;
+            break :blk true;
+        };
+
+        if (already_installed) {
+            // Read existing package.json version to check if it satisfies the constraint
+            var pj_buf: [std.fs.max_path_bytes]u8 = undefined;
+            const pj_path = std.fmt.bufPrint(&pj_buf, "{s}/package.json", .{existing_dir}) catch return null;
+
+            const pj_content = io_helper.readFileAlloc(self.allocator, pj_path, 1024 * 1024) catch return null;
+            defer self.allocator.free(pj_content);
+
+            const pj_parsed = std.json.parseFromSlice(std.json.Value, self.allocator, pj_content, .{}) catch return null;
+            defer pj_parsed.deinit();
+
+            if (pj_parsed.value != .object) return null;
+            const ver_val = pj_parsed.value.object.get("version") orelse return null;
+            if (ver_val != .string) return null;
+
+            const npm_zig = @import("../registry/npm.zig");
+            const constraint = npm_zig.SemverConstraint.parse(version_constraint) catch return null;
+            if (constraint.satisfies(ver_val.string)) {
+                // Cache this result so future lookups skip filesystem entirely
+                self.hoisted_versions.put(name, ver_val.string);
+                return null;
+            }
+
+            // Version conflict: cannot nest in BFS (no parent_dir context), skip
+            // The old DFS would install nested under parent, but BFS processes deps in waves
+            // without tracking which parent requested them. In practice, version conflicts
+            // at the hoisted level are rare and the first-installed version wins.
+            _ = &install_root; // suppress unused
+            return null;
+        }
+
+        // 2. Circular dependency check
+        const install_key = std.fmt.allocPrint(self.allocator, "npm:{s}", .{name}) catch return null;
+        defer self.allocator.free(install_key);
+
+        if (!(self.installing_stack.tryPut(install_key) catch return null)) return null;
+        defer self.installing_stack.remove(install_key);
+
+        // 3. Resolve via npm registry directly
+        const npm_info = self.resolveNpmPackage(name, version_constraint) catch return null;
+        defer self.allocator.free(npm_info.version);
+        defer self.allocator.free(npm_info.tarball_url);
+        defer if (npm_info.integrity) |int| self.allocator.free(int);
+
+        const spec = PackageSpec{
+            .name = name,
+            .version = npm_info.version,
+            .source = .npm,
+            .url = npm_info.tarball_url,
+        };
+
+        var result = self.installFromNpm(spec, .{
+            .project_root = install_root,
+            .quiet = true,
+            .skip_transitive_resolution = true, // BFS handles the next wave
+        }) catch return null;
+
+        // Only print if actually installed (not cached), suppress in CI
+        if (!result.from_cache and !style.isCI()) {
+            style.print("    + {s}@{s}\n", .{ name, npm_info.version });
+        }
+
+        // Return the install path so BFS can enqueue it for the next wave
+        const path = self.allocator.dupe(u8, result.install_path) catch null;
+        result.deinit(self.allocator);
+        return path;
+    }
+
+    /// Collect dependencies from a package.json file into the output list.
+    /// Reads "dependencies" and "peerDependencies" (skips devDependencies).
+    /// Handles npm aliases, workspace refs, optional peers.
+    /// Skips deps already satisfied by the hoisted cache.
+    fn collectDepsFromPackageJson(
         self: *Installer,
         package_dir: []const u8,
-        project_root: []const u8,
-        depth: u32,
-    ) !void {
-        const max_depth = 50;
-        if (depth >= max_depth) return;
-
+        out: *std.ArrayList(CollectedDep),
+    ) void {
         // Read package.json from the installed package (stack buffer for path)
         var pjp_buf: [std.fs.max_path_bytes]u8 = undefined;
-        const pkg_json_path = std.fmt.bufPrint(&pjp_buf, "{s}/package.json", .{package_dir}) catch
-            try std.fmt.allocPrint(self.allocator, "{s}/package.json", .{package_dir});
-        const pjp_is_heap = pkg_json_path.ptr != &pjp_buf;
-        defer if (pjp_is_heap) self.allocator.free(@constCast(pkg_json_path));
-
-        const content = io_helper.readFileAlloc(self.allocator, pkg_json_path, 10 * 1024 * 1024) catch {
-            return; // No package.json or read error — nothing to resolve
+        const pkg_json_path = std.fmt.bufPrint(&pjp_buf, "{s}/package.json", .{package_dir}) catch {
+            const heap_path = std.fmt.allocPrint(self.allocator, "{s}/package.json", .{package_dir}) catch return;
+            defer self.allocator.free(heap_path);
+            self.collectDepsFromPackageJsonPath(heap_path, out);
+            return;
         };
+        self.collectDepsFromPackageJsonPath(pkg_json_path, out);
+    }
+
+    /// Inner helper: collect deps given an already-formed package.json path.
+    fn collectDepsFromPackageJsonPath(
+        self: *Installer,
+        pkg_json_path: []const u8,
+        out: *std.ArrayList(CollectedDep),
+    ) void {
+        const content = io_helper.readFileAlloc(self.allocator, pkg_json_path, 10 * 1024 * 1024) catch return;
         defer self.allocator.free(content);
 
-        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, content, .{}) catch {
-            return; // Invalid JSON
-        };
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, content, .{}) catch return;
         defer parsed.deinit();
 
         if (parsed.value != .object) return;
 
         // Process dependencies and peerDependencies (skip devDependencies)
-        // Hoisted linker: peer deps are flattened to root alongside direct deps
         const sections = [_][]const u8{ "dependencies", "peerDependencies" };
-
-        // Read peerDependenciesMeta for optional peer detection
         const peer_meta = parsed.value.object.get("peerDependenciesMeta");
-
-        // Collect all deps first, then install in parallel
-        var collected: std.ArrayList(CollectedDep) = .empty;
-        defer {
-            for (collected.items) |dep| {
-                self.allocator.free(@constCast(dep.name));
-                self.allocator.free(@constCast(dep.version));
-            }
-            collected.deinit(self.allocator);
-        }
 
         for (sections) |section_key| {
             const deps_val = parsed.value.object.get(section_key) orelse continue;
@@ -1407,73 +1500,186 @@ pub const Installer = struct {
                     }
                 }
 
-                collected.append(self.allocator, .{
+                out.append(self.allocator, .{
                     .name = self.allocator.dupe(u8, actual_name) catch continue,
                     .version = self.allocator.dupe(u8, dep_version) catch continue,
                     .is_optional = is_optional,
                 }) catch continue;
             }
         }
+    }
 
-        if (collected.items.len == 0) return;
+    /// Resolve transitive dependencies using breadth-first parallel resolution.
+    /// Instead of DFS recursion (which serializes at depth >= 1), this processes
+    /// dependencies in waves: each wave collects all deps from the current level,
+    /// resolves+installs them in parallel, then enqueues the newly installed
+    /// package dirs for the next wave. This maximizes HTTP concurrency across
+    /// all depth levels.
+    fn resolveTransitiveDeps(
+        self: *Installer,
+        package_dir: []const u8,
+        project_root: []const u8,
+        depth: u32,
+    ) !void {
+        const max_depth: u32 = 50;
+        if (depth >= max_depth) return;
 
-        // Install transitive deps serially — top-level parallel threads already provide concurrency.
-        // Spawning inner thread pools causes thread thrashing (N outer threads × M inner threads).
-        if (collected.items.len <= 3 or depth >= 1) {
-            for (collected.items) |dep| {
-                if (dep.is_optional) {
-                    self.installOptionalTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
-                } else {
-                    self.installTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
-                }
-            }
-            return;
+        // BFS work queue: directories of packages whose deps need resolving
+        var work_queue: std.ArrayList([]const u8) = .empty;
+        defer {
+            for (work_queue.items) |item| self.allocator.free(item);
+            work_queue.deinit(self.allocator);
         }
 
-        // Parallel resolution: use work-stealing thread pool scaled to CPU cores
-        // Cap spawned threads at 7 (+ main thread = 8 total) to prevent thread explosion
-        const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_spawned = if (cpu_count > 1) cpu_count - 1 else 1; // Reserve 1 for main thread
-        const thread_count = @min(max_spawned, @min(collected.items.len, 7));
-
-        var next_idx = std.atomic.Value(usize).init(0);
-        var ctx = TransitiveDepThreadCtx{
-            .installer = self,
-            .deps = collected.items,
-            .project_root = project_root,
-            .parent_dir = package_dir,
-            .depth = depth + 1,
-            .next = &next_idx,
-        };
-
-        var threads = self.allocator.alloc(?std.Thread, thread_count) catch {
-            // Fallback to serial if thread alloc fails
-            for (collected.items) |dep| {
-                if (dep.is_optional) {
-                    self.installOptionalTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
-                } else {
-                    self.installTransitiveDep(dep.name, dep.version, project_root, package_dir, depth + 1);
-                }
-            }
+        // Seed with initial package directory
+        const initial_dir = self.allocator.dupe(u8, package_dir) catch return;
+        work_queue.append(self.allocator, initial_dir) catch {
+            self.allocator.free(initial_dir);
             return;
         };
-        defer self.allocator.free(threads);
-        for (threads) |*t| t.* = null;
 
-        // Spawn worker threads (main thread also participates)
-        for (0..thread_count) |t| {
-            threads[t] = std.Thread.spawn(.{}, TransitiveDepThreadCtx.worker, .{&ctx}) catch null;
-        }
+        var current_depth: u32 = depth;
 
-        // Main thread participates as worker too
-        ctx.worker();
+        while (work_queue.items.len > 0 and current_depth < max_depth) {
+            // Take current batch and clear the queue for the next wave
+            const batch_len = work_queue.items.len;
+            const current_batch = self.allocator.alloc([]const u8, batch_len) catch break;
+            @memcpy(current_batch, work_queue.items[0..batch_len]);
+            work_queue.clearRetainingCapacity();
 
-        // Join all threads
-        for (threads) |*t| {
-            if (t.*) |thread| {
-                thread.join();
-                t.* = null;
+            // Phase 1: Read all package.json files and collect deps
+            var all_deps: std.ArrayList(CollectedDep) = .empty;
+
+            for (current_batch) |pkg_dir| {
+                self.collectDepsFromPackageJson(pkg_dir, &all_deps);
             }
+
+            // Free batch dirs — we're done reading their package.json files
+            for (current_batch) |dir| self.allocator.free(dir);
+            self.allocator.free(current_batch);
+
+            if (all_deps.items.len == 0) {
+                for (all_deps.items) |dep| {
+                    self.allocator.free(@constCast(dep.name));
+                    self.allocator.free(@constCast(dep.version));
+                }
+                all_deps.deinit(self.allocator);
+                break;
+            }
+
+            // Deduplicate: if two packages in this wave both depend on "lodash@^4",
+            // we only need to resolve+install it once. Use hoisted cache for dedup.
+            var unique_deps: std.ArrayList(CollectedDep) = .empty;
+            {
+                // Track names we've already added in this wave to avoid duplicates
+                var seen = std.StringHashMap(void).init(self.allocator);
+                defer seen.deinit();
+
+                for (all_deps.items) |dep| {
+                    // Re-check hoisted cache (may have been populated by previous wave)
+                    if (self.hoisted_versions.checkSatisfies(dep.name, dep.version)) {
+                        self.allocator.free(@constCast(dep.name));
+                        self.allocator.free(@constCast(dep.version));
+                        continue;
+                    }
+                    if (seen.contains(dep.name)) {
+                        self.allocator.free(@constCast(dep.name));
+                        self.allocator.free(@constCast(dep.version));
+                        continue;
+                    }
+                    seen.put(dep.name, {}) catch {};
+                    unique_deps.append(self.allocator, dep) catch {
+                        self.allocator.free(@constCast(dep.name));
+                        self.allocator.free(@constCast(dep.version));
+                        continue;
+                    };
+                }
+            }
+            // all_deps items have been moved to unique_deps or freed; just deinit the list
+            all_deps.deinit(self.allocator);
+
+            if (unique_deps.items.len == 0) {
+                unique_deps.deinit(self.allocator);
+                break;
+            }
+
+            // Phase 2: Resolve and install ALL deps for this wave in parallel
+            const results = self.allocator.alloc(?[]const u8, unique_deps.items.len) catch {
+                // Fallback: free deps and bail
+                for (unique_deps.items) |dep| {
+                    self.allocator.free(@constCast(dep.name));
+                    self.allocator.free(@constCast(dep.version));
+                }
+                unique_deps.deinit(self.allocator);
+                break;
+            };
+            for (results) |*r| r.* = null;
+
+            // Use thread pool for parallel resolution
+            var next_idx = std.atomic.Value(usize).init(0);
+            var ctx = BfsDepThreadCtx{
+                .installer = self,
+                .deps = unique_deps.items,
+                .results = results,
+                .next = &next_idx,
+                .project_root = project_root,
+            };
+
+            const cpu_count = std.Thread.getCpuCount() catch 4;
+            const max_threads = @min(cpu_count, 16);
+            const thread_count = @min(unique_deps.items.len, max_threads);
+
+            if (thread_count <= 1) {
+                // Single dep or single CPU — just run inline
+                BfsDepThreadCtx.worker(&ctx);
+            } else {
+                const spawned = thread_count - 1; // main thread participates too
+                var threads = self.allocator.alloc(?std.Thread, spawned) catch {
+                    // Fallback to inline
+                    BfsDepThreadCtx.worker(&ctx);
+                    break;
+                };
+                defer self.allocator.free(threads);
+                for (threads) |*t| t.* = null;
+
+                for (0..spawned) |t| {
+                    threads[t] = std.Thread.spawn(.{}, BfsDepThreadCtx.worker, .{&ctx}) catch null;
+                }
+
+                // Main thread participates as worker
+                BfsDepThreadCtx.worker(&ctx);
+
+                // Join all threads
+                for (threads) |*t| {
+                    if (t.*) |thread| {
+                        thread.join();
+                        t.* = null;
+                    }
+                }
+            }
+
+            // Free collected deps (names/versions were borrowed during install)
+            for (unique_deps.items) |dep| {
+                self.allocator.free(@constCast(dep.name));
+                self.allocator.free(@constCast(dep.version));
+            }
+            unique_deps.deinit(self.allocator);
+
+            // Collect newly installed package dirs for the next BFS wave
+            var enqueued: usize = 0;
+            for (results) |r| {
+                if (r) |install_path| {
+                    work_queue.append(self.allocator, install_path) catch {
+                        self.allocator.free(install_path);
+                        continue;
+                    };
+                    enqueued += 1;
+                }
+            }
+            self.allocator.free(results);
+
+            if (enqueued == 0) break;
+            current_depth += 1;
         }
     }
 

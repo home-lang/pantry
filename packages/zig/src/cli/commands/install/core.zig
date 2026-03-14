@@ -798,10 +798,13 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Final pass: ensure pantry/.bin has symlinks for all installed package binaries.
-        // This catches any packages where per-package symlink creation was skipped or failed.
-        helpers.ensureBinSymlinks(allocator, proj_dir, opts.modules_dir);
+        // Only run if there were actual installs (not all cache hits) to avoid expensive dir scan.
+        if (success_count > 0) {
+            helpers.ensureBinSymlinks(allocator, proj_dir, opts.modules_dir);
+        }
 
-        // Generate lockfile
+        // Generate lockfile (skip entirely when --no-save to avoid unnecessary work)
+        if (!opts.no_save) {
         const lockfile_path = try std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{proj_dir});
         defer allocator.free(lockfile_path);
 
@@ -860,6 +863,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
             style.printLockfileSaved();
         }
+        } // if (!opts.no_save) — skip lockfile generation entirely
 
         // Add successful packages to pantry.lock and record in checkpoint
         for (install_results) |result| {

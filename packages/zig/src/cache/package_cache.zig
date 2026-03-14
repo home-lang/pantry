@@ -118,7 +118,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.get(key)) |meta| {
             // Verify file exists
-            io_helper.access(meta.cache_path, .{}) catch {
+            io_helper.accessAbsolute(meta.cache_path, .{}) catch {
                 return false;
             };
             return true;
@@ -127,7 +127,7 @@ pub const PackageCache = struct {
         // Disk fallback: check if tarball file exists at deterministic path
         const cache_path = self.getCachePath(name, version) catch return false;
         defer self.allocator.free(cache_path);
-        io_helper.access(cache_path, .{}) catch return false;
+        io_helper.accessAbsolute(cache_path, .{}) catch return false;
         return true;
     }
 
@@ -141,7 +141,7 @@ pub const PackageCache = struct {
 
         if (self.metadata.getPtr(key)) |meta| {
             // Verify file exists
-            io_helper.access(meta.cache_path, .{}) catch {
+            io_helper.accessAbsolute(meta.cache_path, .{}) catch {
                 return null;
             };
 
@@ -155,7 +155,7 @@ pub const PackageCache = struct {
         // but tarball files persist on disk at deterministic paths.
         // Check if the file exists on disk and reconstruct metadata.
         const cache_path = self.getCachePath(name, version) catch return null;
-        io_helper.access(cache_path, .{}) catch {
+        io_helper.accessAbsolute(cache_path, .{}) catch {
             self.allocator.free(cache_path);
             return null;
         };
