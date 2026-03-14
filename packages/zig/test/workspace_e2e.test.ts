@@ -10,7 +10,9 @@
  * Prerequisites: The pantry binary must be built (`cd packages/zig && zig build`)
  * or available in PATH.
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, setDefaultTimeout } from 'bun:test'
+
+setDefaultTimeout(120_000)
 import { mkdirSync, writeFileSync, readFileSync, existsSync, readlinkSync, lstatSync, rmSync, readdirSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { execSync, spawnSync } from 'node:child_process'

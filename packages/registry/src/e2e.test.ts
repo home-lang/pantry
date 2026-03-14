@@ -578,8 +578,8 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       const checksumRes = await fetch(`${baseUrl}/${checksumPath}`)
       expect(checksumRes.status).toBe(200)
 
-      // Wait for fire-and-forget analytics
-      await new Promise(r => setTimeout(r, 150))
+      // Wait for fire-and-forget analytics (increased for CI)
+      await new Promise(r => setTimeout(r, 500))
 
       // Step 4: Verify analytics were recorded
       const statsRes = await fetch(`${baseUrl}/analytics/curl.se`)

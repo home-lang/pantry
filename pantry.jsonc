@@ -7,8 +7,8 @@
     "zig-cli": "^0.1.0",
     "zig-test-framework": "^0.1.0",
     "zig-bump": "^0.1.1",
-    "ziglang.org": "*",
-    "bun.sh": "^1.3.10"
+    "bun.sh": "^1.3.10",
+    "ziglang.org": "*"
   },
   "devDependencies": {
     "better-dx": "^0.2.0"
