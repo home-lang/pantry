@@ -24,12 +24,7 @@ jobs:
         uses: ./packages/action
 
       - name: Install Dependencies
-        run: |
-          mkdir -p node_modules/bun
-          echo '{"name":"bun","version":"1.0.0","postinstall":"node install.js"}' > node_modules/bun/package.json
-          echo "// bun is installed via pantry" > node_modules/bun/install.js
-          touch node_modules/bun/.installed
-          bun install
+        run: bun install --ignore-scripts
 
       - name: Lint TypeScript/JavaScript
         run: bun run lint
@@ -48,12 +43,7 @@ jobs:
         uses: ./packages/action
 
       - name: Install Dependencies
-        run: |
-          mkdir -p node_modules/bun
-          echo '{"name":"bun","version":"1.0.0","postinstall":"node install.js"}' > node_modules/bun/package.json
-          echo "// bun is installed via pantry" > node_modules/bun/install.js
-          touch node_modules/bun/.installed
-          bun install
+        run: bun install --ignore-scripts
 
       - name: Typecheck
         run: bun run typecheck
@@ -68,12 +58,7 @@ jobs:
         uses: ./packages/action
 
       - name: Install Dependencies
-        run: |
-          mkdir -p node_modules/bun
-          echo '{"name":"bun","version":"1.0.0","postinstall":"node install.js"}' > node_modules/bun/package.json
-          echo "// bun is installed via pantry" > node_modules/bun/install.js
-          touch node_modules/bun/.installed
-          bun install
+        run: bun install --ignore-scripts
 
       - name: Build TypeScript packages
         run: bun run build
@@ -106,12 +91,7 @@ jobs:
         uses: ./packages/action
 
       - name: Install Dependencies
-        run: |
-          mkdir -p node_modules/bun
-          echo '{"name":"bun","version":"1.0.0","postinstall":"node install.js"}' > node_modules/bun/package.json
-          echo "// bun is installed via pantry" > node_modules/bun/install.js
-          touch node_modules/bun/.installed
-          bun install
+        run: bun install --ignore-scripts
 
       - name: Build TypeScript packages
         run: bun run build
