@@ -2,7 +2,7 @@
  * **nullclaw** - pkgx package
  *
  * @domain `github.com/nullclaw/nullclaw`
- * @version `2026.3.13` (13 versions available)
+ * @version `2026.3.14` (14 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/nullclaw/nullclaw`
@@ -15,7 +15,7 @@
  *
  * const pkg = pantry.githubcomnullclawnullclaw
  * console.log(pkg.name)        // "nullclaw"
- * console.log(pkg.versions[0]) // "2026.3.13" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.14" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/nullclaw/nullclaw.md
@@ -68,6 +68,7 @@ export const nullclawPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.14',
     '2026.3.13',
     '2026.3.12',
     '2026.3.11',
