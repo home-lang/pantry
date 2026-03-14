@@ -1211,10 +1211,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             style.print("Warning: Failed to track installed package {s}: {}\n", .{ name, err });
         };
 
-        // Update package.json with the new dependency
-        helpers.addDependencyToPackageJson(allocator, project_root, name, result.version, options.dev_only) catch |err| {
-            style.printWarn("Failed to update package.json: {}\n", .{err});
-        };
+        // Update package.json with the new dependency (skip when --no-save)
+        if (!opts.no_save) {
+            helpers.addDependencyToPackageJson(allocator, project_root, name, result.version, options.dev_only) catch |err| {
+                style.printWarn("Failed to update package.json: {}\n", .{err});
+            };
+        }
     }
 
     // Ensure pantry/.bin has symlinks for all installed package binaries
