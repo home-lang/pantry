@@ -39,6 +39,9 @@
     "preview:docs": "bun bunpress preview docs",
     "typecheck": "bun --bun tsc --noEmit"
   },
+  "trustedDependencies": [
+    "bun"
+  ],
   "devDependencies": {
     "better-dx": "^0.2.6"
   },
