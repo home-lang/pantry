@@ -1,3 +1,52 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.12...v0.8.13)
+
+### 🐛 Bug Fixes
+
+- reset bun.lock before publish:commit to avoid merge conflict ([a61a924](https://github.com/home-lang/pantry/commit/a61a924)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase test timeouts, use domain names in pantry.jsonc ([b15a955](https://github.com/home-lang/pantry/commit/b15a955)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create bunx symlink and set BUN_INSTALL in action ([5076ceb](https://github.com/home-lang/pantry/commit/5076ceb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use domain names in pantry.jsonc, set BUN_INSTALL env var ([54d0159](https://github.com/home-lang/pantry/commit/54d0159)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exclude pantry/ from tsc and bun test, fix bun install ([e5825f2](https://github.com/home-lang/pantry/commit/e5825f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- auto-install bun via official installer when in pantry deps ([37deada](https://github.com/home-lang/pantry/commit/37deada)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release workflow zig not found, exclude test-envs from publish ([723244c](https://github.com/home-lang/pantry/commit/723244c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.13 ([e6ef9c9](https://github.com/home-lang/pantry/commit/e6ef9c9)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update casdoor ([237948d](https://github.com/home-lang/pantry/commit/237948d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([16c18d1](https://github.com/home-lang/pantry/commit/16c18d1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove redundant bun setup, pantry installs it from deps ([70c0607](https://github.com/home-lang/pantry/commit/70c0607)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make install the default action behavior ([fd7c158](https://github.com/home-lang/pantry/commit/fd7c158)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use pantry action install: true to auto-install all deps ([2af997d](https://github.com/home-lang/pantry/commit/2af997d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.12...HEAD)
+
+### 🐛 Bug Fixes
+
+- reset bun.lock before publish:commit to avoid merge conflict ([a61a924](https://github.com/home-lang/pantry/commit/a61a924)) _(by Chris <chrisbreuer93@gmail.com>)_
+- increase test timeouts, use domain names in pantry.jsonc ([b15a955](https://github.com/home-lang/pantry/commit/b15a955)) _(by Chris <chrisbreuer93@gmail.com>)_
+- create bunx symlink and set BUN_INSTALL in action ([5076ceb](https://github.com/home-lang/pantry/commit/5076ceb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use domain names in pantry.jsonc, set BUN_INSTALL env var ([54d0159](https://github.com/home-lang/pantry/commit/54d0159)) _(by Chris <chrisbreuer93@gmail.com>)_
+- exclude pantry/ from tsc and bun test, fix bun install ([e5825f2](https://github.com/home-lang/pantry/commit/e5825f2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- auto-install bun via official installer when in pantry deps ([37deada](https://github.com/home-lang/pantry/commit/37deada)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release workflow zig not found, exclude test-envs from publish ([723244c](https://github.com/home-lang/pantry/commit/723244c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update casdoor ([237948d](https://github.com/home-lang/pantry/commit/237948d)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update registry data (1 file) ([16c18d1](https://github.com/home-lang/pantry/commit/16c18d1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- remove redundant bun setup, pantry installs it from deps ([70c0607](https://github.com/home-lang/pantry/commit/70c0607)) _(by Chris <chrisbreuer93@gmail.com>)_
+- make install the default action behavior ([fd7c158](https://github.com/home-lang/pantry/commit/fd7c158)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use pantry action install: true to auto-install all deps ([2af997d](https://github.com/home-lang/pantry/commit/2af997d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.11...v0.8.12)
 
 ### 🐛 Bug Fixes
