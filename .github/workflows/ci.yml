@@ -39,6 +39,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Setup Pantry
+        uses: ./packages/action
+
       - name: Install Dependencies
         run: bun install
 

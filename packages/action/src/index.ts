@@ -250,6 +250,23 @@ export async function run(): Promise<void> {
     const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
     core.addPath(globalPantryBin)
 
+    // Install bun via official installer if bun.sh is a dependency.
+    // The pantry S3 tarball works for running bun, but `bun install` has a
+    // built-in postinstall check that fails unless bun was installed via its
+    // own installer. This ensures `bun install` works in subsequent steps.
+    const bunInPantry = path.join(pantryBinDir, 'bun')
+    try {
+      await exec.exec('test', ['-f', bunInPantry], { silent: true })
+      core.info('Bun detected in pantry deps — installing via official installer for full compatibility')
+      await exec.exec('bash', ['-c', 'curl -fsSL https://bun.sh/install | bash'], { silent: true })
+      const bunDir = path.join(homeDir, '.bun', 'bin')
+      core.addPath(bunDir)
+      core.info(`Added ${bunDir} to PATH`)
+    }
+    catch {
+      // bun not in pantry deps, skip
+    }
+
     core.info('pantry setup completed successfully')
   }
   catch (error) {
