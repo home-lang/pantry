@@ -44,7 +44,9 @@
     "**/node_modules/**",
     "**/*.d.ts",
     ".cache/**",
+    "pantry/**",
     "packages/site/**",
-    "packages/inspector/**"
+    "packages/inspector/**",
+    "packages/zig/**"
   ]
 }
