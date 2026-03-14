@@ -37,8 +37,7 @@
     "dev:docs": "bun bunpress dev docs",
     "build:docs": "bun bunpress build docs",
     "preview:docs": "bun bunpress preview docs",
-    "typecheck": "bun --bun tsc --noEmit",
-    "postinstall": "bun scripts/patch-ts-cloud.ts"
+    "typecheck": "bun --bun tsc --noEmit"
   },
   "devDependencies": {
     "better-dx": "^0.2.6"
