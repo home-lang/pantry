@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 26 versions</summary>
+<summary>Show all 27 versions</summary>
 
+- `0.13.0`
 - `0.12.0`
 - `0.11.1`, `0.11.0`
 - `0.10.1`, `0.10.0`
@@ -40,13 +41,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.12.0`
+**Latest Version**: `0.13.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/tabiew@0.12.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/tabiew@0.13.0 -- $SHELL -i
 ```
 
 ## Dependencies

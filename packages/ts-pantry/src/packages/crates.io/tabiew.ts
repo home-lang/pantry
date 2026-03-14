@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/tabiew`
  * @programs `tw`
- * @version `0.12.0` (26 versions available)
+ * @version `0.13.0` (27 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install crates.io/tabiew`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "tw"
  * console.log(pkg.description) // "A lightweight TUI application to view and query..."
  * console.log(pkg.programs)    // ["tw"]
- * console.log(pkg.versions[0]) // "0.12.0" (latest)
+ * console.log(pkg.versions[0]) // "0.13.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/crates-io/tabiew.md
@@ -68,6 +68,7 @@ export const cratesiotabiewPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.13.0',
     '0.12.0',
     '0.11.1',
     '0.11.0',
