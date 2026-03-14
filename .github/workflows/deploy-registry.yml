@@ -34,6 +34,7 @@ jobs:
             # Fix git ownership (repo owned by root, SSH user is ec2-user)
             git config --global --add safe.directory /opt/pantry-registry/repo
 
+            sudo git checkout -- bun.lock 2>/dev/null || true
             sudo git pull origin main
             cd packages/registry
             sudo /root/.bun/bin/bun install
