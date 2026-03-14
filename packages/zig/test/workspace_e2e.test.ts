@@ -167,7 +167,7 @@ describe('Workspace structure validation', () => {
     })
 
     // Validate root
-    const rootPkg = JSON.parse(Bun.file(join(dir, 'package.json')).textSync())
+    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
     expect(rootPkg.name).toBe('my-monorepo')
     expect(rootPkg.workspaces).toEqual(['packages/*'])
 
@@ -175,7 +175,7 @@ describe('Workspace structure validation', () => {
     expect(existsSync(join(ws.members['@my/app'].path, 'package.json'))).toBe(true)
     expect(existsSync(join(ws.members['@my/lib'].path, 'package.json'))).toBe(true)
 
-    const appPkg = JSON.parse(Bun.file(join(ws.members['@my/app'].path, 'package.json')).textSync())
+    const appPkg = JSON.parse(await Bun.file(join(ws.members['@my/app'].path, 'package.json')).text())
     expect(appPkg.name).toBe('@my/app')
     expect(appPkg.dependencies.express).toBe('^4.0')
   })
@@ -188,7 +188,7 @@ describe('Workspace structure validation', () => {
       ],
     })
 
-    const appPkg = JSON.parse(Bun.file(join(dir, 'packages/app/package.json')).textSync())
+    const appPkg = JSON.parse(await Bun.file(join(dir, 'packages/app/package.json')).text())
     expect(appPkg.dependencies['@my/lib']).toBe('workspace:*')
     expect(appPkg.dependencies.express).toBe('^4.0')
   })
@@ -216,7 +216,7 @@ describe('Workspace structure validation', () => {
       ],
     })
 
-    const rootPkg = JSON.parse(Bun.file(join(dir, 'package.json')).textSync())
+    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
     expect(rootPkg.dependencies.typescript).toBe('^5.0')
   })
 })
@@ -532,7 +532,7 @@ describe('Workspace config format support', () => {
 
     // Validate the structure is correct
     expect(existsSync(join(dir, 'pantry.json'))).toBe(true)
-    const config = JSON.parse(Bun.file(join(dir, 'pantry.json')).textSync())
+    const config = JSON.parse(await Bun.file(join(dir, 'pantry.json')).text())
     expect(config.workspaces).toEqual(['packages/*'])
   })
 
@@ -545,7 +545,7 @@ describe('Workspace config format support', () => {
       },
     })
 
-    const pkg = JSON.parse(Bun.file(join(dir, 'package.json')).textSync())
+    const pkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
     expect(pkg.workspaces.packages).toEqual(['packages/*'])
     expect(pkg.workspaces.nohoist).toEqual(['**/react-native'])
   })
@@ -562,7 +562,7 @@ describe('Workspace config format support', () => {
 }`)
 
     expect(existsSync(join(dir, 'pantry.jsonc'))).toBe(true)
-    const content = Bun.file(join(dir, 'pantry.jsonc')).textSync()
+    const content = await Bun.file(join(dir, 'pantry.jsonc')).text()
     expect(content).toContain('"workspaces"')
   })
 
@@ -611,7 +611,7 @@ describe('Workspace regressions', () => {
 
     // The root should still be detected as workspace root even when
     // a member has pantry.json (higher-priority dep file)
-    const rootPkg = JSON.parse(Bun.file(join(dir, 'package.json')).textSync())
+    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
     expect(rootPkg.workspaces).toBeDefined()
   })
 
@@ -635,12 +635,12 @@ describe('Workspace regressions', () => {
     })
 
     // From root, the root workspace should be detected
-    const rootPkg = JSON.parse(Bun.file(join(dir, 'package.json')).textSync())
+    const rootPkg = JSON.parse(await Bun.file(join(dir, 'package.json')).text())
     expect(rootPkg.workspaces).toEqual(['packages/*'])
 
     // From sub-monorepo/libs/util, the closest workspace (sub-monorepo) should be detected
     // This tests proper directory-walking behavior
-    const subPkg = JSON.parse(Bun.file(join(dir, 'packages/sub-monorepo/package.json')).textSync())
+    const subPkg = JSON.parse(await Bun.file(join(dir, 'packages/sub-monorepo/package.json')).text())
     expect(subPkg.workspaces).toEqual(['libs/*'])
   })
 
@@ -658,7 +658,7 @@ describe('Workspace regressions', () => {
       // No "name" field!
     })
 
-    const pkg = JSON.parse(Bun.file(join(dir, 'packages/unnamed/package.json')).textSync())
+    const pkg = JSON.parse(await Bun.file(join(dir, 'packages/unnamed/package.json')).text())
     expect(pkg.name).toBeUndefined()
     expect(pkg.version).toBe('1.0.0')
   })

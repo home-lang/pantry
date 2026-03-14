@@ -26,7 +26,9 @@ jobs:
           setup-only: 'true'
 
       - name: Install Zig
-        run: pantry install -g ziglang.org
+        run: |
+          pantry install --no-save ziglang.org
+          echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
 
       - name: Setup Bun
         run: |
@@ -72,7 +74,9 @@ jobs:
           setup-only: 'true'
 
       - name: Install Zig
-        run: pantry install -g ziglang.org
+        run: |
+          pantry install --no-save ziglang.org
+          echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
 
       - name: Setup Bun
         run: |
@@ -123,7 +127,9 @@ jobs:
           setup-only: 'true'
 
       - name: Install Zig
-        run: pantry install -g ziglang.org
+        run: |
+          pantry install --no-save ziglang.org
+          echo "${{ github.workspace }}/pantry/.bin" >> $GITHUB_PATH
 
       - name: Setup Bun
         run: |
