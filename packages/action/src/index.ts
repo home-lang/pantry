@@ -134,6 +134,21 @@ function extractSystemDeps(): string[] {
   return []
 }
 
+/** Find the primary deps file for cache key hashing */
+function findDepsFile(): string | null {
+  const candidates = [
+    'pantry.jsonc', 'pantry.json', 'pantry.yaml', 'pantry.yml',
+    'deps.yaml', 'deps.yml',
+    'config/deps.ts', '.config/deps.ts',
+    'pantry.config.ts', '.config/pantry.ts',
+  ]
+  for (const f of candidates) {
+    if (fs.existsSync(f))
+      return f
+  }
+  return null
+}
+
 /** Find the lockfile for cache key (most accurate indicator of installed state) */
 function findLockfile(): string | null {
   if (fs.existsSync('pantry.lock'))
@@ -184,8 +199,11 @@ export async function run(): Promise<void> {
 
     // ── Install deps with caching ──
     const lockfile = findLockfile()
+    const depsFileForKey = findDepsFile()
     const resolvedVer = ver.trim().split(' ').pop()?.split('(')[0]?.trim() || resolvedVersion
-    const cacheKey = `pantry-v${resolvedVer}-${platform.os}-${platform.arch}-${lockfile ? hashFile(lockfile) : 'no-lock'}-${inputs.packages || 'all'}`
+    const lockHash = lockfile ? hashFile(lockfile) : 'no-lock'
+    const depsHash = depsFileForKey ? hashFile(depsFileForKey) : ''
+    const cacheKey = `pantry-v2-${resolvedVer}-${platform.os}-${platform.arch}-${lockHash}-${depsHash}-${inputs.packages || 'all'}`
     let cacheHit = false
 
     // Try restoring from cache
