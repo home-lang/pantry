@@ -128,7 +128,7 @@ async function downloadAndInstall(version: string, platform: Platform): Promise<
 async function runWithRetry(cmd: string, args: string[], env: Record<string, string | undefined>, retries = 2): Promise<void> {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      await exec.exec(cmd, args, { env })
+      await exec.exec(cmd, args, { env: env as { [key: string]: string } })
       return
     }
     catch (err) {

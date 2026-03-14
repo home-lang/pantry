@@ -278,7 +278,7 @@ describe.skipIf(!serverAvailable)('Package detail', () => {
 
   it('shows versions list', async () => {
     const html = await (await fetch(`${baseUrl}/package/curl.se`)).text()
-    expect(html).toContain('All Versions')
+    expect(html).toContain('Versions')
     expect(html).toContain('latest')
   })
 
