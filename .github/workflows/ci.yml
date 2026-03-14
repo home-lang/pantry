@@ -20,12 +20,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache pantry deps
-        uses: actions/cache@v4
-        with:
-          path: pantry
-          key: pantry-deps-${{ hashFiles('pantry.jsonc') }}
-
       - name: Setup Pantry
         uses: ./packages/action
 
@@ -45,12 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Cache pantry deps
-        uses: actions/cache@v4
-        with:
-          path: pantry
-          key: pantry-deps-${{ hashFiles('pantry.jsonc') }}
-
       - name: Setup Pantry
         uses: ./packages/action
 
@@ -65,12 +53,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Cache pantry deps
-        uses: actions/cache@v4
-        with:
-          path: pantry
-          key: pantry-deps-${{ hashFiles('pantry.jsonc') }}
 
       - name: Setup Pantry
         uses: ./packages/action
@@ -104,12 +86,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Cache pantry deps
-        uses: actions/cache@v4
-        with:
-          path: pantry
-          key: pantry-deps-${{ hashFiles('pantry.jsonc') }}
 
       - name: Setup Pantry
         uses: ./packages/action

@@ -1,7 +1,10 @@
 import type { ActionInputs, Platform } from './types'
+import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import * as process from 'node:process'
+import * as crypto from 'node:crypto'
+import * as cache from '@actions/cache'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as tc from '@actions/tool-cache'
@@ -14,38 +17,12 @@ function detectPlatform(): Platform {
   const platform = os.platform()
   const arch = os.arch()
 
-  let osName: Platform['os']
-  let archName: Platform['arch']
-
-  switch (platform) {
-    case 'darwin':
-      osName = 'darwin'
-      break
-    case 'linux':
-      osName = 'linux'
-      break
-    case 'win32':
-      osName = 'windows'
-      break
-    default:
-      throw new Error(`Unsupported platform: ${platform}`)
-  }
-
-  switch (arch) {
-    case 'x64':
-      archName = 'x64'
-      break
-    case 'arm64':
-      archName = 'arm64'
-      break
-    default:
-      throw new Error(`Unsupported architecture: ${arch}`)
-  }
-
+  const osName = platform === 'darwin' ? 'darwin' : platform === 'win32' ? 'windows' : 'linux'
+  const archName = arch === 'arm64' ? 'arm64' : 'x64'
   const binaryName = osName === 'windows' ? 'pantry.exe' : 'pantry'
   const assetName = `pantry-${osName}-${archName}.zip`
 
-  return { os: osName, arch: archName, binaryName, assetName }
+  return { os: osName as Platform['os'], arch: archName as Platform['arch'], binaryName, assetName }
 }
 
 async function resolveVersion(version: string): Promise<string> {
@@ -54,92 +31,65 @@ async function resolveVersion(version: string): Promise<string> {
 
   let output = ''
   await exec.exec('gh', ['release', 'view', '--repo', REPO, '--json', 'tagName', '--jq', '.tagName'], {
-    listeners: {
-      stdout: (data: Buffer) => {
-        output += data.toString()
-      },
-    },
+    listeners: { stdout: (data: Buffer) => { output += data.toString() } },
     silent: true,
-  }).catch(() => {
-    output = ''
-  })
+  }).catch(() => { output = '' })
 
   if (output.trim())
     return output.trim().replace(/^v/, '')
 
-  // Fallback: use GitHub API via curl
   let apiOutput = ''
   await exec.exec('curl', ['-sL', `https://api.github.com/repos/${REPO}/releases/latest`], {
-    listeners: {
-      stdout: (data: Buffer) => {
-        apiOutput += data.toString()
-      },
-    },
+    listeners: { stdout: (data: Buffer) => { apiOutput += data.toString() } },
     silent: true,
   })
 
   const release = JSON.parse(apiOutput)
   if (!release.tag_name)
-    throw new Error('Could not determine latest pantry version. No releases found.')
+    throw new Error('Could not determine latest pantry version.')
 
   return release.tag_name.replace(/^v/, '')
 }
 
-function getDownloadUrl(version: string, assetName: string): string {
-  if (version === 'latest')
-    return `https://github.com/${REPO}/releases/latest/download/${assetName}`
-
-  return `https://github.com/${REPO}/releases/download/v${version}/${assetName}`
-}
-
 async function downloadAndInstall(version: string, platform: Platform): Promise<string> {
-  const toolName = 'pantry'
-
-  // Check tool cache first
   if (version !== 'latest') {
-    const cached = tc.find(toolName, version, platform.arch)
-    if (cached) {
-      core.info(`Using cached pantry ${version}`)
+    const cached = tc.find('pantry', version, platform.arch)
+    if (cached)
       return cached
-    }
   }
 
-  const downloadUrl = getDownloadUrl(version, platform.assetName)
-  core.info(`Downloading pantry from ${downloadUrl}`)
+  const url = version === 'latest'
+    ? `https://github.com/${REPO}/releases/latest/download/${platform.assetName}`
+    : `https://github.com/${REPO}/releases/download/v${version}/${platform.assetName}`
 
-  const zipPath = await tc.downloadTool(downloadUrl)
-  const extractedDir = await tc.extractZip(zipPath)
+  const zipPath = await tc.downloadTool(url)
+  const dir = await tc.extractZip(zipPath)
 
-  if (platform.os !== 'windows') {
-    const binaryPath = path.join(extractedDir, platform.binaryName)
-    await exec.exec('chmod', ['+x', binaryPath])
-  }
+  if (platform.os !== 'windows')
+    await exec.exec('chmod', ['+x', path.join(dir, platform.binaryName)])
 
-  if (version !== 'latest') {
-    const cachedDir = await tc.cacheDir(extractedDir, toolName, version, platform.arch)
-    return cachedDir
-  }
-
-  return extractedDir
+  return version !== 'latest' ? await tc.cacheDir(dir, 'pantry', version, platform.arch) : dir
 }
 
-async function runPantryInstall(args: string[], env: Record<string, string | undefined>): Promise<void> {
-  for (let attempt = 0; attempt <= 2; attempt++) {
-    try {
-      await exec.exec('pantry', args, { env: env as { [key: string]: string } })
-      return
-    }
-    catch (err) {
-      if (attempt < 2) {
-        const delay = (attempt + 1) * 5000
-        core.warning(`pantry ${args.join(' ')} failed (attempt ${attempt + 1}/3), retrying in ${delay / 1000}s...`)
-        await new Promise(resolve => setTimeout(resolve, delay))
-      }
-      else {
-        throw err
-      }
-    }
+/** Hash a file's contents for cache key */
+function hashFile(filePath: string): string {
+  try {
+    const content = fs.readFileSync(filePath, 'utf-8')
+    return crypto.createHash('sha256').update(content).digest('hex').slice(0, 16)
   }
+  catch {
+    return 'none'
+  }
+}
+
+/** Find the deps file that pantry will read */
+function findDepsFile(): string | null {
+  const candidates = ['pantry.jsonc', 'pantry.json', 'deps.yaml', 'deps.yml', 'package.json']
+  for (const f of candidates) {
+    if (fs.existsSync(f))
+      return f
+  }
+  return null
 }
 
 export async function run(): Promise<void> {
@@ -152,72 +102,92 @@ export async function run(): Promise<void> {
     }
 
     const platform = detectPlatform()
+    const cwd = process.cwd()
+    const homeDir = os.homedir()
+    const pantryDir = path.join(cwd, 'pantry')
+    const pantryBinDir = path.join(pantryDir, '.bin')
 
-    // ── Step 1: Install pantry CLI ──
-    core.startGroup(`Setting up pantry (${inputs.version})`)
+    // ── Install pantry CLI ──
+    core.startGroup('Setup pantry')
     const resolvedVersion = await resolveVersion(inputs.version)
     const installDir = await downloadAndInstall(resolvedVersion, platform)
-    const binaryPath = path.join(installDir, platform.binaryName)
     core.addPath(installDir)
 
-    let versionOutput = ''
-    await exec.exec(binaryPath, ['--version'], {
-      listeners: { stdout: (data: Buffer) => { versionOutput += data.toString() } },
+    let ver = ''
+    await exec.exec(path.join(installDir, platform.binaryName), ['--version'], {
+      listeners: { stdout: (d: Buffer) => { ver += d.toString() } },
       silent: true,
     }).catch(() => {})
 
-    const installedVersion = versionOutput.trim() || resolvedVersion
-    core.setOutput('pantry-path', binaryPath)
-    core.setOutput('version', installedVersion)
-    core.info(`pantry ${installedVersion} installed`)
+    core.setOutput('pantry-path', path.join(installDir, platform.binaryName))
+    core.setOutput('version', ver.trim() || resolvedVersion)
+    core.info(`pantry ${ver.trim() || resolvedVersion}`)
     core.endGroup()
 
-    // ── Step 2: Install dependencies (if enabled) ──
-    if (inputs.setupOnly && !inputs.packages) {
+    if (inputs.setupOnly && !inputs.packages)
       return
+
+    // ── Install deps with caching ──
+    const depsFile = findDepsFile()
+    const cacheKey = `pantry-${platform.os}-${platform.arch}-${depsFile ? hashFile(depsFile) : 'pkgs'}-${inputs.packages || 'all'}`
+    let cacheHit = false
+
+    // Try restoring from cache
+    try {
+      const hit = await cache.restoreCache([pantryDir], cacheKey)
+      if (hit) {
+        cacheHit = true
+        core.info(`Cache hit: ${cacheKey}`)
+      }
+    }
+    catch {
+      // cache miss or unavailable
     }
 
-    // Set CI env so pantry uses milestone progress (no spinner)
-    const installEnv = {
-      ...process.env,
-      CI: 'true',
-      NO_COLOR: '1',
+    if (!cacheHit) {
+      const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
+
+      if (inputs.packages) {
+        core.startGroup(`Installing: ${inputs.packages}`)
+        await exec.exec('pantry', ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)], {
+          env: installEnv as { [key: string]: string },
+        })
+        core.endGroup()
+      }
+      else {
+        core.startGroup('Installing dependencies')
+        await exec.exec('pantry', ['install', '--no-save'], {
+          env: installEnv as { [key: string]: string },
+        })
+        core.endGroup()
+      }
+
+      // Save to cache for next run
+      try {
+        await cache.saveCache([pantryDir], cacheKey)
+        core.info('Dependencies cached')
+      }
+      catch {
+        // cache save failed (already exists or unavailable)
+      }
     }
 
-    // Check if pantry/ dir already has installed packages (cache hit from previous job)
-    const cwd = process.cwd()
-    const pantryBinDir = path.join(cwd, 'pantry', '.bin')
-    const homeDir = os.homedir()
-
-    if (inputs.packages) {
-      core.startGroup(`Installing packages: ${inputs.packages}`)
-      const args = ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)]
-      await runPantryInstall(args, installEnv)
-      core.endGroup()
-    }
-    else {
-      core.startGroup('Installing project dependencies')
-      await runPantryInstall(['install', '--no-save'], installEnv)
-      core.endGroup()
-    }
-
-    // ── Step 3: Configure PATH ──
+    // ── Configure PATH ──
     core.addPath(pantryBinDir)
-    const globalPantryBin = path.join(homeDir, '.pantry', 'bin')
-    core.addPath(globalPantryBin)
+    core.addPath(path.join(homeDir, '.pantry', 'bin'))
 
-    // ── Step 4: Ensure bun is fully configured ──
+    // ── Ensure bun works ──
     const bunPath = path.join(pantryBinDir, 'bun')
     const bunxPath = path.join(pantryBinDir, 'bunx')
     try {
-      await exec.exec('test', ['-f', bunPath], { silent: true })
-      // Create bunx symlink (bun and bunx are the same binary)
-      await exec.exec('bash', ['-c', `[ -f "${bunxPath}" ] || ln -s "${bunPath}" "${bunxPath}"`], { silent: true })
-      // Set BUN_INSTALL so bun's postinstall check passes
-      core.exportVariable('BUN_INSTALL', path.dirname(pantryBinDir))
+      if (fs.existsSync(bunPath)) {
+        if (!fs.existsSync(bunxPath))
+          fs.symlinkSync(bunPath, bunxPath)
+        core.exportVariable('BUN_INSTALL', pantryDir)
+      }
     }
     catch {
-      // bun not installed via pantry
+      // bun not in deps
     }
 
     core.info('Setup complete')
