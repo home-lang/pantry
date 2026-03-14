@@ -91,6 +91,49 @@ function hashFile(filePath: string): string {
   }
 }
 
+/** Extract system dependency names from the project's deps file.
+ *  Supports: pantry.jsonc, pantry.json, deps.yaml, deps.yml, pantry.yaml, pantry.yml */
+function extractSystemDeps(): string[] {
+  // JSON-based: pantry.jsonc, pantry.json
+  for (const f of ['pantry.jsonc', 'pantry.json']) {
+    if (!fs.existsSync(f)) continue
+    try {
+      let content = fs.readFileSync(f, 'utf-8')
+      // Strip JSONC comments
+      content = content.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
+      const parsed = JSON.parse(content)
+      const deps = parsed.dependencies || {}
+      return Object.keys(deps).filter(name =>
+        // System deps have domain-style names or known aliases
+        name.includes('.') || ['bun', 'zig', 'node', 'python', 'ruby', 'go', 'rust', 'deno'].includes(name),
+      )
+    }
+    catch { continue }
+  }
+
+  // YAML-based: deps.yaml, deps.yml, pantry.yaml, pantry.yml
+  for (const f of ['deps.yaml', 'deps.yml', 'pantry.yaml', 'pantry.yml']) {
+    if (!fs.existsSync(f)) continue
+    try {
+      const content = fs.readFileSync(f, 'utf-8')
+      const deps: string[] = []
+      let inDeps = false
+      for (const line of content.split('\n')) {
+        if (/^dependencies:\s*$/.test(line.trim())) { inDeps = true; continue }
+        if (inDeps && /^\s+\S/.test(line)) {
+          const name = line.trim().split(':')[0].trim()
+          if (name) deps.push(name)
+        }
+        else if (inDeps && /^\S/.test(line)) { inDeps = false }
+      }
+      if (deps.length > 0) return deps
+    }
+    catch { continue }
+  }
+
+  return []
+}
+
 /** Find the lockfile for cache key (most accurate indicator of installed state) */
 function findLockfile(): string | null {
   if (fs.existsSync('pantry.lock'))
@@ -181,30 +224,18 @@ export async function run(): Promise<void> {
           env: installEnv as { [key: string]: string },
         })
 
-        // If deps.yaml exists with system deps (bun.sh, ziglang.org, etc.),
-        // install them explicitly — the workspace installer only reads package.json
-        if (fs.existsSync('deps.yaml') || fs.existsSync('deps.yml')) {
-          const depsFile = fs.existsSync('deps.yaml') ? 'deps.yaml' : 'deps.yml'
-          const content = fs.readFileSync(depsFile, 'utf-8')
-          // Extract package names from "dependencies:" section
-          const deps: string[] = []
-          let inDeps = false
-          for (const line of content.split('\n')) {
-            if (line.trim() === 'dependencies:') { inDeps = true; continue }
-            if (inDeps && /^\s+\S/.test(line)) {
-              const name = line.trim().split(':')[0].trim()
-              if (name) deps.push(name)
-            }
-            else if (inDeps && /^\S/.test(line)) { inDeps = false }
-          }
-          if (deps.length > 0) {
-            core.info(`Installing system deps from ${depsFile}: ${deps.join(', ')}`)
-            await exec.exec('pantry', ['install', '--no-save', ...deps], {
-              env: installEnv as { [key: string]: string },
-            }).catch(() => {
-              core.warning('Some system deps failed to install')
-            })
-          }
+        // Install system deps from deps file if it exists.
+        // The workspace installer reads package.json for JS deps but
+        // ignores dedicated deps files (deps.yaml, pantry.jsonc, etc.)
+        // that declare system packages like bun.sh, ziglang.org.
+        const systemDeps = extractSystemDeps()
+        if (systemDeps.length > 0) {
+          core.info(`Installing system deps: ${systemDeps.join(', ')}`)
+          await exec.exec('pantry', ['install', '--no-save', ...systemDeps], {
+            env: installEnv as { [key: string]: string },
+          }).catch(() => {
+            core.warning('Some system deps failed to install')
+          })
         }
         core.endGroup()
       }
