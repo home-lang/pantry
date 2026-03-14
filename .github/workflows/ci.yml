@@ -110,7 +110,9 @@ jobs:
           EOC
 
       - name: Continuous Releases
-        run: pantry publish:commit './packages/*'
+        run: |
+          git checkout -- bun.lock 2>/dev/null || true
+          pantry publish:commit './packages/*'
 
   notify:
     name: discord-failure-alert
