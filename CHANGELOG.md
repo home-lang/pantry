@@ -1,3 +1,58 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.15...v0.8.16)
+
+### 🐛 Bug Fixes
+
+- resolve package aliases in workspace installer ([7670599](https://github.com/home-lang/pantry/commit/7670599)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- add publishing, action, and deps file docs to CLAUDE.md ([a771d2d](https://github.com/home-lang/pantry/commit/a771d2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧪 Tests
+
+- comprehensive package alias tests, fix deploy timeout ([d4b04c0](https://github.com/home-lang/pantry/commit/d4b04c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.8.16 ([e79f5e6](https://github.com/home-lang/pantry/commit/e79f5e6)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update pscale ([799f48a](https://github.com/home-lang/pantry/commit/799f48a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- target ts-cloud remote ([a344a7e](https://github.com/home-lang/pantry/commit/a344a7e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update libwebsockets ([7e5deb7](https://github.com/home-lang/pantry/commit/7e5deb7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update libwebsockets ([a4ada33](https://github.com/home-lang/pantry/commit/a4ada33)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lockfile ([787337e](https://github.com/home-lang/pantry/commit/787337e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update registry data (1 file) ([5a5dce1](https://github.com/home-lang/pantry/commit/5a5dce1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.15...HEAD)
+
+### 🐛 Bug Fixes
+
+- resolve package aliases in workspace installer ([7670599](https://github.com/home-lang/pantry/commit/7670599)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- add publishing, action, and deps file docs to CLAUDE.md ([a771d2d](https://github.com/home-lang/pantry/commit/a771d2d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧪 Tests
+
+- comprehensive package alias tests, fix deploy timeout ([d4b04c0](https://github.com/home-lang/pantry/commit/d4b04c0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update pscale ([799f48a](https://github.com/home-lang/pantry/commit/799f48a)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- target ts-cloud remote ([a344a7e](https://github.com/home-lang/pantry/commit/a344a7e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update libwebsockets ([7e5deb7](https://github.com/home-lang/pantry/commit/7e5deb7)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update libwebsockets ([a4ada33](https://github.com/home-lang/pantry/commit/a4ada33)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+- update lockfile ([787337e](https://github.com/home-lang/pantry/commit/787337e)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update registry data (1 file) ([5a5dce1](https://github.com/home-lang/pantry/commit/5a5dce1)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.14...v0.8.15)
 
 ### 🐛 Bug Fixes
