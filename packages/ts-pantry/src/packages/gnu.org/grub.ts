@@ -30,9 +30,9 @@ export const gnuorggrubPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: '' as const,
+  description: 'GNU GRand Unified Bootloader' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/grub/package.yml' as const,
-  homepageUrl: '' as const,
+  homepageUrl: 'https://www.gnu.org/software/grub/' as const,
   githubUrl: '' as const,
   /**
   * Command to install this package using launchpad.
@@ -41,7 +41,30 @@ export const gnuorggrubPackage = {
   installCommand: 'launchpad install gnu.org/grub' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/grub -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnu.org/grub' as const,
-  programs: [] as const,
+  programs: [
+    'grub-bios-setup',
+    'grub-editenv',
+    'grub-file',
+    'grub-fstest',
+    'grub-install',
+    'grub-kbdcomp',
+    'grub-menulst2cfg',
+    'grub-mkconfig',
+    'grub-mkimage',
+    'grub-mklayout',
+    'grub-mknetdir',
+    'grub-mkpasswd-pbkdf2',
+    'grub-mkrelpath',
+    'grub-mkrescue',
+    'grub-mkstandalone',
+    'grub-mount',
+    'grub-probe',
+    'grub-reboot',
+    'grub-render-label',
+    'grub-script-check',
+    'grub-set-default',
+    'grub-syslinux2cfg',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
@@ -67,7 +90,15 @@ export const gnuorggrubPackage = {
     'gnu.org/automake',
     'python.org@~3.11',
   ] as const,
-  versions: [] as const,
+  versions: [
+    '2.14.0',
+    '2.12.0',
+    '2.6.0',
+    '2.4.0',
+    '2.2.0',
+    '2.0.0',
+    '1.99.0',
+  ] as const,
   aliases: [] as const,
 }
 

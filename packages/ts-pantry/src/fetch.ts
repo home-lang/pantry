@@ -2138,12 +2138,49 @@ export async function readPantryPackageInfo(packageName: string, pantryDir = 'sr
       }
     }
 
+    // Extract programs from provides section
+    const programs: string[] = []
+    let inProvidesSection = false
+    let inProvidesPlatformSection = false
+
+    for (const line of depsLines) {
+      if (line.match(/^provides:\s*$/)) {
+        inProvidesSection = true
+        inProvidesPlatformSection = false
+        continue
+      }
+
+      if (inProvidesSection) {
+        // Exit if we hit a non-indented, non-empty line
+        if (line.match(/^\S/) && !line.match(/^\s*$/)) {
+          inProvidesSection = false
+          continue
+        }
+
+        // Skip platform headers like "darwin:" or "linux:"
+        if (line.match(/^\s+(darwin|linux|windows):\s*$/)) {
+          inProvidesPlatformSection = true
+          continue
+        }
+
+        // Match "- bin/program" or "  - bin/program"
+        const provideMatch = line.match(/^\s+-\s+(?:bin|sbin)\/(.+)/)
+        if (provideMatch) {
+          const prog = provideMatch[1].trim()
+          if (!programs.includes(prog)) {
+            programs.push(prog)
+          }
+        }
+      }
+    }
+
     const packageInfo: Partial<PkgxPackage> = {
       name: packageName.split('/').pop() || packageName,
       domain: packageName,
       dependencies: runtimeDependencies,
       buildDependencies,
       companions,
+      programs,
       homepageUrl,
       githubUrl,
       // We'll get the rest from pkgx.dev
@@ -2194,6 +2231,60 @@ export async function fetchPantryPackageWithMetadata(
         }
       }
 
+      // If web data has no versions or programs, preserve existing TS file data
+      // to avoid wiping out manually-curated metadata for custom/local packages
+      let preservedVersions: string[] = []
+      let preservedPrograms: string[] = []
+      let preservedDescription = ''
+      let preservedHomepageUrl = ''
+
+      const webVersions = webData.packageInfo.versions || []
+      const webPrograms = webData.packageInfo.programs || []
+      const pantryPrograms = pantryInfo?.programs || []
+
+      if (webVersions.length === 0 || (webPrograms.length === 0 && pantryPrograms.length === 0)) {
+        const outputDir = options.outputDir || 'src/packages'
+        const domainParts = packageName.split('/')
+        const existingTsPath = domainParts.length > 1
+          ? path.join(outputDir, ...domainParts.slice(0, -1), `${domainParts[domainParts.length - 1]}.ts`)
+          : path.join(outputDir, `${packageName.replace(/\./g, '')}.ts`)
+
+        if (fs.existsSync(existingTsPath)) {
+          try {
+            const existingContent = fs.readFileSync(existingTsPath, 'utf-8')
+
+            if (webVersions.length === 0) {
+              const versionsMatch = existingContent.match(/versions:\s*\[([\s\S]*?)\]\s*as\s*const/)
+              if (versionsMatch && versionsMatch[1].trim()) {
+                preservedVersions = versionsMatch[1].match(/'([^']+)'/g)?.map(v => v.replace(/'/g, '')) || []
+              }
+            }
+
+            if (webPrograms.length === 0 && pantryPrograms.length === 0) {
+              const programsMatch = existingContent.match(/programs:\s*\[([\s\S]*?)\]\s*as\s*const/)
+              if (programsMatch && programsMatch[1].trim()) {
+                preservedPrograms = programsMatch[1].match(/'([^']+)'/g)?.map(v => v.replace(/'/g, '')) || []
+              }
+            }
+
+            if (!webData.packageInfo.description) {
+              const descMatch = existingContent.match(/description:\s*'([^']*)'\s*as\s*const/)
+              if (descMatch && descMatch[1]) {
+                preservedDescription = descMatch[1]
+              }
+            }
+
+            if (!webData.packageInfo.homepageUrl && !pantryInfo?.homepageUrl) {
+              const homeMatch = existingContent.match(/homepageUrl:\s*'([^']*)'\s*as\s*const/)
+              if (homeMatch && homeMatch[1]) {
+                preservedHomepageUrl = homeMatch[1]
+              }
+            }
+          }
+          catch { /* ignore parse errors */ }
+        }
+      }
+
       // Combine pantry data with web data, giving priority to pantry for dependencies/companions
       const combinedPackageInfo: PkgxPackage = {
         ...webData.packageInfo,
@@ -2207,12 +2298,19 @@ export async function fetchPantryPackageWithMetadata(
         companions: pantryInfo?.companions && pantryInfo.companions.length > 0
           ? pantryInfo.companions
           : webData.packageInfo.companions,
+        // Use pantry programs if web data has none, then preserved, then empty
+        programs: webPrograms.length > 0
+          ? webPrograms
+          : (pantryPrograms.length > 0 ? pantryPrograms : (preservedPrograms.length > 0 ? preservedPrograms : [])),
+        // Preserve existing versions if web fetch returned empty
+        versions: webVersions.length > 0 ? webVersions : preservedVersions,
         domain: pantryInfo?.domain || webData.packageInfo.domain,
+        description: webData.packageInfo.description || preservedDescription || '',
         // For name, prefer web data (which extracts actual program names) over pantry data (which uses generic path segments)
         // Only use pantry name if web data doesn't have a name
         name: webData.packageInfo.name || pantryInfo?.name || packageName.split('/').pop() || packageName,
-        // Use pantry URLs if available, otherwise fallback to web data
-        homepageUrl: pantryInfo?.homepageUrl || webData.packageInfo.homepageUrl,
+        // Use pantry URLs if available, otherwise fallback to web data, then preserved
+        homepageUrl: pantryInfo?.homepageUrl || webData.packageInfo.homepageUrl || preservedHomepageUrl,
         githubUrl: pantryInfo?.githubUrl || webData.packageInfo.githubUrl,
         // Apply alias overrides
         aliases: finalAliases,
@@ -2232,21 +2330,71 @@ export async function fetchPantryPackageWithMetadata(
 
       console.warn(`Failed to fetch web metadata for ${packageName}, using pantry data only:`, webError)
 
-      // Create a minimal package from pantry data only
+      // Try to preserve existing TS file data (versions, programs, description)
+      // so we don't wipe out manually-curated or previously-fetched metadata
+      let existingVersions: string[] = []
+      let existingPrograms: string[] = []
+      let existingDescription = ''
+      let existingHomepageUrl = ''
+
+      const outputDir = options.outputDir || 'src/packages'
+      const domainParts = packageName.split('/')
+      const existingTsPath = domainParts.length > 1
+        ? path.join(outputDir, ...domainParts.slice(0, -1), `${domainParts[domainParts.length - 1]}.ts`)
+        : path.join(outputDir, `${packageName.replace(/\./g, '')}.ts`)
+
+      if (fs.existsSync(existingTsPath)) {
+        try {
+          const existingContent = fs.readFileSync(existingTsPath, 'utf-8')
+
+          // Extract existing versions
+          const versionsMatch = existingContent.match(/versions:\s*\[([\s\S]*?)\]\s*as\s*const/)
+          if (versionsMatch && versionsMatch[1].trim()) {
+            existingVersions = versionsMatch[1].match(/'([^']+)'/g)?.map(v => v.replace(/'/g, '')) || []
+          }
+
+          // Extract existing programs
+          const programsMatch = existingContent.match(/programs:\s*\[([\s\S]*?)\]\s*as\s*const/)
+          if (programsMatch && programsMatch[1].trim()) {
+            existingPrograms = programsMatch[1].match(/'([^']+)'/g)?.map(v => v.replace(/'/g, '')) || []
+          }
+
+          // Extract existing description
+          const descMatch = existingContent.match(/description:\s*'([^']*)'\s*as\s*const/)
+          if (descMatch && descMatch[1]) {
+            existingDescription = descMatch[1]
+          }
+
+          // Extract existing homepage URL
+          const homeMatch = existingContent.match(/homepageUrl:\s*'([^']*)'\s*as\s*const/)
+          if (homeMatch && homeMatch[1]) {
+            existingHomepageUrl = homeMatch[1]
+          }
+        }
+        catch { /* ignore parse errors */ }
+      }
+
+      // Prefer pantry-extracted programs, then existing, then empty
+      const programs = (pantryInfo.programs && pantryInfo.programs.length > 0)
+        ? pantryInfo.programs
+        : existingPrograms
+
+      // Create a package from pantry data, preserving existing metadata
       const packageInfo: PkgxPackage = {
         name: pantryInfo.name || packageName.split('/').pop() || packageName,
         domain: pantryInfo.domain || packageName,
-        description: `Package from pantry: ${packageName}`,
+        description: existingDescription || '',
         installCommand: `launchpad install ${packageName}`,
         pkgxInstallCommand: `sh <(curl https://pkgx.sh) +${packageName} -- $SHELL -i`,
         launchpadInstallCommand: `launchpad install ${packageName}`,
-        programs: [],
+        programs,
         companions: pantryInfo.companions || [],
         dependencies: pantryInfo.dependencies || [],
-        versions: [],
+        versions: existingVersions,
+        buildDependencies: pantryInfo.buildDependencies || [],
         packageYmlUrl: `https://github.com/pkgxdev/pantry/tree/main/projects/${packageName}/package.yml`,
-        homepageUrl: '',
-        githubUrl: '',
+        homepageUrl: existingHomepageUrl || pantryInfo.homepageUrl || '',
+        githubUrl: pantryInfo.githubUrl || '',
       }
 
       return {

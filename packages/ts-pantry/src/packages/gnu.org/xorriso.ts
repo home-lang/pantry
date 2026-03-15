@@ -29,9 +29,9 @@ export const gnuorgxorrisoPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: '' as const,
+  description: 'ISO 9660 Rock Ridge filesystem manipulator' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/xorriso/package.yml' as const,
-  homepageUrl: '' as const,
+  homepageUrl: 'https://www.gnu.org/software/xorriso/' as const,
   githubUrl: '' as const,
   /**
   * Command to install this package using launchpad.
@@ -40,7 +40,12 @@ export const gnuorgxorrisoPackage = {
   installCommand: 'launchpad install gnu.org/xorriso' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/xorriso -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnu.org/xorriso' as const,
-  programs: [] as const,
+  programs: [
+    'xorriso',
+    'xorrisofs',
+    'xorrecord',
+    'osirrox',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
@@ -52,7 +57,14 @@ export const gnuorgxorrisoPackage = {
     'gnu.org/readline',
   ] as const,
   buildDependencies: [] as const,
-  versions: [] as const,
+  versions: [
+    '1.5.6',
+    '1.5.4',
+    '1.5.2',
+    '1.5.0',
+    '1.4.8',
+    '1.4.6',
+  ] as const,
   aliases: [] as const,
 }
 
