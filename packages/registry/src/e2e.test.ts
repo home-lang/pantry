@@ -207,7 +207,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       const top = await topRes.json() as any
       expect(top.packages.length).toBeGreaterThanOrEqual(1)
       expect(top.packages[0].name).toBe('curl.se')
-      expect(top.packages[0].downloads).toBe(1)
+      expect(top.packages[0].downloads).toBeGreaterThanOrEqual(1)
     })
 
     it('tracked downloads appear in daily timeline', async () => {

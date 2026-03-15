@@ -245,13 +245,5 @@ export function getInstallCommand(packages: string[], format: 'pkgx' | 'pantry' 
   return `pantry install ${packages.join(' ')}`
 }
 
-// Backward-compatible type aliases
-/** @deprecated Use PantryPackage instead */
-export type LaunchpadPackage = PantryPackage
-/** @deprecated Use PantryInstallResult instead */
-export type LaunchpadInstallResult = PantryInstallResult
-/** @deprecated Use PantryResolverOptions instead */
-export type LaunchpadResolverOptions = PantryResolverOptions
-
 // Export types for external use
 export type { Dependency, DependencyResolutionResult, DependencyResolverOptions }

@@ -363,9 +363,6 @@ export interface SystemdService {
   }
 }
 
-/** @deprecated Use PantryConfig instead */
-export type LaunchpadConfig = PantryConfig
-
 /**
  * Helper function to define Pantry configuration with full type safety
  */

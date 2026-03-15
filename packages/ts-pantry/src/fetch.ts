@@ -2387,7 +2387,7 @@ export async function fetchPantryPackageWithMetadata(
         installCommand: `pantry install ${packageName}`,
         pkgxInstallCommand: `sh <(curl https://pkgx.sh) +${packageName} -- $SHELL -i`,
         pantryInstallCommand: `pantry install ${packageName}`,
-        programs,
+          programs,
         companions: pantryInfo.companions || [],
         dependencies: pantryInfo.dependencies || [],
         versions: existingVersions,
