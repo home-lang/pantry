@@ -1,0 +1,67 @@
+distributable:
+  url: https://ftpmirror.gnu.org/gnu/grub/grub-{{ version.raw }}.tar.xz
+  strip-components: 1
+
+versions:
+  url: https://ftpmirror.gnu.org/gnu/grub/
+  match: /grub-(\d+\.\d+(\.\d+)?)\.tar\.xz/
+  strip:
+    - /grub-/
+    - /.tar.xz/
+
+platforms:
+  - linux
+
+dependencies:
+  gnu.org/gettext: '*'
+  sourceware.org/bzip2: '*'
+  tukaani.org/xz: '*'
+  zlib.net: '*'
+  gnupg.org/libgcrypt: '*'
+  gnu.org/libunistring: '*'
+
+build:
+  dependencies:
+    gnu.org/bison: '*'
+    gnu.org/m4: '*'
+    github.com/westes/flex: '*'
+    gnu.org/autoconf: '*'
+    gnu.org/automake: '*'
+    freedesktop.org/pkg-config: '*'
+    python.org: ~3.11
+  script:
+    - ./configure $ARGS
+    - make --jobs {{ hw.concurrency }}
+    - make install
+  env:
+    ARGS:
+      - --prefix={{ prefix }}
+      - --disable-werror
+      - --disable-efiemu
+
+provides:
+  - bin/grub-bios-setup
+  - bin/grub-editenv
+  - bin/grub-file
+  - bin/grub-fstest
+  - bin/grub-install
+  - bin/grub-kbdcomp
+  - bin/grub-menulst2cfg
+  - bin/grub-mkconfig
+  - bin/grub-mkimage
+  - bin/grub-mklayout
+  - bin/grub-mknetdir
+  - bin/grub-mkpasswd-pbkdf2
+  - bin/grub-mkrelpath
+  - bin/grub-mkrescue
+  - bin/grub-mkstandalone
+  - bin/grub-mount
+  - bin/grub-probe
+  - bin/grub-reboot
+  - bin/grub-render-label
+  - bin/grub-script-check
+  - bin/grub-set-default
+  - bin/grub-syslinux2cfg
+
+test:
+  script: grub-mkimage --version

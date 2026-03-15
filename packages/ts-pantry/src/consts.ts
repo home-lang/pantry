@@ -1,7 +1,7 @@
 /**
  * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-14T20:37:40.211Z
+ * Generated on 2026-03-15T15:46:21.846Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1662 total)
+ * List of all known packages (1664 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -933,6 +933,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'gnu.org/gperf',
   'gnu.org/grep',
   'gnu.org/groff',
+  'gnu.org/grub',
   'gnu.org/guile',
   'gnu.org/help2man',
   'gnu.org/inetutils',
@@ -960,6 +961,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'gnu.org/texinfo',
   'gnu.org/wget',
   'gnu.org/which',
+  'gnu.org/xorriso',
   'gnupg.org',
   'gnupg.org/gpgme',
   'gnupg.org/libassuan',

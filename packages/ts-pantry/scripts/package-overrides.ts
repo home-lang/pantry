@@ -10037,4 +10037,23 @@ export const packageOverrides: Record<string, PackageOverride> = {
     },
   },
 
+  // ─── gnu.org/grub — GNU GRUB bootloader (linux-only) ──────────────────
+  'gnu.org/grub': {
+    supportedPlatforms: ['linux/x86-64', 'linux/aarch64'],
+    modifyRecipe: (recipe) => {
+      // Remove autoconf/automake build deps (S3 autoconf is broken)
+      if (recipe.build?.dependencies) {
+        delete recipe.build.dependencies['gnu.org/autoconf']
+        delete recipe.build.dependencies['gnu.org/automake']
+      }
+    },
+  },
+
+  // ─── gnu.org/xorriso — ISO 9660 filesystem manipulator ────────────────
+  'gnu.org/xorriso': {
+    modifyRecipe: (recipe) => {
+      // xorriso bundles its own libburn/libisofs — straightforward autotools build
+    },
+  },
+
 }
