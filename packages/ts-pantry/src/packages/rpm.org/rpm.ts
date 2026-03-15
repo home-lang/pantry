@@ -2,6 +2,7 @@
  * **rpm** - pkgx package
  *
  * @domain `rpm.org/rpm`
+ * @programs `rpm`
  * @version `6.0.1` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.rpmorgrpm
  * console.log(pkg.name)        // "rpm"
+ * console.log(pkg.programs)    // ["rpm"]
  * console.log(pkg.versions[0]) // "6.0.1" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const rpmorgrpmPackage = {
   installCommand: 'launchpad install rpm.org/rpm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/rpm -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install rpm.org/rpm' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'rpm',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

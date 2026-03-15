@@ -2,6 +2,7 @@
  * **jj** - pkgx package
  *
  * @domain `github.com/jj-vcs/jj`
+ * @programs `jj`
  * @version `0.39.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.githubcomjjvcsjj
  * console.log(pkg.name)        // "jj"
+ * console.log(pkg.programs)    // ["jj"]
  * console.log(pkg.versions[0]) // "0.39.0" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const jjPackage = {
   installCommand: 'launchpad install github.com/jj-vcs/jj' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jj-vcs/jj -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/jj-vcs/jj' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'jj',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

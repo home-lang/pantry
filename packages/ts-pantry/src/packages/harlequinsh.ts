@@ -2,6 +2,7 @@
  * **harlequin.sh** - pkgx package
  *
  * @domain `harlequin.sh`
+ * @programs `harlequin`
  * @version `2.5.1` (3 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.harlequinsh
  * console.log(pkg.name)        // "harlequin.sh"
+ * console.log(pkg.programs)    // ["harlequin"]
  * console.log(pkg.versions[0]) // "2.5.1" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const harlequinshPackage = {
   installCommand: 'launchpad install harlequin.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +harlequin.sh -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install harlequin.sh' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'harlequin',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

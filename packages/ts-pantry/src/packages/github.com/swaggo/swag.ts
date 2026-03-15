@@ -2,6 +2,7 @@
  * **swag** - pkgx package
  *
  * @domain `github.com/swaggo/swag`
+ * @programs `swag`
  * @version `1.16.6` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomswaggoswag
  * console.log(pkg.name)        // "swag"
+ * console.log(pkg.programs)    // ["swag"]
  * console.log(pkg.versions[0]) // "1.16.6" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const swagPackage = {
   installCommand: 'launchpad install github.com/swaggo/swag' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/swaggo/swag -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/swaggo/swag' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'swag',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

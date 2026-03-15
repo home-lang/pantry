@@ -2,6 +2,7 @@
  * **ipcalc** - pkgx package
  *
  * @domain `github.com/pete911/ipcalc`
+ * @programs `ipcalc`
  * @version `1.0.4` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcompete911ipcalc
  * console.log(pkg.name)        // "ipcalc"
+ * console.log(pkg.programs)    // ["ipcalc"]
  * console.log(pkg.versions[0]) // "1.0.4" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const ipcalcPackage = {
   installCommand: 'launchpad install github.com/pete911/ipcalc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/pete911/ipcalc -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/pete911/ipcalc' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'ipcalc',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

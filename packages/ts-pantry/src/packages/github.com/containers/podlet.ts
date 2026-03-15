@@ -2,6 +2,7 @@
  * **podlet** - pkgx package
  *
  * @domain `github.com/containers/podlet`
+ * @programs `podlet`
  * @version `0.3.1` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.githubcomcontainerspodlet
  * console.log(pkg.name)        // "podlet"
+ * console.log(pkg.programs)    // ["podlet"]
  * console.log(pkg.versions[0]) // "0.3.1" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const podletPackage = {
   installCommand: 'launchpad install github.com/containers/podlet' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/containers/podlet -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/containers/podlet' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'podlet',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

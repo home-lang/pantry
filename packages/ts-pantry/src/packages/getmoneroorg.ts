@@ -2,6 +2,7 @@
  * **getmonero** - pkgx package
  *
  * @domain `getmonero.org`
+ * @programs `monero-wallet-rpc`, `monero-wallet-cli`, `monero-gen-trusted-multisig`, `monero-gen-ssl-cert`, `monerod`, ... (+9 more)
  * @version `0.18.4.6` (6 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.getmoneroorg
  * console.log(pkg.name)        // "getmonero"
+ * console.log(pkg.programs)    // ["monero-wallet-rpc", "monero-wallet-cli", ...]
  * console.log(pkg.versions[0]) // "0.18.4.6" (latest)
  * ```
  *
@@ -44,7 +46,26 @@ export const getmoneroorgPackage = {
   installCommand: 'launchpad install getmonero.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +getmonero.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install getmonero.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'monero-wallet-rpc',
+    'monero-wallet-cli',
+    'monero-gen-trusted-multisig',
+    'monero-gen-ssl-cert',
+    'monerod',
+    'monero-blockchain-import',
+    'monero-blockchain-export',
+    'monero-blockchain-mark-spent-outputs',
+    'monero-blockchain-usage',
+    'monero-blockchain-ancestry',
+    'monero-blockchain-depth',
+    'monero-blockchain-stats',
+    'monero-blockchain-prune-known-spent-data',
+    'monero-blockchain-prune',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

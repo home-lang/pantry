@@ -2,6 +2,7 @@
  * **just-mcp** - pkgx package
  *
  * @domain `github.com/promptexecution/just-mcp`
+ * @programs `just-mcp`
  * @version `0.1.5` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.githubcompromptexecutionjustmcp
  * console.log(pkg.name)        // "just-mcp"
+ * console.log(pkg.programs)    // ["just-mcp"]
  * console.log(pkg.versions[0]) // "0.1.5" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const justmcpPackage = {
   installCommand: 'launchpad install github.com/promptexecution/just-mcp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/promptexecution/just-mcp -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/promptexecution/just-mcp' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'just-mcp',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

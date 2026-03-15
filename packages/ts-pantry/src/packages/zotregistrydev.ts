@@ -2,6 +2,7 @@
  * **zotregistry** - pkgx package
  *
  * @domain `zotregistry.dev`
+ * @programs `zb`, `zli`, `zot`, `zxp`
  * @version `2.1.15` (3 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.zotregistrydev
  * console.log(pkg.name)        // "zotregistry"
+ * console.log(pkg.programs)    // ["zb", "zli", ...]
  * console.log(pkg.versions[0]) // "2.1.15" (latest)
  * ```
  *
@@ -43,7 +45,16 @@ export const zotregistrydevPackage = {
   installCommand: 'launchpad install zotregistry.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zotregistry.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install zotregistry.dev' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'zb',
+    'zli',
+    'zot',
+    'zxp',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

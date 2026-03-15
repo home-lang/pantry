@@ -2,6 +2,7 @@
  * **memcached** - pkgx package
  *
  * @domain `memcached.org`
+ * @programs `memcached`
  *
  * @install `launchpad install memcached.org`
  * @dependencies `libevent.org`
@@ -12,6 +13,7 @@
  *
  * const pkg = pantry.memcachedorg
  * console.log(pkg.name)        // "memcached"
+ * console.log(pkg.programs)    // ["memcached"]
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/memcached-org.md
@@ -40,7 +42,13 @@ export const memcachedorgPackage = {
   installCommand: 'launchpad install memcached.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +memcached.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install memcached.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'memcached',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

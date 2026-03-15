@@ -2,6 +2,7 @@
  * **termshark** - pkgx package
  *
  * @domain `termshark.io`
+ * @programs `termshark`
  * @version `2.4.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.termsharkio
  * console.log(pkg.name)        // "termshark"
+ * console.log(pkg.programs)    // ["termshark"]
  * console.log(pkg.versions[0]) // "2.4.0" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const termsharkioPackage = {
   installCommand: 'launchpad install termshark.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +termshark.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install termshark.io' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'termshark',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

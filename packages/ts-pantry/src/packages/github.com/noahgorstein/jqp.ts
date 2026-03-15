@@ -2,6 +2,7 @@
  * **jqp** - pkgx package
  *
  * @domain `github.com/noahgorstein/jqp`
+ * @programs `jqp`
  * @version `0.8.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomnoahgorsteinjqp
  * console.log(pkg.name)        // "jqp"
+ * console.log(pkg.programs)    // ["jqp"]
  * console.log(pkg.versions[0]) // "0.8.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const jqpPackage = {
   installCommand: 'launchpad install github.com/noahgorstein/jqp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/noahgorstein/jqp -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/noahgorstein/jqp' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'jqp',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

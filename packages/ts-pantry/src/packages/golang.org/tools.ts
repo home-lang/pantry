@@ -2,6 +2,7 @@
  * **tools** - pkgx package
  *
  * @domain `golang.org/tools`
+ * @programs `goimports`, `callgraph`, `digraph`, `stringer`, `toolstash`
  * @version `0.43.0` (5 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.golangorgtools
  * console.log(pkg.name)        // "tools"
+ * console.log(pkg.programs)    // ["goimports", "callgraph", ...]
  * console.log(pkg.versions[0]) // "0.43.0" (latest)
  * ```
  *
@@ -43,7 +45,17 @@ export const golangorgtoolsPackage = {
   installCommand: 'launchpad install golang.org/tools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +golang.org/tools -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install golang.org/tools' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'goimports',
+    'callgraph',
+    'digraph',
+    'stringer',
+    'toolstash',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

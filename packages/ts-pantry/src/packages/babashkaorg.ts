@@ -2,6 +2,7 @@
  * **babashka** - pkgx package
  *
  * @domain `babashka.org`
+ * @programs `bb`
  * @version `1.12.216` (4 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.babashkaorg
  * console.log(pkg.name)        // "babashka"
+ * console.log(pkg.programs)    // ["bb"]
  * console.log(pkg.versions[0]) // "1.12.216" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const babashkaorgPackage = {
   installCommand: 'launchpad install babashka.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +babashka.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install babashka.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'bb',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

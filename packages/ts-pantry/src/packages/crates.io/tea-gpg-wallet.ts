@@ -2,6 +2,7 @@
  * **tea-gpg-wallet** - pkgx package
  *
  * @domain `crates.io/tea-gpg-wallet`
+ * @programs `tea-gpg-wallet`
  * @version `0.2.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.cratesioteagpgwallet
  * console.log(pkg.name)        // "tea-gpg-wallet"
+ * console.log(pkg.programs)    // ["tea-gpg-wallet"]
  * console.log(pkg.versions[0]) // "0.2.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const cratesioteagpgwalletPackage = {
   installCommand: 'launchpad install crates.io/tea-gpg-wallet' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/tea-gpg-wallet -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/tea-gpg-wallet' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'tea-gpg-wallet',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

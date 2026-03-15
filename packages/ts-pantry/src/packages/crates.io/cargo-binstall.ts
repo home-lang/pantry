@@ -2,6 +2,7 @@
  * **cargo-binstall** - pkgx package
  *
  * @domain `crates.io/cargo-binstall`
+ * @programs `cargo-binstall`
  * @version `1.17.7` (18 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.cratesiocargobinstall
  * console.log(pkg.name)        // "cargo-binstall"
+ * console.log(pkg.programs)    // ["cargo-binstall"]
  * console.log(pkg.versions[0]) // "1.17.7" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const cratesiocargobinstallPackage = {
   installCommand: 'launchpad install crates.io/cargo-binstall' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/cargo-binstall -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/cargo-binstall' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'cargo-binstall',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

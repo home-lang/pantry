@@ -2,6 +2,7 @@
  * **mail** - pkgx package
  *
  * @domain `github.com/mail-os/mail`
+ * @programs `mail`
  *
  * @install `launchpad install github.com/mail-os/mail`
  * @buildDependencies `ziglang.org@0.16.0-dev`, `sqlite.org` - required only when building from source
@@ -12,6 +13,7 @@
  *
  * const pkg = pantry.githubcommailosmail
  * console.log(pkg.name)        // "mail"
+ * console.log(pkg.programs)    // ["mail"]
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/mail-os/mail.md
@@ -40,7 +42,13 @@ export const mailPackage = {
   installCommand: 'launchpad install github.com/mail-os/mail' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mail-os/mail -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/mail-os/mail' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'mail',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

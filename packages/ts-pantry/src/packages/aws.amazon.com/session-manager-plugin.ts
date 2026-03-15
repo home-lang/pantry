@@ -2,6 +2,7 @@
  * **session-manager-plugin** - pkgx package
  *
  * @domain `aws.amazon.com/session-manager-plugin`
+ * @programs `session-manager-plugin`
  * @version `1.2.779.0` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.awsamazoncomsessionmanagerplugin
  * console.log(pkg.name)        // "session-manager-plugin"
+ * console.log(pkg.programs)    // ["session-manager-plugin"]
  * console.log(pkg.versions[0]) // "1.2.779.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const awsamazoncomsessionmanagerpluginPackage = {
   installCommand: 'launchpad install aws.amazon.com/session-manager-plugin' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aws.amazon.com/session-manager-plugin -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install aws.amazon.com/session-manager-plugin' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'session-manager-plugin',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

@@ -3,7 +3,7 @@
  *
  * @domain `github.com/Ousret/charset_normalizer`
  * @programs `normalizer`
- * @version `3.4.5` (7 versions available)
+ * @version `3.4.6` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/Ousret/charset_normalizer`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "normalizer"
  * console.log(pkg.description) // "Truly universal encoding detector in pure Python"
  * console.log(pkg.programs)    // ["normalizer"]
- * console.log(pkg.versions[0]) // "3.4.5" (latest)
+ * console.log(pkg.versions[0]) // "3.4.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/Ousret/charset_normalizer.md
@@ -68,6 +68,7 @@ export const charset_normalizerPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.4.6',
     '3.4.5',
     '3.4.4',
     '3.4.3',

@@ -2,6 +2,7 @@
  * **tuxpaint** - pkgx package
  *
  * @domain `tuxpaint.org`
+ * @programs `tp-magic-config`, `tuxpaint`, `tuxpaint-import`
  * @version `0.9.35` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.tuxpaintorg
  * console.log(pkg.name)        // "tuxpaint"
+ * console.log(pkg.programs)    // ["tp-magic-config", "tuxpaint", ...]
  * console.log(pkg.versions[0]) // "0.9.35" (latest)
  * ```
  *
@@ -44,7 +46,15 @@ export const tuxpaintorgPackage = {
   installCommand: 'launchpad install tuxpaint.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tuxpaint.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tuxpaint.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'tp-magic-config',
+    'tuxpaint',
+    'tuxpaint-import',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

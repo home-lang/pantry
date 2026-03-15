@@ -2,6 +2,7 @@
  * **libfyaml** - pkgx package
  *
  * @domain `github.com/pantoniou/libfyaml`
+ * @programs `fy-compose`, `fy-dump`, `fy-filter`, `fy-join`, `fy-testsuite`, ... (+2 more)
  * @version `0.9.5` (6 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcompantonioulibfyaml
  * console.log(pkg.name)        // "libfyaml"
+ * console.log(pkg.programs)    // ["fy-compose", "fy-dump", ...]
  * console.log(pkg.versions[0]) // "0.9.5" (latest)
  * ```
  *
@@ -43,7 +45,19 @@ export const libfyamlPackage = {
   installCommand: 'launchpad install github.com/pantoniou/libfyaml' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/pantoniou/libfyaml -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/pantoniou/libfyaml' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'fy-compose',
+    'fy-dump',
+    'fy-filter',
+    'fy-join',
+    'fy-testsuite',
+    'fy-tool',
+    'fy-ypath',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

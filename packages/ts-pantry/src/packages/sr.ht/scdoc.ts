@@ -2,6 +2,7 @@
  * **scdoc** - pkgx package
  *
  * @domain `sr.ht/scdoc`
+ * @programs `scdoc`
  * @version `1.11.4` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.srhtscdoc
  * console.log(pkg.name)        // "scdoc"
+ * console.log(pkg.programs)    // ["scdoc"]
  * console.log(pkg.versions[0]) // "1.11.4" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const srhtscdocPackage = {
   installCommand: 'launchpad install sr.ht/scdoc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sr.ht/scdoc -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install sr.ht/scdoc' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'scdoc',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

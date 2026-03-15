@@ -2,6 +2,7 @@
  * **tdnf** - pkgx package
  *
  * @domain `github.com/vmware/tdnf`
+ * @programs `tdnf`
  * @version `3.6.3` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.githubcomvmwaretdnf
  * console.log(pkg.name)        // "tdnf"
+ * console.log(pkg.programs)    // ["tdnf"]
  * console.log(pkg.versions[0]) // "3.6.3" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const tdnfPackage = {
   installCommand: 'launchpad install github.com/vmware/tdnf' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/vmware/tdnf -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/vmware/tdnf' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'tdnf',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

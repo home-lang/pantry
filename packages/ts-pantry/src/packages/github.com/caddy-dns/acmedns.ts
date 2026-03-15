@@ -2,6 +2,7 @@
  * **acmedns** - pkgx package
  *
  * @domain `github.com/caddy-dns/acmedns`
+ * @programs `caddy-acmedns`
  * @version `0.6.0` (3 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomcaddydnsacmedns
  * console.log(pkg.name)        // "acmedns"
+ * console.log(pkg.programs)    // ["caddy-acmedns"]
  * console.log(pkg.versions[0]) // "0.6.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const acmednsPackage = {
   installCommand: 'launchpad install github.com/caddy-dns/acmedns' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/caddy-dns/acmedns -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/caddy-dns/acmedns' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'caddy-acmedns',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

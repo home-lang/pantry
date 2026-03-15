@@ -2,6 +2,7 @@
  * **opencode.ai** - pkgx package
  *
  * @domain `opencode.ai`
+ * @programs `opencode`
  * @version `1.2.26` (508 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.opencodeai
  * console.log(pkg.name)        // "opencode.ai"
+ * console.log(pkg.programs)    // ["opencode"]
  * console.log(pkg.versions[0]) // "1.2.26" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const opencodeaiPackage = {
   installCommand: 'launchpad install opencode.ai' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opencode.ai -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install opencode.ai' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'opencode',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

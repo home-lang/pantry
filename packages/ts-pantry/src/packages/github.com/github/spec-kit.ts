@@ -2,6 +2,7 @@
  * **spec-kit** - pkgx package
  *
  * @domain `github.com/github/spec-kit`
+ * @programs `specify`
  * @version `0.3.0` (75 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.githubcomgithubspeckit
  * console.log(pkg.name)        // "spec-kit"
+ * console.log(pkg.programs)    // ["specify"]
  * console.log(pkg.versions[0]) // "0.3.0" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const speckitPackage = {
   installCommand: 'launchpad install github.com/github/spec-kit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/github/spec-kit -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/github/spec-kit' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'specify',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

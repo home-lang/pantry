@@ -2,6 +2,7 @@
  * **landrun** - pkgx package
  *
  * @domain `github.com/Zouuup/landrun`
+ * @programs `landrun`
  * @version `0.1.14` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomzouuuplandrun
  * console.log(pkg.name)        // "landrun"
+ * console.log(pkg.programs)    // ["landrun"]
  * console.log(pkg.versions[0]) // "0.1.14" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const landrunPackage = {
   installCommand: 'launchpad install github.com/Zouuup/landrun' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Zouuup/landrun -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/Zouuup/landrun' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'landrun',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

@@ -2,6 +2,7 @@
  * **meilisearch** - pkgx package
  *
  * @domain `meilisearch.com`
+ * @programs `meilisearch`
  *
  * @install `launchpad install meilisearch.com`
  *
@@ -11,6 +12,7 @@
  *
  * const pkg = pantry.meilisearchcom
  * console.log(pkg.name)        // "meilisearch"
+ * console.log(pkg.programs)    // ["meilisearch"]
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/meilisearch-com.md
@@ -39,7 +41,13 @@ export const meilisearchcomPackage = {
   installCommand: 'launchpad install meilisearch.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +meilisearch.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install meilisearch.com' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'meilisearch',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

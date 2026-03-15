@@ -2,6 +2,7 @@
  * **snipkit** - pkgx package
  *
  * @domain `github.com/lemoony/snipkit`
+ * @programs `snipkit`
  * @version `1.8.1` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomlemoonysnipkit
  * console.log(pkg.name)        // "snipkit"
+ * console.log(pkg.programs)    // ["snipkit"]
  * console.log(pkg.versions[0]) // "1.8.1" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const snipkitPackage = {
   installCommand: 'launchpad install github.com/lemoony/snipkit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/lemoony/snipkit -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/lemoony/snipkit' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'snipkit',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

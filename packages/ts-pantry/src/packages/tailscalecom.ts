@@ -2,6 +2,7 @@
  * **tailscale** - pkgx package
  *
  * @domain `tailscale.com`
+ * @programs `tailscale`, `tailscaled`
  * @version `1.94.2` (14 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.tailscalecom
  * console.log(pkg.name)        // "tailscale"
+ * console.log(pkg.programs)    // ["tailscale", "tailscaled"]
  * console.log(pkg.versions[0]) // "1.94.2" (latest)
  * ```
  *
@@ -43,7 +45,14 @@ export const tailscalecomPackage = {
   installCommand: 'launchpad install tailscale.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tailscale.com -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install tailscale.com' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'tailscale',
+    'tailscaled',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

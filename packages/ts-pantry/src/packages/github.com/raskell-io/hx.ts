@@ -2,6 +2,7 @@
  * **hx** - pkgx package
  *
  * @domain `github.com/raskell-io/hx`
+ * @programs `hx`
  * @version `0.6.0` (5 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomraskelliohx
  * console.log(pkg.name)        // "hx"
+ * console.log(pkg.programs)    // ["hx"]
  * console.log(pkg.versions[0]) // "0.6.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const hxPackage = {
   installCommand: 'launchpad install github.com/raskell-io/hx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/raskell-io/hx -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/raskell-io/hx' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'hx',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

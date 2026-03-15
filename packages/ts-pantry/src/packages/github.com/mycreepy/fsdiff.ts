@@ -2,6 +2,7 @@
  * **fsdiff** - pkgx package
  *
  * @domain `github.com/mycreepy/fsdiff`
+ * @programs `fsdiff`
  * @version `0.5.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcommycreepyfsdiff
  * console.log(pkg.name)        // "fsdiff"
+ * console.log(pkg.programs)    // ["fsdiff"]
  * console.log(pkg.versions[0]) // "0.5.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const fsdiffPackage = {
   installCommand: 'launchpad install github.com/mycreepy/fsdiff' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mycreepy/fsdiff -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/mycreepy/fsdiff' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'fsdiff',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

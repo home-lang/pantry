@@ -2,6 +2,7 @@
  * **cargox** - pkgx package
  *
  * @domain `pkgx.sh/cargox`
+ * @programs `cargox`
  * @version `0.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.pkgxshcargox
  * console.log(pkg.name)        // "cargox"
+ * console.log(pkg.programs)    // ["cargox"]
  * console.log(pkg.versions[0]) // "0.1.0" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const pkgxshcargoxPackage = {
   installCommand: 'launchpad install pkgx.sh/cargox' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh/cargox -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pkgx.sh/cargox' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'cargox',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

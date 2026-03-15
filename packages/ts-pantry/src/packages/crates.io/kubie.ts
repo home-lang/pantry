@@ -2,6 +2,7 @@
  * **kubie** - pkgx package
  *
  * @domain `crates.io/kubie`
+ * @programs `kubie`
  * @version `0.26.1` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.cratesiokubie
  * console.log(pkg.name)        // "kubie"
+ * console.log(pkg.programs)    // ["kubie"]
  * console.log(pkg.versions[0]) // "0.26.1" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const cratesiokubiePackage = {
   installCommand: 'launchpad install crates.io/kubie' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/kubie -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install crates.io/kubie' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'kubie',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

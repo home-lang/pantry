@@ -2,6 +2,7 @@
  * **pi** - pkgx package
  *
  * @domain `pi.dev`
+ * @programs `pi`, `pi-init`
  * @version `0.58.1` (12 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.pidev
  * console.log(pkg.name)        // "pi"
+ * console.log(pkg.programs)    // ["pi", "pi-init"]
  * console.log(pkg.versions[0]) // "0.58.1" (latest)
  * ```
  *
@@ -44,7 +46,14 @@ export const pidevPackage = {
   installCommand: 'launchpad install pi.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pi.dev -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install pi.dev' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'pi',
+    'pi-init',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

@@ -2,6 +2,7 @@
  * **kamal-deploy** - pkgx package
  *
  * @domain `kamal-deploy.org`
+ * @programs `kamal`
  * @version `2.10.1` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.kamaldeployorg
  * console.log(pkg.name)        // "kamal-deploy"
+ * console.log(pkg.programs)    // ["kamal"]
  * console.log(pkg.versions[0]) // "2.10.1" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const kamaldeployorgPackage = {
   installCommand: 'launchpad install kamal-deploy.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kamal-deploy.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install kamal-deploy.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'kamal',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

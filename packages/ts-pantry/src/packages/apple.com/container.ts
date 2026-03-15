@@ -2,6 +2,7 @@
  * **container** - pkgx package
  *
  * @domain `apple.com/container`
+ * @programs `container`, `container-apiserver`
  * @version `0.10.0` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.applecomcontainer
  * console.log(pkg.name)        // "container"
+ * console.log(pkg.programs)    // ["container", "container-apiserver"]
  * console.log(pkg.versions[0]) // "0.10.0" (latest)
  * ```
  *
@@ -42,7 +44,14 @@ export const applecomcontainerPackage = {
   installCommand: 'launchpad install apple.com/container' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apple.com/container -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install apple.com/container' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'container',
+    'container-apiserver',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

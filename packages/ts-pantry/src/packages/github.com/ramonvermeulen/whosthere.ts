@@ -2,6 +2,7 @@
  * **whosthere** - pkgx package
  *
  * @domain `github.com/ramonvermeulen/whosthere`
+ * @programs `whosthere`
  * @version `0.6.1` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomramonvermeulenwhosthere
  * console.log(pkg.name)        // "whosthere"
+ * console.log(pkg.programs)    // ["whosthere"]
  * console.log(pkg.versions[0]) // "0.6.1" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const whostherePackage = {
   installCommand: 'launchpad install github.com/ramonvermeulen/whosthere' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ramonvermeulen/whosthere -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/ramonvermeulen/whosthere' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'whosthere',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

@@ -2,6 +2,7 @@
  * **openclaw** - pkgx package
  *
  * @domain `github.com/openclaw/openclaw`
+ * @programs `openclaw`, `openclaw-init`
  * @version `2026.3.13` (9 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.githubcomopenclawopenclaw
  * console.log(pkg.name)        // "openclaw"
+ * console.log(pkg.programs)    // ["openclaw", "openclaw-init"]
  * console.log(pkg.versions[0]) // "2026.3.13" (latest)
  * ```
  *
@@ -44,7 +46,14 @@ export const openclawPackage = {
   installCommand: 'launchpad install github.com/openclaw/openclaw' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/openclaw/openclaw -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/openclaw/openclaw' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'openclaw',
+    'openclaw-init',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

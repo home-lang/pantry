@@ -2,6 +2,7 @@
  * **pup** - pkgx package
  *
  * @domain `github.com/gromgit/pup`
+ * @programs `pup`
  * @version `0.4.2` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomgromgitpup
  * console.log(pkg.name)        // "pup"
+ * console.log(pkg.programs)    // ["pup"]
  * console.log(pkg.versions[0]) // "0.4.2" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const pupPackage = {
   installCommand: 'launchpad install github.com/gromgit/pup' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/gromgit/pup -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/gromgit/pup' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'pup',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

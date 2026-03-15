@@ -2,6 +2,7 @@
  * **nullclaw** - pkgx package
  *
  * @domain `github.com/nullclaw/nullclaw`
+ * @programs `nullclaw`, `nullclaw-init`
  * @version `2026.3.14` (14 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.githubcomnullclawnullclaw
  * console.log(pkg.name)        // "nullclaw"
+ * console.log(pkg.programs)    // ["nullclaw", "nullclaw-init"]
  * console.log(pkg.versions[0]) // "2026.3.14" (latest)
  * ```
  *
@@ -44,7 +46,14 @@ export const nullclawPackage = {
   installCommand: 'launchpad install github.com/nullclaw/nullclaw' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/nullclaw/nullclaw -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/nullclaw/nullclaw' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'nullclaw',
+    'nullclaw-init',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

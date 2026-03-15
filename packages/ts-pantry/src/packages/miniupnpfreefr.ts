@@ -2,6 +2,7 @@
  * **miniupnp.free.fr** - pkgx package
  *
  * @domain `miniupnp.free.fr`
+ * @programs `external-ip`, `upnp-listdevices`, `upnpc`
  * @version `2.3.3` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.miniupnpfreefr
  * console.log(pkg.name)        // "miniupnp.free.fr"
+ * console.log(pkg.programs)    // ["external-ip", "upnp-listdevices", ...]
  * console.log(pkg.versions[0]) // "2.3.3" (latest)
  * ```
  *
@@ -42,7 +44,15 @@ export const miniupnpfreefrPackage = {
   installCommand: 'launchpad install miniupnp.free.fr' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +miniupnp.free.fr -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install miniupnp.free.fr' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'external-ip',
+    'upnp-listdevices',
+    'upnpc',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

@@ -2,6 +2,7 @@
  * **codex** - pkgx package
  *
  * @domain `openai.com/codex`
+ * @programs `codex`, `codex-exec`, `codex-tui`, `md-events`
  * @version `0.114.0` (69 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.openaicomcodex
  * console.log(pkg.name)        // "codex"
+ * console.log(pkg.programs)    // ["codex", "codex-exec", ...]
  * console.log(pkg.versions[0]) // "0.114.0" (latest)
  * ```
  *
@@ -43,7 +45,16 @@ export const openaicomcodexPackage = {
   installCommand: 'launchpad install openai.com/codex' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openai.com/codex -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install openai.com/codex' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'codex',
+    'codex-exec',
+    'codex-tui',
+    'md-events',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

@@ -2,6 +2,7 @@
  * **cli** - pkgx package
  *
  * @domain `kiro.dev/cli`
+ * @programs `kiro-cli`
  * @version `1.27.2` (4 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.kirodevcli
  * console.log(pkg.name)        // "cli"
+ * console.log(pkg.programs)    // ["kiro-cli"]
  * console.log(pkg.versions[0]) // "1.27.2" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const kirodevcliPackage = {
   installCommand: 'launchpad install kiro.dev/cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kiro.dev/cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install kiro.dev/cli' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'kiro-cli',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

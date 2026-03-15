@@ -2,6 +2,7 @@
  * **dnf5** - pkgx package
  *
  * @domain `rpm.org/dnf5`
+ * @programs `dnf5`
  * @version `5.4.0.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.rpmorgdnf5
  * console.log(pkg.name)        // "dnf5"
+ * console.log(pkg.programs)    // ["dnf5"]
  * console.log(pkg.versions[0]) // "5.4.0.0" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const rpmorgdnf5Package = {
   installCommand: 'launchpad install rpm.org/dnf5' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/dnf5 -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install rpm.org/dnf5' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'dnf5',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

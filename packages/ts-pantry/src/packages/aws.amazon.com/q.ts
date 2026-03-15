@@ -2,6 +2,7 @@
  * **q** - pkgx package
  *
  * @domain `aws.amazon.com/q`
+ * @programs `q`
  * @version `1.19.7` (9 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.awsamazoncomq
  * console.log(pkg.name)        // "q"
+ * console.log(pkg.programs)    // ["q"]
  * console.log(pkg.versions[0]) // "1.19.7" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const awsamazoncomqPackage = {
   installCommand: 'launchpad install aws.amazon.com/q' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aws.amazon.com/q -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install aws.amazon.com/q' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'q',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

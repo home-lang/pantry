@@ -2,6 +2,7 @@
  * **oci2git** - pkgx package
  *
  * @domain `github.com/Virviil/oci2git`
+ * @programs `oci2git`
  * @version `0.3.0` (5 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.githubcomvirviiloci2git
  * console.log(pkg.name)        // "oci2git"
+ * console.log(pkg.programs)    // ["oci2git"]
  * console.log(pkg.versions[0]) // "0.3.0" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const oci2gitPackage = {
   installCommand: 'launchpad install github.com/Virviil/oci2git' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Virviil/oci2git -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/Virviil/oci2git' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'oci2git',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

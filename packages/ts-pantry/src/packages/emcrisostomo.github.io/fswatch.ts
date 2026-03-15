@@ -2,6 +2,7 @@
  * **fswatch** - pkgx package
  *
  * @domain `emcrisostomo.github.io/fswatch`
+ * @programs `fswatch`
  * @version `1.18.3` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.emcrisostomogithubiofswatch
  * console.log(pkg.name)        // "fswatch"
+ * console.log(pkg.programs)    // ["fswatch"]
  * console.log(pkg.versions[0]) // "1.18.3" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const emcrisostomogithubiofswatchPackage = {
   installCommand: 'launchpad install emcrisostomo.github.io/fswatch' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +emcrisostomo.github.io/fswatch -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install emcrisostomo.github.io/fswatch' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'fswatch',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

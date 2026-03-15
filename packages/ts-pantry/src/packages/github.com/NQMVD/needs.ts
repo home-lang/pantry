@@ -2,6 +2,7 @@
  * **needs** - pkgx package
  *
  * @domain `github.com/NQMVD/needs`
+ * @programs `needs`
  * @version `0.8.0` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.githubcomnqmvdneeds
  * console.log(pkg.name)        // "needs"
+ * console.log(pkg.programs)    // ["needs"]
  * console.log(pkg.versions[0]) // "0.8.0" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const needsPackage = {
   installCommand: 'launchpad install github.com/NQMVD/needs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/NQMVD/needs -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/NQMVD/needs' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'needs',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

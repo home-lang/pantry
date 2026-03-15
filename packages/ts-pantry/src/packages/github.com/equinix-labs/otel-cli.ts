@@ -2,6 +2,7 @@
  * **otel-cli** - pkgx package
  *
  * @domain `github.com/equinix-labs/otel-cli`
+ * @programs `otel-cli`
  * @version `0.4.5` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomequinixlabsotelcli
  * console.log(pkg.name)        // "otel-cli"
+ * console.log(pkg.programs)    // ["otel-cli"]
  * console.log(pkg.versions[0]) // "0.4.5" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const otelcliPackage = {
   installCommand: 'launchpad install github.com/equinix-labs/otel-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/equinix-labs/otel-cli -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/equinix-labs/otel-cli' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'otel-cli',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

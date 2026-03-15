@@ -2,6 +2,7 @@
  * **next** - pkgx package
  *
  * @domain `vercel.com/next`
+ * @programs `next`
  * @version `16.1.6` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.vercelcomnext
  * console.log(pkg.name)        // "next"
+ * console.log(pkg.programs)    // ["next"]
  * console.log(pkg.versions[0]) // "16.1.6" (latest)
  * ```
  *
@@ -44,7 +46,13 @@ export const vercelcomnextPackage = {
   installCommand: 'launchpad install vercel.com/next' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vercel.com/next -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install vercel.com/next' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'next',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

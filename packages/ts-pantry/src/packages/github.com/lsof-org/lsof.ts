@@ -2,6 +2,7 @@
  * **lsof** - pkgx package
  *
  * @domain `github.com/lsof-org/lsof`
+ * @programs `lsof`
  * @version `4.99.6` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcomlsoforglsof
  * console.log(pkg.name)        // "lsof"
+ * console.log(pkg.programs)    // ["lsof"]
  * console.log(pkg.versions[0]) // "4.99.6" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const lsofPackage = {
   installCommand: 'launchpad install github.com/lsof-org/lsof' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/lsof-org/lsof -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/lsof-org/lsof' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'lsof',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

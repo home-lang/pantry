@@ -2,6 +2,7 @@
  * **capnproto** - pkgx package
  *
  * @domain `capnproto.org`
+ * @programs `capnp`, `capnpc`, `capnpc-c++`, `capnpc-capnp`
  * @version `1.3.0` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.capnprotoorg
  * console.log(pkg.name)        // "capnproto"
+ * console.log(pkg.programs)    // ["capnp", "capnpc", ...]
  * console.log(pkg.versions[0]) // "1.3.0" (latest)
  * ```
  *
@@ -44,7 +46,16 @@ export const capnprotoorgPackage = {
   installCommand: 'launchpad install capnproto.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +capnproto.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install capnproto.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'capnp',
+    'capnpc',
+    'capnpc-c++',
+    'capnpc-capnp',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.

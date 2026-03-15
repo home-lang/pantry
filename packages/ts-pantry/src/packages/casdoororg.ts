@@ -2,6 +2,7 @@
  * **casdoor** - pkgx package
  *
  * @domain `casdoor.org`
+ * @programs `casdoor`
  * @version `2.355.0` (220 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.casdoororg
  * console.log(pkg.name)        // "casdoor"
+ * console.log(pkg.programs)    // ["casdoor"]
  * console.log(pkg.versions[0]) // "2.355.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const casdoororgPackage = {
   installCommand: 'launchpad install casdoor.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +casdoor.org -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install casdoor.org' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'casdoor',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

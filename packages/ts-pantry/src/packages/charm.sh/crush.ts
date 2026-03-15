@@ -2,6 +2,7 @@
  * **crush** - pkgx package
  *
  * @domain `charm.sh/crush`
+ * @programs `crush`
  * @version `0.49.0` (44 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.charmshcrush
  * console.log(pkg.name)        // "crush"
+ * console.log(pkg.programs)    // ["crush"]
  * console.log(pkg.versions[0]) // "0.49.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const charmshcrushPackage = {
   installCommand: 'launchpad install charm.sh/crush' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +charm.sh/crush -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install charm.sh/crush' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'crush',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

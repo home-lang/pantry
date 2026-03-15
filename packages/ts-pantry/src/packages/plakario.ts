@@ -2,6 +2,7 @@
  * **plakar** - pkgx package
  *
  * @domain `plakar.io`
+ * @programs `plakar`
  * @version `1.0.6` (5 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.plakario
  * console.log(pkg.name)        // "plakar"
+ * console.log(pkg.programs)    // ["plakar"]
  * console.log(pkg.versions[0]) // "1.0.6" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const plakarioPackage = {
   installCommand: 'launchpad install plakar.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +plakar.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install plakar.io' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'plakar',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

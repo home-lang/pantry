@@ -2,6 +2,7 @@
  * **navi** - pkgx package
  *
  * @domain `github.com/denisidoro/navi`
+ * @programs `navi`
  * @version `2.24.0` (1 versions available)
  * @versions From newest version to oldest.
  *
@@ -13,6 +14,7 @@
  *
  * const pkg = pantry.githubcomdenisidoronavi
  * console.log(pkg.name)        // "navi"
+ * console.log(pkg.programs)    // ["navi"]
  * console.log(pkg.versions[0]) // "2.24.0" (latest)
  * ```
  *
@@ -42,7 +44,13 @@ export const naviPackage = {
   installCommand: 'launchpad install github.com/denisidoro/navi' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/denisidoro/navi -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/denisidoro/navi' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'navi',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   buildDependencies: [] as const,

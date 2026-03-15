@@ -2,6 +2,7 @@
  * **ipfscluster** - pkgx package
  *
  * @domain `ipfscluster.io`
+ * @programs `ipfs-cluster-follow`, `ipfs-cluster-ctl`, `ipfs-cluster-service`
  * @version `1.1.5` (2 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.ipfsclusterio
  * console.log(pkg.name)        // "ipfscluster"
+ * console.log(pkg.programs)    // ["ipfs-cluster-follow", "ipfs-cluster-ctl", ...]
  * console.log(pkg.versions[0]) // "1.1.5" (latest)
  * ```
  *
@@ -43,7 +45,15 @@ export const ipfsclusterioPackage = {
   installCommand: 'launchpad install ipfscluster.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ipfscluster.io -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install ipfscluster.io' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'ipfs-cluster-follow',
+    'ipfs-cluster-ctl',
+    'ipfs-cluster-service',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

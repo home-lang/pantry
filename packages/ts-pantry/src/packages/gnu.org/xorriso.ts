@@ -1,9 +1,13 @@
 /**
- * **xorriso** - pkgx package
+ * **xorriso** - ISO 9660 Rock Ridge filesystem manipulator
  *
  * @domain `gnu.org/xorriso`
+ * @programs `xorriso`, `xorrisofs`, `xorrecord`, `osirrox`
+ * @version `1.5.6` (6 versions available)
+ * @versions From newest version to oldest.
  *
  * @install `launchpad install gnu.org/xorriso`
+ * @homepage https://www.gnu.org/software/xorriso/
  * @dependencies `zlib.net`, `sourceware.org/bzip2`, `gnu.org/readline`
  *
  * @example
@@ -12,6 +16,9 @@
  *
  * const pkg = pantry.gnuorgxorriso
  * console.log(pkg.name)        // "xorriso"
+ * console.log(pkg.description) // "ISO 9660 Rock Ridge filesystem manipulator"
+ * console.log(pkg.programs)    // ["xorriso", "xorrisofs", ...]
+ * console.log(pkg.versions[0]) // "1.5.6" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/gnu-org/xorriso.md
@@ -40,6 +47,10 @@ export const gnuorgxorrisoPackage = {
   installCommand: 'launchpad install gnu.org/xorriso' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/xorriso -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install gnu.org/xorriso' as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
   programs: [
     'xorriso',
     'xorrisofs',
@@ -57,6 +68,10 @@ export const gnuorgxorrisoPackage = {
     'gnu.org/readline',
   ] as const,
   buildDependencies: [] as const,
+  /**
+  * Available versions from newest to oldest.
+  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  */
   versions: [
     '1.5.6',
     '1.5.4',

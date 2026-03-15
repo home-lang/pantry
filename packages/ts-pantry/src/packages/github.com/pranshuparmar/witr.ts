@@ -2,6 +2,7 @@
  * **witr** - pkgx package
  *
  * @domain `github.com/pranshuparmar/witr`
+ * @programs `witr`
  * @version `0.3.0` (3 versions available)
  * @versions From newest version to oldest.
  *
@@ -14,6 +15,7 @@
  *
  * const pkg = pantry.githubcompranshuparmarwitr
  * console.log(pkg.name)        // "witr"
+ * console.log(pkg.programs)    // ["witr"]
  * console.log(pkg.versions[0]) // "0.3.0" (latest)
  * ```
  *
@@ -43,7 +45,13 @@ export const witrPackage = {
   installCommand: 'launchpad install github.com/pranshuparmar/witr' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/pranshuparmar/witr -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install github.com/pranshuparmar/witr' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'witr',
+  ] as const,
   companions: [] as const,
   dependencies: [] as const,
   /**

@@ -2,6 +2,7 @@
  * **puzzles** - pkgx package
  *
  * @domain `chiark.greenend.org.uk/puzzles`
+ * @programs `puzzles`, `blackbox`, `bridges`, `cube`, `dominosa`, ... (+36 more)
  * @version `20260309.0.0` (6 versions available)
  * @versions From newest version to oldest.
  *
@@ -15,6 +16,7 @@
  *
  * const pkg = pantry.chiarkgreenendorgukpuzzles
  * console.log(pkg.name)        // "puzzles"
+ * console.log(pkg.programs)    // ["puzzles", "blackbox", ...]
  * console.log(pkg.versions[0]) // "20260309.0.0" (latest)
  * ```
  *
@@ -44,7 +46,53 @@ export const chiarkgreenendorgukpuzzlesPackage = {
   installCommand: 'launchpad install chiark.greenend.org.uk/puzzles' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +chiark.greenend.org.uk/puzzles -- $SHELL -i' as const,
   launchpadInstallCommand: 'launchpad install chiark.greenend.org.uk/puzzles' as const,
-  programs: [] as const,
+  /**
+  * Executable programs provided by this package.
+  * These can be run after installation.
+  */
+  programs: [
+    'puzzles',
+    'blackbox',
+    'bridges',
+    'cube',
+    'dominosa',
+    'fifteen',
+    'filling',
+    'flip',
+    'flood',
+    'galaxies',
+    'guess',
+    'inertia',
+    'keen',
+    'lightup',
+    'loopy',
+    'magnets',
+    'map',
+    'mines',
+    'mosaic',
+    'net',
+    'netslide',
+    'palisade',
+    'pattern',
+    'pearl',
+    'pegs',
+    'range',
+    'rect',
+    'samegame',
+    'signpost',
+    'singles',
+    'sixteen',
+    'slant',
+    'solo',
+    'tents',
+    'towers',
+    'tracks',
+    'twiddle',
+    'undead',
+    'unequal',
+    'unruly',
+    'untangle',
+  ] as const,
   companions: [] as const,
   /**
   * Runtime dependencies for this package.
