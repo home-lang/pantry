@@ -26,7 +26,7 @@
     "typecheck": "bun --bun tsc --noEmit"
   },
   "dependencies": {
-    "@cwcss/crosswind": "^0.1.6"
+    "@stacksjs/stx": "^0.2.9"
   },
   "devDependencies": {
     "bun-types": "latest",

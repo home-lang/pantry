@@ -1,7 +1,3 @@
-<script server>
-  const error = props.error || ''
-</script>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

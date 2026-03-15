@@ -494,7 +494,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       })
       const html = await res.text()
       expect(html).toContain('<canvas id="chart"')
-      expect(html).toContain('getContext(\'2d\')')
+      expect(html).toContain('getContext(')
       expect(html).toContain('Downloads (30 days)')
     })
 

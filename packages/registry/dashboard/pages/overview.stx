@@ -1,9 +1,4 @@
 <script server>
-  const packages = props.packages || []
-  const page = props.page || 1
-  const perPage = props.perPage || 25
-  const qs = props.qs || ''
-  const qsAmp = props.qsAmp || ''
   const totalPackages = packages.length
   const totalPages = Math.max(1, Math.ceil(totalPackages / perPage))
   const startIdx = (page - 1) * perPage

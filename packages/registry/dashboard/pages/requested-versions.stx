@@ -1,15 +1,8 @@
 <script server>
-  const allRequests = props.requests || []
-  const filter = props.filter || 'known'
-  const qs = props.qs || ''
-  const qsAmp = props.qsAmp || ''
+  const knownRequests = requests.filter(r => r.isKnownVersion)
+  const unknownRequests = requests.filter(r => !r.isKnownVersion)
+  const filtered = filter === 'known' ? knownRequests : filter === 'unknown' ? unknownRequests : requests
 
-  const knownRequests = allRequests.filter(r => r.isKnownVersion)
-  const unknownRequests = allRequests.filter(r => !r.isKnownVersion)
-  const filtered = filter === 'known' ? knownRequests : filter === 'unknown' ? unknownRequests : allRequests
-
-  const page = props.page || 1
-  const perPage = props.perPage || 25
   const totalFiltered = filtered.length
   const totalPages = Math.max(1, Math.ceil(totalFiltered / perPage))
   const startIdx = (page - 1) * perPage
@@ -70,7 +63,7 @@
       </div>
       <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <div class="text-sm text-slate-400 mb-1">All Requests</div>
-        <div class="text-2xl font-bold">{{ allRequests.length }}</div>
+        <div class="text-2xl font-bold">{{ requests.length }}</div>
         <div class="text-xs text-slate-500 mt-1">{{ (totalKnownCount + totalUnknownCount).toLocaleString() }} total hits</div>
       </div>
     </div>

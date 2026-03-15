@@ -1,7 +1,4 @@
 <script server>
-  const packageName = props.packageName || ''
-  const stats = props.stats || {}
-  const timeline = props.timeline || []
   const totalDownloads = stats.totalDownloads || 0
   const lastDownload = stats.lastDownload ? new Date(stats.lastDownload).toLocaleDateString() : 'N/A'
   const versions = stats.versionDownloads || {}
@@ -10,9 +7,6 @@
 
   const sortedVersions = Object.entries(versions)
     .sort((a, b) => Number(b[1]) - Number(a[1]))
-
-  const qs = props.qs || ''
-  const qsAmp = props.qsAmp || ''
 
   const chartData = JSON.stringify(timeline.map(d => ({
     date: d.date,

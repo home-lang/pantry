@@ -6,6 +6,10 @@ on:
     paths:
       - 'packages/registry/src/**'
       - 'packages/registry/dashboard/**'
+      - 'packages/registry/site/**'
+      - 'public/install.sh'
+      - 'docs/**'
+      - '.config/bunpress.ts'
   workflow_dispatch:
 
 jobs:
@@ -36,8 +40,15 @@ jobs:
 
             sudo git checkout -- bun.lock 2>/dev/null || true
             sudo git pull origin main
-            cd packages/registry
             sudo /root/.bun/bin/bun install
+
+            # Build bunpress docs (served at /docs)
+            sudo /root/.bun/bin/bun run build:docs 2>/dev/null || echo "::warning::Docs build skipped"
+
+            # Stop old site service if it exists (merged into registry)
+            sudo systemctl stop pantry-site 2>/dev/null || true
+            sudo systemctl disable pantry-site 2>/dev/null || true
+
             sudo systemctl restart pantry-registry
             sleep 2
             curl -sf http://localhost:3000/health || echo "Health check failed"

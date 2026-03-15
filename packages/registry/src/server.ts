@@ -6,226 +6,7 @@ import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from '
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
 import { S3Client } from './storage/aws-client'
-import { CSSGenerator, defaultConfig } from '@cwcss/crosswind'
-
-/**
- * Lightweight .stx template renderer — processes server scripts, directives and expressions.
- * Handles: <script server>, {{ expr }}, {!! expr !!}, @if/@else/@endif, @foreach/@endforeach, @for/@endfor
- */
-async function stxRender(filePath: string, props: Record<string, unknown> = {}): Promise<string> {
-  const raw = await Bun.file(filePath).text()
-
-  // 1. Extract and evaluate <script server> blocks to build context
-  const ctx: Record<string, any> = { props, ...props }
-  const serverScriptRe = /<script\s+server\b[^>]*>([\s\S]*?)<\/script>/gi
-  let templateContent = raw
-  let match: RegExpExecArray | null
-  const serverBlocks: string[] = []
-  while ((match = serverScriptRe.exec(raw)) !== null) {
-    serverBlocks.push(match[1])
-  }
-  // Remove server script tags from output
-  templateContent = raw.replace(serverScriptRe, '')
-
-  // Build evaluation function body from server blocks
-  if (serverBlocks.length > 0) {
-    const script = serverBlocks.join('\n')
-    // Extract variable names assigned with const/let/var
-    const varNames = new Set<string>()
-    for (const m of script.matchAll(/(?:const|let|var)\s+(\w+)\s*=/g)) {
-      varNames.add(m[1])
-    }
-    // Execute the script in a Function, returning declared variables
-    const returnObj = [...varNames].map(v => `${v}`).join(', ')
-    const fn = new Function('props', `${script}\nreturn { ${returnObj} }`)
-    try {
-      const result = fn(props)
-      Object.assign(ctx, result)
-    }
-    catch { /* ignore script errors, variables stay as defaults from props */ }
-  }
-
-  // 2. Process directives
-  templateContent = processBlock(templateContent, ctx)
-
-  // 3. Generate and inject Crosswind CSS from Tailwind utility classes
-  templateContent = injectCrosswindCSS(templateContent)
-
-  return templateContent
-}
-
-/**
- * Extract Tailwind class names from HTML, generate CSS via Crosswind, and inject <style> into <head>
- */
-function injectCrosswindCSS(html: string): string {
-  const classRegex = /class\s*=\s*["']([^"']+)["']/gi
-  const classNames = new Set<string>()
-  let m: RegExpExecArray | null
-  while ((m = classRegex.exec(html)) !== null) {
-    for (const cls of m[1].split(/\s+/)) {
-      if (cls) classNames.add(cls)
-    }
-  }
-  if (classNames.size === 0) return html
-
-  const gen = new CSSGenerator(defaultConfig)
-  for (const cls of classNames) {
-    try { gen.generate(cls) }
-    catch { /* skip unknown classes */ }
-  }
-  const css = gen.toCSS(true, true)
-  if (!css) return html
-
-  const styleTag = `<style data-crosswind="generated">${css}</style>`
-  if (html.includes('</head>')) {
-    return html.replace('</head>', `${styleTag}\n</head>`)
-  }
-  return `${styleTag}\n${html}`
-}
-
-function processBlock(template: string, ctx: Record<string, any>): string {
-  let output = ''
-  const lines = template.split('\n')
-  let i = 0
-
-  while (i < lines.length) {
-    const line = lines[i]
-    const trimmed = line.trim()
-
-    // @if (condition)
-    if (trimmed.startsWith('@if')) {
-      const condMatch = trimmed.match(/@if\s*\((.+)\)\s*$/)
-      if (condMatch) {
-        const { ifBody, elseBody, endIndex } = extractIfBlock(lines, i)
-        const condResult = evalExpr(condMatch[1], ctx)
-        output += processBlock(condResult ? ifBody : elseBody, ctx)
-        i = endIndex + 1
-        continue
-      }
-    }
-
-    // @foreach (array as item) or @foreach (array as item, index)
-    if (trimmed.startsWith('@foreach')) {
-      const foreachMatch = trimmed.match(/@foreach\s*\((\w+)\s+as\s+(\w+)(?:\s*,\s*(\w+))?\)/)
-      if (foreachMatch) {
-        const { body, endIndex } = extractBlock(lines, i, '@foreach', '@endforeach')
-        const arr = evalExpr(foreachMatch[1], ctx)
-        const itemName = foreachMatch[2]
-        const indexName = foreachMatch[3]
-        if (Array.isArray(arr)) {
-          for (let j = 0; j < arr.length; j++) {
-            const loopCtx = { ...ctx, [itemName]: arr[j] }
-            if (indexName) loopCtx[indexName] = j
-            output += processBlock(body, loopCtx)
-          }
-        }
-        i = endIndex + 1
-        continue
-      }
-    }
-
-    // @for (let i = ...; i <= ...; i++)
-    if (trimmed.startsWith('@for')) {
-      const { body, endIndex } = extractBlock(lines, i, '@for', '@endfor')
-      const forMatch = trimmed.match(/@for\s*\((.+)\)/)
-      if (forMatch) {
-        // Execute the for loop
-        const forExpr = forMatch[1]
-        const iterMatch = forExpr.match(/(?:let|var)\s+(\w+)\s*=\s*(.+?);\s*\1\s*([<>=!]+)\s*(.+?);\s*\1(\+\+|--)/)
-        if (iterMatch) {
-          const varName = iterMatch[1]
-          let current = Number(evalExpr(iterMatch[2], ctx))
-          const op = iterMatch[3]
-          const limit = Number(evalExpr(iterMatch[4], ctx))
-          const inc = iterMatch[5] === '++' ? 1 : -1
-          const check = (v: number) => {
-            if (op === '<=') return v <= limit
-            if (op === '<') return v < limit
-            if (op === '>=') return v >= limit
-            if (op === '>') return v > limit
-            return false
-          }
-          while (check(current)) {
-            const loopCtx = { ...ctx, [varName]: current }
-            output += processBlock(body, loopCtx)
-            current += inc
-          }
-        }
-      }
-      i = endIndex + 1
-      continue
-    }
-
-    // Regular line — process expressions
-    output += processExpressions(line, ctx) + '\n'
-    i++
-  }
-
-  return output
-}
-
-function extractIfBlock(lines: string[], startIdx: number): { ifBody: string, elseBody: string, endIndex: number } {
-  let depth = 0
-  let elseIdx = -1
-  for (let i = startIdx; i < lines.length; i++) {
-    const t = lines[i].trim()
-    if (t.startsWith('@if')) depth++
-    if (t === '@endif') {
-      depth--
-      if (depth === 0) {
-        const ifLines = lines.slice(startIdx + 1, elseIdx >= 0 ? elseIdx : i)
-        const elseLines = elseIdx >= 0 ? lines.slice(elseIdx + 1, i) : []
-        return { ifBody: ifLines.join('\n'), elseBody: elseLines.join('\n'), endIndex: i }
-      }
-    }
-    if (t === '@else' && depth === 1) elseIdx = i
-  }
-  return { ifBody: '', elseBody: '', endIndex: lines.length - 1 }
-}
-
-function extractBlock(lines: string[], startIdx: number, openTag: string, closeTag: string): { body: string, endIndex: number } {
-  let depth = 0
-  for (let i = startIdx; i < lines.length; i++) {
-    const t = lines[i].trim()
-    if (t.startsWith(openTag)) depth++
-    if (t.startsWith(closeTag)) {
-      depth--
-      if (depth === 0) {
-        return { body: lines.slice(startIdx + 1, i).join('\n'), endIndex: i }
-      }
-    }
-  }
-  return { body: '', endIndex: lines.length - 1 }
-}
-
-function processExpressions(line: string, ctx: Record<string, any>): string {
-  // {!! expr !!} — raw (unescaped) output
-  line = line.replace(/\{!!\s*(.+?)\s*!!\}/g, (_match, expr) => {
-    try { return String(evalExpr(expr, ctx)) }
-    catch { return '' }
-  })
-  // {{ expr }} — escaped output
-  line = line.replace(/\{\{\s*(.+?)\s*\}\}/g, (_match, expr) => {
-    try { return escapeHtml(String(evalExpr(expr, ctx))) }
-    catch { return '' }
-  })
-  return line
-}
-
-function evalExpr(expr: string, ctx: Record<string, any>): any {
-  const keys = Object.keys(ctx)
-  const values = Object.values(ctx)
-  const fn = new Function(...keys, `return (${expr})`)
-  return fn(...values)
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+import { renderTemplate } from '@stacksjs/stx'
 
 // Build domain→versions lookup from ts-pantry package metadata for version validation
 const _knownVersions = new Map<string, Set<string>>()
@@ -257,6 +38,60 @@ const __dirname = typeof import.meta.dirname === 'string'
   ? import.meta.dirname
   : dirname(fileURLToPath(import.meta.url))
 const DASHBOARD_DIR = resolve(__dirname, '../dashboard/pages')
+const SITE_DIR = resolve(__dirname, '../site/pages')
+const SITE_LAYOUT = resolve(SITE_DIR, 'layout.stx')
+const SITE_COMPONENTS = resolve(__dirname, '../site/components')
+
+/** Featured packages shown on the homepage */
+const FEATURED_PACKAGES = [
+  { domain: 'bun.sh', label: 'Bun', desc: 'JavaScript runtime & toolkit' },
+  { domain: 'curl.se', label: 'curl', desc: 'Command line data transfer' },
+  { domain: 'python.org', label: 'Python', desc: 'Programming language' },
+  { domain: 'nodejs.org', label: 'Node.js', desc: 'JavaScript runtime' },
+  { domain: 'go.dev', label: 'Go', desc: 'Programming language' },
+  { domain: 'ruby-lang.org', label: 'Ruby', desc: 'Programming language' },
+  { domain: 'cmake.org', label: 'CMake', desc: 'Build system generator' },
+  { domain: 'openssl.org', label: 'OpenSSL', desc: 'TLS/SSL toolkit' },
+  { domain: 'redis.io', label: 'Redis', desc: 'In-memory data store' },
+  { domain: 'postgresql.org', label: 'PostgreSQL', desc: 'Relational database' },
+  { domain: 'nginx.org', label: 'nginx', desc: 'Web server & reverse proxy' },
+  { domain: 'sqlite.org', label: 'SQLite', desc: 'Embedded SQL database' },
+  { domain: 'ffmpeg.org', label: 'FFmpeg', desc: 'Multimedia framework' },
+  { domain: 'rust-lang.org', label: 'Rust', desc: 'Systems programming language' },
+  { domain: 'deno.land', label: 'Deno', desc: 'Secure JavaScript runtime' },
+  { domain: 'git-scm.org', label: 'Git', desc: 'Version control system' },
+]
+
+// ============================================================================
+// Render helpers — uses @stacksjs/stx
+// ============================================================================
+
+async function renderSitePage(file: string, context: Record<string, unknown> = {}): Promise<string> {
+  const title = (context.title as string) || 'pantry'
+  return renderTemplate(resolve(SITE_DIR, file), {
+    context: { ...context, title },
+    layout: SITE_LAYOUT,
+    options: { componentsDir: SITE_COMPONENTS },
+    injectCSS: true,
+  })
+}
+
+async function renderDashboardPage(file: string, context: Record<string, unknown> = {}): Promise<string> {
+  return renderTemplate(resolve(DASHBOARD_DIR, file), {
+    context,
+    injectCSS: true,
+  })
+}
+
+function htmlResponse(html: string, status = 200): Response {
+  return new Response(html, {
+    status,
+    headers: {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'public, max-age=60',
+    },
+  })
+}
 
 const categorySlugMap: Record<string, AnalyticsCategory> = {
   'install': 'install',
@@ -348,6 +183,20 @@ export function createHandler(
     }
 
     try {
+      // CLI user-agent detection — serve install script for curl/wget/etc.
+      const ua = req.headers.get('user-agent') || ''
+      const isCLI = /^(curl|wget|httpie|fetch|libfetch|powershell)/i.test(ua) || !ua
+
+      if (isCLI && (path === '/' || path === '')) {
+        try {
+          const script = await Bun.file(resolve(__dirname, '../../../public/install.sh')).text()
+          return new Response(script, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
+        }
+        catch {
+          return new Response('Install script not found', { status: 404 })
+        }
+      }
+
       // Health check
       if (path === '/health') {
         return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
@@ -545,10 +394,48 @@ export function createHandler(
         }
       }
 
-      return Response.json(
-        { error: 'Not found' },
-        { status: 404, headers: corsHeaders },
-      )
+      // ================================================================
+      // Site routes — public pantry.dev pages
+      // ================================================================
+
+      // Homepage
+      if (path === '/' || path === '') {
+        return await handleSiteHome(binaryStorage)
+      }
+
+      // Search page (browser — returns HTML, not JSON)
+      if (path === '/site/search' || (path === '/search' && req.headers.get('accept')?.includes('text/html'))) {
+        const q = url.searchParams.get('q') || ''
+        return await handleSiteSearch(q, registry, binaryStorage)
+      }
+
+      // Package detail page
+      const sitePkgMatch = path.match(/^\/package\/(.+)$/)
+      if (sitePkgMatch) {
+        const name = decodeURIComponent(sitePkgMatch[1])
+        return await handleSitePackage(name, analyticsStorage, binaryStorage, registry)
+      }
+
+      // Docs — serve bunpress-built static docs
+      if (path === '/docs' || path.startsWith('/docs/')) {
+        return await handleDocs(path)
+      }
+
+      // Static pages
+      if (path === '/about') return htmlResponse(await renderSitePage('about.stx', { title: 'About' }))
+      if (path === '/privacy') return htmlResponse(await renderSitePage('privacy.stx', { title: 'Privacy Policy' }))
+      if (path === '/accessibility') return htmlResponse(await renderSitePage('accessibility.stx', { title: 'Accessibility' }))
+
+      // API 404 (JSON) for /api/* and /packages/* paths
+      if (path.startsWith('/api/') || path.startsWith('/packages/') || path.startsWith('/analytics/')) {
+        return Response.json(
+          { error: 'Not found' },
+          { status: 404, headers: corsHeaders },
+        )
+      }
+
+      // HTML 404 for everything else
+      return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/html' } })
     }
     catch (error) {
       console.error('Server error:', error)
@@ -1657,10 +1544,10 @@ async function handleDashboard(
           },
         })
       }
-      const html = await stxRender(`${DASHBOARD_DIR}/login.stx`, { error: 'Invalid token' })
+      const html = await renderDashboardPage('login.stx', { error: 'Invalid token' })
       return new Response(html, { status: 401, headers: htmlHeaders })
     }
-    const html = await stxRender(`${DASHBOARD_DIR}/login.stx`, {})
+    const html = await renderDashboardPage('login.stx', {})
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1699,7 +1586,7 @@ async function handleDashboard(
       analytics.getPackageStats(packageName),
       analytics.getDownloadTimeline(packageName, 30),
     ])
-    const html = await stxRender(`${DASHBOARD_DIR}/package.stx`, { packageName, stats, timeline, qs, qsAmp })
+    const html = await renderDashboardPage('package.stx', { packageName, stats, timeline, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1708,7 +1595,7 @@ async function handleDashboard(
     const allRequests = await analytics.getAllMissingVersionRequests(500)
     const filter = url.searchParams.get('filter') || 'known'
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await stxRender(`${DASHBOARD_DIR}/requested-versions.stx`, { requests: allRequests, filter, page, perPage: 25, qs, qsAmp })
+    const html = await renderDashboardPage('requested-versions.stx', { requests: allRequests, filter, page, perPage: 25, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1716,11 +1603,240 @@ async function handleDashboard(
   if (path === '/dashboard' || path === '/dashboard/') {
     const topPackages = await analytics.getTopPackages(100)
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await stxRender(`${DASHBOARD_DIR}/overview.stx`, { packages: topPackages, page, perPage: 25, qs, qsAmp })
+    const html = await renderDashboardPage('overview.stx', { packages: topPackages, page, perPage: 25, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
   return Response.json({ error: 'Not found' }, { status: 404, headers: noCacheHeaders })
+}
+
+// ============================================================================
+// Site route handlers
+// ============================================================================
+
+async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Promise<any> {
+  try {
+    if (!storage) return null
+    const buffer = await storage.getObject(`binaries/${domain}/metadata.json`)
+    return JSON.parse(Buffer.from(buffer).toString('utf-8'))
+  }
+  catch { return null }
+}
+
+async function handleSiteHome(binaryStorage?: BinaryStorage): Promise<Response> {
+  const metaResults = await Promise.allSettled(
+    FEATURED_PACKAGES.map(async (pkg) => {
+      const meta = await fetchPackageMetadata(pkg.domain, binaryStorage)
+      return {
+        ...pkg,
+        version: meta?.latestVersion || null,
+        versionCount: meta?.versions ? Object.keys(meta.versions).length : 0,
+      }
+    }),
+  )
+
+  const packages = metaResults.map((r, i) =>
+    r.status === 'fulfilled' ? r.value : { ...FEATURED_PACKAGES[i], version: null, versionCount: 0 },
+  )
+
+  const totalPackages = 500 // approximate
+  const html = await renderSitePage('index.stx', { packages, totalPackages })
+  return htmlResponse(html)
+}
+
+async function handleSiteSearch(query: string, registry: Registry, binaryStorage?: BinaryStorage): Promise<Response> {
+  let results: any[] = []
+  if (query) {
+    const searchResults = await registry.search(query, 50)
+    results = searchResults || []
+
+    const metaData = await fetchPackageMetadata(query, binaryStorage)
+    if (metaData && metaData.name) {
+      const exists = results.some((r: any) => r.name === metaData.name)
+      if (!exists) {
+        const latestVersion = metaData.latestVersion || ''
+        const latestData = metaData.versions?.[latestVersion] || {}
+        const platformKeys = Object.keys(latestData.platforms || {})
+        const platformLabels = platformKeys.map((p: string) => {
+          if (p.includes('darwin')) return 'macOS'
+          if (p.includes('linux')) return 'Linux'
+          return p
+        }).filter((v: string, i: number, a: string[]) => a.indexOf(v) === i)
+
+        results.unshift({
+          name: metaData.name,
+          version: latestVersion,
+          description: metaData.description || `${Object.keys(metaData.versions || {}).length} versions available`,
+          platforms: platformLabels,
+        })
+      }
+    }
+  }
+
+  const html = await renderSitePage('search.stx', { query, results, title: query ? `search: ${query}` : 'search' })
+  return htmlResponse(html)
+}
+
+async function handleSitePackage(
+  name: string,
+  analytics: AnalyticsStorage,
+  binaryStorage?: BinaryStorage,
+  registry?: Registry,
+): Promise<Response> {
+  const [meta, stats, timeline, pkgInfo] = await Promise.all([
+    fetchPackageMetadata(name, binaryStorage),
+    analytics.getPackageStats(name),
+    analytics.getDownloadTimeline(name, 30),
+    registry?.getPackage(name) ?? null,
+  ])
+
+  if (!meta && !pkgInfo) {
+    const html = await renderSitePage('package.stx', {
+      name,
+      notFound: true,
+      meta: null,
+      latestVersion: '',
+      versions: [],
+      platforms: [],
+      stats: null,
+      timeline: [],
+      title: `${name} - not found`,
+    })
+    return htmlResponse(html, 404)
+  }
+
+  if (meta) {
+    const versions = Object.keys(meta.versions || {})
+    const latestVersion = meta.latestVersion || versions[0] || 'unknown'
+    const latestData = meta.versions?.[latestVersion] || {}
+    const platforms = Object.keys(latestData.platforms || {})
+
+    const html = await renderSitePage('package.stx', {
+      name,
+      notFound: false,
+      meta,
+      latestVersion,
+      versions,
+      platforms,
+      stats: stats || { totalDownloads: 0, versionDownloads: {} },
+      timeline: timeline || [],
+      title: name,
+    })
+    return htmlResponse(html)
+  }
+
+  const html = await renderSitePage('package.stx', {
+    name,
+    notFound: false,
+    meta: pkgInfo,
+    latestVersion: (pkgInfo as any).version || 'unknown',
+    versions: (pkgInfo as any).version ? [(pkgInfo as any).version] : [],
+    platforms: [],
+    stats: stats || { totalDownloads: (pkgInfo as any).downloads || 0, versionDownloads: {} },
+    timeline: timeline || [],
+    title: name,
+  })
+  return htmlResponse(html)
+}
+
+/** Lazily built set of doc page paths for link rewriting */
+let docsPageCache: Set<string> | null = null
+
+async function getDocsPages(docsDir: string): Promise<Set<string>> {
+  if (docsPageCache) return docsPageCache
+  const pages = new Set<string>(['/'])
+  const { readdir } = await import('node:fs/promises')
+
+  async function scan(dir: string, prefix: string) {
+    try {
+      const entries = await readdir(dir, { withFileTypes: true })
+      for (const entry of entries) {
+        if (entry.isFile() && entry.name.endsWith('.html') && entry.name !== '404.html') {
+          const name = entry.name.replace('.html', '')
+          pages.add(name === 'index' ? prefix || '/' : `${prefix}/${name}`)
+        }
+        else if (entry.isDirectory() && !entry.name.startsWith('.')) {
+          await scan(resolve(dir, entry.name), `${prefix}/${entry.name}`)
+        }
+      }
+    }
+    catch { /* ignore missing dirs */ }
+  }
+
+  await scan(docsDir, '')
+  docsPageCache = pages
+  return pages
+}
+
+function rewriteDocsLinks(html: string, docsPages: Set<string>): string {
+  return html.replace(/href="(\/[^"]*?)"/g, (_match, href) => {
+    if (docsPages.has(href)) {
+      return `href="/docs${href === '/' ? '' : href}"`
+    }
+    return _match
+  })
+}
+
+async function handleDocs(reqPath: string): Promise<Response> {
+  const docsDir = resolve(__dirname, '../../../dist/.bunpress')
+  const subPath = reqPath === '/docs' || reqPath === '/docs/'
+    ? '/index.html'
+    : reqPath.replace('/docs', '')
+
+  const candidates = [
+    resolve(docsDir, `.${subPath}`),
+    resolve(docsDir, `.${subPath}.html`),
+    resolve(docsDir, `.${subPath}/index.html`),
+  ]
+
+  for (const candidate of candidates) {
+    const file = Bun.file(candidate)
+    if (await file.exists()) {
+      const ext = candidate.split('.').pop()
+
+      if (ext === 'html') {
+        const docsPages = await getDocsPages(docsDir)
+        let html = await file.text()
+        html = rewriteDocsLinks(html, docsPages)
+        return new Response(html, {
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'public, max-age=3600',
+          },
+        })
+      }
+
+      const contentTypes: Record<string, string> = {
+        css: 'text/css; charset=utf-8',
+        js: 'application/javascript; charset=utf-8',
+        json: 'application/json',
+        svg: 'image/svg+xml',
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        ico: 'image/x-icon',
+        woff2: 'font/woff2',
+        woff: 'font/woff',
+      }
+      return new Response(file, {
+        headers: {
+          'Content-Type': contentTypes[ext || ''] || 'application/octet-stream',
+          'Cache-Control': 'public, max-age=3600',
+        },
+      })
+    }
+  }
+
+  const indexFile = Bun.file(resolve(docsDir, 'index.html'))
+  if (await indexFile.exists()) {
+    const docsPages = await getDocsPages(docsDir)
+    let html = await indexFile.text()
+    html = rewriteDocsLinks(html, docsPages)
+    return new Response(html, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+  }
+
+  return new Response('Documentation not found', { status: 404 })
 }
 
 // Run server if this is the main module
