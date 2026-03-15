@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tcl-lang.org
+# Install with pantry
+pantry install tcl-lang.org
 ```
 
 ## Programs

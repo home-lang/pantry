@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install videolan.org/libplacebo
+# Install with pantry
+pantry install videolan.org/libplacebo
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libwebsockets.org
+# Install with pantry
+pantry install libwebsockets.org
 ```
 
 ## Programs

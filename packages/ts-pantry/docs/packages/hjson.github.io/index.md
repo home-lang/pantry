@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hjson.github.io
+# Install with pantry
+pantry install hjson.github.io
 ```
 
 ## Programs

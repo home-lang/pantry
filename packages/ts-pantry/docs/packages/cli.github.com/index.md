@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cli.github.com
+# Install with pantry
+pantry install cli.github.com
 ```
 
 ## Programs

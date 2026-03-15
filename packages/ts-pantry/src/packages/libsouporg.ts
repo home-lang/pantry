@@ -5,7 +5,7 @@
  * @version `3.6.6` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libsoup.org`
+ * @install `pantry install libsoup.org`
  * @dependencies `gnome.org/glib-networking`, `gnutls.org`, `rockdaboot.github.io/libpsl`, ... (+7 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com`, `python.org@~3.11`, `gnome.org/vala`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const libsouporgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libsoup.org' as const,
+  installCommand: 'pantry install libsoup.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsoup.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libsoup.org' as const,
+  pantryInstallCommand: 'pantry install libsoup.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

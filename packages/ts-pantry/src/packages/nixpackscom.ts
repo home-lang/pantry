@@ -6,7 +6,7 @@
  * @version `1.41.0` (35 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nixpacks.com`
+ * @install `pantry install nixpacks.com`
  * @homepage https://nixpacks.com/
  *
  * @example
@@ -40,12 +40,12 @@ export const nixpackscomPackage = {
   homepageUrl: 'https://nixpacks.com/' as const,
   githubUrl: 'https://github.com/railwayapp/nixpacks' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nixpacks.com' as const,
+  installCommand: 'pantry install nixpacks.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nixpacks.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nixpacks.com' as const,
+  pantryInstallCommand: 'pantry install nixpacks.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

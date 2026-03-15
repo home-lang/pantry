@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/gperf
+# Install with pantry
+pantry install gnu.org/gperf
 ```
 
 ## Programs

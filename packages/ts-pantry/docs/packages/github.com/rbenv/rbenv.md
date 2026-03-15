@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/rbenv/rbenv
+# Install with pantry
+pantry install github.com/rbenv/rbenv
 ```
 
 ## Programs

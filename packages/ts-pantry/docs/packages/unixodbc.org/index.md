@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install unixodbc.org
+# Install with pantry
+pantry install unixodbc.org
 ```
 
 ## Programs

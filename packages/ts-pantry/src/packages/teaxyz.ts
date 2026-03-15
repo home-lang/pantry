@@ -5,7 +5,7 @@
  * @version `0.39.6` (143 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tea.xyz`
+ * @install `pantry install tea.xyz`
  * @homepage https://pkgx.sh
  * @buildDependencies `deno.land@>=1.23 <1.25 || ^1.25.3` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const teaxyzPackage = {
   homepageUrl: 'https://pkgx.sh' as const,
   githubUrl: 'https://github.com/teaxyz/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tea.xyz' as const,
+  installCommand: 'pantry install tea.xyz' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tea.xyz -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tea.xyz' as const,
+  pantryInstallCommand: 'pantry install tea.xyz' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

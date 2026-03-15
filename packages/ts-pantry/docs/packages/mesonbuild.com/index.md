@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mesonbuild.com
+# Install with pantry
+pantry install mesonbuild.com
 ```
 
 ## Programs

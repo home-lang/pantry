@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libpng.org
+# Install with pantry
+pantry install libpng.org
 ```
 
 ## Programs

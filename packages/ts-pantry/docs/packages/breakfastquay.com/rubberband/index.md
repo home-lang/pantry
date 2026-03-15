@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install breakfastquay.com/rubberband
+# Install with pantry
+pantry install breakfastquay.com/rubberband
 ```
 
 ## Programs

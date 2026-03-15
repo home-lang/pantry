@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/royreznik/rexi
+# Install with pantry
+pantry install github.com/royreznik/rexi
 ```
 
 ## Programs

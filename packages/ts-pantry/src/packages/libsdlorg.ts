@@ -5,7 +5,7 @@
  * @version `3.4.2` (44 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libsdl.org`
+ * @install `pantry install libsdl.org`
  * @homepage https://libsdl.org
  * @dependencies `linux:alsa-project.org/alsa-lib>=1.0.11`, `linux:x.org/x11`, `linux:x.org/xcursor`, ... (+6 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool@2`, ... (+1 more) - required only when building from source
@@ -40,12 +40,12 @@ export const libsdlorgPackage = {
   homepageUrl: 'https://libsdl.org' as const,
   githubUrl: 'https://github.com/libsdl-org/SDL' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libsdl.org' as const,
+  installCommand: 'pantry install libsdl.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsdl.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libsdl.org' as const,
+  pantryInstallCommand: 'pantry install libsdl.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

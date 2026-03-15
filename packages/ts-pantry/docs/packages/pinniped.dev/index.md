@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pinniped.dev
+# Install with pantry
+pantry install pinniped.dev
 ```
 
 ## Programs

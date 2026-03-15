@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cilium.io/cilium
+# Install with pantry
+pantry install cilium.io/cilium
 ```
 
 ## Programs

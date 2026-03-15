@@ -6,7 +6,7 @@
  * @version `2.3.1` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gitlab.com/OldManProgrammer/unix-tree`
+ * @install `pantry install gitlab.com/OldManProgrammer/unix-tree`
  * @homepage https://oldmanprogrammer.net/source.php?dir=projects/tree
  * @buildDependencies `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gitlabcomoldmanprogrammerunixtreePackage = {
   homepageUrl: 'https://oldmanprogrammer.net/source.php?dir=projects/tree' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gitlab.com/OldManProgrammer/unix-tree' as const,
+  installCommand: 'pantry install gitlab.com/OldManProgrammer/unix-tree' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gitlab.com/OldManProgrammer/unix-tree -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gitlab.com/OldManProgrammer/unix-tree' as const,
+  pantryInstallCommand: 'pantry install gitlab.com/OldManProgrammer/unix-tree' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

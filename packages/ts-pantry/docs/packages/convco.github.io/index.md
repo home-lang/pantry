@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install convco.github.io
+# Install with pantry
+pantry install convco.github.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tinygo.org
+# Install with pantry
+pantry install tinygo.org
 ```
 
 ## Programs

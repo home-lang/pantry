@@ -6,7 +6,7 @@
  * @version `3.24.38` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gtk.org/gtk3`
+ * @install `pantry install gtk.org/gtk3`
  * @homepage https://gtk.org/
  * @dependencies `gnome.org/atk`, `gnome.org/gdk-pixbuf`, `gnome.org/glib`, ... (+18 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `docbook.org`, `docbook.org/xsl`, `gnu.org/gettext`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const gtkorggtk3Package = {
   homepageUrl: 'https://gtk.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gtk.org/gtk3' as const,
+  installCommand: 'pantry install gtk.org/gtk3' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gtk.org/gtk3 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gtk.org/gtk3' as const,
+  pantryInstallCommand: 'pantry install gtk.org/gtk3' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

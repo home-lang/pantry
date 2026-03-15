@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ripgrep
+# Install with pantry
+pantry install ripgrep
 ```
 
 ## Programs

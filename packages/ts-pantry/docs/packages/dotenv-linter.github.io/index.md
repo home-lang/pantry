@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dotenv-linter.github.io
+# Install with pantry
+pantry install dotenv-linter.github.io
 ```
 
 ## Programs

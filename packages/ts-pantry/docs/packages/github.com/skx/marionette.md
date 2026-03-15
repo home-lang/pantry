@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/skx/marionette
+# Install with pantry
+pantry install github.com/skx/marionette
 ```
 
 ## Programs

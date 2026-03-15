@@ -5,7 +5,7 @@
  * @version `0.7.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/glog`
+ * @install `pantry install google.com/glog`
  * @homepage http://google.github.io/glog/
  * @dependencies `gflags.github.io~2.2`
  * @buildDependencies `cmake.org` - required only when building from source
@@ -40,12 +40,12 @@ export const googlecomglogPackage = {
   homepageUrl: 'http://google.github.io/glog/' as const,
   githubUrl: 'https://github.com/google/glog' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/glog' as const,
+  installCommand: 'pantry install google.com/glog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/glog -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/glog' as const,
+  pantryInstallCommand: 'pantry install google.com/glog' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vanna.ai
+# Install with pantry
+pantry install vanna.ai
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.3.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install idleberg.github.io/krampus`
+ * @install `pantry install idleberg.github.io/krampus`
  * @homepage https://pkg.go.dev/github.com/idleberg/krampus
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const idleberggithubiokrampusPackage = {
   homepageUrl: 'https://pkg.go.dev/github.com/idleberg/krampus' as const,
   githubUrl: 'https://github.com/idleberg/krampus' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install idleberg.github.io/krampus' as const,
+  installCommand: 'pantry install idleberg.github.io/krampus' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +idleberg.github.io/krampus -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install idleberg.github.io/krampus' as const,
+  pantryInstallCommand: 'pantry install idleberg.github.io/krampus' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `1.6.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rigaux.org/hexedit`
+ * @install `pantry install rigaux.org/hexedit`
  * @homepage https://rigaux.org/hexedit.html
  * @dependencies `invisible-island.net/ncurses@6`
  * @buildDependencies `gnu.org/autoconf` - required only when building from source
@@ -42,12 +42,12 @@ export const rigauxorghexeditPackage = {
   homepageUrl: 'https://rigaux.org/hexedit.html' as const,
   githubUrl: 'https://github.com/pixel/hexedit' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rigaux.org/hexedit' as const,
+  installCommand: 'pantry install rigaux.org/hexedit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rigaux.org/hexedit -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rigaux.org/hexedit' as const,
+  pantryInstallCommand: 'pantry install rigaux.org/hexedit' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

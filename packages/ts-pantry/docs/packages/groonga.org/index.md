@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install groonga.org
+# Install with pantry
+pantry install groonga.org
 ```
 
 ## Programs

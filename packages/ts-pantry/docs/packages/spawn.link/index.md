@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install spawn.link
+# Install with pantry
+pantry install spawn.link
 ```
 
 ## Programs

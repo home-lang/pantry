@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mpg123.de
+# Install with pantry
+pantry install mpg123.de
 ```
 
 ## Programs

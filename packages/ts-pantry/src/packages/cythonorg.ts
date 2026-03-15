@@ -6,7 +6,7 @@
  * @version `3.2.4` (31 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cython.org`
+ * @install `pantry install cython.org`
  * @homepage https://cython.org/
  * @dependencies `python.org<3.12`
  * @buildDependencies `pip.pypa.io` - required only when building from source
@@ -42,12 +42,12 @@ export const cythonorgPackage = {
   homepageUrl: 'https://cython.org/' as const,
   githubUrl: 'https://github.com/cython/cython' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cython.org' as const,
+  installCommand: 'pantry install cython.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cython.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cython.org' as const,
+  pantryInstallCommand: 'pantry install cython.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

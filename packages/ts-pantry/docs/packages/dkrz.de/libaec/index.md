@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dkrz.de/libaec
+# Install with pantry
+pantry install dkrz.de/libaec
 ```
 
 ## Programs

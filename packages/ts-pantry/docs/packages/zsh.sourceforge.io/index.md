@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install zsh.sourceforge.io
+# Install with pantry
+pantry install zsh.sourceforge.io
 ```
 
 ## Programs

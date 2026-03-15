@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rigaux.org/hexedit
+# Install with pantry
+pantry install rigaux.org/hexedit
 ```
 
 ## Programs

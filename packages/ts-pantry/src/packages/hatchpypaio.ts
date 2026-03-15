@@ -6,7 +6,7 @@
  * @version `1.16.5` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install hatch.pypa.io`
+ * @install `pantry install hatch.pypa.io`
  * @homepage https://hatch.pypa.io/latest/
  * @dependencies `python.org>=3<3.12`
  *
@@ -41,12 +41,12 @@ export const hatchpypaioPackage = {
   homepageUrl: 'https://hatch.pypa.io/latest/' as const,
   githubUrl: 'https://github.com/pypa/hatch' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install hatch.pypa.io' as const,
+  installCommand: 'pantry install hatch.pypa.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +hatch.pypa.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install hatch.pypa.io' as const,
+  pantryInstallCommand: 'pantry install hatch.pypa.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

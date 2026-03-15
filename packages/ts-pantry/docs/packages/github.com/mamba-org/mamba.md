@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mamba-org/mamba
+# Install with pantry
+pantry install github.com/mamba-org/mamba
 ```
 
 ## Programs

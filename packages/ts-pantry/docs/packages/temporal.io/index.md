@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install temporal.io
+# Install with pantry
+pantry install temporal.io
 ```
 
 ## Programs

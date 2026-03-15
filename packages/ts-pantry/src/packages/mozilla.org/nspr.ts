@@ -6,7 +6,7 @@
  * @version `4.38.1` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mozilla.org/nspr`
+ * @install `pantry install mozilla.org/nspr`
  * @homepage https://hg.mozilla.org/projects/nspr
  *
  * @example
@@ -40,12 +40,12 @@ export const mozillaorgnsprPackage = {
   homepageUrl: 'https://hg.mozilla.org/projects/nspr' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mozilla.org/nspr' as const,
+  installCommand: 'pantry install mozilla.org/nspr' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mozilla.org/nspr -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mozilla.org/nspr' as const,
+  pantryInstallCommand: 'pantry install mozilla.org/nspr' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

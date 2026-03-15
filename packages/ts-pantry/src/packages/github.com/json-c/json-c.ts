@@ -5,7 +5,7 @@
  * @version `0.18.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/json-c/json-c`
+ * @install `pantry install github.com/json-c/json-c`
  * @homepage https://github.com/json-c/json-c/wiki
  * @buildDependencies `cmake.org@3` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const jsoncPackage = {
   homepageUrl: 'https://github.com/json-c/json-c/wiki' as const,
   githubUrl: 'https://github.com/json-c/json-c' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/json-c/json-c' as const,
+  installCommand: 'pantry install github.com/json-c/json-c' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/json-c/json-c -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/json-c/json-c' as const,
+  pantryInstallCommand: 'pantry install github.com/json-c/json-c' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

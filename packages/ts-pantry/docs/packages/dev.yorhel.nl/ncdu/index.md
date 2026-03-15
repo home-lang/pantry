@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dev.yorhel.nl/ncdu
+# Install with pantry
+pantry install dev.yorhel.nl/ncdu
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.9.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install epsilon-project.sourceforge.io`
+ * @install `pantry install epsilon-project.sourceforge.io`
  * @homepage https://sourceforge.net/projects/epsilon-project/
  * @buildDependencies `gnu.org/make`, `gnu.org/autoconf`, `gnu.org/automake`, ... (+1 more) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const epsilonprojectsourceforgeioPackage = {
   homepageUrl: 'https://sourceforge.net/projects/epsilon-project/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install epsilon-project.sourceforge.io' as const,
+  installCommand: 'pantry install epsilon-project.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +epsilon-project.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install epsilon-project.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install epsilon-project.sourceforge.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

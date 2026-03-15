@@ -6,7 +6,7 @@
  * @version `16.0.0` (40 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install groonga.org`
+ * @install `pantry install groonga.org`
  * @homepage https://groonga.org/
  * @dependencies `darwin:taku910.github.io/mecab`, `darwin:taku910.github.io/mecab-ipadic`, `msgpack.org`, ... (+4 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `linux:curl.se` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const groongaorgPackage = {
   homepageUrl: 'https://groonga.org/' as const,
   githubUrl: 'https://github.com/groonga/groonga' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install groonga.org' as const,
+  installCommand: 'pantry install groonga.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +groonga.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install groonga.org' as const,
+  pantryInstallCommand: 'pantry install groonga.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

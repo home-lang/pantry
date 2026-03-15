@@ -6,7 +6,7 @@
  * @version `0.6.15` (32 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install devpod.sh/cli`
+ * @install `pantry install devpod.sh/cli`
  * @homepage https://devpod.sh
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const devpodshcliPackage = {
   homepageUrl: 'https://devpod.sh' as const,
   githubUrl: 'https://github.com/loft-sh/devpod' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install devpod.sh/cli' as const,
+  installCommand: 'pantry install devpod.sh/cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +devpod.sh/cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install devpod.sh/cli' as const,
+  pantryInstallCommand: 'pantry install devpod.sh/cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

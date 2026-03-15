@@ -5,7 +5,7 @@
  * @version `2.1.28` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cyrusimap.org/cyrus-sasl`
+ * @install `pantry install cyrusimap.org/cyrus-sasl`
  * @buildDependencies `kerberos.org`, `openssl.org@^1.1.1` - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const cyrusimaporgcyrussaslPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/cyrusimap/cyrus-sasl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cyrusimap.org/cyrus-sasl' as const,
+  installCommand: 'pantry install cyrusimap.org/cyrus-sasl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cyrusimap.org/cyrus-sasl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cyrusimap.org/cyrus-sasl' as const,
+  pantryInstallCommand: 'pantry install cyrusimap.org/cyrus-sasl' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

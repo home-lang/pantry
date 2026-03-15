@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/fabio42/sasqwatch
+# Install with pantry
+pantry install github.com/fabio42/sasqwatch
 ```
 
 ## Programs

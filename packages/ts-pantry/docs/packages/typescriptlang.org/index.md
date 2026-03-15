@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install typescriptlang.org
+# Install with pantry
+pantry install typescriptlang.org
 ```
 
 ## Programs

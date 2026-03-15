@@ -6,7 +6,7 @@
  * @version `1.29.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rust-lang.org/rustup`
+ * @install `pantry install rust-lang.org/rustup`
  * @homepage https://rust-lang.github.io/rustup/
  * @dependencies `linux:curl.se` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const rustlangorgrustupPackage = {
   homepageUrl: 'https://rust-lang.github.io/rustup/' as const,
   githubUrl: 'https://github.com/rust-lang/rustup' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rust-lang.org/rustup' as const,
+  installCommand: 'pantry install rust-lang.org/rustup' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rust-lang.org/rustup -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rust-lang.org/rustup' as const,
+  pantryInstallCommand: 'pantry install rust-lang.org/rustup' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

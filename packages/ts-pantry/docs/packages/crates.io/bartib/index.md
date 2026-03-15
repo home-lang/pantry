@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/bartib
+# Install with pantry
+pantry install crates.io/bartib
 ```
 
 ## Programs

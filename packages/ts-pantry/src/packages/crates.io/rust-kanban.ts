@@ -6,7 +6,7 @@
  * @version `0.10.5` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/rust-kanban`
+ * @install `pantry install crates.io/rust-kanban`
  * @homepage https://crates.io/crates/rust-kanban
  * @dependencies `openssl.org^1.1`
  *
@@ -41,12 +41,12 @@ export const cratesiorustkanbanPackage = {
   homepageUrl: 'https://crates.io/crates/rust-kanban' as const,
   githubUrl: 'https://github.com/yashs662/rust_kanban' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/rust-kanban' as const,
+  installCommand: 'pantry install crates.io/rust-kanban' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/rust-kanban -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/rust-kanban' as const,
+  pantryInstallCommand: 'pantry install crates.io/rust-kanban' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

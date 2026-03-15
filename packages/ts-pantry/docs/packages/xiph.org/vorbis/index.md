@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xiph.org/vorbis
+# Install with pantry
+pantry install xiph.org/vorbis
 ```
 
 ## Programs

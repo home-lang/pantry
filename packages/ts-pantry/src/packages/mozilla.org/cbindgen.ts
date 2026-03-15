@@ -6,7 +6,7 @@
  * @version `0.29.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mozilla.org/cbindgen`
+ * @install `pantry install mozilla.org/cbindgen`
  * @dependencies `linux:llvm.org` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const mozillaorgcbindgenPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/mozilla/cbindgen' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mozilla.org/cbindgen' as const,
+  installCommand: 'pantry install mozilla.org/cbindgen' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mozilla.org/cbindgen -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mozilla.org/cbindgen' as const,
+  pantryInstallCommand: 'pantry install mozilla.org/cbindgen' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

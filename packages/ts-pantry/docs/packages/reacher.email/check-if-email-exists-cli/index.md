@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install reacher.email/check-if-email-exists-cli
+# Install with pantry
+pantry install reacher.email/check-if-email-exists-cli
 ```
 
 ## Programs

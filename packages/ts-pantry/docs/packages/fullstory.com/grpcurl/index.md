@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fullstory.com/grpcurl
+# Install with pantry
+pantry install fullstory.com/grpcurl
 ```
 
 ## Programs

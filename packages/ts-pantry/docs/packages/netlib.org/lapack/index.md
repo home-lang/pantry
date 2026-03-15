@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install netlib.org/lapack
+# Install with pantry
+pantry install netlib.org/lapack
 ```
 
 ## Programs

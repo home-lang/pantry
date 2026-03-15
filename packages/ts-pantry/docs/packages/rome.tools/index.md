@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rome.tools
+# Install with pantry
+pantry install rome.tools
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vi
+# Install with pantry
+pantry install vi
 ```
 
 ## Programs

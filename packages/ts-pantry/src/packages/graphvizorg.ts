@@ -6,7 +6,7 @@
  * @version `14.1.3` (25 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install graphviz.org`
+ * @install `pantry install graphviz.org`
  * @homepage https://graphviz.org/
  * @dependencies `cairographics.org^1.1.10`, `freedesktop.org/fontconfig^2.3.95`, `freetype.org^2.1.0`, ... (+7 more)
  *
@@ -41,12 +41,12 @@ export const graphvizorgPackage = {
   homepageUrl: 'https://graphviz.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install graphviz.org' as const,
+  installCommand: 'pantry install graphviz.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +graphviz.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install graphviz.org' as const,
+  pantryInstallCommand: 'pantry install graphviz.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `2.26.6` (81 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pdm.fming.dev`
+ * @install `pantry install pdm.fming.dev`
  * @homepage https://pdm.fming.dev
  * @dependencies `python.org~3.11`
  *
@@ -41,12 +41,12 @@ export const pdmfmingdevPackage = {
   homepageUrl: 'https://pdm.fming.dev' as const,
   githubUrl: 'https://github.com/pdm-project/pdm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pdm.fming.dev' as const,
+  installCommand: 'pantry install pdm.fming.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pdm.fming.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pdm.fming.dev' as const,
+  pantryInstallCommand: 'pantry install pdm.fming.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

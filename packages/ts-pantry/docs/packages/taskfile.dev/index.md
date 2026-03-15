@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install taskfile.dev
+# Install with pantry
+pantry install taskfile.dev
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install elizaOS.github.io
+# Install with pantry
+pantry install elizaOS.github.io
 ```
 
 ## Programs

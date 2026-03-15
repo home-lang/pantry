@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git.tozt.net/rbw
+# Install with pantry
+pantry install git.tozt.net/rbw
 ```
 
 ## Programs

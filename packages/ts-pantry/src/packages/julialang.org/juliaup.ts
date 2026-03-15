@@ -6,7 +6,7 @@
  * @version `1.19.9` (76 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install julialang.org/juliaup`
+ * @install `pantry install julialang.org/juliaup`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const julialangorgjuliaupPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/JuliaLang/juliaup' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install julialang.org/juliaup' as const,
+  installCommand: 'pantry install julialang.org/juliaup' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +julialang.org/juliaup -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install julialang.org/juliaup' as const,
+  pantryInstallCommand: 'pantry install julialang.org/juliaup' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

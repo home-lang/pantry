@@ -5,7 +5,7 @@
  * @version `0.6.25` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libexif.github.io`
+ * @install `pantry install libexif.github.io`
  * @dependencies `gnu.org/gettext`
  * @buildDependencies `gnu.org/wget` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libexifgithubioPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/libexif/libexif' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libexif.github.io' as const,
+  installCommand: 'pantry install libexif.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libexif.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libexif.github.io' as const,
+  pantryInstallCommand: 'pantry install libexif.github.io' as const,
   programs: [] as const,
   companions: [] as const,
   /**

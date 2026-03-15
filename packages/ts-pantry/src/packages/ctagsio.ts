@@ -6,7 +6,7 @@
  * @version `6.2.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ctags.io`
+ * @install `pantry install ctags.io`
  * @homepage https://ctags.io
  * @dependencies `digip.org/jansson^2`, `pyyaml.org/libyaml^0.2`, `pcre.org/v2^10`, ... (+1 more)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `docutils.org@~0.20`, ... (+1 more) - required only when building from source
@@ -42,12 +42,12 @@ export const ctagsioPackage = {
   homepageUrl: 'https://ctags.io' as const,
   githubUrl: 'https://github.com/universal-ctags/ctags' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ctags.io' as const,
+  installCommand: 'pantry install ctags.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ctags.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ctags.io' as const,
+  pantryInstallCommand: 'pantry install ctags.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

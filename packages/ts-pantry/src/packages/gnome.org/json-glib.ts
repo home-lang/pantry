@@ -5,7 +5,7 @@
  * @version `1.10.8` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/json-glib`
+ * @install `pantry install gnome.org/json-glib`
  * @dependencies `gnome.org/glib^2.78`
  * @buildDependencies `gnu.org/gettext`, `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnomeorgjsonglibPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/json-glib' as const,
+  installCommand: 'pantry install gnome.org/json-glib' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/json-glib -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/json-glib' as const,
+  pantryInstallCommand: 'pantry install gnome.org/json-glib' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cloudnative-pg.io
+# Install with pantry
+pantry install cloudnative-pg.io
 ```
 
 ## Programs

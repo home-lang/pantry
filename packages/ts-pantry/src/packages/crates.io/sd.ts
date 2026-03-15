@@ -6,7 +6,7 @@
  * @version `1.1.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/sd`
+ * @install `pantry install crates.io/sd`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiosdPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/chmln/sd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/sd' as const,
+  installCommand: 'pantry install crates.io/sd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/sd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/sd' as const,
+  pantryInstallCommand: 'pantry install crates.io/sd' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

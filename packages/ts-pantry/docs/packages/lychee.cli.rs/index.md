@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lychee.cli.rs
+# Install with pantry
+pantry install lychee.cli.rs
 ```
 
 ## Programs

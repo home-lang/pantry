@@ -6,7 +6,7 @@
  * @version `8.1.2` (25 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/lighthouse`
+ * @install `pantry install crates.io/lighthouse`
  * @homepage https://lighthouse.sigmaprime.io/
  * @dependencies `zlib.net^1`
  * @buildDependencies `cmake.org@^3.12`, `protobuf.dev` - required only when building from source
@@ -42,12 +42,12 @@ export const cratesiolighthousePackage = {
   homepageUrl: 'https://lighthouse.sigmaprime.io/' as const,
   githubUrl: 'https://github.com/sigp/lighthouse' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/lighthouse' as const,
+  installCommand: 'pantry install crates.io/lighthouse' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/lighthouse -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/lighthouse' as const,
+  pantryInstallCommand: 'pantry install crates.io/lighthouse' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

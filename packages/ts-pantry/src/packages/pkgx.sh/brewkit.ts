@@ -6,7 +6,7 @@
  * @version `1.19.3` (69 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pkgx.sh/brewkit`
+ * @install `pantry install pkgx.sh/brewkit`
  * @dependencies `deno.land~1.39 # 1.40 shouts unskippable deprecation warnings`, `gnu.org/bash^5`, `pkgx.sh>=1`
  *
  * @example
@@ -40,12 +40,12 @@ export const pkgxshbrewkitPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/pkgxdev/brewkit' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pkgx.sh/brewkit' as const,
+  installCommand: 'pantry install pkgx.sh/brewkit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh/brewkit -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pkgx.sh/brewkit' as const,
+  pantryInstallCommand: 'pantry install pkgx.sh/brewkit' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pnpm.io
+# Install with pantry
+pantry install pnpm.io
 ```
 
 ## Programs

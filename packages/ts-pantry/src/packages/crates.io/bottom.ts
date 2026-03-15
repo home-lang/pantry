@@ -6,7 +6,7 @@
  * @version `0.12.3` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/bottom`
+ * @install `pantry install crates.io/bottom`
  * @homepage https://clementtsang.github.io/bottom/
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiobottomPackage = {
   homepageUrl: 'https://clementtsang.github.io/bottom/' as const,
   githubUrl: 'https://github.com/ClementTsang/bottom' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/bottom' as const,
+  installCommand: 'pantry install crates.io/bottom' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/bottom -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/bottom' as const,
+  pantryInstallCommand: 'pantry install crates.io/bottom' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

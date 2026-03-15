@@ -6,7 +6,7 @@
  * @version `2023.9.1` (69 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install surrealdb.com`
+ * @install `pantry install surrealdb.com`
  * @homepage https://surrealdb.com
  * @dependencies `openssl.org^1`
  * @buildDependencies `gnu.org/patch` - required only when building from source
@@ -42,12 +42,12 @@ export const surrealdbcomPackage = {
   homepageUrl: 'https://surrealdb.com' as const,
   githubUrl: 'https://github.com/surrealdb/surrealdb' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install surrealdb.com' as const,
+  installCommand: 'pantry install surrealdb.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +surrealdb.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install surrealdb.com' as const,
+  pantryInstallCommand: 'pantry install surrealdb.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

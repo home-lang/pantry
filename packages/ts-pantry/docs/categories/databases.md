@@ -12,7 +12,7 @@ high-performance graph database for real-time use cases
 
 **Programs**: dgraph
 
-**Install**: `launchpad install dgraph.io`
+**Install**: `pantry install dgraph.io`
 
 ---
 
@@ -22,7 +22,7 @@ DuckDB is an analytical in-process SQL database management system
 
 **Programs**: duckdb
 
-**Install**: `launchpad install duckdb.org`
+**Install**: `pantry install duckdb.org`
 
 ---
 
@@ -32,7 +32,7 @@ The EdgeDB CLI
 
 **Programs**: edgedb
 
-**Install**: `launchpad install edgedb.com`
+**Install**: `pantry install edgedb.com`
 
 ---
 
@@ -42,7 +42,7 @@ Distributed reliable key-value store for the most critical data of a distributed
 
 **Programs**: etcd, etcdctl
 
-**Install**: `launchpad install etcd.io`
+**Install**: `pantry install etcd.io`
 
 ---
 
@@ -52,7 +52,7 @@ CLI for SQLite Databases with auto-completion and syntax highlighting
 
 **Programs**: litecli
 
-**Install**: `launchpad install litecli.com`
+**Install**: `pantry install litecli.com`
 
 ---
 
@@ -62,7 +62,7 @@ MongoDB Shell to connect, configure, query, and work with your MongoDB database
 
 **Programs**: mongosh
 
-**Install**: `launchpad install mongodb.com/shell`
+**Install**: `pantry install mongodb.com/shell`
 
 ---
 
@@ -72,7 +72,7 @@ MySQL Server, the world's most popular open source database, and MySQL Cluster, 
 
 **Programs**: mysql_client_test, my_print_defaults, myisam_ftdump, myisamchk, myisamlog, myisampack, mysql, mysql_config, mysql_config_editor, mysql_keyring_encryption_test, mysql_migrate_keyring, mysql_secure_installation, mysql_tzinfo_to_sql, mysqladmin, mysqlbinlog, mysqlcheck, mysqld, mysqld_multi, mysqld_safe, mysqldump, mysqldumpslow, mysqlimport, mysqlrouter, mysqlrouter_keyring, mysqlrouter_passwd, mysqlrouter_plugin_info, mysqlshow, mysqlslap, mysqltest, mysqltest_safe_process, mysqlxtest
 
-**Install**: `launchpad install mysql.com`
+**Install**: `pantry install mysql.com`
 
 ---
 
@@ -82,7 +82,7 @@ MySQL Server, the world's most popular open source database, and MySQL Cluster, 
 
 **Programs**: opensearch, opensearch-keystore, opensearch-plugin, opensearch-shard
 
-**Install**: `launchpad install opensearch.org`
+**Install**: `pantry install opensearch.org`
 
 ---
 
@@ -92,7 +92,7 @@ Serves a fully RESTful API from any existing PostgreSQL database
 
 **Programs**: postgrest
 
-**Install**: `launchpad install postgrest.org`
+**Install**: `pantry install postgrest.org`
 
 ---
 
@@ -102,7 +102,7 @@ Redis is an in-memory database that persists on disk. The data model is key-valu
 
 **Programs**: redis-server, redis-cli, redis-benchmark
 
-**Install**: `launchpad install redis.io`
+**Install**: `pantry install redis.io`
 
 ---
 
@@ -112,7 +112,7 @@ Official Git mirror of the SQLite source tree
 
 **Programs**: sqlite3
 
-**Install**: `launchpad install sqlite`
+**Install**: `pantry install sqlite`
 
 ---
 
@@ -122,7 +122,7 @@ A scalable, distributed, collaborative, document-graph database, for the realtim
 
 **Programs**: surreal
 
-**Install**: `launchpad install surrealdb.com`
+**Install**: `pantry install surrealdb.com`
 
 ---
 
@@ -132,7 +132,7 @@ Command line interface to Turso.
 
 **Programs**: turso
 
-**Install**: `launchpad install turso.tech`
+**Install**: `pantry install turso.tech`
 
 ---
 
@@ -142,7 +142,7 @@ A flexible distributed key-value datastore that is optimized for caching and oth
 
 **Programs**: valkey-server, valkey-cli, valkey-benchmark
 
-**Install**: `launchpad install valkey.io`
+**Install**: `pantry install valkey.io`
 
 ---
 

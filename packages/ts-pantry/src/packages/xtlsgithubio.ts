@@ -6,7 +6,7 @@
  * @version `26.2.6` (49 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xtls.github.io`
+ * @install `pantry install xtls.github.io`
  * @homepage https://xtls.github.io/
  * @buildDependencies `go.dev@^1.21.4`, `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const xtlsgithubioPackage = {
   homepageUrl: 'https://xtls.github.io/' as const,
   githubUrl: 'https://github.com/XTLS/Xray-core' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xtls.github.io' as const,
+  installCommand: 'pantry install xtls.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xtls.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xtls.github.io' as const,
+  pantryInstallCommand: 'pantry install xtls.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

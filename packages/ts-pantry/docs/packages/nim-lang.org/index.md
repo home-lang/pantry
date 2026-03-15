@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nim-lang.org
+# Install with pantry
+pantry install nim-lang.org
 ```
 
 ## Programs

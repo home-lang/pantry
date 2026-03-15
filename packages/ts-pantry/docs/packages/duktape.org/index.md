@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install duktape.org
+# Install with pantry
+pantry install duktape.org
 ```
 
 ## Programs

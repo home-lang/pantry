@@ -6,7 +6,7 @@
  * @version `2.16.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cruft.github.io`
+ * @install `pantry install cruft.github.io`
  * @homepage https://cruft.github.io/cruft/
  * @dependencies `python.org>=3.7<3.12`, `git-scm.org^2`
  *
@@ -41,12 +41,12 @@ export const cruftgithubioPackage = {
   homepageUrl: 'https://cruft.github.io/cruft/' as const,
   githubUrl: 'https://github.com/cruft/cruft' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cruft.github.io' as const,
+  installCommand: 'pantry install cruft.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cruft.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cruft.github.io' as const,
+  pantryInstallCommand: 'pantry install cruft.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

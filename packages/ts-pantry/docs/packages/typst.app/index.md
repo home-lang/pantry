@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install typst.app
+# Install with pantry
+pantry install typst.app
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.10.8` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ebassi.github.io/graphene`
+ * @install `pantry install ebassi.github.io/graphene`
  * @homepage http://ebassi.github.io/graphene
  * @dependencies `gnome.org/glib`
  * @buildDependencies `mesonbuild.com` - required only when building from source
@@ -40,12 +40,12 @@ export const ebassigithubiographenePackage = {
   homepageUrl: 'http://ebassi.github.io/graphene' as const,
   githubUrl: 'https://github.com/ebassi/graphene' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ebassi.github.io/graphene' as const,
+  installCommand: 'pantry install ebassi.github.io/graphene' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ebassi.github.io/graphene -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ebassi.github.io/graphene' as const,
+  pantryInstallCommand: 'pantry install ebassi.github.io/graphene' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install plantuml.com
+# Install with pantry
+pantry install plantuml.com
 ```
 
 ## Programs

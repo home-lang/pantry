@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/xcb-util-keysyms
+# Install with pantry
+pantry install freedesktop.org/xcb-util-keysyms
 ```
 
 ## Programs

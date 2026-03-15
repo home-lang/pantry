@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install render.com
+# Install with pantry
+pantry install render.com
 ```
 
 ## Programs

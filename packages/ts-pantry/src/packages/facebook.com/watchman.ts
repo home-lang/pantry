@@ -6,7 +6,7 @@
  * @version `2026.3.9.0` (78 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install facebook.com/watchman`
+ * @install `pantry install facebook.com/watchman`
  * @homepage https://facebook.github.io/watchman/
  * @dependencies `facebook.com/edencommon`, `facebook.com/fb303`, `facebook.com/folly`, ... (+10 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `github.com/skystrife/cpptoml`, `facebook.com/fbthrift`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const facebookcomwatchmanPackage = {
   homepageUrl: 'https://facebook.github.io/watchman/' as const,
   githubUrl: 'https://github.com/facebook/watchman' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install facebook.com/watchman' as const,
+  installCommand: 'pantry install facebook.com/watchman' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/watchman -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install facebook.com/watchman' as const,
+  pantryInstallCommand: 'pantry install facebook.com/watchman' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

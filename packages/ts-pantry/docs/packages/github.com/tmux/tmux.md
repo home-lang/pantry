@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/tmux/tmux
+# Install with pantry
+pantry install github.com/tmux/tmux
 ```
 
 ## Programs

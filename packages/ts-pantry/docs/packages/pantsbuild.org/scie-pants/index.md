@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pantsbuild.org/scie-pants
+# Install with pantry
+pantry install pantsbuild.org/scie-pants
 ```
 
 ## Programs

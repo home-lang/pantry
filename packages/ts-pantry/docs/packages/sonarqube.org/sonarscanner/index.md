@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sonarqube.org/sonarscanner
+# Install with pantry
+pantry install sonarqube.org/sonarscanner
 ```
 
 ## Programs

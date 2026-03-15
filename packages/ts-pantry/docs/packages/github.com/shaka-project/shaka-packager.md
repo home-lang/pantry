@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/shaka-project/shaka-packager
+# Install with pantry
+pantry install github.com/shaka-project/shaka-packager
 ```
 
 ## Programs

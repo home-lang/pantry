@@ -6,7 +6,7 @@
  * @version `3.9.0` (37 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pandoc.org`
+ * @install `pantry install pandoc.org`
  * @homepage https://pandoc.org/
  * @dependencies `gnu.org/gmp@6`, `zlib.net@1`, `sourceware.org/libffi@3`
  * @buildDependencies `haskell.org@~9.4`, `haskell.org/cabal@~3.10`, `linux:gnu.org/binutils@~2.44` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const pandocorgPackage = {
   homepageUrl: 'https://pandoc.org/' as const,
   githubUrl: 'https://github.com/jgm/pandoc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pandoc.org' as const,
+  installCommand: 'pantry install pandoc.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pandoc.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pandoc.org' as const,
+  pantryInstallCommand: 'pantry install pandoc.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

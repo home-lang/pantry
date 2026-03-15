@@ -6,7 +6,7 @@
  * @version `0.20.1` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/ColinIanKing/stress-ng`
+ * @install `pantry install github.com/ColinIanKing/stress-ng`
  * @homepage https://wiki.ubuntu.com/Kernel/Reference/stress-ng
  * @dependencies `github.com/besser82/libxcrypt`, `zlib.net`
  *
@@ -41,12 +41,12 @@ export const stressngPackage = {
   homepageUrl: 'https://wiki.ubuntu.com/Kernel/Reference/stress-ng' as const,
   githubUrl: 'https://github.com/ColinIanKing/stress-ng' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/ColinIanKing/stress-ng' as const,
+  installCommand: 'pantry install github.com/ColinIanKing/stress-ng' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ColinIanKing/stress-ng -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/ColinIanKing/stress-ng' as const,
+  pantryInstallCommand: 'pantry install github.com/ColinIanKing/stress-ng' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

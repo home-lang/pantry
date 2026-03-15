@@ -6,7 +6,7 @@
  * @version `7.5.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install smartmontools.org`
+ * @install `pantry install smartmontools.org`
  * @homepage https://www.smartmontools.org/
  *
  * @example
@@ -40,12 +40,12 @@ export const smartmontoolsorgPackage = {
   homepageUrl: 'https://www.smartmontools.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install smartmontools.org' as const,
+  installCommand: 'pantry install smartmontools.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +smartmontools.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install smartmontools.org' as const,
+  pantryInstallCommand: 'pantry install smartmontools.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install harding.motd.ca/autossh
+# Install with pantry
+pantry install harding.motd.ca/autossh
 ```
 
 ## Programs

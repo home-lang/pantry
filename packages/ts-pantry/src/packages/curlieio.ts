@@ -6,7 +6,7 @@
  * @version `1.8.2` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install curlie.io`
+ * @install `pantry install curlie.io`
  * @homepage https://rs.github.io/curlie
  * @buildDependencies `go.dev@~1.24`, `goreleaser.com` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const curlieioPackage = {
   homepageUrl: 'https://rs.github.io/curlie' as const,
   githubUrl: 'https://github.com/rs/curlie' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install curlie.io' as const,
+  installCommand: 'pantry install curlie.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +curlie.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install curlie.io' as const,
+  pantryInstallCommand: 'pantry install curlie.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install clog-tool.github.io
+# Install with pantry
+pantry install clog-tool.github.io
 ```
 
 ## Programs

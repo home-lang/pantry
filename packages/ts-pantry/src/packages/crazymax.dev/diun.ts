@@ -6,7 +6,7 @@
  * @version `4.31.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crazymax.dev/diun`
+ * @install `pantry install crazymax.dev/diun`
  * @homepage https://crazymax.dev/diun/
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const crazymaxdevdiunPackage = {
   homepageUrl: 'https://crazymax.dev/diun/' as const,
   githubUrl: 'https://github.com/crazy-max/diun' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crazymax.dev/diun' as const,
+  installCommand: 'pantry install crazymax.dev/diun' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crazymax.dev/diun -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crazymax.dev/diun' as const,
+  pantryInstallCommand: 'pantry install crazymax.dev/diun' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

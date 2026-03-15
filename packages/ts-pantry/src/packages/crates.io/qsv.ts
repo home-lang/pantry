@@ -6,7 +6,7 @@
  * @version `17.0.0` (24 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/qsv`
+ * @install `pantry install crates.io/qsv`
  * @homepage https://qsv.dathere.com
  * @dependencies `linux:wayland.freedesktop.org` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3`, `python.org@>=3.8` - required only when building from source
@@ -42,12 +42,12 @@ export const cratesioqsvPackage = {
   homepageUrl: 'https://qsv.dathere.com' as const,
   githubUrl: 'https://github.com/dathere/qsv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/qsv' as const,
+  installCommand: 'pantry install crates.io/qsv' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/qsv -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/qsv' as const,
+  pantryInstallCommand: 'pantry install crates.io/qsv' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

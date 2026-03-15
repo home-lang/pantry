@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/libidn
+# Install with pantry
+pantry install gnu.org/libidn
 ```
 
 ## Programs

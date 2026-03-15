@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/albion_terminal_rpg
+# Install with pantry
+pantry install crates.io/albion_terminal_rpg
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.151.0` (145 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install daytona.io`
+ * @install `pantry install daytona.io`
  * @homepage https://daytona.io
  * @buildDependencies `go.dev@=1.25.4` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const daytonaioPackage = {
   homepageUrl: 'https://daytona.io' as const,
   githubUrl: 'https://github.com/daytonaio/daytona' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install daytona.io' as const,
+  installCommand: 'pantry install daytona.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +daytona.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install daytona.io' as const,
+  pantryInstallCommand: 'pantry install daytona.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

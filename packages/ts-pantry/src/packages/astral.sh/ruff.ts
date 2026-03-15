@@ -6,7 +6,7 @@
  * @version `0.15.6` (122 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install astral.sh/ruff`
+ * @install `pantry install astral.sh/ruff`
  * @homepage https://docs.astral.sh/ruff/
  *
  * @example
@@ -40,12 +40,12 @@ export const astralshruffPackage = {
   homepageUrl: 'https://docs.astral.sh/ruff/' as const,
   githubUrl: 'https://github.com/astral-sh/ruff' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install astral.sh/ruff' as const,
+  installCommand: 'pantry install astral.sh/ruff' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +astral.sh/ruff -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install astral.sh/ruff' as const,
+  pantryInstallCommand: 'pantry install astral.sh/ruff' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

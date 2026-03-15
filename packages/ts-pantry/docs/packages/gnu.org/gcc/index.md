@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/gcc
+# Install with pantry
+pantry install gnu.org/gcc
 ```
 
 ## Programs

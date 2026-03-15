@@ -6,7 +6,7 @@
  * @version `1.1.11` (51 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install zrok.io`
+ * @install `pantry install zrok.io`
  * @homepage https://zrok.io
  * @buildDependencies `go.dev@~1.23.0`, `nodejs.org@^21`, `npmjs.com@^10` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const zrokioPackage = {
   homepageUrl: 'https://zrok.io' as const,
   githubUrl: 'https://github.com/openziti/zrok' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install zrok.io' as const,
+  installCommand: 'pantry install zrok.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zrok.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install zrok.io' as const,
+  pantryInstallCommand: 'pantry install zrok.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

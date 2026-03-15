@@ -6,7 +6,7 @@
  * @version `0.9.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install maaslalani.com/slides`
+ * @install `pantry install maaslalani.com/slides`
  * @homepage http://maaslalani.com/slides/
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const maaslalanicomslidesPackage = {
   homepageUrl: 'http://maaslalani.com/slides/' as const,
   githubUrl: 'https://github.com/maaslalani/slides' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install maaslalani.com/slides' as const,
+  installCommand: 'pantry install maaslalani.com/slides' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +maaslalani.com/slides -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install maaslalani.com/slides' as const,
+  pantryInstallCommand: 'pantry install maaslalani.com/slides' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

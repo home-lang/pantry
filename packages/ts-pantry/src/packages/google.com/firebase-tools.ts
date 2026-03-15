@@ -6,7 +6,7 @@
  * @version `15.10.0` (143 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/firebase-tools`
+ * @install `pantry install google.com/firebase-tools`
  * @homepage https://firebase.google.com/docs/cli/
  * @dependencies `nodejs.org`
  * @buildDependencies `npmjs.com` - required only when building from source
@@ -42,12 +42,12 @@ export const googlecomfirebasetoolsPackage = {
   homepageUrl: 'https://firebase.google.com/docs/cli/' as const,
   githubUrl: 'https://github.com/firebase/firebase-tools' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/firebase-tools' as const,
+  installCommand: 'pantry install google.com/firebase-tools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/firebase-tools -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/firebase-tools' as const,
+  pantryInstallCommand: 'pantry install google.com/firebase-tools' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

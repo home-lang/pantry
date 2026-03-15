@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/json-c/json-c
+# Install with pantry
+pantry install github.com/json-c/json-c
 ```
 
 ## Programs

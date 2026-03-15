@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kernel.org/linux-headers
+# Install with pantry
+pantry install kernel.org/linux-headers
 ```
 
 ## Programs

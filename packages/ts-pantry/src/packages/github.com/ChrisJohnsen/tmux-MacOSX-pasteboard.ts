@@ -6,7 +6,7 @@
  * @version `2.9.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard`
+ * @install `pantry install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard`
  * @buildDependencies `gnu.org/make` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const tmuxmacosxpasteboardPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/ChrisJohnsen/tmux-MacOSX-pasteboard' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard' as const,
+  installCommand: 'pantry install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ChrisJohnsen/tmux-MacOSX-pasteboard -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard' as const,
+  pantryInstallCommand: 'pantry install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install consul.io
+# Install with pantry
+pantry install consul.io
 ```
 
 ## Programs

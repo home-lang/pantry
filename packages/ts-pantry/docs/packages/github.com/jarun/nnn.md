@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/jarun/nnn
+# Install with pantry
+pantry install github.com/jarun/nnn
 ```
 
 ## Programs

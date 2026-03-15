@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ggerganov/whisper.cpp
+# Install with pantry
+pantry install github.com/ggerganov/whisper.cpp
 ```
 
 ## Programs

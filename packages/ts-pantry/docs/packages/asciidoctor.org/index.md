@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install asciidoctor.org
+# Install with pantry
+pantry install asciidoctor.org
 ```
 
 ## Programs

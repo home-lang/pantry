@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bashly.dannyb.co
+# Install with pantry
+pantry install bashly.dannyb.co
 ```
 
 ## Programs

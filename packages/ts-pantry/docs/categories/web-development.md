@@ -12,7 +12,7 @@ The Laravel application installer.
 
 **Programs**: laravel
 
-**Install**: `launchpad install laravel.com`
+**Install**: `pantry install laravel.com`
 
 ---
 
@@ -22,7 +22,7 @@ The Symfony CLI tool
 
 **Programs**: symfony
 
-**Install**: `launchpad install symfony.com`
+**Install**: `pantry install symfony.com`
 
 ---
 
@@ -32,7 +32,7 @@ A utility-first CSS framework for rapid UI development.
 
 **Programs**: tailwindcss
 
-**Install**: `launchpad install tailwindcss.com`
+**Install**: `pantry install tailwindcss.com`
 
 ---
 
@@ -42,7 +42,7 @@ Next generation frontend tooling. It's fast!
 
 **Programs**: vite
 
-**Install**: `launchpad install vitejs.dev`
+**Install**: `pantry install vitejs.dev`
 
 ---
 

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install flipt.io
+# Install with pantry
+pantry install flipt.io
 ```
 
 ## Programs

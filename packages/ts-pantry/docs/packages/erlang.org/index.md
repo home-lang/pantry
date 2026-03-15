@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install erlang.org
+# Install with pantry
+pantry install erlang.org
 ```
 
 ## Programs

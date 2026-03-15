@@ -6,7 +6,7 @@
  * @version `7.1.2.13` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install imagemagick.org`
+ * @install `pantry install imagemagick.org`
  * @homepage https://imagemagick.org/index.php
  * @dependencies `libpng.org`, `ijg.org=8.4`, `freetype.org`, ... (+18 more) (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const imagemagickorgPackage = {
   homepageUrl: 'https://imagemagick.org/index.php' as const,
   githubUrl: 'https://github.com/ImageMagick/ImageMagick' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install imagemagick.org' as const,
+  installCommand: 'pantry install imagemagick.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +imagemagick.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install imagemagick.org' as const,
+  pantryInstallCommand: 'pantry install imagemagick.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

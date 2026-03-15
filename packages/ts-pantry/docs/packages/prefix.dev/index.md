@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install prefix.dev
+# Install with pantry
+pantry install prefix.dev
 ```
 
 ## Programs

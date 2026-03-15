@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jless.io
+# Install with pantry
+pantry install jless.io
 ```
 
 ## Programs

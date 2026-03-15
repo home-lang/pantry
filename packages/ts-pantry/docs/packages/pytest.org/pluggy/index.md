@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pytest.org/pluggy
+# Install with pantry
+pantry install pytest.org/pluggy
 ```
 
 ## Programs

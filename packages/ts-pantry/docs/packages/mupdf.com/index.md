@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mupdf.com
+# Install with pantry
+pantry install mupdf.com
 ```
 
 ## Programs

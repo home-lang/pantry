@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gitlab.com/AOMediaCodec/SVT-AV1
+# Install with pantry
+pantry install gitlab.com/AOMediaCodec/SVT-AV1
 ```
 
 ## Programs

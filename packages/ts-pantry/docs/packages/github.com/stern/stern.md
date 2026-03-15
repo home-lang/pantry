@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/stern/stern
+# Install with pantry
+pantry install github.com/stern/stern
 ```
 
 ## Programs

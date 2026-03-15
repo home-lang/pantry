@@ -5,7 +5,7 @@
  * @version `5.3.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jemalloc.net`
+ * @install `pantry install jemalloc.net`
  * @homepage http://jemalloc.net/
  * @buildDependencies `gnu.org/autoconf`, `docbook.org` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const jemallocnetPackage = {
   homepageUrl: 'http://jemalloc.net/' as const,
   githubUrl: 'https://github.com/jemalloc/jemalloc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jemalloc.net' as const,
+  installCommand: 'pantry install jemalloc.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jemalloc.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jemalloc.net' as const,
+  pantryInstallCommand: 'pantry install jemalloc.net' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

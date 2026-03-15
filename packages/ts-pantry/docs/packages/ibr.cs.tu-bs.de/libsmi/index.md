@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ibr.cs.tu-bs.de/libsmi
+# Install with pantry
+pantry install ibr.cs.tu-bs.de/libsmi
 ```
 
 ## Programs

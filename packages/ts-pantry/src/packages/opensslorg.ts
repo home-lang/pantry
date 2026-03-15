@@ -6,7 +6,7 @@
  * @version `3.6.1` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openssl.org`
+ * @install `pantry install openssl.org`
  * @aliases `openssl`
  * @homepage https://quictls.github.io/openssl
  * @dependencies `curl.se/ca-certs`
@@ -47,12 +47,12 @@ export const opensslPackage = {
   homepageUrl: 'https://quictls.github.io/openssl' as const,
   githubUrl: 'https://github.com/quictls/openssl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openssl.org' as const,
+  installCommand: 'pantry install openssl.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openssl.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openssl.org' as const,
+  pantryInstallCommand: 'pantry install openssl.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

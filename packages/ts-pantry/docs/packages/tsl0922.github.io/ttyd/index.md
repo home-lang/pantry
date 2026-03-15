@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tsl0922.github.io/ttyd
+# Install with pantry
+pantry install tsl0922.github.io/ttyd
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `0.40.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pixman.org`
+ * @install `pantry install pixman.org`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const pixmanorgPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/freedesktop/pixman' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pixman.org' as const,
+  installCommand: 'pantry install pixman.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pixman.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pixman.org' as const,
+  pantryInstallCommand: 'pantry install pixman.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

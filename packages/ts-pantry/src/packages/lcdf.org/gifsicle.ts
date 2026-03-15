@@ -6,7 +6,7 @@
  * @version `1.96.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lcdf.org/gifsicle`
+ * @install `pantry install lcdf.org/gifsicle`
  * @homepage https://www.lcdf.org/gifsicle/
  * @buildDependencies `gnu.org/autoconf@^2`, `gnu.org/automake@^1` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const lcdforggifsiclePackage = {
   homepageUrl: 'https://www.lcdf.org/gifsicle/' as const,
   githubUrl: 'https://github.com/kohler/gifsicle' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lcdf.org/gifsicle' as const,
+  installCommand: 'pantry install lcdf.org/gifsicle' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lcdf.org/gifsicle -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lcdf.org/gifsicle' as const,
+  pantryInstallCommand: 'pantry install lcdf.org/gifsicle' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

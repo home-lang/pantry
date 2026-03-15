@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install micro-editor.github.io
+# Install with pantry
+pantry install micro-editor.github.io
 ```
 
 ## Programs

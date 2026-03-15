@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install grpc.io/grpc-go
+# Install with pantry
+pantry install grpc.io/grpc-go
 ```
 
 ## Programs

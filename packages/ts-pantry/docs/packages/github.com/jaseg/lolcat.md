@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/jaseg/lolcat
+# Install with pantry
+pantry install github.com/jaseg/lolcat
 ```
 
 ## Programs

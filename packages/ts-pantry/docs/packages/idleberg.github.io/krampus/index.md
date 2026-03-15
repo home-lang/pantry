@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install idleberg.github.io/krampus
+# Install with pantry
+pantry install idleberg.github.io/krampus
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `2.9.5` (40 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install getcomposer.org`
+ * @install `pantry install getcomposer.org`
  * @homepage https://getcomposer.org/
  * @dependencies `php.net`
  * @buildDependencies `curl.se` - required only when building from source
@@ -42,12 +42,12 @@ export const getcomposerorgPackage = {
   homepageUrl: 'https://getcomposer.org/' as const,
   githubUrl: 'https://github.com/composer/composer' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install getcomposer.org' as const,
+  installCommand: 'pantry install getcomposer.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +getcomposer.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install getcomposer.org' as const,
+  pantryInstallCommand: 'pantry install getcomposer.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

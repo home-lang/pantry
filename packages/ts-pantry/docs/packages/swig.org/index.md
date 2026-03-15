@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install swig.org
+# Install with pantry
+pantry install swig.org
 ```
 
 ## Programs

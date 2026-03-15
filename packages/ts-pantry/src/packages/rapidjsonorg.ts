@@ -5,7 +5,7 @@
  * @version `1.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rapidjson.org`
+ * @install `pantry install rapidjson.org`
  * @homepage http://rapidjson.org/
  * @buildDependencies `cmake.org@3`, `doxygen.nl@1`, `gnu.org/patch` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const rapidjsonorgPackage = {
   homepageUrl: 'http://rapidjson.org/' as const,
   githubUrl: 'https://github.com/Tencent/rapidjson' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rapidjson.org' as const,
+  installCommand: 'pantry install rapidjson.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rapidjson.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rapidjson.org' as const,
+  pantryInstallCommand: 'pantry install rapidjson.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

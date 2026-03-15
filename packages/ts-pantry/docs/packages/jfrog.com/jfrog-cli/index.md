@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jfrog.com/jfrog-cli
+# Install with pantry
+pantry install jfrog.com/jfrog-cli
 ```
 
 ## Programs

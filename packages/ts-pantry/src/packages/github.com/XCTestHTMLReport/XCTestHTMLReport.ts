@@ -6,7 +6,7 @@
  * @version `2.5.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/XCTestHTMLReport/XCTestHTMLReport`
+ * @install `pantry install github.com/XCTestHTMLReport/XCTestHTMLReport`
  * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const xctesthtmlreportPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/XCTestHTMLReport/XCTestHTMLReport' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/XCTestHTMLReport/XCTestHTMLReport' as const,
+  installCommand: 'pantry install github.com/XCTestHTMLReport/XCTestHTMLReport' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/XCTestHTMLReport/XCTestHTMLReport -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/XCTestHTMLReport/XCTestHTMLReport' as const,
+  pantryInstallCommand: 'pantry install github.com/XCTestHTMLReport/XCTestHTMLReport' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

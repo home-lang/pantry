@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fmt.dev
+# Install with pantry
+pantry install fmt.dev
 ```
 
 ## Programs

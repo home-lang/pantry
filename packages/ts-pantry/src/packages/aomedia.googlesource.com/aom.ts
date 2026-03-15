@@ -6,7 +6,7 @@
  * @version `3.13.1` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aomedia.googlesource.com/aom`
+ * @install `pantry install aomedia.googlesource.com/aom`
  * @homepage https://aomedia.googlesource.com/aom
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const aomediagooglesourcecomaomPackage = {
   homepageUrl: 'https://aomedia.googlesource.com/aom' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aomedia.googlesource.com/aom' as const,
+  installCommand: 'pantry install aomedia.googlesource.com/aom' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aomedia.googlesource.com/aom -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aomedia.googlesource.com/aom' as const,
+  pantryInstallCommand: 'pantry install aomedia.googlesource.com/aom' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

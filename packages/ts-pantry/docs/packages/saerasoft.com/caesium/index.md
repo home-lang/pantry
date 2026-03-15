@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install saerasoft.com/caesium
+# Install with pantry
+pantry install saerasoft.com/caesium
 ```
 
 ## Programs

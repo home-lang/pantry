@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install scons.org
+# Install with pantry
+pantry install scons.org
 ```
 
 ## Programs

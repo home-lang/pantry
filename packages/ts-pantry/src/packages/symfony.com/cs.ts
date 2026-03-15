@@ -6,7 +6,7 @@
  * @version `3.94.2` (87 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install symfony.com/cs`
+ * @install `pantry install symfony.com/cs`
  * @homepage https://cs.symfony.com/
  * @dependencies `php.net>=7.4<8.4`
  *
@@ -41,12 +41,12 @@ export const symfonycomcsPackage = {
   homepageUrl: 'https://cs.symfony.com/' as const,
   githubUrl: 'https://github.com/PHP-CS-Fixer/PHP-CS-Fixer' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install symfony.com/cs' as const,
+  installCommand: 'pantry install symfony.com/cs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +symfony.com/cs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install symfony.com/cs' as const,
+  pantryInstallCommand: 'pantry install symfony.com/cs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

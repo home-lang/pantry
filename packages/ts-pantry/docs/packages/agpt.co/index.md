@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install agpt.co
+# Install with pantry
+pantry install agpt.co
 ```
 
 ## Programs

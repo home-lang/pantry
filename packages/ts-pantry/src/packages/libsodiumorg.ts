@@ -5,7 +5,7 @@
  * @version `1.0.21` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libsodium.org`
+ * @install `pantry install libsodium.org`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const libsodiumorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libsodium.org' as const,
+  installCommand: 'pantry install libsodium.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsodium.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libsodium.org' as const,
+  pantryInstallCommand: 'pantry install libsodium.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

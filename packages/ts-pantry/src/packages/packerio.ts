@@ -6,7 +6,7 @@
  * @version `1.15.0` (18 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install packer.io`
+ * @install `pantry install packer.io`
  * @homepage https://packer.io
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const packerioPackage = {
   homepageUrl: 'https://packer.io' as const,
   githubUrl: 'https://github.com/hashicorp/packer' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install packer.io' as const,
+  installCommand: 'pantry install packer.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +packer.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install packer.io' as const,
+  pantryInstallCommand: 'pantry install packer.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

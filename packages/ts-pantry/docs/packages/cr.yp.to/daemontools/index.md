@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cr.yp.to/daemontools
+# Install with pantry
+pantry install cr.yp.to/daemontools
 ```
 
 ## Programs

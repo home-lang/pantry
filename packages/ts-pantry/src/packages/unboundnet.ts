@@ -6,7 +6,7 @@
  * @version `1.24.2` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install unbound.net`
+ * @install `pantry install unbound.net`
  * @homepage https://nlnetlabs.nl/unbound
  * @dependencies `openssl.org^1`
  * @buildDependencies `libexpat.github.io`, `github.com/westes/flex`, `gnu.org/bison@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const unboundnetPackage = {
   homepageUrl: 'https://nlnetlabs.nl/unbound' as const,
   githubUrl: 'https://github.com/NLnetLabs/unbound' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install unbound.net' as const,
+  installCommand: 'pantry install unbound.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +unbound.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install unbound.net' as const,
+  pantryInstallCommand: 'pantry install unbound.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

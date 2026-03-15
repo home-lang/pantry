@@ -6,7 +6,7 @@
  * @version `4.99.6` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/lsof-org/lsof`
+ * @install `pantry install github.com/lsof-org/lsof`
  * @buildDependencies `gnu.org/coreutils`, `gnu.org/make`, `llvm.org`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const lsofPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/lsof-org/lsof' as const,
+  installCommand: 'pantry install github.com/lsof-org/lsof' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/lsof-org/lsof -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/lsof-org/lsof' as const,
+  pantryInstallCommand: 'pantry install github.com/lsof-org/lsof' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

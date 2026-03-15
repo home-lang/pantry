@@ -6,7 +6,7 @@
  * @version `0.11.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/rage`
+ * @install `pantry install crates.io/rage`
  * @homepage https://str4d.xyz/rage
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesioragePackage = {
   homepageUrl: 'https://str4d.xyz/rage' as const,
   githubUrl: 'https://github.com/str4d/rage' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/rage' as const,
+  installCommand: 'pantry install crates.io/rage' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/rage -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/rage' as const,
+  pantryInstallCommand: 'pantry install crates.io/rage' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

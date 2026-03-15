@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/99designs/aws-vault
+# Install with pantry
+pantry install github.com/99designs/aws-vault
 ```
 
 ## Programs

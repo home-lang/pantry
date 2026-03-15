@@ -6,7 +6,7 @@
  * @version `13.0.1` (201 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cnquery.io`
+ * @install `pantry install cnquery.io`
  * @homepage https://cnquery.io
  * @buildDependencies `go.dev@~1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cnqueryioPackage = {
   homepageUrl: 'https://cnquery.io' as const,
   githubUrl: 'https://github.com/mondoohq/cnquery' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cnquery.io' as const,
+  installCommand: 'pantry install cnquery.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cnquery.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cnquery.io' as const,
+  pantryInstallCommand: 'pantry install cnquery.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

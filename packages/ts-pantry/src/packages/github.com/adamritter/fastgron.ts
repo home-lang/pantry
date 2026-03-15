@@ -6,7 +6,7 @@
  * @version `0.7.7` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/adamritter/fastgron`
+ * @install `pantry install github.com/adamritter/fastgron`
  * @dependencies `curl.se`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/bash@^5`, `gnu.org/make`, `cmake.org@^3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fastgronPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/adamritter/fastgron' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/adamritter/fastgron' as const,
+  installCommand: 'pantry install github.com/adamritter/fastgron' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/adamritter/fastgron -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/adamritter/fastgron' as const,
+  pantryInstallCommand: 'pantry install github.com/adamritter/fastgron' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

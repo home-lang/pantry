@@ -6,7 +6,7 @@
  * @version `1.5.8` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install printfn.github.io/fend`
+ * @install `pantry install printfn.github.io/fend`
  * @homepage https://printfn.github.io/fend
  * @dependencies `openssl.org^1.1`
  *
@@ -41,12 +41,12 @@ export const printfngithubiofendPackage = {
   homepageUrl: 'https://printfn.github.io/fend' as const,
   githubUrl: 'https://github.com/printfn/fend' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install printfn.github.io/fend' as const,
+  installCommand: 'pantry install printfn.github.io/fend' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +printfn.github.io/fend -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install printfn.github.io/fend' as const,
+  pantryInstallCommand: 'pantry install printfn.github.io/fend' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

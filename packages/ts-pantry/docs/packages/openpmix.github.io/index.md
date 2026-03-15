@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openpmix.github.io
+# Install with pantry
+pantry install openpmix.github.io
 ```
 
 ## Programs

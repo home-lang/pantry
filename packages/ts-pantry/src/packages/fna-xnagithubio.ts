@@ -5,7 +5,7 @@
  * @version `26.3.0` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fna-xna.github.io`
+ * @install `pantry install fna-xna.github.io`
  * @homepage https://fna-xna.github.io/
  * @dependencies `libsdl.org^2.28`
  * @buildDependencies `cmake.org` - required only when building from source
@@ -40,12 +40,12 @@ export const fnaxnagithubioPackage = {
   homepageUrl: 'https://fna-xna.github.io/' as const,
   githubUrl: 'https://github.com/FNA-XNA/FAudio' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fna-xna.github.io' as const,
+  installCommand: 'pantry install fna-xna.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fna-xna.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fna-xna.github.io' as const,
+  pantryInstallCommand: 'pantry install fna-xna.github.io' as const,
   programs: [] as const,
   companions: [] as const,
   /**

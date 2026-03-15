@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/mesa-glu
+# Install with pantry
+pantry install freedesktop.org/mesa-glu
 ```
 
 ## Programs

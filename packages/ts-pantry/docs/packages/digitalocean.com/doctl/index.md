@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install digitalocean.com/doctl
+# Install with pantry
+pantry install digitalocean.com/doctl
 ```
 
 ## Programs

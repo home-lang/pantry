@@ -6,7 +6,7 @@
  * @version `3.6.3` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kislyuk.github.io/argcomplete`
+ * @install `pantry install kislyuk.github.io/argcomplete`
  * @homepage https://kislyuk.github.io/argcomplete/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@~3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const kislyukgithubioargcompletePackage = {
   homepageUrl: 'https://kislyuk.github.io/argcomplete/' as const,
   githubUrl: 'https://github.com/kislyuk/argcomplete' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kislyuk.github.io/argcomplete' as const,
+  installCommand: 'pantry install kislyuk.github.io/argcomplete' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kislyuk.github.io/argcomplete -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kislyuk.github.io/argcomplete' as const,
+  pantryInstallCommand: 'pantry install kislyuk.github.io/argcomplete' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

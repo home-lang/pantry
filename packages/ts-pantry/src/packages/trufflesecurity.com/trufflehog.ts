@@ -6,7 +6,7 @@
  * @version `3.93.8` (175 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install trufflesecurity.com/trufflehog`
+ * @install `pantry install trufflesecurity.com/trufflehog`
  * @homepage https://trufflesecurity.com/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const trufflesecuritycomtrufflehogPackage = {
   homepageUrl: 'https://trufflesecurity.com/' as const,
   githubUrl: 'https://github.com/trufflesecurity/trufflehog' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install trufflesecurity.com/trufflehog' as const,
+  installCommand: 'pantry install trufflesecurity.com/trufflehog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +trufflesecurity.com/trufflehog -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install trufflesecurity.com/trufflehog' as const,
+  pantryInstallCommand: 'pantry install trufflesecurity.com/trufflehog' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

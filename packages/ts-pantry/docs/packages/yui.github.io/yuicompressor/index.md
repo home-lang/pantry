@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install yui.github.io/yuicompressor
+# Install with pantry
+pantry install yui.github.io/yuicompressor
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opendap.org
+# Install with pantry
+pantry install opendap.org
 ```
 
 ## Programs

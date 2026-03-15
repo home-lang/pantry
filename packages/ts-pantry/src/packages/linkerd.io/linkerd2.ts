@@ -6,7 +6,7 @@
  * @version `2.14.10` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install linkerd.io/linkerd2`
+ * @install `pantry install linkerd.io/linkerd2`
  * @homepage https://linkerd.io
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const linkerdiolinkerd2Package = {
   homepageUrl: 'https://linkerd.io' as const,
   githubUrl: 'https://github.com/linkerd/linkerd2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install linkerd.io/linkerd2' as const,
+  installCommand: 'pantry install linkerd.io/linkerd2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +linkerd.io/linkerd2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install linkerd.io/linkerd2' as const,
+  pantryInstallCommand: 'pantry install linkerd.io/linkerd2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

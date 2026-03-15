@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ChargePoint/xcparse
+# Install with pantry
+pantry install github.com/ChargePoint/xcparse
 ```
 
 ## Programs

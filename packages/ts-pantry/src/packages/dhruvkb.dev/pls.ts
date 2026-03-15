@@ -6,7 +6,7 @@
  * @version `2023.12.22` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dhruvkb.dev/pls`
+ * @install `pantry install dhruvkb.dev/pls`
  * @homepage https://pls.cli.rs/
  * @dependencies `libgit2.org~1.7 # links to libgit2.so.1.7`
  *
@@ -41,12 +41,12 @@ export const dhruvkbdevplsPackage = {
   homepageUrl: 'https://pls.cli.rs/' as const,
   githubUrl: 'https://github.com/pls-rs/pls' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dhruvkb.dev/pls' as const,
+  installCommand: 'pantry install dhruvkb.dev/pls' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dhruvkb.dev/pls -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dhruvkb.dev/pls' as const,
+  pantryInstallCommand: 'pantry install dhruvkb.dev/pls' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

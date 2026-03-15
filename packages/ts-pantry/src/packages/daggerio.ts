@@ -6,7 +6,7 @@
  * @version `0.20.1` (114 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dagger.io`
+ * @install `pantry install dagger.io`
  * @homepage https://dagger.io
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const daggerioPackage = {
   homepageUrl: 'https://dagger.io' as const,
   githubUrl: 'https://github.com/dagger/dagger' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dagger.io' as const,
+  installCommand: 'pantry install dagger.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dagger.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dagger.io' as const,
+  pantryInstallCommand: 'pantry install dagger.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

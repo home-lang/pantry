@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install swagger.io/swagger-codegen
+# Install with pantry
+pantry install swagger.io/swagger-codegen
 ```
 
 ## Programs

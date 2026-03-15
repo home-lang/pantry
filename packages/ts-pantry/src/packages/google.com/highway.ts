@@ -5,7 +5,7 @@
  * @version `1.3.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/highway`
+ * @install `pantry install google.com/highway`
  * @buildDependencies `cmake.org` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const googlecomhighwayPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/google/highway' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/highway' as const,
+  installCommand: 'pantry install google.com/highway' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/highway -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/highway' as const,
+  pantryInstallCommand: 'pantry install google.com/highway' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

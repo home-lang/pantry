@@ -6,7 +6,7 @@
  * @version `0.16.8` (70 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fluentci.io`
+ * @install `pantry install fluentci.io`
  * @homepage https://fluentci.io
  * @dependencies `dagger.io^0.10`, `deno.land^1.42`, `charm.sh/glow^1.5.1`
  *
@@ -41,12 +41,12 @@ export const fluentciioPackage = {
   homepageUrl: 'https://fluentci.io' as const,
   githubUrl: 'https://github.com/fluentci-io/fluentci' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fluentci.io' as const,
+  installCommand: 'pantry install fluentci.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fluentci.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fluentci.io' as const,
+  pantryInstallCommand: 'pantry install fluentci.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

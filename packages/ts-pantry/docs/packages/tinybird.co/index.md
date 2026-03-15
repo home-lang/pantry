@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tinybird.co
+# Install with pantry
+pantry install tinybird.co
 ```
 
 ## Programs

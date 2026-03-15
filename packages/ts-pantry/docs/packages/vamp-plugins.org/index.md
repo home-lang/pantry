@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vamp-plugins.org
+# Install with pantry
+pantry install vamp-plugins.org
 ```
 
 ## Programs

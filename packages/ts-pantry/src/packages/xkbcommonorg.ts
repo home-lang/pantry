@@ -6,7 +6,7 @@
  * @version `1.13.0` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xkbcommon.org`
+ * @install `pantry install xkbcommon.org`
  * @homepage https://xkbcommon.org/
  * @dependencies `x.org/x11`, `x.org/xcb`, `freedesktop.org/XKeyboardConfig`, ... (+1 more)
  * @buildDependencies `gnu.org/bison`, `mesonbuild.com` - required only when building from source
@@ -42,12 +42,12 @@ export const xkbcommonorgPackage = {
   homepageUrl: 'https://xkbcommon.org/' as const,
   githubUrl: 'https://github.com/xkbcommon/libxkbcommon' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xkbcommon.org' as const,
+  installCommand: 'pantry install xkbcommon.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xkbcommon.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xkbcommon.org' as const,
+  pantryInstallCommand: 'pantry install xkbcommon.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

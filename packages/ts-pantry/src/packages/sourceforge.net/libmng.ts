@@ -5,7 +5,7 @@
  * @version `2.0.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceforge.net/libmng`
+ * @install `pantry install sourceforge.net/libmng`
  * @dependencies `libjpeg-turbo.org`, `littlecms.com>=2.0.0`, `zlib.net`
  *
  * @example
@@ -37,12 +37,12 @@ export const sourceforgenetlibmngPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceforge.net/libmng' as const,
+  installCommand: 'pantry install sourceforge.net/libmng' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceforge.net/libmng -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceforge.net/libmng' as const,
+  pantryInstallCommand: 'pantry install sourceforge.net/libmng' as const,
   programs: [] as const,
   companions: [] as const,
   /**

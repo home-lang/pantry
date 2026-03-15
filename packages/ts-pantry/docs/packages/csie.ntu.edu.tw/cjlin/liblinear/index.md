@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install csie.ntu.edu.tw/cjlin/liblinear
+# Install with pantry
+pantry install csie.ntu.edu.tw/cjlin/liblinear
 ```
 
 ## Programs

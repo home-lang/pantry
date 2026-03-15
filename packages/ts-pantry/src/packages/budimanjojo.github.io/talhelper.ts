@@ -6,7 +6,7 @@
  * @version `3.1.6` (72 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install budimanjojo.github.io/talhelper`
+ * @install `pantry install budimanjojo.github.io/talhelper`
  * @homepage https://budimanjojo.github.io/talhelper/latest/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const budimanjojogithubiotalhelperPackage = {
   homepageUrl: 'https://budimanjojo.github.io/talhelper/latest/' as const,
   githubUrl: 'https://github.com/budimanjojo/talhelper' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install budimanjojo.github.io/talhelper' as const,
+  installCommand: 'pantry install budimanjojo.github.io/talhelper' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +budimanjojo.github.io/talhelper -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install budimanjojo.github.io/talhelper' as const,
+  pantryInstallCommand: 'pantry install budimanjojo.github.io/talhelper' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `9.8.0` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install proj.org`
+ * @install `pantry install proj.org`
  * @homepage https://proj.org/
  * @dependencies `simplesystems.org/libtiff`, `sqlite.org`, `curl.se`
  * @buildDependencies `cmake.org`, `gnu.org/libtool`, `gnu.org/wget`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const projorgPackage = {
   homepageUrl: 'https://proj.org/' as const,
   githubUrl: 'https://github.com/OSGeo/proj' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install proj.org' as const,
+  installCommand: 'pantry install proj.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +proj.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install proj.org' as const,
+  pantryInstallCommand: 'pantry install proj.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

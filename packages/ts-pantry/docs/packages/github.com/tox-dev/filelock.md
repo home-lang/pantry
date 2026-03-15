@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/tox-dev/filelock
+# Install with pantry
+pantry install github.com/tox-dev/filelock
 ```
 
 ## Programs

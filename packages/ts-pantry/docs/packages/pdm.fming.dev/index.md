@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pdm.fming.dev
+# Install with pantry
+pantry install pdm.fming.dev
 ```
 
 ## Programs

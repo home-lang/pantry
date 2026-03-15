@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/moby/buildkit
+# Install with pantry
+pantry install github.com/moby/buildkit
 ```
 
 ## Programs

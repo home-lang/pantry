@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ordinals.com
+# Install with pantry
+pantry install ordinals.com
 ```
 
 ## Programs

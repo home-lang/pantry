@@ -6,7 +6,7 @@
  * @version `0.7.6` (22 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install terratag.io`
+ * @install `pantry install terratag.io`
  * @homepage https://terratag.io
  * @dependencies `terraform.io>=0.12`, `curl.se/ca-certs`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
@@ -42,12 +42,12 @@ export const terratagioPackage = {
   homepageUrl: 'https://terratag.io' as const,
   githubUrl: 'https://github.com/env0/terratag' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install terratag.io' as const,
+  installCommand: 'pantry install terratag.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +terratag.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install terratag.io' as const,
+  pantryInstallCommand: 'pantry install terratag.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

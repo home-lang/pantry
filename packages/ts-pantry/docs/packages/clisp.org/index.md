@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install clisp.org
+# Install with pantry
+pantry install clisp.org
 ```
 
 ## Programs

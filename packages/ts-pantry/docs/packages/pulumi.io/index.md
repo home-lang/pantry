@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pulumi.io
+# Install with pantry
+pantry install pulumi.io
 ```
 
 ## Programs

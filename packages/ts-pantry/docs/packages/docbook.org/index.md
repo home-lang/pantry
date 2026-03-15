@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install docbook.org
+# Install with pantry
+pantry install docbook.org
 ```
 
 ## Programs

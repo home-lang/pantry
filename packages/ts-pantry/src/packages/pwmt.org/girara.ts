@@ -5,7 +5,7 @@
  * @version `2026.2.4` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pwmt.org/girara`
+ * @install `pantry install pwmt.org/girara`
  * @homepage https://pwmt.org/projects/girara
  * @dependencies `gtk.org/gtk3@3`, `gnome.org/glib^2.72`, `gnome.org/json-glib^1`
  * @buildDependencies `mesonbuild.com@>=0.61`, `gnu.org/gettext` - required only when building from source
@@ -40,12 +40,12 @@ export const pwmtorggiraraPackage = {
   homepageUrl: 'https://pwmt.org/projects/girara' as const,
   githubUrl: 'https://github.com/pwmt/girara' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pwmt.org/girara' as const,
+  installCommand: 'pantry install pwmt.org/girara' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pwmt.org/girara -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pwmt.org/girara' as const,
+  pantryInstallCommand: 'pantry install pwmt.org/girara' as const,
   programs: [] as const,
   companions: [] as const,
   /**

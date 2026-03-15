@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pyinvoke.org
+# Install with pantry
+pantry install pyinvoke.org
 ```
 
 ## Programs

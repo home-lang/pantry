@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fermyon.com/spin
+# Install with pantry
+pantry install fermyon.com/spin
 ```
 
 ## Programs

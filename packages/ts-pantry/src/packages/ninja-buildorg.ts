@@ -6,7 +6,7 @@
  * @version `1.13.2` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ninja-build.org`
+ * @install `pantry install ninja-build.org`
  * @homepage https://ninja-build.org/
  * @buildDependencies `cmake.org@3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const ninjabuildorgPackage = {
   homepageUrl: 'https://ninja-build.org/' as const,
   githubUrl: 'https://github.com/ninja-build/ninja' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ninja-build.org' as const,
+  installCommand: 'pantry install ninja-build.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ninja-build.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ninja-build.org' as const,
+  pantryInstallCommand: 'pantry install ninja-build.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

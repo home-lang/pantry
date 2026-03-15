@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install oberhumer.com/lzo
+# Install with pantry
+pantry install oberhumer.com/lzo
 ```
 
 ## Programs

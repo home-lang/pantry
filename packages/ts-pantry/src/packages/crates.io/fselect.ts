@@ -6,7 +6,7 @@
  * @version `0.9.3` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/fselect`
+ * @install `pantry install crates.io/fselect`
  * @homepage https://fselect.rocks
  * @dependencies `openssl.org^1.1`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const cratesiofselectPackage = {
   homepageUrl: 'https://fselect.rocks' as const,
   githubUrl: 'https://github.com/jhspetersson/fselect' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/fselect' as const,
+  installCommand: 'pantry install crates.io/fselect' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/fselect -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/fselect' as const,
+  pantryInstallCommand: 'pantry install crates.io/fselect' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

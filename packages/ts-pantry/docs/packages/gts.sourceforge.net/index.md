@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gts.sourceforge.net
+# Install with pantry
+pantry install gts.sourceforge.net
 ```
 
 ## Programs

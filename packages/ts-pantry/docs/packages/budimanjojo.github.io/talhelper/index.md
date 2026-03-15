@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install budimanjojo.github.io/talhelper
+# Install with pantry
+pantry install budimanjojo.github.io/talhelper
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ffmpeg.org
+# Install with pantry
+pantry install ffmpeg.org
 ```
 
 ## Programs

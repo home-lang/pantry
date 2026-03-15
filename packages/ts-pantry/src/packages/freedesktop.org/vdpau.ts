@@ -5,7 +5,7 @@
  * @version `1.5.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/vdpau`
+ * @install `pantry install freedesktop.org/vdpau`
  * @dependencies `x.org/x11`, `x.org/exts`, `x.org/protocol`
  * @buildDependencies `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const freedesktoporgvdpauPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/vdpau' as const,
+  installCommand: 'pantry install freedesktop.org/vdpau' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/vdpau -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/vdpau' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/vdpau' as const,
   programs: [] as const,
   companions: [] as const,
   /**

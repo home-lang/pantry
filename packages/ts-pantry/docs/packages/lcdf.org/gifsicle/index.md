@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lcdf.org/gifsicle
+# Install with pantry
+pantry install lcdf.org/gifsicle
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rarlab.com
+# Install with pantry
+pantry install rarlab.com
 ```
 
 ## Programs

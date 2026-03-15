@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/git-ecosystem/git-credential-manager
+# Install with pantry
+pantry install github.com/git-ecosystem/git-credential-manager
 ```
 
 ## Programs

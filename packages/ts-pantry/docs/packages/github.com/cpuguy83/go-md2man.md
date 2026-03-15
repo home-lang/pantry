@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/cpuguy83/go-md2man
+# Install with pantry
+pantry install github.com/cpuguy83/go-md2man
 ```
 
 ## Programs

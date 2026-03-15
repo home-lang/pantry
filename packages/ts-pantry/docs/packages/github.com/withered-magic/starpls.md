@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/withered-magic/starpls
+# Install with pantry
+pantry install github.com/withered-magic/starpls
 ```
 
 ## Programs

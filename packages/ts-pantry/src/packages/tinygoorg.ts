@@ -6,7 +6,7 @@
  * @version `0.40.1` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tinygo.org`
+ * @install `pantry install tinygo.org`
  * @homepage https://tinygo.org
  * @dependencies `go.dev`
  * @buildDependencies `go.dev@^1.18`, `cmake.org@3`, `nodejs.org`, ... (+1 more) - required only when building from source
@@ -42,12 +42,12 @@ export const tinygoorgPackage = {
   homepageUrl: 'https://tinygo.org' as const,
   githubUrl: 'https://github.com/tinygo-org/tinygo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tinygo.org' as const,
+  installCommand: 'pantry install tinygo.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tinygo.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tinygo.org' as const,
+  pantryInstallCommand: 'pantry install tinygo.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

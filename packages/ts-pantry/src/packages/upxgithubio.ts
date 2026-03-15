@@ -6,7 +6,7 @@
  * @version `5.1.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install upx.github.io`
+ * @install `pantry install upx.github.io`
  * @homepage https://upx.github.io/
  * @dependencies `zlib.net`
  * @buildDependencies `cmake.org`, `oberhumer.com/ucl` - required only when building from source
@@ -42,12 +42,12 @@ export const upxgithubioPackage = {
   homepageUrl: 'https://upx.github.io/' as const,
   githubUrl: 'https://github.com/upx/upx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install upx.github.io' as const,
+  installCommand: 'pantry install upx.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +upx.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install upx.github.io' as const,
+  pantryInstallCommand: 'pantry install upx.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

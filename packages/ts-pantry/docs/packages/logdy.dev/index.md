@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install logdy.dev
+# Install with pantry
+pantry install logdy.dev
 ```
 
 ## Programs

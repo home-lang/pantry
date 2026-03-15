@@ -6,7 +6,7 @@
  * @version `0.16.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install docker.com/machine`
+ * @install `pantry install docker.com/machine`
  * @homepage https://docs.gitlab.com/runner/executors/docker_machine.html
  * @buildDependencies `gnu.org/automake`, `go.dev`, `linux:curl.se` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const dockercommachinePackage = {
   homepageUrl: 'https://docs.gitlab.com/runner/executors/docker_machine.html' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install docker.com/machine' as const,
+  installCommand: 'pantry install docker.com/machine' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +docker.com/machine -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install docker.com/machine' as const,
+  pantryInstallCommand: 'pantry install docker.com/machine' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

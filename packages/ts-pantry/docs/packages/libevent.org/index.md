@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libevent.org
+# Install with pantry
+pantry install libevent.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install felixkratz.github.io/SketchyBar
+# Install with pantry
+pantry install felixkratz.github.io/SketchyBar
 ```
 
 ## Programs

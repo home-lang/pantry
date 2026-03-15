@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/cosmtrek/air
+# Install with pantry
+pantry install github.com/cosmtrek/air
 ```
 
 ## Programs

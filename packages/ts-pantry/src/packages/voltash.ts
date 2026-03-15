@@ -6,7 +6,7 @@
  * @version `2.0.2` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install volta.sh`
+ * @install `pantry install volta.sh`
  * @homepage https://volta.sh
  * @dependencies `linux:curl.se/ca-certs` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const voltashPackage = {
   homepageUrl: 'https://volta.sh' as const,
   githubUrl: 'https://github.com/volta-cli/volta' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install volta.sh' as const,
+  installCommand: 'pantry install volta.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +volta.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install volta.sh' as const,
+  pantryInstallCommand: 'pantry install volta.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

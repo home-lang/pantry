@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install quickwit.io
+# Install with pantry
+pantry install quickwit.io
 ```
 
 ## Programs

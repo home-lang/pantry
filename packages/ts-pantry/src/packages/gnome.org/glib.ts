@@ -6,7 +6,7 @@
  * @version `2.87.5` (59 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/glib`
+ * @install `pantry install gnome.org/glib`
  * @homepage https://docs.gtk.org/glib/
  * @dependencies `gnu.org/gettext^0.21`, `sourceware.org/libffi@3`, `pcre.org@8`, ... (+2 more)
  * @buildDependencies `mesonbuild.com@^1.2`, `python.org@>=3.5<3.12`, `gnome.org/libxml2@~2.13` - required only when building from source
@@ -42,12 +42,12 @@ export const gnomeorgglibPackage = {
   homepageUrl: 'https://docs.gtk.org/glib/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/glib' as const,
+  installCommand: 'pantry install gnome.org/glib' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/glib -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/glib' as const,
+  pantryInstallCommand: 'pantry install gnome.org/glib' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

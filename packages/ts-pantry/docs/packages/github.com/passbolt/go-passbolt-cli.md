@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/passbolt/go-passbolt-cli
+# Install with pantry
+pantry install github.com/passbolt/go-passbolt-cli
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.2.3` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/xcursor`
+ * @install `pantry install x.org/xcursor`
  * @dependencies `x.org/x11`, `x.org/xfixes`, `x.org/xrender`
  *
  * @example
@@ -37,12 +37,12 @@ export const xorgxcursorPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/xcursor' as const,
+  installCommand: 'pantry install x.org/xcursor' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/xcursor -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/xcursor' as const,
+  pantryInstallCommand: 'pantry install x.org/xcursor' as const,
   programs: [] as const,
   companions: [] as const,
   /**

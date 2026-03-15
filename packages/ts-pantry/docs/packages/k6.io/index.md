@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install k6.io
+# Install with pantry
+pantry install k6.io
 ```
 
 ## Programs

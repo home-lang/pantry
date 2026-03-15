@@ -6,7 +6,7 @@
  * @version `2.59.3` (56 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install digitalocean.com/doctl`
+ * @install `pantry install digitalocean.com/doctl`
  * @homepage https://docs.digitalocean.com/reference/doctl/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const digitaloceancomdoctlPackage = {
   homepageUrl: 'https://docs.digitalocean.com/reference/doctl/' as const,
   githubUrl: 'https://github.com/digitalocean/doctl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install digitalocean.com/doctl' as const,
+  installCommand: 'pantry install digitalocean.com/doctl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +digitalocean.com/doctl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install digitalocean.com/doctl' as const,
+  pantryInstallCommand: 'pantry install digitalocean.com/doctl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `2024.4.12` (23 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install getfoundry.sh`
+ * @install `pantry install getfoundry.sh`
  * @homepage https://getfoundry.sh
  * @dependencies `git-scm.org^2`
  *
@@ -41,12 +41,12 @@ export const getfoundryshPackage = {
   homepageUrl: 'https://getfoundry.sh' as const,
   githubUrl: 'https://github.com/foundry-rs/foundry' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install getfoundry.sh' as const,
+  installCommand: 'pantry install getfoundry.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +getfoundry.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install getfoundry.sh' as const,
+  pantryInstallCommand: 'pantry install getfoundry.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

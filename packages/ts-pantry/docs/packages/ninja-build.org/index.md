@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ninja-build.org
+# Install with pantry
+pantry install ninja-build.org
 ```
 
 ## Programs

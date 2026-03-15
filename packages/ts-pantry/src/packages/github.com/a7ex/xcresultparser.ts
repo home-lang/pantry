@@ -6,7 +6,7 @@
  * @version `2.0.0` (22 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/a7ex/xcresultparser`
+ * @install `pantry install github.com/a7ex/xcresultparser`
  * @buildDependencies `crates.io/semverator` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const xcresultparserPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/a7ex/xcresultparser' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/a7ex/xcresultparser' as const,
+  installCommand: 'pantry install github.com/a7ex/xcresultparser' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/a7ex/xcresultparser -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/a7ex/xcresultparser' as const,
+  pantryInstallCommand: 'pantry install github.com/a7ex/xcresultparser' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

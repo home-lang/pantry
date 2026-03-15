@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install linkerd.io/linkerd2
+# Install with pantry
+pantry install linkerd.io/linkerd2
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rucio.cern.ch/rucio-client
+# Install with pantry
+pantry install rucio.cern.ch/rucio-client
 ```
 
 ## Programs

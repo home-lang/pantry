@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/brona/iproute2mac
+# Install with pantry
+pantry install github.com/brona/iproute2mac
 ```
 
 ## Programs

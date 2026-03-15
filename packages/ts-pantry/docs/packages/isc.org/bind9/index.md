@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install isc.org/bind9
+# Install with pantry
+pantry install isc.org/bind9
 ```
 
 ## Programs

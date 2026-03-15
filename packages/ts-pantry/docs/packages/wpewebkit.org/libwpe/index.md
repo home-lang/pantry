@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wpewebkit.org/libwpe
+# Install with pantry
+pantry install wpewebkit.org/libwpe
 ```
 
 ## Programs

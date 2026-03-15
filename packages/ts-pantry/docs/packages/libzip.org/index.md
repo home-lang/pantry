@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libzip.org
+# Install with pantry
+pantry install libzip.org
 ```
 
 ## Programs

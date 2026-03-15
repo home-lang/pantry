@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ijg.org
+# Install with pantry
+pantry install ijg.org
 ```
 
 ## Programs

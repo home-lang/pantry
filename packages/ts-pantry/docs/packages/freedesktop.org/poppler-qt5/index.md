@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/poppler-qt5
+# Install with pantry
+pantry install freedesktop.org/poppler-qt5
 ```
 
 ## Programs

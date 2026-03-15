@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kornel.ski/dssim
+# Install with pantry
+pantry install kornel.ski/dssim
 ```
 
 ## Programs

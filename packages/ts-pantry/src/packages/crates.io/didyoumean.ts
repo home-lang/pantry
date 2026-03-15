@@ -6,7 +6,7 @@
  * @version `1.1.4` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/didyoumean`
+ * @install `pantry install crates.io/didyoumean`
  * @dependencies `openssl.org^1.1`, `linux:x.org/xcb` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiodidyoumeanPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/hisbaan/didyoumean' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/didyoumean' as const,
+  installCommand: 'pantry install crates.io/didyoumean' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/didyoumean -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/didyoumean' as const,
+  pantryInstallCommand: 'pantry install crates.io/didyoumean' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

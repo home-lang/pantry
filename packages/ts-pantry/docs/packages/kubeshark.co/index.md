@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kubeshark.co
+# Install with pantry
+pantry install kubeshark.co
 ```
 
 ## Programs

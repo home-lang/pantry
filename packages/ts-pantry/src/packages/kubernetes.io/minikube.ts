@@ -6,7 +6,7 @@
  * @version `1.38.1` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kubernetes.io/minikube`
+ * @install `pantry install kubernetes.io/minikube`
  * @homepage https://minikube.sigs.k8s.io/
  * @dependencies `kubernetes.io/kubectl`
  * @buildDependencies `go.dev@^1.19` - required only when building from source
@@ -42,12 +42,12 @@ export const kubernetesiominikubePackage = {
   homepageUrl: 'https://minikube.sigs.k8s.io/' as const,
   githubUrl: 'https://github.com/kubernetes/minikube' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kubernetes.io/minikube' as const,
+  installCommand: 'pantry install kubernetes.io/minikube' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kubernetes.io/minikube -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kubernetes.io/minikube' as const,
+  pantryInstallCommand: 'pantry install kubernetes.io/minikube' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

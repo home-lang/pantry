@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ruby
+# Install with pantry
+pantry install ruby
 ```
 
 ## Programs

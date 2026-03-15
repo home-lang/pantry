@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install upliftci.dev
+# Install with pantry
+pantry install upliftci.dev
 ```
 
 ## Programs

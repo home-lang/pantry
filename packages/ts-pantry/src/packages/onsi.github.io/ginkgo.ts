@@ -6,7 +6,7 @@
  * @version `2.28.1` (29 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install onsi.github.io/ginkgo`
+ * @install `pantry install onsi.github.io/ginkgo`
  * @homepage http://onsi.github.io/ginkgo/
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const onsigithubioginkgoPackage = {
   homepageUrl: 'http://onsi.github.io/ginkgo/' as const,
   githubUrl: 'https://github.com/onsi/ginkgo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install onsi.github.io/ginkgo' as const,
+  installCommand: 'pantry install onsi.github.io/ginkgo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +onsi.github.io/ginkgo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install onsi.github.io/ginkgo' as const,
+  pantryInstallCommand: 'pantry install onsi.github.io/ginkgo' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

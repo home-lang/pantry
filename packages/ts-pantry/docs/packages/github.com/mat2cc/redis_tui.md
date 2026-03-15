@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mat2cc/redis_tui
+# Install with pantry
+pantry install github.com/mat2cc/redis_tui
 ```
 
 ## Programs

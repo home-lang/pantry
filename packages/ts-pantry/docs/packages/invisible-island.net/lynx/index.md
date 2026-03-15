@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install invisible-island.net/lynx
+# Install with pantry
+pantry install invisible-island.net/lynx
 ```
 
 ## Programs

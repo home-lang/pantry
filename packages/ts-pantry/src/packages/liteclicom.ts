@@ -6,7 +6,7 @@
  * @version `1.17.1` (18 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install litecli.com`
+ * @install `pantry install litecli.com`
  * @homepage https://litecli.com
  * @dependencies `pkgx.sh>=1`, `sqlite.org^3.45`
  * @buildDependencies `python.org@~3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const liteclicomPackage = {
   homepageUrl: 'https://litecli.com' as const,
   githubUrl: 'https://github.com/dbcli/litecli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install litecli.com' as const,
+  installCommand: 'pantry install litecli.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +litecli.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install litecli.com' as const,
+  pantryInstallCommand: 'pantry install litecli.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

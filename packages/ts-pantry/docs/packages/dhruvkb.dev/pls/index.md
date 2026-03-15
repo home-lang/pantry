@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dhruvkb.dev/pls
+# Install with pantry
+pantry install dhruvkb.dev/pls
 ```
 
 ## Programs

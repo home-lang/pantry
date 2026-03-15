@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nmap.org
+# Install with pantry
+pantry install nmap.org
 ```
 
 ## Programs

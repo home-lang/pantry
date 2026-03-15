@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install stedolan.github.io/jq
+# Install with pantry
+pantry install stedolan.github.io/jq
 ```
 
 ## Programs

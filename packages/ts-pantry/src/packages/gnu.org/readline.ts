@@ -5,7 +5,7 @@
  * @version `8.3.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/readline`
+ * @install `pantry install gnu.org/readline`
  * @dependencies `invisible-island.net/ncurses^6`
  *
  * @example
@@ -37,12 +37,12 @@ export const gnuorgreadlinePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/readline' as const,
+  installCommand: 'pantry install gnu.org/readline' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/readline -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/readline' as const,
+  pantryInstallCommand: 'pantry install gnu.org/readline' as const,
   programs: [] as const,
   companions: [] as const,
   /**

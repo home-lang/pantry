@@ -6,7 +6,7 @@
  * @version `5.21.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sdkman.io`
+ * @install `pantry install sdkman.io`
  * @homepage https://sdkman.io
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const sdkmanioPackage = {
   homepageUrl: 'https://sdkman.io' as const,
   githubUrl: 'https://github.com/sdkman/sdkman-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sdkman.io' as const,
+  installCommand: 'pantry install sdkman.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sdkman.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sdkman.io' as const,
+  pantryInstallCommand: 'pantry install sdkman.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

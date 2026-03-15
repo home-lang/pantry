@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tilt.dev
+# Install with pantry
+pantry install tilt.dev
 ```
 
 ## Programs

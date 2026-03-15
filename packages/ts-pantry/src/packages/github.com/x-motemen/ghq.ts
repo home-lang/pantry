@@ -6,7 +6,7 @@
  * @version `1.9.4` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/x-motemen/ghq`
+ * @install `pantry install github.com/x-motemen/ghq`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const ghqPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/x-motemen/ghq' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/x-motemen/ghq' as const,
+  installCommand: 'pantry install github.com/x-motemen/ghq' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/x-motemen/ghq -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/x-motemen/ghq' as const,
+  pantryInstallCommand: 'pantry install github.com/x-motemen/ghq' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

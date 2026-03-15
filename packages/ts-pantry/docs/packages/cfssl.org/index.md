@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cfssl.org
+# Install with pantry
+pantry install cfssl.org
 ```
 
 ## Programs

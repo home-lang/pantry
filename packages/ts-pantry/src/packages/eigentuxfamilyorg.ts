@@ -5,7 +5,7 @@
  * @version `5.0.1` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install eigen.tuxfamily.org`
+ * @install `pantry install eigen.tuxfamily.org`
  * @dependencies `linux:gnu.org/gcc/libstdcxx@14` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const eigentuxfamilyorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install eigen.tuxfamily.org' as const,
+  installCommand: 'pantry install eigen.tuxfamily.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +eigen.tuxfamily.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install eigen.tuxfamily.org' as const,
+  pantryInstallCommand: 'pantry install eigen.tuxfamily.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

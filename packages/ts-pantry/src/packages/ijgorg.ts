@@ -6,7 +6,7 @@
  * @version `10.0.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ijg.org`
+ * @install `pantry install ijg.org`
  * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const ijgorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ijg.org' as const,
+  installCommand: 'pantry install ijg.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ijg.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ijg.org' as const,
+  pantryInstallCommand: 'pantry install ijg.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

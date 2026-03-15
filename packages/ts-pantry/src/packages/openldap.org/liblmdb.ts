@@ -6,7 +6,7 @@
  * @version `0.9.35` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openldap.org/liblmdb`
+ * @install `pantry install openldap.org/liblmdb`
  * @homepage https://www.symas.com/symas-embedded-database-lmdb
  * @buildDependencies `darwin:gnu.org/patch` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const openldaporgliblmdbPackage = {
   homepageUrl: 'https://www.symas.com/symas-embedded-database-lmdb' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openldap.org/liblmdb' as const,
+  installCommand: 'pantry install openldap.org/liblmdb' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openldap.org/liblmdb -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openldap.org/liblmdb' as const,
+  pantryInstallCommand: 'pantry install openldap.org/liblmdb' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

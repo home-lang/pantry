@@ -6,7 +6,7 @@
  * @version `10.2.1` (68 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install qemu.org`
+ * @install `pantry install qemu.org`
  * @homepage https://www.qemu.org/
  * @dependencies `gnome.org/glib@2`, `capstone-engine.org^4`, `pixman.org^0`, ... (+7 more)
  * @buildDependencies `gnu.org/bison`, `github.com/westes/flex`, `python.org@~3.11`, ... (+1 more) - required only when building from source
@@ -42,12 +42,12 @@ export const qemuorgPackage = {
   homepageUrl: 'https://www.qemu.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install qemu.org' as const,
+  installCommand: 'pantry install qemu.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +qemu.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install qemu.org' as const,
+  pantryInstallCommand: 'pantry install qemu.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

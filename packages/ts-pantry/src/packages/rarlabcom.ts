@@ -6,7 +6,7 @@
  * @version `7.2.4` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rarlab.com`
+ * @install `pantry install rarlab.com`
  * @buildDependencies `gnu.org/coreutils@^9` - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const rarlabcomPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rarlab.com' as const,
+  installCommand: 'pantry install rarlab.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rarlab.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rarlab.com' as const,
+  pantryInstallCommand: 'pantry install rarlab.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

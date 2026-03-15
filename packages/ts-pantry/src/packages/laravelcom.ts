@@ -6,7 +6,7 @@
  * @version `5.24.7` (34 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install laravel.com`
+ * @install `pantry install laravel.com`
  * @homepage https://laravel.com/docs
  * @dependencies `php.net^8.2`, `getcomposer.org^2.7`
  * @buildDependencies `curl.se`, `pkgx.sh@>=1` - required only when building from source
@@ -42,12 +42,12 @@ export const laravelcomPackage = {
   homepageUrl: 'https://laravel.com/docs' as const,
   githubUrl: 'https://github.com/laravel/installer' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install laravel.com' as const,
+  installCommand: 'pantry install laravel.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +laravel.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install laravel.com' as const,
+  pantryInstallCommand: 'pantry install laravel.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

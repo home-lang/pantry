@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install valkey.io
+# Install with pantry
+pantry install valkey.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wkentaro.github.io/gdown
+# Install with pantry
+pantry install wkentaro.github.io/gdown
 ```
 
 ## Programs

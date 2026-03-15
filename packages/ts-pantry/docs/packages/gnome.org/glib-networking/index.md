@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/glib-networking
+# Install with pantry
+pantry install gnome.org/glib-networking
 ```
 
 ## Programs

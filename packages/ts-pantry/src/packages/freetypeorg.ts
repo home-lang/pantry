@@ -5,7 +5,7 @@
  * @version `2.14.2` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freetype.org`
+ * @install `pantry install freetype.org`
  * @dependencies `libpng.org@1`, `zlib.net@1`, `sourceware.org/bzip2@1`
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const freetypeorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freetype.org' as const,
+  installCommand: 'pantry install freetype.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freetype.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freetype.org' as const,
+  pantryInstallCommand: 'pantry install freetype.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ccache.dev
+# Install with pantry
+pantry install ccache.dev
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xvid.com
+# Install with pantry
+pantry install xvid.com
 ```
 
 ## Programs

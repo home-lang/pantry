@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install surrealdb.com
+# Install with pantry
+pantry install surrealdb.com
 ```
 
 ## Programs

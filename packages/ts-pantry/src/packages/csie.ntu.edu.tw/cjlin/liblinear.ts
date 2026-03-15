@@ -6,7 +6,7 @@
  * @version `2.50.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install csie.ntu.edu.tw/cjlin/liblinear`
+ * @install `pantry install csie.ntu.edu.tw/cjlin/liblinear`
  * @homepage https://www.csie.ntu.edu.tw/~cjlin/liblinear/
  * @buildDependencies `gnu.org/make`, `curl.se`, `gnu.org/patch` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const csientuedutwcjlinliblinearPackage = {
   homepageUrl: 'https://www.csie.ntu.edu.tw/~cjlin/liblinear/' as const,
   githubUrl: 'https://github.com/cjlin1/liblinear' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install csie.ntu.edu.tw/cjlin/liblinear' as const,
+  installCommand: 'pantry install csie.ntu.edu.tw/cjlin/liblinear' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +csie.ntu.edu.tw/cjlin/liblinear -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install csie.ntu.edu.tw/cjlin/liblinear' as const,
+  pantryInstallCommand: 'pantry install csie.ntu.edu.tw/cjlin/liblinear' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

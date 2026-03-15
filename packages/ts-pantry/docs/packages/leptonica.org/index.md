@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install leptonica.org
+# Install with pantry
+pantry install leptonica.org
 ```
 
 ## Programs

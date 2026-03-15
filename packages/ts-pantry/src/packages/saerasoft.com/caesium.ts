@@ -6,7 +6,7 @@
  * @version `1.2.0` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install saerasoft.com/caesium`
+ * @install `pantry install saerasoft.com/caesium`
  * @homepage http://saerasoft.com/caesium
  *
  * @example
@@ -40,12 +40,12 @@ export const saerasoftcomcaesiumPackage = {
   homepageUrl: 'http://saerasoft.com/caesium' as const,
   githubUrl: 'https://github.com/Lymphatus/caesium-clt' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install saerasoft.com/caesium' as const,
+  installCommand: 'pantry install saerasoft.com/caesium' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +saerasoft.com/caesium -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install saerasoft.com/caesium' as const,
+  pantryInstallCommand: 'pantry install saerasoft.com/caesium' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install imageflow.io/imageflow_tool
+# Install with pantry
+pantry install imageflow.io/imageflow_tool
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install blake2.net/libb2
+# Install with pantry
+pantry install blake2.net/libb2
 ```
 
 ## Programs

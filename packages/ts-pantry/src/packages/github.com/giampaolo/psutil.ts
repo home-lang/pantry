@@ -5,7 +5,7 @@
  * @version `7.2.2` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/giampaolo/psutil`
+ * @install `pantry install github.com/giampaolo/psutil`
  * @dependencies `python.org~3.11`
  *
  * @example
@@ -38,12 +38,12 @@ export const psutilPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/giampaolo/psutil' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/giampaolo/psutil' as const,
+  installCommand: 'pantry install github.com/giampaolo/psutil' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/giampaolo/psutil -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/giampaolo/psutil' as const,
+  pantryInstallCommand: 'pantry install github.com/giampaolo/psutil' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,7 +12,7 @@ Incredibly fast JavaScript runtime, bundler, test runner, and package manager â€
 
 **Programs**: bun, bunx
 
-**Install**: `launchpad install bun.com`
+**Install**: `pantry install bun.com`
 
 ---
 
@@ -22,7 +22,7 @@ The 1.x line is frozen - features and bugfixes now happen on <https://github.com
 
 **Programs**: yarn, yarnpkg
 
-**Install**: `launchpad install yarn`
+**Install**: `pantry install yarn`
 
 ---
 
@@ -32,7 +32,7 @@ Dependency manager for Cocoa projects
 
 **Programs**: pod
 
-**Install**: `launchpad install cocoapods.org`
+**Install**: `pantry install cocoapods.org`
 
 ---
 
@@ -42,7 +42,7 @@ Dependency Manager for PHP
 
 **Programs**: composer, composer.phar
 
-**Install**: `launchpad install getcomposer.org`
+**Install**: `pantry install getcomposer.org`
 
 ---
 
@@ -52,7 +52,7 @@ LuaRocks is the package manager for the Lua programming language.
 
 **Programs**: luarocks, luarocks-admin
 
-**Install**: `launchpad install luarocks.org`
+**Install**: `pantry install luarocks.org`
 
 ---
 
@@ -62,7 +62,7 @@ dev tools, env vars, task runner
 
 **Programs**: rtx, mise
 
-**Install**: `launchpad install mise.jdx.dev`
+**Install**: `pantry install mise.jdx.dev`
 
 ---
 
@@ -72,7 +72,7 @@ App source + Nix packages + Docker = Image
 
 **Programs**: nixpacks
 
-**Install**: `launchpad install nixpacks.com`
+**Install**: `pantry install nixpacks.com`
 
 ---
 
@@ -82,7 +82,7 @@ Platform built on V8 to build network applications
 
 **Programs**: corepack
 
-**Install**: `launchpad install nodejs.org/corepack`
+**Install**: `pantry install nodejs.org/corepack`
 
 ---
 
@@ -92,7 +92,7 @@ the package manager for JavaScript
 
 **Programs**: npm, npx
 
-**Install**: `launchpad install npm`
+**Install**: `pantry install npm`
 
 ---
 
@@ -102,7 +102,7 @@ A modern Python package and dependency manager supporting the latest PEP standar
 
 **Programs**: pdm
 
-**Install**: `launchpad install pdm.fming.dev`
+**Install**: `pantry install pdm.fming.dev`
 
 ---
 
@@ -112,7 +112,7 @@ The Python package installer
 
 **Programs**: pip, pip3.8, pip3.9, pip3.10, pip3.11
 
-**Install**: `launchpad install pip.pypa.io`
+**Install**: `pantry install pip.pypa.io`
 
 ---
 
@@ -122,7 +122,7 @@ The Python package installer
 
 **Programs**: pipenv
 
-**Install**: `launchpad install pipenv.pypa.io`
+**Install**: `pantry install pipenv.pypa.io`
 
 ---
 
@@ -132,7 +132,7 @@ Standalone binary that can run anything
 
 **Programs**: pkgx
 
-**Install**: `launchpad install pkgx.sh`
+**Install**: `pantry install pkgx.sh`
 
 ---
 
@@ -142,7 +142,7 @@ Python packaging and dependency management made easy
 
 **Programs**: poetry
 
-**Install**: `launchpad install python-poetry.org`
+**Install**: `pantry install python-poetry.org`
 
 ---
 
@@ -152,7 +152,7 @@ The Rust package manager
 
 **Programs**: cargo
 
-**Install**: `launchpad install rust-lang.org/cargo`
+**Install**: `pantry install rust-lang.org/cargo`
 
 ---
 
@@ -162,7 +162,7 @@ Experimental Package Management Solution for Python
 
 **Programs**: rye
 
-**Install**: `launchpad install rye.astral.sh`
+**Install**: `pantry install rye.astral.sh`
 
 ---
 

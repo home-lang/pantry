@@ -6,7 +6,7 @@
  * @version `0.40.1` (36 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ipfs.tech`
+ * @install `pantry install ipfs.tech`
  * @homepage https://ipfs.tech/
  * @buildDependencies `go.dev@>=1.20`, `gnu.org/patch` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const ipfstechPackage = {
   homepageUrl: 'https://ipfs.tech/' as const,
   githubUrl: 'https://github.com/ipfs/kubo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ipfs.tech' as const,
+  installCommand: 'pantry install ipfs.tech' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ipfs.tech -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ipfs.tech' as const,
+  pantryInstallCommand: 'pantry install ipfs.tech' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

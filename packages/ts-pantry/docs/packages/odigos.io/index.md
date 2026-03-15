@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install odigos.io
+# Install with pantry
+pantry install odigos.io
 ```
 
 ## Programs

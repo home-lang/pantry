@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install code.videolan.org/aribb24
+# Install with pantry
+pantry install code.videolan.org/aribb24
 ```
 
 ## Programs

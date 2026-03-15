@@ -5,7 +5,7 @@
  * @version `1.3.7` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xiph.org/vorbis`
+ * @install `pantry install xiph.org/vorbis`
  * @dependencies `xiph.org/ogg^1`
  *
  * @example
@@ -38,12 +38,12 @@ export const xiphorgvorbisPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/xiph/vorbis' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xiph.org/vorbis' as const,
+  installCommand: 'pantry install xiph.org/vorbis' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xiph.org/vorbis -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xiph.org/vorbis' as const,
+  pantryInstallCommand: 'pantry install xiph.org/vorbis' as const,
   programs: [] as const,
   companions: [] as const,
   /**

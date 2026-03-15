@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install etcd.io
+# Install with pantry
+pantry install etcd.io
 ```
 
 ## Programs

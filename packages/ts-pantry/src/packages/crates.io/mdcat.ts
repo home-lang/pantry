@@ -6,7 +6,7 @@
  * @version `2.7.1` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/mdcat`
+ * @install `pantry install crates.io/mdcat`
  * @homepage https://crates.io/crates/mdcat
  * @dependencies `openssl.org^1.1`, `curl.se^8 # since 2.7.0`
  *
@@ -41,12 +41,12 @@ export const cratesiomdcatPackage = {
   homepageUrl: 'https://crates.io/crates/mdcat' as const,
   githubUrl: 'https://github.com/swsnr/mdcat' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/mdcat' as const,
+  installCommand: 'pantry install crates.io/mdcat' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/mdcat -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/mdcat' as const,
+  pantryInstallCommand: 'pantry install crates.io/mdcat' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

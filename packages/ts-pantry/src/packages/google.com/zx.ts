@@ -6,7 +6,7 @@
  * @version `8.8.5` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/zx`
+ * @install `pantry install google.com/zx`
  * @homepage https://google.github.io/zx/
  * @dependencies `nodejs.org`
  * @buildDependencies `npmjs.com`, `curl.se` - required only when building from source
@@ -42,12 +42,12 @@ export const googlecomzxPackage = {
   homepageUrl: 'https://google.github.io/zx/' as const,
   githubUrl: 'https://github.com/google/zx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/zx' as const,
+  installCommand: 'pantry install google.com/zx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/zx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/zx' as const,
+  pantryInstallCommand: 'pantry install google.com/zx' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

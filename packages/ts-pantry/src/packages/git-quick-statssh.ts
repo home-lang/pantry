@@ -6,7 +6,7 @@
  * @version `2.8.0` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install git-quick-stats.sh`
+ * @install `pantry install git-quick-stats.sh`
  * @homepage https://git-quick-stats.sh/
  * @dependencies `git-scm.org`, `gnu.org/bash`, `linux:github.com/util-linux/util-linux` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const gitquickstatsshPackage = {
   homepageUrl: 'https://git-quick-stats.sh/' as const,
   githubUrl: 'https://github.com/arzzen/git-quick-stats' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install git-quick-stats.sh' as const,
+  installCommand: 'pantry install git-quick-stats.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +git-quick-stats.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install git-quick-stats.sh' as const,
+  pantryInstallCommand: 'pantry install git-quick-stats.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

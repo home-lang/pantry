@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/skystrife/cpptoml
+# Install with pantry
+pantry install github.com/skystrife/cpptoml
 ```
 
 ## Programs

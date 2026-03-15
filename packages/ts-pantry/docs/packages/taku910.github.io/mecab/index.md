@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install taku910.github.io/mecab
+# Install with pantry
+pantry install taku910.github.io/mecab
 ```
 
 ## Programs

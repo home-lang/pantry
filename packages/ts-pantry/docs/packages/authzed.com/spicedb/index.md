@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install authzed.com/spicedb
+# Install with pantry
+pantry install authzed.com/spicedb
 ```
 
 ## Programs

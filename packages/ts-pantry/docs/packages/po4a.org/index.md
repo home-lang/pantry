@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install po4a.org
+# Install with pantry
+pantry install po4a.org
 ```
 
 ## Programs

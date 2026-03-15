@@ -6,7 +6,7 @@
  * @version `0.11.6` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install neovim.io`
+ * @install `pantry install neovim.io`
  * @homepage https://neovim.io/
  * @dependencies `gnu.org/gettext^0`
  * @buildDependencies `cmake.org`, `gnu.org/libtool@^2` - required only when building from source
@@ -42,12 +42,12 @@ export const neovimioPackage = {
   homepageUrl: 'https://neovim.io/' as const,
   githubUrl: 'https://github.com/neovim/neovim' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install neovim.io' as const,
+  installCommand: 'pantry install neovim.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +neovim.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install neovim.io' as const,
+  pantryInstallCommand: 'pantry install neovim.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

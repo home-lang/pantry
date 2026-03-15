@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libimobiledevice.org/libimobiledevice-glue
+# Install with pantry
+pantry install libimobiledevice.org/libimobiledevice-glue
 ```
 
 ## Programs

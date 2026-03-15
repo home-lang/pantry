@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lftp.yar.ru
+# Install with pantry
+pantry install lftp.yar.ru
 ```
 
 ## Programs

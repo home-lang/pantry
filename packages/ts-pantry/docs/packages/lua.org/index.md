@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lua.org
+# Install with pantry
+pantry install lua.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install khanacademy.org/genqlient
+# Install with pantry
+pantry install khanacademy.org/genqlient
 ```
 
 ## Programs

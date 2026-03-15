@@ -6,7 +6,7 @@
  * @version `3.14.2.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install haskell.org/cabal`
+ * @install `pantry install haskell.org/cabal`
  * @homepage https://www.haskell.org/cabal/
  * @dependencies `haskell.org@9`, `gnu.org/gmp@6`, `zlib.net@1`
  * @buildDependencies `haskell.org@<9.6.4`, `curl.se`, `tukaani.org/xz@5` - required only when building from source
@@ -42,12 +42,12 @@ export const haskellorgcabalPackage = {
   homepageUrl: 'https://www.haskell.org/cabal/' as const,
   githubUrl: 'https://github.com/haskell/cabal' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install haskell.org/cabal' as const,
+  installCommand: 'pantry install haskell.org/cabal' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +haskell.org/cabal -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install haskell.org/cabal' as const,
+  pantryInstallCommand: 'pantry install haskell.org/cabal' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

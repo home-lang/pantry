@@ -6,7 +6,7 @@
  * @version `0.10.1` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/semverator`
+ * @install `pantry install crates.io/semverator`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const cratesiosemveratorPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jhheider/semverator' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/semverator' as const,
+  installCommand: 'pantry install crates.io/semverator' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/semverator -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/semverator' as const,
+  pantryInstallCommand: 'pantry install crates.io/semverator' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

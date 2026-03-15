@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/DaanDeMeyer/reproc
+# Install with pantry
+pantry install github.com/DaanDeMeyer/reproc
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kafka.apache.org
+# Install with pantry
+pantry install kafka.apache.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cairographics.org/pycairo
+# Install with pantry
+pantry install cairographics.org/pycairo
 ```
 
 ## Programs

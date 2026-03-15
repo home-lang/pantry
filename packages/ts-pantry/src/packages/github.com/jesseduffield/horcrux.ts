@@ -6,7 +6,7 @@
  * @version `0.3.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/jesseduffield/horcrux`
+ * @install `pantry install github.com/jesseduffield/horcrux`
  * @buildDependencies `go.dev@^1.14` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const horcruxPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jesseduffield/horcrux' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/jesseduffield/horcrux' as const,
+  installCommand: 'pantry install github.com/jesseduffield/horcrux' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jesseduffield/horcrux -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/jesseduffield/horcrux' as const,
+  pantryInstallCommand: 'pantry install github.com/jesseduffield/horcrux' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

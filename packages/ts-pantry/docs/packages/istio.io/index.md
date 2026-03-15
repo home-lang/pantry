@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install istio.io
+# Install with pantry
+pantry install istio.io
 ```
 
 ## Programs

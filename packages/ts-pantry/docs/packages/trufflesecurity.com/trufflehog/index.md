@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install trufflesecurity.com/trufflehog
+# Install with pantry
+pantry install trufflesecurity.com/trufflehog
 ```
 
 ## Programs

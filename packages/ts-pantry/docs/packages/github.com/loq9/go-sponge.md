@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/loq9/go-sponge
+# Install with pantry
+pantry install github.com/loq9/go-sponge
 ```
 
 ## Programs

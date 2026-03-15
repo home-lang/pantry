@@ -1,22 +1,22 @@
-# Launchpad Integration
+# Pantry Integration
 
-This guide covers the **Launchpad Dependency Resolution API**, a powerful feature of ts-pkgx that enables automatic resolution and installation of package dependencies with deep transitive dependency analysis.
+This guide covers the **Pantry Dependency Resolution API**, a powerful feature of ts-pantry that enables automatic resolution and installation of package dependencies with deep transitive dependency analysis.
 
 ## Overview
 
-The Launchpad API provides comprehensive dependency resolution for package managers and deployment tools, allowing you to:
+The Pantry API provides comprehensive dependency resolution for package managers and deployment tools, allowing you to:
 
-- 🔍 **Deep dependency resolution** - Automatically resolves all transitive dependencies
-- ⚡ **Version conflict resolution** - Intelligently handles conflicting version constraints
-- 🎯 **OS-specific dependencies** - Supports platform-specific packages
-- 📄 **Multiple input formats** - Supports YAML files, strings, and individual packages
-- 🔧 **Semantic versioning** - Proper semver constraint handling (^, ~, >=, etc.)
-- 🚀 **Optimized deduplication** - Removes duplicate packages and resolves conflicts
+- **Deep dependency resolution** - Automatically resolves all transitive dependencies
+- **Version conflict resolution** - Intelligently handles conflicting version constraints
+- **OS-specific dependencies** - Supports platform-specific packages
+- **Multiple input formats** - Supports YAML files, strings, and individual packages
+- **Semantic versioning** - Proper semver constraint handling (^, ~, >=, etc.)
+- **Optimized deduplication** - Removes duplicate packages and resolves conflicts
 
 ## Quick Start
 
 ```typescript
-import { resolveDependencies } from 'ts-pkgx'
+import { resolveDependencies } from 'ts-pantry'
 
 // Resolve from dependency file
 const result = await resolveDependencies('./deps.yaml', {
@@ -28,7 +28,7 @@ console.log(`Installing ${result.totalCount} packages...`)
 
 // Install each resolved package
 for (const pkg of result.packages) {
-  await launchpad.install(pkg.name, pkg.version)
+  await pantry.install(pkg.name, pkg.version)
 }
 ```
 
@@ -41,8 +41,8 @@ Resolves all dependencies from a YAML dependency file with complete transitive d
 ```typescript
 async function resolveDependencies(
   filePath: string,
-  options?: LaunchpadResolverOptions
-): Promise<LaunchpadInstallResult>
+  options?: PantryResolverOptions
+): Promise<PantryInstallResult>
 ```
 
 **Parameters:**
@@ -70,8 +70,8 @@ Resolves dependencies directly from a YAML string without requiring a file.
 ```typescript
 async function resolveDependenciesFromYaml(
   yamlContent: string,
-  options?: LaunchpadResolverOptions
-): Promise<LaunchpadInstallResult>
+  options?: PantryResolverOptions
+): Promise<PantryInstallResult>
 ```
 
 **Example:**
@@ -97,8 +97,8 @@ Resolves all transitive dependencies for a single package.
 ```typescript
 async function resolvePackageDependencies(
   packageName: string,
-  options?: LaunchpadResolverOptions
-): Promise<LaunchpadPackage[]>
+  options?: PantryResolverOptions
+): Promise<PantryPackage[]>
 ```
 
 **Example:**
@@ -110,11 +110,11 @@ const deps = await resolvePackageDependencies('gnu.org/grep')
 
 ## Response Format
 
-All resolution functions return a `LaunchpadInstallResult`:
+All resolution functions return a `PantryInstallResult`:
 
 ```typescript
-interface LaunchpadInstallResult {
-  packages: LaunchpadPackage[] // All packages to install
+interface PantryInstallResult {
+  packages: PantryPackage[] // All packages to install
   directCount: number // Number of direct dependencies
   totalCount: number // Total packages including transitive
   conflicts: Array<{ // Version conflicts resolved
@@ -123,10 +123,10 @@ interface LaunchpadInstallResult {
     resolved: string
   }>
   pkgxCommand: string // Ready-to-use pkgx install command (direct deps only)
-  launchpadCommand: string // Ready-to-use launchpad install command (direct deps only)
+  pantryCommand: string // Ready-to-use pantry install command (direct deps only)
 }
 
-interface LaunchpadPackage {
+interface PantryPackage {
   name: string // Package domain (e.g., 'bun.sh')
   version: string // Resolved version (e.g., '1.2.19')
   constraint: string // Original constraint (e.g., '^1.2.16')
@@ -138,7 +138,7 @@ interface LaunchpadPackage {
 ## Configuration Options
 
 ```typescript
-interface LaunchpadResolverOptions {
+interface PantryResolverOptions {
   targetOs?: 'linux' | 'darwin' | 'windows' // Target platform
   includeOsSpecific?: boolean // Include OS-specific deps
   maxDepth?: number // Max recursion depth (default: 10)
@@ -148,12 +148,12 @@ interface LaunchpadResolverOptions {
 
 ## Integration Examples
 
-### Basic Launchpad Integration
+### Basic Pantry Integration
 
 ```typescript
-import { resolveDependencies } from 'ts-pkgx'
+import { resolveDependencies } from 'ts-pantry'
 
-export class LaunchpadInstaller {
+export class PantryInstaller {
   async installFromDepsFile(filePath: string) {
     const result = await resolveDependencies(filePath, {
       targetOs: process.platform === 'darwin' ? 'darwin' : 'linux',
@@ -179,8 +179,8 @@ export class LaunchpadInstaller {
   }
 
   private async install(packageName: string, version: string) {
-    // Your Launchpad installation logic here
-    // Note: Launchpad should auto-resolve transitive dependencies
+    // Your Pantry installation logic here
+    // Note: Pantry should auto-resolve transitive dependencies
     console.log(`pkgx ${packageName}@${version}`)
   }
 }
@@ -201,7 +201,7 @@ export async function batchInstall(packages: string[]) {
   // Install all unique packages
   for (const pkgSpec of allDeps) {
     const [name, version] = pkgSpec.split('@')
-    await launchpad.install(name, version)
+    await pantry.install(name, version)
   }
 }
 ```
@@ -374,7 +374,7 @@ The resolver will:
 - Version conflict resolutions
 - Ready-to-use install commands:
   - `pkgxCommand`: Installs only 7 direct dependencies (transitive deps auto-resolved)
-  - `launchpadCommand`: Installs only 7 direct dependencies (transitive deps auto-resolved)
+  - `pantryCommand`: Installs only 7 direct dependencies (transitive deps auto-resolved)
 - OS-specific dependency handling
 - Comprehensive error reporting
 
@@ -392,15 +392,15 @@ pkgx install bun.sh gnu.org/bash gnu.org/grep crates.io/eza ffmpeg.org cli.githu
 - pkgx auto-resolves and installs all transitive dependencies
 - Fast and efficient installation
 
-### `launchpadCommand` - Launchpad Installation
+### `pantryCommand` - Pantry Installation
 
 ```bash
-launchpad install bun.sh gnu.org/bash gnu.org/grep crates.io/eza ffmpeg.org cli.github.com starship.rs
+pantry install bun.sh gnu.org/bash gnu.org/grep crates.io/eza ffmpeg.org cli.github.com starship.rs
 ```
 
 - Includes **only the 7 direct dependencies** from your deps file
-- Launchpad auto-resolves and installs all transitive dependencies
-- **Recommended for Launchpad integrations**
+- Pantry auto-resolves and installs all transitive dependencies
+- **Recommended for Pantry integrations**
 
 ### Benefits of Direct Dependencies Only
 

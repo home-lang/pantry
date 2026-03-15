@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install boost.org
+# Install with pantry
+pantry install boost.org
 ```
 
 ## Programs

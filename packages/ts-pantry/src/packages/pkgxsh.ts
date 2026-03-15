@@ -6,7 +6,7 @@
  * @version `2.9.0` (36 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pkgx.sh`
+ * @install `pantry install pkgx.sh`
  * @homepage https://pkgx.sh
  * @buildDependencies `deno.land@~2`, `perl.org@5` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const pkgxshPackage = {
   homepageUrl: 'https://pkgx.sh' as const,
   githubUrl: 'https://github.com/pkgxdev/pkgx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pkgx.sh' as const,
+  installCommand: 'pantry install pkgx.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pkgx.sh' as const,
+  pantryInstallCommand: 'pantry install pkgx.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

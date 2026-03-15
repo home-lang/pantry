@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/ice
+# Install with pantry
+pantry install x.org/ice
 ```
 
 ## Programs

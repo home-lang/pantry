@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install eksctl.io
+# Install with pantry
+pantry install eksctl.io
 ```
 
 ## Programs

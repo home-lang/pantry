@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/json-glib
+# Install with pantry
+pantry install gnome.org/json-glib
 ```
 
 ## Programs

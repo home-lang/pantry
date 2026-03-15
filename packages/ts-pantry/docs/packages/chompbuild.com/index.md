@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install chompbuild.com
+# Install with pantry
+pantry install chompbuild.com
 ```
 
 ## Programs

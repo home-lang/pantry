@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wezfurlong.org/wezterm
+# Install with pantry
+pantry install wezfurlong.org/wezterm
 ```
 
 ## Programs

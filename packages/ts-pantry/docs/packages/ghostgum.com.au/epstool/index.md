@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ghostgum.com.au/epstool
+# Install with pantry
+pantry install ghostgum.com.au/epstool
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `50.0.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/gsettings-desktop-schemas`
+ * @install `pantry install gnome.org/gsettings-desktop-schemas`
  * @dependencies `gnome.org/glib`, `libexpat.github.io`
  * @buildDependencies `mesonbuild.com`, `python.org@~3.11` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnomeorggsettingsdesktopschemasPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/gsettings-desktop-schemas' as const,
+  installCommand: 'pantry install gnome.org/gsettings-desktop-schemas' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/gsettings-desktop-schemas -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/gsettings-desktop-schemas' as const,
+  pantryInstallCommand: 'pantry install gnome.org/gsettings-desktop-schemas' as const,
   programs: [] as const,
   companions: [] as const,
   /**

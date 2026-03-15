@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openprinting.github.io/cups
+# Install with pantry
+pantry install openprinting.github.io/cups
 ```
 
 ## Programs

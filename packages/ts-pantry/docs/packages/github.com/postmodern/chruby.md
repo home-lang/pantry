@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/postmodern/chruby
+# Install with pantry
+pantry install github.com/postmodern/chruby
 ```
 
 ## Programs

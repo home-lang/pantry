@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sagiegurari.github.io/duckscript
+# Install with pantry
+pantry install sagiegurari.github.io/duckscript
 ```
 
 ## Programs

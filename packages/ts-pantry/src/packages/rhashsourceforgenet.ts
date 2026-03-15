@@ -6,7 +6,7 @@
  * @version `1.4.6` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rhash.sourceforge.net`
+ * @install `pantry install rhash.sourceforge.net`
  * @homepage https://sourceforge.net/projects/rhash/
  *
  * @example
@@ -40,12 +40,12 @@ export const rhashsourceforgenetPackage = {
   homepageUrl: 'https://sourceforge.net/projects/rhash/' as const,
   githubUrl: 'https://github.com/rhash/RHash' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rhash.sourceforge.net' as const,
+  installCommand: 'pantry install rhash.sourceforge.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rhash.sourceforge.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rhash.sourceforge.net' as const,
+  pantryInstallCommand: 'pantry install rhash.sourceforge.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

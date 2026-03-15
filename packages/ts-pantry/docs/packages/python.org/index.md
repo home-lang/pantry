@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install py
+# Install with pantry
+pantry install py
 ```
 
 ## Programs

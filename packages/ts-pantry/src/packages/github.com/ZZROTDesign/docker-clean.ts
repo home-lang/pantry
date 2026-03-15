@@ -6,7 +6,7 @@
  * @version `2.0.4` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/ZZROTDesign/docker-clean`
+ * @install `pantry install github.com/ZZROTDesign/docker-clean`
  * @dependencies `gnu.org/bash`, `docker.com/cli`
  *
  * @example
@@ -40,12 +40,12 @@ export const dockercleanPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/ZZROTDesign/docker-clean' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/ZZROTDesign/docker-clean' as const,
+  installCommand: 'pantry install github.com/ZZROTDesign/docker-clean' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ZZROTDesign/docker-clean -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/ZZROTDesign/docker-clean' as const,
+  pantryInstallCommand: 'pantry install github.com/ZZROTDesign/docker-clean' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

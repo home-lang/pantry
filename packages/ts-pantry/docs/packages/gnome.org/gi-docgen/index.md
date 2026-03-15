@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/gi-docgen
+# Install with pantry
+pantry install gnome.org/gi-docgen
 ```
 
 ## Programs

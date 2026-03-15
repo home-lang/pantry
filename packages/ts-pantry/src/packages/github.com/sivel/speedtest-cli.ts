@@ -6,7 +6,7 @@
  * @version `2.1.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/sivel/speedtest-cli`
+ * @install `pantry install github.com/sivel/speedtest-cli`
  * @dependencies `python.org>=3.7<3.12`
  *
  * @example
@@ -40,12 +40,12 @@ export const speedtestcliPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/sivel/speedtest-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/sivel/speedtest-cli' as const,
+  installCommand: 'pantry install github.com/sivel/speedtest-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/sivel/speedtest-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/sivel/speedtest-cli' as const,
+  pantryInstallCommand: 'pantry install github.com/sivel/speedtest-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

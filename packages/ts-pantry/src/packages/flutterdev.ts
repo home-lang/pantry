@@ -6,7 +6,7 @@
  * @version `3.41.4` (76 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install flutter.dev`
+ * @install `pantry install flutter.dev`
  * @homepage https://flutter.dev
  * @dependencies `git-scm.org`, `tukaani.org/xz`, `gnu.org/which`, ... (+3 more) (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const flutterdevPackage = {
   homepageUrl: 'https://flutter.dev' as const,
   githubUrl: 'https://github.com/flutter/flutter' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install flutter.dev' as const,
+  installCommand: 'pantry install flutter.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +flutter.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install flutter.dev' as const,
+  pantryInstallCommand: 'pantry install flutter.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

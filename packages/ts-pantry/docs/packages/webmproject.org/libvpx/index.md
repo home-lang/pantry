@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install webmproject.org/libvpx
+# Install with pantry
+pantry install webmproject.org/libvpx
 ```
 
 ## Programs

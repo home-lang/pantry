@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/thom311/libnl
+# Install with pantry
+pantry install github.com/thom311/libnl
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install notroj.github.io/neon
+# Install with pantry
+pantry install notroj.github.io/neon
 ```
 
 ## Programs

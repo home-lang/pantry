@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install waterlan.home.xs4all.nl/dos2unix
+# Install with pantry
+pantry install waterlan.home.xs4all.nl/dos2unix
 ```
 
 ## Programs

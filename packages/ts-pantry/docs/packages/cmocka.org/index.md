@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cmocka.org
+# Install with pantry
+pantry install cmocka.org
 ```
 
 ## Programs

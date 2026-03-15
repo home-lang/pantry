@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install svenstaro.github.io/genact
+# Install with pantry
+pantry install svenstaro.github.io/genact
 ```
 
 ## Programs

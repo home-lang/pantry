@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gitlab.com/procps-ng/procps
+# Install with pantry
+pantry install gitlab.com/procps-ng/procps
 ```
 
 ## Programs

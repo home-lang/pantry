@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pandoc.org
+# Install with pantry
+pantry install pandoc.org
 ```
 
 ## Programs

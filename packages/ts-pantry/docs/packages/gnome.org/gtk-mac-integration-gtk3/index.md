@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/gtk-mac-integration-gtk3
+# Install with pantry
+pantry install gnome.org/gtk-mac-integration-gtk3
 ```
 
 ## Programs

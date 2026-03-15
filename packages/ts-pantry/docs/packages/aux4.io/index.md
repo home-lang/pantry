@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install aux4.io
+# Install with pantry
+pantry install aux4.io
 ```
 
 ## Programs

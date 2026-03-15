@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install systemd.io
+# Install with pantry
+pantry install systemd.io
 ```
 
 ## Programs

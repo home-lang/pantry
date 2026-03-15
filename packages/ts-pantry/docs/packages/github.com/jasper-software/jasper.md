@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/jasper-software/jasper
+# Install with pantry
+pantry install github.com/jasper-software/jasper
 ```
 
 ## Programs

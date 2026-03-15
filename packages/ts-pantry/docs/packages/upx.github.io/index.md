@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install upx.github.io
+# Install with pantry
+pantry install upx.github.io
 ```
 
 ## Programs

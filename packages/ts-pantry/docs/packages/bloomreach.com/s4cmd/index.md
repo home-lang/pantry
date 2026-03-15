@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bloomreach.com/s4cmd
+# Install with pantry
+pantry install bloomreach.com/s4cmd
 ```
 
 ## Programs

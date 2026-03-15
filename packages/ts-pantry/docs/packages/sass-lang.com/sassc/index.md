@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sass-lang.com/sassc
+# Install with pantry
+pantry install sass-lang.com/sassc
 ```
 
 ## Programs

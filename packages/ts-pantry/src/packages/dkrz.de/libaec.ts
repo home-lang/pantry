@@ -5,7 +5,7 @@
  * @version `1.1.6` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dkrz.de/libaec`
+ * @install `pantry install dkrz.de/libaec`
  * @homepage https://gitlab.dkrz.de/k202009/libaec
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const dkrzdelibaecPackage = {
   homepageUrl: 'https://gitlab.dkrz.de/k202009/libaec' as const,
   githubUrl: 'https://github.com/MathisRosenhauer/libaec' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dkrz.de/libaec' as const,
+  installCommand: 'pantry install dkrz.de/libaec' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dkrz.de/libaec -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dkrz.de/libaec' as const,
+  pantryInstallCommand: 'pantry install dkrz.de/libaec' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

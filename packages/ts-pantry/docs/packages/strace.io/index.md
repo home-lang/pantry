@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install strace.io
+# Install with pantry
+pantry install strace.io
 ```
 
 ## Programs

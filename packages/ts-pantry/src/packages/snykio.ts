@@ -6,7 +6,7 @@
  * @version `1.1303.1` (59 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install snyk.io`
+ * @install `pantry install snyk.io`
  * @homepage https://snyk.io
  * @dependencies `nodejs.org^20`
  * @buildDependencies `npmjs.com@^10` - required only when building from source
@@ -42,12 +42,12 @@ export const snykioPackage = {
   homepageUrl: 'https://snyk.io' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install snyk.io' as const,
+  installCommand: 'pantry install snyk.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +snyk.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install snyk.io' as const,
+  pantryInstallCommand: 'pantry install snyk.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

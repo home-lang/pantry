@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libimobiledevice.org/libplist
+# Install with pantry
+pantry install libimobiledevice.org/libplist
 ```
 
 ## Programs

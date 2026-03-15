@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kubelinter.io
+# Install with pantry
+pantry install kubelinter.io
 ```
 
 ## Programs

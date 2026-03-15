@@ -6,7 +6,7 @@
  * @version `2.8.0` (61 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install flipt.io`
+ * @install `pantry install flipt.io`
  * @homepage https://flipt.io
  * @buildDependencies `go.dev@1.22.0` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fliptioPackage = {
   homepageUrl: 'https://flipt.io' as const,
   githubUrl: 'https://github.com/flipt-io/flipt' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install flipt.io' as const,
+  installCommand: 'pantry install flipt.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +flipt.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install flipt.io' as const,
+  pantryInstallCommand: 'pantry install flipt.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rye.astral.sh
+# Install with pantry
+pantry install rye.astral.sh
 ```
 
 ## Programs

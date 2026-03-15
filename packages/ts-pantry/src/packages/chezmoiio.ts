@@ -6,7 +6,7 @@
  * @version `2.70.0` (96 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install chezmoi.io`
+ * @install `pantry install chezmoi.io`
  * @homepage https://chezmoi.io/
  * @buildDependencies `go.dev@^1.18`, `linux:gnu.org/gcc`, `linux:gnu.org/binutils` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const chezmoiioPackage = {
   homepageUrl: 'https://chezmoi.io/' as const,
   githubUrl: 'https://github.com/twpayne/chezmoi' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install chezmoi.io' as const,
+  installCommand: 'pantry install chezmoi.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +chezmoi.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install chezmoi.io' as const,
+  pantryInstallCommand: 'pantry install chezmoi.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

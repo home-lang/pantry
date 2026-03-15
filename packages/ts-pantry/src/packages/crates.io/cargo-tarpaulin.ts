@@ -6,7 +6,7 @@
  * @version `0.35.2` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/cargo-tarpaulin`
+ * @install `pantry install crates.io/cargo-tarpaulin`
  * @homepage https://crates.io/crates/cargo-tarpaulin
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiocargotarpaulinPackage = {
   homepageUrl: 'https://crates.io/crates/cargo-tarpaulin' as const,
   githubUrl: 'https://github.com/xd009642/tarpaulin' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/cargo-tarpaulin' as const,
+  installCommand: 'pantry install crates.io/cargo-tarpaulin' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/cargo-tarpaulin -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/cargo-tarpaulin' as const,
+  pantryInstallCommand: 'pantry install crates.io/cargo-tarpaulin' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

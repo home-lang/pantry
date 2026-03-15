@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install facebook.com/edencommon
+# Install with pantry
+pantry install facebook.com/edencommon
 ```
 
 ## Programs

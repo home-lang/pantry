@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install riverbankcomputing.com/sip
+# Install with pantry
+pantry install riverbankcomputing.com/sip
 ```
 
 ## Programs

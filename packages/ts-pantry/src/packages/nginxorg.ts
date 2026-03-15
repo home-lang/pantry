@@ -6,7 +6,7 @@
  * @version `1.29.6` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nginx.org`
+ * @install `pantry install nginx.org`
  * @homepage https://nginx.org/
  * @dependencies `pcre.org^8.45 # switch to pcre.org/pcre2 once it`, `zlib.net^1.2.13`, `openssl.org^1.1.1k`
  *
@@ -41,12 +41,12 @@ export const nginxorgPackage = {
   homepageUrl: 'https://nginx.org/' as const,
   githubUrl: 'https://github.com/nginx/nginx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nginx.org' as const,
+  installCommand: 'pantry install nginx.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nginx.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nginx.org' as const,
+  pantryInstallCommand: 'pantry install nginx.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

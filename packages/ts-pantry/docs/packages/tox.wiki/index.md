@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tox.wiki
+# Install with pantry
+pantry install tox.wiki
 ```
 
 ## Programs

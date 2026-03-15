@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/terraform-linters/tflint
+# Install with pantry
+pantry install github.com/terraform-linters/tflint
 ```
 
 ## Programs

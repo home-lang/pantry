@@ -5,7 +5,7 @@
  * @version `0.12.0` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libssh.org`
+ * @install `pantry install libssh.org`
  * @dependencies `openssl.org^1.1`, `zlib.net^1`
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const libsshorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libssh.org' as const,
+  installCommand: 'pantry install libssh.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libssh.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libssh.org' as const,
+  pantryInstallCommand: 'pantry install libssh.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

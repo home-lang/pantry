@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install soliditylang.org
+# Install with pantry
+pantry install soliditylang.org
 ```
 
 ## Programs

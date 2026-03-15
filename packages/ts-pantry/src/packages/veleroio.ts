@@ -6,7 +6,7 @@
  * @version `1.18.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install velero.io`
+ * @install `pantry install velero.io`
  * @homepage https://velero.io/
  * @buildDependencies `go.dev@~1.23.8` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const veleroioPackage = {
   homepageUrl: 'https://velero.io/' as const,
   githubUrl: 'https://github.com/vmware-tanzu/velero' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install velero.io' as const,
+  installCommand: 'pantry install velero.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +velero.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install velero.io' as const,
+  pantryInstallCommand: 'pantry install velero.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

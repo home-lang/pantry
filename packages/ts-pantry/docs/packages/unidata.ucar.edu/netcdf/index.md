@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install unidata.ucar.edu/netcdf
+# Install with pantry
+pantry install unidata.ucar.edu/netcdf
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install zlib.net
+# Install with pantry
+pantry install zlib.net
 ```
 
 ## Programs

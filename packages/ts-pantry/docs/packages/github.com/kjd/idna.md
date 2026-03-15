@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/kjd/idna
+# Install with pantry
+pantry install github.com/kjd/idna
 ```
 
 ## Programs

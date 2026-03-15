@@ -5,7 +5,7 @@
  * @version `8.2.12` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install hboehm.info/gc`
+ * @install `pantry install hboehm.info/gc`
  * @homepage https://www.hboehm.info/gc/
  *
  * @example
@@ -38,12 +38,12 @@ export const hboehminfogcPackage = {
   homepageUrl: 'https://www.hboehm.info/gc/' as const,
   githubUrl: 'https://github.com/ivmai/bdwgc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install hboehm.info/gc' as const,
+  installCommand: 'pantry install hboehm.info/gc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +hboehm.info/gc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install hboehm.info/gc' as const,
+  pantryInstallCommand: 'pantry install hboehm.info/gc' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

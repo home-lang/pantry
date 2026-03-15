@@ -6,7 +6,7 @@
  * @version `1.3.9` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mujs.com`
+ * @install `pantry install mujs.com`
  * @homepage https://www.mujs.com/
  * @dependencies `gnu.org/readline~8.1`, `linux:invisible-island.net/ncurses` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `python.org@^3`, `linux:gnu.org/gcc`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const mujscomPackage = {
   homepageUrl: 'https://www.mujs.com/' as const,
   githubUrl: 'https://github.com/ccxvii/mujs' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mujs.com' as const,
+  installCommand: 'pantry install mujs.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mujs.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mujs.com' as const,
+  pantryInstallCommand: 'pantry install mujs.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

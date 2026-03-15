@@ -5,7 +5,7 @@
  * @version `1.11.769` (685 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/aws/aws-sdk-cpp`
+ * @install `pantry install github.com/aws/aws-sdk-cpp`
  * @dependencies `curl.se`, `zlib.net@1`, `openssl.org@1.1`
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const awssdkcppPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/aws/aws-sdk-cpp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/aws/aws-sdk-cpp' as const,
+  installCommand: 'pantry install github.com/aws/aws-sdk-cpp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/aws/aws-sdk-cpp -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/aws/aws-sdk-cpp' as const,
+  pantryInstallCommand: 'pantry install github.com/aws/aws-sdk-cpp' as const,
   programs: [] as const,
   companions: [] as const,
   /**

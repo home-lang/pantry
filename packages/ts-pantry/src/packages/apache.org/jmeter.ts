@@ -6,7 +6,7 @@
  * @version `5.6.3` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/jmeter`
+ * @install `pantry install apache.org/jmeter`
  * @dependencies `openjdk.org`
  * @buildDependencies `gnu.org/wget` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const apacheorgjmeterPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/jmeter' as const,
+  installCommand: 'pantry install apache.org/jmeter' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/jmeter -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/jmeter' as const,
+  pantryInstallCommand: 'pantry install apache.org/jmeter' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

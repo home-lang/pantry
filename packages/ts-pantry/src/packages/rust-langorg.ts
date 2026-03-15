@@ -6,7 +6,7 @@
  * @version `1.94.0` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rust-lang.org`
+ * @install `pantry install rust-lang.org`
  * @homepage https://www.rust-lang.org/
  * @dependencies `zlib.net@1`
  * @buildDependencies `cmake.org@^3.20`, `python.org@>=3<3.12`, `openssl.org`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const rustlangorgPackage = {
   homepageUrl: 'https://www.rust-lang.org/' as const,
   githubUrl: 'https://github.com/rust-lang/rust' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rust-lang.org' as const,
+  installCommand: 'pantry install rust-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rust-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rust-lang.org' as const,
+  pantryInstallCommand: 'pantry install rust-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `10.2.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openssh.com`
+ * @install `pantry install openssh.com`
  * @dependencies `nlnetlabs.nl/ldns`, `developers.yubico.com/libfido2`, `openssl.org`, ... (+5 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `curl.se`, `darwin:gnu.org/patch`, `linux:gnu.org/gcc`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const opensshcomPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openssh.com' as const,
+  installCommand: 'pantry install openssh.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openssh.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openssh.com' as const,
+  pantryInstallCommand: 'pantry install openssh.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

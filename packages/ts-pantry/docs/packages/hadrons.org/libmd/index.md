@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hadrons.org/libmd
+# Install with pantry
+pantry install hadrons.org/libmd
 ```
 
 ## Programs

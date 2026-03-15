@@ -6,7 +6,7 @@
  * @version `1.1.2` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/appstream`
+ * @install `pantry install freedesktop.org/appstream`
  * @homepage https://www.freedesktop.org/wiki/Distributions/AppStream/
  * @dependencies `gnome.org/glib@2`, `github.com/hughsie/libxmlb@0`, `pyyaml.org/libyaml@0`, ... (+5 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@3`, `mesonbuild.com@>=0.61`, `itstool.org`, ... (+4 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const freedesktoporgappstreamPackage = {
   homepageUrl: 'https://www.freedesktop.org/wiki/Distributions/AppStream/' as const,
   githubUrl: 'https://github.com/ximion/appstream' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/appstream' as const,
+  installCommand: 'pantry install freedesktop.org/appstream' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/appstream -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/appstream' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/appstream' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

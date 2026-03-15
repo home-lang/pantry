@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bore.pub
+# Install with pantry
+pantry install bore.pub
 ```
 
 ## Programs

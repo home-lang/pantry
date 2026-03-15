@@ -6,7 +6,7 @@
  * @version `3.6.2` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fermyon.com/spin`
+ * @install `pantry install fermyon.com/spin`
  * @homepage https://spinroot.com/spin/whatispin.html
  * @buildDependencies `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fermyoncomspinPackage = {
   homepageUrl: 'https://spinroot.com/spin/whatispin.html' as const,
   githubUrl: 'https://github.com/fermyon/spin' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fermyon.com/spin' as const,
+  installCommand: 'pantry install fermyon.com/spin' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fermyon.com/spin -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fermyon.com/spin' as const,
+  pantryInstallCommand: 'pantry install fermyon.com/spin' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -5,7 +5,7 @@
  * @version `4.20.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install debian.org/iso-codes`
+ * @install `pantry install debian.org/iso-codes`
  * @dependencies `gnu.org/gettext`
  * @buildDependencies `python.org@<3.12`, `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const debianorgisocodesPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install debian.org/iso-codes' as const,
+  installCommand: 'pantry install debian.org/iso-codes' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +debian.org/iso-codes -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install debian.org/iso-codes' as const,
+  pantryInstallCommand: 'pantry install debian.org/iso-codes' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ots.sniptt.com
+# Install with pantry
+pantry install ots.sniptt.com
 ```
 
 ## Programs

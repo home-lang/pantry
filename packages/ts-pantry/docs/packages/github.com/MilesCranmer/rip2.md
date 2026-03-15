@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/MilesCranmer/rip2
+# Install with pantry
+pantry install github.com/MilesCranmer/rip2
 ```
 
 ## Programs

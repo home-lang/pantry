@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/libgsf
+# Install with pantry
+pantry install gnome.org/libgsf
 ```
 
 ## Programs

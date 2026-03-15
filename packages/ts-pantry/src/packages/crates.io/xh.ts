@@ -6,7 +6,7 @@
  * @version `0.25.3` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/xh`
+ * @install `pantry install crates.io/xh`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesioxhPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/ducaale/xh' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/xh' as const,
+  installCommand: 'pantry install crates.io/xh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/xh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/xh' as const,
+  pantryInstallCommand: 'pantry install crates.io/xh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

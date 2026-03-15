@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install permit.io/cedar-agent
+# Install with pantry
+pantry install permit.io/cedar-agent
 ```
 
 ## Programs

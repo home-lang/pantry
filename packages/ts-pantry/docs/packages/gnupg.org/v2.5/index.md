@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnupg.org/v2.5
+# Install with pantry
+pantry install gnupg.org/v2.5
 ```
 
 ## Programs

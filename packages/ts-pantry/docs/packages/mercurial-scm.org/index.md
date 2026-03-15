@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mercurial-scm.org
+# Install with pantry
+pantry install mercurial-scm.org
 ```
 
 ## Programs

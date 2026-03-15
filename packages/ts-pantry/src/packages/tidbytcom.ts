@@ -6,7 +6,7 @@
  * @version `0.34.0` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tidbyt.com`
+ * @install `pantry install tidbyt.com`
  * @homepage https://tidbyt.com
  * @dependencies `google.com/webp^1`
  * @buildDependencies `go.dev@^1.22`, `npmjs.com`, `nodejs.org` - required only when building from source
@@ -42,12 +42,12 @@ export const tidbytcomPackage = {
   homepageUrl: 'https://tidbyt.com' as const,
   githubUrl: 'https://github.com/tidbyt/pixlet' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tidbyt.com' as const,
+  installCommand: 'pantry install tidbyt.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tidbyt.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tidbyt.com' as const,
+  pantryInstallCommand: 'pantry install tidbyt.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

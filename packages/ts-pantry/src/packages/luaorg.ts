@@ -6,7 +6,7 @@
  * @version `5.5.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lua.org`
+ * @install `pantry install lua.org`
  * @homepage https://www.lua.org/
  * @dependencies `gnu.org/readline`
  *
@@ -41,12 +41,12 @@ export const luaorgPackage = {
   homepageUrl: 'https://www.lua.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lua.org' as const,
+  installCommand: 'pantry install lua.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lua.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lua.org' as const,
+  pantryInstallCommand: 'pantry install lua.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

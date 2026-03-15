@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tesseract-ocr.github.io
+# Install with pantry
+pantry install tesseract-ocr.github.io
 ```
 
 ## Programs

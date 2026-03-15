@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install elixir-lang.org
+# Install with pantry
+pantry install elixir-lang.org
 ```
 
 ## Programs

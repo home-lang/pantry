@@ -6,7 +6,7 @@
  * @version `3.76.0` (101 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install oracle.com/oci-cli`
+ * @install `pantry install oracle.com/oci-cli`
  * @homepage https://docs.cloud.oracle.com/iaas/Content/API/Concepts/cliconcepts.htm
  * @dependencies `certifi.io/python-certifi^2024`, `pyyaml.org/libyaml^0.2`, `cryptography.io^42`, ... (+1 more)
  * @buildDependencies `cmake.org` - required only when building from source
@@ -42,12 +42,12 @@ export const oraclecomocicliPackage = {
   homepageUrl: 'https://docs.cloud.oracle.com/iaas/Content/API/Concepts/cliconcepts.htm' as const,
   githubUrl: 'https://github.com/oracle/oci-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install oracle.com/oci-cli' as const,
+  installCommand: 'pantry install oracle.com/oci-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +oracle.com/oci-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install oracle.com/oci-cli' as const,
+  pantryInstallCommand: 'pantry install oracle.com/oci-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

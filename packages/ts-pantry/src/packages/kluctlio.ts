@@ -6,7 +6,7 @@
  * @version `2.27.0` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kluctl.io`
+ * @install `pantry install kluctl.io`
  * @homepage https://kluctl.io
  * @buildDependencies `go.dev@^1.21`, `nodejs.org@^18`, `npmjs.com`, ... (+1 more) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kluctlioPackage = {
   homepageUrl: 'https://kluctl.io' as const,
   githubUrl: 'https://github.com/kluctl/kluctl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kluctl.io' as const,
+  installCommand: 'pantry install kluctl.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kluctl.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kluctl.io' as const,
+  pantryInstallCommand: 'pantry install kluctl.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

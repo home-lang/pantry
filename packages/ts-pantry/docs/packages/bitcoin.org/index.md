@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bitcoin.org
+# Install with pantry
+pantry install bitcoin.org
 ```
 
 ## Programs

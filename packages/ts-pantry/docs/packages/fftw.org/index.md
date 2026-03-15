@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fftw.org
+# Install with pantry
+pantry install fftw.org
 ```
 
 ## Programs

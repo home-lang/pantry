@@ -5,7 +5,7 @@
  * @version `1.8.13` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/x11`
+ * @install `pantry install x.org/x11`
  * @dependencies `x.org/xcb^1`, `x.org/protocol`
  * @buildDependencies `x.org/xtrans@^1`, `gnu.org/sed` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const xorgx11Package = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/x11' as const,
+  installCommand: 'pantry install x.org/x11' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/x11 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/x11' as const,
+  pantryInstallCommand: 'pantry install x.org/x11' as const,
   programs: [] as const,
   companions: [] as const,
   /**

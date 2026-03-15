@@ -5,7 +5,7 @@
  * @version `6.0.2` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install msgpack.org`
+ * @install `pantry install msgpack.org`
  * @buildDependencies `cmake.org`, `google.com/googletest` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const msgpackorgPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/msgpack/msgpack-c' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install msgpack.org' as const,
+  installCommand: 'pantry install msgpack.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +msgpack.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install msgpack.org' as const,
+  pantryInstallCommand: 'pantry install msgpack.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rabbitmq.com
+# Install with pantry
+pantry install rabbitmq.com
 ```
 
 ## Programs

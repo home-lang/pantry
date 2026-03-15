@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nodejs.org
+# Install with pantry
+pantry install nodejs.org
 ```
 
 ## Programs

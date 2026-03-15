@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install eyrie.org/eagle/podlators
+# Install with pantry
+pantry install eyrie.org/eagle/podlators
 ```
 
 ## Programs

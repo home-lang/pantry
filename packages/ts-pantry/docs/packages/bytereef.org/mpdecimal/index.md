@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bytereef.org/mpdecimal
+# Install with pantry
+pantry install bytereef.org/mpdecimal
 ```
 
 ## Programs

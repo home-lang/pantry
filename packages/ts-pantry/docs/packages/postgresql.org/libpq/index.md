@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install postgresql.org/libpq
+# Install with pantry
+pantry install postgresql.org/libpq
 ```
 
 ## Programs

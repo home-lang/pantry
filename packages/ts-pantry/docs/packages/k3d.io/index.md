@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install k3d.io
+# Install with pantry
+pantry install k3d.io
 ```
 
 ## Programs

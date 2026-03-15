@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install biomejs.dev
+# Install with pantry
+pantry install biomejs.dev
 ```
 
 ## Programs

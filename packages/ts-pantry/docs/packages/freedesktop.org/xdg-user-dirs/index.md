@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/xdg-user-dirs
+# Install with pantry
+pantry install freedesktop.org/xdg-user-dirs
 ```
 
 ## Programs

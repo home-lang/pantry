@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ankitpokhrel/jira-cli
+# Install with pantry
+pantry install github.com/ankitpokhrel/jira-cli
 ```
 
 ## Programs

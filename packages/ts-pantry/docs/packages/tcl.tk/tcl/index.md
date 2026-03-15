@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tcl.tk/tcl
+# Install with pantry
+pantry install tcl.tk/tcl
 ```
 
 ## Programs

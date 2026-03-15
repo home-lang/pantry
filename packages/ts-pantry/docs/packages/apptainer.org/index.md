@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apptainer.org
+# Install with pantry
+pantry install apptainer.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gomplate.ca
+# Install with pantry
+pantry install gomplate.ca
 ```
 
 ## Programs

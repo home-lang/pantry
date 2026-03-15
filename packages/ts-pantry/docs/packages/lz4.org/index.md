@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lz4.org
+# Install with pantry
+pantry install lz4.org
 ```
 
 ## Programs

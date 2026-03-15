@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fuellabs.github.io/sway
+# Install with pantry
+pantry install fuellabs.github.io/sway
 ```
 
 ## Programs

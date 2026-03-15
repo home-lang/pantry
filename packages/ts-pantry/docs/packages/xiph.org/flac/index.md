@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xiph.org/flac
+# Install with pantry
+pantry install xiph.org/flac
 ```
 
 ## Programs

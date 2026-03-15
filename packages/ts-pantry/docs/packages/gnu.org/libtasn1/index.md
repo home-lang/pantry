@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/libtasn1
+# Install with pantry
+pantry install gnu.org/libtasn1
 ```
 
 ## Programs

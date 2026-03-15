@@ -6,7 +6,7 @@
  * @version `1.14.1` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install augeas.net`
+ * @install `pantry install augeas.net`
  * @homepage https://augeas.net/
  * @dependencies `gnu.org/readline`, `gnome.org/libxml2`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/bison`, ... (+4 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const augeasnetPackage = {
   homepageUrl: 'https://augeas.net/' as const,
   githubUrl: 'https://github.com/hercules-team/augeas' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install augeas.net' as const,
+  installCommand: 'pantry install augeas.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +augeas.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install augeas.net' as const,
+  pantryInstallCommand: 'pantry install augeas.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

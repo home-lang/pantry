@@ -6,7 +6,7 @@
  * @version `2.3.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install savannah.nongnu.org/acl`
+ * @install `pantry install savannah.nongnu.org/acl`
  * @buildDependencies `linux:gnu.org/gcc`, `gnu.org/libtool`, `savannah.nongnu.org/attr` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const savannahnongnuorgaclPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install savannah.nongnu.org/acl' as const,
+  installCommand: 'pantry install savannah.nongnu.org/acl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +savannah.nongnu.org/acl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install savannah.nongnu.org/acl' as const,
+  pantryInstallCommand: 'pantry install savannah.nongnu.org/acl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

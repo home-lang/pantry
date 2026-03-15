@@ -5,7 +5,7 @@
  * @version `0.15.0` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/rustls-ffi`
+ * @install `pantry install crates.io/rustls-ffi`
  * @buildDependencies `mozilla.org/cbindgen` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const cratesiorustlsffiPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/rustls/rustls-ffi' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/rustls-ffi' as const,
+  installCommand: 'pantry install crates.io/rustls-ffi' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/rustls-ffi -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/rustls-ffi' as const,
+  pantryInstallCommand: 'pantry install crates.io/rustls-ffi' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

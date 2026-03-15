@@ -6,7 +6,7 @@
  * @version `1.0.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install uriparser.github.io`
+ * @install `pantry install uriparser.github.io`
  * @homepage https://uriparser.github.io/
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const uriparsergithubioPackage = {
   homepageUrl: 'https://uriparser.github.io/' as const,
   githubUrl: 'https://github.com/uriparser/uriparser' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install uriparser.github.io' as const,
+  installCommand: 'pantry install uriparser.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +uriparser.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install uriparser.github.io' as const,
+  pantryInstallCommand: 'pantry install uriparser.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

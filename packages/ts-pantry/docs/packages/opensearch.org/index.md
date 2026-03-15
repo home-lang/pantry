@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opensearch.org
+# Install with pantry
+pantry install opensearch.org
 ```
 
 ## Programs

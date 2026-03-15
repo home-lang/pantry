@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mas-cli/mas
+# Install with pantry
+pantry install github.com/mas-cli/mas
 ```
 
 ## Programs

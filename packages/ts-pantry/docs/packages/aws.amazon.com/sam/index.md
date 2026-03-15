@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install aws.amazon.com/sam
+# Install with pantry
+pantry install aws.amazon.com/sam
 ```
 
 ## Programs

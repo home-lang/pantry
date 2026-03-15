@@ -5,7 +5,7 @@
  * @version `2.0.2` (45 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vanna.ai`
+ * @install `pantry install vanna.ai`
  * @homepage https://vanna.ai/docs/
  * @dependencies `python.org~3.12`, `linux:openmp.llvm.org^17 # needed by chromadb` (includes OS-specific dependencies with `os:package` format)
  *
@@ -39,12 +39,12 @@ export const vannaaiPackage = {
   homepageUrl: 'https://vanna.ai/docs/' as const,
   githubUrl: 'https://github.com/vanna-ai/vanna' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vanna.ai' as const,
+  installCommand: 'pantry install vanna.ai' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vanna.ai -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vanna.ai' as const,
+  pantryInstallCommand: 'pantry install vanna.ai' as const,
   programs: [] as const,
   companions: [] as const,
   /**

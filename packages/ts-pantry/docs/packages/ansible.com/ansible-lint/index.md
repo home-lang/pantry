@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ansible.com/ansible-lint
+# Install with pantry
+pantry install ansible.com/ansible-lint
 ```
 
 ## Programs

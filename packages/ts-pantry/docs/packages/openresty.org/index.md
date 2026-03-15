@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openresty.org
+# Install with pantry
+pantry install openresty.org
 ```
 
 ## Programs

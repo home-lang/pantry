@@ -6,7 +6,7 @@
  * @version `3.4.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install htop.dev`
+ * @install `pantry install htop.dev`
  * @homepage https://htop.dev/
  * @dependencies `invisible-island.net/ncurses@6`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake` - required only when building from source
@@ -42,12 +42,12 @@ export const htopdevPackage = {
   homepageUrl: 'https://htop.dev/' as const,
   githubUrl: 'https://github.com/htop-dev/htop' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install htop.dev' as const,
+  installCommand: 'pantry install htop.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +htop.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install htop.dev' as const,
+  pantryInstallCommand: 'pantry install htop.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

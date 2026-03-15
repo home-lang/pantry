@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install re2c.org
+# Install with pantry
+pantry install re2c.org
 ```
 
 ## Programs

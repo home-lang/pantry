@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mac-cain13/R.swift
+# Install with pantry
+pantry install github.com/mac-cain13/R.swift
 ```
 
 ## Programs

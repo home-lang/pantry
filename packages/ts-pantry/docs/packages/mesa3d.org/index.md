@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mesa3d.org
+# Install with pantry
+pantry install mesa3d.org
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.112.2` (45 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install materialize.com`
+ * @install `pantry install materialize.com`
  * @homepage https://materialize.com
  * @dependencies `openssl.org^1.1`
  * @buildDependencies `cmake.org@^3`, `perl.org`, `gnu.org/automake`, ... (+4 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const materializecomPackage = {
   homepageUrl: 'https://materialize.com' as const,
   githubUrl: 'https://github.com/MaterializeInc/materialize' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install materialize.com' as const,
+  installCommand: 'pantry install materialize.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +materialize.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install materialize.com' as const,
+  pantryInstallCommand: 'pantry install materialize.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

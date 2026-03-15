@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opendev.org/openstack/python-openstackclient
+# Install with pantry
+pantry install opendev.org/openstack/python-openstackclient
 ```
 
 ## Programs

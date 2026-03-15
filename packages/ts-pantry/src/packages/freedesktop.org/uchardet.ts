@@ -6,7 +6,7 @@
  * @version `0.0.8` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/uchardet`
+ * @install `pantry install freedesktop.org/uchardet`
  * @homepage https://www.freedesktop.org/wiki/Software/uchardet/
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const freedesktoporguchardetPackage = {
   homepageUrl: 'https://www.freedesktop.org/wiki/Software/uchardet/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/uchardet' as const,
+  installCommand: 'pantry install freedesktop.org/uchardet' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/uchardet -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/uchardet' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/uchardet' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

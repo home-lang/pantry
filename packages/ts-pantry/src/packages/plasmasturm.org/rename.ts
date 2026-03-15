@@ -6,7 +6,7 @@
  * @version `1.601.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install plasmasturm.org/rename`
+ * @install `pantry install plasmasturm.org/rename`
  * @homepage http://plasmasturm.org/code/rename/
  * @dependencies `perl.org>=5`
  *
@@ -41,12 +41,12 @@ export const plasmasturmorgrenamePackage = {
   homepageUrl: 'http://plasmasturm.org/code/rename/' as const,
   githubUrl: 'https://github.com/ap/rename' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install plasmasturm.org/rename' as const,
+  installCommand: 'pantry install plasmasturm.org/rename' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +plasmasturm.org/rename -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install plasmasturm.org/rename' as const,
+  pantryInstallCommand: 'pantry install plasmasturm.org/rename' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `1.55.0` (70 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/broot`
+ * @install `pantry install crates.io/broot`
  * @homepage https://dystroy.org/broot/
  * @dependencies `zlib.net^1`
  *
@@ -41,12 +41,12 @@ export const cratesiobrootPackage = {
   homepageUrl: 'https://dystroy.org/broot/' as const,
   githubUrl: 'https://github.com/Canop/broot' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/broot' as const,
+  installCommand: 'pantry install crates.io/broot' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/broot -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/broot' as const,
+  pantryInstallCommand: 'pantry install crates.io/broot' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/strukturag/libheif
+# Install with pantry
+pantry install github.com/strukturag/libheif
 ```
 
 ## Programs

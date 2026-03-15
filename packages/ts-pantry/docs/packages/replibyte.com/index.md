@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install replibyte.com
+# Install with pantry
+pantry install replibyte.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `10.17.0` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install heroku.com`
+ * @install `pantry install heroku.com`
  * @homepage https://www.npmjs.com/package/heroku/
  * @dependencies `nodejs.org^20`
  * @buildDependencies `npmjs.com` - required only when building from source
@@ -42,12 +42,12 @@ export const herokucomPackage = {
   homepageUrl: 'https://www.npmjs.com/package/heroku/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install heroku.com' as const,
+  installCommand: 'pantry install heroku.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +heroku.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install heroku.com' as const,
+  pantryInstallCommand: 'pantry install heroku.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceforge.net/libmng
+# Install with pantry
+pantry install sourceforge.net/libmng
 ```
 
 ## Programs

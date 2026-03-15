@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install itstool.org
+# Install with pantry
+pantry install itstool.org
 ```
 
 ## Programs

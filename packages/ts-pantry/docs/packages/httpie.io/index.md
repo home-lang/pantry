@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install httpie.io
+# Install with pantry
+pantry install httpie.io
 ```
 
 ## Programs

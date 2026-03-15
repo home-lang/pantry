@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wails.io
+# Install with pantry
+pantry install wails.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install glfw.org
+# Install with pantry
+pantry install glfw.org
 ```
 
 ## Programs

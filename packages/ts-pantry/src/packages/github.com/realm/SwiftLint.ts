@@ -6,7 +6,7 @@
  * @version `0.63.2` (25 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/realm/SwiftLint`
+ * @install `pantry install github.com/realm/SwiftLint`
  * @homepage https://realm.github.io/SwiftLint
  * @dependencies `linux:curl.se@8`, `linux:gnome.org/libxml2@2` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `curl.se` - required only when building from source
@@ -42,12 +42,12 @@ export const swiftlintPackage = {
   homepageUrl: 'https://realm.github.io/SwiftLint' as const,
   githubUrl: 'https://github.com/realm/SwiftLint' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/realm/SwiftLint' as const,
+  installCommand: 'pantry install github.com/realm/SwiftLint' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/realm/SwiftLint -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/realm/SwiftLint' as const,
+  pantryInstallCommand: 'pantry install github.com/realm/SwiftLint' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

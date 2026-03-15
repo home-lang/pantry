@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tukaani.org/xz
+# Install with pantry
+pantry install tukaani.org/xz
 ```
 
 ## Programs

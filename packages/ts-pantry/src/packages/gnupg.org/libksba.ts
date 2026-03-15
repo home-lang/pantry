@@ -5,7 +5,7 @@
  * @version `1.6.8` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnupg.org/libksba`
+ * @install `pantry install gnupg.org/libksba`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const gnupgorglibksbaPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnupg.org/libksba' as const,
+  installCommand: 'pantry install gnupg.org/libksba' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnupg.org/libksba -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnupg.org/libksba' as const,
+  pantryInstallCommand: 'pantry install gnupg.org/libksba' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

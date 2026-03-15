@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wireshark.org
+# Install with pantry
+pantry install wireshark.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install developers.yubico.com/libfido2
+# Install with pantry
+pantry install developers.yubico.com/libfido2
 ```
 
 ## Programs

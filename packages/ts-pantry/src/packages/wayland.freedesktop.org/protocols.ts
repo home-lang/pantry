@@ -5,7 +5,7 @@
  * @version `1.47.0` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wayland.freedesktop.org/protocols`
+ * @install `pantry install wayland.freedesktop.org/protocols`
  * @buildDependencies `mesonbuild.com`, `python.org@~3.11`, `wayland.freedesktop.org`, ... (+1 more) - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const waylandfreedesktoporgprotocolsPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wayland.freedesktop.org/protocols' as const,
+  installCommand: 'pantry install wayland.freedesktop.org/protocols' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wayland.freedesktop.org/protocols -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wayland.freedesktop.org/protocols' as const,
+  pantryInstallCommand: 'pantry install wayland.freedesktop.org/protocols' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

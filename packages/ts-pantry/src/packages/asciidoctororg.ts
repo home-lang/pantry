@@ -6,7 +6,7 @@
  * @version `2.0.26` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install asciidoctor.org`
+ * @install `pantry install asciidoctor.org`
  * @homepage https://asciidoctor.org/
  * @dependencies `ruby-lang.org^3.1`, `rubygems.org`
  * @buildDependencies `rubygems.org` - required only when building from source
@@ -42,12 +42,12 @@ export const asciidoctororgPackage = {
   homepageUrl: 'https://asciidoctor.org/' as const,
   githubUrl: 'https://github.com/asciidoctor/asciidoctor' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install asciidoctor.org' as const,
+  installCommand: 'pantry install asciidoctor.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +asciidoctor.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install asciidoctor.org' as const,
+  pantryInstallCommand: 'pantry install asciidoctor.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

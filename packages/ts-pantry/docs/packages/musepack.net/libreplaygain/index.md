@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install musepack.net/libreplaygain
+# Install with pantry
+pantry install musepack.net/libreplaygain
 ```
 
 ## Programs

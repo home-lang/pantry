@@ -6,7 +6,7 @@
  * @version `0.13.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install project-copacetic.github.io`
+ * @install `pantry install project-copacetic.github.io`
  * @homepage https://project-copacetic.github.io/copacetic/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const projectcopaceticgithubioPackage = {
   homepageUrl: 'https://project-copacetic.github.io/copacetic/' as const,
   githubUrl: 'https://github.com/project-copacetic/copacetic' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install project-copacetic.github.io' as const,
+  installCommand: 'pantry install project-copacetic.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +project-copacetic.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install project-copacetic.github.io' as const,
+  pantryInstallCommand: 'pantry install project-copacetic.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

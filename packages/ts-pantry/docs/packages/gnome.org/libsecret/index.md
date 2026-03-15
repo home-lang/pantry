@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/libsecret
+# Install with pantry
+pantry install gnome.org/libsecret
 ```
 
 ## Programs

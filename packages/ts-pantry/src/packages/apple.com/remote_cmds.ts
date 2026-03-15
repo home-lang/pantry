@@ -6,7 +6,7 @@
  * @version `306.0.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apple.com/remote_cmds`
+ * @install `pantry install apple.com/remote_cmds`
  * @homepage https://opensource.apple.com/releases
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const applecomremote_cmdsPackage = {
   homepageUrl: 'https://opensource.apple.com/releases' as const,
   githubUrl: 'https://github.com/apple-oss-distributions/remote_cmds' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apple.com/remote_cmds' as const,
+  installCommand: 'pantry install apple.com/remote_cmds' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apple.com/remote_cmds -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apple.com/remote_cmds' as const,
+  pantryInstallCommand: 'pantry install apple.com/remote_cmds' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

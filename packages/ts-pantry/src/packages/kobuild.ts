@@ -6,7 +6,7 @@
  * @version `0.18.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ko.build`
+ * @install `pantry install ko.build`
  * @homepage https://ko.build
  * @buildDependencies `go.dev@^1.22` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kobuildPackage = {
   homepageUrl: 'https://ko.build' as const,
   githubUrl: 'https://github.com/ko-build/ko' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ko.build' as const,
+  installCommand: 'pantry install ko.build' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ko.build -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ko.build' as const,
+  pantryInstallCommand: 'pantry install ko.build' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `1.4.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lunarvim.org`
+ * @install `pantry install lunarvim.org`
  * @homepage https://www.lunarvim.org
  * @dependencies `gnu.org/bash`, `crates.io/fd-find`, `pip.pypa.io`, ... (+4 more)
  * @buildDependencies `cmake.org`, `gnu.org/bash` - required only when building from source
@@ -42,12 +42,12 @@ export const lunarvimorgPackage = {
   homepageUrl: 'https://www.lunarvim.org' as const,
   githubUrl: 'https://github.com/LunarVim/LunarVim' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lunarvim.org' as const,
+  installCommand: 'pantry install lunarvim.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lunarvim.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lunarvim.org' as const,
+  pantryInstallCommand: 'pantry install lunarvim.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

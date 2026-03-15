@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libsdl.org
+# Install with pantry
+pantry install libsdl.org
 ```
 
 ## Programs

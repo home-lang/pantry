@@ -6,7 +6,7 @@
  * @version `25.7.1` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install helix-editor.com`
+ * @install `pantry install helix-editor.com`
  * @homepage https://helix-editor.com
  *
  * @example
@@ -40,12 +40,12 @@ export const helixeditorcomPackage = {
   homepageUrl: 'https://helix-editor.com' as const,
   githubUrl: 'https://github.com/helix-editor/helix' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install helix-editor.com' as const,
+  installCommand: 'pantry install helix-editor.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +helix-editor.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install helix-editor.com' as const,
+  pantryInstallCommand: 'pantry install helix-editor.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

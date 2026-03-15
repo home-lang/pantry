@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/confluentinc/libserdes
+# Install with pantry
+pantry install github.com/confluentinc/libserdes
 ```
 
 ## Programs

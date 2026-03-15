@@ -6,7 +6,7 @@
  * @version `39.2.0` (28 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fx.wtf`
+ * @install `pantry install fx.wtf`
  * @homepage https://fx.wtf
  * @buildDependencies `go.dev@^1.19` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fxwtfPackage = {
   homepageUrl: 'https://fx.wtf' as const,
   githubUrl: 'https://github.com/antonmedv/fx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fx.wtf' as const,
+  installCommand: 'pantry install fx.wtf' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fx.wtf -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fx.wtf' as const,
+  pantryInstallCommand: 'pantry install fx.wtf' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

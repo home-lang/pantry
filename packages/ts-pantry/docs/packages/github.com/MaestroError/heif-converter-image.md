@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/MaestroError/heif-converter-image
+# Install with pantry
+pantry install github.com/MaestroError/heif-converter-image
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/icon-theme
+# Install with pantry
+pantry install freedesktop.org/icon-theme
 ```
 
 ## Programs

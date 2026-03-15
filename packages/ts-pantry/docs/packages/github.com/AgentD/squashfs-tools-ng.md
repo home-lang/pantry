@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/AgentD/squashfs-tools-ng
+# Install with pantry
+pantry install github.com/AgentD/squashfs-tools-ng
 ```
 
 ## Programs

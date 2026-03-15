@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install shellcheck.net
+# Install with pantry
+pantry install shellcheck.net
 ```
 
 ## Programs

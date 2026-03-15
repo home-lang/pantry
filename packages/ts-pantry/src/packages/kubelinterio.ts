@@ -6,7 +6,7 @@
  * @version `0.8.3` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kubelinter.io`
+ * @install `pantry install kubelinter.io`
  * @homepage https://docs.kubelinter.io/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kubelinterioPackage = {
   homepageUrl: 'https://docs.kubelinter.io/' as const,
   githubUrl: 'https://github.com/stackrox/kube-linter' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kubelinter.io' as const,
+  installCommand: 'pantry install kubelinter.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kubelinter.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kubelinter.io' as const,
+  pantryInstallCommand: 'pantry install kubelinter.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

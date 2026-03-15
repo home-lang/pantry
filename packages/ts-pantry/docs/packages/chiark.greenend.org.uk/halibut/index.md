@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install chiark.greenend.org.uk/halibut
+# Install with pantry
+pantry install chiark.greenend.org.uk/halibut
 ```
 
 ## Programs

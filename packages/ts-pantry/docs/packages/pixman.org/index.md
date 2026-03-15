@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pixman.org
+# Install with pantry
+pantry install pixman.org
 ```
 
 ## Programs

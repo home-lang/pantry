@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install netflix.com/vmaf
+# Install with pantry
+pantry install netflix.com/vmaf
 ```
 
 ## Programs

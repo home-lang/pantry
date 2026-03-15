@@ -6,7 +6,7 @@
  * @version `0.10.10` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/ripgrep-all`
+ * @install `pantry install crates.io/ripgrep-all`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesioripgrepallPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/phiresky/ripgrep-all' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/ripgrep-all' as const,
+  installCommand: 'pantry install crates.io/ripgrep-all' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/ripgrep-all -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/ripgrep-all' as const,
+  pantryInstallCommand: 'pantry install crates.io/ripgrep-all' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

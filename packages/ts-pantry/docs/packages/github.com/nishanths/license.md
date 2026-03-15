@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/nishanths/license
+# Install with pantry
+pantry install github.com/nishanths/license
 ```
 
 ## Programs

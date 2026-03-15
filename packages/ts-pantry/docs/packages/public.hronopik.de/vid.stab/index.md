@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install public.hronopik.de/vid.stab
+# Install with pantry
+pantry install public.hronopik.de/vid.stab
 ```
 
 ## Programs

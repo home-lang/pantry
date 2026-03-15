@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install browser-use.com
+# Install with pantry
+pantry install browser-use.com
 ```
 
 ## Programs

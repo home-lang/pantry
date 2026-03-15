@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install luajit.org
+# Install with pantry
+pantry install luajit.org
 ```
 
 ## Programs

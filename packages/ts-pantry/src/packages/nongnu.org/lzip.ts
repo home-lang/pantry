@@ -6,7 +6,7 @@
  * @version `1.23.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nongnu.org/lzip`
+ * @install `pantry install nongnu.org/lzip`
  * @homepage https://www.nongnu.org/lzip/
  *
  * @example
@@ -40,12 +40,12 @@ export const nongnuorglzipPackage = {
   homepageUrl: 'https://www.nongnu.org/lzip/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nongnu.org/lzip' as const,
+  installCommand: 'pantry install nongnu.org/lzip' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nongnu.org/lzip -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nongnu.org/lzip' as const,
+  pantryInstallCommand: 'pantry install nongnu.org/lzip' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

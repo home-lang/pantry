@@ -6,7 +6,7 @@
  * @version `1.35.2` (136 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kubernetes.io/kubectl`
+ * @install `pantry install kubernetes.io/kubectl`
  * @name `kubectl`
  * @homepage https://kubernetes.io/docs/reference/kubectl/
  * @buildDependencies `go.dev@~1.24.4`, `gnu.org/coreutils@^9.1.0`, `gnu.org/bash@^5.1`, ... (+2 more) - required only when building from source
@@ -46,12 +46,12 @@ export const kubectlPackage = {
   homepageUrl: 'https://kubernetes.io/docs/reference/kubectl/' as const,
   githubUrl: 'https://github.com/kubernetes/kubernetes' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kubernetes.io/kubectl' as const,
+  installCommand: 'pantry install kubernetes.io/kubectl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kubernetes.io/kubectl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kubernetes.io/kubectl' as const,
+  pantryInstallCommand: 'pantry install kubernetes.io/kubectl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

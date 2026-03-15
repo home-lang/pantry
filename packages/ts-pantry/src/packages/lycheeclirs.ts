@@ -6,7 +6,7 @@
  * @version `0.15.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lychee.cli.rs`
+ * @install `pantry install lychee.cli.rs`
  * @homepage https://lychee.cli.rs/
  * @dependencies `openssl.org>=1.1`
  *
@@ -41,12 +41,12 @@ export const lycheeclirsPackage = {
   homepageUrl: 'https://lychee.cli.rs/' as const,
   githubUrl: 'https://github.com/lycheeverse/lychee' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lychee.cli.rs' as const,
+  installCommand: 'pantry install lychee.cli.rs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lychee.cli.rs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lychee.cli.rs' as const,
+  pantryInstallCommand: 'pantry install lychee.cli.rs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install koyeb.com
+# Install with pantry
+pantry install koyeb.com
 ```
 
 ## Programs

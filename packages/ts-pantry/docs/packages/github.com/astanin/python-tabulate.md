@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/astanin/python-tabulate
+# Install with pantry
+pantry install github.com/astanin/python-tabulate
 ```
 
 ## Programs

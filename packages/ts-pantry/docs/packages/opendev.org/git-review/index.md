@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opendev.org/git-review
+# Install with pantry
+pantry install opendev.org/git-review
 ```
 
 ## Programs

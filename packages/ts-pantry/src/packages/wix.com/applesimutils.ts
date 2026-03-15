@@ -6,7 +6,7 @@
  * @version `0.9.12` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wix.com/applesimutils`
+ * @install `pantry install wix.com/applesimutils`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const wixcomapplesimutilsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/wix/AppleSimulatorUtils' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wix.com/applesimutils' as const,
+  installCommand: 'pantry install wix.com/applesimutils' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wix.com/applesimutils -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wix.com/applesimutils' as const,
+  pantryInstallCommand: 'pantry install wix.com/applesimutils' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -5,7 +5,7 @@
  * @version `3.51.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/PyGObject`
+ * @install `pantry install gnome.org/PyGObject`
  * @dependencies `gnome.org/gobject-introspection`, `cairographics.org/pycairo`
  * @buildDependencies `mesonbuild.com`, `python.org@~3.11` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnomeorgpygobjectPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/PyGObject' as const,
+  installCommand: 'pantry install gnome.org/PyGObject' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/PyGObject -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/PyGObject' as const,
+  pantryInstallCommand: 'pantry install gnome.org/PyGObject' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `3.0.11` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/guile`
+ * @install `pantry install gnu.org/guile`
  * @homepage https://www.gnu.org/software/guile/
  * @dependencies `hboehm.info/gc^8`, `gnu.org/gmp^6`, `gnu.org/libtool^2`, ... (+6 more)
  *
@@ -41,12 +41,12 @@ export const gnuorgguilePackage = {
   homepageUrl: 'https://www.gnu.org/software/guile/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/guile' as const,
+  installCommand: 'pantry install gnu.org/guile' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/guile -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/guile' as const,
+  pantryInstallCommand: 'pantry install gnu.org/guile' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

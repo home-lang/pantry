@@ -5,7 +5,7 @@
  * @version `1.52.1` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libuv.org`
+ * @install `pantry install libuv.org`
  * @homepage https://libuv.org/
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libuvorgPackage = {
   homepageUrl: 'https://libuv.org/' as const,
   githubUrl: 'https://github.com/libuv/libuv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libuv.org' as const,
+  installCommand: 'pantry install libuv.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libuv.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libuv.org' as const,
+  pantryInstallCommand: 'pantry install libuv.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

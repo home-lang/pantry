@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install steampipe.io
+# Install with pantry
+pantry install steampipe.io
 ```
 
 ## Programs

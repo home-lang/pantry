@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install groovy-lang.org
+# Install with pantry
+pantry install groovy-lang.org
 ```
 
 ## Programs

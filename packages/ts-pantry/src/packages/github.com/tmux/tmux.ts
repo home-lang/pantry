@@ -6,7 +6,7 @@
  * @version `3.6a` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/tmux/tmux`
+ * @install `pantry install github.com/tmux/tmux`
  * @homepage https://tmux.github.io/
  * @dependencies `libevent.org^2.0`, `invisible-island.net/ncurses`
  * @buildDependencies `gnu.org/bison` - required only when building from source
@@ -42,12 +42,12 @@ export const tmuxPackage = {
   homepageUrl: 'https://tmux.github.io/' as const,
   githubUrl: 'https://github.com/tmux/tmux' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/tmux/tmux' as const,
+  installCommand: 'pantry install github.com/tmux/tmux' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/tmux/tmux -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/tmux/tmux' as const,
+  pantryInstallCommand: 'pantry install github.com/tmux/tmux' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `7.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/dylanaraps/neofetch`
+ * @install `pantry install github.com/dylanaraps/neofetch`
  * @dependencies `darwin:github.com/jhford/screenresolution` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const neofetchPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/dylanaraps/neofetch' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/dylanaraps/neofetch' as const,
+  installCommand: 'pantry install github.com/dylanaraps/neofetch' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/dylanaraps/neofetch -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/dylanaraps/neofetch' as const,
+  pantryInstallCommand: 'pantry install github.com/dylanaraps/neofetch' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

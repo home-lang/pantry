@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install smartmontools.org
+# Install with pantry
+pantry install smartmontools.org
 ```
 
 ## Programs

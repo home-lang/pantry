@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/life4/enc
+# Install with pantry
+pantry install github.com/life4/enc
 ```
 
 ## Programs

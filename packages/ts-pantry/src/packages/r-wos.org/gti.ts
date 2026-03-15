@@ -6,7 +6,7 @@
  * @version `1.9.1` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install r-wos.org/gti`
+ * @install `pantry install r-wos.org/gti`
  * @homepage https://r-wos.org/hacks/gti
  *
  * @example
@@ -40,12 +40,12 @@ export const rwosorggtiPackage = {
   homepageUrl: 'https://r-wos.org/hacks/gti' as const,
   githubUrl: 'https://github.com/rwos/gti' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install r-wos.org/gti' as const,
+  installCommand: 'pantry install r-wos.org/gti' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +r-wos.org/gti -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install r-wos.org/gti' as const,
+  pantryInstallCommand: 'pantry install r-wos.org/gti' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

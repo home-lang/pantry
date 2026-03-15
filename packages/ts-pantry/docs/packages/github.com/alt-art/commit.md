@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/alt-art/commit
+# Install with pantry
+pantry install github.com/alt-art/commit
 ```
 
 ## Programs

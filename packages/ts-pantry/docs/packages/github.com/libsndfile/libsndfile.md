@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/libsndfile/libsndfile
+# Install with pantry
+pantry install github.com/libsndfile/libsndfile
 ```
 
 ## Programs

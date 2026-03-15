@@ -5,7 +5,7 @@
  * @version `1.0.5` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libimobiledevice.org/libtatsu`
+ * @install `pantry install libimobiledevice.org/libtatsu`
  * @dependencies `libimobiledevice.org/libplist^2.6`, `rockdaboot.github.io/libpsl`, `curl.se>=7`
  * @buildDependencies `gnu.org/libtool` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const libimobiledeviceorglibtatsuPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libimobiledevice.org/libtatsu' as const,
+  installCommand: 'pantry install libimobiledevice.org/libtatsu' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libimobiledevice.org/libtatsu -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libimobiledevice.org/libtatsu' as const,
+  pantryInstallCommand: 'pantry install libimobiledevice.org/libtatsu' as const,
   programs: [] as const,
   companions: [] as const,
   /**

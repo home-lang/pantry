@@ -6,7 +6,7 @@
  * @version `3.52.0` (34 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sqlite.org`
+ * @install `pantry install sqlite.org`
  * @aliases `sqlite`
  * @homepage https://sqlite.org/index.html
  * @dependencies `zlib.net@1`, `gnu.org/readline@8`
@@ -46,12 +46,12 @@ export const sqlitePackage = {
   homepageUrl: 'https://sqlite.org/index.html' as const,
   githubUrl: 'https://github.com/sqlite/sqlite' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sqlite.org' as const,
+  installCommand: 'pantry install sqlite.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sqlite.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sqlite.org' as const,
+  pantryInstallCommand: 'pantry install sqlite.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

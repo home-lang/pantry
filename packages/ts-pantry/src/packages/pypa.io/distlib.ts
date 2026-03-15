@@ -5,7 +5,7 @@
  * @version `0.3.6` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pypa.io/distlib`
+ * @install `pantry install pypa.io/distlib`
  * @homepage http://distlib.readthedocs.io/
  * @dependencies `python.org>=3.11`
  *
@@ -39,12 +39,12 @@ export const pypaiodistlibPackage = {
   homepageUrl: 'http://distlib.readthedocs.io/' as const,
   githubUrl: 'https://github.com/pypa/distlib' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pypa.io/distlib' as const,
+  installCommand: 'pantry install pypa.io/distlib' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pypa.io/distlib -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pypa.io/distlib' as const,
+  pantryInstallCommand: 'pantry install pypa.io/distlib' as const,
   programs: [] as const,
   companions: [] as const,
   /**

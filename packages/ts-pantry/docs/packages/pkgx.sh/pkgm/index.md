@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pkgx.sh/pkgm
+# Install with pantry
+pantry install pkgx.sh/pkgm
 ```
 
 ## Programs

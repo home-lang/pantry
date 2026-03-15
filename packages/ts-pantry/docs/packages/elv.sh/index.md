@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install elv.sh
+# Install with pantry
+pantry install elv.sh
 ```
 
 ## Programs

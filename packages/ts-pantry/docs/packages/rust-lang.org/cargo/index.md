@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rust-lang.org/cargo
+# Install with pantry
+pantry install rust-lang.org/cargo
 ```
 
 ## Programs

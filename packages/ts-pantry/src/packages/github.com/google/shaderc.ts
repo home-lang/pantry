@@ -6,7 +6,7 @@
  * @version `2026.1.0` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/google/shaderc`
+ * @install `pantry install github.com/google/shaderc`
  * @buildDependencies `cmake.org`, `python.org@~3.12` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const shadercPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/google/shaderc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/google/shaderc' as const,
+  installCommand: 'pantry install github.com/google/shaderc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/google/shaderc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/google/shaderc' as const,
+  pantryInstallCommand: 'pantry install github.com/google/shaderc' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

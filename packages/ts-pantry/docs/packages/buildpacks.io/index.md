@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install buildpacks.io
+# Install with pantry
+pantry install buildpacks.io
 ```
 
 ## Programs

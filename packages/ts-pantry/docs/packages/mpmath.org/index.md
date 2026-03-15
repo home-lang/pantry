@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mpmath.org
+# Install with pantry
+pantry install mpmath.org
 ```
 
 ## Programs

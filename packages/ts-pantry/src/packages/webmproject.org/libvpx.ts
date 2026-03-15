@@ -5,7 +5,7 @@
  * @version `1.16.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install webmproject.org/libvpx`
+ * @install `pantry install webmproject.org/libvpx`
  * @homepage http://www.webmproject.org/code/
  * @buildDependencies `yasm.tortall.net` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const webmprojectorglibvpxPackage = {
   homepageUrl: 'http://www.webmproject.org/code/' as const,
   githubUrl: 'https://github.com/webmproject/libvpx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install webmproject.org/libvpx' as const,
+  installCommand: 'pantry install webmproject.org/libvpx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +webmproject.org/libvpx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install webmproject.org/libvpx' as const,
+  pantryInstallCommand: 'pantry install webmproject.org/libvpx' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -6,7 +6,7 @@
  * @version `2.0.4` (85 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install moonrepo.dev/moon`
+ * @install `pantry install moonrepo.dev/moon`
  * @homepage https://moonrepo.dev/moon
  *
  * @example
@@ -40,12 +40,12 @@ export const moonrepodevmoonPackage = {
   homepageUrl: 'https://moonrepo.dev/moon' as const,
   githubUrl: 'https://github.com/moonrepo/moon' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install moonrepo.dev/moon' as const,
+  installCommand: 'pantry install moonrepo.dev/moon' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +moonrepo.dev/moon -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install moonrepo.dev/moon' as const,
+  pantryInstallCommand: 'pantry install moonrepo.dev/moon' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

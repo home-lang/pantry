@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mypy-lang.org
+# Install with pantry
+pantry install mypy-lang.org
 ```
 
 ## Programs

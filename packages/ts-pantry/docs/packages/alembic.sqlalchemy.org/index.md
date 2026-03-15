@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install alembic.sqlalchemy.org
+# Install with pantry
+pantry install alembic.sqlalchemy.org
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.0.3` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install glm.g-truc.net`
+ * @install `pantry install glm.g-truc.net`
  * @homepage https://glm.g-truc.net
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const glmgtrucnetPackage = {
   homepageUrl: 'https://glm.g-truc.net' as const,
   githubUrl: 'https://github.com/g-truc/glm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install glm.g-truc.net' as const,
+  installCommand: 'pantry install glm.g-truc.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +glm.g-truc.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install glm.g-truc.net' as const,
+  pantryInstallCommand: 'pantry install glm.g-truc.net' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

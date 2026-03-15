@@ -6,7 +6,7 @@
  * @version `1.61.0` (33 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install hetzner.com/hcloud`
+ * @install `pantry install hetzner.com/hcloud`
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const hetznercomhcloudPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/hetznercloud/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install hetzner.com/hcloud' as const,
+  installCommand: 'pantry install hetzner.com/hcloud' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +hetzner.com/hcloud -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install hetzner.com/hcloud' as const,
+  pantryInstallCommand: 'pantry install hetzner.com/hcloud' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

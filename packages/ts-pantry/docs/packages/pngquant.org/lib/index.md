@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pngquant.org/lib
+# Install with pantry
+pantry install pngquant.org/lib
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.28.14` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aquasecurity.github.io/tfsec`
+ * @install `pantry install aquasecurity.github.io/tfsec`
  * @homepage https://aquasecurity.github.io/tfsec/latest/
  * @buildDependencies `go.dev@>=1.19` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const aquasecuritygithubiotfsecPackage = {
   homepageUrl: 'https://aquasecurity.github.io/tfsec/latest/' as const,
   githubUrl: 'https://github.com/aquasecurity/tfsec' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aquasecurity.github.io/tfsec' as const,
+  installCommand: 'pantry install aquasecurity.github.io/tfsec' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aquasecurity.github.io/tfsec -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aquasecurity.github.io/tfsec' as const,
+  pantryInstallCommand: 'pantry install aquasecurity.github.io/tfsec' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

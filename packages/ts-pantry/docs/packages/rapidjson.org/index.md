@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rapidjson.org
+# Install with pantry
+pantry install rapidjson.org
 ```
 
 ## Programs

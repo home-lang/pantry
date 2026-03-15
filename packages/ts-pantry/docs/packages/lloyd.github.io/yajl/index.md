@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lloyd.github.io/yajl
+# Install with pantry
+pantry install lloyd.github.io/yajl
 ```
 
 ## Programs

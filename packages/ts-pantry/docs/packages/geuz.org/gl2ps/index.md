@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install geuz.org/gl2ps
+# Install with pantry
+pantry install geuz.org/gl2ps
 ```
 
 ## Programs

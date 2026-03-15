@@ -6,7 +6,7 @@
  * @version `3.0.2` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnupg.org/libassuan`
+ * @install `pantry install gnupg.org/libassuan`
  * @homepage https://www.gnupg.org/related_software/libassuan/
  *
  * @example
@@ -40,12 +40,12 @@ export const gnupgorglibassuanPackage = {
   homepageUrl: 'https://www.gnupg.org/related_software/libassuan/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnupg.org/libassuan' as const,
+  installCommand: 'pantry install gnupg.org/libassuan' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnupg.org/libassuan -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnupg.org/libassuan' as const,
+  pantryInstallCommand: 'pantry install gnupg.org/libassuan' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

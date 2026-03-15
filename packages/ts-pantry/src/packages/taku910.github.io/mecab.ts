@@ -6,7 +6,7 @@
  * @version `0.996.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install taku910.github.io/mecab`
+ * @install `pantry install taku910.github.io/mecab`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const taku910githubiomecabPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install taku910.github.io/mecab' as const,
+  installCommand: 'pantry install taku910.github.io/mecab' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +taku910.github.io/mecab -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install taku910.github.io/mecab' as const,
+  pantryInstallCommand: 'pantry install taku910.github.io/mecab' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

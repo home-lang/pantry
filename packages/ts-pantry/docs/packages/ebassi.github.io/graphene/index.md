@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ebassi.github.io/graphene
+# Install with pantry
+pantry install ebassi.github.io/graphene
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openai.com/whisper
+# Install with pantry
+pantry install openai.com/whisper
 ```
 
 ## Programs

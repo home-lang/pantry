@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install scala-sbt.org
+# Install with pantry
+pantry install scala-sbt.org
 ```
 
 ## Programs

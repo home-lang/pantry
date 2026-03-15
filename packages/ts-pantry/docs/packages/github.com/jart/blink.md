@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/jart/blink
+# Install with pantry
+pantry install github.com/jart/blink
 ```
 
 ## Programs

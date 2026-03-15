@@ -6,7 +6,7 @@
  * @version `1.4.3` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install borgbackup.org`
+ * @install `pantry install borgbackup.org`
  * @homepage https://www.borgbackup.org/
  * @dependencies `pkgx.sh>=1`, `github.com/Cyan4973/xxHash^0.8`
  * @buildDependencies `python.org@^3.10`, `openssl.org@^1.1`, `facebook.com/zstd`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const borgbackuporgPackage = {
   homepageUrl: 'https://www.borgbackup.org/' as const,
   githubUrl: 'https://github.com/borgbackup/borg' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install borgbackup.org' as const,
+  installCommand: 'pantry install borgbackup.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +borgbackup.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install borgbackup.org' as const,
+  pantryInstallCommand: 'pantry install borgbackup.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

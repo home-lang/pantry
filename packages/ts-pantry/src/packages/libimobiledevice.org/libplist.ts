@@ -6,7 +6,7 @@
  * @version `2.7.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libimobiledevice.org/libplist`
+ * @install `pantry install libimobiledevice.org/libplist`
  * @homepage https://www.libimobiledevice.org/
  *
  * @example
@@ -40,12 +40,12 @@ export const libimobiledeviceorglibplistPackage = {
   homepageUrl: 'https://www.libimobiledevice.org/' as const,
   githubUrl: 'https://github.com/libimobiledevice/libplist' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libimobiledevice.org/libplist' as const,
+  installCommand: 'pantry install libimobiledevice.org/libplist' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libimobiledevice.org/libplist -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libimobiledevice.org/libplist' as const,
+  pantryInstallCommand: 'pantry install libimobiledevice.org/libplist' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

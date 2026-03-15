@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install thekelleys.org.uk/dnsmasq
+# Install with pantry
+pantry install thekelleys.org.uk/dnsmasq
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.3.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libtom.net/math`
+ * @install `pantry install libtom.net/math`
  * @homepage https://www.libtom.net
  * @buildDependencies `gnu.org/libtool@^2.4.7` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libtomnetmathPackage = {
   homepageUrl: 'https://www.libtom.net' as const,
   githubUrl: 'https://github.com/libtom/libtommath' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libtom.net/math' as const,
+  installCommand: 'pantry install libtom.net/math' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libtom.net/math -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libtom.net/math' as const,
+  pantryInstallCommand: 'pantry install libtom.net/math' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install python-pillow.org
+# Install with pantry
+pantry install python-pillow.org
 ```
 
 ## Programs

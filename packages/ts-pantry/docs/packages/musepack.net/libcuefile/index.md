@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install musepack.net/libcuefile
+# Install with pantry
+pantry install musepack.net/libcuefile
 ```
 
 ## Programs

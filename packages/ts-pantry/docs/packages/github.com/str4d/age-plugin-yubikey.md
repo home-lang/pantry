@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/str4d/age-plugin-yubikey
+# Install with pantry
+pantry install github.com/str4d/age-plugin-yubikey
 ```
 
 ## Programs

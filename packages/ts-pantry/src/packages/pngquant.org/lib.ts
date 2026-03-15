@@ -5,7 +5,7 @@
  * @version `4.4.1` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pngquant.org/lib`
+ * @install `pantry install pngquant.org/lib`
  * @homepage https://pngquant.org/lib
  *
  * @example
@@ -38,12 +38,12 @@ export const pngquantorglibPackage = {
   homepageUrl: 'https://pngquant.org/lib' as const,
   githubUrl: 'https://github.com/ImageOptim/libimagequant' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pngquant.org/lib' as const,
+  installCommand: 'pantry install pngquant.org/lib' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pngquant.org/lib -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pngquant.org/lib' as const,
+  pantryInstallCommand: 'pantry install pngquant.org/lib' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

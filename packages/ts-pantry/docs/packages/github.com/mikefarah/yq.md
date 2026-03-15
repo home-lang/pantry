@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mikefarah/yq
+# Install with pantry
+pantry install github.com/mikefarah/yq
 ```
 
 ## Programs

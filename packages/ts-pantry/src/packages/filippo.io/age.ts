@@ -6,7 +6,7 @@
  * @version `1.3.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install filippo.io/age`
+ * @install `pantry install filippo.io/age`
  * @homepage https://age-encryption.org
  * @buildDependencies `go.dev@^1.19` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const filippoioagePackage = {
   homepageUrl: 'https://age-encryption.org' as const,
   githubUrl: 'https://github.com/FiloSottile/age' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install filippo.io/age' as const,
+  installCommand: 'pantry install filippo.io/age' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +filippo.io/age -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install filippo.io/age' as const,
+  pantryInstallCommand: 'pantry install filippo.io/age' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

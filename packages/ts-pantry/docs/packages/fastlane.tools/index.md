@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fastlane.tools
+# Install with pantry
+pantry install fastlane.tools
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.3.6` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install bashly.dannyb.co`
+ * @install `pantry install bashly.dannyb.co`
  * @homepage https://bashly.dev
  * @dependencies `ruby-lang.org^3.1`, `rubygems.org`
  * @buildDependencies `rubygems.org` - required only when building from source
@@ -42,12 +42,12 @@ export const bashlydannybcoPackage = {
   homepageUrl: 'https://bashly.dev' as const,
   githubUrl: 'https://github.com/DannyBen/bashly' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install bashly.dannyb.co' as const,
+  installCommand: 'pantry install bashly.dannyb.co' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bashly.dannyb.co -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install bashly.dannyb.co' as const,
+  pantryInstallCommand: 'pantry install bashly.dannyb.co' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

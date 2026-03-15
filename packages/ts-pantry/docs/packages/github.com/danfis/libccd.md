@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/danfis/libccd
+# Install with pantry
+pantry install github.com/danfis/libccd
 ```
 
 ## Programs

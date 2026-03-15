@@ -6,7 +6,7 @@
  * @version `1.3.2` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnupg.org/pinentry`
+ * @install `pantry install gnupg.org/pinentry`
  * @homepage https://www.gnupg.org/related_software/pinentry/
  * @dependencies `gnupg.org/libassuan`, `gnupg.org/libgpg-error`
  *
@@ -41,12 +41,12 @@ export const gnupgorgpinentryPackage = {
   homepageUrl: 'https://www.gnupg.org/related_software/pinentry/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnupg.org/pinentry' as const,
+  installCommand: 'pantry install gnupg.org/pinentry' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnupg.org/pinentry -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnupg.org/pinentry' as const,
+  pantryInstallCommand: 'pantry install gnupg.org/pinentry' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `4.7.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install simplesystems.org/libtiff`
+ * @install `pantry install simplesystems.org/libtiff`
  * @homepage https://libtiff.gitlab.io/libtiff/
  * @dependencies `facebook.com/zstd^1`, `libjpeg-turbo.org^2`, `zlib.net^1`
  *
@@ -41,12 +41,12 @@ export const simplesystemsorglibtiffPackage = {
   homepageUrl: 'https://libtiff.gitlab.io/libtiff/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install simplesystems.org/libtiff' as const,
+  installCommand: 'pantry install simplesystems.org/libtiff' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +simplesystems.org/libtiff -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install simplesystems.org/libtiff' as const,
+  pantryInstallCommand: 'pantry install simplesystems.org/libtiff' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

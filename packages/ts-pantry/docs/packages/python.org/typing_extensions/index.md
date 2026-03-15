@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install python.org/typing_extensions
+# Install with pantry
+pantry install python.org/typing_extensions
 ```
 
 ## Programs

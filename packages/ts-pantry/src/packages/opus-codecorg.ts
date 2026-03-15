@@ -5,7 +5,7 @@
  * @version `1.6.1` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install opus-codec.org`
+ * @install `pantry install opus-codec.org`
  * @homepage https://opus-codec.org/
  * @buildDependencies `gnu.org/autoconf@2`, `gnu.org/automake@1.16`, `gnu.org/libtool@2.4`, ... (+1 more) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const opuscodecorgPackage = {
   homepageUrl: 'https://opus-codec.org/' as const,
   githubUrl: 'https://github.com/xiph/opus' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install opus-codec.org' as const,
+  installCommand: 'pantry install opus-codec.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opus-codec.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install opus-codec.org' as const,
+  pantryInstallCommand: 'pantry install opus-codec.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

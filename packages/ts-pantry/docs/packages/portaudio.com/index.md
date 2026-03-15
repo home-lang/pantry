@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install portaudio.com
+# Install with pantry
+pantry install portaudio.com
 ```
 
 ## Programs

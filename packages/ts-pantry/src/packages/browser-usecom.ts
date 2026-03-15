@@ -5,7 +5,7 @@
  * @version `0.12.2` (83 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install browser-use.com`
+ * @install `pantry install browser-use.com`
  * @homepage https://browser-use.com/
  * @dependencies `python.org~3.12 # no torch<2.3.0 for 3.13`
  *
@@ -39,12 +39,12 @@ export const browserusecomPackage = {
   homepageUrl: 'https://browser-use.com/' as const,
   githubUrl: 'https://github.com/browser-use/browser-use' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install browser-use.com' as const,
+  installCommand: 'pantry install browser-use.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +browser-use.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install browser-use.com' as const,
+  pantryInstallCommand: 'pantry install browser-use.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**

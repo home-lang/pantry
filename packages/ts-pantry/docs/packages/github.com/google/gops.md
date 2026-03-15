@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/google/gops
+# Install with pantry
+pantry install github.com/google/gops
 ```
 
 ## Programs

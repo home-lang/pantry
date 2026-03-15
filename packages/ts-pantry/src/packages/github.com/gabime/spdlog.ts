@@ -5,7 +5,7 @@
  * @version `1.17.0` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/gabime/spdlog`
+ * @install `pantry install github.com/gabime/spdlog`
  * @dependencies `fmt.dev^11`
  * @buildDependencies `cmake.org@^3`, `darwin:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const spdlogPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/gabime/spdlog' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/gabime/spdlog' as const,
+  installCommand: 'pantry install github.com/gabime/spdlog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/gabime/spdlog -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/gabime/spdlog' as const,
+  pantryInstallCommand: 'pantry install github.com/gabime/spdlog' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `0.13.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/adegtyarev/streebog`
+ * @install `pantry install github.com/adegtyarev/streebog`
  * @homepage https://www.streebog.net/
  * @buildDependencies `linux:gnu.org/patch` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const streebogPackage = {
   homepageUrl: 'https://www.streebog.net/' as const,
   githubUrl: 'https://github.com/adegtyarev/streebog' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/adegtyarev/streebog' as const,
+  installCommand: 'pantry install github.com/adegtyarev/streebog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/adegtyarev/streebog -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/adegtyarev/streebog' as const,
+  pantryInstallCommand: 'pantry install github.com/adegtyarev/streebog' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

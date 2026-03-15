@@ -35,7 +35,7 @@ ts-pkgx provides specialized **Integration APIs** designed for package managers 
 - 🔧 **Semantic versioning** - Full semver constraint support (^, ~, >=, etc.)
 - 🚀 **Optimized for automation** - Ready-to-use install commands and structured data
 
-See the [Launchpad Integration Guide](./launchpad-integration.md) for detailed documentation and examples.
+See the [Pantry Integration Guide](./pantry-integration.md) for detailed documentation and examples.
 
 ### Bulk Fetching
 

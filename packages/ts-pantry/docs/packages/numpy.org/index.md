@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install numpy.org
+# Install with pantry
+pantry install numpy.org
 ```
 
 ## Programs

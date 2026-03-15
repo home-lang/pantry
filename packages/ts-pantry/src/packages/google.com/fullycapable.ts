@@ -6,7 +6,7 @@
  * @version `2.66.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/fullycapable`
+ * @install `pantry install google.com/fullycapable`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const googlecomfullycapablePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/fullycapable' as const,
+  installCommand: 'pantry install google.com/fullycapable' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/fullycapable -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/fullycapable' as const,
+  pantryInstallCommand: 'pantry install google.com/fullycapable' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

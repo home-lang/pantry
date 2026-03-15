@@ -5,7 +5,7 @@
  * @version `0.5.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libspng.org`
+ * @install `pantry install libspng.org`
  * @homepage https://libspng.org
  * @dependencies `darwin:zlib.net` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com` - required only when building from source
@@ -40,12 +40,12 @@ export const libspngorgPackage = {
   homepageUrl: 'https://libspng.org' as const,
   githubUrl: 'https://github.com/randy408/libspng' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libspng.org' as const,
+  installCommand: 'pantry install libspng.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libspng.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libspng.org' as const,
+  pantryInstallCommand: 'pantry install libspng.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

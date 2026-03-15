@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rclone.org
+# Install with pantry
+pantry install rclone.org
 ```
 
 ## Programs

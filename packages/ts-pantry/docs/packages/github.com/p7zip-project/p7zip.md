@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/p7zip-project/p7zip
+# Install with pantry
+pantry install github.com/p7zip-project/p7zip
 ```
 
 ## Programs

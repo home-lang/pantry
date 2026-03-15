@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mozilla.org/nspr
+# Install with pantry
+pantry install mozilla.org/nspr
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.70.0` (55 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/junegunn/fzf`
+ * @install `pantry install github.com/junegunn/fzf`
  * @homepage https://junegunn.github.io/fzf/
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fzfPackage = {
   homepageUrl: 'https://junegunn.github.io/fzf/' as const,
   githubUrl: 'https://github.com/junegunn/fzf' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/junegunn/fzf' as const,
+  installCommand: 'pantry install github.com/junegunn/fzf' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/junegunn/fzf -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/junegunn/fzf' as const,
+  pantryInstallCommand: 'pantry install github.com/junegunn/fzf' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

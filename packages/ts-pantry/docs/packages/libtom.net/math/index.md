@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libtom.net/math
+# Install with pantry
+pantry install libtom.net/math
 ```
 
 ## Programs

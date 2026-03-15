@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install getcomposer.org
+# Install with pantry
+pantry install getcomposer.org
 ```
 
 ## Programs

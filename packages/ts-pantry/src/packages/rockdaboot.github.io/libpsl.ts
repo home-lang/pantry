@@ -5,7 +5,7 @@
  * @version `0.21.5` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rockdaboot.github.io/libpsl`
+ * @install `pantry install rockdaboot.github.io/libpsl`
  * @homepage https://rockdaboot.github.io/libpsl
  * @dependencies `unicode.org^71`
  * @buildDependencies `mesonbuild.com`, `python.org@~3.11`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -40,12 +40,12 @@ export const rockdabootgithubiolibpslPackage = {
   homepageUrl: 'https://rockdaboot.github.io/libpsl' as const,
   githubUrl: 'https://github.com/rockdaboot/libpsl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rockdaboot.github.io/libpsl' as const,
+  installCommand: 'pantry install rockdaboot.github.io/libpsl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rockdaboot.github.io/libpsl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rockdaboot.github.io/libpsl' as const,
+  pantryInstallCommand: 'pantry install rockdaboot.github.io/libpsl' as const,
   programs: [] as const,
   companions: [] as const,
   /**

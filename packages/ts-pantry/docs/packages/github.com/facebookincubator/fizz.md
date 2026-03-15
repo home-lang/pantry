@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/facebookincubator/fizz
+# Install with pantry
+pantry install github.com/facebookincubator/fizz
 ```
 
 ## Programs

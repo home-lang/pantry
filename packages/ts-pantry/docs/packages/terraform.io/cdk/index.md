@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install terraform.io/cdk
+# Install with pantry
+pantry install terraform.io/cdk
 ```
 
 ## Programs

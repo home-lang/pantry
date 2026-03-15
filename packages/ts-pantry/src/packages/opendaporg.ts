@@ -6,7 +6,7 @@
  * @version `3.21.1` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install opendap.org`
+ * @install `pantry install opendap.org`
  * @homepage https://www.opendap.org/
  * @dependencies `gnome.org/libxml2`, `openssl.org`, `curl.se`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/bison`, `github.com/westes/flex`, `gnu.org/patch`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const opendaporgPackage = {
   homepageUrl: 'https://www.opendap.org/' as const,
   githubUrl: 'https://github.com/OPENDAP/libdap4' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install opendap.org' as const,
+  installCommand: 'pantry install opendap.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opendap.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install opendap.org' as const,
+  pantryInstallCommand: 'pantry install opendap.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

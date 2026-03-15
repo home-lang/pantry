@@ -6,7 +6,7 @@
  * @version `26.3.0` (31 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/poppler-qt5`
+ * @install `pantry install freedesktop.org/poppler-qt5`
  * @homepage https://poppler.freedesktop.org/
  * @dependencies `gnupg.org/libassuan^2`, `cairographics.org^1`, `freedesktop.org/fontconfig^2`, ... (+17 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `linux:gnu.org/binutils@^2`, `linux:llvm.org@~21.1` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const freedesktoporgpopplerqt5Package = {
   homepageUrl: 'https://poppler.freedesktop.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/poppler-qt5' as const,
+  installCommand: 'pantry install freedesktop.org/poppler-qt5' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/poppler-qt5 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/poppler-qt5' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/poppler-qt5' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install harfbuzz.org
+# Install with pantry
+pantry install harfbuzz.org
 ```
 
 ## Programs

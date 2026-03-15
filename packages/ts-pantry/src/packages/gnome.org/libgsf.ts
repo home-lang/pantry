@@ -6,7 +6,7 @@
  * @version `1.14.55` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/libgsf`
+ * @install `pantry install gnome.org/libgsf`
  * @homepage https://gitlab.gnome.org/GNOME/libgsf
  * @dependencies `gnome.org/glib`
  *
@@ -41,12 +41,12 @@ export const gnomeorglibgsfPackage = {
   homepageUrl: 'https://gitlab.gnome.org/GNOME/libgsf' as const,
   githubUrl: 'https://github.com/GNOME/libgsf' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/libgsf' as const,
+  installCommand: 'pantry install gnome.org/libgsf' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/libgsf -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/libgsf' as const,
+  pantryInstallCommand: 'pantry install gnome.org/libgsf' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

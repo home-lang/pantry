@@ -5,7 +5,7 @@
  * @version `1.15.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pugixml.org`
+ * @install `pantry install pugixml.org`
  * @homepage http://pugixml.org/
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const pugixmlorgPackage = {
   homepageUrl: 'http://pugixml.org/' as const,
   githubUrl: 'https://github.com/zeux/pugixml' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pugixml.org' as const,
+  installCommand: 'pantry install pugixml.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pugixml.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pugixml.org' as const,
+  pantryInstallCommand: 'pantry install pugixml.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

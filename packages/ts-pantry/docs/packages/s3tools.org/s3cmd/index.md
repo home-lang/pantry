@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install s3tools.org/s3cmd
+# Install with pantry
+pantry install s3tools.org/s3cmd
 ```
 
 ## Programs

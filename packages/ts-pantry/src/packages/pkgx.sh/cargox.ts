@@ -6,7 +6,7 @@
  * @version `0.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pkgx.sh/cargox`
+ * @install `pantry install pkgx.sh/cargox`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const pkgxshcargoxPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pkgx.sh/cargox' as const,
+  installCommand: 'pantry install pkgx.sh/cargox' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh/cargox -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pkgx.sh/cargox' as const,
+  pantryInstallCommand: 'pantry install pkgx.sh/cargox' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

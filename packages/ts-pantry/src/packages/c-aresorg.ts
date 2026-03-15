@@ -5,7 +5,7 @@
  * @version `1.34.6` (29 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install c-ares.org`
+ * @install `pantry install c-ares.org`
  * @buildDependencies `cmake.org@^3`, `curl.se` - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const caresorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install c-ares.org' as const,
+  installCommand: 'pantry install c-ares.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +c-ares.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install c-ares.org' as const,
+  pantryInstallCommand: 'pantry install c-ares.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mailpit.axllent.org
+# Install with pantry
+pantry install mailpit.axllent.org
 ```
 
 ## Programs

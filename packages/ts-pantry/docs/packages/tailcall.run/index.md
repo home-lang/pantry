@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tailcall.run
+# Install with pantry
+pantry install tailcall.run
 ```
 
 ## Programs

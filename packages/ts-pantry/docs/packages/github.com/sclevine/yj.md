@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/sclevine/yj
+# Install with pantry
+pantry install github.com/sclevine/yj
 ```
 
 ## Programs

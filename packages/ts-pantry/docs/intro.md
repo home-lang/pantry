@@ -55,7 +55,7 @@ The project follows a clean and maintainable structure:
 
 ## Changelog
 
-Please see our [releases](https://github.com/stackjs/launchpad/releases) page for information on changes.
+Please see our [releases](https://github.com/home-lang/pantry/releases) page for information on changes.
 
 ## Contributing
 
@@ -65,7 +65,7 @@ Please see [CONTRIBUTING](https://github.com/home-lang/pantry/blob/main/.github/
 
 For help or discussion:
 
-- [Discussions on GitHub](https://github.com/stacksjs/launchpad/discussions)
+- [Discussions on GitHub](https://github.com/home-lang/pantry/discussions)
 - [Join the Stacks Discord Server](https://discord.gg/stacksjs)
 
 ## Postcardware
@@ -79,7 +79,7 @@ Our address: Stacks.js, 12665 Village Ln #2306, Playa Vista, CA 90094, United St
 - [Max Howell](https://github.com/mxcl) - for creating [pkgx](https://github.com/pkgxdev/pkgx) and [Homebrew](https://github.com/Homebrew/brew)
 - [pkgm](https://github.com/pkgxdev/pkgm) & [dev](https://github.com/pkgxdev/dev) - thanks for the inspiration
 - [Chris Breuer](https://github.com/chrisbbreuer)
-- [All Contributors](https://github.com/stacksjs/launchpad/graphs/contributors)
+- [All Contributors](https://github.com/home-lang/pantry/graphs/contributors)
 
 ## Sponsors
 

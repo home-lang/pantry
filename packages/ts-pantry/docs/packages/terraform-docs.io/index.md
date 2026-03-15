@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install terraform-docs.io
+# Install with pantry
+pantry install terraform-docs.io
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `2019.10.22` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/stego`
+ * @install `pantry install crates.io/stego`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiostegoPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/ajmwagar/stego' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/stego' as const,
+  installCommand: 'pantry install crates.io/stego' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/stego -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/stego' as const,
+  pantryInstallCommand: 'pantry install crates.io/stego' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

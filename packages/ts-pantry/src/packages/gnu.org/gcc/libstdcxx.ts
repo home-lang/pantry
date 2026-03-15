@@ -5,7 +5,7 @@
  * @version `15.2.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/gcc/libstdcxx`
+ * @install `pantry install gnu.org/gcc/libstdcxx`
  * @dependencies `gnu.org/binutils`, `gnu.org/gmp>=4.2`, `gnu.org/mpfr>=2.4.0`, ... (+3 more)
  * @buildDependencies `linux:gnu.org/gcc`, `gnu.org/make`, `perl.org@^5.6.1`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnuorggcclibstdcxxPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/gcc-mirror/gcc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/gcc/libstdcxx' as const,
+  installCommand: 'pantry install gnu.org/gcc/libstdcxx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/gcc/libstdcxx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/gcc/libstdcxx' as const,
+  pantryInstallCommand: 'pantry install gnu.org/gcc/libstdcxx' as const,
   programs: [] as const,
   companions: [] as const,
   /**

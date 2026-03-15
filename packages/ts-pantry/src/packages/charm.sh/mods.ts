@@ -6,7 +6,7 @@
  * @version `1.8.1` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install charm.sh/mods`
+ * @install `pantry install charm.sh/mods`
  * @buildDependencies `go.dev@~1.24.0` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const charmshmodsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/charmbracelet/mods' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install charm.sh/mods' as const,
+  installCommand: 'pantry install charm.sh/mods' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +charm.sh/mods -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install charm.sh/mods' as const,
+  pantryInstallCommand: 'pantry install charm.sh/mods' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

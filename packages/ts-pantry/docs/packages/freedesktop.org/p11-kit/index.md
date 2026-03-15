@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/p11-kit
+# Install with pantry
+pantry install freedesktop.org/p11-kit
 ```
 
 ## Programs

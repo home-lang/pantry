@@ -5,7 +5,7 @@
  * @version `2.15.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install digip.org/jansson`
+ * @install `pantry install digip.org/jansson`
  * @homepage http://www.digip.org/jansson/
  * @buildDependencies `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const digiporgjanssonPackage = {
   homepageUrl: 'http://www.digip.org/jansson/' as const,
   githubUrl: 'https://github.com/akheron/jansson' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install digip.org/jansson' as const,
+  installCommand: 'pantry install digip.org/jansson' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +digip.org/jansson -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install digip.org/jansson' as const,
+  pantryInstallCommand: 'pantry install digip.org/jansson' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

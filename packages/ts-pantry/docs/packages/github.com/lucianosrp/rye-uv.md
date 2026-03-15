@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/lucianosrp/rye-uv
+# Install with pantry
+pantry install github.com/lucianosrp/rye-uv
 ```
 
 ## Programs

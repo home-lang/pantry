@@ -6,7 +6,7 @@
  * @version `1.1.24` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install plocate.sesse.net`
+ * @install `pantry install plocate.sesse.net`
  * @dependencies `facebook.com/zstd@1`, `gnu.org/gcc/libstdcxx@14`
  * @buildDependencies `mesonbuild.com@^1`, `cmake.org@^3`, `gnu.org/gcc` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const plocatesessenetPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install plocate.sesse.net' as const,
+  installCommand: 'pantry install plocate.sesse.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +plocate.sesse.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install plocate.sesse.net' as const,
+  pantryInstallCommand: 'pantry install plocate.sesse.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

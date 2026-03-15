@@ -5,7 +5,7 @@
  * @version `18.0.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install postgresql.org/libpq`
+ * @install `pantry install postgresql.org/libpq`
  * @dependencies `kerberos.org`, `openssl.org^1.1`, `zlib.net^1`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `linux:gnu.org/bison`, `linux:github.com/westes/flex` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const postgresqlorglibpqPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install postgresql.org/libpq' as const,
+  installCommand: 'pantry install postgresql.org/libpq' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +postgresql.org/libpq -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install postgresql.org/libpq' as const,
+  pantryInstallCommand: 'pantry install postgresql.org/libpq' as const,
   programs: [] as const,
   companions: [] as const,
   /**

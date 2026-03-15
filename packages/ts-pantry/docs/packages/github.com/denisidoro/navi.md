@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/denisidoro/navi
+# Install with pantry
+pantry install github.com/denisidoro/navi
 ```
 
 ## Programs

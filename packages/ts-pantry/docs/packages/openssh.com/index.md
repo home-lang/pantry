@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openssh.com
+# Install with pantry
+pantry install openssh.com
 ```
 
 ## Programs

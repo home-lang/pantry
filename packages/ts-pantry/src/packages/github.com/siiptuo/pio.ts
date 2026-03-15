@@ -6,7 +6,7 @@
  * @version `0.4.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/siiptuo/pio`
+ * @install `pantry install github.com/siiptuo/pio`
  * @homepage https://platformio.org/
  *
  * @example
@@ -40,12 +40,12 @@ export const pioPackage = {
   homepageUrl: 'https://platformio.org/' as const,
   githubUrl: 'https://github.com/platformio/platformio-core' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/siiptuo/pio' as const,
+  installCommand: 'pantry install github.com/siiptuo/pio' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/siiptuo/pio -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/siiptuo/pio' as const,
+  pantryInstallCommand: 'pantry install github.com/siiptuo/pio' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

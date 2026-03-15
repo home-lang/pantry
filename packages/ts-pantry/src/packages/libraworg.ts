@@ -6,7 +6,7 @@
  * @version `0.22.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libraw.org`
+ * @install `pantry install libraw.org`
  * @homepage https://www.libraw.org/
  * @dependencies `github.com/jasper-software/jasper`, `libjpeg-turbo.org`, `littlecms.com`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const libraworgPackage = {
   homepageUrl: 'https://www.libraw.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libraw.org' as const,
+  installCommand: 'pantry install libraw.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libraw.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libraw.org' as const,
+  pantryInstallCommand: 'pantry install libraw.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

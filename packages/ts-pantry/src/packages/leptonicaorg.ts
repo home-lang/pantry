@@ -6,7 +6,7 @@
  * @version `1.87.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install leptonica.org`
+ * @install `pantry install leptonica.org`
  * @homepage http://www.leptonica.org/
  * @dependencies `giflib.sourceforge.io@5`, `libjpeg-turbo.org@2`, `libpng.org@1`, ... (+3 more)
  * @buildDependencies `gnu.org/wget` - required only when building from source
@@ -42,12 +42,12 @@ export const leptonicaorgPackage = {
   homepageUrl: 'http://www.leptonica.org/' as const,
   githubUrl: 'https://github.com/DanBloomberg/leptonica' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install leptonica.org' as const,
+  installCommand: 'pantry install leptonica.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +leptonica.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install leptonica.org' as const,
+  pantryInstallCommand: 'pantry install leptonica.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `10.4.2` (44 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install schollz.com/croc`
+ * @install `pantry install schollz.com/croc`
  * @homepage https://schollz.com/software/croc6
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const schollzcomcrocPackage = {
   homepageUrl: 'https://schollz.com/software/croc6' as const,
   githubUrl: 'https://github.com/schollz/croc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install schollz.com/croc' as const,
+  installCommand: 'pantry install schollz.com/croc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +schollz.com/croc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install schollz.com/croc' as const,
+  pantryInstallCommand: 'pantry install schollz.com/croc' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `1.0.17` (96 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install turso.tech`
+ * @install `pantry install turso.tech`
  * @homepage https://turso.tech
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tursotechPackage = {
   homepageUrl: 'https://turso.tech' as const,
   githubUrl: 'https://github.com/tursodatabase/turso-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install turso.tech' as const,
+  installCommand: 'pantry install turso.tech' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +turso.tech -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install turso.tech' as const,
+  pantryInstallCommand: 'pantry install turso.tech' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

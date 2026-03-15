@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install php.net
+# Install with pantry
+pantry install php.net
 ```
 
 ## Programs

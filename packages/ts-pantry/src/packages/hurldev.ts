@@ -6,7 +6,7 @@
  * @version `7.1.0` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install hurl.dev`
+ * @install `pantry install hurl.dev`
  * @homepage https://hurl.dev
  * @dependencies `gnome.org/libxml2~2.13 # 2.14 changed the API`, `curl.se`
  *
@@ -41,12 +41,12 @@ export const hurldevPackage = {
   homepageUrl: 'https://hurl.dev' as const,
   githubUrl: 'https://github.com/Orange-OpenSource/hurl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install hurl.dev' as const,
+  installCommand: 'pantry install hurl.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +hurl.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install hurl.dev' as const,
+  pantryInstallCommand: 'pantry install hurl.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

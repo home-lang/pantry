@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openmp.llvm.org
+# Install with pantry
+pantry install openmp.llvm.org
 ```
 
 ## Programs

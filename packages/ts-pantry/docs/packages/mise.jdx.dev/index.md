@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mise.jdx.dev
+# Install with pantry
+pantry install mise.jdx.dev
 ```
 
 ## Programs

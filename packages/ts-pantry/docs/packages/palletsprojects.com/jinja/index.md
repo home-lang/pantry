@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install palletsprojects.com/jinja
+# Install with pantry
+pantry install palletsprojects.com/jinja
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.3.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/awslabs/dynein`
+ * @install `pantry install github.com/awslabs/dynein`
  * @dependencies `linux:openssl.org^1.1` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@3`, `linux:openssl.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const dyneinPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/awslabs/dynein' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/awslabs/dynein' as const,
+  installCommand: 'pantry install github.com/awslabs/dynein' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/awslabs/dynein -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/awslabs/dynein' as const,
+  pantryInstallCommand: 'pantry install github.com/awslabs/dynein' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lxml.de
+# Install with pantry
+pantry install lxml.de
 ```
 
 ## Programs

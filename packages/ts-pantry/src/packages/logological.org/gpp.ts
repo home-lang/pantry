@@ -6,7 +6,7 @@
  * @version `2.28.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install logological.org/gpp`
+ * @install `pantry install logological.org/gpp`
  * @homepage https://logological.org/gpp
  * @buildDependencies `gnu.org/autoconf` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const logologicalorggppPackage = {
   homepageUrl: 'https://logological.org/gpp' as const,
   githubUrl: 'https://github.com/logological/gpp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install logological.org/gpp' as const,
+  installCommand: 'pantry install logological.org/gpp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +logological.org/gpp -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install logological.org/gpp' as const,
+  pantryInstallCommand: 'pantry install logological.org/gpp' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

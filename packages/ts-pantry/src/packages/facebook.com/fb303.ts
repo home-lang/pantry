@@ -5,7 +5,7 @@
  * @version `2026.3.9.0` (109 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install facebook.com/fb303`
+ * @install `pantry install facebook.com/fb303`
  * @dependencies `github.com/facebookincubator/fizz`, `facebook.com/wangle`, `facebook.com/folly`, ... (+9 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `facebook.com/mvfst`, `boost.org@^1.84`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const facebookcomfb303Package = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebook/fb303' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install facebook.com/fb303' as const,
+  installCommand: 'pantry install facebook.com/fb303' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/fb303 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install facebook.com/fb303' as const,
+  pantryInstallCommand: 'pantry install facebook.com/fb303' as const,
   programs: [] as const,
   companions: [] as const,
   /**

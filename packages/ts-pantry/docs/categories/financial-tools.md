@@ -12,7 +12,7 @@ Crypto Portfolio and Tax Reporting Tool
 
 **Programs**: raccoin
 
-**Install**: `launchpad install raccoin.org`
+**Install**: `pantry install raccoin.org`
 
 ---
 

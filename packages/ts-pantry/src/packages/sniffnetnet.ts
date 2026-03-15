@@ -6,7 +6,7 @@
  * @version `1.4.2` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sniffnet.net`
+ * @install `pantry install sniffnet.net`
  * @homepage https://sniffnet.net
  * @dependencies `openssl.org@1`, `tcpdump.org@1`, `linux:alsa-project.org/alsa-lib@1`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const sniffnetnetPackage = {
   homepageUrl: 'https://sniffnet.net' as const,
   githubUrl: 'https://github.com/GyulyVGC/sniffnet' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sniffnet.net' as const,
+  installCommand: 'pantry install sniffnet.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sniffnet.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sniffnet.net' as const,
+  pantryInstallCommand: 'pantry install sniffnet.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

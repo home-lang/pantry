@@ -5,7 +5,7 @@
  * @version `1.29.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cairographics.org/pycairo`
+ * @install `pantry install cairographics.org/pycairo`
  * @homepage https://pycairo.readthedocs.io
  * @dependencies `cairographics.org`
  * @buildDependencies `python.org@~3.11`, `mesonbuild.com` - required only when building from source
@@ -40,12 +40,12 @@ export const cairographicsorgpycairoPackage = {
   homepageUrl: 'https://pycairo.readthedocs.io' as const,
   githubUrl: 'https://github.com/pygobject/pycairo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cairographics.org/pycairo' as const,
+  installCommand: 'pantry install cairographics.org/pycairo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cairographics.org/pycairo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cairographics.org/pycairo' as const,
+  pantryInstallCommand: 'pantry install cairographics.org/pycairo' as const,
   programs: [] as const,
   companions: [] as const,
   /**

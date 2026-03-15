@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tart.run
+# Install with pantry
+pantry install tart.run
 ```
 
 ## Programs

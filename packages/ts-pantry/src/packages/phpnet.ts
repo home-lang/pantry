@@ -6,7 +6,7 @@
  * @version `8.5.4` (99 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install php.net`
+ * @install `pantry install php.net`
  * @name `php`
  * @homepage https://www.php.net/
  * @dependencies `gnu.org/bison^3`, `re2c.org^3`, `apache.org/apr^1`, ... (+28 more) (includes OS-specific dependencies with `os:package` format)
@@ -47,12 +47,12 @@ export const phpPackage = {
   homepageUrl: 'https://www.php.net/' as const,
   githubUrl: 'https://github.com/php/php-src' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install php.net' as const,
+  installCommand: 'pantry install php.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +php.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install php.net' as const,
+  pantryInstallCommand: 'pantry install php.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

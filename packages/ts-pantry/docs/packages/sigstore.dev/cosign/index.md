@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sigstore.dev/cosign
+# Install with pantry
+pantry install sigstore.dev/cosign
 ```
 
 ## Programs

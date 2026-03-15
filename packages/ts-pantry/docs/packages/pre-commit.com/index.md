@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pre-commit.com
+# Install with pantry
+pantry install pre-commit.com
 ```
 
 ## Programs

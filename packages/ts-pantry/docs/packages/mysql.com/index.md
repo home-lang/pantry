@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mysql.com
+# Install with pantry
+pantry install mysql.com
 ```
 
 ## Programs

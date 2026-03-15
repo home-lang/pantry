@@ -6,7 +6,7 @@
  * @version `1.1.408` (55 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install microsoft.com/pyright`
+ * @install `pantry install microsoft.com/pyright`
  * @dependencies `nodejs.org^20`
  * @buildDependencies `npmjs.com` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const microsoftcompyrightPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/microsoft/pyright' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install microsoft.com/pyright' as const,
+  installCommand: 'pantry install microsoft.com/pyright' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +microsoft.com/pyright -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install microsoft.com/pyright' as const,
+  pantryInstallCommand: 'pantry install microsoft.com/pyright' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

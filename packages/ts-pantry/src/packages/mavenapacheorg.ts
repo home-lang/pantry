@@ -6,7 +6,7 @@
  * @version `3.9.14` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install maven.apache.org`
+ * @install `pantry install maven.apache.org`
  * @name `mvn`
  * @aliases `maven`
  * @homepage https://maven.apache.org/
@@ -47,12 +47,12 @@ export const mavenPackage = {
   homepageUrl: 'https://maven.apache.org/' as const,
   githubUrl: 'https://github.com/apache/maven' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install maven.apache.org' as const,
+  installCommand: 'pantry install maven.apache.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +maven.apache.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install maven.apache.org' as const,
+  pantryInstallCommand: 'pantry install maven.apache.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

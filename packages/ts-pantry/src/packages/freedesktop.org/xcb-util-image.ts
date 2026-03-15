@@ -5,7 +5,7 @@
  * @version `0.4.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/xcb-util-image`
+ * @install `pantry install freedesktop.org/xcb-util-image`
  * @dependencies `x.org/xcb`, `freedesktop.org/xcb-util`
  *
  * @example
@@ -37,12 +37,12 @@ export const freedesktoporgxcbutilimagePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/xcb-util-image' as const,
+  installCommand: 'pantry install freedesktop.org/xcb-util-image' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/xcb-util-image -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/xcb-util-image' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/xcb-util-image' as const,
   programs: [] as const,
   companions: [] as const,
   /**

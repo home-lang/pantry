@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/Cyan4973/xxHash
+# Install with pantry
+pantry install github.com/Cyan4973/xxHash
 ```
 
 ## Programs

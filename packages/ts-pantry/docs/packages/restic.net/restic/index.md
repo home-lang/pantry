@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install restic.net/restic
+# Install with pantry
+pantry install restic.net/restic
 ```
 
 ## Programs

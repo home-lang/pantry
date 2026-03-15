@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/allure-framework/allure2
+# Install with pantry
+pantry install github.com/allure-framework/allure2
 ```
 
 ## Programs

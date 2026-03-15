@@ -6,7 +6,7 @@
  * @version `3.7.1` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install projectdiscovery.io/nuclei`
+ * @install `pantry install projectdiscovery.io/nuclei`
  * @homepage https://nuclei.projectdiscovery.io/
  * @buildDependencies `go.dev@~1.22.2` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const projectdiscoveryionucleiPackage = {
   homepageUrl: 'https://nuclei.projectdiscovery.io/' as const,
   githubUrl: 'https://github.com/projectdiscovery/nuclei' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install projectdiscovery.io/nuclei' as const,
+  installCommand: 'pantry install projectdiscovery.io/nuclei' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +projectdiscovery.io/nuclei -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install projectdiscovery.io/nuclei' as const,
+  pantryInstallCommand: 'pantry install projectdiscovery.io/nuclei' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

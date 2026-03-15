@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/samwho/spacer
+# Install with pantry
+pantry install github.com/samwho/spacer
 ```
 
 ## Programs

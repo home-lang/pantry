@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/kubernetes-sigs/aws-iam-authenticator
+# Install with pantry
+pantry install github.com/kubernetes-sigs/aws-iam-authenticator
 ```
 
 ## Programs

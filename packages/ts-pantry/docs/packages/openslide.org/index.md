@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openslide.org
+# Install with pantry
+pantry install openslide.org
 ```
 
 ## Programs

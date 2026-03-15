@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install akuity.io/kargo
+# Install with pantry
+pantry install akuity.io/kargo
 ```
 
 ## Programs

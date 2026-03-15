@@ -6,7 +6,7 @@
  * @version `0.21.0` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install terraform.io/cdk`
+ * @install `pantry install terraform.io/cdk`
  * @homepage https://www.terraform.io/cdktf
  * @dependencies `nodejs.org^17 || ^18 || ^19 || ^20`
  * @buildDependencies `classic.yarnpkg.com` - required only when building from source
@@ -42,12 +42,12 @@ export const terraformiocdkPackage = {
   homepageUrl: 'https://www.terraform.io/cdktf' as const,
   githubUrl: 'https://github.com/hashicorp/terraform-cdk' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install terraform.io/cdk' as const,
+  installCommand: 'pantry install terraform.io/cdk' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +terraform.io/cdk -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install terraform.io/cdk' as const,
+  pantryInstallCommand: 'pantry install terraform.io/cdk' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

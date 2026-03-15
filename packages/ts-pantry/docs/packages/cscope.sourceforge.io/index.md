@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cscope.sourceforge.io
+# Install with pantry
+pantry install cscope.sourceforge.io
 ```
 
 ## Programs

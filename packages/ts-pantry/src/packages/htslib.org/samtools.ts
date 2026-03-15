@@ -6,7 +6,7 @@
  * @version `1.23.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install htslib.org/samtools`
+ * @install `pantry install htslib.org/samtools`
  * @homepage https://www.htslib.org/
  * @dependencies `htslib.org`, `invisible-island.net/ncurses`, `zlib.net@1`
  *
@@ -41,12 +41,12 @@ export const htsliborgsamtoolsPackage = {
   homepageUrl: 'https://www.htslib.org/' as const,
   githubUrl: 'https://github.com/samtools/samtools' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install htslib.org/samtools' as const,
+  installCommand: 'pantry install htslib.org/samtools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +htslib.org/samtools -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install htslib.org/samtools' as const,
+  pantryInstallCommand: 'pantry install htslib.org/samtools' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

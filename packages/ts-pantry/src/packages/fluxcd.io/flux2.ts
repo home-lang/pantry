@@ -6,7 +6,7 @@
  * @version `2.8.2` (23 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fluxcd.io/flux2`
+ * @install `pantry install fluxcd.io/flux2`
  * @homepage https://fluxcd.io
  * @buildDependencies `go.dev@^1.20`, `kubernetes.io/kustomize@^5`, `gnu.org/make` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fluxcdioflux2Package = {
   homepageUrl: 'https://fluxcd.io' as const,
   githubUrl: 'https://github.com/fluxcd/flux2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fluxcd.io/flux2' as const,
+  installCommand: 'pantry install fluxcd.io/flux2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fluxcd.io/flux2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fluxcd.io/flux2' as const,
+  pantryInstallCommand: 'pantry install fluxcd.io/flux2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

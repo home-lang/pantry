@@ -6,7 +6,7 @@
  * @version `2.4.66` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/httpd`
+ * @install `pantry install apache.org/httpd`
  * @homepage https://httpd.apache.org/
  * @dependencies `apache.org/apr>=1.3.0`, `apache.org/apr-util>=1.3.0`, `github.com/google/brotli`, ... (+6 more)
  * @buildDependencies `gnu.org/libtool`, `gnu.org/autoconf` - required only when building from source
@@ -42,12 +42,12 @@ export const apacheorghttpdPackage = {
   homepageUrl: 'https://httpd.apache.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/httpd' as const,
+  installCommand: 'pantry install apache.org/httpd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/httpd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/httpd' as const,
+  pantryInstallCommand: 'pantry install apache.org/httpd' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/cowsay-org/cowsay
+# Install with pantry
+pantry install github.com/cowsay-org/cowsay
 ```
 
 ## Programs

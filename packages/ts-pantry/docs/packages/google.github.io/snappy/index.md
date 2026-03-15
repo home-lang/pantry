@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install google.github.io/snappy
+# Install with pantry
+pantry install google.github.io/snappy
 ```
 
 ## Programs

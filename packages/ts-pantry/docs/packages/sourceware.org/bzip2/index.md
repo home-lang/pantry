@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceware.org/bzip2
+# Install with pantry
+pantry install sourceware.org/bzip2
 ```
 
 ## Programs

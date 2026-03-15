@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xkbcommon.org
+# Install with pantry
+pantry install xkbcommon.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ZZROTDesign/docker-clean
+# Install with pantry
+pantry install github.com/ZZROTDesign/docker-clean
 ```
 
 ## Programs

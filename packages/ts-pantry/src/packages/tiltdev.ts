@@ -6,7 +6,7 @@
  * @version `0.37.0` (30 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tilt.dev`
+ * @install `pantry install tilt.dev`
  * @homepage https://tilt.dev/
  * @buildDependencies `go.dev@~1.21`, `nodejs.org@^20`, `classic.yarnpkg.com` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tiltdevPackage = {
   homepageUrl: 'https://tilt.dev/' as const,
   githubUrl: 'https://github.com/tilt-dev/tilt' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tilt.dev' as const,
+  installCommand: 'pantry install tilt.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tilt.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tilt.dev' as const,
+  pantryInstallCommand: 'pantry install tilt.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

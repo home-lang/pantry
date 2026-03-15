@@ -6,7 +6,7 @@
  * @version `0.5.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/eb`
+ * @install `pantry install crates.io/eb`
  * @homepage https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3.html
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesioebPackage = {
   homepageUrl: 'https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/eb-cli3.html' as const,
   githubUrl: 'https://github.com/rye/eb' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/eb' as const,
+  installCommand: 'pantry install crates.io/eb' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/eb -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/eb' as const,
+  pantryInstallCommand: 'pantry install crates.io/eb' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

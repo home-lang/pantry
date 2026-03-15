@@ -25,7 +25,7 @@ export {
   toTypeName,
   updatePackageVersionMap,
 } from './generate'
-export * from './launchpad-api'
+export * from './pantry-api'
 export * from './package-types'
 export * from './packages'
 export * from './pkgx-fetcher'

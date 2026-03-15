@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install filippo.io/yubikey-agent
+# Install with pantry
+pantry install filippo.io/yubikey-agent
 ```
 
 ## Programs

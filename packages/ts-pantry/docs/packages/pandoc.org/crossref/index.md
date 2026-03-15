@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pandoc.org/crossref
+# Install with pantry
+pantry install pandoc.org/crossref
 ```
 
 ## Programs

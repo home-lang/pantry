@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fna-xna.github.io
+# Install with pantry
+pantry install fna-xna.github.io
 ```
 
 ## Programs

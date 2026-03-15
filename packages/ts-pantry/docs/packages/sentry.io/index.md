@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sentry.io
+# Install with pantry
+pantry install sentry.io
 ```
 
 ## Programs

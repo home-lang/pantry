@@ -5,7 +5,7 @@
  * @version `1.19.5` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install elixir-lang.org/otp-27`
+ * @install `pantry install elixir-lang.org/otp-27`
  * @dependencies `erlang.org^27`
  *
  * @example
@@ -37,12 +37,12 @@ export const elixirlangorgotp27Package = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install elixir-lang.org/otp-27' as const,
+  installCommand: 'pantry install elixir-lang.org/otp-27' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +elixir-lang.org/otp-27 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install elixir-lang.org/otp-27' as const,
+  pantryInstallCommand: 'pantry install elixir-lang.org/otp-27' as const,
   programs: [] as const,
   companions: [] as const,
   /**

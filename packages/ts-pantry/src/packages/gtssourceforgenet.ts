@@ -6,7 +6,7 @@
  * @version `0.7.6` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gts.sourceforge.net`
+ * @install `pantry install gts.sourceforge.net`
  * @homepage https://gts.sourceforge.net/
  * @dependencies `gnome.org/glib>=2.4.0`
  * @buildDependencies `gnu.org/automake`, `gnu.org/autoconf`, `gnu.org/libtool` - required only when building from source
@@ -42,12 +42,12 @@ export const gtssourceforgenetPackage = {
   homepageUrl: 'https://gts.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gts.sourceforge.net' as const,
+  installCommand: 'pantry install gts.sourceforge.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gts.sourceforge.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gts.sourceforge.net' as const,
+  pantryInstallCommand: 'pantry install gts.sourceforge.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

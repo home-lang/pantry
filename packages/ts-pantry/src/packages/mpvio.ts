@@ -6,7 +6,7 @@
  * @version `0.41.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mpv.io`
+ * @install `pantry install mpv.io`
  * @homepage https://mpv.io
  * @dependencies `ffmpeg.org`, `libjpeg-turbo.org@2`, `libarchive.org@3`, ... (+10 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com@1`, `linux:nixos.org/patchelf@0` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const mpvioPackage = {
   homepageUrl: 'https://mpv.io' as const,
   githubUrl: 'https://github.com/mpv-player/mpv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mpv.io' as const,
+  installCommand: 'pantry install mpv.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mpv.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mpv.io' as const,
+  pantryInstallCommand: 'pantry install mpv.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

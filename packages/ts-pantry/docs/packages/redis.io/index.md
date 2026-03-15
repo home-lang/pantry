@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install redis.io
+# Install with pantry
+pantry install redis.io
 ```
 
 ## Programs

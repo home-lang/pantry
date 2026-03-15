@@ -6,7 +6,7 @@
  * @version `18.0.0` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install postgresql.org`
+ * @install `pantry install postgresql.org`
  * @name `postgresql`
  * @aliases `postgres`
  * @homepage https://www.postgresql.org/
@@ -48,12 +48,12 @@ export const postgresPackage = {
   homepageUrl: 'https://www.postgresql.org/' as const,
   githubUrl: 'https://github.com/postgres/postgres' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install postgresql.org' as const,
+  installCommand: 'pantry install postgresql.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +postgresql.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install postgresql.org' as const,
+  pantryInstallCommand: 'pantry install postgresql.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

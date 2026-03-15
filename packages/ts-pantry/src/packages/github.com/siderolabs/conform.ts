@@ -6,7 +6,7 @@
  * @version `2022.10.25` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/siderolabs/conform`
+ * @install `pantry install github.com/siderolabs/conform`
  * @buildDependencies `go.dev@^1.19` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const conformPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/siderolabs/conform' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/siderolabs/conform' as const,
+  installCommand: 'pantry install github.com/siderolabs/conform' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/siderolabs/conform -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/siderolabs/conform' as const,
+  pantryInstallCommand: 'pantry install github.com/siderolabs/conform' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

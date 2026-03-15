@@ -6,7 +6,7 @@
  * @version `0.56.18` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/vala`
+ * @install `pantry install gnome.org/vala`
  * @homepage https://wiki.gnome.org/Projects/Vala
  * @dependencies `gnome.org/glib`, `graphviz.org`, `freedesktop.org/pkg-config`, ... (+1 more)
  * @buildDependencies `gnu.org/bison`, `github.com/westes/flex`, `gnome.org/libxslt` - required only when building from source
@@ -42,12 +42,12 @@ export const gnomeorgvalaPackage = {
   homepageUrl: 'https://wiki.gnome.org/Projects/Vala' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/vala' as const,
+  installCommand: 'pantry install gnome.org/vala' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/vala -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/vala' as const,
+  pantryInstallCommand: 'pantry install gnome.org/vala' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

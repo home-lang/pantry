@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install orhun.dev/gpg-tui
+# Install with pantry
+pantry install orhun.dev/gpg-tui
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pkl-lang.org
+# Install with pantry
+pantry install pkl-lang.org
 ```
 
 ## Programs

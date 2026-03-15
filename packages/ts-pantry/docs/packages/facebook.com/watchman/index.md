@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install facebook.com/watchman
+# Install with pantry
+pantry install facebook.com/watchman
 ```
 
 ## Programs

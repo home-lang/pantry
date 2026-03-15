@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install curl.se/trurl
+# Install with pantry
+pantry install curl.se/trurl
 ```
 
 ## Programs

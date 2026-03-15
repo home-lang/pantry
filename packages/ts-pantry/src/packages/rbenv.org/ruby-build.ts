@@ -6,7 +6,7 @@
  * @version `20260311.0.0` (65 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rbenv.org/ruby-build`
+ * @install `pantry install rbenv.org/ruby-build`
  * @homepage https://rbenv.org/man/ruby-build.1
  * @dependencies `openssl.org>=1.1`, `curl.se`, `gnu.org/autoconf^2.72`, ... (+3 more)
  * @buildDependencies `linux:gnu.org/gcc@<15` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const rbenvorgrubybuildPackage = {
   homepageUrl: 'https://rbenv.org/man/ruby-build.1' as const,
   githubUrl: 'https://github.com/rbenv/ruby-build' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rbenv.org/ruby-build' as const,
+  installCommand: 'pantry install rbenv.org/ruby-build' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rbenv.org/ruby-build -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rbenv.org/ruby-build' as const,
+  pantryInstallCommand: 'pantry install rbenv.org/ruby-build' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

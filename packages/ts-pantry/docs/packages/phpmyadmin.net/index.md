@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install phpmyadmin.net
+# Install with pantry
+pantry install phpmyadmin.net
 ```
 
 ## Programs

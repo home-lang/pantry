@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/10gic/vanitygen-plusplus
+# Install with pantry
+pantry install github.com/10gic/vanitygen-plusplus
 ```
 
 ## Programs

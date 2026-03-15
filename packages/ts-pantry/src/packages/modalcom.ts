@@ -5,7 +5,7 @@
  * @version `1.3.1` (807 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install modal.com`
+ * @install `pantry install modal.com`
  * @homepage https://modal.com/docs
  * @dependencies `pkgx.sh@1`
  * @buildDependencies `python.org@>=3.9<3.13`, `protobuf.dev` - required only when building from source
@@ -40,12 +40,12 @@ export const modalcomPackage = {
   homepageUrl: 'https://modal.com/docs' as const,
   githubUrl: 'https://github.com/modal-labs/modal-client' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install modal.com' as const,
+  installCommand: 'pantry install modal.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +modal.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install modal.com' as const,
+  pantryInstallCommand: 'pantry install modal.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**

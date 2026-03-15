@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install certbot.eff.org
+# Install with pantry
+pantry install certbot.eff.org
 ```
 
 ## Programs

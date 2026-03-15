@@ -6,7 +6,7 @@
  * @version `0.5.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mun-lang.org`
+ * @install `pantry install mun-lang.org`
  * @homepage https://mun-lang.org
  * @dependencies `invisible-island.net/ncurses@6`, `sourceware.org/libffi@3`, `gnome.org/libxml2@2`
  * @buildDependencies `llvm.org@^14` - required only when building from source
@@ -42,12 +42,12 @@ export const munlangorgPackage = {
   homepageUrl: 'https://mun-lang.org' as const,
   githubUrl: 'https://github.com/mun-lang/mun' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mun-lang.org' as const,
+  installCommand: 'pantry install mun-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mun-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mun-lang.org' as const,
+  pantryInstallCommand: 'pantry install mun-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

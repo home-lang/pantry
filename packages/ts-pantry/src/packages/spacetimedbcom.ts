@@ -6,7 +6,7 @@
  * @version `2023.12.8` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install spacetimedb.com`
+ * @install `pantry install spacetimedb.com`
  * @homepage https://spacetimedb.com
  * @dependencies `openssl.org^1`
  * @buildDependencies `cmake.org@^3`, `perl.org` - required only when building from source
@@ -42,12 +42,12 @@ export const spacetimedbcomPackage = {
   homepageUrl: 'https://spacetimedb.com' as const,
   githubUrl: 'https://github.com/clockworklabs/SpacetimeDB' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install spacetimedb.com' as const,
+  installCommand: 'pantry install spacetimedb.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +spacetimedb.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install spacetimedb.com' as const,
+  pantryInstallCommand: 'pantry install spacetimedb.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

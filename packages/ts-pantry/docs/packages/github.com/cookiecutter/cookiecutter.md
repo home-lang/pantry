@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/cookiecutter/cookiecutter
+# Install with pantry
+pantry install github.com/cookiecutter/cookiecutter
 ```
 
 ## Programs

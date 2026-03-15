@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/Genymobile/scrcpy
+# Install with pantry
+pantry install github.com/Genymobile/scrcpy
 ```
 
 ## Programs

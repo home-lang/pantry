@@ -6,7 +6,7 @@
  * @version `1.19.7` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aws.amazon.com/q`
+ * @install `pantry install aws.amazon.com/q`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const awsamazoncomqPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aws.amazon.com/q' as const,
+  installCommand: 'pantry install aws.amazon.com/q' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aws.amazon.com/q -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aws.amazon.com/q' as const,
+  pantryInstallCommand: 'pantry install aws.amazon.com/q' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

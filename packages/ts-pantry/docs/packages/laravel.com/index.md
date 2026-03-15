@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install laravel.com
+# Install with pantry
+pantry install laravel.com
 ```
 
 ## Programs

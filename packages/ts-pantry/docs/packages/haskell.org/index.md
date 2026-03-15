@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install haskell.org
+# Install with pantry
+pantry install haskell.org
 ```
 
 ## Programs

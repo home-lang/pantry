@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install leonerd.org.uk/libvterm
+# Install with pantry
+pantry install leonerd.org.uk/libvterm
 ```
 
 ## Programs

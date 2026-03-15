@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mkcert.dev
+# Install with pantry
+pantry install mkcert.dev
 ```
 
 ## Programs

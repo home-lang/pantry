@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wasmer.io
+# Install with pantry
+pantry install wasmer.io
 ```
 
 ## Programs

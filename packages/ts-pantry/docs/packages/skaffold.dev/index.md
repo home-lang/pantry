@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install skaffold.dev
+# Install with pantry
+pantry install skaffold.dev
 ```
 
 ## Programs

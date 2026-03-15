@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install symfony.com
+# Install with pantry
+pantry install symfony.com
 ```
 
 ## Programs

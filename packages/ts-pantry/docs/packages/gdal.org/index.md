@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gdal.org
+# Install with pantry
+pantry install gdal.org
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.8.5` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install people.redhat.com/sgrubb/libcap-ng`
+ * @install `pantry install people.redhat.com/sgrubb/libcap-ng`
  * @homepage https://people.redhat.com/sgrubb/libcap-ng/
  *
  * @example
@@ -40,12 +40,12 @@ export const peopleredhatcomsgrubblibcapngPackage = {
   homepageUrl: 'https://people.redhat.com/sgrubb/libcap-ng/' as const,
   githubUrl: 'https://github.com/stevegrubb/libcap-ng' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install people.redhat.com/sgrubb/libcap-ng' as const,
+  installCommand: 'pantry install people.redhat.com/sgrubb/libcap-ng' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +people.redhat.com/sgrubb/libcap-ng -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install people.redhat.com/sgrubb/libcap-ng' as const,
+  pantryInstallCommand: 'pantry install people.redhat.com/sgrubb/libcap-ng' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xiph.org/libshout
+# Install with pantry
+pantry install xiph.org/libshout
 ```
 
 ## Programs

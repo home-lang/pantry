@@ -6,7 +6,7 @@
  * @version `0.26.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/bat`
+ * @install `pantry install crates.io/bat`
  * @dependencies `zlib.net^1`, `libgit2.org~1.7 # links to libgit2.so.1.7`
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiobatPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/sharkdp/bat' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/bat' as const,
+  installCommand: 'pantry install crates.io/bat' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/bat -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/bat' as const,
+  pantryInstallCommand: 'pantry install crates.io/bat' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

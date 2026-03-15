@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install unbound.net
+# Install with pantry
+pantry install unbound.net
 ```
 
 ## Programs

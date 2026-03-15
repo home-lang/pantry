@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xiph.org/ogg
+# Install with pantry
+pantry install xiph.org/ogg
 ```
 
 ## Programs

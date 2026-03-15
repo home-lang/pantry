@@ -6,7 +6,7 @@
  * @version `10.6.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ghostscript.com`
+ * @install `pantry install ghostscript.com`
  * @homepage https://www.ghostscript.com/
  * @dependencies `zlib.net^1.2`, `libpng.org^1.6`, `libjpeg-turbo.org^2`, ... (+8 more)
  *
@@ -41,12 +41,12 @@ export const ghostscriptcomPackage = {
   homepageUrl: 'https://www.ghostscript.com/' as const,
   githubUrl: 'https://github.com/ArtifexSoftware/ghostpdl-downloads' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ghostscript.com' as const,
+  installCommand: 'pantry install ghostscript.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ghostscript.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ghostscript.com' as const,
+  pantryInstallCommand: 'pantry install ghostscript.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

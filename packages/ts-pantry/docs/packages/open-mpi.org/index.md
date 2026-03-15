@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install open-mpi.org
+# Install with pantry
+pantry install open-mpi.org
 ```
 
 ## Programs

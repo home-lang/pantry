@@ -6,7 +6,7 @@
  * @version `0.18.0` (157 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ollama.ai`
+ * @install `pantry install ollama.ai`
  * @homepage https://ollama.com/
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `go.dev@^1.21`, `cmake.org@^3`, `linux:gnu.org/binutils` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const ollamaaiPackage = {
   homepageUrl: 'https://ollama.com/' as const,
   githubUrl: 'https://github.com/ollama/ollama' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ollama.ai' as const,
+  installCommand: 'pantry install ollama.ai' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ollama.ai -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ollama.ai' as const,
+  pantryInstallCommand: 'pantry install ollama.ai' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jbig2dec.com
+# Install with pantry
+pantry install jbig2dec.com
 ```
 
 ## Programs

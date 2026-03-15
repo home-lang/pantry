@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/PyGObject
+# Install with pantry
+pantry install gnome.org/PyGObject
 ```
 
 ## Programs

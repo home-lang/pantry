@@ -5,7 +5,7 @@
  * @version `2.7.0.20070801` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install taku910.github.io/mecab-ipadic`
+ * @install `pantry install taku910.github.io/mecab-ipadic`
  * @dependencies `taku910.github.io/mecab`
  *
  * @example
@@ -37,12 +37,12 @@ export const taku910githubiomecabipadicPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install taku910.github.io/mecab-ipadic' as const,
+  installCommand: 'pantry install taku910.github.io/mecab-ipadic' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +taku910.github.io/mecab-ipadic -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install taku910.github.io/mecab-ipadic' as const,
+  pantryInstallCommand: 'pantry install taku910.github.io/mecab-ipadic' as const,
   programs: [] as const,
   companions: [] as const,
   /**

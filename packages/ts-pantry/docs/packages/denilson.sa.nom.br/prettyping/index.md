@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install denilson.sa.nom.br/prettyping
+# Install with pantry
+pantry install denilson.sa.nom.br/prettyping
 ```
 
 ## Programs

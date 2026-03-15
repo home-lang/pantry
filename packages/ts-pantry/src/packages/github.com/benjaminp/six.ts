@@ -5,7 +5,7 @@
  * @version `1.17.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/benjaminp/six`
+ * @install `pantry install github.com/benjaminp/six`
  * @homepage https://six.readthedocs.io/
  * @dependencies `python.org~3.11`
  *
@@ -39,12 +39,12 @@ export const sixPackage = {
   homepageUrl: 'https://six.readthedocs.io/' as const,
   githubUrl: 'https://github.com/benjaminp/six' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/benjaminp/six' as const,
+  installCommand: 'pantry install github.com/benjaminp/six' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/benjaminp/six -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/benjaminp/six' as const,
+  pantryInstallCommand: 'pantry install github.com/benjaminp/six' as const,
   programs: [] as const,
   companions: [] as const,
   /**

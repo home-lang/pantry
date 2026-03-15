@@ -6,7 +6,7 @@
  * @version `5.8.2` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tukaani.org/xz`
+ * @install `pantry install tukaani.org/xz`
  * @homepage https://tukaani.org/xz/
  *
  * @example
@@ -40,12 +40,12 @@ export const tukaaniorgxzPackage = {
   homepageUrl: 'https://tukaani.org/xz/' as const,
   githubUrl: 'https://github.com/tukaani-project/xz' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tukaani.org/xz' as const,
+  installCommand: 'pantry install tukaani.org/xz' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tukaani.org/xz -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tukaani.org/xz' as const,
+  pantryInstallCommand: 'pantry install tukaani.org/xz' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

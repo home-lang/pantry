@@ -6,7 +6,7 @@
  * @version `18.1.40` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install oracle.com/berkeley-db`
+ * @install `pantry install oracle.com/berkeley-db`
  * @homepage https://www.oracle.com/database/technologies/related/berkeleydb.html
  * @dependencies `openssl.org^1.1.1`
  *
@@ -41,12 +41,12 @@ export const oraclecomberkeleydbPackage = {
   homepageUrl: 'https://www.oracle.com/database/technologies/related/berkeleydb.html' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install oracle.com/berkeley-db' as const,
+  installCommand: 'pantry install oracle.com/berkeley-db' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +oracle.com/berkeley-db -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install oracle.com/berkeley-db' as const,
+  pantryInstallCommand: 'pantry install oracle.com/berkeley-db' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

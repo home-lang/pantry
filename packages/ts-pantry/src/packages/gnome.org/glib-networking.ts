@@ -5,7 +5,7 @@
  * @version `2.80.1` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/glib-networking`
+ * @install `pantry install gnome.org/glib-networking`
  * @dependencies `gnome.org/glib`, `gnutls.org`, `gnome.org/gsettings-desktop-schemas`
  * @buildDependencies `mesonbuild.com`, `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnomeorgglibnetworkingPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/glib-networking' as const,
+  installCommand: 'pantry install gnome.org/glib-networking' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/glib-networking -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/glib-networking' as const,
+  pantryInstallCommand: 'pantry install gnome.org/glib-networking' as const,
   programs: [] as const,
   companions: [] as const,
   /**

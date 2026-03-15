@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/pango
+# Install with pantry
+pantry install gnome.org/pango
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/rpg-cli
+# Install with pantry
+pantry install crates.io/rpg-cli
 ```
 
 ## Programs

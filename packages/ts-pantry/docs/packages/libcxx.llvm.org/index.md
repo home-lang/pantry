@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libcxx.llvm.org
+# Install with pantry
+pantry install libcxx.llvm.org
 ```
 
 ## Programs

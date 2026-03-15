@@ -5,7 +5,7 @@
  * @version `1.45.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/luvit/luv`
+ * @install `pantry install github.com/luvit/luv`
  * @dependencies `libuv.org`
  * @buildDependencies `cmake.org`, `lua.org`, `luajit.org`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const luvPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/luvit/luv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/luvit/luv' as const,
+  installCommand: 'pantry install github.com/luvit/luv' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/luvit/luv -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/luvit/luv' as const,
+  pantryInstallCommand: 'pantry install github.com/luvit/luv' as const,
   programs: [] as const,
   companions: [] as const,
   /**

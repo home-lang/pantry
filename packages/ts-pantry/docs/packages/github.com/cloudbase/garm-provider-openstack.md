@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/cloudbase/garm-provider-openstack
+# Install with pantry
+pantry install github.com/cloudbase/garm-provider-openstack
 ```
 
 ## Programs

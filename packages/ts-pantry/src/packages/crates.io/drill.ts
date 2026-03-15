@@ -6,7 +6,7 @@
  * @version `0.9.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/drill`
+ * @install `pantry install crates.io/drill`
  * @dependencies `openssl.org^1.1`
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiodrillPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/fcsonline/drill' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/drill' as const,
+  installCommand: 'pantry install crates.io/drill' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/drill -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/drill' as const,
+  pantryInstallCommand: 'pantry install crates.io/drill' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

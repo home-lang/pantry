@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnupg.org/npth
+# Install with pantry
+pantry install gnupg.org/npth
 ```
 
 ## Programs

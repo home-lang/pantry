@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/exts
+# Install with pantry
+pantry install x.org/exts
 ```
 
 ## Programs

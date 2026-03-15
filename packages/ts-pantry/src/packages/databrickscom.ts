@@ -6,7 +6,7 @@
  * @version `0.294.0` (96 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install databricks.com`
+ * @install `pantry install databricks.com`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const databrickscomPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/databricks/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install databricks.com' as const,
+  installCommand: 'pantry install databricks.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +databricks.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install databricks.com' as const,
+  pantryInstallCommand: 'pantry install databricks.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apache.org/apr-util
+# Install with pantry
+pantry install apache.org/apr-util
 ```
 
 ## Programs

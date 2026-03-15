@@ -6,7 +6,7 @@
  * @version `4.31.0` (103 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install railway.app`
+ * @install `pantry install railway.app`
  * @homepage https://railway.app/
  * @buildDependencies `darwin:gnu.org/libiconv` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const railwayappPackage = {
   homepageUrl: 'https://railway.app/' as const,
   githubUrl: 'https://github.com/railwayapp/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install railway.app' as const,
+  installCommand: 'pantry install railway.app' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +railway.app -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install railway.app' as const,
+  pantryInstallCommand: 'pantry install railway.app' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

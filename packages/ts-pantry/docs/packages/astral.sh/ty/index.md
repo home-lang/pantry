@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install astral.sh/ty
+# Install with pantry
+pantry install astral.sh/ty
 ```
 
 ## Programs

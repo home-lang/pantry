@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vcluster.com
+# Install with pantry
+pantry install vcluster.com
 ```
 
 ## Programs

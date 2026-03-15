@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/adnanh/webhook
+# Install with pantry
+pantry install github.com/adnanh/webhook
 ```
 
 ## Programs

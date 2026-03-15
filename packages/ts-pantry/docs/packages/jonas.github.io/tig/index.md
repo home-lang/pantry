@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jonas.github.io/tig
+# Install with pantry
+pantry install jonas.github.io/tig
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.7.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/ankitpokhrel/jira-cli`
+ * @install `pantry install github.com/ankitpokhrel/jira-cli`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const jiracliPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/go-jira/jira' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/ankitpokhrel/jira-cli' as const,
+  installCommand: 'pantry install github.com/ankitpokhrel/jira-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ankitpokhrel/jira-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/ankitpokhrel/jira-cli' as const,
+  pantryInstallCommand: 'pantry install github.com/ankitpokhrel/jira-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

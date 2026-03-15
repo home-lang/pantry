@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vitejs.dev
+# Install with pantry
+pantry install vitejs.dev
 ```
 
 ## Programs

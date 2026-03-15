@@ -6,7 +6,7 @@
  * @version `3.3.4` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/Genymobile/scrcpy`
+ * @install `pantry install github.com/Genymobile/scrcpy`
  * @dependencies `ffmpeg.org`, `libusb.info`, `libsdl.org`, ... (+3 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com`, `gnu.org/wget`, `gnu.org/patch` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const scrcpyPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/Genymobile/scrcpy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/Genymobile/scrcpy' as const,
+  installCommand: 'pantry install github.com/Genymobile/scrcpy' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Genymobile/scrcpy -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/Genymobile/scrcpy' as const,
+  pantryInstallCommand: 'pantry install github.com/Genymobile/scrcpy' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

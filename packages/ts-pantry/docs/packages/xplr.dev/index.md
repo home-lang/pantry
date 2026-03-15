@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xplr.dev
+# Install with pantry
+pantry install xplr.dev
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.73.1` (68 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install zarf.dev`
+ * @install `pantry install zarf.dev`
  * @buildDependencies `go.dev` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const zarfdevPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/defenseunicorns/zarf' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install zarf.dev' as const,
+  installCommand: 'pantry install zarf.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zarf.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install zarf.dev' as const,
+  pantryInstallCommand: 'pantry install zarf.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

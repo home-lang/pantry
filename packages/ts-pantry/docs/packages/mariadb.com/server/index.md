@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mariadb.com/server
+# Install with pantry
+pantry install mariadb.com/server
 ```
 
 ## Programs

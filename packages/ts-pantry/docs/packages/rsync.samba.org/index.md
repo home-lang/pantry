@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rsync.samba.org
+# Install with pantry
+pantry install rsync.samba.org
 ```
 
 ## Programs

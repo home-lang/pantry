@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install conftest.dev
+# Install with pantry
+pantry install conftest.dev
 ```
 
 ## Programs

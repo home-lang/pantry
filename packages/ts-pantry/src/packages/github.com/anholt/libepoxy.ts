@@ -5,7 +5,7 @@
  * @version `1.5.10` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/anholt/libepoxy`
+ * @install `pantry install github.com/anholt/libepoxy`
  * @dependencies `linux:x.org/x11`, `linux:mesa3d.org` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com`, `python.org@>=3.1<3.12`, `linux:freeglut.sourceforge.io` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libepoxyPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/anholt/libepoxy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/anholt/libepoxy' as const,
+  installCommand: 'pantry install github.com/anholt/libepoxy' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/anholt/libepoxy -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/anholt/libepoxy' as const,
+  pantryInstallCommand: 'pantry install github.com/anholt/libepoxy' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gaia-gis.it/fossil/freexl
+# Install with pantry
+pantry install gaia-gis.it/fossil/freexl
 ```
 
 ## Programs

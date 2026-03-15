@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jdk
+# Install with pantry
+pantry install jdk
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install eigen.tuxfamily.org
+# Install with pantry
+pantry install eigen.tuxfamily.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pypa.github.io/pipx
+# Install with pantry
+pantry install pypa.github.io/pipx
 ```
 
 ## Programs

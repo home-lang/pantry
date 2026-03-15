@@ -6,7 +6,7 @@
  * @version `2.49.92` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install clisp.org`
+ * @install `pantry install clisp.org`
  * @homepage https://clisp.sourceforge.io/
  * @dependencies `gnu.org/libsigsegv^2.14`, `gnu.org/readline^8.2`, `github.com/besser82/libxcrypt^4.4`
  *
@@ -41,12 +41,12 @@ export const clisporgPackage = {
   homepageUrl: 'https://clisp.sourceforge.io/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install clisp.org' as const,
+  installCommand: 'pantry install clisp.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +clisp.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install clisp.org' as const,
+  pantryInstallCommand: 'pantry install clisp.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

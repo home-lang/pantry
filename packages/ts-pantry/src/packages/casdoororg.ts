@@ -6,7 +6,7 @@
  * @version `2.355.0` (220 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install casdoor.org`
+ * @install `pantry install casdoor.org`
  * @buildDependencies `go.dev@^1.21`, `nodejs.org@18.19.0`, `classic.yarnpkg.com@^1` - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const casdoororgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install casdoor.org' as const,
+  installCommand: 'pantry install casdoor.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +casdoor.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install casdoor.org' as const,
+  pantryInstallCommand: 'pantry install casdoor.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

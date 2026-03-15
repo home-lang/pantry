@@ -6,7 +6,7 @@
  * @version `3.12.2` (25 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gdal.org`
+ * @install `pantry install gdal.org`
  * @homepage https://www.gdal.org/
  * @dependencies `apache.org/arrow@19`, `heasarc.gsfc.nasa.gov/cfitsio`, `epsilon-project.sourceforge.io`, ... (+40 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `boost.org`, `cmake.org`, `swig.org`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const gdalorgPackage = {
   homepageUrl: 'https://www.gdal.org/' as const,
   githubUrl: 'https://github.com/OSGeo/gdal' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gdal.org' as const,
+  installCommand: 'pantry install gdal.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gdal.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gdal.org' as const,
+  pantryInstallCommand: 'pantry install gdal.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

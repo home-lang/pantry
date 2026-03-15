@@ -6,7 +6,7 @@
  * @version `0.16.1` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install curl.se/trurl`
+ * @install `pantry install curl.se/trurl`
  * @homepage https://curl.se/trurl/
  * @dependencies `curl.se^7,^8`
  * @buildDependencies `openssl.org@^1.1` - required only when building from source
@@ -42,12 +42,12 @@ export const curlsetrurlPackage = {
   homepageUrl: 'https://curl.se/trurl/' as const,
   githubUrl: 'https://github.com/curl/trurl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install curl.se/trurl' as const,
+  installCommand: 'pantry install curl.se/trurl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +curl.se/trurl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install curl.se/trurl' as const,
+  pantryInstallCommand: 'pantry install curl.se/trurl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

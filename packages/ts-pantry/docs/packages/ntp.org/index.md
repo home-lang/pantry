@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ntp.org
+# Install with pantry
+pantry install ntp.org
 ```
 
 ## Programs

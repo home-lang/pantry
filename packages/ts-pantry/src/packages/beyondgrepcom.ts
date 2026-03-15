@@ -6,7 +6,7 @@
  * @version `3.9.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install beyondgrep.com`
+ * @install `pantry install beyondgrep.com`
  * @homepage https://beyondgrep.com/
  * @dependencies `perl.org`
  *
@@ -41,12 +41,12 @@ export const beyondgrepcomPackage = {
   homepageUrl: 'https://beyondgrep.com/' as const,
   githubUrl: 'https://github.com/beyondgrep/ack3' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install beyondgrep.com' as const,
+  installCommand: 'pantry install beyondgrep.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +beyondgrep.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install beyondgrep.com' as const,
+  pantryInstallCommand: 'pantry install beyondgrep.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

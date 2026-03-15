@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/wagoodman/dive
+# Install with pantry
+pantry install github.com/wagoodman/dive
 ```
 
 ## Programs

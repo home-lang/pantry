@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fairwinds.com/pluto
+# Install with pantry
+pantry install fairwinds.com/pluto
 ```
 
 ## Programs

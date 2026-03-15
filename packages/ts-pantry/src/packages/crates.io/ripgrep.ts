@@ -6,7 +6,7 @@
  * @version `15.1.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/ripgrep`
+ * @install `pantry install crates.io/ripgrep`
  * @name `rg`
  * @aliases `ripgrep`
  *
@@ -45,12 +45,12 @@ export const ripgrepPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/BurntSushi/ripgrep' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/ripgrep' as const,
+  installCommand: 'pantry install crates.io/ripgrep' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/ripgrep -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/ripgrep' as const,
+  pantryInstallCommand: 'pantry install crates.io/ripgrep' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

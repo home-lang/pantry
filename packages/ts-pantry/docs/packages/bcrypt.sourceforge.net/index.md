@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bcrypt.sourceforge.net
+# Install with pantry
+pantry install bcrypt.sourceforge.net
 ```
 
 ## Programs

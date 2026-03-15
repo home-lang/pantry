@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nasm.us
+# Install with pantry
+pantry install nasm.us
 ```
 
 ## Programs

@@ -2,7 +2,7 @@
  * Pantry Configuration Types
  *
  * Comprehensive type definitions for Pantry package manager configuration.
- * Based on the original LaunchpadConfig interface with enhanced documentation.
+ * Based on the original PantryConfig interface with enhanced documentation.
  *
  * @module ts-pantry
  */
@@ -198,7 +198,7 @@ interface PantryConfigBase {
 }
 
 /**
- * Pantry configuration interface (formerly LaunchpadConfig)
+ * Pantry configuration interface
  *
  * FULLY TYPED with validation for both package names AND versions
  */
@@ -363,9 +363,7 @@ export interface SystemdService {
   }
 }
 
-/**
- * LaunchpadConfig is the legacy alias for PantryConfig
- */
+/** @deprecated Use PantryConfig instead */
 export type LaunchpadConfig = PantryConfig
 
 /**

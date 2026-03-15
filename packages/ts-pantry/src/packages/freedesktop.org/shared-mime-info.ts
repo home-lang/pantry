@@ -6,7 +6,7 @@
  * @version `2.4.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/shared-mime-info`
+ * @install `pantry install freedesktop.org/shared-mime-info`
  * @homepage https://wiki.freedesktop.org/www/Software/shared-mime-info
  * @dependencies `gnome.org/glib@2`, `gnu.org/gettext^0.21`
  * @buildDependencies `mesonbuild.com@^0.63`, `gnome.org/libxml2@2` - required only when building from source
@@ -42,12 +42,12 @@ export const freedesktoporgsharedmimeinfoPackage = {
   homepageUrl: 'https://wiki.freedesktop.org/www/Software/shared-mime-info' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/shared-mime-info' as const,
+  installCommand: 'pantry install freedesktop.org/shared-mime-info' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/shared-mime-info -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/shared-mime-info' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/shared-mime-info' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

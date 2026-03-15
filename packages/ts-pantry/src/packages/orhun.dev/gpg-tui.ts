@@ -6,7 +6,7 @@
  * @version `0.11.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install orhun.dev/gpg-tui`
+ * @install `pantry install orhun.dev/gpg-tui`
  * @homepage https://blog.orhun.dev/introducing-gpg-tui/
  * @dependencies `gnupg.org`, `gnupg.org/gpgme^1.12`, `gnupg.org/libgpg-error`, ... (+1 more)
  *
@@ -41,12 +41,12 @@ export const orhundevgpgtuiPackage = {
   homepageUrl: 'https://blog.orhun.dev/introducing-gpg-tui/' as const,
   githubUrl: 'https://github.com/orhun/gpg-tui' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install orhun.dev/gpg-tui' as const,
+  installCommand: 'pantry install orhun.dev/gpg-tui' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +orhun.dev/gpg-tui -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install orhun.dev/gpg-tui' as const,
+  pantryInstallCommand: 'pantry install orhun.dev/gpg-tui' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -5,7 +5,7 @@
  * @version `3.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install thrysoee.dk/editline`
+ * @install `pantry install thrysoee.dk/editline`
  * @dependencies `invisible-island.net/ncurses`
  *
  * @example
@@ -37,12 +37,12 @@ export const thrysoeedkeditlinePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install thrysoee.dk/editline' as const,
+  installCommand: 'pantry install thrysoee.dk/editline' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +thrysoee.dk/editline -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install thrysoee.dk/editline' as const,
+  pantryInstallCommand: 'pantry install thrysoee.dk/editline' as const,
   programs: [] as const,
   companions: [] as const,
   /**

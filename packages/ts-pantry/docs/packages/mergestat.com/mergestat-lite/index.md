@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mergestat.com/mergestat-lite
+# Install with pantry
+pantry install mergestat.com/mergestat-lite
 ```
 
 ## Programs

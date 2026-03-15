@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/npryce/adr-tools
+# Install with pantry
+pantry install github.com/npryce/adr-tools
 ```
 
 ## Programs

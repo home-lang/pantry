@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/caarlos0/svu
+# Install with pantry
+pantry install github.com/caarlos0/svu
 ```
 
 ## Programs

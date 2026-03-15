@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/diffutils
+# Install with pantry
+pantry install gnu.org/diffutils
 ```
 
 ## Programs

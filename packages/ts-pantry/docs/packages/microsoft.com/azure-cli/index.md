@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install microsoft.com/azure-cli
+# Install with pantry
+pantry install microsoft.com/azure-cli
 ```
 
 ## Programs

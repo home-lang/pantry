@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/protobuf-c/protobuf-c
+# Install with pantry
+pantry install github.com/protobuf-c/protobuf-c
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tidbyt.com
+# Install with pantry
+pantry install tidbyt.com
 ```
 
 ## Programs

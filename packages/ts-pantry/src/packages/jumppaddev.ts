@@ -6,7 +6,7 @@
  * @version `0.24.0` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jumppad.dev`
+ * @install `pantry install jumppad.dev`
  * @homepage https://jumppad.dev
  * @buildDependencies `go.dev@=1.21.5`, `linux:gnu.org/gcc`, `linux:gnu.org/binutils@~2.44` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const jumppaddevPackage = {
   homepageUrl: 'https://jumppad.dev' as const,
   githubUrl: 'https://github.com/jumppad-labs/jumppad' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jumppad.dev' as const,
+  installCommand: 'pantry install jumppad.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jumppad.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jumppad.dev' as const,
+  pantryInstallCommand: 'pantry install jumppad.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

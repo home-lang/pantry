@@ -6,7 +6,7 @@
  * @version `1.2.15.3` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install alsa-project.org/alsa-lib`
+ * @install `pantry install alsa-project.org/alsa-lib`
  * @homepage https://www.alsa-project.org/
  *
  * @example
@@ -40,12 +40,12 @@ export const alsaprojectorgalsalibPackage = {
   homepageUrl: 'https://www.alsa-project.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install alsa-project.org/alsa-lib' as const,
+  installCommand: 'pantry install alsa-project.org/alsa-lib' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +alsa-project.org/alsa-lib -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install alsa-project.org/alsa-lib' as const,
+  pantryInstallCommand: 'pantry install alsa-project.org/alsa-lib' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

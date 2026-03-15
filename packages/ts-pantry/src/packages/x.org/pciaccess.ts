@@ -5,7 +5,7 @@
  * @version `0.17.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/pciaccess`
+ * @install `pantry install x.org/pciaccess`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const xorgpciaccessPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/pciaccess' as const,
+  installCommand: 'pantry install x.org/pciaccess' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/pciaccess -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/pciaccess' as const,
+  pantryInstallCommand: 'pantry install x.org/pciaccess' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

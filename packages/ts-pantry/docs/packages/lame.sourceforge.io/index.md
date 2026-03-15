@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lame.sourceforge.io
+# Install with pantry
+pantry install lame.sourceforge.io
 ```
 
 ## Programs

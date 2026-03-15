@@ -6,7 +6,7 @@
  * @version `0.1.8` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libusb.info/compat`
+ * @install `pantry install libusb.info/compat`
  * @homepage https://libusb.info/
  * @dependencies `libusb.info^1`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
@@ -42,12 +42,12 @@ export const libusbinfocompatPackage = {
   homepageUrl: 'https://libusb.info/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libusb.info/compat' as const,
+  installCommand: 'pantry install libusb.info/compat' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libusb.info/compat -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libusb.info/compat' as const,
+  pantryInstallCommand: 'pantry install libusb.info/compat' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

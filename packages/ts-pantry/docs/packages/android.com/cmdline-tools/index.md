@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install android.com/cmdline-tools
+# Install with pantry
+pantry install android.com/cmdline-tools
 ```
 
 ## Programs

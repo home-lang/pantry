@@ -6,7 +6,7 @@
  * @version `1.21.4` (64 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vaultproject.io`
+ * @install `pantry install vaultproject.io`
  * @homepage https://www.vaultproject.io/
  * @buildDependencies `go.dev@=1.25.5`, `nodejs.org@^20`, `python.org@~3.10`, ... (+3 more) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const vaultprojectioPackage = {
   homepageUrl: 'https://www.vaultproject.io/' as const,
   githubUrl: 'https://github.com/hashicorp/vault' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vaultproject.io' as const,
+  installCommand: 'pantry install vaultproject.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vaultproject.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vaultproject.io' as const,
+  pantryInstallCommand: 'pantry install vaultproject.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

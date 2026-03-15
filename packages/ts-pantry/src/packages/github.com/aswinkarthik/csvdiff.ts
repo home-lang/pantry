@@ -6,7 +6,7 @@
  * @version `1.4.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/aswinkarthik/csvdiff`
+ * @install `pantry install github.com/aswinkarthik/csvdiff`
  * @homepage https://aswinkarthik.github.io/csvdiff/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const csvdiffPackage = {
   homepageUrl: 'https://aswinkarthik.github.io/csvdiff/' as const,
   githubUrl: 'https://github.com/aswinkarthik/csvdiff' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/aswinkarthik/csvdiff' as const,
+  installCommand: 'pantry install github.com/aswinkarthik/csvdiff' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/aswinkarthik/csvdiff -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/aswinkarthik/csvdiff' as const,
+  pantryInstallCommand: 'pantry install github.com/aswinkarthik/csvdiff' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

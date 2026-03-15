@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mvdan.cc/gofumpt
+# Install with pantry
+pantry install mvdan.cc/gofumpt
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/tomnomnom/gron
+# Install with pantry
+pantry install github.com/tomnomnom/gron
 ```
 
 ## Programs

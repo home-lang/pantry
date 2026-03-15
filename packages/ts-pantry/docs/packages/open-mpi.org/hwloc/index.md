@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install open-mpi.org/hwloc
+# Install with pantry
+pantry install open-mpi.org/hwloc
 ```
 
 ## Programs

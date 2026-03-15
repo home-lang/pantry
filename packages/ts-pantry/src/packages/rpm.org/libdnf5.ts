@@ -5,7 +5,7 @@
  * @version `5.4.0.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rpm.org/libdnf5`
+ * @install `pantry install rpm.org/libdnf5`
  * @dependencies `rpm.org/rpm`, `rpm.org/popt`, `rpm.org/librepo`, ... (+11 more)
  * @buildDependencies `cmake.org@>=3.16`, `gnu.org/gcc@^14`, `gnu.org/gettext`, ... (+2 more) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const rpmorglibdnf5Package = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rpm.org/libdnf5' as const,
+  installCommand: 'pantry install rpm.org/libdnf5' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/libdnf5 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rpm.org/libdnf5' as const,
+  pantryInstallCommand: 'pantry install rpm.org/libdnf5' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `5.1.18` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aux4.io`
+ * @install `pantry install aux4.io`
  * @homepage https://aux4.io
  * @buildDependencies `go.dev@~1.21.5` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const aux4ioPackage = {
   homepageUrl: 'https://aux4.io' as const,
   githubUrl: 'https://github.com/aux4/aux4' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aux4.io' as const,
+  installCommand: 'pantry install aux4.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aux4.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aux4.io' as const,
+  pantryInstallCommand: 'pantry install aux4.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

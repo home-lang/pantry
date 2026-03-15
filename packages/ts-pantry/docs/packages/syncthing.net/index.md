@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install syncthing.net
+# Install with pantry
+pantry install syncthing.net
 ```
 
 ## Programs

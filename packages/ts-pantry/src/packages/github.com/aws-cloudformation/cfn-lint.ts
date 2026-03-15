@@ -6,7 +6,7 @@
  * @version `1.46.0` (173 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/aws-cloudformation/cfn-lint`
+ * @install `pantry install github.com/aws-cloudformation/cfn-lint`
  * @dependencies `pkgx.sh>=1`, `pyyaml.org`, `github.com/benjaminp/six`
  * @buildDependencies `python.org@~3.11` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cfnlintPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/aws-cloudformation/cfn-lint' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/aws-cloudformation/cfn-lint' as const,
+  installCommand: 'pantry install github.com/aws-cloudformation/cfn-lint' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/aws-cloudformation/cfn-lint -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/aws-cloudformation/cfn-lint' as const,
+  pantryInstallCommand: 'pantry install github.com/aws-cloudformation/cfn-lint' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

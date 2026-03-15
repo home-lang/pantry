@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rubygems.org/gist
+# Install with pantry
+pantry install rubygems.org/gist
 ```
 
 ## Programs

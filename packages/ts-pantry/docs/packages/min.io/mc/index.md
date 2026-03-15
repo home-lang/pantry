@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install min.io/mc
+# Install with pantry
+pantry install min.io/mc
 ```
 
 ## Programs

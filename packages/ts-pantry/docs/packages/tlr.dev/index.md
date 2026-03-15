@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tlr.dev
+# Install with pantry
+pantry install tlr.dev
 ```
 
 ## Programs

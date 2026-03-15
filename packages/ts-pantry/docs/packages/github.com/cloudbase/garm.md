@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/cloudbase/garm
+# Install with pantry
+pantry install github.com/cloudbase/garm
 ```
 
 ## Programs

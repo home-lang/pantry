@@ -5,7 +5,7 @@
  * @version `1.17.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/googletest`
+ * @install `pantry install google.com/googletest`
  * @homepage https://google.github.io/googletest/
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const googlecomgoogletestPackage = {
   homepageUrl: 'https://google.github.io/googletest/' as const,
   githubUrl: 'https://github.com/google/googletest' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/googletest' as const,
+  installCommand: 'pantry install google.com/googletest' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/googletest -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/googletest' as const,
+  pantryInstallCommand: 'pantry install google.com/googletest' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -5,7 +5,7 @@
  * @version `1.1.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install hadrons.org/libmd`
+ * @install `pantry install hadrons.org/libmd`
  * @homepage https://www.hadrons.org/software/libmd/
  * @buildDependencies `gnu.org/patch`, `crates.io/semverator` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const hadronsorglibmdPackage = {
   homepageUrl: 'https://www.hadrons.org/software/libmd/' as const,
   githubUrl: 'https://github.com/guillemj/libmd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install hadrons.org/libmd' as const,
+  installCommand: 'pantry install hadrons.org/libmd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +hadrons.org/libmd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install hadrons.org/libmd' as const,
+  pantryInstallCommand: 'pantry install hadrons.org/libmd' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

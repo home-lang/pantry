@@ -5,7 +5,7 @@
  * @version `1.3.2` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install zlib.net/minizip`
+ * @install `pantry install zlib.net/minizip`
  * @homepage http://zlib.net/
  * @buildDependencies `gnu.org/autoconf@^2`, `gnu.org/automake@^1`, `gnu.org/libtool@^2` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const zlibnetminizipPackage = {
   homepageUrl: 'http://zlib.net/' as const,
   githubUrl: 'https://github.com/madler/zlib' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install zlib.net/minizip' as const,
+  installCommand: 'pantry install zlib.net/minizip' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zlib.net/minizip -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install zlib.net/minizip' as const,
+  pantryInstallCommand: 'pantry install zlib.net/minizip' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

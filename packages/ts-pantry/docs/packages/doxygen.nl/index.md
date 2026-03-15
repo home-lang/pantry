@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install doxygen.nl
+# Install with pantry
+pantry install doxygen.nl
 ```
 
 ## Programs

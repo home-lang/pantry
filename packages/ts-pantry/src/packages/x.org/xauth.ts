@@ -6,7 +6,7 @@
  * @version `1.1.5` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/xauth`
+ * @install `pantry install x.org/xauth`
  * @homepage https://www.x.org/
  * @dependencies `x.org/x11`, `x.org/exts`, `x.org/xau`, ... (+3 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `linux:gnu.org/gcc`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const xorgxauthPackage = {
   homepageUrl: 'https://www.x.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/xauth' as const,
+  installCommand: 'pantry install x.org/xauth' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/xauth -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/xauth' as const,
+  pantryInstallCommand: 'pantry install x.org/xauth' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -5,7 +5,7 @@
  * @version `4.15.0` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install python.org/typing_extensions`
+ * @install `pantry install python.org/typing_extensions`
  * @buildDependencies `flit.pypa.io`, `python.org@~3.11` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const pythonorgtyping_extensionsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/python/typing_extensions' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install python.org/typing_extensions' as const,
+  installCommand: 'pantry install python.org/typing_extensions' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +python.org/typing_extensions -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install python.org/typing_extensions' as const,
+  pantryInstallCommand: 'pantry install python.org/typing_extensions' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

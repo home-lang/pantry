@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jsonnet.org
+# Install with pantry
+pantry install jsonnet.org
 ```
 
 ## Programs

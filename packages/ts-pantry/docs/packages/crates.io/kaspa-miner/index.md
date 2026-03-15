@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/kaspa-miner
+# Install with pantry
+pantry install crates.io/kaspa-miner
 ```
 
 ## Programs

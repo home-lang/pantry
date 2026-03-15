@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install acorn.io/acorn-cli
+# Install with pantry
+pantry install acorn.io/acorn-cli
 ```
 
 ## Programs

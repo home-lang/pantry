@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install c-ares.org
+# Install with pantry
+pantry install c-ares.org
 ```
 
 ## Programs

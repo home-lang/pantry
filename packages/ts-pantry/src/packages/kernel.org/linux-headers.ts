@@ -5,7 +5,7 @@
  * @version `6.19.8` (267 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kernel.org/linux-headers`
+ * @install `pantry install kernel.org/linux-headers`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const kernelorglinuxheadersPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kernel.org/linux-headers' as const,
+  installCommand: 'pantry install kernel.org/linux-headers' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kernel.org/linux-headers -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kernel.org/linux-headers' as const,
+  pantryInstallCommand: 'pantry install kernel.org/linux-headers' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

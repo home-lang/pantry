@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nomadproject.io
+# Install with pantry
+pantry install nomadproject.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install brxken128.github.io/dexios
+# Install with pantry
+pantry install brxken128.github.io/dexios
 ```
 
 ## Programs

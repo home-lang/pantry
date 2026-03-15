@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install goreleaser.com
+# Install with pantry
+pantry install goreleaser.com
 ```
 
 ## Programs

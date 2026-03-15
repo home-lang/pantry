@@ -6,7 +6,7 @@
  * @version `6.8.3` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install riverbankcomputing.com/sip`
+ * @install `pantry install riverbankcomputing.com/sip`
  * @homepage https://python-sip.readthedocs.io/en/latest/
  * @dependencies `python.org~3.11`, `llvm.org<17 # needs gcc to sip-install`
  * @buildDependencies `gnu.org/make` - required only when building from source
@@ -42,12 +42,12 @@ export const riverbankcomputingcomsipPackage = {
   homepageUrl: 'https://python-sip.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/Python-SIP/sip' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install riverbankcomputing.com/sip' as const,
+  installCommand: 'pantry install riverbankcomputing.com/sip' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +riverbankcomputing.com/sip -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install riverbankcomputing.com/sip' as const,
+  pantryInstallCommand: 'pantry install riverbankcomputing.com/sip' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

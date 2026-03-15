@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pimalaya.org/himalaya
+# Install with pantry
+pantry install pimalaya.org/himalaya
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `2025.7.22` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install khronos.org/opencl-headers`
+ * @install `pantry install khronos.org/opencl-headers`
  * @buildDependencies `gnu.org/make`, `cmake.org`, `python.org@~3.11` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const khronosorgopenclheadersPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/KhronosGroup/OpenCL-Headers' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install khronos.org/opencl-headers' as const,
+  installCommand: 'pantry install khronos.org/opencl-headers' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +khronos.org/opencl-headers -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install khronos.org/opencl-headers' as const,
+  pantryInstallCommand: 'pantry install khronos.org/opencl-headers' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

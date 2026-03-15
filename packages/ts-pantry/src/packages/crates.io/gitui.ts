@@ -6,7 +6,7 @@
  * @version `0.28.0` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/gitui`
+ * @install `pantry install crates.io/gitui`
  * @dependencies `perl.org`, `openssl.org^1.1`, `zlib.net^1`, ... (+1 more)
  * @buildDependencies `cmake.org@3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cratesiogituiPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/extrawurst/gitui' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/gitui' as const,
+  installCommand: 'pantry install crates.io/gitui' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/gitui -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/gitui' as const,
+  pantryInstallCommand: 'pantry install crates.io/gitui' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

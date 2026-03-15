@@ -46,7 +46,7 @@ describe('Download from S3 - Config Parsing', () => {
   postgres: ^17.2.0
   redis: ^8.0.4
 
-# Launchpad service management configuration
+# Pantry service management configuration
 services:
   enabled: true
   autoStart:

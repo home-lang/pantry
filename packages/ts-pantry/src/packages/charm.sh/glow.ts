@@ -6,7 +6,7 @@
  * @version `2.1.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install charm.sh/glow`
+ * @install `pantry install charm.sh/glow`
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const charmshglowPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/charmbracelet/glow' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install charm.sh/glow' as const,
+  installCommand: 'pantry install charm.sh/glow' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +charm.sh/glow -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install charm.sh/glow' as const,
+  pantryInstallCommand: 'pantry install charm.sh/glow' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

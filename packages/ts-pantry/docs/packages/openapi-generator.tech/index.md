@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openapi-generator.tech
+# Install with pantry
+pantry install openapi-generator.tech
 ```
 
 ## Programs

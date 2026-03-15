@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mujs.com
+# Install with pantry
+pantry install mujs.com
 ```
 
 ## Programs

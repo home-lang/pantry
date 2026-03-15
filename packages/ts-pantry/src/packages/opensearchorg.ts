@@ -6,7 +6,7 @@
  * @version `3.5.0` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install opensearch.org`
+ * @install `pantry install opensearch.org`
  * @homepage https://opensearch.org/docs/latest/opensearch/index/
  * @dependencies `openjdk.org^21 # since v3`, `openmp.llvm.org^19`
  * @buildDependencies `cmake.org@3`, `gnu.org/wget`, `gnu.org/gcc@^11`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const opensearchorgPackage = {
   homepageUrl: 'https://opensearch.org/docs/latest/opensearch/index/' as const,
   githubUrl: 'https://github.com/opensearch-project/OpenSearch' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install opensearch.org' as const,
+  installCommand: 'pantry install opensearch.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opensearch.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install opensearch.org' as const,
+  pantryInstallCommand: 'pantry install opensearch.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

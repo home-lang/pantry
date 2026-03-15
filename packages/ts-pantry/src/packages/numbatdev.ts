@@ -6,7 +6,7 @@
  * @version `1.23.0` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install numbat.dev`
+ * @install `pantry install numbat.dev`
  * @homepage https://numbat.dev
  *
  * @example
@@ -40,12 +40,12 @@ export const numbatdevPackage = {
   homepageUrl: 'https://numbat.dev' as const,
   githubUrl: 'https://github.com/sharkdp/numbat' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install numbat.dev' as const,
+  installCommand: 'pantry install numbat.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +numbat.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install numbat.dev' as const,
+  pantryInstallCommand: 'pantry install numbat.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

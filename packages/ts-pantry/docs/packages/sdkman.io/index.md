@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sdkman.io
+# Install with pantry
+pantry install sdkman.io
 ```
 
 ## Programs

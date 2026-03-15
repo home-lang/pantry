@@ -6,7 +6,7 @@
  * @version `2.34.9` (1280 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aws.amazon.com/cli`
+ * @install `pantry install aws.amazon.com/cli`
  * @homepage https://aws.amazon.com/cli/
  * @dependencies `sourceware.org/libffi^3`, `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.7<3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const awsamazoncomcliPackage = {
   homepageUrl: 'https://aws.amazon.com/cli/' as const,
   githubUrl: 'https://github.com/aws/aws-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aws.amazon.com/cli' as const,
+  installCommand: 'pantry install aws.amazon.com/cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aws.amazon.com/cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aws.amazon.com/cli' as const,
+  pantryInstallCommand: 'pantry install aws.amazon.com/cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

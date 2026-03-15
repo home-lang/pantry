@@ -6,7 +6,7 @@
  * @version `0.6.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install bore.pub`
+ * @install `pantry install bore.pub`
  * @homepage http://bore.pub
  *
  * @example
@@ -40,12 +40,12 @@ export const borepubPackage = {
   homepageUrl: 'http://bore.pub' as const,
   githubUrl: 'https://github.com/ekzhang/bore' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install bore.pub' as const,
+  installCommand: 'pantry install bore.pub' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bore.pub -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install bore.pub' as const,
+  pantryInstallCommand: 'pantry install bore.pub' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

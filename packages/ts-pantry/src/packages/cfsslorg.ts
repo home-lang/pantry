@@ -6,7 +6,7 @@
  * @version `1.6.5` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cfssl.org`
+ * @install `pantry install cfssl.org`
  * @homepage https://cfssl.org/
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cfsslorgPackage = {
   homepageUrl: 'https://cfssl.org/' as const,
   githubUrl: 'https://github.com/cloudflare/cfssl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cfssl.org' as const,
+  installCommand: 'pantry install cfssl.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cfssl.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cfssl.org' as const,
+  pantryInstallCommand: 'pantry install cfssl.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

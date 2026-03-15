@@ -5,7 +5,7 @@
  * @version `3.9.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/opencollab/arpack-ng`
+ * @install `pantry install github.com/opencollab/arpack-ng`
  * @dependencies `eigen.tuxfamily.org@3`, `gnu.org/gcc`, `open-mpi.org@5`, ... (+1 more)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const arpackngPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/opencollab/arpack-ng' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/opencollab/arpack-ng' as const,
+  installCommand: 'pantry install github.com/opencollab/arpack-ng' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/opencollab/arpack-ng -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/opencollab/arpack-ng' as const,
+  pantryInstallCommand: 'pantry install github.com/opencollab/arpack-ng' as const,
   programs: [] as const,
   companions: [] as const,
   /**

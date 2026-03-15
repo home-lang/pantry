@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/portfolio_rs
+# Install with pantry
+pantry install crates.io/portfolio_rs
 ```
 
 ## Programs

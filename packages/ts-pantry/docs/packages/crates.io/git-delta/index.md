@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/git-delta
+# Install with pantry
+pantry install crates.io/git-delta
 ```
 
 ## Programs

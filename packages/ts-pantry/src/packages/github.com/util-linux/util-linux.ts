@@ -6,7 +6,7 @@
  * @version `2.41.3` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/util-linux/util-linux`
+ * @install `pantry install github.com/util-linux/util-linux`
  * @homepage http://en.wikipedia.org/wiki/Util-linux
  * @dependencies `gnu.org/gettext^0`, `sqlite.org^3`
  * @buildDependencies `gnu.org/bison`, `gnu.org/patch`, `darwin:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -41,12 +41,12 @@ export const utillinuxPackage = {
   homepageUrl: 'http://en.wikipedia.org/wiki/Util-linux' as const,
   githubUrl: 'https://github.com/util-linux/util-linux' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/util-linux/util-linux' as const,
+  installCommand: 'pantry install github.com/util-linux/util-linux' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/util-linux/util-linux -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/util-linux/util-linux' as const,
+  pantryInstallCommand: 'pantry install github.com/util-linux/util-linux' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

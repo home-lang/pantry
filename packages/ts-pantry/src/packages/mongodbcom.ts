@@ -6,7 +6,7 @@
  * @version `8.2.5` (60 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mongodb.com`
+ * @install `pantry install mongodb.com`
  * @homepage https://www.mongodb.com/
  * @dependencies `curl.se@8`, `openssl.org@1.1`
  *
@@ -41,12 +41,12 @@ export const mongodbcomPackage = {
   homepageUrl: 'https://www.mongodb.com/' as const,
   githubUrl: 'https://github.com/mongodb/mongo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mongodb.com' as const,
+  installCommand: 'pantry install mongodb.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mongodb.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mongodb.com' as const,
+  pantryInstallCommand: 'pantry install mongodb.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

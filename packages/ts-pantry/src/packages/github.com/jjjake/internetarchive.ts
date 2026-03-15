@@ -6,7 +6,7 @@
  * @version `5.8.0` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/jjjake/internetarchive`
+ * @install `pantry install github.com/jjjake/internetarchive`
  * @dependencies `python.org~3.11`, `gnu.org/which^2 # our stubs use which`
  *
  * @example
@@ -40,12 +40,12 @@ export const internetarchivePackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jjjake/internetarchive' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/jjjake/internetarchive' as const,
+  installCommand: 'pantry install github.com/jjjake/internetarchive' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jjjake/internetarchive -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/jjjake/internetarchive' as const,
+  pantryInstallCommand: 'pantry install github.com/jjjake/internetarchive' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -5,7 +5,7 @@
  * @version `3.0.3` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install markupsafe.palletsprojects.com`
+ * @install `pantry install markupsafe.palletsprojects.com`
  * @homepage https://markupsafe.palletsprojects.com
  * @dependencies `python.org~3.11`
  *
@@ -39,12 +39,12 @@ export const markupsafepalletsprojectscomPackage = {
   homepageUrl: 'https://markupsafe.palletsprojects.com' as const,
   githubUrl: 'https://github.com/pallets/markupsafe' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install markupsafe.palletsprojects.com' as const,
+  installCommand: 'pantry install markupsafe.palletsprojects.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +markupsafe.palletsprojects.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install markupsafe.palletsprojects.com' as const,
+  pantryInstallCommand: 'pantry install markupsafe.palletsprojects.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**

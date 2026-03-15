@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install getfoundry.sh
+# Install with pantry
+pantry install getfoundry.sh
 ```
 
 ## Programs

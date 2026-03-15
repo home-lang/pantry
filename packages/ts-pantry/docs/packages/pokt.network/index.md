@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pokt.network
+# Install with pantry
+pantry install pokt.network
 ```
 
 ## Programs

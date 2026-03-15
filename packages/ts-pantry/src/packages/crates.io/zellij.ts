@@ -6,7 +6,7 @@
  * @version `0.43.1` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/zellij`
+ * @install `pantry install crates.io/zellij`
  * @homepage https://zellij.dev
  * @dependencies `zlib.net^1`, `curl.se@8`
  * @buildDependencies `openssl.org@^1.1`, `perl.org@^5` - required only when building from source
@@ -42,12 +42,12 @@ export const cratesiozellijPackage = {
   homepageUrl: 'https://zellij.dev' as const,
   githubUrl: 'https://github.com/zellij-org/zellij' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/zellij' as const,
+  installCommand: 'pantry install crates.io/zellij' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/zellij -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/zellij' as const,
+  pantryInstallCommand: 'pantry install crates.io/zellij' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

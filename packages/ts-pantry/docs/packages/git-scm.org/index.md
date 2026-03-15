@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git-scm.org
+# Install with pantry
+pantry install git-scm.org
 ```
 
 ## Programs

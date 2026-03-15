@@ -6,7 +6,7 @@
  * @version `1.10.2` (37 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mesonbuild.com`
+ * @install `pantry install mesonbuild.com`
  * @homepage https://mesonbuild.com/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@~3.11` - required only when building from source
@@ -42,12 +42,12 @@ export const mesonbuildcomPackage = {
   homepageUrl: 'https://mesonbuild.com/' as const,
   githubUrl: 'https://github.com/mesonbuild/meson' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mesonbuild.com' as const,
+  installCommand: 'pantry install mesonbuild.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mesonbuild.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mesonbuild.com' as const,
+  pantryInstallCommand: 'pantry install mesonbuild.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

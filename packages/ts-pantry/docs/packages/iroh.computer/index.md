@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install iroh.computer
+# Install with pantry
+pantry install iroh.computer
 ```
 
 ## Programs

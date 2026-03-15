@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/licensee/licensed
+# Install with pantry
+pantry install github.com/licensee/licensed
 ```
 
 ## Programs

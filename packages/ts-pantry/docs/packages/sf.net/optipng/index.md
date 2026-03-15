@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sf.net/optipng
+# Install with pantry
+pantry install sf.net/optipng
 ```
 
 ## Programs

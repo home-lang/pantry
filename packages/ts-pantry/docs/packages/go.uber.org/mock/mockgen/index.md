@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install go.uber.org/mock/mockgen
+# Install with pantry
+pantry install go.uber.org/mock/mockgen
 ```
 
 ## Programs

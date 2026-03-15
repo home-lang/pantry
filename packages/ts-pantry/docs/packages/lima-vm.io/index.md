@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lima-vm.io
+# Install with pantry
+pantry install lima-vm.io
 ```
 
 ## Programs

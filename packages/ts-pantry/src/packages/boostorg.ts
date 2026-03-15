@@ -5,7 +5,7 @@
  * @version `1.90.0` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install boost.org`
+ * @install `pantry install boost.org`
  * @homepage https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview
  * @dependencies `facebook.com/zstd^1`
  *
@@ -39,12 +39,12 @@ export const boostorgPackage = {
   homepageUrl: 'https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview' as const,
   githubUrl: 'https://github.com/boostorg/boost' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install boost.org' as const,
+  installCommand: 'pantry install boost.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +boost.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install boost.org' as const,
+  pantryInstallCommand: 'pantry install boost.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

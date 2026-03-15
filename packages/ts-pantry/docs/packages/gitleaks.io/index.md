@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gitleaks.io
+# Install with pantry
+pantry install gitleaks.io
 ```
 
 ## Programs

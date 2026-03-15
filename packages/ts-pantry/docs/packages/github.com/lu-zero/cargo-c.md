@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/lu-zero/cargo-c
+# Install with pantry
+pantry install github.com/lu-zero/cargo-c
 ```
 
 ## Programs

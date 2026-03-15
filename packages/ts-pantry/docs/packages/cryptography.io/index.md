@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cryptography.io
+# Install with pantry
+pantry install cryptography.io
 ```
 
 ## Programs

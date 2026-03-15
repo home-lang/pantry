@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install versity.com/versitygw
+# Install with pantry
+pantry install versity.com/versitygw
 ```
 
 ## Programs

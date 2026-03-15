@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/daixiang0/gci
+# Install with pantry
+pantry install github.com/daixiang0/gci
 ```
 
 ## Programs

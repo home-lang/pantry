@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pluralith.com
+# Install with pantry
+pantry install pluralith.com
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/eliben/pycparser
+# Install with pantry
+pantry install github.com/eliben/pycparser
 ```
 
 ## Programs

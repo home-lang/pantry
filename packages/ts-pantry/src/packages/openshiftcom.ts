@@ -6,7 +6,7 @@
  * @version `4.21.5` (359 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openshift.com`
+ * @install `pantry install openshift.com`
  * @homepage https://www.openshift.com/
  * @dependencies `kerberos.org^1.21`
  * @buildDependencies `go.dev@^1.21`, `linux:gnu.org/gcc`, `linux:gnu.org/binutils@~2.44` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const openshiftcomPackage = {
   homepageUrl: 'https://www.openshift.com/' as const,
   githubUrl: 'https://github.com/openshift/oc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openshift.com' as const,
+  installCommand: 'pantry install openshift.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openshift.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openshift.com' as const,
+  pantryInstallCommand: 'pantry install openshift.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

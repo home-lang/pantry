@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mergiraf.org
+# Install with pantry
+pantry install mergiraf.org
 ```
 
 ## Programs

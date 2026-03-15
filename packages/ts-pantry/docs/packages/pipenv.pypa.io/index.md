@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pipenv.pypa.io
+# Install with pantry
+pantry install pipenv.pypa.io
 ```
 
 ## Programs

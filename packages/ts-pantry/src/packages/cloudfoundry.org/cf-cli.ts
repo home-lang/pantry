@@ -6,7 +6,7 @@
  * @version `8.18.0` (34 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cloudfoundry.org/cf-cli`
+ * @install `pantry install cloudfoundry.org/cf-cli`
  * @homepage https://ee.lbl.gov/
  * @buildDependencies `cmake.org@^3`, `go.dev@=1.23.1` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cloudfoundryorgcfcliPackage = {
   homepageUrl: 'https://ee.lbl.gov/' as const,
   githubUrl: 'https://github.com/cloudfoundry/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cloudfoundry.org/cf-cli' as const,
+  installCommand: 'pantry install cloudfoundry.org/cf-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cloudfoundry.org/cf-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cloudfoundry.org/cf-cli' as const,
+  pantryInstallCommand: 'pantry install cloudfoundry.org/cf-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

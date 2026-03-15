@@ -5,7 +5,7 @@
  * @version `0.1.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/skystrife/cpptoml`
+ * @install `pantry install github.com/skystrife/cpptoml`
  * @buildDependencies `cmake.org`, `linux:gnu.org/gcc@13` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const cpptomlPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/skystrife/cpptoml' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/skystrife/cpptoml' as const,
+  installCommand: 'pantry install github.com/skystrife/cpptoml' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/skystrife/cpptoml -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/skystrife/cpptoml' as const,
+  pantryInstallCommand: 'pantry install github.com/skystrife/cpptoml' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

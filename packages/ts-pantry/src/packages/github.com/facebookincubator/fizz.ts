@@ -6,7 +6,7 @@
  * @version `2026.3.9.0` (139 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/facebookincubator/fizz`
+ * @install `pantry install github.com/facebookincubator/fizz`
  * @dependencies `boost.org`, `google.com/double-conversion^3`, `fmt.dev^12`, ... (+12 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3`, `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fizzPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebookincubator/fizz' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/facebookincubator/fizz' as const,
+  installCommand: 'pantry install github.com/facebookincubator/fizz' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/facebookincubator/fizz -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/facebookincubator/fizz' as const,
+  pantryInstallCommand: 'pantry install github.com/facebookincubator/fizz' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

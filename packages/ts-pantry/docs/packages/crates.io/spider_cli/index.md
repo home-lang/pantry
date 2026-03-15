@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/spider_cli
+# Install with pantry
+pantry install crates.io/spider_cli
 ```
 
 ## Programs

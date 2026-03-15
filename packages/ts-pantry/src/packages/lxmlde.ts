@@ -5,7 +5,7 @@
  * @version `6.0.2` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lxml.de`
+ * @install `pantry install lxml.de`
  * @homepage https://lxml.de/
  * @dependencies `python.org^3.10`, `gnome.org/libxml2~2.12`, `gnome.org/libxslt^1`
  *
@@ -39,12 +39,12 @@ export const lxmldePackage = {
   homepageUrl: 'https://lxml.de/' as const,
   githubUrl: 'https://github.com/lxml/lxml' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lxml.de' as const,
+  installCommand: 'pantry install lxml.de' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lxml.de -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lxml.de' as const,
+  pantryInstallCommand: 'pantry install lxml.de' as const,
   programs: [] as const,
   companions: [] as const,
   /**

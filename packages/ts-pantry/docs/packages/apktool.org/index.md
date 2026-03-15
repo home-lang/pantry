@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apktool.org
+# Install with pantry
+pantry install apktool.org
 ```
 
 ## Programs

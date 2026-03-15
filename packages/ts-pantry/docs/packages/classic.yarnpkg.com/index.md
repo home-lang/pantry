@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install yarn
+# Install with pantry
+pantry install yarn
 ```
 
 ## Programs

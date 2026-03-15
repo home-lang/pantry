@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dystroy.org/bacon
+# Install with pantry
+pantry install dystroy.org/bacon
 ```
 
 ## Programs

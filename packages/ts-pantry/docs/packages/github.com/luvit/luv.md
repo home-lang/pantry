@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/luvit/luv
+# Install with pantry
+pantry install github.com/luvit/luv
 ```
 
 ## Programs

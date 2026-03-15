@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/abiosoft/colima
+# Install with pantry
+pantry install github.com/abiosoft/colima
 ```
 
 ## Programs

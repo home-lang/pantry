@@ -5,7 +5,7 @@
  * @version `7.5.2.231027084844` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/confluentinc/libserdes`
+ * @install `pantry install github.com/confluentinc/libserdes`
  * @dependencies `apache.org/avro`, `digip.org/jansson`, `curl.se`
  * @buildDependencies `linux:gnu.org/gcc`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libserdesPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/confluentinc/libserdes' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/confluentinc/libserdes' as const,
+  installCommand: 'pantry install github.com/confluentinc/libserdes' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/confluentinc/libserdes -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/confluentinc/libserdes' as const,
+  pantryInstallCommand: 'pantry install github.com/confluentinc/libserdes' as const,
   programs: [] as const,
   companions: [] as const,
   /**

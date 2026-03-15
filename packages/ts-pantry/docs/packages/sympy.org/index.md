@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sympy.org
+# Install with pantry
+pantry install sympy.org
 ```
 
 ## Programs

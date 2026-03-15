@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mandoc.bsd.lv
+# Install with pantry
+pantry install mandoc.bsd.lv
 ```
 
 ## Programs

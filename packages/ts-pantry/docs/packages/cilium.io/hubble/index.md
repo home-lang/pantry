@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cilium.io/hubble
+# Install with pantry
+pantry install cilium.io/hubble
 ```
 
 ## Programs

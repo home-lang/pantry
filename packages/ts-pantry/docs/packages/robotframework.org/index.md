@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install robotframework.org
+# Install with pantry
+pantry install robotframework.org
 ```
 
 ## Programs

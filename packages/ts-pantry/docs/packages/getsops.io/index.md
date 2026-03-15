@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install getsops.io
+# Install with pantry
+pantry install getsops.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gleam.run
+# Install with pantry
+pantry install gleam.run
 ```
 
 ## Programs

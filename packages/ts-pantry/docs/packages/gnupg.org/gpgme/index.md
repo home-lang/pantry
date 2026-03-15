@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnupg.org/gpgme
+# Install with pantry
+pantry install gnupg.org/gpgme
 ```
 
 ## Programs

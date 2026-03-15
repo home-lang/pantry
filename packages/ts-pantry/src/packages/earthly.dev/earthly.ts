@@ -6,7 +6,7 @@
  * @version `0.8.16` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install earthly.dev/earthly`
+ * @install `pantry install earthly.dev/earthly`
  * @homepage https://earthly.dev/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const earthlydevearthlyPackage = {
   homepageUrl: 'https://earthly.dev/' as const,
   githubUrl: 'https://github.com/earthly/earthly' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install earthly.dev/earthly' as const,
+  installCommand: 'pantry install earthly.dev/earthly' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +earthly.dev/earthly -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install earthly.dev/earthly' as const,
+  pantryInstallCommand: 'pantry install earthly.dev/earthly' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

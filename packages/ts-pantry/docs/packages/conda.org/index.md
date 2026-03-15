@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install conda.org
+# Install with pantry
+pantry install conda.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git-lfs.com
+# Install with pantry
+pantry install git-lfs.com
 ```
 
 ## Programs

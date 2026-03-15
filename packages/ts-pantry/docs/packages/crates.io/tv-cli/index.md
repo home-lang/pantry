@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/tv-cli
+# Install with pantry
+pantry install crates.io/tv-cli
 ```
 
 ## Programs

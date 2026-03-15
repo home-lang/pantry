@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install digip.org/jansson
+# Install with pantry
+pantry install digip.org/jansson
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.9.2` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libgit2.org`
+ * @install `pantry install libgit2.org`
  * @homepage https://libgit2.github.com/
  * @dependencies `libssh2.org^1`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const libgit2orgPackage = {
   homepageUrl: 'https://libgit2.github.com/' as const,
   githubUrl: 'https://github.com/libgit2/libgit2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libgit2.org' as const,
+  installCommand: 'pantry install libgit2.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libgit2.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libgit2.org' as const,
+  pantryInstallCommand: 'pantry install libgit2.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

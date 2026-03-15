@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lunarvim.org
+# Install with pantry
+pantry install lunarvim.org
 ```
 
 ## Programs

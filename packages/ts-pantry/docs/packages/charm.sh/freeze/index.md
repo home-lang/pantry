@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install charm.sh/freeze
+# Install with pantry
+pantry install charm.sh/freeze
 ```
 
 ## Programs

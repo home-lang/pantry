@@ -6,7 +6,7 @@
  * @version `1.49.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/help2man`
+ * @install `pantry install gnu.org/help2man`
  * @homepage https://www.gnu.org/software/help2man/
  * @dependencies `gnu.org/gettext^0`, `perl.org~5.42 # perl modules require matching minors; must match gettext`
  * @buildDependencies `cpanmin.us` - required only when building from source
@@ -43,12 +43,12 @@ export const gnuorghelp2manPackage = {
   homepageUrl: 'https://www.gnu.org/software/help2man/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/help2man' as const,
+  installCommand: 'pantry install gnu.org/help2man' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/help2man -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/help2man' as const,
+  pantryInstallCommand: 'pantry install gnu.org/help2man' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

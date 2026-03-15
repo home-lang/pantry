@@ -6,7 +6,7 @@
  * @version `1.24.2` (24 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install starship.rs`
+ * @install `pantry install starship.rs`
  * @homepage https://starship.rs
  * @buildDependencies `cmake.org@>=3.5` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const starshiprsPackage = {
   homepageUrl: 'https://starship.rs' as const,
   githubUrl: 'https://github.com/starship/starship' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install starship.rs' as const,
+  installCommand: 'pantry install starship.rs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +starship.rs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install starship.rs' as const,
+  pantryInstallCommand: 'pantry install starship.rs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

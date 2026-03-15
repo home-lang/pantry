@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hdfgroup.org/HDF5
+# Install with pantry
+pantry install hdfgroup.org/HDF5
 ```
 
 ## Programs

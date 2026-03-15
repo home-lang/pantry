@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install doctave.com
+# Install with pantry
+pantry install doctave.com
 ```
 
 ## Programs

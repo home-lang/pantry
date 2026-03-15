@@ -6,7 +6,7 @@
  * @version `0.21.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install elv.sh`
+ * @install `pantry install elv.sh`
  * @homepage https://elv.sh/
  * @buildDependencies `go.dev@^1.19` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const elvshPackage = {
   homepageUrl: 'https://elv.sh/' as const,
   githubUrl: 'https://github.com/elves/elvish' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install elv.sh' as const,
+  installCommand: 'pantry install elv.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +elv.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install elv.sh' as const,
+  pantryInstallCommand: 'pantry install elv.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

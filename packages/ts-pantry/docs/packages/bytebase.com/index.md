@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bytebase.com
+# Install with pantry
+pantry install bytebase.com
 ```
 
 ## Programs

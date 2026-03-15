@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install oras.land
+# Install with pantry
+pantry install oras.land
 ```
 
 ## Programs

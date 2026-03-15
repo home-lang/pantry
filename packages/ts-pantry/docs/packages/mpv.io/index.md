@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mpv.io
+# Install with pantry
+pantry install mpv.io
 ```
 
 ## Programs

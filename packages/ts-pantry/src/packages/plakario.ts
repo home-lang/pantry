@@ -6,7 +6,7 @@
  * @version `1.0.6` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install plakar.io`
+ * @install `pantry install plakar.io`
  * @buildDependencies `go.dev@^1.23` - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const plakarioPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install plakar.io' as const,
+  installCommand: 'pantry install plakar.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +plakar.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install plakar.io' as const,
+  pantryInstallCommand: 'pantry install plakar.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

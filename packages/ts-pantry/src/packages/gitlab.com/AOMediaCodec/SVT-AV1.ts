@@ -6,7 +6,7 @@
  * @version `4.0.1` (18 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gitlab.com/AOMediaCodec/SVT-AV1`
+ * @install `pantry install gitlab.com/AOMediaCodec/SVT-AV1`
  * @homepage https://gitlab.com/AOMediaCodec/SVT-AV1
  * @buildDependencies `cmake.org`, `yasm.tortall.net` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gitlabcomaomediacodecsvtav1Package = {
   homepageUrl: 'https://gitlab.com/AOMediaCodec/SVT-AV1' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gitlab.com/AOMediaCodec/SVT-AV1' as const,
+  installCommand: 'pantry install gitlab.com/AOMediaCodec/SVT-AV1' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gitlab.com/AOMediaCodec/SVT-AV1 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gitlab.com/AOMediaCodec/SVT-AV1' as const,
+  pantryInstallCommand: 'pantry install gitlab.com/AOMediaCodec/SVT-AV1' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

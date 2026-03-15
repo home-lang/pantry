@@ -6,7 +6,7 @@
  * @version `6.2.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install strace.io`
+ * @install `pantry install strace.io`
  * @homepage https://strace.io/
  *
  * @example
@@ -40,12 +40,12 @@ export const straceioPackage = {
   homepageUrl: 'https://strace.io/' as const,
   githubUrl: 'https://github.com/strace/strace' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install strace.io' as const,
+  installCommand: 'pantry install strace.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +strace.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install strace.io' as const,
+  pantryInstallCommand: 'pantry install strace.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

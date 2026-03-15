@@ -5,7 +5,7 @@
  * @version `1.17.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/xcb`
+ * @install `pantry install x.org/xcb`
  * @dependencies `x.org/xau^1`, `x.org/xdmcp^1`
  * @buildDependencies `python.org@~3.11`, `x.org/protocol/xcb@^1`, `gnu.org/patch` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const xorgxcbPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/xcb' as const,
+  installCommand: 'pantry install x.org/xcb' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/xcb -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/xcb' as const,
+  pantryInstallCommand: 'pantry install x.org/xcb' as const,
   programs: [] as const,
   companions: [] as const,
   /**

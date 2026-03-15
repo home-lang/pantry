@@ -6,7 +6,7 @@
  * @version `3.5.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install yadm.io`
+ * @install `pantry install yadm.io`
  * @homepage https://yadm.io/
  * @dependencies `git-scm.org`, `gnu.org/bash`
  *
@@ -41,12 +41,12 @@ export const yadmioPackage = {
   homepageUrl: 'https://yadm.io/' as const,
   githubUrl: 'https://github.com/yadm-dev/yadm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install yadm.io' as const,
+  installCommand: 'pantry install yadm.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +yadm.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install yadm.io' as const,
+  pantryInstallCommand: 'pantry install yadm.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

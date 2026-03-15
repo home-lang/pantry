@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install arkade.dev
+# Install with pantry
+pantry install arkade.dev
 ```
 
 ## Programs

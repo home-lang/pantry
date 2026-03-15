@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/lm-sensors/lm-sensors
+# Install with pantry
+pantry install github.com/lm-sensors/lm-sensors
 ```
 
 ## Programs

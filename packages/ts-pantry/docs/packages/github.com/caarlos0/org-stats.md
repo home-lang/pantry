@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/caarlos0/org-stats
+# Install with pantry
+pantry install github.com/caarlos0/org-stats
 ```
 
 ## Programs

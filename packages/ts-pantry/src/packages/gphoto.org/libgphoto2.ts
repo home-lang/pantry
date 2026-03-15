@@ -6,7 +6,7 @@
  * @version `2.5.33` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gphoto.org/libgphoto2`
+ * @install `pantry install gphoto.org/libgphoto2`
  * @homepage http://www.gphoto.org/proj/libgphoto2/
  * @dependencies `libgd.github.io^2.3`, `libjpeg-turbo.org^2`, `libexif.github.io^0.6`, ... (+4 more)
  * @buildDependencies `linux:gnu.org/gcc`, `linux:systemd.io` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const gphotoorglibgphoto2Package = {
   homepageUrl: 'http://www.gphoto.org/proj/libgphoto2/' as const,
   githubUrl: 'https://github.com/gphoto/libgphoto2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gphoto.org/libgphoto2' as const,
+  installCommand: 'pantry install gphoto.org/libgphoto2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gphoto.org/libgphoto2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gphoto.org/libgphoto2' as const,
+  pantryInstallCommand: 'pantry install gphoto.org/libgphoto2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

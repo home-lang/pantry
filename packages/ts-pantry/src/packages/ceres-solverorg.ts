@@ -5,7 +5,7 @@
  * @version `2.2.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ceres-solver.org`
+ * @install `pantry install ceres-solver.org`
  * @dependencies `eigen.tuxfamily.org`, `gflags.github.io`, `google.com/glog`, ... (+4 more)
  * @buildDependencies `cmake.org`, `linux:gnu.org/gcc`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const ceressolverorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ceres-solver.org' as const,
+  installCommand: 'pantry install ceres-solver.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ceres-solver.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ceres-solver.org' as const,
+  pantryInstallCommand: 'pantry install ceres-solver.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

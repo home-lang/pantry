@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install zarf.dev
+# Install with pantry
+pantry install zarf.dev
 ```
 
 ## Programs

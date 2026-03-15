@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cpanmin.us
+# Install with pantry
+pantry install cpanmin.us
 ```
 
 ## Programs

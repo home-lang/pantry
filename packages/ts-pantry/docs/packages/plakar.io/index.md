@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install plakar.io
+# Install with pantry
+pantry install plakar.io
 ```
 
 ## Programs

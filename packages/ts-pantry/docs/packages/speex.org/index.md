@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install speex.org
+# Install with pantry
+pantry install speex.org
 ```
 
 ## Programs

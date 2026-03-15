@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install aomedia.googlesource.com/aom
+# Install with pantry
+pantry install aomedia.googlesource.com/aom
 ```
 
 ## Programs

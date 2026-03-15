@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tectonic-typesetting.github.io
+# Install with pantry
+pantry install tectonic-typesetting.github.io
 ```
 
 ## Programs

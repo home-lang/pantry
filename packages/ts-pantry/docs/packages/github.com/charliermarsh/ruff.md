@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/charliermarsh/ruff
+# Install with pantry
+pantry install github.com/charliermarsh/ruff
 ```
 
 ## Programs

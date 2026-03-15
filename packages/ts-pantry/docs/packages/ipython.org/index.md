@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ipython.org
+# Install with pantry
+pantry install ipython.org
 ```
 
 ## Programs

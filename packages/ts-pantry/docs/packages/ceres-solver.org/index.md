@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ceres-solver.org
+# Install with pantry
+pantry install ceres-solver.org
 ```
 
 ## Programs

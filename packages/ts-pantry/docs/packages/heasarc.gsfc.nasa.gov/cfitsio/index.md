@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install heasarc.gsfc.nasa.gov/cfitsio
+# Install with pantry
+pantry install heasarc.gsfc.nasa.gov/cfitsio
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.13.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install trippy.cli.rs`
+ * @install `pantry install trippy.cli.rs`
  * @homepage https://trippy.cli.rs/
  *
  * @example
@@ -40,12 +40,12 @@ export const trippyclirsPackage = {
   homepageUrl: 'https://trippy.cli.rs/' as const,
   githubUrl: 'https://github.com/fujiapple852/trippy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install trippy.cli.rs' as const,
+  installCommand: 'pantry install trippy.cli.rs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +trippy.cli.rs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install trippy.cli.rs' as const,
+  pantryInstallCommand: 'pantry install trippy.cli.rs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

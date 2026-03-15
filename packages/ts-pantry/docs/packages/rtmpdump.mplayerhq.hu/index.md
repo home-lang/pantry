@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rtmpdump.mplayerhq.hu
+# Install with pantry
+pantry install rtmpdump.mplayerhq.hu
 ```
 
 ## Programs

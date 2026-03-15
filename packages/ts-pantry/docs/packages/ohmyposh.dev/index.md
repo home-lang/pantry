@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ohmyposh.dev
+# Install with pantry
+pantry install ohmyposh.dev
 ```
 
 ## Programs

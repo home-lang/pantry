@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/atk
+# Install with pantry
+pantry install gnome.org/atk
 ```
 
 ## Programs

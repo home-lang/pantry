@@ -5,7 +5,7 @@
  * @version `1.10.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rpm.org/rpm-sequoia`
+ * @install `pantry install rpm.org/rpm-sequoia`
  * @dependencies `openssl.org^1.1`
  *
  * @example
@@ -37,12 +37,12 @@ export const rpmorgrpmsequoiaPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rpm.org/rpm-sequoia' as const,
+  installCommand: 'pantry install rpm.org/rpm-sequoia' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/rpm-sequoia -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rpm.org/rpm-sequoia' as const,
+  pantryInstallCommand: 'pantry install rpm.org/rpm-sequoia' as const,
   programs: [] as const,
   companions: [] as const,
   /**

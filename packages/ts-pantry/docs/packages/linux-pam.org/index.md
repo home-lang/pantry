@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install linux-pam.org
+# Install with pantry
+pantry install linux-pam.org
 ```
 
 ## Programs

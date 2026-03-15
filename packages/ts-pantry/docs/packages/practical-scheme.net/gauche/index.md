@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install practical-scheme.net/gauche
+# Install with pantry
+pantry install practical-scheme.net/gauche
 ```
 
 ## Programs

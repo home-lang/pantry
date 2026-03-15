@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vale.sh
+# Install with pantry
+pantry install vale.sh
 ```
 
 ## Programs

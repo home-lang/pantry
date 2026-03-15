@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install localai.io
+# Install with pantry
+pantry install localai.io
 ```
 
 ## Programs

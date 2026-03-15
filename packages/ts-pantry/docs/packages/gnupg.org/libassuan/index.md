@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnupg.org/libassuan
+# Install with pantry
+pantry install gnupg.org/libassuan
 ```
 
 ## Programs

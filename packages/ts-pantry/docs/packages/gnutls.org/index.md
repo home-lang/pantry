@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnutls.org
+# Install with pantry
+pantry install gnutls.org
 ```
 
 ## Programs

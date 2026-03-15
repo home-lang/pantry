@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install graphite.sil.org
+# Install with pantry
+pantry install graphite.sil.org
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `26.0.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pypa.io/packaging`
+ * @install `pantry install pypa.io/packaging`
  * @homepage https://packaging.pypa.io/
  * @dependencies `python.org>=3.11`
  *
@@ -39,12 +39,12 @@ export const pypaiopackagingPackage = {
   homepageUrl: 'https://packaging.pypa.io/' as const,
   githubUrl: 'https://github.com/pypa/packaging' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pypa.io/packaging' as const,
+  installCommand: 'pantry install pypa.io/packaging' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pypa.io/packaging -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pypa.io/packaging' as const,
+  pantryInstallCommand: 'pantry install pypa.io/packaging' as const,
   programs: [] as const,
   companions: [] as const,
   /**

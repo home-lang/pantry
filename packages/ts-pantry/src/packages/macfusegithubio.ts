@@ -5,7 +5,7 @@
  * @version `5.1.3` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install macfuse.github.io`
+ * @install `pantry install macfuse.github.io`
  * @buildDependencies `mesonbuild.com` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const macfusegithubioPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/macfuse/macfuse' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install macfuse.github.io' as const,
+  installCommand: 'pantry install macfuse.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +macfuse.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install macfuse.github.io' as const,
+  pantryInstallCommand: 'pantry install macfuse.github.io' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

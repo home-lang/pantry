@@ -6,7 +6,7 @@
  * @version `11.11.1` (79 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install npmjs.com`
+ * @install `pantry install npmjs.com`
  * @aliases `npm`
  * @homepage https://docs.npmjs.com/cli/
  * @dependencies `nodejs.org`
@@ -46,12 +46,12 @@ export const npmPackage = {
   homepageUrl: 'https://docs.npmjs.com/cli/' as const,
   githubUrl: 'https://github.com/npm/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install npmjs.com' as const,
+  installCommand: 'pantry install npmjs.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +npmjs.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install npmjs.com' as const,
+  pantryInstallCommand: 'pantry install npmjs.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

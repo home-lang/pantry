@@ -6,7 +6,7 @@
  * @version `0.0.7` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/tom-on-the-internet/cemetery-escape`
+ * @install `pantry install github.com/tom-on-the-internet/cemetery-escape`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const cemeteryescapePackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/tom-on-the-internet/cemetery-escape' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/tom-on-the-internet/cemetery-escape' as const,
+  installCommand: 'pantry install github.com/tom-on-the-internet/cemetery-escape' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/tom-on-the-internet/cemetery-escape -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/tom-on-the-internet/cemetery-escape' as const,
+  pantryInstallCommand: 'pantry install github.com/tom-on-the-internet/cemetery-escape' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

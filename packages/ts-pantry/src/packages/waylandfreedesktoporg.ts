@@ -6,7 +6,7 @@
  * @version `1.24.91` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wayland.freedesktop.org`
+ * @install `pantry install wayland.freedesktop.org`
  * @dependencies `libexpat.github.io`, `sourceware.org/libffi`, `gnome.org/libxml2`
  * @buildDependencies `mesonbuild.com`, `gnu.org/make`, `cmake.org`, ... (+2 more) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const waylandfreedesktoporgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wayland.freedesktop.org' as const,
+  installCommand: 'pantry install wayland.freedesktop.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wayland.freedesktop.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wayland.freedesktop.org' as const,
+  pantryInstallCommand: 'pantry install wayland.freedesktop.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

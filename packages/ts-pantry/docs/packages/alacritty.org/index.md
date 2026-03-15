@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install alacritty.org
+# Install with pantry
+pantry install alacritty.org
 ```
 
 ## Programs

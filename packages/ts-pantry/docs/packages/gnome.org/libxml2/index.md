@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/libxml2
+# Install with pantry
+pantry install gnome.org/libxml2
 ```
 
 ## Programs

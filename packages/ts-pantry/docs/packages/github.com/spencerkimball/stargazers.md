@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/spencerkimball/stargazers
+# Install with pantry
+pantry install github.com/spencerkimball/stargazers
 ```
 
 ## Programs

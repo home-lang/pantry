@@ -6,7 +6,7 @@
  * @version `0.26.2` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/p11-kit`
+ * @install `pantry install freedesktop.org/p11-kit`
  * @homepage https://p11-glue.freedesktop.org
  * @dependencies `sourceware.org/libffi^3`, `curl.se/ca-certs`, `gnu.org/libtasn1^4`, ... (+1 more)
  * @buildDependencies `python.org@3`, `mesonbuild.com` - required only when building from source
@@ -42,12 +42,12 @@ export const freedesktoporgp11kitPackage = {
   homepageUrl: 'https://p11-glue.freedesktop.org' as const,
   githubUrl: 'https://github.com/p11-glue/p11-kit' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/p11-kit' as const,
+  installCommand: 'pantry install freedesktop.org/p11-kit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/p11-kit -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/p11-kit' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/p11-kit' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rockdaboot.github.io/libpsl
+# Install with pantry
+pantry install rockdaboot.github.io/libpsl
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pyyaml.org
+# Install with pantry
+pantry install pyyaml.org
 ```
 
 ## Programs

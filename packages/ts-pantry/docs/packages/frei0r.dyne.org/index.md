@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install frei0r.dyne.org
+# Install with pantry
+pantry install frei0r.dyne.org
 ```
 
 ## Programs

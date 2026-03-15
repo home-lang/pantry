@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/Everduin94/better-commits
+# Install with pantry
+pantry install github.com/Everduin94/better-commits
 ```
 
 ## Programs

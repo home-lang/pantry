@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install infracost.io
+# Install with pantry
+pantry install infracost.io
 ```
 
 ## Programs

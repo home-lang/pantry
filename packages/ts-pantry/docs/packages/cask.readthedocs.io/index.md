@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cask.readthedocs.io
+# Install with pantry
+pantry install cask.readthedocs.io
 ```
 
 ## Programs

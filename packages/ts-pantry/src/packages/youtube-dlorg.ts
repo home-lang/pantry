@@ -6,7 +6,7 @@
  * @version `2023.8.4` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install youtube-dl.org`
+ * @install `pantry install youtube-dl.org`
  * @homepage https://ytdl-org.github.io/youtube-dl/
  * @dependencies `python.org>=3<3.12`
  *
@@ -41,12 +41,12 @@ export const youtubedlorgPackage = {
   homepageUrl: 'https://ytdl-org.github.io/youtube-dl/' as const,
   githubUrl: 'https://github.com/ytdl-org/youtube-dl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install youtube-dl.org' as const,
+  installCommand: 'pantry install youtube-dl.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +youtube-dl.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install youtube-dl.org' as const,
+  pantryInstallCommand: 'pantry install youtube-dl.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

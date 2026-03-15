@@ -6,7 +6,7 @@
  * @version `1.12.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/avro`
+ * @install `pantry install apache.org/avro`
  * @homepage https://avro.apache.org/
  * @dependencies `digip.org/jansson`, `google.github.io/snappy`, `tukaani.org/xz`, ... (+1 more)
  * @buildDependencies `gnu.org/tar`, `curl.se`, `cmake.org`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const apacheorgavroPackage = {
   homepageUrl: 'https://avro.apache.org/' as const,
   githubUrl: 'https://github.com/apache/avro' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/avro' as const,
+  installCommand: 'pantry install apache.org/avro' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/avro -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/avro' as const,
+  pantryInstallCommand: 'pantry install apache.org/avro' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

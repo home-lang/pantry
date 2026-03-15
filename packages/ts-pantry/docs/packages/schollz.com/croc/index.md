@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install schollz.com/croc
+# Install with pantry
+pantry install schollz.com/croc
 ```
 
 ## Programs

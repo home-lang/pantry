@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/librsvg
+# Install with pantry
+pantry install gnome.org/librsvg
 ```
 
 ## Programs

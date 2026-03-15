@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vlang.io
+# Install with pantry
+pantry install vlang.io
 ```
 
 ## Programs

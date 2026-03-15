@@ -6,7 +6,7 @@
  * @version `1.29.3` (89 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mailpit.axllent.org`
+ * @install `pantry install mailpit.axllent.org`
  * @homepage https://mailpit.axllent.org/
  * @dependencies `linux:curl.se/ca-certs` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `go.dev@^1.20`, `nodejs.org@^18`, `npmjs.com` - required only when building from source
@@ -42,12 +42,12 @@ export const mailpitaxllentorgPackage = {
   homepageUrl: 'https://mailpit.axllent.org/' as const,
   githubUrl: 'https://github.com/axllent/mailpit' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mailpit.axllent.org' as const,
+  installCommand: 'pantry install mailpit.axllent.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mailpit.axllent.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mailpit.axllent.org' as const,
+  pantryInstallCommand: 'pantry install mailpit.axllent.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

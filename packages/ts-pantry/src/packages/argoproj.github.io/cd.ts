@@ -6,7 +6,7 @@
  * @version `3.3.3` (172 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install argoproj.github.io/cd`
+ * @install `pantry install argoproj.github.io/cd`
  * @homepage https://argoproj.github.io/cd/
  * @buildDependencies `go.dev`, `nodejs.org@<23`, `yarnpkg.com` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const argoprojgithubiocdPackage = {
   homepageUrl: 'https://argoproj.github.io/cd/' as const,
   githubUrl: 'https://github.com/argoproj/cd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install argoproj.github.io/cd' as const,
+  installCommand: 'pantry install argoproj.github.io/cd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +argoproj.github.io/cd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install argoproj.github.io/cd' as const,
+  pantryInstallCommand: 'pantry install argoproj.github.io/cd' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

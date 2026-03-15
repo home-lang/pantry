@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cruft.github.io
+# Install with pantry
+pantry install cruft.github.io
 ```
 
 ## Programs

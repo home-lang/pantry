@@ -6,7 +6,7 @@
  * @version `2.11.2` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceforge.net/faad2`
+ * @install `pantry install sourceforge.net/faad2`
  * @homepage https://sourceforge.net/projects/faac/
  * @buildDependencies `cmake.org`, `gnu.org/autoconf`, `gnu.org/automake`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const sourceforgenetfaad2Package = {
   homepageUrl: 'https://sourceforge.net/projects/faac/' as const,
   githubUrl: 'https://github.com/knik0/faad2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceforge.net/faad2' as const,
+  installCommand: 'pantry install sourceforge.net/faad2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceforge.net/faad2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceforge.net/faad2' as const,
+  pantryInstallCommand: 'pantry install sourceforge.net/faad2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

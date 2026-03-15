@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openssl
+# Install with pantry
+pantry install openssl
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git.osgeo.org/gitea/rttopo/librttopo
+# Install with pantry
+pantry install git.osgeo.org/gitea/rttopo/librttopo
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install elementsproject.org
+# Install with pantry
+pantry install elementsproject.org
 ```
 
 ## Programs

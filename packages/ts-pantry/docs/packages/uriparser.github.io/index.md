@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install uriparser.github.io
+# Install with pantry
+pantry install uriparser.github.io
 ```
 
 ## Programs

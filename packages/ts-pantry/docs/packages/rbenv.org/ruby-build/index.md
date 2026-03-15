@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rbenv.org/ruby-build
+# Install with pantry
+pantry install rbenv.org/ruby-build
 ```
 
 ## Programs

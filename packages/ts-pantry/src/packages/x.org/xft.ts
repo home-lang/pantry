@@ -5,7 +5,7 @@
  * @version `2.3.9` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/xft`
+ * @install `pantry install x.org/xft`
  * @dependencies `freedesktop.org/fontconfig^2.14`, `x.org/xrender^0.9`, `sourceware.org/bzip2^1`, ... (+1 more)
  *
  * @example
@@ -37,12 +37,12 @@ export const xorgxftPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/xft' as const,
+  installCommand: 'pantry install x.org/xft' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/xft -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/xft' as const,
+  pantryInstallCommand: 'pantry install x.org/xft' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `2.12.0` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install git-cliff.org`
+ * @install `pantry install git-cliff.org`
  * @homepage https://git-cliff.org
  * @dependencies `libgit2.org~1.7 # links to libgit2.so.1.7`
  *
@@ -41,12 +41,12 @@ export const gitclifforgPackage = {
   homepageUrl: 'https://git-cliff.org' as const,
   githubUrl: 'https://github.com/orhun/git-cliff' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install git-cliff.org' as const,
+  installCommand: 'pantry install git-cliff.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +git-cliff.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install git-cliff.org' as const,
+  pantryInstallCommand: 'pantry install git-cliff.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

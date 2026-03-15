@@ -6,7 +6,7 @@
  * @version `0.26.1` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/kubie`
+ * @install `pantry install crates.io/kubie`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const cratesiokubiePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/kubie' as const,
+  installCommand: 'pantry install crates.io/kubie' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/kubie -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/kubie' as const,
+  pantryInstallCommand: 'pantry install crates.io/kubie' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

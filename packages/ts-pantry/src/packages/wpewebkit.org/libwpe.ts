@@ -5,7 +5,7 @@
  * @version `1.16.3` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wpewebkit.org/libwpe`
+ * @install `pantry install wpewebkit.org/libwpe`
  * @dependencies `xkbcommon.org`, `mesa3d.org`
  * @buildDependencies `gnu.org/gcc`, `mesonbuild.com` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const wpewebkitorglibwpePackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/WebPlatformForEmbedded/libwpe' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wpewebkit.org/libwpe' as const,
+  installCommand: 'pantry install wpewebkit.org/libwpe' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wpewebkit.org/libwpe -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wpewebkit.org/libwpe' as const,
+  pantryInstallCommand: 'pantry install wpewebkit.org/libwpe' as const,
   programs: [] as const,
   companions: [] as const,
   /**

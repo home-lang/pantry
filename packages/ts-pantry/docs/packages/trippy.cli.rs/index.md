@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install trippy.cli.rs
+# Install with pantry
+pantry install trippy.cli.rs
 ```
 
 ## Programs

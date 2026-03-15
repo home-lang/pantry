@@ -6,7 +6,7 @@
  * @version `1.3.20230209` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install invisible-island.net/dialog`
+ * @install `pantry install invisible-island.net/dialog`
  * @homepage https://invisible-island.net/dialog/
  * @dependencies `invisible-island.net/ncurses`
  *
@@ -41,12 +41,12 @@ export const invisibleislandnetdialogPackage = {
   homepageUrl: 'https://invisible-island.net/dialog/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install invisible-island.net/dialog' as const,
+  installCommand: 'pantry install invisible-island.net/dialog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +invisible-island.net/dialog -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install invisible-island.net/dialog' as const,
+  pantryInstallCommand: 'pantry install invisible-island.net/dialog' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.1.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install graphqleditor.com/gql`
+ * @install `pantry install graphqleditor.com/gql`
  * @buildDependencies `go.dev@^1.19` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const graphqleditorcomgqlPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/graphql-editor/gql' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install graphqleditor.com/gql' as const,
+  installCommand: 'pantry install graphqleditor.com/gql' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +graphqleditor.com/gql -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install graphqleditor.com/gql' as const,
+  pantryInstallCommand: 'pantry install graphqleditor.com/gql' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

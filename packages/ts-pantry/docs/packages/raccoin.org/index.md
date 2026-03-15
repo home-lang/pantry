@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install raccoin.org
+# Install with pantry
+pantry install raccoin.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install radicle.org
+# Install with pantry
+pantry install radicle.org
 ```
 
 ## Programs

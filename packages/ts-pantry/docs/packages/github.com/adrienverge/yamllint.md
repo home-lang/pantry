@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/adrienverge/yamllint
+# Install with pantry
+pantry install github.com/adrienverge/yamllint
 ```
 
 ## Programs

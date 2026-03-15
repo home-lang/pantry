@@ -6,7 +6,7 @@
  * @version `0.12.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/termusic`
+ * @install `pantry install crates.io/termusic`
  * @dependencies `linux:alsa-project.org/alsa-lib`, `linux:freedesktop.org/dbus` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `protobuf.dev`, `abseil.io@^20250127` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cratesiotermusicPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/tramhao/termusic' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/termusic' as const,
+  installCommand: 'pantry install crates.io/termusic' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/termusic -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/termusic' as const,
+  pantryInstallCommand: 'pantry install crates.io/termusic' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

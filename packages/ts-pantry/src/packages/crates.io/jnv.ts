@@ -6,7 +6,7 @@
  * @version `0.6.2` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/jnv`
+ * @install `pantry install crates.io/jnv`
  * @buildDependencies `gnu.org/autoconf@2`, `gnu.org/automake@1`, `gnu.org/libtool@2` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiojnvPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/ynqa/jnv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/jnv' as const,
+  installCommand: 'pantry install crates.io/jnv' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/jnv -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/jnv' as const,
+  pantryInstallCommand: 'pantry install crates.io/jnv' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { resolveDependencies } from '../src/launchpad-api'
+import { resolveDependencies } from '../src/pantry-api'
 
 const stacksFixture = path.resolve(import.meta.dir, '../../zig/test-envs/stacks-config/dependencies.yaml')
 
@@ -46,15 +46,15 @@ describe('Stacks config alias regression', () => {
         normalizeNames(canonicalResult.packages.map(pkg => pkg.name)),
       )
 
-      expect(fixtureResult.launchpadCommand).toContain('aws/cli')
-      expect(fixtureResult.launchpadCommand).toContain('bun')
-      expect(fixtureResult.launchpadCommand).toContain('gh')
-      expect(fixtureResult.launchpadCommand).toContain('sqlite3')
+      expect(fixtureResult.pantryCommand).toContain('aws/cli')
+      expect(fixtureResult.pantryCommand).toContain('bun')
+      expect(fixtureResult.pantryCommand).toContain('gh')
+      expect(fixtureResult.pantryCommand).toContain('sqlite3')
 
-      expect(canonicalResult.launchpadCommand).toContain('aws.amazon.com/cli')
-      expect(canonicalResult.launchpadCommand).toContain('bun.sh')
-      expect(canonicalResult.launchpadCommand).toContain('cli.github.com')
-      expect(canonicalResult.launchpadCommand).toContain('sqlite.org')
+      expect(canonicalResult.pantryCommand).toContain('aws.amazon.com/cli')
+      expect(canonicalResult.pantryCommand).toContain('bun.sh')
+      expect(canonicalResult.pantryCommand).toContain('cli.github.com')
+      expect(canonicalResult.pantryCommand).toContain('sqlite.org')
     }
     finally {
       try {

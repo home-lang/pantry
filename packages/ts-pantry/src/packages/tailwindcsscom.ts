@@ -6,7 +6,7 @@
  * @version `4.2.1` (56 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tailwindcss.com`
+ * @install `pantry install tailwindcss.com`
  * @homepage https://tailwindcss.com
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tailwindcsscomPackage = {
   homepageUrl: 'https://tailwindcss.com' as const,
   githubUrl: 'https://github.com/tailwindlabs/tailwindcss' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tailwindcss.com' as const,
+  installCommand: 'pantry install tailwindcss.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tailwindcss.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tailwindcss.com' as const,
+  pantryInstallCommand: 'pantry install tailwindcss.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

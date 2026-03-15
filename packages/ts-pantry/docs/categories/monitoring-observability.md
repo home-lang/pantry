@@ -12,7 +12,7 @@ Allure Report is a flexible, lightweight multi-language test reporting tool. It 
 
 **Programs**: allure
 
-**Install**: `launchpad install github.com/allure-framework/allure2`
+**Install**: `pantry install github.com/allure-framework/allure2`
 
 ---
 
@@ -22,7 +22,7 @@ Horizontally-scalable, highly-available log aggregation system
 
 **Programs**: loki
 
-**Install**: `launchpad install grafana.com/loki`
+**Install**: `pantry install grafana.com/loki`
 
 ---
 
@@ -32,7 +32,7 @@ Web based real-time log viewer. Stream ANY content to a web UI with autogenerate
 
 **Programs**: logdy
 
-**Install**: `launchpad install logdy.dev`
+**Install**: `pantry install logdy.dev`
 
 ---
 
@@ -42,7 +42,7 @@ Zero-ETL, infinite possibilities. Live query APIs, code & more with SQL. No DB r
 
 **Programs**: steampipe
 
-**Install**: `launchpad install steampipe.io`
+**Install**: `pantry install steampipe.io`
 
 ---
 

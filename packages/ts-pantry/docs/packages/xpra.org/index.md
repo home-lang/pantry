@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xpra.org
+# Install with pantry
+pantry install xpra.org
 ```
 
 ## Programs

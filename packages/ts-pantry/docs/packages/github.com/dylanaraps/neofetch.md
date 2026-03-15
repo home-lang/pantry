@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/dylanaraps/neofetch
+# Install with pantry
+pantry install github.com/dylanaraps/neofetch
 ```
 
 ## Programs

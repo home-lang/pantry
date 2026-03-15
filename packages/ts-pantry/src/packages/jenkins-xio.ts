@@ -6,7 +6,7 @@
  * @version `3.16.56` (87 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jenkins-x.io`
+ * @install `pantry install jenkins-x.io`
  * @homepage https://jenkins-x.io/
  * @buildDependencies `go.dev@~1.23` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const jenkinsxioPackage = {
   homepageUrl: 'https://jenkins-x.io/' as const,
   githubUrl: 'https://github.com/jenkins-x/jx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jenkins-x.io' as const,
+  installCommand: 'pantry install jenkins-x.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jenkins-x.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jenkins-x.io' as const,
+  pantryInstallCommand: 'pantry install jenkins-x.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

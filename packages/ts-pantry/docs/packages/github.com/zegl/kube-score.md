@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/zegl/kube-score
+# Install with pantry
+pantry install github.com/zegl/kube-score
 ```
 
 ## Programs

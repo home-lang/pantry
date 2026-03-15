@@ -6,7 +6,7 @@
  * @version `5.9.3` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install typescriptlang.org`
+ * @install `pantry install typescriptlang.org`
  * @homepage https://www.typescriptlang.org/
  * @dependencies `nodejs.org^20`
  * @buildDependencies `npmjs.com` - required only when building from source
@@ -42,12 +42,12 @@ export const typescriptlangorgPackage = {
   homepageUrl: 'https://www.typescriptlang.org/' as const,
   githubUrl: 'https://github.com/Microsoft/TypeScript' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install typescriptlang.org' as const,
+  installCommand: 'pantry install typescriptlang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +typescriptlang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install typescriptlang.org' as const,
+  pantryInstallCommand: 'pantry install typescriptlang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

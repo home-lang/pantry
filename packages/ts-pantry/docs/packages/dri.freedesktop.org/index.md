@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dri.freedesktop.org
+# Install with pantry
+pantry install dri.freedesktop.org
 ```
 
 ## Programs

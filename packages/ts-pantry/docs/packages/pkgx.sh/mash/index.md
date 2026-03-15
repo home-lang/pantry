@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pkgx.sh/mash
+# Install with pantry
+pantry install pkgx.sh/mash
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `8.3.1` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install palletsprojects.com/click`
+ * @install `pantry install palletsprojects.com/click`
  * @homepage https://click.palletsprojects.com
  * @dependencies `python.org>=3.11`
  *
@@ -39,12 +39,12 @@ export const palletsprojectscomclickPackage = {
   homepageUrl: 'https://click.palletsprojects.com' as const,
   githubUrl: 'https://github.com/pallets/click' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install palletsprojects.com/click' as const,
+  installCommand: 'pantry install palletsprojects.com/click' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +palletsprojects.com/click -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install palletsprojects.com/click' as const,
+  pantryInstallCommand: 'pantry install palletsprojects.com/click' as const,
   programs: [] as const,
   companions: [] as const,
   /**

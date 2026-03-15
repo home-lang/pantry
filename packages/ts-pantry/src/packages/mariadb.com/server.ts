@@ -6,7 +6,7 @@
  * @version `12.3.1` (45 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mariadb.com/server`
+ * @install `pantry install mariadb.com/server`
  * @homepage https://mariadb.org/
  * @dependencies `sourceware.org/bzip2^1`, `github.com/besser82/libxcrypt^4`, `gnome.org/libxml2~2.13 # 2.14 changed the api version`, ... (+5 more)
  * @buildDependencies `cmake.org`, `gnu.org/bison`, `gnu.org/coreutils`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const mariadbcomserverPackage = {
   homepageUrl: 'https://mariadb.org/' as const,
   githubUrl: 'https://github.com/MariaDB/server' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mariadb.com/server' as const,
+  installCommand: 'pantry install mariadb.com/server' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mariadb.com/server -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mariadb.com/server' as const,
+  pantryInstallCommand: 'pantry install mariadb.com/server' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

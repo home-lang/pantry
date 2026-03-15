@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install volta.sh
+# Install with pantry
+pantry install volta.sh
 ```
 
 ## Programs

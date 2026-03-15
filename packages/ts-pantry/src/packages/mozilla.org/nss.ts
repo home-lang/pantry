@@ -6,7 +6,7 @@
  * @version `3.92.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mozilla.org/nss`
+ * @install `pantry install mozilla.org/nss`
  * @homepage https://firefox-source-docs.mozilla.org/security/nss/index.html
  * @dependencies `mozilla.org/nspr`, `sqlite.org`, `zlib.net`
  * @buildDependencies `linux:gnu.org/gcc`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const mozillaorgnssPackage = {
   homepageUrl: 'https://firefox-source-docs.mozilla.org/security/nss/index.html' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mozilla.org/nss' as const,
+  installCommand: 'pantry install mozilla.org/nss' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mozilla.org/nss -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mozilla.org/nss' as const,
+  pantryInstallCommand: 'pantry install mozilla.org/nss' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

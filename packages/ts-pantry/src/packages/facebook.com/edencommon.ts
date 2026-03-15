@@ -5,7 +5,7 @@
  * @version `2026.3.9.0` (130 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install facebook.com/edencommon`
+ * @install `pantry install facebook.com/edencommon`
  * @dependencies `facebook.com/folly`, `gflags.github.io`, `google.com/glog`, ... (+6 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `google.com/googletest`, `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const facebookcomedencommonPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebookexperimental/edencommon' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install facebook.com/edencommon' as const,
+  installCommand: 'pantry install facebook.com/edencommon' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/edencommon -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install facebook.com/edencommon' as const,
+  pantryInstallCommand: 'pantry install facebook.com/edencommon' as const,
   programs: [] as const,
   companions: [] as const,
   /**

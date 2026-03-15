@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openpolicyagent.org
+# Install with pantry
+pantry install openpolicyagent.org
 ```
 
 ## Programs

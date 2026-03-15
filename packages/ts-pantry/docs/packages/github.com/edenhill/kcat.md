@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/edenhill/kcat
+# Install with pantry
+pantry install github.com/edenhill/kcat
 ```
 
 ## Programs

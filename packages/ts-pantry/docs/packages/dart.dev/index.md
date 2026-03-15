@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dart.dev
+# Install with pantry
+pantry install dart.dev
 ```
 
 ## Programs

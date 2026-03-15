@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libvips.org
+# Install with pantry
+pantry install libvips.org
 ```
 
 ## Programs

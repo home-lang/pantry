@@ -6,7 +6,7 @@
  * @version `2.47.24` (359 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/spider_cli`
+ * @install `pantry install crates.io/spider_cli`
  * @homepage https://spider.cloud
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiospider_cliPackage = {
   homepageUrl: 'https://spider.cloud' as const,
   githubUrl: 'https://github.com/spider-rs/spider' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/spider_cli' as const,
+  installCommand: 'pantry install crates.io/spider_cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/spider_cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/spider_cli' as const,
+  pantryInstallCommand: 'pantry install crates.io/spider_cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

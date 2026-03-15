@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/python-lsp/python-lsp-server
+# Install with pantry
+pantry install github.com/python-lsp/python-lsp-server
 ```
 
 ## Programs

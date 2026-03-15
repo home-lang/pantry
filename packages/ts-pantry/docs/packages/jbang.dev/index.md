@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jbang.dev
+# Install with pantry
+pantry install jbang.dev
 ```
 
 ## Programs

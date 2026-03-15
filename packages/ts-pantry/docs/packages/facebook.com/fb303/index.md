@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install facebook.com/fb303
+# Install with pantry
+pantry install facebook.com/fb303
 ```
 
 ## Programs

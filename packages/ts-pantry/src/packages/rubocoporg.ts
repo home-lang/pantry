@@ -6,7 +6,7 @@
  * @version `1.85.1` (46 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rubocop.org`
+ * @install `pantry install rubocop.org`
  * @homepage https://docs.rubocop.org
  * @dependencies `ruby-lang.org>=3.1<3.3.7`, `rubygems.org`
  *
@@ -41,12 +41,12 @@ export const rubocoporgPackage = {
   homepageUrl: 'https://docs.rubocop.org' as const,
   githubUrl: 'https://github.com/rubocop/rubocop' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rubocop.org' as const,
+  installCommand: 'pantry install rubocop.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rubocop.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rubocop.org' as const,
+  pantryInstallCommand: 'pantry install rubocop.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

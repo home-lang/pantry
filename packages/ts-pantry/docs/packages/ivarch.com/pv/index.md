@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ivarch.com/pv
+# Install with pantry
+pantry install ivarch.com/pv
 ```
 
 ## Programs

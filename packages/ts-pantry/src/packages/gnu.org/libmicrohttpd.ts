@@ -5,7 +5,7 @@
  * @version `1.0.2` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/libmicrohttpd`
+ * @install `pantry install gnu.org/libmicrohttpd`
  * @dependencies `gnu.org/libunistring^1`
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnuorglibmicrohttpdPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/libmicrohttpd' as const,
+  installCommand: 'pantry install gnu.org/libmicrohttpd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/libmicrohttpd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/libmicrohttpd' as const,
+  pantryInstallCommand: 'pantry install gnu.org/libmicrohttpd' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -5,7 +5,7 @@
  * @version `0.13.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/PJK/libcbor`
+ * @install `pantry install github.com/PJK/libcbor`
  * @buildDependencies `cmake.org@3` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const libcborPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/PJK/libcbor' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/PJK/libcbor' as const,
+  installCommand: 'pantry install github.com/PJK/libcbor' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/PJK/libcbor -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/PJK/libcbor' as const,
+  pantryInstallCommand: 'pantry install github.com/PJK/libcbor' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install elfutils.org
+# Install with pantry
+pantry install elfutils.org
 ```
 
 ## Programs

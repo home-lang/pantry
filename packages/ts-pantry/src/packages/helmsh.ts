@@ -6,7 +6,7 @@
  * @version `4.1.3` (55 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install helm.sh`
+ * @install `pantry install helm.sh`
  * @name `helm`
  * @homepage https://helm.sh/
  * @buildDependencies `go.dev@^1.19` - required only when building from source
@@ -46,12 +46,12 @@ export const helmPackage = {
   homepageUrl: 'https://helm.sh/' as const,
   githubUrl: 'https://github.com/helm/helm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install helm.sh' as const,
+  installCommand: 'pantry install helm.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +helm.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install helm.sh' as const,
+  pantryInstallCommand: 'pantry install helm.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

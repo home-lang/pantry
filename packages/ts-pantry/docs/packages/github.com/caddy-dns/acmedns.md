@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/caddy-dns/acmedns
+# Install with pantry
+pantry install github.com/caddy-dns/acmedns
 ```
 
 ## Programs

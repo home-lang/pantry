@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ast-grep.github.io
+# Install with pantry
+pantry install ast-grep.github.io
 ```
 
 ## Programs

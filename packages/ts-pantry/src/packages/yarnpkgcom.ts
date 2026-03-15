@@ -6,7 +6,7 @@
  * @version `4.13.0` (49 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install yarnpkg.com`
+ * @install `pantry install yarnpkg.com`
  * @homepage https://yarnpkg.com/
  * @dependencies `nodejs.org`
  * @buildDependencies `classic.yarnpkg.com@^1`, `nodejs.org@>=18.3<23` - required only when building from source
@@ -42,12 +42,12 @@ export const yarnPackage = {
   homepageUrl: 'https://yarnpkg.com/' as const,
   githubUrl: 'https://github.com/yarnpkg/berry' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install yarnpkg.com' as const,
+  installCommand: 'pantry install yarnpkg.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +yarnpkg.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install yarnpkg.com' as const,
+  pantryInstallCommand: 'pantry install yarnpkg.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

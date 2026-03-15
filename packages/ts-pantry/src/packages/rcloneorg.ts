@@ -6,7 +6,7 @@
  * @version `1.73.2` (28 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rclone.org`
+ * @install `pantry install rclone.org`
  * @homepage https://rclone.org/
  * @buildDependencies `go.dev`, `darwin:curl.se`, `darwin:gnu.org/patch` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const rcloneorgPackage = {
   homepageUrl: 'https://rclone.org/' as const,
   githubUrl: 'https://github.com/rclone/rclone' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rclone.org' as const,
+  installCommand: 'pantry install rclone.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rclone.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rclone.org' as const,
+  pantryInstallCommand: 'pantry install rclone.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

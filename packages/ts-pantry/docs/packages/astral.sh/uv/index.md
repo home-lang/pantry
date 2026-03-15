@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install astral.sh/uv
+# Install with pantry
+pantry install astral.sh/uv
 ```
 
 ## Programs

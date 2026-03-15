@@ -6,7 +6,7 @@
  * @version `0.137.0` (41 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jbang.dev`
+ * @install `pantry install jbang.dev`
  * @homepage https://jbang.dev/
  * @dependencies `openjdk.org`
  *
@@ -41,12 +41,12 @@ export const jbangdevPackage = {
   homepageUrl: 'https://jbang.dev/' as const,
   githubUrl: 'https://github.com/jbangdev/jbang' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jbang.dev' as const,
+  installCommand: 'pantry install jbang.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jbang.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jbang.dev' as const,
+  pantryInstallCommand: 'pantry install jbang.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

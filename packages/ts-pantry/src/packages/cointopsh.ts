@@ -6,7 +6,7 @@
  * @version `1.6.10` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cointop.sh`
+ * @install `pantry install cointop.sh`
  * @homepage https://cointop.sh
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `go.dev@^1.17` - required only when building from source
@@ -42,12 +42,12 @@ export const cointopshPackage = {
   homepageUrl: 'https://cointop.sh' as const,
   githubUrl: 'https://github.com/cointop-sh/cointop' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cointop.sh' as const,
+  installCommand: 'pantry install cointop.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cointop.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cointop.sh' as const,
+  pantryInstallCommand: 'pantry install cointop.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

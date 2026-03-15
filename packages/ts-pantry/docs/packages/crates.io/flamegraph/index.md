@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/flamegraph
+# Install with pantry
+pantry install crates.io/flamegraph
 ```
 
 ## Programs

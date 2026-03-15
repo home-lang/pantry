@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install docker.com/buildx
+# Install with pantry
+pantry install docker.com/buildx
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `9.1.0` (48 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sphinx-doc.org`
+ * @install `pantry install sphinx-doc.org`
  * @homepage https://www.sphinx-doc.org/
  * @dependencies `python.org>=3.12`
  *
@@ -41,12 +41,12 @@ export const sphinxdocorgPackage = {
   homepageUrl: 'https://www.sphinx-doc.org/' as const,
   githubUrl: 'https://github.com/sphinx-doc/sphinx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sphinx-doc.org' as const,
+  installCommand: 'pantry install sphinx-doc.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sphinx-doc.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sphinx-doc.org' as const,
+  pantryInstallCommand: 'pantry install sphinx-doc.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.9.35` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tuxpaint.org`
+ * @install `pantry install tuxpaint.org`
  * @dependencies `cairographics.org`, `ferzkopp.net/SDL2_gfx`, `github.com/markuskimius/SDL2_Pango`, ... (+12 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `freedesktop.org/appstream`, `gnu.org/bash`, `gnu.org/gperf`, ... (+1 more) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const tuxpaintorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tuxpaint.org' as const,
+  installCommand: 'pantry install tuxpaint.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tuxpaint.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tuxpaint.org' as const,
+  pantryInstallCommand: 'pantry install tuxpaint.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

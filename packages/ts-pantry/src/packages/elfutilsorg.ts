@@ -6,7 +6,7 @@
  * @version `0.194.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install elfutils.org`
+ * @install `pantry install elfutils.org`
  * @dependencies `sourceware.org/bzip2`, `tukaani.org/xz`, `zlib.net`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/m4` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const elfutilsorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install elfutils.org' as const,
+  installCommand: 'pantry install elfutils.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +elfutils.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install elfutils.org' as const,
+  pantryInstallCommand: 'pantry install elfutils.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

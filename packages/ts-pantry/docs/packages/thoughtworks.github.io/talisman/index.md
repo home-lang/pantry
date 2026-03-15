@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install thoughtworks.github.io/talisman
+# Install with pantry
+pantry install thoughtworks.github.io/talisman
 ```
 
 ## Programs

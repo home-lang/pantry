@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fluxcd.io/flux2
+# Install with pantry
+pantry install fluxcd.io/flux2
 ```
 
 ## Programs

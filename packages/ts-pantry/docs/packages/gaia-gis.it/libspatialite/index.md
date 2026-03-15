@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gaia-gis.it/libspatialite
+# Install with pantry
+pantry install gaia-gis.it/libspatialite
 ```
 
 ## Programs

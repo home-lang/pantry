@@ -6,7 +6,7 @@
  * @version `1.14.1` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install go.dev/testscript`
+ * @install `pantry install go.dev/testscript`
  * @homepage https://github.com/rogpeppe/go-internal/tree/master/cmd/testscript
  * @buildDependencies `go.dev@~1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const godevtestscriptPackage = {
   homepageUrl: 'https://github.com/rogpeppe/go-internal/tree/master/cmd/testscript' as const,
   githubUrl: 'https://github.com/rogpeppe/go-internal' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install go.dev/testscript' as const,
+  installCommand: 'pantry install go.dev/testscript' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +go.dev/testscript -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install go.dev/testscript' as const,
+  pantryInstallCommand: 'pantry install go.dev/testscript' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

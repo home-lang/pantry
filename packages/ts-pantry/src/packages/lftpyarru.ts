@@ -6,7 +6,7 @@
  * @version `4.9.3` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lftp.yar.ru`
+ * @install `pantry install lftp.yar.ru`
  * @homepage https://lftp.yar.ru/
  * @dependencies `gnu.org/libidn2`, `gnu.org/gettext`, `gnu.org/readline`, ... (+5 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const lftpyarruPackage = {
   homepageUrl: 'https://lftp.yar.ru/' as const,
   githubUrl: 'https://github.com/lavv17/lftp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lftp.yar.ru' as const,
+  installCommand: 'pantry install lftp.yar.ru' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lftp.yar.ru -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lftp.yar.ru' as const,
+  pantryInstallCommand: 'pantry install lftp.yar.ru' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rioterm.com
+# Install with pantry
+pantry install rioterm.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.22.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/thrift`
+ * @install `pantry install apache.org/thrift`
  * @homepage https://thrift.apache.org/
  * @dependencies `openssl.org@1.1`, `zlib.net`
  * @buildDependencies `gnu.org/automake`, `gnu.org/autoconf`, `gnu.org/libtool`, ... (+2 more) - required only when building from source
@@ -42,12 +42,12 @@ export const apacheorgthriftPackage = {
   homepageUrl: 'https://thrift.apache.org/' as const,
   githubUrl: 'https://github.com/apache/thrift' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/thrift' as const,
+  installCommand: 'pantry install apache.org/thrift' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/thrift -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/thrift' as const,
+  pantryInstallCommand: 'pantry install apache.org/thrift' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

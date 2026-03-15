@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install paulfitz.github.io/daff
+# Install with pantry
+pantry install paulfitz.github.io/daff
 ```
 
 ## Programs

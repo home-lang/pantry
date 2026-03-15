@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jumppad.dev
+# Install with pantry
+pantry install jumppad.dev
 ```
 
 ## Programs

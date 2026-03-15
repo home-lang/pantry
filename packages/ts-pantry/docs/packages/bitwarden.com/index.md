@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bitwarden.com
+# Install with pantry
+pantry install bitwarden.com
 ```
 
 ## Programs

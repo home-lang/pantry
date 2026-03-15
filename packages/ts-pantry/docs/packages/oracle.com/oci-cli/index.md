@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install oracle.com/oci-cli
+# Install with pantry
+pantry install oracle.com/oci-cli
 ```
 
 ## Programs

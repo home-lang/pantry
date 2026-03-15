@@ -6,7 +6,7 @@
  * @version `0.1.6` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install filippo.io/yubikey-agent`
+ * @install `pantry install filippo.io/yubikey-agent`
  * @homepage https://filippo.io/yubikey-agent
  * @dependencies `pcsclite.apdu.fr^2`, `linux:gnupg.org/pinentry` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `go.dev@^1.20` - required only when building from source
@@ -42,12 +42,12 @@ export const filippoioyubikeyagentPackage = {
   homepageUrl: 'https://filippo.io/yubikey-agent' as const,
   githubUrl: 'https://github.com/FiloSottile/yubikey-agent' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install filippo.io/yubikey-agent' as const,
+  installCommand: 'pantry install filippo.io/yubikey-agent' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +filippo.io/yubikey-agent -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install filippo.io/yubikey-agent' as const,
+  pantryInstallCommand: 'pantry install filippo.io/yubikey-agent' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

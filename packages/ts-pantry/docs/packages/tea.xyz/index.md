@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tea.xyz
+# Install with pantry
+pantry install tea.xyz
 ```
 
 ## Programs

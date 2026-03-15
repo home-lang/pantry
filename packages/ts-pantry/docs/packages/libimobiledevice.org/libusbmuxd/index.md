@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libimobiledevice.org/libusbmuxd
+# Install with pantry
+pantry install libimobiledevice.org/libusbmuxd
 ```
 
 ## Programs

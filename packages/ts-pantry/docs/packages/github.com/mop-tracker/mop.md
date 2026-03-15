@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mop-tracker/mop
+# Install with pantry
+pantry install github.com/mop-tracker/mop
 ```
 
 ## Programs

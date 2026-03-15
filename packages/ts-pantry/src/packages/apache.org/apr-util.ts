@@ -6,7 +6,7 @@
  * @version `1.6.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/apr-util`
+ * @install `pantry install apache.org/apr-util`
  * @buildDependencies `apache.org/apr`, `openssl.org`, `libexpat.github.io`, ... (+1 more) - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const apacheorgaprutilPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/apache/apr-util' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/apr-util' as const,
+  installCommand: 'pantry install apache.org/apr-util' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/apr-util -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/apr-util' as const,
+  pantryInstallCommand: 'pantry install apache.org/apr-util' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.37.1` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install notroj.github.io/neon`
+ * @install `pantry install notroj.github.io/neon`
  * @homepage https://notroj.github.io/neon/
  * @dependencies `openssl.org`
  * @buildDependencies `gnu.org/make`, `pagure.io/xmlto` - required only when building from source
@@ -42,12 +42,12 @@ export const notrojgithubioneonPackage = {
   homepageUrl: 'https://notroj.github.io/neon/' as const,
   githubUrl: 'https://github.com/notroj/neon' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install notroj.github.io/neon' as const,
+  installCommand: 'pantry install notroj.github.io/neon' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +notroj.github.io/neon -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install notroj.github.io/neon' as const,
+  pantryInstallCommand: 'pantry install notroj.github.io/neon' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

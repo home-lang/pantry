@@ -5,7 +5,7 @@
  * @version `4.5.5` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libwebsockets.org`
+ * @install `pantry install libwebsockets.org`
  * @homepage https://libwebsockets.org
  * @dependencies `libuv.org@1`, `libevent.org@2`
  * @buildDependencies `cmake.org@3` - required only when building from source
@@ -40,12 +40,12 @@ export const libwebsocketsorgPackage = {
   homepageUrl: 'https://libwebsockets.org' as const,
   githubUrl: 'https://github.com/warmcat/libwebsockets' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libwebsockets.org' as const,
+  installCommand: 'pantry install libwebsockets.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libwebsockets.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libwebsockets.org' as const,
+  pantryInstallCommand: 'pantry install libwebsockets.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

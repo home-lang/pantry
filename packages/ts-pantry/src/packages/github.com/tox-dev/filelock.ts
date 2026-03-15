@@ -5,7 +5,7 @@
  * @version `3.25.2` (33 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/tox-dev/filelock`
+ * @install `pantry install github.com/tox-dev/filelock`
  * @homepage https://py-filelock.readthedocs.io
  * @dependencies `python.org>=3.11`
  *
@@ -39,12 +39,12 @@ export const filelockPackage = {
   homepageUrl: 'https://py-filelock.readthedocs.io' as const,
   githubUrl: 'https://github.com/tox-dev/filelock' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/tox-dev/filelock' as const,
+  installCommand: 'pantry install github.com/tox-dev/filelock' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/tox-dev/filelock -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/tox-dev/filelock' as const,
+  pantryInstallCommand: 'pantry install github.com/tox-dev/filelock' as const,
   programs: [] as const,
   companions: [] as const,
   /**

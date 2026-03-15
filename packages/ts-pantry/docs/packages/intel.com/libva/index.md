@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install intel.com/libva
+# Install with pantry
+pantry install intel.com/libva
 ```
 
 ## Programs

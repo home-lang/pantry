@@ -5,7 +5,7 @@
  * @version `1.0.29` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libusb.info`
+ * @install `pantry install libusb.info`
  * @homepage https://libusb.info
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/libtool`, `linux:systemd.io` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libusbinfoPackage = {
   homepageUrl: 'https://libusb.info' as const,
   githubUrl: 'https://github.com/libusb/libusb' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libusb.info' as const,
+  installCommand: 'pantry install libusb.info' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libusb.info -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libusb.info' as const,
+  pantryInstallCommand: 'pantry install libusb.info' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -6,7 +6,7 @@
  * @version `1.19.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install connectrpc.org/protoc-gen-connect-go`
+ * @install `pantry install connectrpc.org/protoc-gen-connect-go`
  * @homepage https://connectrpc.com
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const connectrpcorgprotocgenconnectgoPackage = {
   homepageUrl: 'https://connectrpc.com' as const,
   githubUrl: 'https://github.com/connectrpc/connect-go' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install connectrpc.org/protoc-gen-connect-go' as const,
+  installCommand: 'pantry install connectrpc.org/protoc-gen-connect-go' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +connectrpc.org/protoc-gen-connect-go -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install connectrpc.org/protoc-gen-connect-go' as const,
+  pantryInstallCommand: 'pantry install connectrpc.org/protoc-gen-connect-go' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

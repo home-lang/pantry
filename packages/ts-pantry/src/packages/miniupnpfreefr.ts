@@ -6,7 +6,7 @@
  * @version `2.3.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install miniupnp.free.fr`
+ * @install `pantry install miniupnp.free.fr`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const miniupnpfreefrPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install miniupnp.free.fr' as const,
+  installCommand: 'pantry install miniupnp.free.fr' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +miniupnp.free.fr -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install miniupnp.free.fr' as const,
+  pantryInstallCommand: 'pantry install miniupnp.free.fr' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

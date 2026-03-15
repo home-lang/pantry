@@ -6,7 +6,7 @@
  * @version `2.8.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pwgen.sourceforge.io`
+ * @install `pantry install pwgen.sourceforge.io`
  * @homepage https://pwgen.sourceforge.net/
  *
  * @example
@@ -40,12 +40,12 @@ export const pwgensourceforgeioPackage = {
   homepageUrl: 'https://pwgen.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pwgen.sourceforge.io' as const,
+  installCommand: 'pantry install pwgen.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pwgen.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pwgen.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install pwgen.sourceforge.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

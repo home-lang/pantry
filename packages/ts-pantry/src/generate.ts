@@ -31,7 +31,7 @@ interface PkgxPackage {
   githubUrl: string
   installCommand: string
   pkgxInstallCommand: string
-  launchpadInstallCommand: string
+  pantryInstallCommand: string
   programs: readonly string[]
   companions: readonly string[]
   dependencies: readonly string[]
@@ -204,7 +204,7 @@ function extractPackageDataFromFile(content: string, fallbackDomain: string): Pk
     const githubUrl = extractString('githubUrl') || ''
     const installCommand = extractString('installCommand') || ''
     const pkgxInstallCommand = extractString('pkgxInstallCommand') || `sh <(curl https://pkgx.sh) +${domain} -- $SHELL -i`
-    const launchpadInstallCommand = extractString('launchpadInstallCommand') || `launchpad install ${domain}`
+    const pantryInstallCommand = extractString('pantryInstallCommand') || `pantry install ${domain}`
     const fullPath = extractString('fullPath') || domain
 
     const programs = extractArray('programs')
@@ -222,7 +222,7 @@ function extractPackageDataFromFile(content: string, fallbackDomain: string): Pk
       githubUrl,
       installCommand,
       pkgxInstallCommand,
-      launchpadInstallCommand,
+      pantryInstallCommand,
       programs,
       companions,
       dependencies,
@@ -1741,25 +1741,25 @@ function generateInstallCommand(pkg: PkgxPackage): string {
       .replace(/\{\{(?![^}]*\}\})/g, '&lbrace;&lbrace;')
   }
 
-  // If there's a launchpadInstallCommand, use it but normalize the package name
-  if (pkg.launchpadInstallCommand) {
+  // If there's a pantryInstallCommand, use it but normalize the package name
+  if (pkg.pantryInstallCommand) {
     // Check if the command contains uppercase letters that should be lowercase
-    const match = pkg.launchpadInstallCommand.match(/launchpad install (.+)/)
+    const match = pkg.pantryInstallCommand.match(/pantry install (.+)/)
     if (match) {
       const packageName = match[1]
       // If the package has aliases, prefer the shortest one (usually the most common name)
       if (pkg.aliases && pkg.aliases.length > 0) {
         const sortedAliases = [...pkg.aliases].sort((a, b) => a.length - b.length)
         const resolvedAlias = resolveTemplateVars(sortedAliases[0])
-        return `launchpad install ${resolvedAlias}`
+        return `pantry install ${resolvedAlias}`
       }
       // If the package name is the same as an alias but with different case, use lowercase
       if (pkg.aliases && pkg.aliases.some(alias => alias.toLowerCase() === packageName.toLowerCase())) {
         const resolvedName = resolveTemplateVars(packageName.toLowerCase())
-        return `launchpad install ${resolvedName}`
+        return `pantry install ${resolvedName}`
       }
       // Otherwise use the command as-is but resolve template variables
-      return resolveTemplateVars(pkg.launchpadInstallCommand)
+      return resolveTemplateVars(pkg.pantryInstallCommand)
     }
   }
 
@@ -1780,7 +1780,7 @@ function generateInstallCommand(pkg: PkgxPackage): string {
   // Resolve template variables with actual values
   installName = resolveTemplateVars(installName)
 
-  return `launchpad install ${installName}`
+  return `pantry install ${installName}`
 }
 
 /**
@@ -2321,7 +2321,7 @@ ${resolvedDescription ? `> ${resolvedDescription}` : ''}
 ## Installation
 
 \`\`\`bash
-# Install with launchpad
+# Install with pantry
 ${generateInstallCommand(pkg)}
 \`\`\`
 

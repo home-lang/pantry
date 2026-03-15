@@ -6,7 +6,7 @@
  * @version `1.6.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install indexsupply.com/shovel`
+ * @install `pantry install indexsupply.com/shovel`
  * @homepage https://indexsupply.com/shovel
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const indexsupplycomshovelPackage = {
   homepageUrl: 'https://indexsupply.com/shovel' as const,
   githubUrl: 'https://github.com/indexsupply/code' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install indexsupply.com/shovel' as const,
+  installCommand: 'pantry install indexsupply.com/shovel' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +indexsupply.com/shovel -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install indexsupply.com/shovel' as const,
+  pantryInstallCommand: 'pantry install indexsupply.com/shovel' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

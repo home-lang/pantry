@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git-quick-stats.sh
+# Install with pantry
+pantry install git-quick-stats.sh
 ```
 
 ## Programs

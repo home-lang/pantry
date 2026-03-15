@@ -5,7 +5,7 @@
  * @version `3.0.2` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/gtk-mac-integration-gtk3`
+ * @install `pantry install gnome.org/gtk-mac-integration-gtk3`
  * @dependencies `gnu.org/gettext`, `gtk.org/gtk3`
  * @buildDependencies `freedesktop.org/intltool`, `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gnomeorggtkmacintegrationgtk3Package = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/gtk-mac-integration-gtk3' as const,
+  installCommand: 'pantry install gnome.org/gtk-mac-integration-gtk3' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/gtk-mac-integration-gtk3 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/gtk-mac-integration-gtk3' as const,
+  pantryInstallCommand: 'pantry install gnome.org/gtk-mac-integration-gtk3' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `0.67.0` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wilfred.me.uk/difftastic`
+ * @install `pantry install wilfred.me.uk/difftastic`
  * @homepage https://difftastic.wilfred.me.uk/
  *
  * @example
@@ -40,12 +40,12 @@ export const wilfredmeukdifftasticPackage = {
   homepageUrl: 'https://difftastic.wilfred.me.uk/' as const,
   githubUrl: 'https://github.com/Wilfred/difftastic' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wilfred.me.uk/difftastic' as const,
+  installCommand: 'pantry install wilfred.me.uk/difftastic' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wilfred.me.uk/difftastic -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wilfred.me.uk/difftastic' as const,
+  pantryInstallCommand: 'pantry install wilfred.me.uk/difftastic' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

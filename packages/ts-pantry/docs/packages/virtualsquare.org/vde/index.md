@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install virtualsquare.org/vde
+# Install with pantry
+pantry install virtualsquare.org/vde
 ```
 
 ## Programs

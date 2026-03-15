@@ -6,7 +6,7 @@
  * @version `1.5.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xiph.org/flac`
+ * @install `pantry install xiph.org/flac`
  * @homepage https://xiph.org/flac/
  * @dependencies `xiph.org/ogg^1.3.5`
  * @buildDependencies `gnu.org/libtool@^2.4`, `gnu.org/automake@^1.16`, `gnu.org/autoconf@^2.71` - required only when building from source
@@ -42,12 +42,12 @@ export const xiphorgflacPackage = {
   homepageUrl: 'https://xiph.org/flac/' as const,
   githubUrl: 'https://github.com/xiph/flac' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xiph.org/flac' as const,
+  installCommand: 'pantry install xiph.org/flac' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xiph.org/flac -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xiph.org/flac' as const,
+  pantryInstallCommand: 'pantry install xiph.org/flac' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install qt.io
+# Install with pantry
+pantry install qt.io
 ```
 
 ## Programs

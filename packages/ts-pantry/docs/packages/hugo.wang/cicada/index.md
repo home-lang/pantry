@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hugo.wang/cicada
+# Install with pantry
+pantry install hugo.wang/cicada
 ```
 
 ## Programs

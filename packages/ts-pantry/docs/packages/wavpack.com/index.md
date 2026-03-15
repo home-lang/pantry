@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wavpack.com
+# Install with pantry
+pantry install wavpack.com
 ```
 
 ## Programs

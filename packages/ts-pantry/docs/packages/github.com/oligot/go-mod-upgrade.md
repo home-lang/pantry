@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/oligot/go-mod-upgrade
+# Install with pantry
+pantry install github.com/oligot/go-mod-upgrade
 ```
 
 ## Programs

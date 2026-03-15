@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cgal.org
+# Install with pantry
+pantry install cgal.org
 ```
 
 ## Programs

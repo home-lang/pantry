@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install exiftool.org
+# Install with pantry
+pantry install exiftool.org
 ```
 
 ## Programs

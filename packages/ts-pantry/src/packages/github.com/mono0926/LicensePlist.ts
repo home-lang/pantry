@@ -6,7 +6,7 @@
  * @version `3.27.2` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/mono0926/LicensePlist`
+ * @install `pantry install github.com/mono0926/LicensePlist`
  * @homepage https://www.slideshare.net/mono0926/licenseplist-a-license-list-generator-of-all-your-dependencies-for-ios-applications
  * @buildDependencies `swift.org@6` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const licenseplistPackage = {
   homepageUrl: 'https://www.slideshare.net/mono0926/licenseplist-a-license-list-generator-of-all-your-dependencies-for-ios-applications' as const,
   githubUrl: 'https://github.com/mono0926/LicensePList' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/mono0926/LicensePlist' as const,
+  installCommand: 'pantry install github.com/mono0926/LicensePlist' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mono0926/LicensePlist -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/mono0926/LicensePlist' as const,
+  pantryInstallCommand: 'pantry install github.com/mono0926/LicensePlist' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

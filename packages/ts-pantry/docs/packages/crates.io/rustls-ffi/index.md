@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/rustls-ffi
+# Install with pantry
+pantry install crates.io/rustls-ffi
 ```
 
 ## Programs

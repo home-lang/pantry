@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sqlc.dev
+# Install with pantry
+pantry install sqlc.dev
 ```
 
 ## Programs

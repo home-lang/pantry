@@ -6,7 +6,7 @@
  * @version `1.6.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tldr.sh`
+ * @install `pantry install tldr.sh`
  * @dependencies `linux:sourceware.org/bzip2^1`, `curl.se` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const tldrshPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/tldr-pages/tldr-c-client' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tldr.sh' as const,
+  installCommand: 'pantry install tldr.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tldr.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tldr.sh' as const,
+  pantryInstallCommand: 'pantry install tldr.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install imagemagick.org
+# Install with pantry
+pantry install imagemagick.org
 ```
 
 ## Programs

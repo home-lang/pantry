@@ -6,7 +6,7 @@
  * @version `3.14.3` (169 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install python.org`
+ * @install `pantry install python.org`
  * @name `python`
  * @aliases `py`
  * @homepage https://www.python.org
@@ -48,12 +48,12 @@ export const pythonPackage = {
   homepageUrl: 'https://www.python.org' as const,
   githubUrl: 'https://github.com/python/cpython' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install python.org' as const,
+  installCommand: 'pantry install python.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +python.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install python.org' as const,
+  pantryInstallCommand: 'pantry install python.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

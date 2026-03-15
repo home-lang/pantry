@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libgeos.org
+# Install with pantry
+pantry install libgeos.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install poppler.freedesktop.org/poppler-data
+# Install with pantry
+pantry install poppler.freedesktop.org/poppler-data
 ```
 
 ## Programs

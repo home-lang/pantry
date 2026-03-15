@@ -6,7 +6,7 @@
  * @version `1.3.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install capnproto.org`
+ * @install `pantry install capnproto.org`
  * @dependencies `zlib.net`, `linux:openssl.org^1.1` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const capnprotoorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install capnproto.org' as const,
+  installCommand: 'pantry install capnproto.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +capnproto.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install capnproto.org' as const,
+  pantryInstallCommand: 'pantry install capnproto.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install endoflife.date
+# Install with pantry
+pantry install endoflife.date
 ```
 
 ## Programs

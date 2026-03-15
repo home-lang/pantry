@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jugit.fz-juelich.de/mlz/libcerf
+# Install with pantry
+pantry install jugit.fz-juelich.de/mlz/libcerf
 ```
 
 ## Programs

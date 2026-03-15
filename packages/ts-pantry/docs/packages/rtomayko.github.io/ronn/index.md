@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rtomayko.github.io/ronn
+# Install with pantry
+pantry install rtomayko.github.io/ronn
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install earthly.dev/earthly
+# Install with pantry
+pantry install earthly.dev/earthly
 ```
 
 ## Programs

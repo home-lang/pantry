@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bun.com
+# Install with pantry
+pantry install bun.com
 ```
 
 ## Programs

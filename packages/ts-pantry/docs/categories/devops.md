@@ -12,7 +12,7 @@ Ansible is a radically simple IT automation platform that makes your application
 
 **Programs**: ansible, ansible-config, ansible-connection, ansible-console, ansible-doc, ansible-galaxy, ansible-inventory, ansible-playbook, ansible-pull, ansible-test, ansible-vault
 
-**Install**: `launchpad install ansible.com`
+**Install**: `pantry install ansible.com`
 
 ---
 
@@ -22,7 +22,7 @@ ansible-lint checks playbooks for practices and behavior that could potentially 
 
 **Programs**: ansible-lint
 
-**Install**: `launchpad install ansible.com/ansible-lint`
+**Install**: `pantry install ansible.com/ansible-lint`
 
 ---
 
@@ -32,7 +32,7 @@ Consul is a distributed, highly available, and data center aware solution to con
 
 **Programs**: consul
 
-**Install**: `launchpad install consul.io`
+**Install**: `pantry install consul.io`
 
 ---
 
@@ -42,7 +42,7 @@ Pack, ship and run any application as a lightweight container
 
 **Programs**: docker
 
-**Install**: `launchpad install docker`
+**Install**: `pantry install docker`
 
 ---
 
@@ -52,7 +52,7 @@ Define and run multi-container applications with Docker
 
 **Programs**: docker-compose
 
-**Install**: `launchpad install docker.com/compose`
+**Install**: `pantry install docker.com/compose`
 
 ---
 
@@ -62,7 +62,7 @@ Open and extensible continuous delivery solution for Kubernetes. Powered by GitO
 
 **Programs**: flux
 
-**Install**: `launchpad install fluxcd.io/flux2`
+**Install**: `pantry install fluxcd.io/flux2`
 
 ---
 
@@ -72,7 +72,7 @@ Validate CloudFormation templates against the CloudFormation spec
 
 **Programs**: cfn-lint
 
-**Install**: `launchpad install github.com/aws-cloudformation/cfn-lint`
+**Install**: `pantry install github.com/aws-cloudformation/cfn-lint`
 
 ---
 
@@ -82,7 +82,7 @@ Update version constraints in your Terraform configurations
 
 **Programs**: tfupdate
 
-**Install**: `launchpad install github.com/minamijoyo/tfupdate`
+**Install**: `pantry install github.com/minamijoyo/tfupdate`
 
 ---
 
@@ -92,7 +92,7 @@ A Pluggable Terraform Linter
 
 **Programs**: tflint
 
-**Install**: `launchpad install github.com/terraform-linters/tflint`
+**Install**: `pantry install github.com/terraform-linters/tflint`
 
 ---
 
@@ -102,7 +102,7 @@ The Kubernetes Package Manager
 
 **Programs**: helm
 
-**Install**: `launchpad install helm.sh`
+**Install**: `pantry install helm.sh`
 
 ---
 
@@ -112,7 +112,7 @@ Cloud cost estimates for Terraform in pull requests💰📉 Shift FinOps Left!
 
 **Programs**: infracost
 
-**Install**: `launchpad install infracost.io`
+**Install**: `pantry install infracost.io`
 
 ---
 
@@ -122,7 +122,7 @@ Extendable open source continuous integration server
 
 **Programs**: jenkins-lts, jenkins-lts-cli
 
-**Install**: `launchpad install jenkins.io`
+**Install**: `pantry install jenkins.io`
 
 ---
 
@@ -132,7 +132,7 @@ Little helper to run CNCF's k3s in Docker
 
 **Programs**: k3d
 
-**Install**: `launchpad install k3d.io`
+**Install**: `pantry install k3d.io`
 
 ---
 
@@ -142,7 +142,7 @@ Kubernetes IN Docker - local clusters for testing Kubernetes
 
 **Programs**: kind
 
-**Install**: `launchpad install kind.sigs.k8s.io`
+**Install**: `pantry install kind.sigs.k8s.io`
 
 ---
 
@@ -152,7 +152,7 @@ Production-Grade Container Scheduling and Management
 
 **Programs**: kubectl
 
-**Install**: `launchpad install kubernetes.io/kubectl`
+**Install**: `pantry install kubernetes.io/kubectl`
 
 ---
 
@@ -162,7 +162,7 @@ Template-free customization of Kubernetes YAML manifests
 
 **Programs**: kustomize
 
-**Install**: `launchpad install kubernetes.io/kustomize`
+**Install**: `pantry install kubernetes.io/kustomize`
 
 ---
 
@@ -172,7 +172,7 @@ Run a Kubernetes cluster locally
 
 **Programs**: minikube
 
-**Install**: `launchpad install kubernetes.io/minikube`
+**Install**: `pantry install kubernetes.io/minikube`
 
 ---
 
@@ -182,7 +182,7 @@ Nomad is an easy-to-use, flexible, and performant workload orchestrator that can
 
 **Programs**: nomad
 
-**Install**: `launchpad install nomadproject.io`
+**Install**: `pantry install nomadproject.io`
 
 ---
 
@@ -192,7 +192,7 @@ OpenTofu lets you declaratively manage your cloud infrastructure.
 
 **Programs**: tofu
 
-**Install**: `launchpad install opentofu.org`
+**Install**: `pantry install opentofu.org`
 
 ---
 
@@ -202,7 +202,7 @@ Packer is a tool for creating identical machine images for multiple platforms fr
 
 **Programs**: packer
 
-**Install**: `launchpad install packer.io`
+**Install**: `pantry install packer.io`
 
 ---
 
@@ -212,7 +212,7 @@ Podman: A tool for managing OCI containers and pods.
 
 **Programs**: podman, podman-remote, podman-mac-helper
 
-**Install**: `launchpad install podman.io`
+**Install**: `pantry install podman.io`
 
 ---
 
@@ -222,7 +222,7 @@ Terraform Pull Request Automation tool
 
 **Programs**: atlantis
 
-**Install**: `launchpad install runatlantis.io`
+**Install**: `pantry install runatlantis.io`
 
 ---
 
@@ -232,7 +232,7 @@ Terraform enables you to safely and predictably create, change, and improve infr
 
 **Programs**: terraform
 
-**Install**: `launchpad install terraform.io`
+**Install**: `pantry install terraform.io`
 
 ---
 
@@ -242,7 +242,7 @@ Terragrunt is a flexible orchestration tool that allows Infrastructure as Code w
 
 **Programs**: terragrunt
 
-**Install**: `launchpad install terragrunt.gruntwork.io`
+**Install**: `pantry install terragrunt.gruntwork.io`
 
 ---
 
@@ -252,7 +252,7 @@ Terratag is a CLI tool that enables users of Terraform to automatically create a
 
 **Programs**: terratag
 
-**Install**: `launchpad install terratag.io`
+**Install**: `pantry install terratag.io`
 
 ---
 
@@ -262,7 +262,7 @@ A tool for secrets management, encryption as a service, and privileged access ma
 
 **Programs**: vault
 
-**Install**: `launchpad install vaultproject.io`
+**Install**: `pantry install vaultproject.io`
 
 ---
 

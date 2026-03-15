@@ -6,7 +6,7 @@
  * @version `1.43.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/libidn`
+ * @install `pantry install gnu.org/libidn`
  * @homepage https://www.gnu.org/software/libidn/
  *
  * @example
@@ -40,12 +40,12 @@ export const gnuorglibidnPackage = {
   homepageUrl: 'https://www.gnu.org/software/libidn/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/libidn' as const,
+  installCommand: 'pantry install gnu.org/libidn' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/libidn -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/libidn' as const,
+  pantryInstallCommand: 'pantry install gnu.org/libidn' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

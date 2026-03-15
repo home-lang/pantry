@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/kubecolor/kubecolor
+# Install with pantry
+pantry install github.com/kubecolor/kubecolor
 ```
 
 ## Programs

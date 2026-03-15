@@ -5,7 +5,7 @@
  * @version `3.3.3` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install psycopg.org/psycopg3`
+ * @install `pantry install psycopg.org/psycopg3`
  * @homepage https://www.psycopg.org/psycopg3/
  * @dependencies `python.org~3.11`, `postgresql.org`
  *
@@ -39,12 +39,12 @@ export const psycopgorgpsycopg3Package = {
   homepageUrl: 'https://www.psycopg.org/psycopg3/' as const,
   githubUrl: 'https://github.com/psycopg/psycopg' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install psycopg.org/psycopg3' as const,
+  installCommand: 'pantry install psycopg.org/psycopg3' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +psycopg.org/psycopg3 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install psycopg.org/psycopg3' as const,
+  pantryInstallCommand: 'pantry install psycopg.org/psycopg3' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vercel.com/pkg
+# Install with pantry
+pantry install vercel.com/pkg
 ```
 
 ## Programs

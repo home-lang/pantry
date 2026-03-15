@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install maven
+# Install with pantry
+pantry install maven
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.14.0` (47 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gleam.run`
+ * @install `pantry install gleam.run`
  * @homepage https://gleam.run
  *
  * @example
@@ -40,12 +40,12 @@ export const gleamrunPackage = {
   homepageUrl: 'https://gleam.run' as const,
   githubUrl: 'https://github.com/gleam-lang/gleam' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gleam.run' as const,
+  installCommand: 'pantry install gleam.run' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gleam.run -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gleam.run' as const,
+  pantryInstallCommand: 'pantry install gleam.run' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install neovim.io
+# Install with pantry
+pantry install neovim.io
 ```
 
 ## Programs

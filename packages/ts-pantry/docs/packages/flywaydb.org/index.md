@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install flywaydb.org
+# Install with pantry
+pantry install flywaydb.org
 ```
 
 ## Programs

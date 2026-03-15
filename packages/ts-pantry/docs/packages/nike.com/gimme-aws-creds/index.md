@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nike.com/gimme-aws-creds
+# Install with pantry
+pantry install nike.com/gimme-aws-creds
 ```
 
 ## Programs

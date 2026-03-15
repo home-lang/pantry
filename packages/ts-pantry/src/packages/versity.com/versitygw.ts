@@ -6,7 +6,7 @@
  * @version `1.3.1` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install versity.com/versitygw`
+ * @install `pantry install versity.com/versitygw`
  * @homepage https://www.versity.com/products/versitygw/
  * @buildDependencies `go.dev@1.21.0` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const versitycomversitygwPackage = {
   homepageUrl: 'https://www.versity.com/products/versitygw/' as const,
   githubUrl: 'https://github.com/versity/versitygw' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install versity.com/versitygw' as const,
+  installCommand: 'pantry install versity.com/versitygw' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +versity.com/versitygw -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install versity.com/versitygw' as const,
+  pantryInstallCommand: 'pantry install versity.com/versitygw' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

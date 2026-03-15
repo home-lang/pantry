@@ -6,7 +6,7 @@
  * @version `2.3.2` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install python-poetry.org`
+ * @install `pantry install python-poetry.org`
  * @homepage https://python-poetry.org/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@~3.11`, `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const pythonpoetryorgPackage = {
   homepageUrl: 'https://python-poetry.org/' as const,
   githubUrl: 'https://github.com/python-poetry/poetry' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install python-poetry.org' as const,
+  installCommand: 'pantry install python-poetry.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +python-poetry.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install python-poetry.org' as const,
+  pantryInstallCommand: 'pantry install python-poetry.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dhall-lang.org
+# Install with pantry
+pantry install dhall-lang.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceware.org/libffi
+# Install with pantry
+pantry install sourceware.org/libffi
 ```
 
 ## Programs

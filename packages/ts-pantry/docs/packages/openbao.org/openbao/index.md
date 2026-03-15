@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openbao.org/openbao
+# Install with pantry
+pantry install openbao.org/openbao
 ```
 
 ## Programs

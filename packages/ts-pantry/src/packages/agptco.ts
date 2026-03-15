@@ -6,7 +6,7 @@
  * @version `0.4.7` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install agpt.co`
+ * @install `pantry install agpt.co`
  * @homepage https://agpt.co
  * @dependencies `python.org>=3.10<3.12`, `redis.io^7`, `tea.xyz^0`
  *
@@ -41,12 +41,12 @@ export const agptcoPackage = {
   homepageUrl: 'https://agpt.co' as const,
   githubUrl: 'https://github.com/Significant-Gravitas/Auto-GPT' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install agpt.co' as const,
+  installCommand: 'pantry install agpt.co' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +agpt.co -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install agpt.co' as const,
+  pantryInstallCommand: 'pantry install agpt.co' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

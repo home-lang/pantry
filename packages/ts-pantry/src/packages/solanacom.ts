@@ -6,7 +6,7 @@
  * @version `1.18.26` (83 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install solana.com`
+ * @install `pantry install solana.com`
  * @homepage https://solana.com
  * @dependencies `protobuf.dev^21`, `zlib.net^1.2`, `openssl.org^1.1`
  * @buildDependencies `linux:systemd.io` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const solanacomPackage = {
   homepageUrl: 'https://solana.com' as const,
   githubUrl: 'https://github.com/solana-labs/solana' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install solana.com' as const,
+  installCommand: 'pantry install solana.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +solana.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install solana.com' as const,
+  pantryInstallCommand: 'pantry install solana.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

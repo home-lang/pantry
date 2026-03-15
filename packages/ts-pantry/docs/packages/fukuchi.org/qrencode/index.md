@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fukuchi.org/qrencode
+# Install with pantry
+pantry install fukuchi.org/qrencode
 ```
 
 ## Programs

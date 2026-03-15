@@ -12,7 +12,7 @@ Packages related to documentation & text processing.
 
 **Programs**: asciidoctor
 
-**Install**: `launchpad install asciidoctor.org`
+**Install**: `pantry install asciidoctor.org`
 
 ---
 
@@ -22,7 +22,7 @@ Terminal based presentation tool
 
 **Programs**: slides
 
-**Install**: `launchpad install maaslalani.com/slides`
+**Install**: `pantry install maaslalani.com/slides`
 
 ---
 
@@ -32,7 +32,7 @@ Project documentation with Markdown.
 
 **Programs**: mkdocs
 
-**Install**: `launchpad install mkdocs.org`
+**Install**: `pantry install mkdocs.org`
 
 ---
 
@@ -42,7 +42,7 @@ Swiss-army knife of markup format conversion
 
 **Programs**: pandoc
 
-**Install**: `launchpad install pandoc.org`
+**Install**: `pantry install pandoc.org`
 
 ---
 
@@ -52,7 +52,7 @@ Tool to create intelligent and beautiful documentation
 
 **Programs**: sphinx-apidoc, sphinx-autogen, sphinx-build, sphinx-quickstart
 
-**Install**: `launchpad install sphinx-doc.org`
+**Install**: `pantry install sphinx-doc.org`
 
 ---
 
@@ -62,7 +62,7 @@ A modernized, complete, self-contained TeX/LaTeX engine, powered by XeTeX and Te
 
 **Programs**: tectonic
 
-**Install**: `launchpad install tectonic-typesetting.github.io`
+**Install**: `pantry install tectonic-typesetting.github.io`
 
 ---
 
@@ -72,7 +72,7 @@ A new markup-based typesetting system that is powerful and easy to learn.
 
 **Programs**: typst
 
-**Install**: `launchpad install typst.app`
+**Install**: `pantry install typst.app`
 
 ---
 

@@ -6,7 +6,7 @@
  * @version `3.5.0` (24 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install leo-lang.org`
+ * @install `pantry install leo-lang.org`
  * @homepage https://leo-lang.org/
  * @dependencies `openssl.org^1.1`, `curl.se^8.4`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const leolangorgPackage = {
   homepageUrl: 'https://leo-lang.org/' as const,
   githubUrl: 'https://github.com/AleoHQ/leo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install leo-lang.org' as const,
+  installCommand: 'pantry install leo-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +leo-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install leo-lang.org' as const,
+  pantryInstallCommand: 'pantry install leo-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

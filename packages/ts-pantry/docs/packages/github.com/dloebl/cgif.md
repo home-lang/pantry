@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/dloebl/cgif
+# Install with pantry
+pantry install github.com/dloebl/cgif
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kislyuk.github.io/argcomplete
+# Install with pantry
+pantry install kislyuk.github.io/argcomplete
 ```
 
 ## Programs

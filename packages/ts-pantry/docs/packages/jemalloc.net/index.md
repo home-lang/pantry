@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jemalloc.net
+# Install with pantry
+pantry install jemalloc.net
 ```
 
 ## Programs

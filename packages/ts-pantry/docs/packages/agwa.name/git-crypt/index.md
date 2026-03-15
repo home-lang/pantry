@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install agwa.name/git-crypt
+# Install with pantry
+pantry install agwa.name/git-crypt
 ```
 
 ## Programs

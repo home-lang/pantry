@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install markupsafe.palletsprojects.com
+# Install with pantry
+pantry install markupsafe.palletsprojects.com
 ```
 
 ## Programs

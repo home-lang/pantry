@@ -6,7 +6,7 @@
  * @version `0.9.0` (29 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xcfile.dev`
+ * @install `pantry install xcfile.dev`
  * @homepage https://xcfile.dev/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const xcfiledevPackage = {
   homepageUrl: 'https://xcfile.dev/' as const,
   githubUrl: 'https://github.com/joerdav/xc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xcfile.dev' as const,
+  installCommand: 'pantry install xcfile.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xcfile.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xcfile.dev' as const,
+  pantryInstallCommand: 'pantry install xcfile.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

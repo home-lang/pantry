@@ -6,7 +6,7 @@
  * @version `1.15.4` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install riverbankcomputing.com/pyqt-builder`
+ * @install `pantry install riverbankcomputing.com/pyqt-builder`
  * @homepage https://pyqt-builder.readthedocs.io/
  * @dependencies `python.org~3.11`, `riverbankcomputing.com/sip`
  * @buildDependencies `llvm.org@<17`, `gnu.org/make` - required only when building from source
@@ -42,12 +42,12 @@ export const riverbankcomputingcompyqtbuilderPackage = {
   homepageUrl: 'https://pyqt-builder.readthedocs.io/' as const,
   githubUrl: 'https://github.com/Python-PyQt/PyQt-builder' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install riverbankcomputing.com/pyqt-builder' as const,
+  installCommand: 'pantry install riverbankcomputing.com/pyqt-builder' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +riverbankcomputing.com/pyqt-builder -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install riverbankcomputing.com/pyqt-builder' as const,
+  pantryInstallCommand: 'pantry install riverbankcomputing.com/pyqt-builder' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

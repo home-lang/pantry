@@ -6,7 +6,7 @@
  * @version `1.9.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nlnetlabs.nl/ldns`
+ * @install `pantry install nlnetlabs.nl/ldns`
  * @homepage https://nlnetlabs.nl/projects/ldns/
  * @dependencies `openssl.org^1`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `swig.org` - required only when building from source
@@ -42,12 +42,12 @@ export const nlnetlabsnlldnsPackage = {
   homepageUrl: 'https://nlnetlabs.nl/projects/ldns/' as const,
   githubUrl: 'https://github.com/NLnetLabs/ldns' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nlnetlabs.nl/ldns' as const,
+  installCommand: 'pantry install nlnetlabs.nl/ldns' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nlnetlabs.nl/ldns -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nlnetlabs.nl/ldns' as const,
+  pantryInstallCommand: 'pantry install nlnetlabs.nl/ldns' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

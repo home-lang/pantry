@@ -6,7 +6,7 @@
  * @version `1.3.46` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install graphicsmagick.org`
+ * @install `pantry install graphicsmagick.org`
  * @homepage http://www.graphicsmagick.org/
  * @dependencies `freetype.org`, `github.com/jasper-software/jasper`, `libjpeg-turbo.org`, ... (+9 more)
  *
@@ -41,12 +41,12 @@ export const graphicsmagickorgPackage = {
   homepageUrl: 'http://www.graphicsmagick.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install graphicsmagick.org' as const,
+  installCommand: 'pantry install graphicsmagick.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +graphicsmagick.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install graphicsmagick.org' as const,
+  pantryInstallCommand: 'pantry install graphicsmagick.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

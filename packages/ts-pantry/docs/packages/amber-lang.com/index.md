@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install amber-lang.com
+# Install with pantry
+pantry install amber-lang.com
 ```
 
 ## Programs

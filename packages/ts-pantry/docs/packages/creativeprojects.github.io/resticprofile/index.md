@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install creativeprojects.github.io/resticprofile
+# Install with pantry
+pantry install creativeprojects.github.io/resticprofile
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install darwinsys.com/file
+# Install with pantry
+pantry install darwinsys.com/file
 ```
 
 ## Programs

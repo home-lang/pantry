@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install abseil.io
+# Install with pantry
+pantry install abseil.io
 ```
 
 ## Programs

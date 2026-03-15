@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install aws.amazon.com/cli
+# Install with pantry
+pantry install aws.amazon.com/cli
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `3.16.0` (51 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install bytebase.com`
+ * @install `pantry install bytebase.com`
  * @homepage https://www.bytebase.com
  * @dependencies `nodejs.org~24.1 # 24.4 has oom errors`
  * @buildDependencies `go.dev@~1.24.2`, `pnpm.io`, `linux:kerberos.org@1`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const bytebasecomPackage = {
   homepageUrl: 'https://www.bytebase.com' as const,
   githubUrl: 'https://github.com/bytebase/bytebase' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install bytebase.com' as const,
+  installCommand: 'pantry install bytebase.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bytebase.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install bytebase.com' as const,
+  pantryInstallCommand: 'pantry install bytebase.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

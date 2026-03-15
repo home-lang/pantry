@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hunspell.github.io
+# Install with pantry
+pantry install hunspell.github.io
 ```
 
 ## Programs

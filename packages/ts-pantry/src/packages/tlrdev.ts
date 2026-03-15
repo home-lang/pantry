@@ -6,7 +6,7 @@
  * @version `2.0.7` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tlr.dev`
+ * @install `pantry install tlr.dev`
  * @dependencies `openssl.org^1.1`
  * @buildDependencies `go.dev@^1.21`, `protobuf.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tlrdevPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/SpectralOps/teller' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tlr.dev' as const,
+  installCommand: 'pantry install tlr.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tlr.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tlr.dev' as const,
+  pantryInstallCommand: 'pantry install tlr.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

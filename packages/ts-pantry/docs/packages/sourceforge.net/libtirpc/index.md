@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceforge.net/libtirpc
+# Install with pantry
+pantry install sourceforge.net/libtirpc
 ```
 
 ## Programs

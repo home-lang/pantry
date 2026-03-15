@@ -6,7 +6,7 @@
  * @version `4.17.0` (39 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install seaweedfs.com`
+ * @install `pantry install seaweedfs.com`
  * @homepage https://seaweedfs.com
  * @buildDependencies `go.dev@=1.22.0` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const seaweedfscomPackage = {
   homepageUrl: 'https://seaweedfs.com' as const,
   githubUrl: 'https://github.com/seaweedfs/seaweedfs' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install seaweedfs.com' as const,
+  installCommand: 'pantry install seaweedfs.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +seaweedfs.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install seaweedfs.com' as const,
+  pantryInstallCommand: 'pantry install seaweedfs.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

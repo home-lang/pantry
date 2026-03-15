@@ -6,7 +6,7 @@
  * @version `1.3.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install yasm.tortall.net`
+ * @install `pantry install yasm.tortall.net`
  * @homepage https://yasm.tortall.net/
  *
  * @example
@@ -40,12 +40,12 @@ export const yasmtortallnetPackage = {
   homepageUrl: 'https://yasm.tortall.net/' as const,
   githubUrl: 'https://github.com/yasm/yasm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install yasm.tortall.net' as const,
+  installCommand: 'pantry install yasm.tortall.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +yasm.tortall.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install yasm.tortall.net' as const,
+  pantryInstallCommand: 'pantry install yasm.tortall.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

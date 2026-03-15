@@ -6,7 +6,7 @@
  * @version `1.11.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install catb.org/wumpus`
+ * @install `pantry install catb.org/wumpus`
  * @homepage http://www.catb.org/~esr/wumpus/
  *
  * @example
@@ -40,12 +40,12 @@ export const catborgwumpusPackage = {
   homepageUrl: 'http://www.catb.org/~esr/wumpus/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install catb.org/wumpus' as const,
+  installCommand: 'pantry install catb.org/wumpus' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +catb.org/wumpus -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install catb.org/wumpus' as const,
+  pantryInstallCommand: 'pantry install catb.org/wumpus' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

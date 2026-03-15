@@ -6,7 +6,7 @@
  * @version `1.37.0` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install thoughtworks.github.io/talisman`
+ * @install `pantry install thoughtworks.github.io/talisman`
  * @homepage https://thoughtworks.github.io/talisman/
  * @buildDependencies `go.dev@~1.24.2` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const thoughtworksgithubiotalismanPackage = {
   homepageUrl: 'https://thoughtworks.github.io/talisman/' as const,
   githubUrl: 'https://github.com/thoughtworks/talisman' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install thoughtworks.github.io/talisman' as const,
+  installCommand: 'pantry install thoughtworks.github.io/talisman' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +thoughtworks.github.io/talisman -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install thoughtworks.github.io/talisman' as const,
+  pantryInstallCommand: 'pantry install thoughtworks.github.io/talisman' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

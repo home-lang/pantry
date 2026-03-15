@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wilfred.me.uk/difftastic
+# Install with pantry
+pantry install wilfred.me.uk/difftastic
 ```
 
 ## Programs

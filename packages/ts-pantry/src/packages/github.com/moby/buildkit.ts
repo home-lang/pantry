@@ -6,7 +6,7 @@
  * @version `0.28.0` (39 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/moby/buildkit`
+ * @install `pantry install github.com/moby/buildkit`
  * @homepage https://github.com/moby/moby/issues/34227
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const buildkitPackage = {
   homepageUrl: 'https://github.com/moby/moby/issues/34227' as const,
   githubUrl: 'https://github.com/moby/buildkit' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/moby/buildkit' as const,
+  installCommand: 'pantry install github.com/moby/buildkit' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/moby/buildkit -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/moby/buildkit' as const,
+  pantryInstallCommand: 'pantry install github.com/moby/buildkit' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

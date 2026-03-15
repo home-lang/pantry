@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install qpdf.sourceforge.io
+# Install with pantry
+pantry install qpdf.sourceforge.io
 ```
 
 ## Programs

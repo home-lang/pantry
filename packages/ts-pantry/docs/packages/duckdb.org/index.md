@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install duckdb.org
+# Install with pantry
+pantry install duckdb.org
 ```
 
 ## Programs

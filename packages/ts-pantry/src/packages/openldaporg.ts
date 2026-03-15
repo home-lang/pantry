@@ -6,7 +6,7 @@
  * @version `2.6.13` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openldap.org`
+ * @install `pantry install openldap.org`
  * @homepage https://www.openldap.org/software/
  * @dependencies `openssl.org^1.1`, `linux:github.com/util-linux/util-linux` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/sed` - required only when building from source
@@ -42,12 +42,12 @@ export const openldaporgPackage = {
   homepageUrl: 'https://www.openldap.org/software/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openldap.org' as const,
+  installCommand: 'pantry install openldap.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openldap.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openldap.org' as const,
+  pantryInstallCommand: 'pantry install openldap.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

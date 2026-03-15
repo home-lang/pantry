@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install edgedb.com
+# Install with pantry
+pantry install edgedb.com
 ```
 
 ## Programs

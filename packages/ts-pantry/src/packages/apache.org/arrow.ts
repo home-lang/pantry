@@ -6,7 +6,7 @@
  * @version `23.0.1` (18 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/arrow`
+ * @install `pantry install apache.org/arrow`
  * @homepage https://arrow.apache.org/
  * @dependencies `github.com/aws/aws-sdk-cpp`, `github.com/google/brotli`, `sourceware.org/bzip2`, ... (+14 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `boost.org`, `cmake.org@3`, `python.org@<3.12`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const apacheorgarrowPackage = {
   homepageUrl: 'https://arrow.apache.org/' as const,
   githubUrl: 'https://github.com/apache/arrow' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/arrow' as const,
+  installCommand: 'pantry install apache.org/arrow' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/arrow -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/arrow' as const,
+  pantryInstallCommand: 'pantry install apache.org/arrow' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.0.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jetporch.com`
+ * @install `pantry install jetporch.com`
  * @buildDependencies `openssl.org`, `zlib.net` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const jetporchcomPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jetporch/jetporch' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jetporch.com' as const,
+  installCommand: 'pantry install jetporch.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jetporch.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jetporch.com' as const,
+  pantryInstallCommand: 'pantry install jetporch.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install atlasgo.io
+# Install with pantry
+pantry install atlasgo.io
 ```
 
 ## Programs

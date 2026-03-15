@@ -6,7 +6,7 @@
  * @version `4.7.5` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/plougher/squashfs-tools`
+ * @install `pantry install github.com/plougher/squashfs-tools`
  * @dependencies `lz4.org@1`, `oberhumer.com/lzo@2`, `tukaani.org/xz@5`, ... (+2 more)
  * @buildDependencies `curl.se`, `gnu.org/patch` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const squashfstoolsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/plougher/squashfs-tools' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/plougher/squashfs-tools' as const,
+  installCommand: 'pantry install github.com/plougher/squashfs-tools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/plougher/squashfs-tools -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/plougher/squashfs-tools' as const,
+  pantryInstallCommand: 'pantry install github.com/plougher/squashfs-tools' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

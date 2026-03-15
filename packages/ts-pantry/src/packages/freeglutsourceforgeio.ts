@@ -5,7 +5,7 @@
  * @version `3.8.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freeglut.sourceforge.io`
+ * @install `pantry install freeglut.sourceforge.io`
  * @homepage http://freeglut.sourceforge.net
  * @dependencies `x.org/x11`, `x.org/xi`, `x.org/xrandr`, ... (+4 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org` - required only when building from source
@@ -40,12 +40,12 @@ export const freeglutsourceforgeioPackage = {
   homepageUrl: 'http://freeglut.sourceforge.net' as const,
   githubUrl: 'https://github.com/FreeGLUTProject/freeglut' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freeglut.sourceforge.io' as const,
+  installCommand: 'pantry install freeglut.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freeglut.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freeglut.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install freeglut.sourceforge.io' as const,
   programs: [] as const,
   companions: [] as const,
   /**

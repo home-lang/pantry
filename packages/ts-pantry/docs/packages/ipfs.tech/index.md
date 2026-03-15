@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ipfs.tech
+# Install with pantry
+pantry install ipfs.tech
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.6.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install radicle.org`
+ * @install `pantry install radicle.org`
  * @homepage https://app.radicle.network/alt-clients.radicle.eth/radicle-cli
  * @dependencies `openssl.org^1.1.1`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const radicleorgPackage = {
   homepageUrl: 'https://app.radicle.network/alt-clients.radicle.eth/radicle-cli' as const,
   githubUrl: 'https://github.com/radicle-dev/radicle-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install radicle.org' as const,
+  installCommand: 'pantry install radicle.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +radicle.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install radicle.org' as const,
+  pantryInstallCommand: 'pantry install radicle.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `1.27.2` (41 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mupdf.com`
+ * @install `pantry install mupdf.com`
  * @homepage https://mupdf.com/
  * @dependencies `zlib.net^1`, `openssl.org^1.1`, `info-zip.org/unzip^6`, ... (+17 more) (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const mupdfcomPackage = {
   homepageUrl: 'https://mupdf.com/' as const,
   githubUrl: 'https://github.com/ArtifexSoftware/mupdf' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mupdf.com' as const,
+  installCommand: 'pantry install mupdf.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mupdf.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mupdf.com' as const,
+  pantryInstallCommand: 'pantry install mupdf.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

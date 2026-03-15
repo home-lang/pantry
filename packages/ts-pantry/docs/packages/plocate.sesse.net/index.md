@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install plocate.sesse.net
+# Install with pantry
+pantry install plocate.sesse.net
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `2.3.39` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceware.org/dm`
+ * @install `pantry install sourceware.org/dm`
  * @dependencies `pagure.io/libaio^0.3`
  *
  * @example
@@ -37,12 +37,12 @@ export const sourcewareorgdmPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceware.org/dm' as const,
+  installCommand: 'pantry install sourceware.org/dm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceware.org/dm -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceware.org/dm' as const,
+  pantryInstallCommand: 'pantry install sourceware.org/dm' as const,
   programs: [] as const,
   companions: [] as const,
   /**

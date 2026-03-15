@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rpm.org/popt
+# Install with pantry
+pantry install rpm.org/popt
 ```
 
 ## Programs

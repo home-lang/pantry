@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kubecm.cloud
+# Install with pantry
+pantry install kubecm.cloud
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `2.2.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install geoff.greer.fm/ag`
+ * @install `pantry install geoff.greer.fm/ag`
  * @homepage http://geoff.greer.fm/ag/
  * @dependencies `pcre.org^8`, `tukaani.org/xz^5.4.5`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake` - required only when building from source
@@ -42,12 +42,12 @@ export const geoffgreerfmagPackage = {
   homepageUrl: 'http://geoff.greer.fm/ag/' as const,
   githubUrl: 'https://github.com/ggreer/the_silver_searcher' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install geoff.greer.fm/ag' as const,
+  installCommand: 'pantry install geoff.greer.fm/ag' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +geoff.greer.fm/ag -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install geoff.greer.fm/ag' as const,
+  pantryInstallCommand: 'pantry install geoff.greer.fm/ag' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

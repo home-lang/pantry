@@ -35,8 +35,8 @@ export interface PkgxPackage {
   homepageUrl?: string
   githubUrl?: string
   /**
-   * Command to install this package using launchpad (default install command)
-   * @example launchpad install domain
+   * Command to install this package using pantry (default install command)
+   * @example pantry install domain
    */
   installCommand: string
   /**
@@ -45,10 +45,10 @@ export interface PkgxPackage {
    */
   pkgxInstallCommand: string
   /**
-   * Command to install this package using launchpad
-   * @example launchpad install domain
+   * Command to install this package using pantry
+   * @example pantry install domain
    */
-  launchpadInstallCommand: string
+  pantryInstallCommand: string
   programs: string[]
   companions: string[]
   /**

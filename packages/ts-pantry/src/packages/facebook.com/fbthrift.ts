@@ -6,7 +6,7 @@
  * @version `2026.3.9.0` (114 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install facebook.com/fbthrift`
+ * @install `pantry install facebook.com/fbthrift`
  * @dependencies `github.com/facebookincubator/fizz`, `facebook.com/folly`, `facebook.com/wangle`, ... (+10 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `facebook.com/mvfst`, `gnu.org/bison`, ... (+4 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const facebookcomfbthriftPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebook/fbthrift' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install facebook.com/fbthrift' as const,
+  installCommand: 'pantry install facebook.com/fbthrift' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/fbthrift -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install facebook.com/fbthrift' as const,
+  pantryInstallCommand: 'pantry install facebook.com/fbthrift' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

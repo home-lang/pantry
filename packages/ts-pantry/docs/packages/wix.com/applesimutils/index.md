@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wix.com/applesimutils
+# Install with pantry
+pantry install wix.com/applesimutils
 ```
 
 ## Programs

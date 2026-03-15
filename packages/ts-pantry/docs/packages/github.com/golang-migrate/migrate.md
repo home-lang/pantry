@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/golang-migrate/migrate
+# Install with pantry
+pantry install github.com/golang-migrate/migrate
 ```
 
 ## Programs

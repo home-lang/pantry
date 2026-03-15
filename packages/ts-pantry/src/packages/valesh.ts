@@ -6,7 +6,7 @@
  * @version `3.14.0` (48 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vale.sh`
+ * @install `pantry install vale.sh`
  * @homepage https://vale.sh/
  * @buildDependencies `go.dev@~1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const valeshPackage = {
   homepageUrl: 'https://vale.sh/' as const,
   githubUrl: 'https://github.com/errata-ai/vale' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vale.sh' as const,
+  installCommand: 'pantry install vale.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vale.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vale.sh' as const,
+  pantryInstallCommand: 'pantry install vale.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

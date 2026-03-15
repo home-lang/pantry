@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libsdl.org/SDL_image
+# Install with pantry
+pantry install libsdl.org/SDL_image
 ```
 
 ## Programs

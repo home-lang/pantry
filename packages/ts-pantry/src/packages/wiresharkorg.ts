@@ -6,7 +6,7 @@
  * @version `4.6.4` (45 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wireshark.org`
+ * @install `pantry install wireshark.org`
  * @homepage https://www.wireshark.org
  * @dependencies `c-ares.org^1.23`, `gnome.org/glib^2.78.3`, `gnutls.org^3.8.2`, ... (+10 more)
  * @buildDependencies `cmake.org`, `gnu.org/bison`, `github.com/westes/flex`, ... (+2 more) - required only when building from source
@@ -42,12 +42,12 @@ export const wiresharkorgPackage = {
   homepageUrl: 'https://www.wireshark.org' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wireshark.org' as const,
+  installCommand: 'pantry install wireshark.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wireshark.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wireshark.org' as const,
+  pantryInstallCommand: 'pantry install wireshark.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

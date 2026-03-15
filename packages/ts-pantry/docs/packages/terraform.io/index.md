@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install terraform.io
+# Install with pantry
+pantry install terraform.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install asciinema.org
+# Install with pantry
+pantry install asciinema.org
 ```
 
 ## Programs

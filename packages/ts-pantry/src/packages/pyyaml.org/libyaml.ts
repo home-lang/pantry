@@ -5,7 +5,7 @@
  * @version `0.2.5` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pyyaml.org/libyaml`
+ * @install `pantry install pyyaml.org/libyaml`
  * @homepage http://pyyaml.org/wiki/LibYAML
  * @buildDependencies `gnu.org/libtool`, `gnu.org/autoconf` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const pyyamlorglibyamlPackage = {
   homepageUrl: 'http://pyyaml.org/wiki/LibYAML' as const,
   githubUrl: 'https://github.com/yaml/libyaml' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pyyaml.org/libyaml' as const,
+  installCommand: 'pantry install pyyaml.org/libyaml' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pyyaml.org/libyaml -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pyyaml.org/libyaml' as const,
+  pantryInstallCommand: 'pantry install pyyaml.org/libyaml' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

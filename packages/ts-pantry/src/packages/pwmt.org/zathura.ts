@@ -6,7 +6,7 @@
  * @version `2026.2.9` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pwmt.org/zathura`
+ * @install `pantry install pwmt.org/zathura`
  * @homepage https://pwmt.org/projects/zathura
  * @dependencies `gnome.org/glib^2.72`, `gnome.org/adwaita-icon-theme`, `gnu.org/gettext`, ... (+8 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com@>=0.61`, `linux:nixos.org/patchelf` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const pwmtorgzathuraPackage = {
   homepageUrl: 'https://pwmt.org/projects/zathura' as const,
   githubUrl: 'https://github.com/pwmt/zathura' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pwmt.org/zathura' as const,
+  installCommand: 'pantry install pwmt.org/zathura' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pwmt.org/zathura -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pwmt.org/zathura' as const,
+  pantryInstallCommand: 'pantry install pwmt.org/zathura' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

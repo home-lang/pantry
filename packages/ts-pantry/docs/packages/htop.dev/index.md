@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install htop.dev
+# Install with pantry
+pantry install htop.dev
 ```
 
 ## Programs

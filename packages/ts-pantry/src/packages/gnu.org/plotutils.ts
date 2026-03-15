@@ -6,7 +6,7 @@
  * @version `2.6.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/plotutils`
+ * @install `pantry install gnu.org/plotutils`
  * @homepage https://www.gnu.org/software/plotutils/
  * @dependencies `libpng.org^1.6`, `libraw.org^0.21`
  *
@@ -41,12 +41,12 @@ export const gnuorgplotutilsPackage = {
   homepageUrl: 'https://www.gnu.org/software/plotutils/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/plotutils' as const,
+  installCommand: 'pantry install gnu.org/plotutils' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/plotutils -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/plotutils' as const,
+  pantryInstallCommand: 'pantry install gnu.org/plotutils' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fury.co
+# Install with pantry
+pantry install fury.co
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pcre.org/v2
+# Install with pantry
+pantry install pcre.org/v2
 ```
 
 ## Programs

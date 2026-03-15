@@ -6,7 +6,7 @@
  * @version `3.1.3` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libjpeg-turbo.org`
+ * @install `pantry install libjpeg-turbo.org`
  * @homepage https://libjpeg-turbo.org
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const libjpegturboorgPackage = {
   homepageUrl: 'https://libjpeg-turbo.org' as const,
   githubUrl: 'https://github.com/libjpeg-turbo/libjpeg-turbo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libjpeg-turbo.org' as const,
+  installCommand: 'pantry install libjpeg-turbo.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libjpeg-turbo.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libjpeg-turbo.org' as const,
+  pantryInstallCommand: 'pantry install libjpeg-turbo.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

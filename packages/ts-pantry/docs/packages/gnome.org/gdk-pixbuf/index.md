@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/gdk-pixbuf
+# Install with pantry
+pantry install gnome.org/gdk-pixbuf
 ```
 
 ## Programs

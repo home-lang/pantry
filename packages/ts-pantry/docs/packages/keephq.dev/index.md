@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install keephq.dev
+# Install with pantry
+pantry install keephq.dev
 ```
 
 ## Programs

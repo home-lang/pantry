@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sqlfluff.com
+# Install with pantry
+pantry install sqlfluff.com
 ```
 
 ## Programs

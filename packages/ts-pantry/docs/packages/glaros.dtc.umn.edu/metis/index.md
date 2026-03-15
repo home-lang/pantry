@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install glaros.dtc.umn.edu/metis
+# Install with pantry
+pantry install glaros.dtc.umn.edu/metis
 ```
 
 ## Programs

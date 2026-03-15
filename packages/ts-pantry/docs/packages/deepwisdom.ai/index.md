@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install deepwisdom.ai
+# Install with pantry
+pantry install deepwisdom.ai
 ```
 
 ## Programs

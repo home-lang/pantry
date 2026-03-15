@@ -6,7 +6,7 @@
  * @version `3.8.4` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/cowsay-org/cowsay`
+ * @install `pantry install github.com/cowsay-org/cowsay`
  * @homepage https://cowsay.diamonds
  * @dependencies `perl.org^5`
  * @buildDependencies `cpanmin.us` - required only when building from source
@@ -43,12 +43,12 @@ export const cowsayPackage = {
   homepageUrl: 'https://cowsay.diamonds' as const,
   githubUrl: 'https://github.com/cowsay-org/cowsay' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/cowsay-org/cowsay' as const,
+  installCommand: 'pantry install github.com/cowsay-org/cowsay' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/cowsay-org/cowsay -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/cowsay-org/cowsay' as const,
+  pantryInstallCommand: 'pantry install github.com/cowsay-org/cowsay' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

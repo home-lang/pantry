@@ -6,7 +6,7 @@
  * @version `0.114.0` (69 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openai.com/codex`
+ * @install `pantry install openai.com/codex`
  * @dependencies `linux:kernel.org/libcap^1` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -39,12 +39,12 @@ export const openaicomcodexPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openai.com/codex' as const,
+  installCommand: 'pantry install openai.com/codex' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openai.com/codex -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openai.com/codex' as const,
+  pantryInstallCommand: 'pantry install openai.com/codex' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

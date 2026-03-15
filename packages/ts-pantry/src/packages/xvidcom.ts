@@ -5,7 +5,7 @@
  * @version `1.3.7` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xvid.com`
+ * @install `pantry install xvid.com`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const xvidcomPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xvid.com' as const,
+  installCommand: 'pantry install xvid.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xvid.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xvid.com' as const,
+  pantryInstallCommand: 'pantry install xvid.com' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

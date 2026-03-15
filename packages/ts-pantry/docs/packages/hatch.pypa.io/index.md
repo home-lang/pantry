@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hatch.pypa.io
+# Install with pantry
+pantry install hatch.pypa.io
 ```
 
 ## Programs

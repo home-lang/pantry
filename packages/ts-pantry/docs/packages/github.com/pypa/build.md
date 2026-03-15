@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/pypa/build
+# Install with pantry
+pantry install github.com/pypa/build
 ```
 
 ## Programs

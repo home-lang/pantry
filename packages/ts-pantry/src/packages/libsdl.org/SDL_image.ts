@@ -5,7 +5,7 @@
  * @version `3.4.0` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libsdl.org/SDL_image`
+ * @install `pantry install libsdl.org/SDL_image`
  * @dependencies `libjpeg-turbo.org^2`, `github.com/AOMediaCodec/libavif^0.11`, `libpng.org^1.6`, ... (+3 more)
  * @buildDependencies `gnu.org/gcc/libstdcxx` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libsdlorgsdl_imagePackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/libsdl-org/SDL_image' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libsdl.org/SDL_image' as const,
+  installCommand: 'pantry install libsdl.org/SDL_image' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsdl.org/SDL_image -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libsdl.org/SDL_image' as const,
+  pantryInstallCommand: 'pantry install libsdl.org/SDL_image' as const,
   programs: [] as const,
   companions: [] as const,
   /**

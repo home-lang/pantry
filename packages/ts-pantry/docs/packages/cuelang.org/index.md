@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cuelang.org
+# Install with pantry
+pantry install cuelang.org
 ```
 
 ## Programs

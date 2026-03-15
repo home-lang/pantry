@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/alexellis/k3sup
+# Install with pantry
+pantry install github.com/alexellis/k3sup
 ```
 
 ## Programs

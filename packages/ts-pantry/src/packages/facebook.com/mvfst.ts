@@ -5,7 +5,7 @@
  * @version `2026.3.9.0` (115 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install facebook.com/mvfst`
+ * @install `pantry install facebook.com/mvfst`
  * @dependencies `boost.org`, `github.com/facebookincubator/fizz`, `fmt.dev^12`, ... (+6 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `linux:gnu.org/gcc@14`, `linux:gnu.org/binutils`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const facebookcommvfstPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/facebook/mvfst' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install facebook.com/mvfst' as const,
+  installCommand: 'pantry install facebook.com/mvfst' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/mvfst -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install facebook.com/mvfst' as const,
+  pantryInstallCommand: 'pantry install facebook.com/mvfst' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install prql-lang.org
+# Install with pantry
+pantry install prql-lang.org
 ```
 
 ## Programs

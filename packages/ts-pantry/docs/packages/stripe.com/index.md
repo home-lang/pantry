@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install stripe.com
+# Install with pantry
+pantry install stripe.com
 ```
 
 ## Programs

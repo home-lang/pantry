@@ -6,7 +6,7 @@
  * @version `2.84.0` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install microsoft.com/azure-cli`
+ * @install `pantry install microsoft.com/azure-cli`
  * @homepage https://docs.microsoft.com/cli/azure/overview
  * @dependencies `openssl.org@1.1`, `python.org>=3.10<3.12`, `sourceware.org/libffi`
  *
@@ -41,12 +41,12 @@ export const microsoftcomazurecliPackage = {
   homepageUrl: 'https://docs.microsoft.com/cli/azure/overview' as const,
   githubUrl: 'https://github.com/Azure/azure-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install microsoft.com/azure-cli' as const,
+  installCommand: 'pantry install microsoft.com/azure-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +microsoft.com/azure-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install microsoft.com/azure-cli' as const,
+  pantryInstallCommand: 'pantry install microsoft.com/azure-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

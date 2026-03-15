@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install curl
+# Install with pantry
+pantry install curl
 ```
 
 ## Programs

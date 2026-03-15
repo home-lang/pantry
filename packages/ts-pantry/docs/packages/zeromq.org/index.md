@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install zeromq.org
+# Install with pantry
+pantry install zeromq.org
 ```
 
 ## Programs

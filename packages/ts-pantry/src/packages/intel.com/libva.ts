@@ -5,7 +5,7 @@
  * @version `2.23.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install intel.com/libva`
+ * @install `pantry install intel.com/libva`
  * @homepage http://intel.github.io/libva/
  * @dependencies `dri.freedesktop.org`, `x.org/x11`, `x.org/exts`, ... (+2 more)
  * @buildDependencies `mesonbuild.com` - required only when building from source
@@ -40,12 +40,12 @@ export const intelcomlibvaPackage = {
   homepageUrl: 'http://intel.github.io/libva/' as const,
   githubUrl: 'https://github.com/intel/libva' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install intel.com/libva' as const,
+  installCommand: 'pantry install intel.com/libva' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +intel.com/libva -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install intel.com/libva' as const,
+  pantryInstallCommand: 'pantry install intel.com/libva' as const,
   programs: [] as const,
   companions: [] as const,
   /**

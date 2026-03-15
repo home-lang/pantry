@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install just.systems
+# Install with pantry
+pantry install just.systems
 ```
 
 ## Programs

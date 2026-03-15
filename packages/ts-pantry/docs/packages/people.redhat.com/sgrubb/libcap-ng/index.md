@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install people.redhat.com/sgrubb/libcap-ng
+# Install with pantry
+pantry install people.redhat.com/sgrubb/libcap-ng
 ```
 
 ## Programs

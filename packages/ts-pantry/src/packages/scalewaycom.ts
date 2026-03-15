@@ -6,7 +6,7 @@
  * @version `2.53.0` (22 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install scaleway.com`
+ * @install `pantry install scaleway.com`
  * @homepage https://www.scaleway.com/en/cli/
  * @buildDependencies `go.dev@~1.24.6` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const scalewaycomPackage = {
   homepageUrl: 'https://www.scaleway.com/en/cli/' as const,
   githubUrl: 'https://github.com/scaleway/scaleway-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install scaleway.com' as const,
+  installCommand: 'pantry install scaleway.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +scaleway.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install scaleway.com' as const,
+  pantryInstallCommand: 'pantry install scaleway.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

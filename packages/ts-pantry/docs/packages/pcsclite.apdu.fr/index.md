@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pcsclite.apdu.fr
+# Install with pantry
+pantry install pcsclite.apdu.fr
 ```
 
 ## Programs

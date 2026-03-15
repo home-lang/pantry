@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install matio.sourceforge.io
+# Install with pantry
+pantry install matio.sourceforge.io
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.17.88` (52 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gqlgen.com`
+ * @install `pantry install gqlgen.com`
  * @homepage https://gqlgen.com
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gqlgencomPackage = {
   homepageUrl: 'https://gqlgen.com' as const,
   githubUrl: 'https://github.com/99designs/gqlgen' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gqlgen.com' as const,
+  installCommand: 'pantry install gqlgen.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gqlgen.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gqlgen.com' as const,
+  pantryInstallCommand: 'pantry install gqlgen.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

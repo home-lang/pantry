@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install terratag.io
+# Install with pantry
+pantry install terratag.io
 ```
 
 ## Programs

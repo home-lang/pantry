@@ -6,7 +6,7 @@
  * @version `0.16.3` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mergiraf.org`
+ * @install `pantry install mergiraf.org`
  * @homepage https://mergiraf.org
  *
  * @example
@@ -40,12 +40,12 @@ export const mergiraforgPackage = {
   homepageUrl: 'https://mergiraf.org' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mergiraf.org' as const,
+  installCommand: 'pantry install mergiraf.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mergiraf.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mergiraf.org' as const,
+  pantryInstallCommand: 'pantry install mergiraf.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

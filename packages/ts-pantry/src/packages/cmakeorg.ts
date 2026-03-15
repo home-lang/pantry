@@ -6,7 +6,7 @@
  * @version `4.2.3` (78 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cmake.org`
+ * @install `pantry install cmake.org`
  * @name `cmake`
  * @homepage https://www.cmake.org/
  * @dependencies `curl.se>=5<8.13`, `zlib.net@1`, `sourceware.org/bzip2@1`
@@ -46,12 +46,12 @@ export const cmakePackage = {
   homepageUrl: 'https://www.cmake.org/' as const,
   githubUrl: 'https://github.com/Kitware/CMake' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cmake.org' as const,
+  installCommand: 'pantry install cmake.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cmake.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cmake.org' as const,
+  pantryInstallCommand: 'pantry install cmake.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

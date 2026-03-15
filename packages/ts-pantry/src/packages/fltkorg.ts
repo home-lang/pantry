@@ -6,7 +6,7 @@
  * @version `1.4.4` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fltk.org`
+ * @install `pantry install fltk.org`
  * @homepage https://www.fltk.org/
  * @dependencies `libjpeg-turbo.org^2`, `libpng.org^1`, `linux:x.org/xft^2`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const fltkorgPackage = {
   homepageUrl: 'https://www.fltk.org/' as const,
   githubUrl: 'https://github.com/fltk/fltk' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fltk.org' as const,
+  installCommand: 'pantry install fltk.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fltk.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fltk.org' as const,
+  pantryInstallCommand: 'pantry install fltk.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

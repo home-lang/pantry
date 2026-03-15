@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install litecli.com
+# Install with pantry
+pantry install litecli.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `3.8.2` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install scala-lang.org`
+ * @install `pantry install scala-lang.org`
  * @aliases `scala`
  * @homepage https://dotty.epfl.ch
  * @dependencies `openjdk.org`
@@ -47,12 +47,12 @@ export const scalaPackage = {
   homepageUrl: 'https://dotty.epfl.ch' as const,
   githubUrl: 'https://github.com/scala/scala3' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install scala-lang.org' as const,
+  installCommand: 'pantry install scala-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +scala-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install scala-lang.org' as const,
+  pantryInstallCommand: 'pantry install scala-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

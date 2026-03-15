@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libusb.info/compat
+# Install with pantry
+pantry install libusb.info/compat
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `2.7.1` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sftpgo.com`
+ * @install `pantry install sftpgo.com`
  * @homepage https://sftpgo.com
  * @buildDependencies `go.dev@=1.22.2`, `gnu.org/coreutils` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const sftpgocomPackage = {
   homepageUrl: 'https://sftpgo.com' as const,
   githubUrl: 'https://github.com/drakkan/sftpgo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sftpgo.com' as const,
+  installCommand: 'pantry install sftpgo.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sftpgo.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sftpgo.com' as const,
+  pantryInstallCommand: 'pantry install sftpgo.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

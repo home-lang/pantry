@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install golangci-lint.run
+# Install with pantry
+pantry install golangci-lint.run
 ```
 
 ## Programs

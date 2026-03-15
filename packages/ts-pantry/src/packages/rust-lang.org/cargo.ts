@@ -6,7 +6,7 @@
  * @version `0.95.0` (33 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rust-lang.org/cargo`
+ * @install `pantry install rust-lang.org/cargo`
  * @homepage https://doc.rust-lang.org/cargo
  * @dependencies `zlib.net^1`, `libgit2.org~1.7 # links to libgit2.so.1.7`, `curl.se/ca-certs`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/tar`, `tukaani.org/xz` - required only when building from source
@@ -42,12 +42,12 @@ export const rustlangorgcargoPackage = {
   homepageUrl: 'https://doc.rust-lang.org/cargo' as const,
   githubUrl: 'https://github.com/rust-lang/cargo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rust-lang.org/cargo' as const,
+  installCommand: 'pantry install rust-lang.org/cargo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rust-lang.org/cargo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rust-lang.org/cargo' as const,
+  pantryInstallCommand: 'pantry install rust-lang.org/cargo' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

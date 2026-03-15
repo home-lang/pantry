@@ -5,7 +5,7 @@
  * @version `1.14.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sympy.org`
+ * @install `pantry install sympy.org`
  * @homepage https://sympy.org/
  * @dependencies `python.org>=3.11`
  *
@@ -39,12 +39,12 @@ export const sympyorgPackage = {
   homepageUrl: 'https://sympy.org/' as const,
   githubUrl: 'https://github.com/sympy/sympy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sympy.org' as const,
+  installCommand: 'pantry install sympy.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sympy.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sympy.org' as const,
+  pantryInstallCommand: 'pantry install sympy.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

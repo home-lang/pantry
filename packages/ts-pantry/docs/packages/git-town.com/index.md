@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git-town.com
+# Install with pantry
+pantry install git-town.com
 ```
 
 ## Programs

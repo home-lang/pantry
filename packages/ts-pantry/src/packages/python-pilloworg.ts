@@ -5,7 +5,7 @@
  * @version `12.1.1` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install python-pillow.org`
+ * @install `pantry install python-pillow.org`
  * @homepage https://python-pillow.github.io
  * @dependencies `libjpeg-turbo.org^2`, `pngquant.org/lib^4`, `simplesystems.org/libtiff^4`, ... (+7 more)
  * @buildDependencies `pypa.io/setuptools` - required only when building from source
@@ -40,12 +40,12 @@ export const pythonpilloworgPackage = {
   homepageUrl: 'https://python-pillow.github.io' as const,
   githubUrl: 'https://github.com/python-pillow/Pillow' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install python-pillow.org' as const,
+  installCommand: 'pantry install python-pillow.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +python-pillow.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install python-pillow.org' as const,
+  pantryInstallCommand: 'pantry install python-pillow.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

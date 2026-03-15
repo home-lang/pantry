@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/igorshubovych/markdownlint-cli
+# Install with pantry
+pantry install github.com/igorshubovych/markdownlint-cli
 ```
 
 ## Programs

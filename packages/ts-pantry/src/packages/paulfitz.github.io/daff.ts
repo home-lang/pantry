@@ -6,7 +6,7 @@
  * @version `1.4.2` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install paulfitz.github.io/daff`
+ * @install `pantry install paulfitz.github.io/daff`
  * @homepage https://paulfitz.github.io/daff
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.7<3.12`, `pip.pypa.io` - required only when building from source
@@ -42,12 +42,12 @@ export const paulfitzgithubiodaffPackage = {
   homepageUrl: 'https://paulfitz.github.io/daff' as const,
   githubUrl: 'https://github.com/paulfitz/daff' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install paulfitz.github.io/daff' as const,
+  installCommand: 'pantry install paulfitz.github.io/daff' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +paulfitz.github.io/daff -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install paulfitz.github.io/daff' as const,
+  pantryInstallCommand: 'pantry install paulfitz.github.io/daff' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

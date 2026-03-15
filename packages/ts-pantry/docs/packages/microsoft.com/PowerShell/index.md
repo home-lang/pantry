@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install microsoft.com/PowerShell
+# Install with pantry
+pantry install microsoft.com/PowerShell
 ```
 
 ## Programs

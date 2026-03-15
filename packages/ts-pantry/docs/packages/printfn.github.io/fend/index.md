@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install printfn.github.io/fend
+# Install with pantry
+pantry install printfn.github.io/fend
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kotlin
+# Install with pantry
+pantry install kotlin
 ```
 
 ## Programs

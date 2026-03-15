@@ -5,7 +5,7 @@
  * @version `0.11.7` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/libbsd`
+ * @install `pantry install freedesktop.org/libbsd`
  * @homepage https://libbsd.freedesktop.org/
  * @buildDependencies `hadrons.org/libmd` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const freedesktoporglibbsdPackage = {
   homepageUrl: 'https://libbsd.freedesktop.org/' as const,
   githubUrl: 'https://github.com/guillemj/libbsd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/libbsd' as const,
+  installCommand: 'pantry install freedesktop.org/libbsd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/libbsd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/libbsd' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/libbsd' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

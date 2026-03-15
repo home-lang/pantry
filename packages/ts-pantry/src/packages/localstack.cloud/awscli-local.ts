@@ -6,7 +6,7 @@
  * @version `2023.12.28` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install localstack.cloud/awscli-local`
+ * @install `pantry install localstack.cloud/awscli-local`
  * @homepage https://www.localstack.cloud/
  * @dependencies `pkgx.sh>=1`, `aws.amazon.com/cli^2`
  * @buildDependencies `python.org@^3.11` - required only when building from source
@@ -42,12 +42,12 @@ export const localstackcloudawsclilocalPackage = {
   homepageUrl: 'https://www.localstack.cloud/' as const,
   githubUrl: 'https://github.com/localstack/awscli-local' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install localstack.cloud/awscli-local' as const,
+  installCommand: 'pantry install localstack.cloud/awscli-local' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +localstack.cloud/awscli-local -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install localstack.cloud/awscli-local' as const,
+  pantryInstallCommand: 'pantry install localstack.cloud/awscli-local' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

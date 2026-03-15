@@ -6,7 +6,7 @@
  * @version `9.11.0` (53 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ipython.org`
+ * @install `pantry install ipython.org`
  * @homepage https://ipython.org/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.7<3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const ipythonorgPackage = {
   homepageUrl: 'https://ipython.org/' as const,
   githubUrl: 'https://github.com/ipython/ipython' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ipython.org' as const,
+  installCommand: 'pantry install ipython.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ipython.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ipython.org' as const,
+  pantryInstallCommand: 'pantry install ipython.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

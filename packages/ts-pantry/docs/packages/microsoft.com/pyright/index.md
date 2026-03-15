@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install microsoft.com/pyright
+# Install with pantry
+pantry install microsoft.com/pyright
 ```
 
 ## Programs

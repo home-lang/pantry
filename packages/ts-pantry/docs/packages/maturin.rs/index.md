@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install maturin.rs
+# Install with pantry
+pantry install maturin.rs
 ```
 
 ## Programs

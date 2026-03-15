@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install liblqr.wikidot.com
+# Install with pantry
+pantry install liblqr.wikidot.com
 ```
 
 ## Programs

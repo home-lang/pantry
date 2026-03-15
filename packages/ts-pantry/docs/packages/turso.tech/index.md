@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install turso.tech
+# Install with pantry
+pantry install turso.tech
 ```
 
 ## Programs

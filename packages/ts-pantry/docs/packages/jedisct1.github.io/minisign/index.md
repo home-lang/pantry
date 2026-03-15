@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jedisct1.github.io/minisign
+# Install with pantry
+pantry install jedisct1.github.io/minisign
 ```
 
 ## Programs

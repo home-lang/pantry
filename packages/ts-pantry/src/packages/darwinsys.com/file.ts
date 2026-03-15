@@ -6,7 +6,7 @@
  * @version `5.47.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install darwinsys.com/file`
+ * @install `pantry install darwinsys.com/file`
  * @homepage https://darwinsys.com/file/
  * @dependencies `zlib.net^1 #FIXME this is actually an optional dep`
  * @buildDependencies `gnu.org/patch` - required only when building from source
@@ -42,12 +42,12 @@ export const darwinsyscomfilePackage = {
   homepageUrl: 'https://darwinsys.com/file/' as const,
   githubUrl: 'https://github.com/file/file' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install darwinsys.com/file' as const,
+  installCommand: 'pantry install darwinsys.com/file' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +darwinsys.com/file -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install darwinsys.com/file' as const,
+  pantryInstallCommand: 'pantry install darwinsys.com/file' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

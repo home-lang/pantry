@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/safe-waters/docker-lock
+# Install with pantry
+pantry install github.com/safe-waters/docker-lock
 ```
 
 ## Programs

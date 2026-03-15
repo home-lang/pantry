@@ -5,7 +5,7 @@
  * @version `3.4.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/double-conversion`
+ * @install `pantry install google.com/double-conversion`
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const googlecomdoubleconversionPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/google/double-conversion' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/double-conversion' as const,
+  installCommand: 'pantry install google.com/double-conversion' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/double-conversion -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/double-conversion' as const,
+  pantryInstallCommand: 'pantry install google.com/double-conversion' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install traefik.io
+# Install with pantry
+pantry install traefik.io
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `4.2.2` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/cesnet/libyang`
+ * @install `pantry install github.com/cesnet/libyang`
  * @dependencies `pcre.org/v2>=10.21`
  * @buildDependencies `graphviz.org`, `doxygen.nl`, `cmake.org@^3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const libyangPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/CESNET/libyang' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/cesnet/libyang' as const,
+  installCommand: 'pantry install github.com/cesnet/libyang' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/cesnet/libyang -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/cesnet/libyang' as const,
+  pantryInstallCommand: 'pantry install github.com/cesnet/libyang' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

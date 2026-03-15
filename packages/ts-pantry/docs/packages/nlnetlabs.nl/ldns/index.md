@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nlnetlabs.nl/ldns
+# Install with pantry
+pantry install nlnetlabs.nl/ldns
 ```
 
 ## Programs

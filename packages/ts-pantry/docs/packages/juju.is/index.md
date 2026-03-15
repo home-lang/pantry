@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install juju.is
+# Install with pantry
+pantry install juju.is
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openldap.org
+# Install with pantry
+pantry install openldap.org
 ```
 
 ## Programs

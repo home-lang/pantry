@@ -6,7 +6,7 @@
  * @version `2.9.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install invisible-island.net/lynx`
+ * @install `pantry install invisible-island.net/lynx`
  * @homepage https://invisible-island.net/lynx/
  * @dependencies `openssl.org^3`, `invisible-island.net/ncurses^6`
  *
@@ -41,12 +41,12 @@ export const invisibleislandnetlynxPackage = {
   homepageUrl: 'https://invisible-island.net/lynx/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install invisible-island.net/lynx' as const,
+  installCommand: 'pantry install invisible-island.net/lynx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +invisible-island.net/lynx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install invisible-island.net/lynx' as const,
+  pantryInstallCommand: 'pantry install invisible-island.net/lynx' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

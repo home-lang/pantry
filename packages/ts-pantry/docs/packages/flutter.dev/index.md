@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install flutter.dev
+# Install with pantry
+pantry install flutter.dev
 ```
 
 ## Programs

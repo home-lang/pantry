@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install zlib.net/minizip
+# Install with pantry
+pantry install zlib.net/minizip
 ```
 
 ## Programs

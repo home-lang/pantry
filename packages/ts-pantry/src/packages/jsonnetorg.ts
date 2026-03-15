@@ -6,7 +6,7 @@
  * @version `0.21.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jsonnet.org`
+ * @install `pantry install jsonnet.org`
  * @homepage http://jsonnet.org
  *
  * @example
@@ -40,12 +40,12 @@ export const jsonnetorgPackage = {
   homepageUrl: 'http://jsonnet.org' as const,
   githubUrl: 'https://github.com/google/jsonnet' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jsonnet.org' as const,
+  installCommand: 'pantry install jsonnet.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jsonnet.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jsonnet.org' as const,
+  pantryInstallCommand: 'pantry install jsonnet.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

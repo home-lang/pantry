@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fltk.org
+# Install with pantry
+pantry install fltk.org
 ```
 
 ## Programs

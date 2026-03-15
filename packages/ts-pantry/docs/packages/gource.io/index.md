@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gource.io
+# Install with pantry
+pantry install gource.io
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.13.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/tiny`
+ * @install `pantry install crates.io/tiny`
  * @dependencies `openssl.org^1.1`
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiotinyPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/osa1/tiny' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/tiny' as const,
+  installCommand: 'pantry install crates.io/tiny' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/tiny -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/tiny' as const,
+  pantryInstallCommand: 'pantry install crates.io/tiny' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

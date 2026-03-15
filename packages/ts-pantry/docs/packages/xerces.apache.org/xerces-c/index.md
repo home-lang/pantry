@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xerces.apache.org/xerces-c
+# Install with pantry
+pantry install xerces.apache.org/xerces-c
 ```
 
 ## Programs

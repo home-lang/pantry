@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/libxfont2
+# Install with pantry
+pantry install x.org/libxfont2
 ```
 
 ## Programs

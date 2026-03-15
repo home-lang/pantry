@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/awslabs/dynein
+# Install with pantry
+pantry install github.com/awslabs/dynein
 ```
 
 ## Programs

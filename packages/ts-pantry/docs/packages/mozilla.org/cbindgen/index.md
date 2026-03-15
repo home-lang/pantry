@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mozilla.org/cbindgen
+# Install with pantry
+pantry install mozilla.org/cbindgen
 ```
 
 ## Programs

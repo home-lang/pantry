@@ -12,7 +12,7 @@ Perl lib for reading and writing EXIF metadata
 
 **Programs**: exiftool
 
-**Install**: `launchpad install exiftool.org`
+**Install**: `pantry install exiftool.org`
 
 ---
 
@@ -22,7 +22,7 @@ Play, record, convert, and stream audio and video
 
 **Programs**: ffmpeg, ffplay, ffprobe
 
-**Install**: `launchpad install ffmpeg.org`
+**Install**: `pantry install ffmpeg.org`
 
 ---
 
@@ -32,7 +32,7 @@ ImageMagick is a powerful, open-source software suite for creating, editing, con
 
 **Programs**: animate, compare, composite, conjure, convert, display, identify, import, magick, magick-script, Magick++-config, MagickCore-config, MagickWand-config, mogrify, montage, stream
 
-**Install**: `launchpad install imagemagick.org`
+**Install**: `pantry install imagemagick.org`
 
 ---
 
@@ -42,7 +42,7 @@ Create, manipulate, and optimize GIF images and animations
 
 **Programs**: gifsicle
 
-**Install**: `launchpad install lcdf.org/gifsicle`
+**Install**: `pantry install lcdf.org/gifsicle`
 
 ---
 
@@ -52,7 +52,7 @@ A fast image processing library with low memory needs.
 
 **Programs**: vips, vipsedit, vipsheader, vipsprofile, vipsthumbnail
 
-**Install**: `launchpad install libvips.org`
+**Install**: `pantry install libvips.org`
 
 ---
 
@@ -62,7 +62,7 @@ Media player based on MPlayer and mplayer2
 
 **Programs**: mpv
 
-**Install**: `launchpad install mpv.io`
+**Install**: `pantry install mpv.io`
 
 ---
 
@@ -72,7 +72,7 @@ PNG file optimizer
 
 **Programs**: optipng
 
-**Install**: `launchpad install sf.net/optipng`
+**Install**: `pantry install sf.net/optipng`
 
 ---
 
@@ -82,7 +82,7 @@ Streamlink is a CLI utility which pipes video streams from various services into
 
 **Programs**: streamlink
 
-**Install**: `launchpad install streamlink.github.io`
+**Install**: `pantry install streamlink.github.io`
 
 ---
 
@@ -92,7 +92,7 @@ A feature-rich command-line audio/video downloader
 
 **Programs**: yt-dlp
 
-**Install**: `launchpad install yt-dlp.org`
+**Install**: `pantry install yt-dlp.org`
 
 ---
 

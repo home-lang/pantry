@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/stub42/pytz
+# Install with pantry
+pantry install github.com/stub42/pytz
 ```
 
 ## Programs

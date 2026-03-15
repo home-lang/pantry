@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install soldeer.xyz
+# Install with pantry
+pantry install soldeer.xyz
 ```
 
 ## Programs

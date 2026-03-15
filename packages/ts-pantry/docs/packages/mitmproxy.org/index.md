@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mitmproxy.org
+# Install with pantry
+pantry install mitmproxy.org
 ```
 
 ## Programs

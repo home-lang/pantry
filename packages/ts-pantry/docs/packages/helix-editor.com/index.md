@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install helix-editor.com
+# Install with pantry
+pantry install helix-editor.com
 ```
 
 ## Programs

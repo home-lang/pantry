@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rust-script.org
+# Install with pantry
+pantry install rust-script.org
 ```
 
 ## Programs

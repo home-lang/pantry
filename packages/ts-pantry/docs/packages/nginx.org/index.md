@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nginx.org
+# Install with pantry
+pantry install nginx.org
 ```
 
 ## Programs

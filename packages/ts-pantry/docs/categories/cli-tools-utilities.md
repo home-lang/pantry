@@ -12,7 +12,7 @@ Clone of cat(1) with syntax highlighting and Git integration
 
 **Programs**: bat
 
-**Install**: `launchpad install crates.io/bat`
+**Install**: `pantry install crates.io/bat`
 
 ---
 
@@ -22,7 +22,7 @@ Yet another cross-platform graphical process/system monitor.
 
 **Programs**: btm
 
-**Install**: `launchpad install crates.io/bottom`
+**Install**: `pantry install crates.io/bottom`
 
 ---
 
@@ -32,7 +32,7 @@ Drill is an HTTP load testing application written in Rust
 
 **Programs**: drill
 
-**Install**: `launchpad install crates.io/drill`
+**Install**: `pantry install crates.io/drill`
 
 ---
 
@@ -42,7 +42,7 @@ A more intuitive version of du in rust
 
 **Programs**: dust
 
-**Install**: `launchpad install crates.io/du-dust`
+**Install**: `pantry install crates.io/du-dust`
 
 ---
 
@@ -52,7 +52,7 @@ A modern replacement for ‘ls’.
 
 **Programs**: exa
 
-**Install**: `launchpad install crates.io/exa`
+**Install**: `pantry install crates.io/exa`
 
 ---
 
@@ -62,7 +62,7 @@ Modern, maintained replacement for ls
 
 **Programs**: eza
 
-**Install**: `launchpad install crates.io/eza`
+**Install**: `pantry install crates.io/eza`
 
 ---
 
@@ -72,7 +72,7 @@ A syntax-highlighting pager for git, diff, grep, and blame output
 
 **Programs**: delta
 
-**Install**: `launchpad install crates.io/git-delta`
+**Install**: `pantry install crates.io/git-delta`
 
 ---
 
@@ -82,7 +82,7 @@ A command-line benchmarking tool
 
 **Programs**: hyperfine
 
-**Install**: `launchpad install crates.io/hyperfine`
+**Install**: `pantry install crates.io/hyperfine`
 
 ---
 
@@ -92,7 +92,7 @@ ripgrep recursively searches directories for a regex pattern while respecting yo
 
 **Programs**: rg
 
-**Install**: `launchpad install ripgrep`
+**Install**: `pantry install ripgrep`
 
 ---
 
@@ -102,7 +102,7 @@ rga: ripgrep, but also search in PDFs, E-Books, Office documents, zip, tar.gz, e
 
 **Programs**: rga, rga-fzf, rga-fzf-open, rga-preproc
 
-**Install**: `launchpad install crates.io/ripgrep-all`
+**Install**: `pantry install crates.io/ripgrep-all`
 
 ---
 
@@ -112,7 +112,7 @@ Intuitive find & replace CLI (sed alternative)
 
 **Programs**: sd
 
-**Install**: `launchpad install crates.io/sd`
+**Install**: `pantry install crates.io/sd`
 
 ---
 
@@ -122,7 +122,7 @@ Program that allows you to count code, quickly
 
 **Programs**: tokei
 
-**Install**: `launchpad install crates.io/tokei`
+**Install**: `pantry install crates.io/tokei`
 
 ---
 
@@ -132,7 +132,7 @@ Friendly and fast tool for sending HTTP requests
 
 **Programs**: xh
 
-**Install**: `launchpad install crates.io/xh`
+**Install**: `pantry install crates.io/xh`
 
 ---
 
@@ -142,7 +142,7 @@ A command line tool and library for transferring data with URL syntax, supportin
 
 **Programs**: curl, curl-config
 
-**Install**: `launchpad install curl`
+**Install**: `pantry install curl`
 
 ---
 
@@ -152,7 +152,7 @@ NCurses Disk Usage
 
 **Programs**: ncdu
 
-**Install**: `launchpad install dev.yorhel.nl/ncdu`
+**Install**: `pantry install dev.yorhel.nl/ncdu`
 
 ---
 
@@ -162,7 +162,7 @@ A command-line DNS client.
 
 **Programs**: dog
 
-**Install**: `launchpad install dns.lookup.dog`
+**Install**: `pantry install dns.lookup.dog`
 
 ---
 
@@ -172,7 +172,7 @@ User-friendly command-line shell for UNIX-like operating systems
 
 **Programs**: fish, fish_indent, fish_key_reader
 
-**Install**: `launchpad install fishshell.com`
+**Install**: `pantry install fishshell.com`
 
 ---
 
@@ -182,7 +182,7 @@ Resource monitor. C++ version and continuation of bashtop and bpytop
 
 **Programs**: btop
 
-**Install**: `launchpad install github.com/aristocratos/btop`
+**Install**: `pantry install github.com/aristocratos/btop`
 
 ---
 
@@ -192,7 +192,7 @@ Fast disk usage analyzer with console interface written in Go
 
 **Programs**: gdu
 
-**Install**: `launchpad install github.com/dundee/gdu`
+**Install**: `pantry install github.com/dundee/gdu`
 
 ---
 
@@ -202,7 +202,7 @@ Fast disk usage analyzer with console interface written in Go
 
 **Programs**: fzf
 
-**Install**: `launchpad install github.com/junegunn/fzf`
+**Install**: `pantry install github.com/junegunn/fzf`
 
 ---
 
@@ -212,7 +212,7 @@ yq is a portable command-line YAML, JSON, XML, CSV, TOML and properties processo
 
 **Programs**: yq
 
-**Install**: `launchpad install github.com/mikefarah/yq`
+**Install**: `pantry install github.com/mikefarah/yq`
 
 ---
 
@@ -222,7 +222,7 @@ Disk Usage/Free Utility - a better 'df' alternative
 
 **Programs**: duf
 
-**Install**: `launchpad install github.com/muesli/duf`
+**Install**: `pantry install github.com/muesli/duf`
 
 ---
 
@@ -232,7 +232,7 @@ Clone of ls with colorful output, file type icons, and more
 
 **Programs**: lsd
 
-**Install**: `launchpad install github.com/peltoche/lsd`
+**Install**: `pantry install github.com/peltoche/lsd`
 
 ---
 
@@ -242,7 +242,7 @@ Good-lookin' diffs. Actually… nah… The best-lookin' diffs. :tada:
 
 **Programs**: diff-so-fancy
 
-**Install**: `launchpad install github.com/so-fancy/diff-so-fancy`
+**Install**: `pantry install github.com/so-fancy/diff-so-fancy`
 
 ---
 
@@ -252,7 +252,7 @@ Terminal multiplexer
 
 **Programs**: tmux
 
-**Install**: `launchpad install github.com/tmux/tmux`
+**Install**: `pantry install github.com/tmux/tmux`
 
 ---
 
@@ -262,7 +262,7 @@ Display directories as trees (with optional color/HTML output)
 
 **Programs**: tree
 
-**Install**: `launchpad install gitlab.com/OldManProgrammer/unix-tree`
+**Install**: `pantry install gitlab.com/OldManProgrammer/unix-tree`
 
 ---
 
@@ -272,7 +272,7 @@ Bourne-Again SHell, a UNIX command interpreter
 
 **Programs**: bash, bashbug
 
-**Install**: `launchpad install gnu.org/bash`
+**Install**: `pantry install gnu.org/bash`
 
 ---
 
@@ -282,7 +282,7 @@ Internet file retriever
 
 **Programs**: wget
 
-**Install**: `launchpad install gnu.org/wget`
+**Install**: `pantry install gnu.org/wget`
 
 ---
 
@@ -292,7 +292,7 @@ Improved top (interactive process viewer)
 
 **Programs**: htop
 
-**Install**: `launchpad install htop.dev`
+**Install**: `pantry install htop.dev`
 
 ---
 
@@ -302,7 +302,7 @@ Improved top (interactive process viewer)
 
 **Programs**: http, httpie, https
 
-**Install**: `launchpad install httpie.io`
+**Install**: `pantry install httpie.io`
 
 ---
 
@@ -312,7 +312,7 @@ The most customisable and low-latency cross platform/shell prompt renderer
 
 **Programs**: oh-my-posh
 
-**Install**: `launchpad install ohmyposh.dev`
+**Install**: `pantry install ohmyposh.dev`
 
 ---
 
@@ -322,7 +322,7 @@ The most customisable and low-latency cross platform/shell prompt renderer
 
 **Programs**: starship
 
-**Install**: `launchpad install starship.rs`
+**Install**: `pantry install starship.rs`
 
 ---
 
@@ -332,7 +332,7 @@ Lightweight and flexible command-line JSON processor
 
 **Programs**: jq
 
-**Install**: `launchpad install stedolan.github.io/jq`
+**Install**: `pantry install stedolan.github.io/jq`
 
 ---
 
@@ -342,7 +342,7 @@ Parser generator tool and incremental parsing library
 
 **Programs**: tree-sitter
 
-**Install**: `launchpad install tree-sitter.github.io`
+**Install**: `pantry install tree-sitter.github.io`
 
 ---
 
@@ -352,7 +352,7 @@ a structural diff that understands syntax 🟥🟩
 
 **Programs**: difft
 
-**Install**: `launchpad install wilfred.me.uk/difftastic`
+**Install**: `pantry install wilfred.me.uk/difftastic`
 
 ---
 
@@ -362,7 +362,7 @@ UNIX shell (command interpreter)
 
 **Programs**: zsh
 
-**Install**: `launchpad install zsh.sourceforge.io`
+**Install**: `pantry install zsh.sourceforge.io`
 
 ---
 

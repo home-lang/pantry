@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mercure.rocks
+# Install with pantry
+pantry install mercure.rocks
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pygments.org
+# Install with pantry
+pantry install pygments.org
 ```
 
 ## Programs

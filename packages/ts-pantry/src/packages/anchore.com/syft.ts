@@ -6,7 +6,7 @@
  * @version `1.42.2` (63 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install anchore.com/syft`
+ * @install `pantry install anchore.com/syft`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const anchorecomsyftPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/anchore/syft' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install anchore.com/syft' as const,
+  installCommand: 'pantry install anchore.com/syft' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +anchore.com/syft -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install anchore.com/syft' as const,
+  pantryInstallCommand: 'pantry install anchore.com/syft' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

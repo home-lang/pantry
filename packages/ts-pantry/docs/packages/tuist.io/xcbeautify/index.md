@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tuist.io/xcbeautify
+# Install with pantry
+pantry install tuist.io/xcbeautify
 ```
 
 ## Programs

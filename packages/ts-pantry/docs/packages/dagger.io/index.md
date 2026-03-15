@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dagger.io
+# Install with pantry
+pantry install dagger.io
 ```
 
 ## Programs

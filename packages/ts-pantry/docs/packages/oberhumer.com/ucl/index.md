@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install oberhumer.com/ucl
+# Install with pantry
+pantry install oberhumer.com/ucl
 ```
 
 ## Programs

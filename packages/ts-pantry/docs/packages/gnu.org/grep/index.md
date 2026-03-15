@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/grep
+# Install with pantry
+pantry install gnu.org/grep
 ```
 
 ## Programs

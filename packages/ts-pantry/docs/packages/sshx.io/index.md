@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sshx.io
+# Install with pantry
+pantry install sshx.io
 ```
 
 ## Programs

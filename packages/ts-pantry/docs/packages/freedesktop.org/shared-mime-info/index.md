@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/shared-mime-info
+# Install with pantry
+pantry install freedesktop.org/shared-mime-info
 ```
 
 ## Programs

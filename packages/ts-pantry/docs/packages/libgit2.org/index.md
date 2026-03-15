@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libgit2.org
+# Install with pantry
+pantry install libgit2.org
 ```
 
 ## Programs

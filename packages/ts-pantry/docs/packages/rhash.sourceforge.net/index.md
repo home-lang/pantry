@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rhash.sourceforge.net
+# Install with pantry
+pantry install rhash.sourceforge.net
 ```
 
 ## Programs

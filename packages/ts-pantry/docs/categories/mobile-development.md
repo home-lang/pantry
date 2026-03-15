@@ -12,7 +12,7 @@ Cross-platform automation framework for all kinds of apps, built on top of the W
 
 **Programs**: appium
 
-**Install**: `launchpad install appium.io`
+**Install**: `pantry install appium.io`
 
 ---
 
@@ -22,7 +22,7 @@ Cross-platform automation framework for all kinds of apps, built on top of the W
 
 **Programs**: fastlane
 
-**Install**: `launchpad install fastlane.tools`
+**Install**: `pantry install fastlane.tools`
 
 ---
 
@@ -32,7 +32,7 @@ Flutter makes it easy and fast to build beautiful apps for mobile and beyond
 
 **Programs**: flutter, dart
 
-**Install**: `launchpad install flutter.dev`
+**Install**: `pantry install flutter.dev`
 
 ---
 
@@ -42,7 +42,7 @@ Open-source build automation tool based on the Groovy and Kotlin DSL
 
 **Programs**: gradle
 
-**Install**: `launchpad install gradle.org`
+**Install**: `pantry install gradle.org`
 
 ---
 

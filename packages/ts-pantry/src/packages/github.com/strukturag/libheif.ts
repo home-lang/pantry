@@ -6,7 +6,7 @@
  * @version `1.21.2` (26 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/strukturag/libheif`
+ * @install `pantry install github.com/strukturag/libheif`
  * @homepage https://www.libde265.org/
  * @dependencies `aomedia.googlesource.com/aom`, `libjpeg-turbo.org`, `github.com/strukturag/libde265`, ... (+4 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org`, `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const libheifPackage = {
   homepageUrl: 'https://www.libde265.org/' as const,
   githubUrl: 'https://github.com/strukturag/libheif' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/strukturag/libheif' as const,
+  installCommand: 'pantry install github.com/strukturag/libheif' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/strukturag/libheif -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/strukturag/libheif' as const,
+  pantryInstallCommand: 'pantry install github.com/strukturag/libheif' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

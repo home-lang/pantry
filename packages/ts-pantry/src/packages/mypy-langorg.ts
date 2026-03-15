@@ -6,7 +6,7 @@
  * @version `1.19.1` (31 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mypy-lang.org`
+ * @install `pantry install mypy-lang.org`
  * @homepage https://www.mypy-lang.org/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3<3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const mypylangorgPackage = {
   homepageUrl: 'https://www.mypy-lang.org/' as const,
   githubUrl: 'https://github.com/python/mypy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mypy-lang.org' as const,
+  installCommand: 'pantry install mypy-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mypy-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mypy-lang.org' as const,
+  pantryInstallCommand: 'pantry install mypy-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

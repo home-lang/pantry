@@ -5,7 +5,7 @@
  * @version `1.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install git.osgeo.org/gitea/rttopo/librttopo`
+ * @install `pantry install git.osgeo.org/gitea/rttopo/librttopo`
  * @dependencies `libgeos.org`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gitosgeoorggitearttopolibrttopoPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install git.osgeo.org/gitea/rttopo/librttopo' as const,
+  installCommand: 'pantry install git.osgeo.org/gitea/rttopo/librttopo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +git.osgeo.org/gitea/rttopo/librttopo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install git.osgeo.org/gitea/rttopo/librttopo' as const,
+  pantryInstallCommand: 'pantry install git.osgeo.org/gitea/rttopo/librttopo' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `3.11.2` (56 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dart.dev`
+ * @install `pantry install dart.dev`
  * @homepage https://dart.dev
  * @buildDependencies `curl.se`, `python.org@>=3<3.12`, `tukaani.org/xz` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const dartdevPackage = {
   homepageUrl: 'https://dart.dev' as const,
   githubUrl: 'https://github.com/dart-lang/sdk' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dart.dev' as const,
+  installCommand: 'pantry install dart.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dart.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dart.dev' as const,
+  pantryInstallCommand: 'pantry install dart.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

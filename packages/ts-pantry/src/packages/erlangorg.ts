@@ -6,7 +6,7 @@
  * @version `28.4.1` (100 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install erlang.org`
+ * @install `pantry install erlang.org`
  * @homepage https://www.erlang.org/
  * @dependencies `openssl.org^1.1`, `invisible-island.net/ncurses`
  * @buildDependencies `perl.org@>=5` - required only when building from source
@@ -42,12 +42,12 @@ export const erlangorgPackage = {
   homepageUrl: 'https://www.erlang.org/' as const,
   githubUrl: 'https://github.com/erlang/otp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install erlang.org' as const,
+  installCommand: 'pantry install erlang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +erlang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install erlang.org' as const,
+  pantryInstallCommand: 'pantry install erlang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

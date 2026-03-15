@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install localstack.cloud/awscli-local
+# Install with pantry
+pantry install localstack.cloud/awscli-local
 ```
 
 ## Programs

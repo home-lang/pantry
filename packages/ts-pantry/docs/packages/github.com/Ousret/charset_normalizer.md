@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/Ousret/charset_normalizer
+# Install with pantry
+pantry install github.com/Ousret/charset_normalizer
 ```
 
 ## Programs

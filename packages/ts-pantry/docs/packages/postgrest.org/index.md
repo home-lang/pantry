@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install postgrest.org
+# Install with pantry
+pantry install postgrest.org
 ```
 
 ## Programs

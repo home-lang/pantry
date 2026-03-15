@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/click
+# Install with pantry
+pantry install crates.io/click
 ```
 
 ## Programs

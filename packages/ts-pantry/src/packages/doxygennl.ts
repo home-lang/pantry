@@ -6,7 +6,7 @@
  * @version `1.16.1` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install doxygen.nl`
+ * @install `pantry install doxygen.nl`
  * @homepage https://www.doxygen.nl/
  * @buildDependencies `gnu.org/bison@^3`, `cmake.org@^3`, `github.com/westes/flex@2`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const doxygennlPackage = {
   homepageUrl: 'https://www.doxygen.nl/' as const,
   githubUrl: 'https://github.com/doxygen/doxygen' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install doxygen.nl' as const,
+  installCommand: 'pantry install doxygen.nl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +doxygen.nl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install doxygen.nl' as const,
+  pantryInstallCommand: 'pantry install doxygen.nl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `5.2.2` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install giflib.sourceforge.io`
+ * @install `pantry install giflib.sourceforge.io`
  * @homepage https://giflib.sourceforge.net/
  * @buildDependencies `gnu.org/patch`, `imagemagick.org` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const giflibsourceforgeioPackage = {
   homepageUrl: 'https://giflib.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install giflib.sourceforge.io' as const,
+  installCommand: 'pantry install giflib.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +giflib.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install giflib.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install giflib.sourceforge.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

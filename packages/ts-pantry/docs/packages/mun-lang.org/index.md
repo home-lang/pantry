@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mun-lang.org
+# Install with pantry
+pantry install mun-lang.org
 ```
 
 ## Programs

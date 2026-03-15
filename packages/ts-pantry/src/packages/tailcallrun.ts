@@ -6,7 +6,7 @@
  * @version `1.6.14` (626 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tailcall.run`
+ * @install `pantry install tailcall.run`
  * @homepage https://tailcall.run
  * @buildDependencies `protobuf.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tailcallrunPackage = {
   homepageUrl: 'https://tailcall.run' as const,
   githubUrl: 'https://github.com/tailcallhq/tailcall' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tailcall.run' as const,
+  installCommand: 'pantry install tailcall.run' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tailcall.run -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tailcall.run' as const,
+  pantryInstallCommand: 'pantry install tailcall.run' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

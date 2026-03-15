@@ -6,7 +6,7 @@
  * @version `0.18.4.6` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install getmonero.org`
+ * @install `pantry install getmonero.org`
  * @dependencies `boost.org^1.66`, `openssl.org^1.1`, `libsodium.org`, ... (+3 more)
  * @buildDependencies `cmake.org@^3`, `linux:llvm.org@20` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const getmoneroorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install getmonero.org' as const,
+  installCommand: 'pantry install getmonero.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +getmonero.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install getmonero.org' as const,
+  pantryInstallCommand: 'pantry install getmonero.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

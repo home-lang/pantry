@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install taglib.org
+# Install with pantry
+pantry install taglib.org
 ```
 
 ## Programs

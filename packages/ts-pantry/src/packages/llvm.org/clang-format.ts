@@ -6,7 +6,7 @@
  * @version `21.1.8` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install llvm.org/clang-format`
+ * @install `pantry install llvm.org/clang-format`
  * @homepage http://llvm.org
  * @dependencies `gnome.org/libxml2`, `invisible-island.net/ncurses`, `python.org<3.12`, ... (+1 more)
  * @buildDependencies `cmake.org`, `curl.se` - required only when building from source
@@ -42,12 +42,12 @@ export const llvmorgclangformatPackage = {
   homepageUrl: 'http://llvm.org' as const,
   githubUrl: 'https://github.com/llvm/llvm-project' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install llvm.org/clang-format' as const,
+  installCommand: 'pantry install llvm.org/clang-format' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +llvm.org/clang-format -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install llvm.org/clang-format' as const,
+  pantryInstallCommand: 'pantry install llvm.org/clang-format' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

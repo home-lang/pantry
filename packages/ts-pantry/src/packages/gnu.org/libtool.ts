@@ -6,7 +6,7 @@
  * @version `2.5.4` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/libtool`
+ * @install `pantry install gnu.org/libtool`
  * @buildDependencies `gnu.org/autoconf@^2.65.0`, `gnu.org/m4@1` - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const gnuorglibtoolPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/libtool' as const,
+  installCommand: 'pantry install gnu.org/libtool' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/libtool -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/libtool' as const,
+  pantryInstallCommand: 'pantry install gnu.org/libtool' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

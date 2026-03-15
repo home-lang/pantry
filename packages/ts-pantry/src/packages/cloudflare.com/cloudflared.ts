@@ -6,7 +6,7 @@
  * @version `2026.3.0` (41 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cloudflare.com/cloudflared`
+ * @install `pantry install cloudflare.com/cloudflared`
  * @homepage https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide
  * @buildDependencies `go.dev@~1.24` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const cloudflarecomcloudflaredPackage = {
   homepageUrl: 'https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide' as const,
   githubUrl: 'https://github.com/cloudflare/cloudflared' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cloudflare.com/cloudflared' as const,
+  installCommand: 'pantry install cloudflare.com/cloudflared' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cloudflare.com/cloudflared -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cloudflare.com/cloudflared' as const,
+  pantryInstallCommand: 'pantry install cloudflare.com/cloudflared' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

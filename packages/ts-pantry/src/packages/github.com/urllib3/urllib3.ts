@@ -5,7 +5,7 @@
  * @version `2.6.3` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/urllib3/urllib3`
+ * @install `pantry install github.com/urllib3/urllib3`
  * @homepage https://urllib3.readthedocs.io
  * @dependencies `python.org~3.11`
  *
@@ -39,12 +39,12 @@ export const urllib3Package = {
   homepageUrl: 'https://urllib3.readthedocs.io' as const,
   githubUrl: 'https://github.com/urllib3/urllib3' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/urllib3/urllib3' as const,
+  installCommand: 'pantry install github.com/urllib3/urllib3' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/urllib3/urllib3 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/urllib3/urllib3' as const,
+  pantryInstallCommand: 'pantry install github.com/urllib3/urllib3' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install docker
+# Install with pantry
+pantry install docker
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install srtalliance.org
+# Install with pantry
+pantry install srtalliance.org
 ```
 
 ## Programs

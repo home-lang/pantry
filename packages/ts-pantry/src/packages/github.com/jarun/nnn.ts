@@ -6,7 +6,7 @@
  * @version `5.2.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/jarun/nnn`
+ * @install `pantry install github.com/jarun/nnn`
  * @dependencies `invisible-island.net/ncurses@6`, `gnu.org/readline@8`
  *
  * @example
@@ -40,12 +40,12 @@ export const nnnPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jarun/nnn' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/jarun/nnn' as const,
+  installCommand: 'pantry install github.com/jarun/nnn' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jarun/nnn -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/jarun/nnn' as const,
+  pantryInstallCommand: 'pantry install github.com/jarun/nnn' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

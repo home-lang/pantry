@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/thinkst/zippy
+# Install with pantry
+pantry install github.com/thinkst/zippy
 ```
 
 ## Programs

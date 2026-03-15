@@ -6,7 +6,7 @@
  * @version `1.16.1` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/gopasspw/gopass`
+ * @install `pantry install github.com/gopasspw/gopass`
  * @homepage https://www.gopass.pw/
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gopassPackage = {
   homepageUrl: 'https://www.gopass.pw/' as const,
   githubUrl: 'https://github.com/gopasspw/gopass' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/gopasspw/gopass' as const,
+  installCommand: 'pantry install github.com/gopasspw/gopass' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/gopasspw/gopass -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/gopasspw/gopass' as const,
+  pantryInstallCommand: 'pantry install github.com/gopasspw/gopass' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install encore.dev/go
+# Install with pantry
+pantry install encore.dev/go
 ```
 
 ## Programs

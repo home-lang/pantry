@@ -6,7 +6,7 @@
  * @version `1.29.1` (67 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install istio.io`
+ * @install `pantry install istio.io`
  * @homepage https://istio.io/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const istioioPackage = {
   homepageUrl: 'https://istio.io/' as const,
   githubUrl: 'https://github.com/istio/istio' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install istio.io' as const,
+  installCommand: 'pantry install istio.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +istio.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install istio.io' as const,
+  pantryInstallCommand: 'pantry install istio.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

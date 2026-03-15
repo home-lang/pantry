@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libpipeline.gitlab.io/libpipeline
+# Install with pantry
+pantry install libpipeline.gitlab.io/libpipeline
 ```
 
 ## Programs

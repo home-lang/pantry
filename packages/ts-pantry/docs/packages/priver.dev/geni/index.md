@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install priver.dev/geni
+# Install with pantry
+pantry install priver.dev/geni
 ```
 
 ## Programs

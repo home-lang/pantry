@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install docker.com/machine
+# Install with pantry
+pantry install docker.com/machine
 ```
 
 ## Programs

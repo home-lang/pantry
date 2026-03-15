@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install chiark.greenend.org.uk/putty
+# Install with pantry
+pantry install chiark.greenend.org.uk/putty
 ```
 
 ## Programs

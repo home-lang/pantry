@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libspng.org
+# Install with pantry
+pantry install libspng.org
 ```
 
 ## Programs

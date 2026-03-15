@@ -5,7 +5,7 @@
  * @version `2.11.3` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/JuliaStrings/utf8proc`
+ * @install `pantry install github.com/JuliaStrings/utf8proc`
  * @homepage http://juliastrings.github.io/utf8proc/
  *
  * @example
@@ -38,12 +38,12 @@ export const utf8procPackage = {
   homepageUrl: 'http://juliastrings.github.io/utf8proc/' as const,
   githubUrl: 'https://github.com/JuliaStrings/utf8proc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/JuliaStrings/utf8proc' as const,
+  installCommand: 'pantry install github.com/JuliaStrings/utf8proc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/JuliaStrings/utf8proc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/JuliaStrings/utf8proc' as const,
+  pantryInstallCommand: 'pantry install github.com/JuliaStrings/utf8proc' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

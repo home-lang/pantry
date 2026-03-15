@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mongodb.com
+# Install with pantry
+pantry install mongodb.com
 ```
 
 ## Programs

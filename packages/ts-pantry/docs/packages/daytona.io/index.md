@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install daytona.io
+# Install with pantry
+pantry install daytona.io
 ```
 
 ## Programs

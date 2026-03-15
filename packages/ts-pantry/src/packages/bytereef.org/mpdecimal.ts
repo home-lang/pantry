@@ -5,7 +5,7 @@
  * @version `4.0.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install bytereef.org/mpdecimal`
+ * @install `pantry install bytereef.org/mpdecimal`
  *
  * @example
  * ```typescript
@@ -36,12 +36,12 @@ export const bytereeforgmpdecimalPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install bytereef.org/mpdecimal' as const,
+  installCommand: 'pantry install bytereef.org/mpdecimal' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bytereef.org/mpdecimal -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install bytereef.org/mpdecimal' as const,
+  pantryInstallCommand: 'pantry install bytereef.org/mpdecimal' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hetzner.com/hcloud
+# Install with pantry
+pantry install hetzner.com/hcloud
 ```
 
 ## Programs

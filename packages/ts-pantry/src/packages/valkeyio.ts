@@ -6,7 +6,7 @@
  * @version `9.0.3` (26 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install valkey.io`
+ * @install `pantry install valkey.io`
  * @homepage https://valkey.io
  * @dependencies `openssl.org^1`
  *
@@ -41,12 +41,12 @@ export const valkeyioPackage = {
   homepageUrl: 'https://valkey.io' as const,
   githubUrl: 'https://github.com/valkey-io/valkey' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install valkey.io' as const,
+  installCommand: 'pantry install valkey.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +valkey.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install valkey.io' as const,
+  pantryInstallCommand: 'pantry install valkey.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

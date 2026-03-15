@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freetype.org
+# Install with pantry
+pantry install freetype.org
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `3.3.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install xerces.apache.org/xerces-c`
+ * @install `pantry install xerces.apache.org/xerces-c`
  * @homepage https://xerces.apache.org/xerces-c/
  * @dependencies `curl.se`
  * @buildDependencies `cmake.org` - required only when building from source
@@ -42,12 +42,12 @@ export const xercesapacheorgxercescPackage = {
   homepageUrl: 'https://xerces.apache.org/xerces-c/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install xerces.apache.org/xerces-c' as const,
+  installCommand: 'pantry install xerces.apache.org/xerces-c' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +xerces.apache.org/xerces-c -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install xerces.apache.org/xerces-c' as const,
+  pantryInstallCommand: 'pantry install xerces.apache.org/xerces-c' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

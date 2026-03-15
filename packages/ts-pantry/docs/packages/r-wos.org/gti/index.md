@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install r-wos.org/gti
+# Install with pantry
+pantry install r-wos.org/gti
 ```
 
 ## Programs

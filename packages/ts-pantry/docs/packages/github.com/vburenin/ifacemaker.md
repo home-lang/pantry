@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/vburenin/ifacemaker
+# Install with pantry
+pantry install github.com/vburenin/ifacemaker
 ```
 
 ## Programs

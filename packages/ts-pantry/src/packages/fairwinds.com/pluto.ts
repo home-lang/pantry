@@ -6,7 +6,7 @@
  * @version `5.23.5` (30 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fairwinds.com/pluto`
+ * @install `pantry install fairwinds.com/pluto`
  * @homepage https://fairwinds.com
  * @buildDependencies `go.dev@^1.21`, `gnu.org/make` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const fairwindscomplutoPackage = {
   homepageUrl: 'https://fairwinds.com' as const,
   githubUrl: 'https://github.com/FairwindsOps/pluto' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fairwinds.com/pluto' as const,
+  installCommand: 'pantry install fairwinds.com/pluto' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fairwinds.com/pluto -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fairwinds.com/pluto' as const,
+  pantryInstallCommand: 'pantry install fairwinds.com/pluto' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

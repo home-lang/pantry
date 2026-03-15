@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install glm.g-truc.net
+# Install with pantry
+pantry install glm.g-truc.net
 ```
 
 ## Programs

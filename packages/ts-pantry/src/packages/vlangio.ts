@@ -6,7 +6,7 @@
  * @version `0.5.1` (18 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vlang.io`
+ * @install `pantry install vlang.io`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const vlangioPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/vlang/v' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vlang.io' as const,
+  installCommand: 'pantry install vlang.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vlang.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vlang.io' as const,
+  pantryInstallCommand: 'pantry install vlang.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

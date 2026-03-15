@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install yt-dlp.org
+# Install with pantry
+pantry install yt-dlp.org
 ```
 
 ## Programs

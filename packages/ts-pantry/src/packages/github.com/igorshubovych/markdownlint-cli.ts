@@ -6,7 +6,7 @@
  * @version `0.48.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/igorshubovych/markdownlint-cli`
+ * @install `pantry install github.com/igorshubovych/markdownlint-cli`
  * @dependencies `nodejs.org>=18`
  * @buildDependencies `npmjs.com@^10` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const markdownlintcliPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/igorshubovych/markdownlint-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/igorshubovych/markdownlint-cli' as const,
+  installCommand: 'pantry install github.com/igorshubovych/markdownlint-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/igorshubovych/markdownlint-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/igorshubovych/markdownlint-cli' as const,
+  pantryInstallCommand: 'pantry install github.com/igorshubovych/markdownlint-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

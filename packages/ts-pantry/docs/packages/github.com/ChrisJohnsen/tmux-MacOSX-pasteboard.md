@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard
+# Install with pantry
+pantry install github.com/ChrisJohnsen/tmux-MacOSX-pasteboard
 ```
 
 ## Programs

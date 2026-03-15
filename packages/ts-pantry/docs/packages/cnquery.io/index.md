@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cnquery.io
+# Install with pantry
+pantry install cnquery.io
 ```
 
 ## Programs

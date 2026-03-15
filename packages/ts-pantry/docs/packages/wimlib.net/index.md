@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wimlib.net
+# Install with pantry
+pantry install wimlib.net
 ```
 
 ## Programs

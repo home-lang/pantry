@@ -6,7 +6,7 @@
  * @version `7.14.3` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install oauth2-proxy.github.io`
+ * @install `pantry install oauth2-proxy.github.io`
  * @homepage https://oauth2-proxy.github.io/oauth2-proxy/
  * @buildDependencies `go.dev@1.22.4` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const oauth2proxygithubioPackage = {
   homepageUrl: 'https://oauth2-proxy.github.io/oauth2-proxy/' as const,
   githubUrl: 'https://github.com/oauth2-proxy/oauth2-proxy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install oauth2-proxy.github.io' as const,
+  installCommand: 'pantry install oauth2-proxy.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +oauth2-proxy.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install oauth2-proxy.github.io' as const,
+  pantryInstallCommand: 'pantry install oauth2-proxy.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

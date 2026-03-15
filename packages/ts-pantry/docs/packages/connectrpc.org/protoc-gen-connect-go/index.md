@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install connectrpc.org/protoc-gen-connect-go
+# Install with pantry
+pantry install connectrpc.org/protoc-gen-connect-go
 ```
 
 ## Programs

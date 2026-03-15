@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install buf.build
+# Install with pantry
+pantry install buf.build
 ```
 
 ## Programs

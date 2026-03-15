@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opencore-amr.sourceforge.io
+# Install with pantry
+pantry install opencore-amr.sourceforge.io
 ```
 
 ## Programs

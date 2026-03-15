@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ko.build
+# Install with pantry
+pantry install ko.build
 ```
 
 ## Programs

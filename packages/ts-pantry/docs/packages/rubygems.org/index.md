@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rubygems.org
+# Install with pantry
+pantry install rubygems.org
 ```
 
 ## Programs

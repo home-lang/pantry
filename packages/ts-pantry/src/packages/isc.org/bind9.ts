@@ -6,7 +6,7 @@
  * @version `9.21.19` (40 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install isc.org/bind9`
+ * @install `pantry install isc.org/bind9`
  * @dependencies `gnome.org/libxml2@2.13`, `nghttp2.org@1.57`, `libuv.org@1.49`, ... (+8 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com@1`, `cmake.org@3` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const iscorgbind9Package = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install isc.org/bind9' as const,
+  installCommand: 'pantry install isc.org/bind9' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +isc.org/bind9 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install isc.org/bind9' as const,
+  pantryInstallCommand: 'pantry install isc.org/bind9' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

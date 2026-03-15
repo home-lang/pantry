@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cmake.org
+# Install with pantry
+pantry install cmake.org
 ```
 
 ## Programs

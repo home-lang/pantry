@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libproxy.github.io/libproxy
+# Install with pantry
+pantry install libproxy.github.io/libproxy
 ```
 
 ## Programs

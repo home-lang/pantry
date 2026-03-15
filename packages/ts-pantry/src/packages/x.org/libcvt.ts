@@ -6,7 +6,7 @@
  * @version `0.1.3` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/libcvt`
+ * @install `pantry install x.org/libcvt`
  * @homepage https://www.x.org
  * @dependencies `x.org/x11^1`, `x.org/exts`, `x.org/protocol`
  * @buildDependencies `mesonbuild.com` - required only when building from source
@@ -42,12 +42,12 @@ export const xorglibcvtPackage = {
   homepageUrl: 'https://www.x.org' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/libcvt' as const,
+  installCommand: 'pantry install x.org/libcvt' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/libcvt -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/libcvt' as const,
+  pantryInstallCommand: 'pantry install x.org/libcvt' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

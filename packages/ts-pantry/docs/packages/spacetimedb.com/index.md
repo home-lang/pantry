@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install spacetimedb.com
+# Install with pantry
+pantry install spacetimedb.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `4.9.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/sed`
+ * @install `pantry install gnu.org/sed`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const gnuorgsedPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/sed' as const,
+  installCommand: 'pantry install gnu.org/sed' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/sed -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/sed' as const,
+  pantryInstallCommand: 'pantry install gnu.org/sed' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

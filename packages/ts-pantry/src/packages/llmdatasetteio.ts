@@ -6,7 +6,7 @@
  * @version `0.28.0` (33 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install llm.datasette.io`
+ * @install `pantry install llm.datasette.io`
  * @homepage https://llm.datasette.io/
  * @dependencies `python.org~3.11`
  *
@@ -41,12 +41,12 @@ export const llmdatasetteioPackage = {
   homepageUrl: 'https://llm.datasette.io/' as const,
   githubUrl: 'https://github.com/simonw/llm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install llm.datasette.io' as const,
+  installCommand: 'pantry install llm.datasette.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +llm.datasette.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install llm.datasette.io' as const,
+  pantryInstallCommand: 'pantry install llm.datasette.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

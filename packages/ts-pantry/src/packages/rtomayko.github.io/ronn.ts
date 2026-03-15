@@ -6,7 +6,7 @@
  * @version `0.7.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rtomayko.github.io/ronn`
+ * @install `pantry install rtomayko.github.io/ronn`
  * @homepage http://rtomayko.github.com/ronn/
  * @dependencies `ruby-lang.org^3.1`, `rubygems.org`
  * @buildDependencies `rubygems.org` - required only when building from source
@@ -42,12 +42,12 @@ export const rtomaykogithubioronnPackage = {
   homepageUrl: 'http://rtomayko.github.com/ronn/' as const,
   githubUrl: 'https://github.com/rtomayko/ronn' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rtomayko.github.io/ronn' as const,
+  installCommand: 'pantry install rtomayko.github.io/ronn' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rtomayko.github.io/ronn -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rtomayko.github.io/ronn' as const,
+  pantryInstallCommand: 'pantry install rtomayko.github.io/ronn' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

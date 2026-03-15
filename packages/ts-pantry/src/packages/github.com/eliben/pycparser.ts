@@ -5,7 +5,7 @@
  * @version `3.0.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/eliben/pycparser`
+ * @install `pantry install github.com/eliben/pycparser`
  * @dependencies `python.org~3.11`
  * @buildDependencies `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const pycparserPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/eliben/pycparser' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/eliben/pycparser' as const,
+  installCommand: 'pantry install github.com/eliben/pycparser' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/eliben/pycparser -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/eliben/pycparser' as const,
+  pantryInstallCommand: 'pantry install github.com/eliben/pycparser' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nixpacks.com
+# Install with pantry
+pantry install nixpacks.com
 ```
 
 ## Programs

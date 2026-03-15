@@ -5,7 +5,7 @@
  * @version `1.20.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rpm.org/librepo`
+ * @install `pantry install rpm.org/librepo`
  * @dependencies `gnome.org/glib`, `gnome.org/libxml2`, `savannah.nongnu.org/attr`, ... (+7 more)
  * @buildDependencies `cmake.org@>=3.16`, `gnu.org/gcc@^14`, `python.org@>=3.9` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const rpmorglibrepoPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rpm.org/librepo' as const,
+  installCommand: 'pantry install rpm.org/librepo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/librepo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rpm.org/librepo' as const,
+  pantryInstallCommand: 'pantry install rpm.org/librepo' as const,
   programs: [] as const,
   companions: [] as const,
   /**

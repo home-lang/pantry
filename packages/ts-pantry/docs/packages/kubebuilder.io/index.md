@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kubebuilder.io
+# Install with pantry
+pantry install kubebuilder.io
 ```
 
 ## Programs

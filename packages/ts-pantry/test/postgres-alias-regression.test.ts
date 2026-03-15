@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { resolveDependencies } from '../src/launchpad-api'
+import { resolveDependencies } from '../src/pantry-api'
 
 describe('PostgreSQL Alias Resolution - Regression Test', () => {
   it('should properly resolve postgres alias to postgresql.org with all dependencies', async () => {
@@ -13,7 +13,7 @@ describe('PostgreSQL Alias Resolution - Regression Test', () => {
     const tempDir = os.tmpdir()
     const tempFile = path.join(tempDir, `postgres-alias-test-${Date.now()}.yaml`)
 
-    // This YAML content represents what Launchpad was incorrectly generating
+    // This YAML content represents what Pantry was incorrectly generating
     // when a user requested "postgres" - it should be resolved to "postgresql.org"
     const yamlContent = `dependencies:
   postgresql.org: "*"
@@ -49,7 +49,7 @@ describe('PostgreSQL Alias Resolution - Regression Test', () => {
 
       // Verify that we get a valid command for installation
       expect(result.pkgxCommand).toContain('postgresql.org')
-      expect(result.launchpadCommand).toContain('postgresql.org')
+      expect(result.pantryCommand).toContain('postgresql.org')
     }
     finally {
       // Clean up

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install viaduct.ai/ksops
+# Install with pantry
+pantry install viaduct.ai/ksops
 ```
 
 ## Programs

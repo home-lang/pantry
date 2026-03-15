@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openjpeg.org
+# Install with pantry
+pantry install openjpeg.org
 ```
 
 ## Programs

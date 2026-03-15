@@ -6,7 +6,7 @@
  * @version `1.79.2` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install grpc.io/grpc-go`
+ * @install `pantry install grpc.io/grpc-go`
  * @homepage https://grpc.io
  * @dependencies `google.com/protobuf-go^1`
  * @buildDependencies `go.dev@^1.19` - required only when building from source
@@ -42,12 +42,12 @@ export const grpciogrpcgoPackage = {
   homepageUrl: 'https://grpc.io' as const,
   githubUrl: 'https://github.com/grpc/grpc-go' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install grpc.io/grpc-go' as const,
+  installCommand: 'pantry install grpc.io/grpc-go' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +grpc.io/grpc-go -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install grpc.io/grpc-go' as const,
+  pantryInstallCommand: 'pantry install grpc.io/grpc-go' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

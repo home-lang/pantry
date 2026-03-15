@@ -6,7 +6,7 @@
  * @version `0.7.0` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/portfolio_rs`
+ * @install `pantry install crates.io/portfolio_rs`
  * @homepage https://crates.io/crates/portfolio_rs
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesioportfolio_rsPackage = {
   homepageUrl: 'https://crates.io/crates/portfolio_rs' as const,
   githubUrl: 'https://github.com/MarkusZoppelt/portfolio_rs' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/portfolio_rs' as const,
+  installCommand: 'pantry install crates.io/portfolio_rs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/portfolio_rs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/portfolio_rs' as const,
+  pantryInstallCommand: 'pantry install crates.io/portfolio_rs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

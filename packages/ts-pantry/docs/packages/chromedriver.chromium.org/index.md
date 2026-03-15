@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install chromedriver.chromium.org
+# Install with pantry
+pantry install chromedriver.chromium.org
 ```
 
 ## Programs

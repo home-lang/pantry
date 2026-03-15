@@ -5,7 +5,7 @@
  * @version `5.1.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gaia-gis.it/libspatialite`
+ * @install `pantry install gaia-gis.it/libspatialite`
  * @dependencies `gaia-gis.it/fossil/freexl`, `libgeos.org`, `git.osgeo.org/gitea/rttopo/librttopo`, ... (+4 more)
  * @buildDependencies `gnu.org/make`, `darwin:gnu.org/patch`, `darwin:curl.se` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const gaiagisitlibspatialitePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gaia-gis.it/libspatialite' as const,
+  installCommand: 'pantry install gaia-gis.it/libspatialite' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gaia-gis.it/libspatialite -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gaia-gis.it/libspatialite' as const,
+  pantryInstallCommand: 'pantry install gaia-gis.it/libspatialite' as const,
   programs: [] as const,
   companions: [] as const,
   /**

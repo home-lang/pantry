@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install unicode.org
+# Install with pantry
+pantry install unicode.org
 ```
 
 ## Programs

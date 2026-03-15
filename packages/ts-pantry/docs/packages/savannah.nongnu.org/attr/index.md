@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install savannah.nongnu.org/attr
+# Install with pantry
+pantry install savannah.nongnu.org/attr
 ```
 
 ## Programs

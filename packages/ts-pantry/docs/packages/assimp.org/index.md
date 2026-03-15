@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install assimp.org
+# Install with pantry
+pantry install assimp.org
 ```
 
 ## Programs

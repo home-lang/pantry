@@ -6,7 +6,7 @@
  * @version `3.9.5` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apache.org/zookeeper`
+ * @install `pantry install apache.org/zookeeper`
  * @dependencies `openjdk.org`, `openssl.org`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `freedesktop.org/cppunit`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const apacheorgzookeeperPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apache.org/zookeeper' as const,
+  installCommand: 'pantry install apache.org/zookeeper' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apache.org/zookeeper -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apache.org/zookeeper' as const,
+  pantryInstallCommand: 'pantry install apache.org/zookeeper' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

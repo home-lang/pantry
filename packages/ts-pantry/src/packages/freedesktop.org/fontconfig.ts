@@ -6,7 +6,7 @@
  * @version `2.17.1` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/fontconfig`
+ * @install `pantry install freedesktop.org/fontconfig`
  * @homepage https://wiki.freedesktop.org/www/Software/fontconfig/
  * @dependencies `sourceware.org/bzip2@1`, `freetype.org@2`, `zlib.net@1`, ... (+2 more)
  * @buildDependencies `gnu.org/gperf@3`, `python.org@>=3<3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const freedesktoporgfontconfigPackage = {
   homepageUrl: 'https://wiki.freedesktop.org/www/Software/fontconfig/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/fontconfig' as const,
+  installCommand: 'pantry install freedesktop.org/fontconfig' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/fontconfig -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/fontconfig' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/fontconfig' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

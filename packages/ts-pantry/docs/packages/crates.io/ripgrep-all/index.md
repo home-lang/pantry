@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/ripgrep-all
+# Install with pantry
+pantry install crates.io/ripgrep-all
 ```
 
 ## Programs

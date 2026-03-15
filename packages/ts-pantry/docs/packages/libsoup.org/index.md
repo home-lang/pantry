@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libsoup.org
+# Install with pantry
+pantry install libsoup.org
 ```
 
 ## Programs

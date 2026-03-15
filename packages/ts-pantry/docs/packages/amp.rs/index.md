@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install amp.rs
+# Install with pantry
+pantry install amp.rs
 ```
 
 ## Programs

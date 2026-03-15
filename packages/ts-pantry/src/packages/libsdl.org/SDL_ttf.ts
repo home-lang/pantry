@@ -5,7 +5,7 @@
  * @version `2.24.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libsdl.org/SDL_ttf`
+ * @install `pantry install libsdl.org/SDL_ttf`
  * @dependencies `freetype.org>=2.0.4`, `harfbuzz.org>=2.3.1`, `libsdl.org^2.0.10`
  *
  * @example
@@ -37,12 +37,12 @@ export const libsdlorgsdl_ttfPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libsdl.org/SDL_ttf' as const,
+  installCommand: 'pantry install libsdl.org/SDL_ttf' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsdl.org/SDL_ttf -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libsdl.org/SDL_ttf' as const,
+  pantryInstallCommand: 'pantry install libsdl.org/SDL_ttf' as const,
   programs: [] as const,
   companions: [] as const,
   /**

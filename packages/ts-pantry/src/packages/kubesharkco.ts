@@ -6,7 +6,7 @@
  * @version `72.3.83` (66 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kubeshark.co`
+ * @install `pantry install kubeshark.co`
  * @homepage https://www.kubeshark.co/
  * @buildDependencies `go.dev@^1.19`, `gnu.org/make` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kubesharkcoPackage = {
   homepageUrl: 'https://www.kubeshark.co/' as const,
   githubUrl: 'https://github.com/kubeshark/kubeshark' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kubeshark.co' as const,
+  installCommand: 'pantry install kubeshark.co' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kubeshark.co -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kubeshark.co' as const,
+  pantryInstallCommand: 'pantry install kubeshark.co' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

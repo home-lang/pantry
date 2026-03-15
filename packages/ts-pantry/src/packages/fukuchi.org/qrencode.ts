@@ -6,7 +6,7 @@
  * @version `4.1.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fukuchi.org/qrencode`
+ * @install `pantry install fukuchi.org/qrencode`
  * @homepage https://fukuchi.org/works/qrencode/index.html.en
  * @dependencies `libpng.org`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/coreutils`, ... (+1 more) - required only when building from source
@@ -42,12 +42,12 @@ export const fukuchiorgqrencodePackage = {
   homepageUrl: 'https://fukuchi.org/works/qrencode/index.html.en' as const,
   githubUrl: 'https://github.com/fukuchi/libqrencode' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fukuchi.org/qrencode' as const,
+  installCommand: 'pantry install fukuchi.org/qrencode' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fukuchi.org/qrencode -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fukuchi.org/qrencode' as const,
+  pantryInstallCommand: 'pantry install fukuchi.org/qrencode' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

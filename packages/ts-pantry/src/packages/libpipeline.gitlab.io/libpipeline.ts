@@ -5,7 +5,7 @@
  * @version `1.5.8` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libpipeline.gitlab.io/libpipeline`
+ * @install `pantry install libpipeline.gitlab.io/libpipeline`
  * @buildDependencies `gnu.org/make` - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const libpipelinegitlabiolibpipelinePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libpipeline.gitlab.io/libpipeline' as const,
+  installCommand: 'pantry install libpipeline.gitlab.io/libpipeline' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libpipeline.gitlab.io/libpipeline -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libpipeline.gitlab.io/libpipeline' as const,
+  pantryInstallCommand: 'pantry install libpipeline.gitlab.io/libpipeline' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

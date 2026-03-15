@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/git-trim
+# Install with pantry
+pantry install crates.io/git-trim
 ```
 
 ## Programs

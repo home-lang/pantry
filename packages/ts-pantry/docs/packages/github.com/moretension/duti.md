@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/moretension/duti
+# Install with pantry
+pantry install github.com/moretension/duti
 ```
 
 ## Programs

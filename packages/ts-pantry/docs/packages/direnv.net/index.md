@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install direnv.net
+# Install with pantry
+pantry install direnv.net
 ```
 
 ## Programs

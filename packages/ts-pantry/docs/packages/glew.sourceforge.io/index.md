@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install glew.sourceforge.io
+# Install with pantry
+pantry install glew.sourceforge.io
 ```
 
 ## Programs

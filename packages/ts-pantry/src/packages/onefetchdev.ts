@@ -6,7 +6,7 @@
  * @version `2.26.1` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install onefetch.dev`
+ * @install `pantry install onefetch.dev`
  * @homepage https://onefetch.dev/
  * @dependencies `libgit2.org~1.7 # links to libgit2.so.1.7`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const onefetchdevPackage = {
   homepageUrl: 'https://onefetch.dev/' as const,
   githubUrl: 'https://github.com/o2sh/onefetch' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install onefetch.dev' as const,
+  installCommand: 'pantry install onefetch.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +onefetch.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install onefetch.dev' as const,
+  pantryInstallCommand: 'pantry install onefetch.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

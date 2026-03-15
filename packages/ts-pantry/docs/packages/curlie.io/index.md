@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install curlie.io
+# Install with pantry
+pantry install curlie.io
 ```
 
 ## Programs

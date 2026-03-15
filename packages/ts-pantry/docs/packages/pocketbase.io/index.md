@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pocketbase.io
+# Install with pantry
+pantry install pocketbase.io
 ```
 
 ## Programs

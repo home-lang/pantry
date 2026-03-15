@@ -5,7 +5,7 @@
  * @version `1.0.4` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install code.videolan.org/aribb24`
+ * @install `pantry install code.videolan.org/aribb24`
  * @dependencies `libpng.org`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const codevideolanorgaribb24Package = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install code.videolan.org/aribb24' as const,
+  installCommand: 'pantry install code.videolan.org/aribb24' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +code.videolan.org/aribb24 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install code.videolan.org/aribb24' as const,
+  pantryInstallCommand: 'pantry install code.videolan.org/aribb24' as const,
   programs: [] as const,
   companions: [] as const,
   /**

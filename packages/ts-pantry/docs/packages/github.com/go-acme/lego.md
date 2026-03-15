@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/go-acme/lego
+# Install with pantry
+pantry install github.com/go-acme/lego
 ```
 
 ## Programs

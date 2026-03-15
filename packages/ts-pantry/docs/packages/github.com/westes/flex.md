@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/westes/flex
+# Install with pantry
+pantry install github.com/westes/flex
 ```
 
 ## Programs

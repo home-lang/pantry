@@ -6,7 +6,7 @@
  * @version `2.11.2` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install caddyserver.com`
+ * @install `pantry install caddyserver.com`
  * @homepage https://caddyserver.com/
  * @buildDependencies `go.dev`, `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const caddyservercomPackage = {
   homepageUrl: 'https://caddyserver.com/' as const,
   githubUrl: 'https://github.com/caddyserver/caddy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install caddyserver.com' as const,
+  installCommand: 'pantry install caddyserver.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +caddyserver.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install caddyserver.com' as const,
+  pantryInstallCommand: 'pantry install caddyserver.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

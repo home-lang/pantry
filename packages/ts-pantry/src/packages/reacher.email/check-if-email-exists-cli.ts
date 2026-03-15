@@ -6,7 +6,7 @@
  * @version `0.11.7` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install reacher.email/check-if-email-exists-cli`
+ * @install `pantry install reacher.email/check-if-email-exists-cli`
  * @homepage https://reacher.email
  * @dependencies `openssl.org^1.1`
  * @buildDependencies `perl.org` - required only when building from source
@@ -42,12 +42,12 @@ export const reacheremailcheckifemailexistscliPackage = {
   homepageUrl: 'https://reacher.email' as const,
   githubUrl: 'https://github.com/reacherhq/check-if-email-exists' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install reacher.email/check-if-email-exists-cli' as const,
+  installCommand: 'pantry install reacher.email/check-if-email-exists-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +reacher.email/check-if-email-exists-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install reacher.email/check-if-email-exists-cli' as const,
+  pantryInstallCommand: 'pantry install reacher.email/check-if-email-exists-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

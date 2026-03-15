@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install f1bonacc1.github.io/process-compose
+# Install with pantry
+pantry install f1bonacc1.github.io/process-compose
 ```
 
 ## Programs

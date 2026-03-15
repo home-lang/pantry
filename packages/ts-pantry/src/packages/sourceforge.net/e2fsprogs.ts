@@ -6,7 +6,7 @@
  * @version `1.47.4` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceforge.net/e2fsprogs`
+ * @install `pantry install sourceforge.net/e2fsprogs`
  * @homepage https://e2fsprogs.sourceforge.net/
  * @dependencies `darwin:gnu.org/gettext^0.22`, `linux:github.com/util-linux/util-linux^2.39` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const sourceforgenete2fsprogsPackage = {
   homepageUrl: 'https://e2fsprogs.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceforge.net/e2fsprogs' as const,
+  installCommand: 'pantry install sourceforge.net/e2fsprogs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceforge.net/e2fsprogs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceforge.net/e2fsprogs' as const,
+  pantryInstallCommand: 'pantry install sourceforge.net/e2fsprogs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

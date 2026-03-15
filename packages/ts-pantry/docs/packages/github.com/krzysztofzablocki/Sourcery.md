@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/krzysztofzablocki/Sourcery
+# Install with pantry
+pantry install github.com/krzysztofzablocki/Sourcery
 ```
 
 ## Programs

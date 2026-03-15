@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ollama.ai
+# Install with pantry
+pantry install ollama.ai
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install khronos.org/SPIRV-Tools
+# Install with pantry
+pantry install khronos.org/SPIRV-Tools
 ```
 
 ## Programs

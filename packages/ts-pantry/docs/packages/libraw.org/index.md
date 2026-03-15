@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libraw.org
+# Install with pantry
+pantry install libraw.org
 ```
 
 ## Programs

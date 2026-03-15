@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install videolan.org/x265
+# Install with pantry
+pantry install videolan.org/x265
 ```
 
 ## Programs

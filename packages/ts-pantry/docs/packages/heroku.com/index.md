@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install heroku.com
+# Install with pantry
+pantry install heroku.com
 ```
 
 ## Programs

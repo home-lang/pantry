@@ -12,7 +12,7 @@ Apache HTTP server
 
 **Programs**: ab, apachectl, checkgid, fcgistarter, htcacheclean, htdbm, htdigest, htpasswd, httpd, httxt2dbm, logresolve, rotatelogs, suexec
 
-**Install**: `launchpad install apache.org/httpd`
+**Install**: `pantry install apache.org/httpd`
 
 ---
 
@@ -22,7 +22,7 @@ Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS
 
 **Programs**: caddy
 
-**Install**: `launchpad install caddyserver.com`
+**Install**: `pantry install caddyserver.com`
 
 ---
 
@@ -32,7 +32,7 @@ Cloudflare Tunnel client (formerly Argo Tunnel)
 
 **Programs**: cloudflared
 
-**Install**: `launchpad install cloudflare.com/cloudflared`
+**Install**: `pantry install cloudflare.com/cloudflared`
 
 ---
 
@@ -42,7 +42,7 @@ A command line tool and library for transferring data with URL syntax, supportin
 
 **Programs**: curl, curl-config
 
-**Install**: `launchpad install curl`
+**Install**: `pantry install curl`
 
 ---
 
@@ -52,7 +52,7 @@ Internet file retriever
 
 **Programs**: wget
 
-**Install**: `launchpad install gnu.org/wget`
+**Install**: `pantry install gnu.org/wget`
 
 ---
 
@@ -62,7 +62,7 @@ Internet file retriever
 
 **Programs**: http, httpie, https
 
-**Install**: `launchpad install httpie.io`
+**Install**: `pantry install httpie.io`
 
 ---
 
@@ -72,7 +72,7 @@ Remote terminal application
 
 **Programs**: mosh-client, mosh-server
 
-**Install**: `launchpad install mosh.org`
+**Install**: `pantry install mosh.org`
 
 ---
 
@@ -82,7 +82,7 @@ HTTP(S) server and reverse proxy, and IMAP/POP3 proxy server
 
 **Programs**: nginx
 
-**Install**: `launchpad install nginx.org`
+**Install**: `pantry install nginx.org`
 
 ---
 
@@ -92,7 +92,7 @@ An open source utility that provides fast incremental file transfer. It also has
 
 **Programs**: rsync, rsync-ssl
 
-**Install**: `launchpad install rsync.samba.org`
+**Install**: `pantry install rsync.samba.org`
 
 ---
 
@@ -102,7 +102,7 @@ The Cloud Native Application Proxy
 
 **Programs**: traefik
 
-**Install**: `launchpad install traefik.io`
+**Install**: `pantry install traefik.io`
 
 ---
 

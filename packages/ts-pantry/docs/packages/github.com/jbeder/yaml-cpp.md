@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/jbeder/yaml-cpp
+# Install with pantry
+pantry install github.com/jbeder/yaml-cpp
 ```
 
 ## Programs

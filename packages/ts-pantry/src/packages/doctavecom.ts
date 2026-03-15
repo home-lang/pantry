@@ -6,7 +6,7 @@
  * @version `0.4.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install doctave.com`
+ * @install `pantry install doctave.com`
  * @homepage https://cli.doctave.com
  *
  * @example
@@ -40,12 +40,12 @@ export const doctavecomPackage = {
   homepageUrl: 'https://cli.doctave.com' as const,
   githubUrl: 'https://github.com/Doctave/doctave' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install doctave.com' as const,
+  installCommand: 'pantry install doctave.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +doctave.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install doctave.com' as const,
+  pantryInstallCommand: 'pantry install doctave.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

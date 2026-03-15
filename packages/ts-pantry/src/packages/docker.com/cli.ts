@@ -6,7 +6,7 @@
  * @version `29.3.0` (74 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install docker.com/cli`
+ * @install `pantry install docker.com/cli`
  * @aliases `docker`
  * @homepage https://www.docker.com/
  * @buildDependencies `go.dev` - required only when building from source
@@ -46,12 +46,12 @@ export const dockerPackage = {
   homepageUrl: 'https://www.docker.com/' as const,
   githubUrl: 'https://github.com/docker/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install docker.com/cli' as const,
+  installCommand: 'pantry install docker.com/cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +docker.com/cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install docker.com/cli' as const,
+  pantryInstallCommand: 'pantry install docker.com/cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

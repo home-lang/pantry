@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install starship.rs
+# Install with pantry
+pantry install starship.rs
 ```
 
 ## Programs

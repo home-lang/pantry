@@ -6,7 +6,7 @@
  * @version `1.11.4` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libzip.org`
+ * @install `pantry install libzip.org`
  * @homepage https://libzip.org/
  * @dependencies `facebook.com/zstd>=1.5.0`, `darwin:sourceware.org/bzip2>=1.0.8`, `darwin:tukaani.org/xz>=5.2.7`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@>=3.24` - required only when building from source
@@ -42,12 +42,12 @@ export const libziporgPackage = {
   homepageUrl: 'https://libzip.org/' as const,
   githubUrl: 'https://github.com/nih-at/libzip' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libzip.org' as const,
+  installCommand: 'pantry install libzip.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libzip.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libzip.org' as const,
+  pantryInstallCommand: 'pantry install libzip.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

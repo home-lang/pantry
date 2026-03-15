@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ios-control/ios-deploy
+# Install with pantry
+pantry install github.com/ios-control/ios-deploy
 ```
 
 ## Programs

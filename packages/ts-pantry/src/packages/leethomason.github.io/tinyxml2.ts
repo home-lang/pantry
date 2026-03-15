@@ -5,7 +5,7 @@
  * @version `11.0.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install leethomason.github.io/tinyxml2`
+ * @install `pantry install leethomason.github.io/tinyxml2`
  * @buildDependencies `cmake.org` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const leethomasongithubiotinyxml2Package = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/leethomason/tinyxml2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install leethomason.github.io/tinyxml2' as const,
+  installCommand: 'pantry install leethomason.github.io/tinyxml2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +leethomason.github.io/tinyxml2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install leethomason.github.io/tinyxml2' as const,
+  pantryInstallCommand: 'pantry install leethomason.github.io/tinyxml2' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

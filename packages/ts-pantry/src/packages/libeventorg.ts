@@ -5,7 +5,7 @@
  * @version `2.1.12` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libevent.org`
+ * @install `pantry install libevent.org`
  * @homepage https://libevent.org
  * @dependencies `openssl.org^1.1`
  * @buildDependencies `gnu.org/libtool@2`, `gnu.org/automake@1`, `gnu.org/autoconf@2` - required only when building from source
@@ -40,12 +40,12 @@ export const libeventorgPackage = {
   homepageUrl: 'https://libevent.org' as const,
   githubUrl: 'https://github.com/libevent/libevent' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libevent.org' as const,
+  installCommand: 'pantry install libevent.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libevent.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libevent.org' as const,
+  pantryInstallCommand: 'pantry install libevent.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

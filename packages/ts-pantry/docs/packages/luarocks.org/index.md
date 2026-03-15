@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install luarocks.org
+# Install with pantry
+pantry install luarocks.org
 ```
 
 ## Programs

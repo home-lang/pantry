@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install railway.app
+# Install with pantry
+pantry install railway.app
 ```
 
 ## Programs

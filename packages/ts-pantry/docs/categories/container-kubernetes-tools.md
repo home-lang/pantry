@@ -12,7 +12,7 @@ CLI to install, manage & troubleshoot Kubernetes clusters running Cilium
 
 **Programs**: cilium
 
-**Install**: `launchpad install cilium.io/cilium`
+**Install**: `pantry install cilium.io/cilium`
 
 ---
 
@@ -22,7 +22,7 @@ Hubble - Network, Service & Security Observability for Kubernetes using eBPF
 
 **Programs**: hubble
 
-**Install**: `launchpad install cilium.io/hubble`
+**Install**: `pantry install cilium.io/hubble`
 
 ---
 
@@ -32,7 +32,7 @@ CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreS
 
 **Programs**: kubectl-cnpg
 
-**Install**: `launchpad install cloudnative-pg.io`
+**Install**: `pantry install cloudnative-pg.io`
 
 ---
 
@@ -42,7 +42,7 @@ Pack, ship and run any application as a lightweight container
 
 **Programs**: docker
 
-**Install**: `launchpad install docker`
+**Install**: `pantry install docker`
 
 ---
 
@@ -52,7 +52,7 @@ Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as
 
 **Programs**: helmfile
 
-**Install**: `launchpad install github.com/helmfile/helmfile`
+**Install**: `pantry install github.com/helmfile/helmfile`
 
 ---
 
@@ -62,7 +62,7 @@ Declaratively deploy your Kubernetes manifests, Kustomize configs, and Charts as
 
 **Programs**: stern
 
-**Install**: `launchpad install github.com/stern/stern`
+**Install**: `pantry install github.com/stern/stern`
 
 ---
 
@@ -72,7 +72,7 @@ A FAST Kubernetes manifests validator, with support for Custom Resources!
 
 **Programs**: kubeconform
 
-**Install**: `launchpad install github.com/yannh/kubeconform`
+**Install**: `pantry install github.com/yannh/kubeconform`
 
 ---
 
@@ -82,7 +82,7 @@ The Kubernetes Package Manager
 
 **Programs**: helm
 
-**Install**: `launchpad install helm.sh`
+**Install**: `pantry install helm.sh`
 
 ---
 
@@ -92,7 +92,7 @@ Connect, secure, control, and observe services.
 
 **Programs**: istioctl
 
-**Install**: `launchpad install istio.io`
+**Install**: `pantry install istio.io`
 
 ---
 
@@ -102,7 +102,7 @@ Connect, secure, control, and observe services.
 
 **Programs**: k9s
 
-**Install**: `launchpad install k9scli.io`
+**Install**: `pantry install k9scli.io`
 
 ---
 
@@ -112,7 +112,7 @@ Connect, secure, control, and observe services.
 
 **Programs**: kubectl-krew
 
-**Install**: `launchpad install krew.sigs.k8s.io`
+**Install**: `pantry install krew.sigs.k8s.io`
 
 ---
 
@@ -122,7 +122,7 @@ Kubebuilder - SDK for building Kubernetes APIs using CRDs
 
 **Programs**: kubebuilder
 
-**Install**: `launchpad install kubebuilder.io`
+**Install**: `pantry install kubebuilder.io`
 
 ---
 
@@ -132,7 +132,7 @@ Manage your kubeconfig more easily.
 
 **Programs**: kubecm
 
-**Install**: `launchpad install kubecm.cloud`
+**Install**: `pantry install kubecm.cloud`
 
 ---
 
@@ -142,7 +142,7 @@ KubeLinter is a static analysis tool that checks Kubernetes YAML files and Helm 
 
 **Programs**: kube-linter
 
-**Install**: `launchpad install kubelinter.io`
+**Install**: `pantry install kubelinter.io`
 
 ---
 
@@ -152,7 +152,7 @@ Production-Grade Container Scheduling and Management
 
 **Programs**: kubectl
 
-**Install**: `launchpad install kubernetes.io/kubectl`
+**Install**: `pantry install kubernetes.io/kubectl`
 
 ---
 
@@ -162,7 +162,7 @@ Template-free customization of Kubernetes YAML manifests
 
 **Programs**: kustomize
 
-**Install**: `launchpad install kubernetes.io/kustomize`
+**Install**: `pantry install kubernetes.io/kustomize`
 
 ---
 
@@ -172,7 +172,7 @@ Run a Kubernetes cluster locally
 
 **Programs**: minikube
 
-**Install**: `launchpad install kubernetes.io/minikube`
+**Install**: `pantry install kubernetes.io/minikube`
 
 ---
 
@@ -182,7 +182,7 @@ The API traffic analyzer for Kubernetes providing real-time K8s protocol-level v
 
 **Programs**: kubeshark
 
-**Install**: `launchpad install kubeshark.co`
+**Install**: `pantry install kubeshark.co`
 
 ---
 
@@ -192,7 +192,7 @@ Ultralight, security-first service mesh for Kubernetes. Main repo for Linkerd 2.
 
 **Programs**: linkerd
 
-**Install**: `launchpad install linkerd.io/linkerd2`
+**Install**: `pantry install linkerd.io/linkerd2`
 
 ---
 
@@ -202,7 +202,7 @@ SDK for building Kubernetes applications. Provides high level APIs, useful abstr
 
 **Programs**: operator-sdk
 
-**Install**: `launchpad install operatorframework.io/operator-sdk`
+**Install**: `pantry install operatorframework.io/operator-sdk`
 
 ---
 
@@ -212,7 +212,7 @@ Podman: A tool for managing OCI containers and pods.
 
 **Programs**: podman, podman-remote, podman-mac-helper
 
-**Install**: `launchpad install podman.io`
+**Install**: `pantry install podman.io`
 
 ---
 
@@ -222,7 +222,7 @@ Easy and Repeatable Kubernetes Development
 
 **Programs**: skaffold
 
-**Install**: `launchpad install skaffold.dev`
+**Install**: `pantry install skaffold.dev`
 
 ---
 
@@ -232,7 +232,7 @@ Define your dev environment as code. For microservice apps on Kubernetes.
 
 **Programs**: tilt
 
-**Install**: `launchpad install tilt.dev`
+**Install**: `pantry install tilt.dev`
 
 ---
 
@@ -242,7 +242,7 @@ vCluster - Create fully functional virtual Kubernetes clusters - Each vcluster r
 
 **Programs**: vcluster
 
-**Install**: `launchpad install vcluster.com`
+**Install**: `pantry install vcluster.com`
 
 ---
 
@@ -252,7 +252,7 @@ Backup and migrate Kubernetes applications and their persistent volumes
 
 **Programs**: velero
 
-**Install**: `launchpad install velero.io`
+**Install**: `pantry install velero.io`
 
 ---
 

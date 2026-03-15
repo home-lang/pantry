@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnome.org/adwaita-icon-theme
+# Install with pantry
+pantry install gnome.org/adwaita-icon-theme
 ```
 
 ## Programs

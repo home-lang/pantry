@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nano-editor.org
+# Install with pantry
+pantry install nano-editor.org
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.2.37` (22 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rioterm.com`
+ * @install `pantry install rioterm.com`
  * @homepage https://rioterm.com
  * @dependencies `linux:freedesktop.org/fontconfig` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const riotermcomPackage = {
   homepageUrl: 'https://rioterm.com' as const,
   githubUrl: 'https://github.com/raphamorim/rio' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rioterm.com' as const,
+  installCommand: 'pantry install rioterm.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rioterm.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rioterm.com' as const,
+  pantryInstallCommand: 'pantry install rioterm.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

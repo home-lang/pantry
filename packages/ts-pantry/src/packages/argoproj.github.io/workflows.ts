@@ -6,7 +6,7 @@
  * @version `4.0.2` (56 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install argoproj.github.io/workflows`
+ * @install `pantry install argoproj.github.io/workflows`
  * @homepage https://argoproj.io
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const argoprojgithubioworkflowsPackage = {
   homepageUrl: 'https://argoproj.io' as const,
   githubUrl: 'https://github.com/argoproj/argo-workflows' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install argoproj.github.io/workflows' as const,
+  installCommand: 'pantry install argoproj.github.io/workflows' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +argoproj.github.io/workflows -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install argoproj.github.io/workflows' as const,
+  pantryInstallCommand: 'pantry install argoproj.github.io/workflows' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

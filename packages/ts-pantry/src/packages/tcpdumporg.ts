@@ -6,7 +6,7 @@
  * @version `1.10.6` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tcpdump.org`
+ * @install `pantry install tcpdump.org`
  * @homepage https://www.tcpdump.org/
  * @buildDependencies `gnu.org/make`, `gnu.org/bison`, `github.com/westes/flex` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tcpdumporgPackage = {
   homepageUrl: 'https://www.tcpdump.org/' as const,
   githubUrl: 'https://github.com/the-tcpdump-group/libpcap' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tcpdump.org' as const,
+  installCommand: 'pantry install tcpdump.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tcpdump.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tcpdump.org' as const,
+  pantryInstallCommand: 'pantry install tcpdump.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

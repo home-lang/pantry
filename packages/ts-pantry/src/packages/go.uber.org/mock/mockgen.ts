@@ -6,7 +6,7 @@
  * @version `0.6.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install go.uber.org/mock/mockgen`
+ * @install `pantry install go.uber.org/mock/mockgen`
  * @dependencies `go.dev^1.20`
  * @buildDependencies `goreleaser.com` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gouberorgmockmockgenPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/uber-go/mock' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install go.uber.org/mock/mockgen' as const,
+  installCommand: 'pantry install go.uber.org/mock/mockgen' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +go.uber.org/mock/mockgen -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install go.uber.org/mock/mockgen' as const,
+  pantryInstallCommand: 'pantry install go.uber.org/mock/mockgen' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

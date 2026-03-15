@@ -6,7 +6,7 @@
  * @version `1.4.21` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/m4`
+ * @install `pantry install gnu.org/m4`
  * @homepage https://www.gnu.org/software/m4/
  *
  * @example
@@ -40,12 +40,12 @@ export const gnuorgm4Package = {
   homepageUrl: 'https://www.gnu.org/software/m4/' as const,
   githubUrl: 'https://github.com/autotools-mirror/m4' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/m4' as const,
+  installCommand: 'pantry install gnu.org/m4' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/m4 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/m4' as const,
+  pantryInstallCommand: 'pantry install gnu.org/m4' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

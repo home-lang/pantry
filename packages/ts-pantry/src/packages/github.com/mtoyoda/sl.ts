@@ -6,7 +6,7 @@
  * @version `5.2.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/mtoyoda/sl`
+ * @install `pantry install github.com/mtoyoda/sl`
  * @dependencies `invisible-island.net/ncurses@6`
  * @buildDependencies `gnu.org/patch` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const slPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/mtoyoda/sl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/mtoyoda/sl' as const,
+  installCommand: 'pantry install github.com/mtoyoda/sl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mtoyoda/sl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/mtoyoda/sl' as const,
+  pantryInstallCommand: 'pantry install github.com/mtoyoda/sl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

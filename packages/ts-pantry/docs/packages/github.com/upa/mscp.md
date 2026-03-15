@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/upa/mscp
+# Install with pantry
+pantry install github.com/upa/mscp
 ```
 
 ## Programs

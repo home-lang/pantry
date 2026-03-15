@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install carapace.sh
+# Install with pantry
+pantry install carapace.sh
 ```
 
 ## Programs

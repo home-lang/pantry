@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install augeas.net
+# Install with pantry
+pantry install augeas.net
 ```
 
 ## Programs

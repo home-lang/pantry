@@ -6,7 +6,7 @@
  * @version `1.12.5` (46 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install talos.dev`
+ * @install `pantry install talos.dev`
  * @homepage https://www.talos.dev/
  * @buildDependencies `go.dev@^1.21`, `linux:gnu.org/gcc`, `linux:gnu.org/binutils@~2.44` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const talosdevPackage = {
   homepageUrl: 'https://www.talos.dev/' as const,
   githubUrl: 'https://github.com/siderolabs/talos' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install talos.dev' as const,
+  installCommand: 'pantry install talos.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +talos.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install talos.dev' as const,
+  pantryInstallCommand: 'pantry install talos.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

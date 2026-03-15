@@ -6,7 +6,7 @@
  * @version `1.22.5` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/ed`
+ * @install `pantry install gnu.org/ed`
  * @buildDependencies `curl.se`, `nongnu.org/lzip` - required only when building from source
  *
  * @example
@@ -39,12 +39,12 @@ export const gnuorgedPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/ed' as const,
+  installCommand: 'pantry install gnu.org/ed' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/ed -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/ed' as const,
+  pantryInstallCommand: 'pantry install gnu.org/ed' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

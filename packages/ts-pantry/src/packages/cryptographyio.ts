@@ -5,7 +5,7 @@
  * @version `46.0.5` (30 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cryptography.io`
+ * @install `pantry install cryptography.io`
  * @homepage https://cryptography.io
  * @dependencies `python.org>=3.11`, `github.com/python-cffi/cffi^1.16`, `openssl.org>=1.1`
  *
@@ -39,12 +39,12 @@ export const cryptographyioPackage = {
   homepageUrl: 'https://cryptography.io' as const,
   githubUrl: 'https://github.com/pyca/cryptography' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cryptography.io' as const,
+  installCommand: 'pantry install cryptography.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cryptography.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cryptography.io' as const,
+  pantryInstallCommand: 'pantry install cryptography.io' as const,
   programs: [] as const,
   companions: [] as const,
   /**

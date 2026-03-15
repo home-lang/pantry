@@ -6,7 +6,7 @@
  * @version `20260309.0.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install chiark.greenend.org.uk/puzzles`
+ * @install `pantry install chiark.greenend.org.uk/puzzles`
  * @dependencies `linux:gtk.org/gtk3` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@>=3.5`, `chiark.greenend.org.uk/halibut`, `linux:llvm.org@20`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const chiarkgreenendorgukpuzzlesPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install chiark.greenend.org.uk/puzzles' as const,
+  installCommand: 'pantry install chiark.greenend.org.uk/puzzles' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +chiark.greenend.org.uk/puzzles -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install chiark.greenend.org.uk/puzzles' as const,
+  pantryInstallCommand: 'pantry install chiark.greenend.org.uk/puzzles' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

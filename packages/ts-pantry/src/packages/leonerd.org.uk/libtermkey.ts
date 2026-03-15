@@ -5,7 +5,7 @@
  * @version `0.21.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install leonerd.org.uk/libtermkey`
+ * @install `pantry install leonerd.org.uk/libtermkey`
  * @dependencies `github.com/neovim/unibilium`, `invisible-island.net/ncurses`
  * @buildDependencies `gnu.org/libtool`, `linux:gnome.org/glib` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const leonerdorguklibtermkeyPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install leonerd.org.uk/libtermkey' as const,
+  installCommand: 'pantry install leonerd.org.uk/libtermkey' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +leonerd.org.uk/libtermkey -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install leonerd.org.uk/libtermkey' as const,
+  pantryInstallCommand: 'pantry install leonerd.org.uk/libtermkey' as const,
   programs: [] as const,
   companions: [] as const,
   /**

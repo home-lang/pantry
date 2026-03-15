@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libjpeg-turbo.org
+# Install with pantry
+pantry install libjpeg-turbo.org
 ```
 
 ## Programs

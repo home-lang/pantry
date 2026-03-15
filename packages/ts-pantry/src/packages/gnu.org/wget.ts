@@ -6,7 +6,7 @@
  * @version `1.25.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/wget`
+ * @install `pantry install gnu.org/wget`
  * @homepage https://www.gnu.org/software/wget/
  * @dependencies `openssl.org^1.1`
  *
@@ -41,12 +41,12 @@ export const gnuorgwgetPackage = {
   homepageUrl: 'https://www.gnu.org/software/wget/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/wget' as const,
+  installCommand: 'pantry install gnu.org/wget' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/wget -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/wget' as const,
+  pantryInstallCommand: 'pantry install gnu.org/wget' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

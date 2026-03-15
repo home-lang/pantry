@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install netpbm.sourceforge.net
+# Install with pantry
+pantry install netpbm.sourceforge.net
 ```
 
 ## Programs

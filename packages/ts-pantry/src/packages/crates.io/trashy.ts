@@ -6,7 +6,7 @@
  * @version `2.0.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/trashy`
+ * @install `pantry install crates.io/trashy`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiotrashyPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/oberblastmeister/trashy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/trashy' as const,
+  installCommand: 'pantry install crates.io/trashy' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/trashy -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/trashy' as const,
+  pantryInstallCommand: 'pantry install crates.io/trashy' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

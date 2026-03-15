@@ -5,7 +5,7 @@
  * @version `2026.2.25` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install certifi.io/python-certifi`
+ * @install `pantry install certifi.io/python-certifi`
  * @dependencies `python.org~3.11`
  *
  * @example
@@ -38,12 +38,12 @@ export const certifiiopythoncertifiPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/certifi/python-certifi' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install certifi.io/python-certifi' as const,
+  installCommand: 'pantry install certifi.io/python-certifi' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +certifi.io/python-certifi -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install certifi.io/python-certifi' as const,
+  pantryInstallCommand: 'pantry install certifi.io/python-certifi' as const,
   programs: [] as const,
   companions: [] as const,
   /**

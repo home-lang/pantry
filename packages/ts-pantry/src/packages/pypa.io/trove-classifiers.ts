@@ -5,7 +5,7 @@
  * @version `2026.1.14.14` (37 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pypa.io/trove-classifiers`
+ * @install `pantry install pypa.io/trove-classifiers`
  * @homepage https://pypi.org/p/trove-classifiers/
  * @dependencies `python.org~3.12`
  * @buildDependencies `pypa.io/setuptools` - required only when building from source
@@ -40,12 +40,12 @@ export const pypaiotroveclassifiersPackage = {
   homepageUrl: 'https://pypi.org/p/trove-classifiers/' as const,
   githubUrl: 'https://github.com/pypa/trove-classifiers' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pypa.io/trove-classifiers' as const,
+  installCommand: 'pantry install pypa.io/trove-classifiers' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pypa.io/trove-classifiers -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pypa.io/trove-classifiers' as const,
+  pantryInstallCommand: 'pantry install pypa.io/trove-classifiers' as const,
   programs: [] as const,
   companions: [] as const,
   /**

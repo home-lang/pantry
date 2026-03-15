@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/libbsd
+# Install with pantry
+pantry install freedesktop.org/libbsd
 ```
 
 ## Programs

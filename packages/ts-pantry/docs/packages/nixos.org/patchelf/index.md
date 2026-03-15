@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nixos.org/patchelf
+# Install with pantry
+pantry install nixos.org/patchelf
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.3.1` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/TartanLlama/expected`
+ * @install `pantry install github.com/TartanLlama/expected`
  * @homepage https://tl.tartanllama.xyz
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const expectedPackage = {
   homepageUrl: 'https://tl.tartanllama.xyz' as const,
   githubUrl: 'https://github.com/TartanLlama/expected' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/TartanLlama/expected' as const,
+  installCommand: 'pantry install github.com/TartanLlama/expected' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/TartanLlama/expected -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/TartanLlama/expected' as const,
+  pantryInstallCommand: 'pantry install github.com/TartanLlama/expected' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

@@ -6,7 +6,7 @@
  * @version `7.98.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nmap.org`
+ * @install `pantry install nmap.org`
  * @homepage https://nmap.org/
  * @dependencies `openssl.org^1.1`, `pcre.org/v2^10`
  * @buildDependencies `gnu.org/patch`, `python.org@3` - required only when building from source
@@ -42,12 +42,12 @@ export const nmaporgPackage = {
   homepageUrl: 'https://nmap.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nmap.org' as const,
+  installCommand: 'pantry install nmap.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nmap.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nmap.org' as const,
+  pantryInstallCommand: 'pantry install nmap.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/snowplow/factotum
+# Install with pantry
+pantry install github.com/snowplow/factotum
 ```
 
 ## Programs

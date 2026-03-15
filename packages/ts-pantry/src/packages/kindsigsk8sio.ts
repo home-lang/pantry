@@ -6,7 +6,7 @@
  * @version `0.31.0` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kind.sigs.k8s.io`
+ * @install `pantry install kind.sigs.k8s.io`
  * @homepage https://kind.sigs.k8s.io/
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kindsigsk8sioPackage = {
   homepageUrl: 'https://kind.sigs.k8s.io/' as const,
   githubUrl: 'https://github.com/kubernetes-sigs/kind' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kind.sigs.k8s.io' as const,
+  installCommand: 'pantry install kind.sigs.k8s.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kind.sigs.k8s.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kind.sigs.k8s.io' as const,
+  pantryInstallCommand: 'pantry install kind.sigs.k8s.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/maxbrunsfeld/counterfeiter
+# Install with pantry
+pantry install github.com/maxbrunsfeld/counterfeiter
 ```
 
 ## Programs

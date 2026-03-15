@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install google.com/woff2
+# Install with pantry
+pantry install google.com/woff2
 ```
 
 ## Programs

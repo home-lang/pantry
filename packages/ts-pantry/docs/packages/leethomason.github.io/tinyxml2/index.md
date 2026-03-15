@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install leethomason.github.io/tinyxml2
+# Install with pantry
+pantry install leethomason.github.io/tinyxml2
 ```
 
 ## Programs

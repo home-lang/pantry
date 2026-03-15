@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rust-lang.github.io/mdBook
+# Install with pantry
+pantry install rust-lang.github.io/mdBook
 ```
 
 ## Programs

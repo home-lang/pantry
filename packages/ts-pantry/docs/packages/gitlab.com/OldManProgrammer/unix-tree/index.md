@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gitlab.com/OldManProgrammer/unix-tree
+# Install with pantry
+pantry install gitlab.com/OldManProgrammer/unix-tree
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install certifi.io/python-certifi
+# Install with pantry
+pantry install certifi.io/python-certifi
 ```
 
 ## Programs

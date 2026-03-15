@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install granted.dev
+# Install with pantry
+pantry install granted.dev
 ```
 
 ## Programs

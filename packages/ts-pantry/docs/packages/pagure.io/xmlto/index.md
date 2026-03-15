@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pagure.io/xmlto
+# Install with pantry
+pantry install pagure.io/xmlto
 ```
 
 ## Programs

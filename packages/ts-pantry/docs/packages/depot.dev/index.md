@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install depot.dev
+# Install with pantry
+pantry install depot.dev
 ```
 
 ## Programs

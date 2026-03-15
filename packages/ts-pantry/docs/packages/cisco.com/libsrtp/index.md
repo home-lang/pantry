@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cisco.com/libsrtp
+# Install with pantry
+pantry install cisco.com/libsrtp
 ```
 
 ## Programs

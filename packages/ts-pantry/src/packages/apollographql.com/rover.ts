@@ -6,7 +6,7 @@
  * @version `0.37.2` (36 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apollographql.com/rover`
+ * @install `pantry install apollographql.com/rover`
  * @homepage https://www.apollographql.com/docs/rover/
  * @dependencies `openssl.org^1.1`, `zlib.net^1`, `libgit2.org~1.7 # links to libgit2.so.1.7`
  * @buildDependencies `linux:perl.org@^5` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const apollographqlcomroverPackage = {
   homepageUrl: 'https://www.apollographql.com/docs/rover/' as const,
   githubUrl: 'https://github.com/apollographql/rover' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apollographql.com/rover' as const,
+  installCommand: 'pantry install apollographql.com/rover' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apollographql.com/rover -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apollographql.com/rover' as const,
+  pantryInstallCommand: 'pantry install apollographql.com/rover' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

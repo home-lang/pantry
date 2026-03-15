@@ -6,7 +6,7 @@
  * @version `0.9.5` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install microbrew.org/md5sha1sum`
+ * @install `pantry install microbrew.org/md5sha1sum`
  * @homepage http://microbrew.org/tools/md5sha1sum/
  * @dependencies `openssl.org^1.1`
  *
@@ -41,12 +41,12 @@ export const microbreworgmd5sha1sumPackage = {
   homepageUrl: 'http://microbrew.org/tools/md5sha1sum/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install microbrew.org/md5sha1sum' as const,
+  installCommand: 'pantry install microbrew.org/md5sha1sum' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +microbrew.org/md5sha1sum -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install microbrew.org/md5sha1sum' as const,
+  pantryInstallCommand: 'pantry install microbrew.org/md5sha1sum' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

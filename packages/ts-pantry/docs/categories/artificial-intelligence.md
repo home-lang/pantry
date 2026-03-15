@@ -12,7 +12,7 @@ All-in-one LLM CLI tool featuring Shell Assistant, Chat-REPL, RAG, AI Tools & Ag
 
 **Programs**: aichat
 
-**Install**: `launchpad install crates.io/aichat`
+**Install**: `pantry install crates.io/aichat`
 
 ---
 
@@ -22,7 +22,7 @@ All-in-one LLM CLI tool featuring Shell Assistant, Chat-REPL, RAG, AI Tools & Ag
 
 **Programs**: metagpt
 
-**Install**: `launchpad install deepwisdom.ai`
+**Install**: `pantry install deepwisdom.ai`
 
 ---
 
@@ -32,7 +32,7 @@ Autonomous agents for everyone
 
 **Programs**: eliza
 
-**Install**: `launchpad install elizaOS.github.io`
+**Install**: `pantry install elizaOS.github.io`
 
 ---
 
@@ -42,7 +42,7 @@ Platform to experiment with the AI Software Engineer. Terminal based. NOTE: Very
 
 **Programs**: gpte, gpt-engineer
 
-**Install**: `launchpad install github.com/AntonOsika/gpt-engineer`
+**Install**: `pantry install github.com/AntonOsika/gpt-engineer`
 
 ---
 
@@ -52,7 +52,7 @@ An LLM playground you can run on your laptop
 
 **Programs**: openplayground
 
-**Install**: `launchpad install github.com/nat/openplayground`
+**Install**: `pantry install github.com/nat/openplayground`
 
 ---
 
@@ -62,7 +62,7 @@ A CLI Swiss Army Knife for ChatGPT
 
 **Programs**: chatblade
 
-**Install**: `launchpad install github.com/npiv/chatblade`
+**Install**: `pantry install github.com/npiv/chatblade`
 
 ---
 
@@ -72,7 +72,7 @@ JupyterLab computational environment.
 
 **Programs**: jlpm, jupyter, jupyter-bundlerextension, jupyter-dejavu, jupyter-events, jupyter-execute, jupyter-fileid, jupyter-kernel, jupyter-kernelspec, jupyter-lab, jupyter-labextension, jupyter-labhub, jupyter-migrate, jupyter-nbclassic, jupyter-nbclassic-bundlerextension, jupyter-nbclassic-extension, jupyter-nbclassic-serverextension, jupyter-nbconvert, jupyter-nbextension, jupyter-run, jupyter-server, jupyter-serverextension, jupyter-troubleshoot, jupyter-trust
 
-**Install**: `launchpad install jupyter.org`
+**Install**: `pantry install jupyter.org`
 
 ---
 
@@ -82,7 +82,7 @@ Official Kaggle API
 
 **Programs**: kaggle
 
-**Install**: `launchpad install kaggle.com`
+**Install**: `pantry install kaggle.com`
 
 ---
 
@@ -92,7 +92,7 @@ Access large language models from the command-line
 
 **Programs**: llm
 
-**Install**: `launchpad install llm.datasette.io`
+**Install**: `pantry install llm.datasette.io`
 
 ---
 
@@ -102,7 +102,7 @@ The fundamental package for scientific computing with Python.
 
 **Programs**: f2py
 
-**Install**: `launchpad install numpy.org`
+**Install**: `pantry install numpy.org`
 
 ---
 
@@ -112,7 +112,7 @@ Get up and running with Llama 3.3, DeepSeek-R1, Phi-4, Gemma 2, and other large 
 
 **Programs**: ollama
 
-**Install**: `launchpad install ollama.ai`
+**Install**: `pantry install ollama.ai`
 
 ---
 
@@ -122,7 +122,7 @@ The official Python library for the OpenAI API
 
 **Programs**: openai
 
-**Install**: `launchpad install openai.com/openai-python`
+**Install**: `pantry install openai.com/openai-python`
 
 ---
 
@@ -132,7 +132,7 @@ A natural language interface for computers
 
 **Programs**: interpreter
 
-**Install**: `launchpad install openinterpreter.com`
+**Install**: `pantry install openinterpreter.com`
 
 ---
 

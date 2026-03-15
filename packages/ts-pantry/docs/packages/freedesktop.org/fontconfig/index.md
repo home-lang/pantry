@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/fontconfig
+# Install with pantry
+pantry install freedesktop.org/fontconfig
 ```
 
 ## Programs

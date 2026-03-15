@@ -12,7 +12,7 @@ Vector graphics library with cross-device output support
 
 **Programs**: cairo-trace
 
-**Install**: `launchpad install cairographics.org`
+**Install**: `pantry install cairographics.org`
 
 ---
 
@@ -22,7 +22,7 @@ OpenGL Mathematics (GLM)
 
 **Programs**: None specified
 
-**Install**: `launchpad install glm.g-truc.net`
+**Install**: `pantry install glm.g-truc.net`
 
 ---
 
@@ -32,7 +32,7 @@ Simple Directmedia Layer
 
 **Programs**: None specified
 
-**Install**: `launchpad install libsdl.org`
+**Install**: `pantry install libsdl.org`
 
 ---
 
@@ -42,7 +42,7 @@ Image decoding for many popular formats for Simple Directmedia Layer.
 
 **Programs**: None specified
 
-**Install**: `launchpad install libsdl.org/SDL_image`
+**Install**: `pantry install libsdl.org/SDL_image`
 
 ---
 

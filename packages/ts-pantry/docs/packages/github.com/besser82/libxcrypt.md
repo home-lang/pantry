@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/besser82/libxcrypt
+# Install with pantry
+pantry install github.com/besser82/libxcrypt
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `4.111.0` (66 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install coder.com/code-server`
+ * @install `pantry install coder.com/code-server`
  * @homepage https://coder.com
  * @dependencies `nodejs.org^22 # since 4.101.0`, `linux:gnome.org/libsecret^0.21`, `linux:x.org/x11^1.8`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `npmjs.com`, `python.org@>=3.11` - required only when building from source
@@ -42,12 +42,12 @@ export const codercomcodeserverPackage = {
   homepageUrl: 'https://coder.com' as const,
   githubUrl: 'https://github.com/coder/code-server' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install coder.com/code-server' as const,
+  installCommand: 'pantry install coder.com/code-server' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +coder.com/code-server -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install coder.com/code-server' as const,
+  pantryInstallCommand: 'pantry install coder.com/code-server' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

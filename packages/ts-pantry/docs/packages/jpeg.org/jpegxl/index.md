@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jpeg.org/jpegxl
+# Install with pantry
+pantry install jpeg.org/jpegxl
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/jnv
+# Install with pantry
+pantry install crates.io/jnv
 ```
 
 ## Programs

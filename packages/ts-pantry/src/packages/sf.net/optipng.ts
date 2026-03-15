@@ -6,7 +6,7 @@
  * @version `7.9.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sf.net/optipng`
+ * @install `pantry install sf.net/optipng`
  * @homepage https://optipng.sourceforge.net/
  * @dependencies `libpng.org^1`, `zlib.net^1`
  *
@@ -41,12 +41,12 @@ export const sfnetoptipngPackage = {
   homepageUrl: 'https://optipng.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sf.net/optipng' as const,
+  installCommand: 'pantry install sf.net/optipng' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sf.net/optipng -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sf.net/optipng' as const,
+  pantryInstallCommand: 'pantry install sf.net/optipng' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

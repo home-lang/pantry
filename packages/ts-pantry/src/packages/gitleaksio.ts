@@ -6,7 +6,7 @@
  * @version `8.30.0` (33 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gitleaks.io`
+ * @install `pantry install gitleaks.io`
  * @homepage https://gitleaks.io
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gitleaksioPackage = {
   homepageUrl: 'https://gitleaks.io' as const,
   githubUrl: 'https://github.com/gitleaks/gitleaks' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gitleaks.io' as const,
+  installCommand: 'pantry install gitleaks.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gitleaks.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gitleaks.io' as const,
+  pantryInstallCommand: 'pantry install gitleaks.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

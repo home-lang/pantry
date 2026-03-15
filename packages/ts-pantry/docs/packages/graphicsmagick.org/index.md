@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install graphicsmagick.org
+# Install with pantry
+pantry install graphicsmagick.org
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.0.16` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/xaw`
+ * @install `pantry install x.org/xaw`
  * @dependencies `x.org/x11`, `x.org/exts`, `x.org/xmu`, ... (+2 more)
  *
  * @example
@@ -37,12 +37,12 @@ export const xorgxawPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/xaw' as const,
+  installCommand: 'pantry install x.org/xaw' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/xaw -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/xaw' as const,
+  pantryInstallCommand: 'pantry install x.org/xaw' as const,
   programs: [] as const,
   companions: [] as const,
   /**

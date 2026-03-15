@@ -6,7 +6,7 @@
  * @version `6.2.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/pypa/twine`
+ * @install `pantry install github.com/pypa/twine`
  * @homepage https://twine.readthedocs.io/
  * @dependencies `python.org>=3.7<3.12`
  *
@@ -41,12 +41,12 @@ export const twinePackage = {
   homepageUrl: 'https://twine.readthedocs.io/' as const,
   githubUrl: 'https://github.com/pypa/twine' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/pypa/twine' as const,
+  installCommand: 'pantry install github.com/pypa/twine' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/pypa/twine -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/pypa/twine' as const,
+  pantryInstallCommand: 'pantry install github.com/pypa/twine' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

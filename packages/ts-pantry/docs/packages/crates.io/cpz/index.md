@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crates.io/cpz
+# Install with pantry
+pantry install crates.io/cpz
 ```
 
 ## Programs

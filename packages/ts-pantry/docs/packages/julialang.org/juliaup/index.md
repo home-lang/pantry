@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install julialang.org/juliaup
+# Install with pantry
+pantry install julialang.org/juliaup
 ```
 
 ## Programs

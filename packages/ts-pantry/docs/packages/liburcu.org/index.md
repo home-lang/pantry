@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install liburcu.org
+# Install with pantry
+pantry install liburcu.org
 ```
 
 ## Programs

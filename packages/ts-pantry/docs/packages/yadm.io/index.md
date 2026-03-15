@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install yadm.io
+# Install with pantry
+pantry install yadm.io
 ```
 
 ## Programs

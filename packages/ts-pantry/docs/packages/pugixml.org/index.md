@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pugixml.org
+# Install with pantry
+pantry install pugixml.org
 ```
 
 ## Programs

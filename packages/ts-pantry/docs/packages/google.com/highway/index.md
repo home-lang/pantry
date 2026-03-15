@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install google.com/highway
+# Install with pantry
+pantry install google.com/highway
 ```
 
 ## Programs

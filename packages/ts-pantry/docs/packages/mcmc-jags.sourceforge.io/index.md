@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mcmc-jags.sourceforge.io
+# Install with pantry
+pantry install mcmc-jags.sourceforge.io
 ```
 
 ## Programs

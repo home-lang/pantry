@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install thrysoee.dk/editline
+# Install with pantry
+pantry install thrysoee.dk/editline
 ```
 
 ## Programs

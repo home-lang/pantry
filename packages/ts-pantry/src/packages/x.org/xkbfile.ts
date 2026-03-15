@@ -5,7 +5,7 @@
  * @version `1.2.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/xkbfile`
+ * @install `pantry install x.org/xkbfile`
  * @dependencies `x.org/x11`
  * @buildDependencies `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const xorgxkbfilePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/xkbfile' as const,
+  installCommand: 'pantry install x.org/xkbfile' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/xkbfile -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/xkbfile' as const,
+  pantryInstallCommand: 'pantry install x.org/xkbfile' as const,
   programs: [] as const,
   companions: [] as const,
   /**

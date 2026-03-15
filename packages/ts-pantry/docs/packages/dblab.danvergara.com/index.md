@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dblab.danvergara.com
+# Install with pantry
+pantry install dblab.danvergara.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.14.1` (44 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openpolicyagent.org`
+ * @install `pantry install openpolicyagent.org`
  * @homepage https://www.openpolicyagent.org
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const openpolicyagentorgPackage = {
   homepageUrl: 'https://www.openpolicyagent.org' as const,
   githubUrl: 'https://github.com/open-policy-agent/opa' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openpolicyagent.org' as const,
+  installCommand: 'pantry install openpolicyagent.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openpolicyagent.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openpolicyagent.org' as const,
+  pantryInstallCommand: 'pantry install openpolicyagent.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `5.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install eyrie.org/eagle/podlators`
+ * @install `pantry install eyrie.org/eagle/podlators`
  * @dependencies `perl.org^5`
  * @buildDependencies `gnu.org/make`, `gnu.org/wget`, `linux:cpanmin.us@^1` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  * @companions `PERL5LIB^{{prefix}}/lib/perl5:{{prefix}}/libexec/lib/perl5:$PERL5LIB`
@@ -41,12 +41,12 @@ export const eyrieorgeaglepodlatorsPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install eyrie.org/eagle/podlators' as const,
+  installCommand: 'pantry install eyrie.org/eagle/podlators' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +eyrie.org/eagle/podlators -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install eyrie.org/eagle/podlators' as const,
+  pantryInstallCommand: 'pantry install eyrie.org/eagle/podlators' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

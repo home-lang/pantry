@@ -5,7 +5,7 @@
  * @version `26.0.2` (79 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mesa3d.org`
+ * @install `pantry install mesa3d.org`
  * @dependencies `libexpat.github.io`, `x.org/x11`, `x.org/xcb`, ... (+21 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/bison`, `mesonbuild.com`, `pygments.org`, ... (+6 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const mesa3dorgPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mesa3d.org' as const,
+  installCommand: 'pantry install mesa3d.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mesa3d.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mesa3d.org' as const,
+  pantryInstallCommand: 'pantry install mesa3d.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

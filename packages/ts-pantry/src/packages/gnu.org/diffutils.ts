@@ -6,7 +6,7 @@
  * @version `3.12.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/diffutils`
+ * @install `pantry install gnu.org/diffutils`
  * @homepage https://www.gnu.org/software/diffutils/
  *
  * @example
@@ -40,12 +40,12 @@ export const gnuorgdiffutilsPackage = {
   homepageUrl: 'https://www.gnu.org/software/diffutils/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/diffutils' as const,
+  installCommand: 'pantry install gnu.org/diffutils' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/diffutils -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/diffutils' as const,
+  pantryInstallCommand: 'pantry install gnu.org/diffutils' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

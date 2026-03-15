@@ -5,7 +5,7 @@
  * @version `2025.12.2` (25 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install curl.se/ca-certs`
+ * @install `pantry install curl.se/ca-certs`
  * @buildDependencies `curl.se` - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const curlsecacertsPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install curl.se/ca-certs' as const,
+  installCommand: 'pantry install curl.se/ca-certs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +curl.se/ca-certs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install curl.se/ca-certs' as const,
+  pantryInstallCommand: 'pantry install curl.se/ca-certs' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

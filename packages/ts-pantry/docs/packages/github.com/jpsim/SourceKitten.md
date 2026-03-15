@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/jpsim/SourceKitten
+# Install with pantry
+pantry install github.com/jpsim/SourceKitten
 ```
 
 ## Programs

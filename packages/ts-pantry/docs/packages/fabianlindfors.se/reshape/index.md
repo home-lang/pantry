@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fabianlindfors.se/reshape
+# Install with pantry
+pantry install fabianlindfors.se/reshape
 ```
 
 ## Programs

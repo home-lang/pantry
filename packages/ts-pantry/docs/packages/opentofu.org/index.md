@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opentofu.org
+# Install with pantry
+pantry install opentofu.org
 ```
 
 ## Programs

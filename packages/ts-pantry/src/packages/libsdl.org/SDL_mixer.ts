@@ -5,7 +5,7 @@
  * @version `3.2.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libsdl.org/SDL_mixer`
+ * @install `pantry install libsdl.org/SDL_mixer`
  * @dependencies `libsdl.org^2.0.9`, `mpg123.de`, `wavpack.com>=4`, ... (+1 more)
  *
  * @example
@@ -37,12 +37,12 @@ export const libsdlorgsdl_mixerPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libsdl.org/SDL_mixer' as const,
+  installCommand: 'pantry install libsdl.org/SDL_mixer' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libsdl.org/SDL_mixer -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libsdl.org/SDL_mixer' as const,
+  pantryInstallCommand: 'pantry install libsdl.org/SDL_mixer' as const,
   programs: [] as const,
   companions: [] as const,
   /**

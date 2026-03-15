@@ -6,7 +6,7 @@
  * @version `0.3.25` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/hughsie/libxmlb`
+ * @install `pantry install github.com/hughsie/libxmlb`
  * @dependencies `gnome.org/glib@2`, `tukaani.org/xz@5`, `facebook.com/zstd@1`
  * @buildDependencies `mesonbuild.com@>=0.61`, `python.org@3`, `gnome.org/vala` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const libxmlbPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/hughsie/libxmlb' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/hughsie/libxmlb' as const,
+  installCommand: 'pantry install github.com/hughsie/libxmlb' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/hughsie/libxmlb -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/hughsie/libxmlb' as const,
+  pantryInstallCommand: 'pantry install github.com/hughsie/libxmlb' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

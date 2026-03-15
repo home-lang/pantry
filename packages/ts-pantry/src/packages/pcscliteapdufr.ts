@@ -6,7 +6,7 @@
  * @version `2.4.1` (15 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pcsclite.apdu.fr`
+ * @install `pantry install pcsclite.apdu.fr`
  * @dependencies `libusb.info^1`, `linux:systemd.io^254 # libudev` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3`, `mesonbuild.com@^1`, `github.com/westes/flex`, ... (+1 more) - required only when building from source
  *
@@ -40,12 +40,12 @@ export const pcscliteapdufrPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pcsclite.apdu.fr' as const,
+  installCommand: 'pantry install pcsclite.apdu.fr' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pcsclite.apdu.fr -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pcsclite.apdu.fr' as const,
+  pantryInstallCommand: 'pantry install pcsclite.apdu.fr' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

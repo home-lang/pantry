@@ -6,7 +6,7 @@
  * @version `1.22.5` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install consul.io`
+ * @install `pantry install consul.io`
  * @homepage https://www.consul.io
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const consulioPackage = {
   homepageUrl: 'https://www.consul.io' as const,
   githubUrl: 'https://github.com/hashicorp/consul' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install consul.io' as const,
+  installCommand: 'pantry install consul.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +consul.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install consul.io' as const,
+  pantryInstallCommand: 'pantry install consul.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

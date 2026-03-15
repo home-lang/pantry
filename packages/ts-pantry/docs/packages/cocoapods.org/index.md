@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cocoapods.org
+# Install with pantry
+pantry install cocoapods.org
 ```
 
 ## Programs

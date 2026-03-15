@@ -6,7 +6,7 @@
  * @version `2.31.0` (70 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tart.run`
+ * @install `pantry install tart.run`
  * @homepage https://tart.run
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const tartrunPackage = {
   homepageUrl: 'https://tart.run' as const,
   githubUrl: 'https://github.com/cirruslabs/tart' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tart.run' as const,
+  installCommand: 'pantry install tart.run' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tart.run -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tart.run' as const,
+  pantryInstallCommand: 'pantry install tart.run' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

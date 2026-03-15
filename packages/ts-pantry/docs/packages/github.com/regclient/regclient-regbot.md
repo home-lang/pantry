@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/regclient/regclient/regbot
+# Install with pantry
+pantry install github.com/regclient/regclient/regbot
 ```
 
 ## Programs

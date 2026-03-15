@@ -6,7 +6,7 @@
  * @version `7.5.4` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install waterlan.home.xs4all.nl/dos2unix`
+ * @install `pantry install waterlan.home.xs4all.nl/dos2unix`
  * @homepage https://waterlan.home.xs4all.nl/dos2unix.html
  * @dependencies `gnu.org/gettext`
  *
@@ -41,12 +41,12 @@ export const waterlanhomexs4allnldos2unixPackage = {
   homepageUrl: 'https://waterlan.home.xs4all.nl/dos2unix.html' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install waterlan.home.xs4all.nl/dos2unix' as const,
+  installCommand: 'pantry install waterlan.home.xs4all.nl/dos2unix' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +waterlan.home.xs4all.nl/dos2unix -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install waterlan.home.xs4all.nl/dos2unix' as const,
+  pantryInstallCommand: 'pantry install waterlan.home.xs4all.nl/dos2unix' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

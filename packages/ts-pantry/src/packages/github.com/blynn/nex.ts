@@ -6,7 +6,7 @@
  * @version `2021.3.30` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/blynn/nex`
+ * @install `pantry install github.com/blynn/nex`
  * @homepage https://repo.or.cz/nvi.git
  * @buildDependencies `rsync.samba.org`, `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const nexPackage = {
   homepageUrl: 'https://repo.or.cz/nvi.git' as const,
   githubUrl: 'https://github.com/blynn/nex' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/blynn/nex' as const,
+  installCommand: 'pantry install github.com/blynn/nex' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/blynn/nex -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/blynn/nex' as const,
+  pantryInstallCommand: 'pantry install github.com/blynn/nex' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

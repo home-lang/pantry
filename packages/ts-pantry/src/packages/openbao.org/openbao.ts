@@ -6,7 +6,7 @@
  * @version `2.5.1` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openbao.org/openbao`
+ * @install `pantry install openbao.org/openbao`
  * @homepage https://openbao.org/
  * @buildDependencies `go.dev`, `gnu.org/coreutils` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const openbaoorgopenbaoPackage = {
   homepageUrl: 'https://openbao.org/' as const,
   githubUrl: 'https://github.com/openbao/openbao' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openbao.org/openbao' as const,
+  installCommand: 'pantry install openbao.org/openbao' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openbao.org/openbao -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openbao.org/openbao' as const,
+  pantryInstallCommand: 'pantry install openbao.org/openbao' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

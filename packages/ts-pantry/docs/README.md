@@ -9,7 +9,7 @@ Welcome to the ts-pkgx documentation! This directory contains comprehensive docu
 - **[Category Pages](./package-catalog.md#categories)** - Packages grouped by functionality
 - **[API Reference](./api-reference.md)** - TypeScript API documentation
 - **[CLI Reference](./cli-reference.md)** - Command-line interface documentation
-- **[Launchpad Integration](./launchpad-integration.md)** - Dependency resolution API for package managers
+- **[Pantry Integration](./pantry-integration.md)** - Dependency resolution API for package managers
 
 ## 🚀 Auto-Generated Documentation
 

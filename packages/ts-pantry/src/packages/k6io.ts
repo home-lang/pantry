@@ -6,7 +6,7 @@
  * @version `1.6.1` (36 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install k6.io`
+ * @install `pantry install k6.io`
  * @homepage https://k6.io
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const k6ioPackage = {
   homepageUrl: 'https://k6.io' as const,
   githubUrl: 'https://github.com/grafana/k6' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install k6.io' as const,
+  installCommand: 'pantry install k6.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +k6.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install k6.io' as const,
+  pantryInstallCommand: 'pantry install k6.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

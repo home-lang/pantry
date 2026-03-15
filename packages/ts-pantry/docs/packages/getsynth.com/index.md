@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install getsynth.com
+# Install with pantry
+pantry install getsynth.com
 ```
 
 ## Programs

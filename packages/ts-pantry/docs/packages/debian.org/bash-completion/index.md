@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install debian.org/bash-completion
+# Install with pantry
+pantry install debian.org/bash-completion
 ```
 
 ## Programs

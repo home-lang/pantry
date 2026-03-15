@@ -6,7 +6,7 @@
  * @version `2023.9.25` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install imageflow.io/imageflow_tool`
+ * @install `pantry install imageflow.io/imageflow_tool`
  * @homepage https://docs.imageflow.io/
  * @dependencies `openssl.org@1.1`
  * @buildDependencies `nasm.us`, `kornel.ski/dssim` - required only when building from source
@@ -42,12 +42,12 @@ export const imageflowioimageflow_toolPackage = {
   homepageUrl: 'https://docs.imageflow.io/' as const,
   githubUrl: 'https://github.com/imazen/imageflow' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install imageflow.io/imageflow_tool' as const,
+  installCommand: 'pantry install imageflow.io/imageflow_tool' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +imageflow.io/imageflow_tool -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install imageflow.io/imageflow_tool' as const,
+  pantryInstallCommand: 'pantry install imageflow.io/imageflow_tool' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.41.0` (50 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/gitu`
+ * @install `pantry install crates.io/gitu`
  * @dependencies `zlib.net~1.3`, `libgit2.org~1.7`
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiogituPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/altsem/gitu' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/gitu' as const,
+  installCommand: 'pantry install crates.io/gitu' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/gitu -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/gitu' as const,
+  pantryInstallCommand: 'pantry install crates.io/gitu' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

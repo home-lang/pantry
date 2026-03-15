@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install expo.dev/eas-cli
+# Install with pantry
+pantry install expo.dev/eas-cli
 ```
 
 ## Programs

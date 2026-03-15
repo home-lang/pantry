@@ -6,7 +6,7 @@
  * @version `0.23.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fury.co`
+ * @install `pantry install fury.co`
  * @homepage https://fury.co/guide/cli
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const furycoPackage = {
   homepageUrl: 'https://fury.co/guide/cli' as const,
   githubUrl: 'https://github.com/gemfury/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fury.co' as const,
+  installCommand: 'pantry install fury.co' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fury.co -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fury.co' as const,
+  pantryInstallCommand: 'pantry install fury.co' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

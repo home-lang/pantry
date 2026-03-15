@@ -6,7 +6,7 @@
  * @version `0.40.4` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/nvm-sh/nvm`
+ * @install `pantry install github.com/nvm-sh/nvm`
  * @dependencies `linux:curl.se` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const nvmPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/nvm-sh/nvm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/nvm-sh/nvm' as const,
+  installCommand: 'pantry install github.com/nvm-sh/nvm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/nvm-sh/nvm -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/nvm-sh/nvm' as const,
+  pantryInstallCommand: 'pantry install github.com/nvm-sh/nvm' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

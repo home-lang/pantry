@@ -5,7 +5,7 @@
  * @version `25.4.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install attrs.org`
+ * @install `pantry install attrs.org`
  * @homepage https://www.attrs.org/
  * @dependencies `python.org~3.11`
  *
@@ -39,12 +39,12 @@ export const attrsorgPackage = {
   homepageUrl: 'https://www.attrs.org/' as const,
   githubUrl: 'https://github.com/python-attrs/attrs' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install attrs.org' as const,
+  installCommand: 'pantry install attrs.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +attrs.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install attrs.org' as const,
+  pantryInstallCommand: 'pantry install attrs.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

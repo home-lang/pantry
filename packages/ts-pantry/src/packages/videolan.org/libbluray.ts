@@ -5,7 +5,7 @@
  * @version `1.4.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install videolan.org/libbluray`
+ * @install `pantry install videolan.org/libbluray`
  * @dependencies `freedesktop.org/fontconfig`, `freetype.org`, `gnome.org/libxml2~2.13 # API changed in 2.14`
  * @buildDependencies `gnu.org/automake`, `gnu.org/autoconf`, `gnu.org/libtool`, ... (+1 more) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const videolanorglibblurayPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install videolan.org/libbluray' as const,
+  installCommand: 'pantry install videolan.org/libbluray' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +videolan.org/libbluray -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install videolan.org/libbluray' as const,
+  pantryInstallCommand: 'pantry install videolan.org/libbluray' as const,
   programs: [] as const,
   companions: [] as const,
   /**

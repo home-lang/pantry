@@ -6,7 +6,7 @@
  * @version `0.157.0` (155 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gohugo.io`
+ * @install `pantry install gohugo.io`
  * @homepage https://gohugo.io/
  * @buildDependencies `go.dev@~1.22.6` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gohugoioPackage = {
   homepageUrl: 'https://gohugo.io/' as const,
   githubUrl: 'https://github.com/gohugoio/hugo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gohugo.io' as const,
+  installCommand: 'pantry install gohugo.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gohugo.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gohugo.io' as const,
+  pantryInstallCommand: 'pantry install gohugo.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

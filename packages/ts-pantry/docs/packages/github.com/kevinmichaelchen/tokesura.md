@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/kevinmichaelchen/tokesura
+# Install with pantry
+pantry install github.com/kevinmichaelchen/tokesura
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `2.0.3` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceforge.net/opencore-amr`
+ * @install `pantry install sourceforge.net/opencore-amr`
  * @homepage https://sourceforge.net/projects/opencore-amr/
  * @buildDependencies `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const sourceforgenetopencoreamrPackage = {
   homepageUrl: 'https://sourceforge.net/projects/opencore-amr/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceforge.net/opencore-amr' as const,
+  installCommand: 'pantry install sourceforge.net/opencore-amr' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceforge.net/opencore-amr -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceforge.net/opencore-amr' as const,
+  pantryInstallCommand: 'pantry install sourceforge.net/opencore-amr' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

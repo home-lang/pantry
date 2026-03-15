@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install oauth2-proxy.github.io
+# Install with pantry
+pantry install oauth2-proxy.github.io
 ```
 
 ## Programs

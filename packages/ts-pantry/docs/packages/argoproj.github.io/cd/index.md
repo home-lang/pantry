@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install argoproj.github.io/cd
+# Install with pantry
+pantry install argoproj.github.io/cd
 ```
 
 ## Programs

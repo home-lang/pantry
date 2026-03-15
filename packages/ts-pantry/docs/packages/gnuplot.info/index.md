@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnuplot.info
+# Install with pantry
+pantry install gnuplot.info
 ```
 
 ## Programs

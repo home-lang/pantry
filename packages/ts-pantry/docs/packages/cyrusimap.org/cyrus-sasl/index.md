@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cyrusimap.org/cyrus-sasl
+# Install with pantry
+pantry install cyrusimap.org/cyrus-sasl
 ```
 
 ## Programs

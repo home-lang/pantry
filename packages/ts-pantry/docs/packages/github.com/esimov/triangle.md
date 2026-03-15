@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/esimov/triangle
+# Install with pantry
+pantry install github.com/esimov/triangle
 ```
 
 ## Programs

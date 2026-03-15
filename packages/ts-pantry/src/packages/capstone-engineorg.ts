@@ -6,7 +6,7 @@
  * @version `5.0.7` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install capstone-engine.org`
+ * @install `pantry install capstone-engine.org`
  * @homepage https://www.capstone-engine.org/
  * @buildDependencies `gnu.org/diffutils` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const capstoneengineorgPackage = {
   homepageUrl: 'https://www.capstone-engine.org/' as const,
   githubUrl: 'https://github.com/capstone-engine/capstone' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install capstone-engine.org' as const,
+  installCommand: 'pantry install capstone-engine.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +capstone-engine.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install capstone-engine.org' as const,
+  pantryInstallCommand: 'pantry install capstone-engine.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

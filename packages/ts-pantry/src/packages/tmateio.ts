@@ -6,7 +6,7 @@
  * @version `2.4.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tmate.io`
+ * @install `pantry install tmate.io`
  * @homepage https://tmate.io/
  * @dependencies `libevent.org^2.0`, `invisible-island.net/ncurses@6`, `msgpack.org@6`, ... (+1 more)
  * @buildDependencies `gnu.org/bison`, `gnu.org/autoconf`, `gnu.org/automake` - required only when building from source
@@ -42,12 +42,12 @@ export const tmateioPackage = {
   homepageUrl: 'https://tmate.io/' as const,
   githubUrl: 'https://github.com/tmate-io/tmate' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tmate.io' as const,
+  installCommand: 'pantry install tmate.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tmate.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tmate.io' as const,
+  pantryInstallCommand: 'pantry install tmate.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

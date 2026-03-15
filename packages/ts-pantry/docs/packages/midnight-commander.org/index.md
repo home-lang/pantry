@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install midnight-commander.org
+# Install with pantry
+pantry install midnight-commander.org
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `82.0.1` (71 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pypa.io/setuptools`
+ * @install `pantry install pypa.io/setuptools`
  * @homepage https://pypi.org/project/setuptools/
  * @dependencies `python.org~3.12`
  *
@@ -39,12 +39,12 @@ export const pypaiosetuptoolsPackage = {
   homepageUrl: 'https://pypi.org/project/setuptools/' as const,
   githubUrl: 'https://github.com/pypa/setuptools' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pypa.io/setuptools' as const,
+  installCommand: 'pantry install pypa.io/setuptools' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pypa.io/setuptools -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pypa.io/setuptools' as const,
+  pantryInstallCommand: 'pantry install pypa.io/setuptools' as const,
   programs: [] as const,
   companions: [] as const,
   /**

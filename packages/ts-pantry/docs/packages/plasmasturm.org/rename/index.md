@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install plasmasturm.org/rename
+# Install with pantry
+pantry install plasmasturm.org/rename
 ```
 
 ## Programs

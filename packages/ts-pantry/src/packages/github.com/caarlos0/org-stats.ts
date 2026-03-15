@@ -6,7 +6,7 @@
  * @version `1.12.2` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/caarlos0/org-stats`
+ * @install `pantry install github.com/caarlos0/org-stats`
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const orgstatsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/caarlos0/org-stats' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/caarlos0/org-stats' as const,
+  installCommand: 'pantry install github.com/caarlos0/org-stats' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/caarlos0/org-stats -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/caarlos0/org-stats' as const,
+  pantryInstallCommand: 'pantry install github.com/caarlos0/org-stats' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/xtrans
+# Install with pantry
+pantry install x.org/xtrans
 ```
 
 ## Programs

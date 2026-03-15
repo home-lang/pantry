@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install llvm.org/clang-format
+# Install with pantry
+pantry install llvm.org/clang-format
 ```
 
 ## Programs

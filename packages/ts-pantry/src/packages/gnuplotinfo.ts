@@ -6,7 +6,7 @@
  * @version `6.0.4` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnuplot.info`
+ * @install `pantry install gnuplot.info`
  * @homepage http://www.gnuplot.info/
  * @dependencies `libgd.github.io`, `lua.org`, `gnome.org/pango`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/libtool` - required only when building from source
@@ -42,12 +42,12 @@ export const gnuplotinfoPackage = {
   homepageUrl: 'http://www.gnuplot.info/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnuplot.info' as const,
+  installCommand: 'pantry install gnuplot.info' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnuplot.info -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnuplot.info' as const,
+  pantryInstallCommand: 'pantry install gnuplot.info' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.0.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install keephq.dev`
+ * @install `pantry install keephq.dev`
  * @homepage https://keephq.dev
  * @dependencies `python.org>=3<3.12`
  *
@@ -41,12 +41,12 @@ export const keephqdevPackage = {
   homepageUrl: 'https://keephq.dev' as const,
   githubUrl: 'https://github.com/keephq/keep' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install keephq.dev' as const,
+  installCommand: 'pantry install keephq.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +keephq.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install keephq.dev' as const,
+  pantryInstallCommand: 'pantry install keephq.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

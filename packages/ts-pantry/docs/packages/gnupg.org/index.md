@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gpg
+# Install with pantry
+pantry install gpg
 ```
 
 ## Programs

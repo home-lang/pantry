@@ -6,7 +6,7 @@
  * @version `3.0.2` (39 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install appium.io`
+ * @install `pantry install appium.io`
  * @homepage https://appium.io/
  * @dependencies `npmjs.com`, `nodejs.org^10.13.0 || ^12 || ^14 || ^16 || ^18 || ^20`, `openjdk.org`
  *
@@ -41,12 +41,12 @@ export const appiumioPackage = {
   homepageUrl: 'https://appium.io/' as const,
   githubUrl: 'https://github.com/appium/appium' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install appium.io' as const,
+  installCommand: 'pantry install appium.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +appium.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install appium.io' as const,
+  pantryInstallCommand: 'pantry install appium.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

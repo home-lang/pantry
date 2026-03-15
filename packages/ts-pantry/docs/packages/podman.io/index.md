@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install podman.io
+# Install with pantry
+pantry install podman.io
 ```
 
 ## Programs

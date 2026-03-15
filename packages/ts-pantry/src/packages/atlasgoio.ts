@@ -6,7 +6,7 @@
  * @version `1.1.0` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install atlasgo.io`
+ * @install `pantry install atlasgo.io`
  * @homepage https://atlasgo.io
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const atlasgoioPackage = {
   homepageUrl: 'https://atlasgo.io' as const,
   githubUrl: 'https://github.com/ariga/atlas' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install atlasgo.io' as const,
+  installCommand: 'pantry install atlasgo.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +atlasgo.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install atlasgo.io' as const,
+  pantryInstallCommand: 'pantry install atlasgo.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

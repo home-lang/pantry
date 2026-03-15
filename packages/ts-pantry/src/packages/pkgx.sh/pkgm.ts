@@ -6,7 +6,7 @@
  * @version `0.12.0` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pkgx.sh/pkgm`
+ * @install `pantry install pkgx.sh/pkgm`
  * @dependencies `pkgx.sh^2`, `curl.se/ca-certs`
  *
  * @example
@@ -40,12 +40,12 @@ export const pkgxshpkgmPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/pkgxdev/pkgm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pkgx.sh/pkgm' as const,
+  installCommand: 'pantry install pkgx.sh/pkgm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh/pkgm -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pkgx.sh/pkgm' as const,
+  pantryInstallCommand: 'pantry install pkgx.sh/pkgm' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

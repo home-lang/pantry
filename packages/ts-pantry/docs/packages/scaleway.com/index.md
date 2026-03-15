@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install scaleway.com
+# Install with pantry
+pantry install scaleway.com
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dotnet.microsoft.com
+# Install with pantry
+pantry install dotnet.microsoft.com
 ```
 
 ## Programs

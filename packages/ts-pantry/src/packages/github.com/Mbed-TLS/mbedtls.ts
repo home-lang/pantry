@@ -6,7 +6,7 @@
  * @version `3.6.3.1` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/Mbed-TLS/mbedtls`
+ * @install `pantry install github.com/Mbed-TLS/mbedtls`
  * @homepage https://tls.mbed.org/
  * @buildDependencies `cmake.org`, `python.org@~3.11` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const mbedtlsPackage = {
   homepageUrl: 'https://tls.mbed.org/' as const,
   githubUrl: 'https://github.com/Mbed-TLS/mbedtls' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/Mbed-TLS/mbedtls' as const,
+  installCommand: 'pantry install github.com/Mbed-TLS/mbedtls' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Mbed-TLS/mbedtls -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/Mbed-TLS/mbedtls' as const,
+  pantryInstallCommand: 'pantry install github.com/Mbed-TLS/mbedtls' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

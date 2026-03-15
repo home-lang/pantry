@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wxwidgets.org
+# Install with pantry
+pantry install wxwidgets.org
 ```
 
 ## Programs

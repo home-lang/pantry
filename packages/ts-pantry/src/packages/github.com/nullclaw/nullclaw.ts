@@ -6,7 +6,7 @@
  * @version `2026.3.14` (14 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/nullclaw/nullclaw`
+ * @install `pantry install github.com/nullclaw/nullclaw`
  * @dependencies `github.com/mikefarah/yq`, `stedolan.github.io/jq`, `gnu.org/sed`
  * @buildDependencies `curl.se`, `gnu.org/coreutils` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const nullclawPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/nullclaw/nullclaw' as const,
+  installCommand: 'pantry install github.com/nullclaw/nullclaw' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/nullclaw/nullclaw -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/nullclaw/nullclaw' as const,
+  pantryInstallCommand: 'pantry install github.com/nullclaw/nullclaw' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

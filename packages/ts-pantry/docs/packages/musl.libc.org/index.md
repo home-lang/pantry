@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install musl.libc.org
+# Install with pantry
+pantry install musl.libc.org
 ```
 
 ## Programs

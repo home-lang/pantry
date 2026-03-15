@@ -5,7 +5,7 @@
  * @version `1.7.19` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/DaveGamble/cJSON`
+ * @install `pantry install github.com/DaveGamble/cJSON`
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const cjsonPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/DaveGamble/cJSON' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/DaveGamble/cJSON' as const,
+  installCommand: 'pantry install github.com/DaveGamble/cJSON' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/DaveGamble/cJSON -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/DaveGamble/cJSON' as const,
+  pantryInstallCommand: 'pantry install github.com/DaveGamble/cJSON' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

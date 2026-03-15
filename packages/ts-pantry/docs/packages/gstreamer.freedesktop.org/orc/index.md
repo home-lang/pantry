@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gstreamer.freedesktop.org/orc
+# Install with pantry
+pantry install gstreamer.freedesktop.org/orc
 ```
 
 ## Programs

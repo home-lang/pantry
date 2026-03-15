@@ -6,7 +6,7 @@
  * @version `4.0.3` (29 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install juju.is`
+ * @install `pantry install juju.is`
  * @homepage https://juju.is/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const jujuisPackage = {
   homepageUrl: 'https://juju.is/' as const,
   githubUrl: 'https://github.com/juju/juju' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install juju.is' as const,
+  installCommand: 'pantry install juju.is' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +juju.is -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install juju.is' as const,
+  pantryInstallCommand: 'pantry install juju.is' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

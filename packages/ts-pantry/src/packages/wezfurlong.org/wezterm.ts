@@ -6,7 +6,7 @@
  * @version `2024.2.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wezfurlong.org/wezterm`
+ * @install `pantry install wezfurlong.org/wezterm`
  * @homepage https://wezfurlong.org/wezterm/
  * @dependencies `zlib.net^1.3`, `linux:freetype.org`, `linux:freedesktop.org/fontconfig`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const wezfurlongorgweztermPackage = {
   homepageUrl: 'https://wezfurlong.org/wezterm/' as const,
   githubUrl: 'https://github.com/wez/wezterm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wezfurlong.org/wezterm' as const,
+  installCommand: 'pantry install wezfurlong.org/wezterm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wezfurlong.org/wezterm -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wezfurlong.org/wezterm' as const,
+  pantryInstallCommand: 'pantry install wezfurlong.org/wezterm' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

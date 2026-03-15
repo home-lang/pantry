@@ -6,7 +6,7 @@
  * @version `0.9.7` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/thinkst/opencanary`
+ * @install `pantry install github.com/thinkst/opencanary`
  * @homepage http://opencanary.org
  * @dependencies `python.org>=3.10<3.12`, `tcpdump.org`, `openssl.org`
  * @buildDependencies `pip.pypa.io` - required only when building from source
@@ -42,12 +42,12 @@ export const opencanaryPackage = {
   homepageUrl: 'http://opencanary.org' as const,
   githubUrl: 'https://github.com/thinkst/opencanary' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/thinkst/opencanary' as const,
+  installCommand: 'pantry install github.com/thinkst/opencanary' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/thinkst/opencanary -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/thinkst/opencanary' as const,
+  pantryInstallCommand: 'pantry install github.com/thinkst/opencanary' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

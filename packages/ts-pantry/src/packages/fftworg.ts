@@ -6,7 +6,7 @@
  * @version `3.3.10` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fftw.org`
+ * @install `pantry install fftw.org`
  * @homepage https://fftw.org
  * @dependencies `open-mpi.org`
  *
@@ -41,12 +41,12 @@ export const fftworgPackage = {
   homepageUrl: 'https://fftw.org' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fftw.org' as const,
+  installCommand: 'pantry install fftw.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fftw.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fftw.org' as const,
+  pantryInstallCommand: 'pantry install fftw.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

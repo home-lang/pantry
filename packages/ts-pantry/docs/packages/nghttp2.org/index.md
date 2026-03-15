@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nghttp2.org
+# Install with pantry
+pantry install nghttp2.org
 ```
 
 ## Programs

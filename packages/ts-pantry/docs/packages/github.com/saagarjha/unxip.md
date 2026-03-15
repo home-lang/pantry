@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/saagarjha/unxip
+# Install with pantry
+pantry install github.com/saagarjha/unxip
 ```
 
 ## Programs

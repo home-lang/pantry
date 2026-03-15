@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install macvim.org
+# Install with pantry
+pantry install macvim.org
 ```
 
 ## Programs

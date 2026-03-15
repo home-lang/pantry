@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fluentci.io
+# Install with pantry
+pantry install fluentci.io
 ```
 
 ## Programs

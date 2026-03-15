@@ -5,7 +5,7 @@
  * @version `1.3.2` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libimobiledevice.org/libimobiledevice-glue`
+ * @install `pantry install libimobiledevice.org/libimobiledevice-glue`
  * @dependencies `libimobiledevice.org/libplist^2.4`
  * @buildDependencies `gnu.org/libtool` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libimobiledeviceorglibimobiledevicegluePackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/libimobiledevice/libimobiledevice-glue' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libimobiledevice.org/libimobiledevice-glue' as const,
+  installCommand: 'pantry install libimobiledevice.org/libimobiledevice-glue' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libimobiledevice.org/libimobiledevice-glue -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libimobiledevice.org/libimobiledevice-glue' as const,
+  pantryInstallCommand: 'pantry install libimobiledevice.org/libimobiledevice-glue' as const,
   programs: [] as const,
   companions: [] as const,
   /**

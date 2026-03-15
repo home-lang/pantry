@@ -6,7 +6,7 @@
  * @version `3.2.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install asciinema.org`
+ * @install `pantry install asciinema.org`
  * @homepage https://asciinema.org
  * @dependencies `python.org^3.12 # v2`
  *
@@ -41,12 +41,12 @@ export const asciinemaorgPackage = {
   homepageUrl: 'https://asciinema.org' as const,
   githubUrl: 'https://github.com/asciinema/asciinema' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install asciinema.org' as const,
+  installCommand: 'pantry install asciinema.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +asciinema.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install asciinema.org' as const,
+  pantryInstallCommand: 'pantry install asciinema.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

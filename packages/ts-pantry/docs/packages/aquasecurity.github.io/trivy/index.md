@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install aquasecurity.github.io/trivy
+# Install with pantry
+pantry install aquasecurity.github.io/trivy
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install microbrew.org/md5sha1sum
+# Install with pantry
+pantry install microbrew.org/md5sha1sum
 ```
 
 ## Programs

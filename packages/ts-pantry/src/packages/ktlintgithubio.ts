@@ -6,7 +6,7 @@
  * @version `1.8.0` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ktlint.github.io`
+ * @install `pantry install ktlint.github.io`
  * @homepage https://ktlint.github.io/
  * @dependencies `openjdk.org`
  *
@@ -41,12 +41,12 @@ export const ktlintgithubioPackage = {
   homepageUrl: 'https://ktlint.github.io/' as const,
   githubUrl: 'https://github.com/pinterest/ktlint' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ktlint.github.io' as const,
+  installCommand: 'pantry install ktlint.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ktlint.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ktlint.github.io' as const,
+  pantryInstallCommand: 'pantry install ktlint.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

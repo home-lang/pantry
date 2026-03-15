@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/canonical/charmcraft
+# Install with pantry
+pantry install github.com/canonical/charmcraft
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/x11
+# Install with pantry
+pantry install x.org/x11
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install info-zip.org/unzip
+# Install with pantry
+pantry install info-zip.org/unzip
 ```
 
 ## Programs

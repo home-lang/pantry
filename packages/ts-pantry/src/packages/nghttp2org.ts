@@ -5,7 +5,7 @@
  * @version `1.68.0` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nghttp2.org`
+ * @install `pantry install nghttp2.org`
  * @homepage https://nghttp2.org
  *
  * @example
@@ -38,12 +38,12 @@ export const nghttp2orgPackage = {
   homepageUrl: 'https://nghttp2.org' as const,
   githubUrl: 'https://github.com/nghttp2/nghttp2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nghttp2.org' as const,
+  installCommand: 'pantry install nghttp2.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nghttp2.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nghttp2.org' as const,
+  pantryInstallCommand: 'pantry install nghttp2.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

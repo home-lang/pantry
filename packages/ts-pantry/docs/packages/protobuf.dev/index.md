@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install protobuf.dev
+# Install with pantry
+pantry install protobuf.dev
 ```
 
 ## Programs

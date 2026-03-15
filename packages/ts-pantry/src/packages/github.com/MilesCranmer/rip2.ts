@@ -6,7 +6,7 @@
  * @version `0.9.6` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/MilesCranmer/rip2`
+ * @install `pantry install github.com/MilesCranmer/rip2`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const rip2Package = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/MilesCranmer/rip2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/MilesCranmer/rip2' as const,
+  installCommand: 'pantry install github.com/MilesCranmer/rip2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/MilesCranmer/rip2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/MilesCranmer/rip2' as const,
+  pantryInstallCommand: 'pantry install github.com/MilesCranmer/rip2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

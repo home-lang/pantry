@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openvpn.net
+# Install with pantry
+pantry install openvpn.net
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libusb.info
+# Install with pantry
+pantry install libusb.info
 ```
 
 ## Programs

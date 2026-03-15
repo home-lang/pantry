@@ -6,7 +6,7 @@
  * @version `1.0.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/fsrx`
+ * @install `pantry install crates.io/fsrx`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiofsrxPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/jrnxf/fsrx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/fsrx' as const,
+  installCommand: 'pantry install crates.io/fsrx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/fsrx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/fsrx' as const,
+  pantryInstallCommand: 'pantry install crates.io/fsrx' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

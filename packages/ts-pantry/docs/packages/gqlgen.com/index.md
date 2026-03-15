@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gqlgen.com
+# Install with pantry
+pantry install gqlgen.com
 ```
 
 ## Programs

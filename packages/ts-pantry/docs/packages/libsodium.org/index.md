@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libsodium.org
+# Install with pantry
+pantry install libsodium.org
 ```
 
 ## Programs

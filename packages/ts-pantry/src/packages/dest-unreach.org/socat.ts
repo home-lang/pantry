@@ -6,7 +6,7 @@
  * @version `1.8.1.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dest-unreach.org/socat`
+ * @install `pantry install dest-unreach.org/socat`
  * @homepage http://www.dest-unreach.org/socat/
  * @dependencies `openssl.org^1.1`, `gnu.org/readline^8.2`
  *
@@ -41,12 +41,12 @@ export const destunreachorgsocatPackage = {
   homepageUrl: 'http://www.dest-unreach.org/socat/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dest-unreach.org/socat' as const,
+  installCommand: 'pantry install dest-unreach.org/socat' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dest-unreach.org/socat -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dest-unreach.org/socat' as const,
+  pantryInstallCommand: 'pantry install dest-unreach.org/socat' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

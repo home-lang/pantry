@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install people.engr.tamu.edu/davis/suitesparse
+# Install with pantry
+pantry install people.engr.tamu.edu/davis/suitesparse
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/PJK/libcbor
+# Install with pantry
+pantry install github.com/PJK/libcbor
 ```
 
 ## Programs

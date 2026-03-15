@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openshift.com
+# Install with pantry
+pantry install openshift.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.51.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/intltool`
+ * @install `pantry install freedesktop.org/intltool`
  * @homepage https://wiki.freedesktop.org/www/Software/intltool
  * @dependencies `perl.org~5`, `linux:libexpat.github.io^2.6` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cpanmin.us` - required only when building from source
@@ -43,12 +43,12 @@ export const freedesktoporgintltoolPackage = {
   homepageUrl: 'https://wiki.freedesktop.org/www/Software/intltool' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/intltool' as const,
+  installCommand: 'pantry install freedesktop.org/intltool' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/intltool -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/intltool' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/intltool' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

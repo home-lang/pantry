@@ -6,7 +6,7 @@
  * @version `1.37.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aria2.github.io`
+ * @install `pantry install aria2.github.io`
  * @homepage https://aria2.github.io/
  * @dependencies `zlib.net^1`, `openssl.org^1`, `libexpat.github.io`, ... (+1 more)
  * @buildDependencies `gnupg.org/libgcrypt@^1` - required only when building from source
@@ -42,12 +42,12 @@ export const aria2githubioPackage = {
   homepageUrl: 'https://aria2.github.io/' as const,
   githubUrl: 'https://github.com/aria2/aria2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aria2.github.io' as const,
+  installCommand: 'pantry install aria2.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aria2.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aria2.github.io' as const,
+  pantryInstallCommand: 'pantry install aria2.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

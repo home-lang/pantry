@@ -6,7 +6,7 @@
  * @version `8.18.0` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libvips.org`
+ * @install `pantry install libvips.org`
  * @homepage https://libvips.github.io/libvips/
  * @dependencies `mozilla.org/mozjpeg`, `cairographics.org`, `heasarc.gsfc.nasa.gov/cfitsio`, ... (+24 more)
  * @buildDependencies `mesonbuild.com` - required only when building from source
@@ -42,12 +42,12 @@ export const libvipsorgPackage = {
   homepageUrl: 'https://libvips.github.io/libvips/' as const,
   githubUrl: 'https://github.com/libvips/libvips' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libvips.org' as const,
+  installCommand: 'pantry install libvips.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libvips.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libvips.org' as const,
+  pantryInstallCommand: 'pantry install libvips.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

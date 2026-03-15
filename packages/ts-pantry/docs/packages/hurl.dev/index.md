@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hurl.dev
+# Install with pantry
+pantry install hurl.dev
 ```
 
 ## Programs

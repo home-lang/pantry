@@ -6,7 +6,7 @@
  * @version `1.78.1` (55 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install grpc.io`
+ * @install `pantry install grpc.io`
  * @homepage https://grpc.io/
  * @dependencies `abseil.io^20250127`, `c-ares.org`, `openssl.org^1.1`, ... (+4 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const grpcioPackage = {
   homepageUrl: 'https://grpc.io/' as const,
   githubUrl: 'https://github.com/grpc/grpc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install grpc.io' as const,
+  installCommand: 'pantry install grpc.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +grpc.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install grpc.io' as const,
+  pantryInstallCommand: 'pantry install grpc.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

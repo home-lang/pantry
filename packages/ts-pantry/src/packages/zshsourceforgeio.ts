@@ -6,7 +6,7 @@
  * @version `5.9.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install zsh.sourceforge.io`
+ * @install `pantry install zsh.sourceforge.io`
  * @homepage https://www.zsh.org/
  * @dependencies `invisible-island.net/ncurses`, `pcre.org`
  *
@@ -41,12 +41,12 @@ export const zshsourceforgeioPackage = {
   homepageUrl: 'https://www.zsh.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install zsh.sourceforge.io' as const,
+  installCommand: 'pantry install zsh.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +zsh.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install zsh.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install zsh.sourceforge.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

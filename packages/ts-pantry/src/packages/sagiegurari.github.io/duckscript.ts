@@ -6,7 +6,7 @@
  * @version `0.11.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sagiegurari.github.io/duckscript`
+ * @install `pantry install sagiegurari.github.io/duckscript`
  * @homepage https://sagiegurari.github.io/duckscript
  *
  * @example
@@ -40,12 +40,12 @@ export const sagiegurarigithubioduckscriptPackage = {
   homepageUrl: 'https://sagiegurari.github.io/duckscript' as const,
   githubUrl: 'https://github.com/sagiegurari/duckscript' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sagiegurari.github.io/duckscript' as const,
+  installCommand: 'pantry install sagiegurari.github.io/duckscript' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sagiegurari.github.io/duckscript -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sagiegurari.github.io/duckscript' as const,
+  pantryInstallCommand: 'pantry install sagiegurari.github.io/duckscript' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

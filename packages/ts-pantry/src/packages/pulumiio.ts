@@ -6,7 +6,7 @@
  * @version `3.226.0` (191 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pulumi.io`
+ * @install `pantry install pulumi.io`
  * @homepage https://pulumi.io/
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `go.dev@^1.20`, `classic.yarnpkg.com`, `nodejs.org` - required only when building from source
@@ -42,12 +42,12 @@ export const pulumiioPackage = {
   homepageUrl: 'https://pulumi.io/' as const,
   githubUrl: 'https://github.com/pulumi/pulumi' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pulumi.io' as const,
+  installCommand: 'pantry install pulumi.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pulumi.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pulumi.io' as const,
+  pantryInstallCommand: 'pantry install pulumi.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.50.18` (64 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install k9scli.io`
+ * @install `pantry install k9scli.io`
  * @homepage https://k9scli.io/
  * @buildDependencies `go.dev@^1.18`, `gnu.org/make` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const k9scliioPackage = {
   homepageUrl: 'https://k9scli.io/' as const,
   githubUrl: 'https://github.com/derailed/k9s' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install k9scli.io' as const,
+  installCommand: 'pantry install k9scli.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +k9scli.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install k9scli.io' as const,
+  pantryInstallCommand: 'pantry install k9scli.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

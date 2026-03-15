@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install llm.datasette.io
+# Install with pantry
+pantry install llm.datasette.io
 ```
 
 ## Programs

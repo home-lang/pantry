@@ -6,7 +6,7 @@
  * @version `0.4.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pkgx.sh/mash`
+ * @install `pantry install pkgx.sh/mash`
  * @homepage https://mash.pkgx.sh
  * @dependencies `pkgx.sh^1.1,^2`, `gnu.org/bash`, `curl.se`
  *
@@ -41,12 +41,12 @@ export const pkgxshmashPackage = {
   homepageUrl: 'https://mash.pkgx.sh' as const,
   githubUrl: 'https://github.com/pkgxdev/mash' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pkgx.sh/mash' as const,
+  installCommand: 'pantry install pkgx.sh/mash' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pkgx.sh/mash -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pkgx.sh/mash' as const,
+  pantryInstallCommand: 'pantry install pkgx.sh/mash' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

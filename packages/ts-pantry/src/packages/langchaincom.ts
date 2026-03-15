@@ -6,7 +6,7 @@
  * @version `0.1.16` (29 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install langchain.com`
+ * @install `pantry install langchain.com`
  * @homepage https://python.langchain.com
  * @dependencies `python.org^3.12`, `docker.com/compose^2.23`
  *
@@ -41,12 +41,12 @@ export const langchaincomPackage = {
   homepageUrl: 'https://python.langchain.com' as const,
   githubUrl: 'https://github.com/langchain-ai/langchain' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install langchain.com' as const,
+  installCommand: 'pantry install langchain.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +langchain.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install langchain.com' as const,
+  pantryInstallCommand: 'pantry install langchain.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

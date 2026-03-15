@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/tom-on-the-internet/cemetery-escape
+# Install with pantry
+pantry install github.com/tom-on-the-internet/cemetery-escape
 ```
 
 ## Programs

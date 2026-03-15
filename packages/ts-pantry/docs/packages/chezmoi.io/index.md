@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install chezmoi.io
+# Install with pantry
+pantry install chezmoi.io
 ```
 
 ## Programs

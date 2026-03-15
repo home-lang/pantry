@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install veracode.com/gen-ir
+# Install with pantry
+pantry install veracode.com/gen-ir
 ```
 
 ## Programs

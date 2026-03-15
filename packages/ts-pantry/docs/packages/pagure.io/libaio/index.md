@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pagure.io/libaio
+# Install with pantry
+pantry install pagure.io/libaio
 ```
 
 ## Programs

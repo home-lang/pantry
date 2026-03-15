@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install khronos.org/opencl-headers
+# Install with pantry
+pantry install khronos.org/opencl-headers
 ```
 
 ## Programs

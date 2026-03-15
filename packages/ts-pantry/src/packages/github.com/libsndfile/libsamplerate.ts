@@ -5,7 +5,7 @@
  * @version `0.2.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/libsndfile/libsamplerate`
+ * @install `pantry install github.com/libsndfile/libsamplerate`
  * @homepage http://libsndfile.github.io/libsamplerate/
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const libsampleratePackage = {
   homepageUrl: 'http://libsndfile.github.io/libsamplerate/' as const,
   githubUrl: 'https://github.com/libsndfile/libsamplerate' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/libsndfile/libsamplerate' as const,
+  installCommand: 'pantry install github.com/libsndfile/libsamplerate' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/libsndfile/libsamplerate -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/libsndfile/libsamplerate' as const,
+  pantryInstallCommand: 'pantry install github.com/libsndfile/libsamplerate' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

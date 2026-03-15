@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/xxf86vm
+# Install with pantry
+pantry install x.org/xxf86vm
 ```
 
 ## Programs

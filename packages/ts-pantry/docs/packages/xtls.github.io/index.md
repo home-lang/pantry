@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install xtls.github.io
+# Install with pantry
+pantry install xtls.github.io
 ```
 
 ## Programs

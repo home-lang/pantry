@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dozzle.dev
+# Install with pantry
+pantry install dozzle.dev
 ```
 
 ## Programs

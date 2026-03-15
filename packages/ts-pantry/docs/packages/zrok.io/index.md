@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install zrok.io
+# Install with pantry
+pantry install zrok.io
 ```
 
 ## Programs

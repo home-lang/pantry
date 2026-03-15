@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install catb.org/wumpus
+# Install with pantry
+pantry install catb.org/wumpus
 ```
 
 ## Programs

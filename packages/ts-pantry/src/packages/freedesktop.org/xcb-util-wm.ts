@@ -5,7 +5,7 @@
  * @version `0.4.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/xcb-util-wm`
+ * @install `pantry install freedesktop.org/xcb-util-wm`
  * @dependencies `x.org/xcb`, `gnu.org/m4`
  *
  * @example
@@ -37,12 +37,12 @@ export const freedesktoporgxcbutilwmPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/xcb-util-wm' as const,
+  installCommand: 'pantry install freedesktop.org/xcb-util-wm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/xcb-util-wm -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/xcb-util-wm' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/xcb-util-wm' as const,
   programs: [] as const,
   companions: [] as const,
   /**

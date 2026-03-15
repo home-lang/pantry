@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install proj.org
+# Install with pantry
+pantry install proj.org
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install snyk.io/driftctl
+# Install with pantry
+pantry install snyk.io/driftctl
 ```
 
 ## Programs

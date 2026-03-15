@@ -6,7 +6,7 @@
  * @version `0.2.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pluralith.com`
+ * @install `pantry install pluralith.com`
  * @homepage https://www.pluralith.com
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
@@ -42,12 +42,12 @@ export const pluralithcomPackage = {
   homepageUrl: 'https://www.pluralith.com' as const,
   githubUrl: 'https://github.com/Pluralith/pluralith-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pluralith.com' as const,
+  installCommand: 'pantry install pluralith.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pluralith.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pluralith.com' as const,
+  pantryInstallCommand: 'pantry install pluralith.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

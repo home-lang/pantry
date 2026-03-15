@@ -6,7 +6,7 @@
  * @version `0.21.11` (26 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mercure.rocks`
+ * @install `pantry install mercure.rocks`
  * @homepage https://mercure.rocks
  * @buildDependencies `go.dev@^1.19`, `goreleaser.com@>=2.4.2` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const mercurerocksPackage = {
   homepageUrl: 'https://mercure.rocks' as const,
   githubUrl: 'https://github.com/dunglas/mercure' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mercure.rocks' as const,
+  installCommand: 'pantry install mercure.rocks' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mercure.rocks -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mercure.rocks' as const,
+  pantryInstallCommand: 'pantry install mercure.rocks' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

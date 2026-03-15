@@ -12,7 +12,7 @@ Simple Directmedia Layer
 
 **Programs**: None specified
 
-**Install**: `launchpad install libsdl.org`
+**Install**: `pantry install libsdl.org`
 
 ---
 

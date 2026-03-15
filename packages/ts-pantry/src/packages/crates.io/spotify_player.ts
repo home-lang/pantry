@@ -6,7 +6,7 @@
  * @version `0.22.1` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/spotify_player`
+ * @install `pantry install crates.io/spotify_player`
  * @dependencies `openssl.org^1.1`, `github.com/libsixel/libsixel^1`, `linux:alsa-project.org/alsa-lib^1`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiospotify_playerPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/aome510/spotify-player' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/spotify_player' as const,
+  installCommand: 'pantry install crates.io/spotify_player' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/spotify_player -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/spotify_player' as const,
+  pantryInstallCommand: 'pantry install crates.io/spotify_player' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

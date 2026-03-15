@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install snyk.io
+# Install with pantry
+pantry install snyk.io
 ```
 
 ## Programs

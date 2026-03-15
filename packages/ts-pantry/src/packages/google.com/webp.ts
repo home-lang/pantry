@@ -6,7 +6,7 @@
  * @version `1.6.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/webp`
+ * @install `pantry install google.com/webp`
  * @homepage https://developers.google.com/speed/webp/
  * @dependencies `giflib.sourceforge.io^5`, `libjpeg-turbo.org^2`, `libpng.org^1`, ... (+1 more)
  * @buildDependencies `gnu.org/wget` - required only when building from source
@@ -42,12 +42,12 @@ export const googlecomwebpPackage = {
   homepageUrl: 'https://developers.google.com/speed/webp/' as const,
   githubUrl: 'https://github.com/webmproject/libwebp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/webp' as const,
+  installCommand: 'pantry install google.com/webp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/webp -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/webp' as const,
+  pantryInstallCommand: 'pantry install google.com/webp' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

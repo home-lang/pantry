@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install debian.org/iso-codes
+# Install with pantry
+pantry install debian.org/iso-codes
 ```
 
 ## Programs

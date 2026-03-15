@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cython.org
+# Install with pantry
+pantry install cython.org
 ```
 
 ## Programs

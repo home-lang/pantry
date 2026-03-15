@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install youtube-dl.org
+# Install with pantry
+pantry install youtube-dl.org
 ```
 
 ## Programs

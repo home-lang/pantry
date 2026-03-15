@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install quary.dev/sqruff
+# Install with pantry
+pantry install quary.dev/sqruff
 ```
 
 ## Programs

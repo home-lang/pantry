@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install checkov.io
+# Install with pantry
+pantry install checkov.io
 ```
 
 ## Programs

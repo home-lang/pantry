@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install d2lang.com
+# Install with pantry
+pantry install d2lang.com
 ```
 
 ## Programs

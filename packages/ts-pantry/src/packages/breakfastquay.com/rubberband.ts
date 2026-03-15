@@ -6,7 +6,7 @@
  * @version `4.0.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install breakfastquay.com/rubberband`
+ * @install `pantry install breakfastquay.com/rubberband`
  * @homepage https://breakfastquay.com/rubberband/
  * @dependencies `github.com/libsndfile/libsamplerate^0.2`, `github.com/libsndfile/libsndfile^1.2`, `linux:fftw.org^3.3`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `mesonbuild.com@^1.3.2` - required only when building from source
@@ -42,12 +42,12 @@ export const breakfastquaycomrubberbandPackage = {
   homepageUrl: 'https://breakfastquay.com/rubberband/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install breakfastquay.com/rubberband' as const,
+  installCommand: 'pantry install breakfastquay.com/rubberband' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +breakfastquay.com/rubberband -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install breakfastquay.com/rubberband' as const,
+  pantryInstallCommand: 'pantry install breakfastquay.com/rubberband' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

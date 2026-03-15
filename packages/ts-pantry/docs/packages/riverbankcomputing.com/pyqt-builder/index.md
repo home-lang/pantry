@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install riverbankcomputing.com/pyqt-builder
+# Install with pantry
+pantry install riverbankcomputing.com/pyqt-builder
 ```
 
 ## Programs

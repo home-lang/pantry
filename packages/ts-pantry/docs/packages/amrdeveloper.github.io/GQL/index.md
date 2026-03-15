@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install amrdeveloper.github.io/GQL
+# Install with pantry
+pantry install amrdeveloper.github.io/GQL
 ```
 
 ## Programs

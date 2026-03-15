@@ -6,7 +6,7 @@
  * @version `4.13.1` (16 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ccache.dev`
+ * @install `pantry install ccache.dev`
  * @homepage https://ccache.dev/
  * @dependencies `github.com/redis/hiredis`, `facebook.com/zstd`
  * @buildDependencies `asciidoctor.org`, `cmake.org`, `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const ccachedevPackage = {
   homepageUrl: 'https://ccache.dev/' as const,
   githubUrl: 'https://github.com/ccache/ccache' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ccache.dev' as const,
+  installCommand: 'pantry install ccache.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ccache.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ccache.dev' as const,
+  pantryInstallCommand: 'pantry install ccache.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

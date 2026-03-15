@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install velero.io
+# Install with pantry
+pantry install velero.io
 ```
 
 ## Programs

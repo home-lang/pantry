@@ -5,7 +5,7 @@
  * @version `4.1.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/Esri/lerc`
+ * @install `pantry install github.com/Esri/lerc`
  * @homepage https://github.com/esri/lerc
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const lercPackage = {
   homepageUrl: 'https://github.com/esri/lerc' as const,
   githubUrl: 'https://github.com/Esri/lerc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/Esri/lerc' as const,
+  installCommand: 'pantry install github.com/Esri/lerc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Esri/lerc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/Esri/lerc' as const,
+  pantryInstallCommand: 'pantry install github.com/Esri/lerc' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

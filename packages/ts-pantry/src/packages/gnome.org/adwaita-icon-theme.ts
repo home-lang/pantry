@@ -5,7 +5,7 @@
  * @version `49.0.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/adwaita-icon-theme`
+ * @install `pantry install gnome.org/adwaita-icon-theme`
  * @buildDependencies `gnu.org/gettext`, `gtk.org/gtk4`, `freedesktop.org/intltool`, ... (+1 more) - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const gnomeorgadwaitaiconthemePackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/adwaita-icon-theme' as const,
+  installCommand: 'pantry install gnome.org/adwaita-icon-theme' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/adwaita-icon-theme -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/adwaita-icon-theme' as const,
+  pantryInstallCommand: 'pantry install gnome.org/adwaita-icon-theme' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

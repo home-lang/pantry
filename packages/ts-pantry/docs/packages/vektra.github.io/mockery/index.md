@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install vektra.github.io/mockery
+# Install with pantry
+pantry install vektra.github.io/mockery
 ```
 
 ## Programs

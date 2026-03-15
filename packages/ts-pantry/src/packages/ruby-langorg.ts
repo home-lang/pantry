@@ -6,7 +6,7 @@
  * @version `4.0.1` (53 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ruby-lang.org`
+ * @install `pantry install ruby-lang.org`
  * @aliases `ruby`
  * @homepage https://www.ruby-lang.org/
  * @dependencies `openssl.org^1.1`, `pyyaml.org^0.2`, `zlib.net^1`
@@ -47,12 +47,12 @@ export const rubyPackage = {
   homepageUrl: 'https://www.ruby-lang.org/' as const,
   githubUrl: 'https://github.com/ruby/ruby' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ruby-lang.org' as const,
+  installCommand: 'pantry install ruby-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ruby-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ruby-lang.org' as const,
+  pantryInstallCommand: 'pantry install ruby-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

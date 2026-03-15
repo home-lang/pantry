@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opus-codec.org
+# Install with pantry
+pantry install opus-codec.org
 ```
 
 ## Programs

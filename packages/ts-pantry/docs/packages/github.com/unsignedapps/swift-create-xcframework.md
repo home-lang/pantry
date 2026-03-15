@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/unsignedapps/swift-create-xcframework
+# Install with pantry
+pantry install github.com/unsignedapps/swift-create-xcframework
 ```
 
 ## Programs

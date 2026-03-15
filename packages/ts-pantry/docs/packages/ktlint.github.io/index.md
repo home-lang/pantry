@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ktlint.github.io
+# Install with pantry
+pantry install ktlint.github.io
 ```
 
 ## Programs

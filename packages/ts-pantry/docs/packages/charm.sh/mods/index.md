@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install charm.sh/mods
+# Install with pantry
+pantry install charm.sh/mods
 ```
 
 ## Programs

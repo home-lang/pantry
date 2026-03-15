@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install coredns.io
+# Install with pantry
+pantry install coredns.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install aria2.github.io
+# Install with pantry
+pantry install aria2.github.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/kevinburke/go-bindata
+# Install with pantry
+pantry install github.com/kevinburke/go-bindata
 ```
 
 ## Programs

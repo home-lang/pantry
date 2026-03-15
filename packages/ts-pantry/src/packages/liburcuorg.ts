@@ -5,7 +5,7 @@
  * @version `0.15.6` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install liburcu.org`
+ * @install `pantry install liburcu.org`
  * @homepage http://liburcu.org
  *
  * @example
@@ -38,12 +38,12 @@ export const liburcuorgPackage = {
   homepageUrl: 'http://liburcu.org' as const,
   githubUrl: 'https://github.com/urcu/userspace-rcu' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install liburcu.org' as const,
+  installCommand: 'pantry install liburcu.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +liburcu.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install liburcu.org' as const,
+  pantryInstallCommand: 'pantry install liburcu.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

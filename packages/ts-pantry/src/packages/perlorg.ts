@@ -6,7 +6,7 @@
  * @version `5.42.1` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install perl.org`
+ * @install `pantry install perl.org`
  * @homepage https://www.perl.org/
  * @buildDependencies `linux:llvm.org@<17`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const perlorgPackage = {
   homepageUrl: 'https://www.perl.org/' as const,
   githubUrl: 'https://github.com/perl/perl5' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install perl.org' as const,
+  installCommand: 'pantry install perl.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +perl.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install perl.org' as const,
+  pantryInstallCommand: 'pantry install perl.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

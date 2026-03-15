@@ -5,7 +5,7 @@
  * @version `3.4.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install glfw.org`
+ * @install `pantry install glfw.org`
  * @homepage https://www.glfw.org
  * @dependencies `linux:freeglut.sourceforge.io^3.4`, `linux:x.org/xcursor^1.2`, `linux:xkbcommon.org^1.0`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org` - required only when building from source
@@ -40,12 +40,12 @@ export const glfworgPackage = {
   homepageUrl: 'https://www.glfw.org' as const,
   githubUrl: 'https://github.com/glfw/glfw' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install glfw.org' as const,
+  installCommand: 'pantry install glfw.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +glfw.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install glfw.org' as const,
+  pantryInstallCommand: 'pantry install glfw.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

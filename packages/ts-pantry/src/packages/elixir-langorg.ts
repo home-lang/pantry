@@ -6,7 +6,7 @@
  * @version `1.19.5` (30 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install elixir-lang.org`
+ * @install `pantry install elixir-lang.org`
  * @homepage https://elixir-lang.org/
  * @dependencies `erlang.org`
  *
@@ -41,12 +41,12 @@ export const elixirlangorgPackage = {
   homepageUrl: 'https://elixir-lang.org/' as const,
   githubUrl: 'https://github.com/elixir-lang/elixir' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install elixir-lang.org' as const,
+  installCommand: 'pantry install elixir-lang.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +elixir-lang.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install elixir-lang.org' as const,
+  pantryInstallCommand: 'pantry install elixir-lang.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

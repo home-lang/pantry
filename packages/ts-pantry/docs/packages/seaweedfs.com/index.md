@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install seaweedfs.com
+# Install with pantry
+pantry install seaweedfs.com
 ```
 
 ## Programs

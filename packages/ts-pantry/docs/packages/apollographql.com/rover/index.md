@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apollographql.com/rover
+# Install with pantry
+pantry install apollographql.com/rover
 ```
 
 ## Programs

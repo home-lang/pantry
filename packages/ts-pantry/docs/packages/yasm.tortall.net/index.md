@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install yasm.tortall.net
+# Install with pantry
+pantry install yasm.tortall.net
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.0.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install modernc.org/goyacc`
+ * @install `pantry install modernc.org/goyacc`
  * @homepage https://pkg.go.dev/modernc.org/goyacc
  * @buildDependencies `go.dev@~1.19` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const moderncorggoyaccPackage = {
   homepageUrl: 'https://pkg.go.dev/modernc.org/goyacc' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install modernc.org/goyacc' as const,
+  installCommand: 'pantry install modernc.org/goyacc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +modernc.org/goyacc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install modernc.org/goyacc' as const,
+  pantryInstallCommand: 'pantry install modernc.org/goyacc' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `10.1.1` (100 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dozzle.dev`
+ * @install `pantry install dozzle.dev`
  * @homepage https://dozzle.dev/
  * @buildDependencies `go.dev@=1.25.7`, `pnpm.io`, `openssl.org`, ... (+2 more) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const dozzledevPackage = {
   homepageUrl: 'https://dozzle.dev/' as const,
   githubUrl: 'https://github.com/amir20/dozzle' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dozzle.dev' as const,
+  installCommand: 'pantry install dozzle.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dozzle.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dozzle.dev' as const,
+  pantryInstallCommand: 'pantry install dozzle.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

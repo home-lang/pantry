@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install deno.land
+# Install with pantry
+pantry install deno.land
 ```
 
 ## Programs

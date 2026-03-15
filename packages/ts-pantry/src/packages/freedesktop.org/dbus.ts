@@ -6,7 +6,7 @@
  * @version `1.16.2` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/dbus`
+ * @install `pantry install freedesktop.org/dbus`
  * @homepage https://wiki.freedesktop.org/www/Software/dbus
  * @buildDependencies `pagure.io/xmlto`, `libexpat.github.io`, `mesonbuild.com`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const freedesktoporgdbusPackage = {
   homepageUrl: 'https://wiki.freedesktop.org/www/Software/dbus' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/dbus' as const,
+  installCommand: 'pantry install freedesktop.org/dbus' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/dbus -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/dbus' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/dbus' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

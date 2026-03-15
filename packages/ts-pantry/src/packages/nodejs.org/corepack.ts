@@ -6,7 +6,7 @@
  * @version `0.34.6` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nodejs.org/corepack`
+ * @install `pantry install nodejs.org/corepack`
  * @homepage https://nodejs.org/
  * @dependencies `nodejs.org^20`
  * @buildDependencies `npmjs.com` - required only when building from source
@@ -42,12 +42,12 @@ export const nodejsorgcorepackPackage = {
   homepageUrl: 'https://nodejs.org/' as const,
   githubUrl: 'https://github.com/nodejs/node' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nodejs.org/corepack' as const,
+  installCommand: 'pantry install nodejs.org/corepack' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nodejs.org/corepack -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nodejs.org/corepack' as const,
+  pantryInstallCommand: 'pantry install nodejs.org/corepack' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

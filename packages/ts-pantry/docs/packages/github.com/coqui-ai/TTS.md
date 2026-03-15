@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/coqui-ai/TTS
+# Install with pantry
+pantry install github.com/coqui-ai/TTS
 ```
 
 ## Programs

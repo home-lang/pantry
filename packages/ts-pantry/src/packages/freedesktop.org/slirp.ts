@@ -5,7 +5,7 @@
  * @version `4.9.1` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/slirp`
+ * @install `pantry install freedesktop.org/slirp`
  * @dependencies `gnome.org/glib^2`
  * @buildDependencies `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const freedesktoporgslirpPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/slirp' as const,
+  installCommand: 'pantry install freedesktop.org/slirp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/slirp -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/slirp' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/slirp' as const,
   programs: [] as const,
   companions: [] as const,
   /**

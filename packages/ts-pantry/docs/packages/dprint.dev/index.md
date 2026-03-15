@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dprint.dev
+# Install with pantry
+pantry install dprint.dev
 ```
 
 ## Programs

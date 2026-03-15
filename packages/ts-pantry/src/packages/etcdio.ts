@@ -6,7 +6,7 @@
  * @version `3.6.8` (29 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install etcd.io`
+ * @install `pantry install etcd.io`
  * @homepage https://etcd.io
  * @buildDependencies `go.dev@^1.22` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const etcdioPackage = {
   homepageUrl: 'https://etcd.io' as const,
   githubUrl: 'https://github.com/etcd-io/etcd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install etcd.io' as const,
+  installCommand: 'pantry install etcd.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +etcd.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install etcd.io' as const,
+  pantryInstallCommand: 'pantry install etcd.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

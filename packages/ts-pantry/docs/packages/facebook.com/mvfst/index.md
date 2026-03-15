@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install facebook.com/mvfst
+# Install with pantry
+pantry install facebook.com/mvfst
 ```
 
 ## Programs

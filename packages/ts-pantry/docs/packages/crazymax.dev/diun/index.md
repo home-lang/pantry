@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crazymax.dev/diun
+# Install with pantry
+pantry install crazymax.dev/diun
 ```
 
 ## Programs

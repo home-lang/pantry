@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install supabase.com/cli
+# Install with pantry
+pantry install supabase.com/cli
 ```
 
 ## Programs

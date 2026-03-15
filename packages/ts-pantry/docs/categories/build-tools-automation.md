@@ -12,7 +12,7 @@ Mirror of CMake upstream repository
 
 **Programs**: cmake, ccmake, cpack, ctest
 
-**Install**: `launchpad install cmake.org`
+**Install**: `pantry install cmake.org`
 
 ---
 
@@ -22,7 +22,7 @@ Super simple build framework with fast, repeatable builds and an instantly famil
 
 **Programs**: earthly
 
-**Install**: `launchpad install earthly.dev/earthly`
+**Install**: `pantry install earthly.dev/earthly`
 
 ---
 
@@ -32,7 +32,7 @@ package compiler and linker metadata toolkit
 
 **Programs**: pkg-config
 
-**Install**: `launchpad install freedesktop.org/pkg-config`
+**Install**: `pantry install freedesktop.org/pkg-config`
 
 ---
 
@@ -42,7 +42,7 @@ A user-friendly launcher for Bazel.
 
 **Programs**: bazel, bazelisk
 
-**Install**: `launchpad install github.com/bazelbuild/bazelisk`
+**Install**: `pantry install github.com/bazelbuild/bazelisk`
 
 ---
 
@@ -52,7 +52,7 @@ Format bazel BUILD files with a standard convention
 
 **Programs**: buildifier
 
-**Install**: `launchpad install github.com/bazelbuild/buildtools`
+**Install**: `pantry install github.com/bazelbuild/buildtools`
 
 ---
 
@@ -62,7 +62,7 @@ concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
 
 **Programs**: buildctl
 
-**Install**: `launchpad install github.com/moby/buildkit`
+**Install**: `pantry install github.com/moby/buildkit`
 
 ---
 
@@ -72,7 +72,7 @@ Automatic configure script builder
 
 **Programs**: autoconf, autoheader, autom4te, autoreconf, autoscan, autoupdate, ifnames
 
-**Install**: `launchpad install gnu.org/autoconf`
+**Install**: `pantry install gnu.org/autoconf`
 
 ---
 
@@ -82,7 +82,7 @@ Tool for generating GNU Standards-compliant Makefiles
 
 **Programs**: aclocal, automake
 
-**Install**: `launchpad install gnu.org/automake`
+**Install**: `pantry install gnu.org/automake`
 
 ---
 
@@ -92,7 +92,7 @@ Open-source build automation tool based on the Groovy and Kotlin DSL
 
 **Programs**: gradle
 
-**Install**: `launchpad install gradle.org`
+**Install**: `pantry install gradle.org`
 
 ---
 
@@ -102,7 +102,7 @@ Handy way to save and run project-specific commands
 
 **Programs**: just
 
-**Install**: `launchpad install just.systems`
+**Install**: `pantry install just.systems`
 
 ---
 
@@ -112,7 +112,7 @@ Java-based project management
 
 **Programs**: mvn, mvnDebug, mvnyjp
 
-**Install**: `launchpad install maven`
+**Install**: `pantry install maven`
 
 ---
 
@@ -122,7 +122,7 @@ Fast and user friendly build system
 
 **Programs**: meson
 
-**Install**: `launchpad install mesonbuild.com`
+**Install**: `pantry install mesonbuild.com`
 
 ---
 
@@ -132,7 +132,7 @@ Small build system for use with gyp or CMake
 
 **Programs**: ninja
 
-**Install**: `launchpad install ninja-build.org`
+**Install**: `pantry install ninja-build.org`
 
 ---
 
@@ -142,7 +142,7 @@ Protects your Pants from the elements.
 
 **Programs**: pants
 
-**Install**: `launchpad install pantsbuild.org/scie-pants`
+**Install**: `pantry install pantsbuild.org/scie-pants`
 
 ---
 
@@ -152,7 +152,7 @@ Substitute for classic 'make' tool with autoconf/automake functionality
 
 **Programs**: scons
 
-**Install**: `launchpad install scons.org`
+**Install**: `pantry install scons.org`
 
 ---
 
@@ -162,7 +162,7 @@ A task runner / simpler Make alternative written in Go
 
 **Programs**: task
 
-**Install**: `launchpad install taskfile.dev`
+**Install**: `pantry install taskfile.dev`
 
 ---
 

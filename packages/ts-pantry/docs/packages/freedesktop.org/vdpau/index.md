@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/vdpau
+# Install with pantry
+pantry install freedesktop.org/vdpau
 ```
 
 ## Programs

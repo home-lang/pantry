@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install google.com/fullycapable
+# Install with pantry
+pantry install google.com/fullycapable
 ```
 
 ## Programs

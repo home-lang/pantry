@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install getclipboard.app
+# Install with pantry
+pantry install getclipboard.app
 ```
 
 ## Programs

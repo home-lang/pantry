@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lavinmq.com
+# Install with pantry
+pantry install lavinmq.com
 ```
 
 ## Programs

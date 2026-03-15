@@ -6,7 +6,7 @@
  * @version `73.0.0` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vapoursynth.com`
+ * @install `pantry install vapoursynth.com`
  * @homepage https://www.vapoursynth.com
  * @dependencies `python.org~3.11`, `github.com/sekrit-twc/zimg`, `linux:gnu.org/gcc/libstdcxx` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `cython.org`, ... (+3 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const vapoursynthcomPackage = {
   homepageUrl: 'https://www.vapoursynth.com' as const,
   githubUrl: 'https://github.com/vapoursynth/vapoursynth' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vapoursynth.com' as const,
+  installCommand: 'pantry install vapoursynth.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vapoursynth.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vapoursynth.com' as const,
+  pantryInstallCommand: 'pantry install vapoursynth.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

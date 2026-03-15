@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/chrusty/protoc-gen-jsonschema
+# Install with pantry
+pantry install github.com/chrusty/protoc-gen-jsonschema
 ```
 
 ## Programs

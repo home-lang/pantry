@@ -6,7 +6,7 @@
  * @version `1.16.2` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cocoapods.org`
+ * @install `pantry install cocoapods.org`
  * @homepage https://cocoapods.org/
  * @dependencies `ruby-lang.org~3.2`, `sourceware.org/libffi^3`, `rubygems.org^3`, ... (+1 more)
  *
@@ -41,12 +41,12 @@ export const cocoapodsorgPackage = {
   homepageUrl: 'https://cocoapods.org/' as const,
   githubUrl: 'https://github.com/CocoaPods/CocoaPods' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cocoapods.org' as const,
+  installCommand: 'pantry install cocoapods.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cocoapods.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cocoapods.org' as const,
+  pantryInstallCommand: 'pantry install cocoapods.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

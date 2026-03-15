@@ -6,7 +6,7 @@
  * @version `3.0.77` (34 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install swagger.io/swagger-codegen`
+ * @install `pantry install swagger.io/swagger-codegen`
  * @homepage https://swagger.io/tools/swagger-codegen/
  * @dependencies `openjdk.org^11`
  * @buildDependencies `maven.apache.org` - required only when building from source
@@ -42,12 +42,12 @@ export const swaggerioswaggercodegenPackage = {
   homepageUrl: 'https://swagger.io/tools/swagger-codegen/' as const,
   githubUrl: 'https://github.com/swagger-api/swagger-codegen' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install swagger.io/swagger-codegen' as const,
+  installCommand: 'pantry install swagger.io/swagger-codegen' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +swagger.io/swagger-codegen -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install swagger.io/swagger-codegen' as const,
+  pantryInstallCommand: 'pantry install swagger.io/swagger-codegen' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

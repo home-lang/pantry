@@ -6,7 +6,7 @@
  * @version `1.10.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install lz4.org`
+ * @install `pantry install lz4.org`
  * @homepage https://lz4.github.io/lz4/
  *
  * @example
@@ -40,12 +40,12 @@ export const lz4orgPackage = {
   homepageUrl: 'https://lz4.github.io/lz4/' as const,
   githubUrl: 'https://github.com/lz4/lz4' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install lz4.org' as const,
+  installCommand: 'pantry install lz4.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +lz4.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install lz4.org' as const,
+  pantryInstallCommand: 'pantry install lz4.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

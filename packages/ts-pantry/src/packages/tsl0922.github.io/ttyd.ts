@@ -6,7 +6,7 @@
  * @version `1.7.7` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tsl0922.github.io/ttyd`
+ * @install `pantry install tsl0922.github.io/ttyd`
  * @homepage https://tsl0922.github.io/ttyd/
  * @dependencies `libuv.org@1`, `github.com/json-c/json-c^0.16`, `libwebsockets.org~4.3 # ABI version changes in 4.4`, ... (+1 more)
  * @buildDependencies `cmake.org@3` - required only when building from source
@@ -42,12 +42,12 @@ export const tsl0922githubiottydPackage = {
   homepageUrl: 'https://tsl0922.github.io/ttyd/' as const,
   githubUrl: 'https://github.com/tsl0922/ttyd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tsl0922.github.io/ttyd' as const,
+  installCommand: 'pantry install tsl0922.github.io/ttyd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tsl0922.github.io/ttyd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tsl0922.github.io/ttyd' as const,
+  pantryInstallCommand: 'pantry install tsl0922.github.io/ttyd' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

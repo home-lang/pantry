@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cocogitto.io
+# Install with pantry
+pantry install cocogitto.io
 ```
 
 ## Programs

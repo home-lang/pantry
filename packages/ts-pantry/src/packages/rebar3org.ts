@@ -6,7 +6,7 @@
  * @version `3.27.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rebar3.org`
+ * @install `pantry install rebar3.org`
  * @homepage https://rebar3.org
  * @dependencies `erlang.org`
  *
@@ -41,12 +41,12 @@ export const rebar3orgPackage = {
   homepageUrl: 'https://rebar3.org' as const,
   githubUrl: 'https://github.com/erlang/rebar3' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rebar3.org' as const,
+  installCommand: 'pantry install rebar3.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rebar3.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rebar3.org' as const,
+  pantryInstallCommand: 'pantry install rebar3.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

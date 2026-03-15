@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceforge.net/xmlstar
+# Install with pantry
+pantry install sourceforge.net/xmlstar
 ```
 
 ## Programs

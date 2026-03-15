@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install psycopg.org/psycopg3
+# Install with pantry
+pantry install psycopg.org/psycopg3
 ```
 
 ## Programs

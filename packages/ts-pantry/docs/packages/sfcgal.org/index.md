@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sfcgal.org
+# Install with pantry
+pantry install sfcgal.org
 ```
 
 ## Programs

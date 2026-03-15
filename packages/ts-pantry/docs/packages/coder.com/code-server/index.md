@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install coder.com/code-server
+# Install with pantry
+pantry install coder.com/code-server
 ```
 
 ## Programs

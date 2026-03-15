@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install python-poetry.org
+# Install with pantry
+pantry install python-poetry.org
 ```
 
 ## Programs

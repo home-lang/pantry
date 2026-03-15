@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gitlab.com/gitlab-org/gitlab-runner
+# Install with pantry
+pantry install gitlab.com/gitlab-org/gitlab-runner
 ```
 
 ## Programs

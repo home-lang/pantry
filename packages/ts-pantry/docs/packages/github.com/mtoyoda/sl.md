@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mtoyoda/sl
+# Install with pantry
+pantry install github.com/mtoyoda/sl
 ```
 
 ## Programs

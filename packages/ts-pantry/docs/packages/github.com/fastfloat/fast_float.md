@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/fastfloat/fast_float
+# Install with pantry
+pantry install github.com/fastfloat/fast_float
 ```
 
 ## Programs

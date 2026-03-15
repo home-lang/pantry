@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install packer.io
+# Install with pantry
+pantry install packer.io
 ```
 
 ## Programs

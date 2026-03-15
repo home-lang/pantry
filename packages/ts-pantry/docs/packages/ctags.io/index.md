@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ctags.io
+# Install with pantry
+pantry install ctags.io
 ```
 
 ## Programs

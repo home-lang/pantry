@@ -6,7 +6,7 @@
  * @version `1.5.30` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install matio.sourceforge.io`
+ * @install `pantry install matio.sourceforge.io`
  * @homepage https://matio.sourceforge.net/
  * @dependencies `hdfgroup.org/HDF5`, `zlib.net`
  * @buildDependencies `cmake.org`, `darwin:llvm.org@20` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const matiosourceforgeioPackage = {
   homepageUrl: 'https://matio.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install matio.sourceforge.io' as const,
+  installCommand: 'pantry install matio.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +matio.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install matio.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install matio.sourceforge.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

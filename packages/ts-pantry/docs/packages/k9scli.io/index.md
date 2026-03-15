@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install k9scli.io
+# Install with pantry
+pantry install k9scli.io
 ```
 
 ## Programs

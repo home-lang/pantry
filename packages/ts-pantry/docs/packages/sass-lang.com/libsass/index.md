@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sass-lang.com/libsass
+# Install with pantry
+pantry install sass-lang.com/libsass
 ```
 
 ## Programs

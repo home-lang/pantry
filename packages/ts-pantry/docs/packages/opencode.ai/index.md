@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install opencode.ai
+# Install with pantry
+pantry install opencode.ai
 ```
 
 ## Programs

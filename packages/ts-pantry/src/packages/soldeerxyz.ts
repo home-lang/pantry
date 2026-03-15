@@ -6,7 +6,7 @@
  * @version `0.10.1` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install soldeer.xyz`
+ * @install `pantry install soldeer.xyz`
  * @homepage https://soldeer.xyz
  *
  * @example
@@ -40,12 +40,12 @@ export const soldeerxyzPackage = {
   homepageUrl: 'https://soldeer.xyz' as const,
   githubUrl: 'https://github.com/mario-eth/soldeer' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install soldeer.xyz' as const,
+  installCommand: 'pantry install soldeer.xyz' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +soldeer.xyz -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install soldeer.xyz' as const,
+  pantryInstallCommand: 'pantry install soldeer.xyz' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

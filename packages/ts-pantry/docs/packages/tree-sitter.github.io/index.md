@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tree-sitter.github.io
+# Install with pantry
+pantry install tree-sitter.github.io
 ```
 
 ## Programs

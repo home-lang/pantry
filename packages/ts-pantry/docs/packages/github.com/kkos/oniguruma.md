@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/kkos/oniguruma
+# Install with pantry
+pantry install github.com/kkos/oniguruma
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.18.4` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cairographics.org`
+ * @install `pantry install cairographics.org`
  * @homepage https://cairographics.org/
  * @dependencies `libpng.org@1`, `pixman.org^0.40.0`, `freetype.org@2`, ... (+8 more)
  * @buildDependencies `libexpat.github.io@=2.4.9`, `gnu.org/libtool@^2`, `mesonbuild.com@^1` - required only when building from source
@@ -42,12 +42,12 @@ export const cairographicsorgPackage = {
   homepageUrl: 'https://cairographics.org/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cairographics.org' as const,
+  installCommand: 'pantry install cairographics.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cairographics.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cairographics.org' as const,
+  pantryInstallCommand: 'pantry install cairographics.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

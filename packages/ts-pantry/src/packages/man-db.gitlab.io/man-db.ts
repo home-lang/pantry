@@ -6,7 +6,7 @@
  * @version `2.13.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install man-db.gitlab.io/man-db`
+ * @install `pantry install man-db.gitlab.io/man-db`
  * @dependencies `libpipeline.gitlab.io/libpipeline`, `gnu.org/groff`, `linux:gnu.org/gdbm` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/make` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const mandbgitlabiomandbPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install man-db.gitlab.io/man-db' as const,
+  installCommand: 'pantry install man-db.gitlab.io/man-db' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +man-db.gitlab.io/man-db -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install man-db.gitlab.io/man-db' as const,
+  pantryInstallCommand: 'pantry install man-db.gitlab.io/man-db' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

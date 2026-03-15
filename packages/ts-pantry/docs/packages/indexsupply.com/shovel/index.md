@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install indexsupply.com/shovel
+# Install with pantry
+pantry install indexsupply.com/shovel
 ```
 
 ## Programs

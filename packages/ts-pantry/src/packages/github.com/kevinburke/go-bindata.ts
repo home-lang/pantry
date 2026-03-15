@@ -6,7 +6,7 @@
  * @version `4.0.2` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/kevinburke/go-bindata`
+ * @install `pantry install github.com/kevinburke/go-bindata`
  * @buildDependencies `go.dev@^1.18`, `gnu.org/patch`, `crates.io/semverator@^0` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const gobindataPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/kevinburke/go-bindata' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/kevinburke/go-bindata' as const,
+  installCommand: 'pantry install github.com/kevinburke/go-bindata' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/kevinburke/go-bindata -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/kevinburke/go-bindata' as const,
+  pantryInstallCommand: 'pantry install github.com/kevinburke/go-bindata' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.44.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rye.astral.sh`
+ * @install `pantry install rye.astral.sh`
  * @homepage https://rye-up.com/
  * @dependencies `curl.se/ca-certs`
  *
@@ -41,12 +41,12 @@ export const ryeastralshPackage = {
   homepageUrl: 'https://rye-up.com/' as const,
   githubUrl: 'https://github.com/astral-sh/rye' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rye.astral.sh' as const,
+  installCommand: 'pantry install rye.astral.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rye.astral.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rye.astral.sh' as const,
+  pantryInstallCommand: 'pantry install rye.astral.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceware.org/dm
+# Install with pantry
+pantry install sourceware.org/dm
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/anholt/libepoxy
+# Install with pantry
+pantry install github.com/anholt/libepoxy
 ```
 
 ## Programs

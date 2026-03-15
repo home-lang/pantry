@@ -6,7 +6,7 @@
  * @version `2.2.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pyinvoke.org`
+ * @install `pantry install pyinvoke.org`
  * @homepage https://www.pyinvoke.org/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@^3.13.3` - required only when building from source
@@ -42,12 +42,12 @@ export const pyinvokeorgPackage = {
   homepageUrl: 'https://www.pyinvoke.org/' as const,
   githubUrl: 'https://github.com/pyinvoke/invoke' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pyinvoke.org' as const,
+  installCommand: 'pantry install pyinvoke.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pyinvoke.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pyinvoke.org' as const,
+  pantryInstallCommand: 'pantry install pyinvoke.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

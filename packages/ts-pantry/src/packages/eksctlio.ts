@@ -6,7 +6,7 @@
  * @version `0.224.0` (71 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install eksctl.io`
+ * @install `pantry install eksctl.io`
  * @homepage https://eksctl.io
  * @dependencies `github.com/kubernetes-sigs/aws-iam-authenticator`
  * @buildDependencies `github.com/maxbrunsfeld/counterfeiter`, `go.dev@~1.25`, `github.com/vburenin/ifacemaker`, ... (+1 more) - required only when building from source
@@ -42,12 +42,12 @@ export const eksctlioPackage = {
   homepageUrl: 'https://eksctl.io' as const,
   githubUrl: 'https://github.com/eksctl-io/eksctl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install eksctl.io' as const,
+  installCommand: 'pantry install eksctl.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +eksctl.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install eksctl.io' as const,
+  pantryInstallCommand: 'pantry install eksctl.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

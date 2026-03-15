@@ -6,7 +6,7 @@
  * @version `0.29.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/pkg-config`
+ * @install `pantry install freedesktop.org/pkg-config`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const freedesktoporgpkgconfigPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/pkgconf/pkgconf' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/pkg-config' as const,
+  installCommand: 'pantry install freedesktop.org/pkg-config' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/pkg-config -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/pkg-config' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/pkg-config' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

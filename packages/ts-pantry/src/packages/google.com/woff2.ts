@@ -6,7 +6,7 @@
  * @version `1.0.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install google.com/woff2`
+ * @install `pantry install google.com/woff2`
  * @dependencies `github.com/google/brotli`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const googlecomwoff2Package = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/google/woff2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install google.com/woff2' as const,
+  installCommand: 'pantry install google.com/woff2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +google.com/woff2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install google.com/woff2' as const,
+  pantryInstallCommand: 'pantry install google.com/woff2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

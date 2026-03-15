@@ -6,7 +6,7 @@
  * @version `4.21.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/libtasn1`
+ * @install `pantry install gnu.org/libtasn1`
  * @homepage https://www.gnu.org/software/libtasn1/
  *
  * @example
@@ -40,12 +40,12 @@ export const gnuorglibtasn1Package = {
   homepageUrl: 'https://www.gnu.org/software/libtasn1/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/libtasn1' as const,
+  installCommand: 'pantry install gnu.org/libtasn1' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/libtasn1 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/libtasn1' as const,
+  pantryInstallCommand: 'pantry install gnu.org/libtasn1' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

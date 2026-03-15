@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sing-box.app
+# Install with pantry
+pantry install sing-box.app
 ```
 
 ## Programs

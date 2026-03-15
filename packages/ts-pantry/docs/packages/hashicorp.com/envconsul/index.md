@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hashicorp.com/envconsul
+# Install with pantry
+pantry install hashicorp.com/envconsul
 ```
 
 ## Programs

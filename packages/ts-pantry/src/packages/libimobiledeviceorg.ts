@@ -6,7 +6,7 @@
  * @version `1.4.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libimobiledevice.org`
+ * @install `pantry install libimobiledevice.org`
  * @homepage https://www.libimobiledevice.org/
  * @dependencies `libimobiledevice.org/libplist^2.4`, `libimobiledevice.org/libtatsu^1`, `libimobiledevice.org/libimobiledevice-glue^1.3`, ... (+3 more)
  *
@@ -41,12 +41,12 @@ export const libimobiledeviceorgPackage = {
   homepageUrl: 'https://www.libimobiledevice.org/' as const,
   githubUrl: 'https://github.com/libimobiledevice/libimobiledevice' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libimobiledevice.org' as const,
+  installCommand: 'pantry install libimobiledevice.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libimobiledevice.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libimobiledevice.org' as const,
+  pantryInstallCommand: 'pantry install libimobiledevice.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

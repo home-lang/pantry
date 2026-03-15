@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dns.lookup.dog
+# Install with pantry
+pantry install dns.lookup.dog
 ```
 
 ## Programs

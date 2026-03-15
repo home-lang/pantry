@@ -6,7 +6,7 @@
  * @version `2.5.0` (30 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/mamba-org/micro`
+ * @install `pantry install github.com/mamba-org/micro`
  * @homepage https://mamba.readthedocs.io
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `curl.se`, `sourceware.org/bzip2` - required only when building from source
@@ -42,12 +42,12 @@ export const microPackage = {
   homepageUrl: 'https://mamba.readthedocs.io' as const,
   githubUrl: 'https://github.com/mamba-org/mamba' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/mamba-org/micro' as const,
+  installCommand: 'pantry install github.com/mamba-org/micro' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/mamba-org/micro -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/mamba-org/micro' as const,
+  pantryInstallCommand: 'pantry install github.com/mamba-org/micro' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

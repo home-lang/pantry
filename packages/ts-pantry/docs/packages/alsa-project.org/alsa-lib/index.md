@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install alsa-project.org/alsa-lib
+# Install with pantry
+pantry install alsa-project.org/alsa-lib
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `0.1.22` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/withered-magic/starpls`
+ * @install `pantry install github.com/withered-magic/starpls`
  * @buildDependencies `github.com/bazelbuild/bazelisk` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const starplsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/withered-magic/starpls' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/withered-magic/starpls' as const,
+  installCommand: 'pantry install github.com/withered-magic/starpls' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/withered-magic/starpls -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/withered-magic/starpls' as const,
+  pantryInstallCommand: 'pantry install github.com/withered-magic/starpls' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

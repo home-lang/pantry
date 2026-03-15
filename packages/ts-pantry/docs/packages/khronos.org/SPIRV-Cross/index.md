@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install khronos.org/SPIRV-Cross
+# Install with pantry
+pantry install khronos.org/SPIRV-Cross
 ```
 
 ## Programs

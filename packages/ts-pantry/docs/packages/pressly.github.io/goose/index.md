@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pressly.github.io/goose
+# Install with pantry
+pantry install pressly.github.io/goose
 ```
 
 ## Programs

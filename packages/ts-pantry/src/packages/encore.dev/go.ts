@@ -6,7 +6,7 @@
  * @version `1.25.4` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install encore.dev/go`
+ * @install `pantry install encore.dev/go`
  * @homepage https://encore.dev
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `curl.se`, `gnu.org/tar` - required only when building from source
@@ -42,12 +42,12 @@ export const encoredevgoPackage = {
   homepageUrl: 'https://encore.dev' as const,
   githubUrl: 'https://github.com/encoredev/go' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install encore.dev/go' as const,
+  installCommand: 'pantry install encore.dev/go' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +encore.dev/go -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install encore.dev/go' as const,
+  pantryInstallCommand: 'pantry install encore.dev/go' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wayland.freedesktop.org/protocols
+# Install with pantry
+pantry install wayland.freedesktop.org/protocols
 ```
 
 ## Programs

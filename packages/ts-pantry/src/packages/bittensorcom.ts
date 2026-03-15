@@ -5,7 +5,7 @@
  * @version `10.1.0` (78 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install bittensor.com`
+ * @install `pantry install bittensor.com`
  * @homepage https://www.bittensor.com/
  * @dependencies `pkgx.sh>=1`, `openssl.org^1.1`
  * @buildDependencies `python.org@~3.11`, `cmake.org@3` - required only when building from source
@@ -40,12 +40,12 @@ export const bittensorcomPackage = {
   homepageUrl: 'https://www.bittensor.com/' as const,
   githubUrl: 'https://github.com/opentensor/bittensor' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install bittensor.com' as const,
+  installCommand: 'pantry install bittensor.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +bittensor.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install bittensor.com' as const,
+  pantryInstallCommand: 'pantry install bittensor.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**

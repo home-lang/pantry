@@ -6,7 +6,7 @@
  * @version `4.13.0` (28 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kubebuilder.io`
+ * @install `pantry install kubebuilder.io`
  * @homepage http://book.kubebuilder.io
  * @buildDependencies `go.dev@~1.25.3`, `gnu.org/coreutils`, `goreleaser.com` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kubebuilderioPackage = {
   homepageUrl: 'http://book.kubebuilder.io' as const,
   githubUrl: 'https://github.com/kubernetes-sigs/kubebuilder' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kubebuilder.io' as const,
+  installCommand: 'pantry install kubebuilder.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kubebuilder.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kubebuilder.io' as const,
+  pantryInstallCommand: 'pantry install kubebuilder.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

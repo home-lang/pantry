@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install simplesystems.org/libtiff
+# Install with pantry
+pantry install simplesystems.org/libtiff
 ```
 
 ## Programs

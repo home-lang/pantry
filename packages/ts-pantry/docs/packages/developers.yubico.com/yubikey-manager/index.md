@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install developers.yubico.com/yubikey-manager
+# Install with pantry
+pantry install developers.yubico.com/yubikey-manager
 ```
 
 ## Programs

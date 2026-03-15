@@ -6,7 +6,7 @@
  * @version `0.2.5` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/kaspa-miner`
+ * @install `pantry install crates.io/kaspa-miner`
  * @buildDependencies `protobuf.dev@25` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiokaspaminerPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/elichai/kaspa-miner' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/kaspa-miner' as const,
+  installCommand: 'pantry install crates.io/kaspa-miner' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/kaspa-miner -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/kaspa-miner' as const,
+  pantryInstallCommand: 'pantry install crates.io/kaspa-miner' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

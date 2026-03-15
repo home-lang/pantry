@@ -6,7 +6,7 @@
  * @version `8.17.0` (28 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install curl.se`
+ * @install `pantry install curl.se`
  * @aliases `curl`
  * @homepage https://curl.se
  * @dependencies `openssl.org^1.1`, `curl.se/ca-certs`, `zlib.net^1.2.11`, ... (+1 more)
@@ -46,12 +46,12 @@ export const curlPackage = {
   homepageUrl: 'https://curl.se' as const,
   githubUrl: 'https://github.com/curl/curl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install curl.se' as const,
+  installCommand: 'pantry install curl.se' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +curl.se -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install curl.se' as const,
+  pantryInstallCommand: 'pantry install curl.se' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

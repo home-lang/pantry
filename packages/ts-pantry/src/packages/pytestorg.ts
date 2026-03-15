@@ -6,7 +6,7 @@
  * @version `9.0.2` (31 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pytest.org`
+ * @install `pantry install pytest.org`
  * @homepage https://docs.pytest.org/en/latest/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.7<3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const pytestorgPackage = {
   homepageUrl: 'https://docs.pytest.org/en/latest/' as const,
   githubUrl: 'https://github.com/pytest-dev/pytest' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pytest.org' as const,
+  installCommand: 'pantry install pytest.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pytest.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pytest.org' as const,
+  pantryInstallCommand: 'pantry install pytest.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apache.org/thrift
+# Install with pantry
+pantry install apache.org/thrift
 ```
 
 ## Programs

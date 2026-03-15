@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install grafana.com/loki
+# Install with pantry
+pantry install grafana.com/loki
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install epsilon-project.sourceforge.io
+# Install with pantry
+pantry install epsilon-project.sourceforge.io
 ```
 
 ## Programs

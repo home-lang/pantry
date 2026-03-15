@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/aws-cloudformation/cfn-lint
+# Install with pantry
+pantry install github.com/aws-cloudformation/cfn-lint
 ```
 
 ## Programs

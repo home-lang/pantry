@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/helmfile/helmfile
+# Install with pantry
+pantry install github.com/helmfile/helmfile
 ```
 
 ## Programs

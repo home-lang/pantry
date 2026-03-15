@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sftpgo.com
+# Install with pantry
+pantry install sftpgo.com
 ```
 
 ## Programs

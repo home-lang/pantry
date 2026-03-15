@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tcsh.org
+# Install with pantry
+pantry install tcsh.org
 ```
 
 ## Programs

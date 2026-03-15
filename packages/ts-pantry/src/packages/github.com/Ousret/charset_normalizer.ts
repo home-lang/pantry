@@ -6,7 +6,7 @@
  * @version `3.4.6` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/Ousret/charset_normalizer`
+ * @install `pantry install github.com/Ousret/charset_normalizer`
  * @homepage https://charset-normalizer.readthedocs.io/en/latest/
  * @dependencies `python.org>=3.11`
  *
@@ -41,12 +41,12 @@ export const charset_normalizerPackage = {
   homepageUrl: 'https://charset-normalizer.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/Ousret/charset_normalizer' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/Ousret/charset_normalizer' as const,
+  installCommand: 'pantry install github.com/Ousret/charset_normalizer' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Ousret/charset_normalizer -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/Ousret/charset_normalizer' as const,
+  pantryInstallCommand: 'pantry install github.com/Ousret/charset_normalizer' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

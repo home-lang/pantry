@@ -5,7 +5,7 @@
  * @version `2025.1.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/protocol`
+ * @install `pantry install x.org/protocol`
  * @dependencies `x.org/util-macros`
  *
  * @example
@@ -37,12 +37,12 @@ export const xorgprotocolPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/protocol' as const,
+  installCommand: 'pantry install x.org/protocol' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/protocol -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/protocol' as const,
+  pantryInstallCommand: 'pantry install x.org/protocol' as const,
   programs: [] as const,
   companions: [] as const,
   /**

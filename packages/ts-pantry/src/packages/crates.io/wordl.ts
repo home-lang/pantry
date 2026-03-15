@@ -6,7 +6,7 @@
  * @version `0.3.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/wordl`
+ * @install `pantry install crates.io/wordl`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiowordlPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/palerdot/wordl-rs' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/wordl' as const,
+  installCommand: 'pantry install crates.io/wordl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/wordl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/wordl' as const,
+  pantryInstallCommand: 'pantry install crates.io/wordl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

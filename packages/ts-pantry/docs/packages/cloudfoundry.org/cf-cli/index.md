@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cloudfoundry.org/cf-cli
+# Install with pantry
+pantry install cloudfoundry.org/cf-cli
 ```
 
 ## Programs

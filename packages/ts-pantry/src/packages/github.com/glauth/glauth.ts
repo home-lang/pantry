@@ -6,7 +6,7 @@
  * @version `2.4.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/glauth/glauth`
+ * @install `pantry install github.com/glauth/glauth`
  * @buildDependencies `go.dev@^1.23`, `gnu.org/gcc`, `gnu.org/coreutils`, ... (+1 more) - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const glauthPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/glauth/glauth' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/glauth/glauth' as const,
+  installCommand: 'pantry install github.com/glauth/glauth' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/glauth/glauth -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/glauth/glauth' as const,
+  pantryInstallCommand: 'pantry install github.com/glauth/glauth' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

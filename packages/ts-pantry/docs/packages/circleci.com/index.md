@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install circleci.com
+# Install with pantry
+pantry install circleci.com
 ```
 
 ## Programs

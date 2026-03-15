@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pwgen.sourceforge.io
+# Install with pantry
+pantry install pwgen.sourceforge.io
 ```
 
 ## Programs

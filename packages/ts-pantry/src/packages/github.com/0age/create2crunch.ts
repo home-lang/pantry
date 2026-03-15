@@ -6,7 +6,7 @@
  * @version `2024.12.23` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/0age/create2crunch`
+ * @install `pantry install github.com/0age/create2crunch`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const create2crunchPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/0age/create2crunch' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/0age/create2crunch' as const,
+  installCommand: 'pantry install github.com/0age/create2crunch' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/0age/create2crunch -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/0age/create2crunch' as const,
+  pantryInstallCommand: 'pantry install github.com/0age/create2crunch' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

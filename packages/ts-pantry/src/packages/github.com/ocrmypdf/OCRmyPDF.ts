@@ -6,7 +6,7 @@
  * @version `17.3.0` (47 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/ocrmypdf/OCRmyPDF`
+ * @install `pantry install github.com/ocrmypdf/OCRmyPDF`
  * @homepage https://ocrmypdf.readthedocs.io/en/latest/
  * @dependencies `pkgx.sh>=1`, `qpdf.sourceforge.io^12 # as of 16.10.1`
  * @buildDependencies `python.org@~3.11` - required only when building from source
@@ -42,12 +42,12 @@ export const ocrmypdfPackage = {
   homepageUrl: 'https://ocrmypdf.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/ocrmypdf/OCRmyPDF' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/ocrmypdf/OCRmyPDF' as const,
+  installCommand: 'pantry install github.com/ocrmypdf/OCRmyPDF' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/ocrmypdf/OCRmyPDF -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/ocrmypdf/OCRmyPDF' as const,
+  pantryInstallCommand: 'pantry install github.com/ocrmypdf/OCRmyPDF' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

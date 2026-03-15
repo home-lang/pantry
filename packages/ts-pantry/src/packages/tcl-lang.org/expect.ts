@@ -6,7 +6,7 @@
  * @version `5.45.4` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install tcl-lang.org/expect`
+ * @install `pantry install tcl-lang.org/expect`
  * @homepage https://core.tcl-lang.org/expect/index
  * @dependencies `tcl.tk/tcl^8`
  * @buildDependencies `gnu.org/automake`, `gnu.org/autoconf`, `gnu.org/patch` - required only when building from source
@@ -42,12 +42,12 @@ export const tcllangorgexpectPackage = {
   homepageUrl: 'https://core.tcl-lang.org/expect/index' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install tcl-lang.org/expect' as const,
+  installCommand: 'pantry install tcl-lang.org/expect' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +tcl-lang.org/expect -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install tcl-lang.org/expect' as const,
+  pantryInstallCommand: 'pantry install tcl-lang.org/expect' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `2.4.8` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install yui.github.io/yuicompressor`
+ * @install `pantry install yui.github.io/yuicompressor`
  * @homepage https://yui.github.io/yuicompressor/
  * @dependencies `openjdk.org`
  *
@@ -41,12 +41,12 @@ export const yuigithubioyuicompressorPackage = {
   homepageUrl: 'https://yui.github.io/yuicompressor/' as const,
   githubUrl: 'https://github.com/yui/yuicompressor' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install yui.github.io/yuicompressor' as const,
+  installCommand: 'pantry install yui.github.io/yuicompressor' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +yui.github.io/yuicompressor -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install yui.github.io/yuicompressor' as const,
+  pantryInstallCommand: 'pantry install yui.github.io/yuicompressor' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

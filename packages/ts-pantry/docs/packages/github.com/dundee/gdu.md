@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/dundee/gdu
+# Install with pantry
+pantry install github.com/dundee/gdu
 ```
 
 ## Programs

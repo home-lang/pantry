@@ -5,7 +5,7 @@
  * @version `1.19.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install rpm.org/popt`
+ * @install `pantry install rpm.org/popt`
  * @homepage http://ftp.rpm.org/popt/
  *
  * @example
@@ -38,12 +38,12 @@ export const rpmorgpoptPackage = {
   homepageUrl: 'http://ftp.rpm.org/popt/' as const,
   githubUrl: 'https://github.com/rpm-software-management/popt' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install rpm.org/popt' as const,
+  installCommand: 'pantry install rpm.org/popt' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +rpm.org/popt -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install rpm.org/popt' as const,
+  pantryInstallCommand: 'pantry install rpm.org/popt' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

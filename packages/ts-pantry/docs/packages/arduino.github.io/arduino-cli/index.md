@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install arduino.github.io/arduino-cli
+# Install with pantry
+pantry install arduino.github.io/arduino-cli
 ```
 
 ## Programs

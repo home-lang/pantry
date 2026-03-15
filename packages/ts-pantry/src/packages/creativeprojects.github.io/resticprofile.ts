@@ -6,7 +6,7 @@
  * @version `0.32.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install creativeprojects.github.io/resticprofile`
+ * @install `pantry install creativeprojects.github.io/resticprofile`
  * @homepage https://creativeprojects.github.io/resticprofile/
  * @buildDependencies `go.dev@~1.22` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const creativeprojectsgithubioresticprofilePackage = {
   homepageUrl: 'https://creativeprojects.github.io/resticprofile/' as const,
   githubUrl: 'https://github.com/creativeprojects/resticprofile' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install creativeprojects.github.io/resticprofile' as const,
+  installCommand: 'pantry install creativeprojects.github.io/resticprofile' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +creativeprojects.github.io/resticprofile -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install creativeprojects.github.io/resticprofile' as const,
+  pantryInstallCommand: 'pantry install creativeprojects.github.io/resticprofile' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install charm.sh/gum
+# Install with pantry
+pantry install charm.sh/gum
 ```
 
 ## Programs

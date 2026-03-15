@@ -6,7 +6,7 @@
  * @version `2.4.3` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install numpy.org`
+ * @install `pantry install numpy.org`
  * @homepage https://www.numpy.org/
  * @dependencies `openblas.net^0.3`, `python.org^3.11`
  * @buildDependencies `cython.org/libcython`, `llvm.org` - required only when building from source
@@ -42,12 +42,12 @@ export const numpyorgPackage = {
   homepageUrl: 'https://www.numpy.org/' as const,
   githubUrl: 'https://github.com/numpy/numpy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install numpy.org' as const,
+  installCommand: 'pantry install numpy.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +numpy.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install numpy.org' as const,
+  pantryInstallCommand: 'pantry install numpy.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

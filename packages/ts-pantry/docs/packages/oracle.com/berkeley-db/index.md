@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install oracle.com/berkeley-db
+# Install with pantry
+pantry install oracle.com/berkeley-db
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install projectdiscovery.io/nuclei
+# Install with pantry
+pantry install projectdiscovery.io/nuclei
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install x.org/xft
+# Install with pantry
+pantry install x.org/xft
 ```
 
 ## Programs

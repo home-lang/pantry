@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/aws/aws-sdk-cpp
+# Install with pantry
+pantry install github.com/aws/aws-sdk-cpp
 ```
 
 ## Programs

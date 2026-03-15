@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pwmt.org/zathura
+# Install with pantry
+pantry install pwmt.org/zathura
 ```
 
 ## Programs

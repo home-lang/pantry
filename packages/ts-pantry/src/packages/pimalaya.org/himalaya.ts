@@ -6,7 +6,7 @@
  * @version `1.2.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pimalaya.org/himalaya`
+ * @install `pantry install pimalaya.org/himalaya`
  * @homepage https://pimalaya.org
  *
  * @example
@@ -40,12 +40,12 @@ export const pimalayaorghimalayaPackage = {
   homepageUrl: 'https://pimalaya.org' as const,
   githubUrl: 'https://github.com/pimalaya/himalaya' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pimalaya.org/himalaya' as const,
+  installCommand: 'pantry install pimalaya.org/himalaya' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pimalaya.org/himalaya -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pimalaya.org/himalaya' as const,
+  pantryInstallCommand: 'pantry install pimalaya.org/himalaya' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

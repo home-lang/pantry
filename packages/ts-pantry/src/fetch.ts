@@ -139,8 +139,8 @@ function getPropertyJSDoc(key: string, value: any): string | null {
 
     case 'installCommand':
       return `  /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */`
 
     case 'description':
@@ -838,9 +838,9 @@ export async function fetchPantryPackage(
       packageYmlUrl: `https://github.com/pkgxdev/pantry/tree/main/projects/${packageName}/package.yml`,
       homepageUrl: scrapedData.homepage || '',
       githubUrl: scrapedData.github || '',
-      installCommand: `launchpad install ${packageName}`,
+      installCommand: `pantry install ${packageName}`,
       pkgxInstallCommand: `sh <(curl https://pkgx.sh) +${packageName} -- $SHELL -i`,
-      launchpadInstallCommand: `launchpad install ${packageName}`,
+      pantryInstallCommand: `pantry install ${packageName}`,
       programs: scrapedData.provides || [],
       companions: Array.isArray(scrapedData.companions) ? scrapedData.companions : [],
       dependencies: Array.isArray(scrapedData.dependencies) ? scrapedData.dependencies : [],
@@ -1411,9 +1411,9 @@ function createMinimalPackageInfo(
     packageYmlUrl: '',
     homepageUrl: '',
     githubUrl: '',
-    installCommand: `launchpad install ${packageName}`,
+    installCommand: `pantry install ${packageName}`,
     pkgxInstallCommand: `sh <(curl https://pkgx.sh) +${packageName} -- $SHELL -i`,
-    launchpadInstallCommand: `launchpad install ${packageName}`,
+    pantryInstallCommand: `pantry install ${packageName}`,
     programs: [],
     companions: [],
     dependencies: [],
@@ -2384,9 +2384,9 @@ export async function fetchPantryPackageWithMetadata(
         name: pantryInfo.name || packageName.split('/').pop() || packageName,
         domain: pantryInfo.domain || packageName,
         description: existingDescription || '',
-        installCommand: `launchpad install ${packageName}`,
+        installCommand: `pantry install ${packageName}`,
         pkgxInstallCommand: `sh <(curl https://pkgx.sh) +${packageName} -- $SHELL -i`,
-        launchpadInstallCommand: `launchpad install ${packageName}`,
+        pantryInstallCommand: `pantry install ${packageName}`,
         programs,
         companions: pantryInfo.companions || [],
         dependencies: pantryInfo.dependencies || [],

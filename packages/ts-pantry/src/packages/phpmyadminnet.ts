@@ -5,7 +5,7 @@
  * @version `5.2.3` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install phpmyadmin.net`
+ * @install `pantry install phpmyadmin.net`
  * @dependencies `php.net`
  * @buildDependencies `php.net` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const phpmyadminnetPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install phpmyadmin.net' as const,
+  installCommand: 'pantry install phpmyadmin.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +phpmyadmin.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install phpmyadmin.net' as const,
+  pantryInstallCommand: 'pantry install phpmyadmin.net' as const,
   programs: [] as const,
   companions: [] as const,
   /**

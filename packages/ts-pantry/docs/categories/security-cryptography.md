@@ -12,7 +12,7 @@ Enable transparent encryption/decryption of files in a git repo
 
 **Programs**: git-crypt
 
-**Install**: `launchpad install agwa.name/git-crypt`
+**Install**: `pantry install agwa.name/git-crypt`
 
 ---
 
@@ -22,7 +22,7 @@ Static analysis security scanner for your terraform code
 
 **Programs**: tfsec
 
-**Install**: `launchpad install aquasecurity.github.io/tfsec`
+**Install**: `pantry install aquasecurity.github.io/tfsec`
 
 ---
 
@@ -32,7 +32,7 @@ Find vulnerabilities, misconfigurations, secrets, SBOM in containers, Kubernetes
 
 **Programs**: trivy
 
-**Install**: `launchpad install aquasecurity.github.io/trivy`
+**Install**: `pantry install aquasecurity.github.io/trivy`
 
 ---
 
@@ -42,7 +42,7 @@ Certbot is EFF's tool to obtain certs from Let's Encrypt and (optionally) auto-e
 
 **Programs**: certbot
 
-**Install**: `launchpad install certbot.eff.org`
+**Install**: `pantry install certbot.eff.org`
 
 ---
 
@@ -52,7 +52,7 @@ Prevent cloud misconfigurations and find vulnerabilities during build-time in in
 
 **Programs**: checkov
 
-**Install**: `launchpad install checkov.io`
+**Install**: `pantry install checkov.io`
 
 ---
 
@@ -62,7 +62,7 @@ A simple, modern and secure encryption tool (and Go library) with small explicit
 
 **Programs**: age, age-keygen
 
-**Install**: `launchpad install filippo.io/age`
+**Install**: `pantry install filippo.io/age`
 
 ---
 
@@ -72,7 +72,7 @@ Seamless ssh-agent for YubiKeys and other PIV tokens
 
 **Programs**: yubikey-agent
 
-**Install**: `launchpad install filippo.io/yubikey-agent`
+**Install**: `pantry install filippo.io/yubikey-agent`
 
 ---
 
@@ -82,7 +82,7 @@ GNU Pretty Good Privacy (PGP) package
 
 **Programs**: gpg, gpg-agent, gpg-connect-agent, gpg-wks-server, gpgconf, gpgparsemail, gpgscm, gpgsm, gpgsplit, gpgtar, gpgv, kbxutil, watchgnupg
 
-**Install**: `launchpad install gpg`
+**Install**: `pantry install gpg`
 
 ---
 
@@ -92,7 +92,7 @@ A simple zero-config tool to make locally trusted development certificates with 
 
 **Programs**: mkcert
 
-**Install**: `launchpad install mkcert.dev`
+**Install**: `pantry install mkcert.dev`
 
 ---
 
@@ -102,7 +102,7 @@ TLS/SSL and crypto library with QUIC APIs
 
 **Programs**: openssl, c_rehash
 
-**Install**: `launchpad install openssl`
+**Install**: `pantry install openssl`
 
 ---
 
@@ -112,7 +112,7 @@ Manage your GnuPG keys with ease! 🔐
 
 **Programs**: gpg-tui
 
-**Install**: `launchpad install orhun.dev/gpg-tui`
+**Install**: `pantry install orhun.dev/gpg-tui`
 
 ---
 
@@ -122,7 +122,7 @@ Scans and monitors projects for security vulnerabilities
 
 **Programs**: snyk
 
-**Install**: `launchpad install snyk.io`
+**Install**: `pantry install snyk.io`
 
 ---
 
@@ -132,7 +132,7 @@ A tool for secrets management, encryption as a service, and privileged access ma
 
 **Programs**: vault
 
-**Install**: `launchpad install vaultproject.io`
+**Install**: `pantry install vaultproject.io`
 
 ---
 

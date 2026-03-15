@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install operatorframework.io/operator-sdk
+# Install with pantry
+pantry install operatorframework.io/operator-sdk
 ```
 
 ## Programs

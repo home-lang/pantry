@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install huggingface.co
+# Install with pantry
+pantry install huggingface.co
 ```
 
 ## Programs

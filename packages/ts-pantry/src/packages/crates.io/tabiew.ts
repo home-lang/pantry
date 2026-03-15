@@ -6,7 +6,7 @@
  * @version `0.13.0` (27 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/tabiew`
+ * @install `pantry install crates.io/tabiew`
  * @dependencies `linux:openssl.org` (includes OS-specific dependencies with `os:package` format)
  *
  * @example
@@ -40,12 +40,12 @@ export const cratesiotabiewPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/shshemi/tabiew' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/tabiew' as const,
+  installCommand: 'pantry install crates.io/tabiew' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/tabiew -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/tabiew' as const,
+  pantryInstallCommand: 'pantry install crates.io/tabiew' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

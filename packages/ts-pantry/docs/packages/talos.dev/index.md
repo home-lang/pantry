@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install talos.dev
+# Install with pantry
+pantry install talos.dev
 ```
 
 ## Programs

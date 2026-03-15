@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gradle.org
+# Install with pantry
+pantry install gradle.org
 ```
 
 ## Programs

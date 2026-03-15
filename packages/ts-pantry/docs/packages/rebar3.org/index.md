@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install rebar3.org
+# Install with pantry
+pantry install rebar3.org
 ```
 
 ## Programs

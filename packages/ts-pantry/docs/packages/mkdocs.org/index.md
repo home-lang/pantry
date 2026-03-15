@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mkdocs.org
+# Install with pantry
+pantry install mkdocs.org
 ```
 
 ## Programs

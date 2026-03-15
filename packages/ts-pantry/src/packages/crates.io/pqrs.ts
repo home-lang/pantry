@@ -6,7 +6,7 @@
  * @version `0.3.2` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/pqrs`
+ * @install `pantry install crates.io/pqrs`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiopqrsPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/manojkarthick/pqrs' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/pqrs' as const,
+  installCommand: 'pantry install crates.io/pqrs' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/pqrs -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/pqrs' as const,
+  pantryInstallCommand: 'pantry install crates.io/pqrs' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

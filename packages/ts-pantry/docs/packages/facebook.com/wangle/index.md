@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install facebook.com/wangle
+# Install with pantry
+pantry install facebook.com/wangle
 ```
 
 ## Programs

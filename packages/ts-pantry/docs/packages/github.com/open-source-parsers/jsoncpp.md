@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/open-source-parsers/jsoncpp
+# Install with pantry
+pantry install github.com/open-source-parsers/jsoncpp
 ```
 
 ## Programs

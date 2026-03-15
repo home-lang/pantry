@@ -1039,9 +1039,9 @@ try {
 }
 ```
 
-## Launchpad Dependency Resolution API
+## Pantry Dependency Resolution API
 
-The Launchpad API provides comprehensive dependency resolution for package managers and deployment tools.
+The Pantry API provides comprehensive dependency resolution for package managers and deployment tools.
 
 ### resolveDependencies()
 
@@ -1050,8 +1050,8 @@ Resolves all dependencies from a YAML dependency file with complete transitive d
 ```typescript
 async function resolveDependencies(
   filePath: string,
-  options?: LaunchpadResolverOptions
-): Promise<LaunchpadInstallResult>
+  options?: PantryResolverOptions
+): Promise<PantryInstallResult>
 ```
 
 #### Parameters
@@ -1063,7 +1063,7 @@ _ `filePath`: Path to dependency file (deps.yaml, pkgx.yaml, etc.)
 #### Example
 
 ```typescript
-import { resolveDependencies } from 'ts-pkgx'
+import { resolveDependencies } from 'ts-pantry'
 
 const result = await resolveDependencies('./deps.yaml', {
   targetOs: 'darwin',
@@ -1074,7 +1074,7 @@ const result = await resolveDependencies('./deps.yaml', {
 
 console.log(`Installing ${result.totalCount} packages...`)
 for (const pkg of result.packages) {
-  await launchpad.install(pkg.name, pkg.version)
+  await pantry.install(pkg.name, pkg.version)
 }
 ```
 
@@ -1085,8 +1085,8 @@ Resolves dependencies directly from a YAML string without requiring a file.
 ```typescript
 async function resolveDependenciesFromYaml(
   yamlContent: string,
-  options?: LaunchpadResolverOptions
-): Promise<LaunchpadInstallResult>
+  options?: PantryResolverOptions
+): Promise<PantryInstallResult>
 ```
 
 #### Example
@@ -1111,8 +1111,8 @@ Resolves all transitive dependencies for a single package.
 ```typescript
 async function resolvePackageDependencies(
   packageName: string,
-  options?: LaunchpadResolverOptions
-): Promise<LaunchpadPackage[]>
+  options?: PantryResolverOptions
+): Promise<PantryPackage[]>
 ```
 
 #### Example
@@ -1122,13 +1122,13 @@ const deps = await resolvePackageDependencies('gnu.org/grep')
 console.log(deps) // ['gnu.org/grep', 'pcre.org/v2', 'zlib.net', ...]
 ```
 
-### LaunchpadInstallResult
+### PantryInstallResult
 
-Response format for all Launchpad resolution functions.
+Response format for all Pantry resolution functions.
 
 ```typescript
-interface LaunchpadInstallResult {
-  packages: LaunchpadPackage[]     // All packages to install
+interface PantryInstallResult {
+  packages: PantryPackage[]        // All packages to install
   directCount: number              // Number of direct dependencies
   totalCount: number               // Total packages including transitive
   conflicts: Array<{               // Version conflicts resolved
@@ -1137,16 +1137,16 @@ interface LaunchpadInstallResult {
     resolved: string
   }>
   pkgxCommand: string             // Ready-to-use pkgx install command (direct deps only)
-  launchpadCommand: string        // Ready-to-use launchpad install command (direct deps only)
+  pantryCommand: string           // Ready-to-use pantry install command (direct deps only)
 }
 ```
 
-### LaunchpadPackage
+### PantryPackage
 
 Individual package information in the resolution result.
 
 ```typescript
-interface LaunchpadPackage {
+interface PantryPackage {
   name: string                    // Package domain (e.g., 'bun.sh')
   version: string                 // Resolved version (e.g., '1.2.19')
   constraint: string              // Original constraint (e.g., '^1.2.16')
@@ -1155,12 +1155,12 @@ interface LaunchpadPackage {
 }
 ```
 
-### LaunchpadResolverOptions
+### PantryResolverOptions
 
 Configuration options for dependency resolution.
 
 ```typescript
-interface LaunchpadResolverOptions {
+interface PantryResolverOptions {
   targetOs?: 'linux' | 'darwin' | 'windows'  // Target platform
   includeOsSpecific?: boolean                 // Include OS-specific deps
   maxDepth?: number                          // Max recursion depth (default: 10)
@@ -1168,4 +1168,4 @@ interface LaunchpadResolverOptions {
 }
 ```
 
-For comprehensive integration examples and usage patterns, see the [Launchpad Integration Guide](./launchpad-integration.md).
+For comprehensive integration examples and usage patterns, see the [Pantry Integration Guide](./pantry-integration.md).

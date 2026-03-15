@@ -5,7 +5,7 @@
  * @version `7.360.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install videolan.org/libplacebo`
+ * @install `pantry install videolan.org/libplacebo`
  * @dependencies `littlecms.com^2`, `github.com/KhronosGroup/Vulkan-Loader^1.3.272`
  * @buildDependencies `mesonbuild.com`, `python.org@^3.11`, `curl.se`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const videolanorglibplaceboPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install videolan.org/libplacebo' as const,
+  installCommand: 'pantry install videolan.org/libplacebo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +videolan.org/libplacebo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install videolan.org/libplacebo' as const,
+  pantryInstallCommand: 'pantry install videolan.org/libplacebo' as const,
   programs: [] as const,
   companions: [] as const,
   /**

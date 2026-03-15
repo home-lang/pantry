@@ -6,7 +6,7 @@
  * @version `1.4.1` (24 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install arduino.github.io/arduino-cli`
+ * @install `pantry install arduino.github.io/arduino-cli`
  * @homepage https://arduino.github.io/arduino-cli/latest/
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const arduinogithubioarduinocliPackage = {
   homepageUrl: 'https://arduino.github.io/arduino-cli/latest/' as const,
   githubUrl: 'https://github.com/arduino/arduino-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install arduino.github.io/arduino-cli' as const,
+  installCommand: 'pantry install arduino.github.io/arduino-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +arduino.github.io/arduino-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install arduino.github.io/arduino-cli' as const,
+  pantryInstallCommand: 'pantry install arduino.github.io/arduino-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

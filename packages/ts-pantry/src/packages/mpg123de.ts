@@ -6,7 +6,7 @@
  * @version `1.33.4` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install mpg123.de`
+ * @install `pantry install mpg123.de`
  * @homepage https://www.mpg123.de/
  *
  * @example
@@ -40,12 +40,12 @@ export const mpg123dePackage = {
   homepageUrl: 'https://www.mpg123.de/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install mpg123.de' as const,
+  installCommand: 'pantry install mpg123.de' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +mpg123.de -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install mpg123.de' as const,
+  pantryInstallCommand: 'pantry install mpg123.de' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

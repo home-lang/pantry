@@ -6,7 +6,7 @@
  * @version `2.101.19` (93 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install depot.dev`
+ * @install `pantry install depot.dev`
  * @homepage https://depot.dev
  * @buildDependencies `go.dev@~1.21`, `gnu.org/coreutils` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const depotdevPackage = {
   homepageUrl: 'https://depot.dev' as const,
   githubUrl: 'https://github.com/depot/cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install depot.dev' as const,
+  installCommand: 'pantry install depot.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +depot.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install depot.dev' as const,
+  pantryInstallCommand: 'pantry install depot.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

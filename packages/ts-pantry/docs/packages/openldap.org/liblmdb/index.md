@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openldap.org/liblmdb
+# Install with pantry
+pantry install openldap.org/liblmdb
 ```
 
 ## Programs

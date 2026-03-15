@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install savannah.nongnu.org/acl
+# Install with pantry
+pantry install savannah.nongnu.org/acl
 ```
 
 ## Programs

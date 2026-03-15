@@ -6,7 +6,7 @@
  * @version `5.8.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vercel.com/pkg`
+ * @install `pantry install vercel.com/pkg`
  * @homepage https://npmjs.com/pkg
  * @dependencies `nodejs.org`
  * @buildDependencies `npmjs.com` - required only when building from source
@@ -42,12 +42,12 @@ export const vercelcompkgPackage = {
   homepageUrl: 'https://npmjs.com/pkg' as const,
   githubUrl: 'https://github.com/vercel/pkg' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vercel.com/pkg' as const,
+  installCommand: 'pantry install vercel.com/pkg' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vercel.com/pkg -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vercel.com/pkg' as const,
+  pantryInstallCommand: 'pantry install vercel.com/pkg' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

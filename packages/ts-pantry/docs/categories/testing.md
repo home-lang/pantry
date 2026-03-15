@@ -12,7 +12,7 @@ The pytest framework makes it easy to write small tests, yet scales to support c
 
 **Programs**: pytest
 
-**Install**: `launchpad install pytest.org`
+**Install**: `pantry install pytest.org`
 
 ---
 

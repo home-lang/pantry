@@ -6,7 +6,7 @@
  * @version `5.0.0` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gomplate.ca`
+ * @install `pantry install gomplate.ca`
  * @homepage https://gomplate.ca/
  * @buildDependencies `go.dev@~1.22.3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gomplatecaPackage = {
   homepageUrl: 'https://gomplate.ca/' as const,
   githubUrl: 'https://github.com/hairyhenderson/gomplate' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gomplate.ca' as const,
+  installCommand: 'pantry install gomplate.ca' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gomplate.ca -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gomplate.ca' as const,
+  pantryInstallCommand: 'pantry install gomplate.ca' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

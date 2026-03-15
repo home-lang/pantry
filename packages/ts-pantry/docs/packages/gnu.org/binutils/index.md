@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/binutils
+# Install with pantry
+pantry install gnu.org/binutils
 ```
 
 ## Programs

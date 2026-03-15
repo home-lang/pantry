@@ -6,7 +6,7 @@
  * @version `1.5.7` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install facebook.com/zstd`
+ * @install `pantry install facebook.com/zstd`
  * @homepage https://facebook.github.io/zstd/
  * @dependencies `lz4.org^1`, `tukaani.org/xz^5`, `zlib.net^1`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const facebookcomzstdPackage = {
   homepageUrl: 'https://facebook.github.io/zstd/' as const,
   githubUrl: 'https://github.com/facebook/zstd' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install facebook.com/zstd' as const,
+  installCommand: 'pantry install facebook.com/zstd' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +facebook.com/zstd -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install facebook.com/zstd' as const,
+  pantryInstallCommand: 'pantry install facebook.com/zstd' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

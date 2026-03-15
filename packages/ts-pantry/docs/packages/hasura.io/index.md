@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hasura.io
+# Install with pantry
+pantry install hasura.io
 ```
 
 ## Programs

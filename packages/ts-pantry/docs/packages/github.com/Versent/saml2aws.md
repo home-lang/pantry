@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/Versent/saml2aws
+# Install with pantry
+pantry install github.com/Versent/saml2aws
 ```
 
 ## Programs

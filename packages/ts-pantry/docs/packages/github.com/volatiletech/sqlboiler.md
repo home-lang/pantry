@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/volatiletech/sqlboiler
+# Install with pantry
+pantry install github.com/volatiletech/sqlboiler
 ```
 
 ## Programs

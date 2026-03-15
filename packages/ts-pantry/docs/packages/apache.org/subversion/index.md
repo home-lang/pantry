@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apache.org/subversion
+# Install with pantry
+pantry install apache.org/subversion
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apache.org/httpd
+# Install with pantry
+pantry install apache.org/httpd
 ```
 
 ## Programs

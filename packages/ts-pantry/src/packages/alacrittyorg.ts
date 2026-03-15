@@ -6,7 +6,7 @@
  * @version `0.16.1` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install alacritty.org`
+ * @install `pantry install alacritty.org`
  * @homepage https://alacritty.org
  * @dependencies `linux:freetype.org`, `linux:freedesktop.org/fontconfig` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const alacrittyorgPackage = {
   homepageUrl: 'https://alacritty.org' as const,
   githubUrl: 'https://github.com/alacritty/alacritty' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install alacritty.org' as const,
+  installCommand: 'pantry install alacritty.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +alacritty.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install alacritty.org' as const,
+  pantryInstallCommand: 'pantry install alacritty.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

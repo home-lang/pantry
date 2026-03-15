@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install leo-lang.org
+# Install with pantry
+pantry install leo-lang.org
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `2.46.0` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnu.org/binutils`
+ * @install `pantry install gnu.org/binutils`
  * @homepage https://www.gnu.org/software/binutils/binutils.html
  * @buildDependencies `gnu.org/bison`, `gnu.org/texinfo`, `facebook.com/zstd`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gnuorgbinutilsPackage = {
   homepageUrl: 'https://www.gnu.org/software/binutils/binutils.html' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnu.org/binutils' as const,
+  installCommand: 'pantry install gnu.org/binutils' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/binutils -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnu.org/binutils' as const,
+  pantryInstallCommand: 'pantry install gnu.org/binutils' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

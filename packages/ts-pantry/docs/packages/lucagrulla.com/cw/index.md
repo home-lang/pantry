@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install lucagrulla.com/cw
+# Install with pantry
+pantry install lucagrulla.com/cw
 ```
 
 ## Programs

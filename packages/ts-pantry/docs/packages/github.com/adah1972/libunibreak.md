@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/adah1972/libunibreak
+# Install with pantry
+pantry install github.com/adah1972/libunibreak
 ```
 
 ## Programs

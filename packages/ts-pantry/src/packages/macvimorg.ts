@@ -6,7 +6,7 @@
  * @version `182.0.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install macvim.org`
+ * @install `pantry install macvim.org`
  * @homepage https://macvim.org
  * @dependencies `cscope.sourceforge.io`, `invisible-island.net/ncurses`, `lua.org`, ... (+4 more)
  * @buildDependencies `gnu.org/make` - required only when building from source
@@ -42,12 +42,12 @@ export const macvimorgPackage = {
   homepageUrl: 'https://macvim.org' as const,
   githubUrl: 'https://github.com/macvim-dev/macvim' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install macvim.org' as const,
+  installCommand: 'pantry install macvim.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +macvim.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install macvim.org' as const,
+  pantryInstallCommand: 'pantry install macvim.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

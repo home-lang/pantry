@@ -6,7 +6,7 @@
  * @version `29.0.0` (35 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/antfu/ni`
+ * @install `pantry install github.com/antfu/ni`
  * @dependencies `nodejs.org>=14`, `npmjs.com`
  * @buildDependencies `pnpm.io@^10.6` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const niPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/antfu/ni' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/antfu/ni' as const,
+  installCommand: 'pantry install github.com/antfu/ni' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/antfu/ni -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/antfu/ni' as const,
+  pantryInstallCommand: 'pantry install github.com/antfu/ni' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

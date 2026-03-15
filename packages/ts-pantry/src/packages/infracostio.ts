@@ -6,7 +6,7 @@
  * @version `0.10.43` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install infracost.io`
+ * @install `pantry install infracost.io`
  * @homepage https://www.infracost.io/docs/
  * @buildDependencies `go.dev@^1.19` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const infracostioPackage = {
   homepageUrl: 'https://www.infracost.io/docs/' as const,
   githubUrl: 'https://github.com/infracost/infracost' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install infracost.io' as const,
+  installCommand: 'pantry install infracost.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +infracost.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install infracost.io' as const,
+  pantryInstallCommand: 'pantry install infracost.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

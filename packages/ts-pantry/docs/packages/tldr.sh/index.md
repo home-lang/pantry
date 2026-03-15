@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tldr.sh
+# Install with pantry
+pantry install tldr.sh
 ```
 
 ## Programs

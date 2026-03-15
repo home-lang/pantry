@@ -6,7 +6,7 @@
  * @version `1.4f` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install harding.motd.ca/autossh`
+ * @install `pantry install harding.motd.ca/autossh`
  * @homepage https://www.harding.motd.ca/autossh/
  * @dependencies `openssh.com`
  * @buildDependencies `gnu.org/make`, `gnu.org/gcc` - required only when building from source
@@ -42,12 +42,12 @@ export const hardingmotdcaautosshPackage = {
   homepageUrl: 'https://www.harding.motd.ca/autossh/' as const,
   githubUrl: 'https://github.com/Autossh/autossh' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install harding.motd.ca/autossh' as const,
+  installCommand: 'pantry install harding.motd.ca/autossh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +harding.motd.ca/autossh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install harding.motd.ca/autossh' as const,
+  pantryInstallCommand: 'pantry install harding.motd.ca/autossh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

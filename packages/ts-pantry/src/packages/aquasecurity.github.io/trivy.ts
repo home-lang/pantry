@@ -6,7 +6,7 @@
  * @version `0.69.3` (46 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install aquasecurity.github.io/trivy`
+ * @install `pantry install aquasecurity.github.io/trivy`
  * @homepage https://aquasecurity.github.io/trivy/
  * @dependencies `curl.se/ca-certs`
  * @buildDependencies `go.dev@=1.25`, `linux:gnu.org/gcc`, `linux:gnu.org/binutils@~2.44` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const aquasecuritygithubiotrivyPackage = {
   homepageUrl: 'https://aquasecurity.github.io/trivy/' as const,
   githubUrl: 'https://github.com/aquasecurity/trivy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install aquasecurity.github.io/trivy' as const,
+  installCommand: 'pantry install aquasecurity.github.io/trivy' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +aquasecurity.github.io/trivy -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install aquasecurity.github.io/trivy' as const,
+  pantryInstallCommand: 'pantry install aquasecurity.github.io/trivy' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

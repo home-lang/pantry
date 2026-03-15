@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/mattrobenolt/jinja2-cli
+# Install with pantry
+pantry install github.com/mattrobenolt/jinja2-cli
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install macfuse.github.io
+# Install with pantry
+pantry install macfuse.github.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tmate.io
+# Install with pantry
+pantry install tmate.io
 ```
 
 ## Programs

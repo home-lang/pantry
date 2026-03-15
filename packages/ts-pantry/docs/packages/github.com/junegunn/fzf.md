@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/junegunn/fzf
+# Install with pantry
+pantry install github.com/junegunn/fzf
 ```
 
 ## Programs

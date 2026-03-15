@@ -5,7 +5,7 @@
  * @version `2.13.2` (18 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/confluentinc/librdkafka`
+ * @install `pantry install github.com/confluentinc/librdkafka`
  * @dependencies `lz4.org`, `zlib.net`, `openssl.org^1.1`, ... (+2 more)
  * @buildDependencies `python.org@~3.11`, `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const librdkafkaPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/confluentinc/librdkafka' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/confluentinc/librdkafka' as const,
+  installCommand: 'pantry install github.com/confluentinc/librdkafka' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/confluentinc/librdkafka -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/confluentinc/librdkafka' as const,
+  pantryInstallCommand: 'pantry install github.com/confluentinc/librdkafka' as const,
   programs: [] as const,
   companions: [] as const,
   /**

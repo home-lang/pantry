@@ -5,7 +5,7 @@
  * @version `1.3.7` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceforge.net/libtirpc`
+ * @install `pantry install sourceforge.net/libtirpc`
  * @dependencies `kerberos.org`
  * @buildDependencies `linux:llvm.org@^16`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -38,12 +38,12 @@ export const sourceforgenetlibtirpcPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceforge.net/libtirpc' as const,
+  installCommand: 'pantry install sourceforge.net/libtirpc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceforge.net/libtirpc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceforge.net/libtirpc' as const,
+  pantryInstallCommand: 'pantry install sourceforge.net/libtirpc' as const,
   programs: [] as const,
   companions: [] as const,
   /**

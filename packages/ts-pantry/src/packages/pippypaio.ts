@@ -6,7 +6,7 @@
  * @version `26.0.1` (31 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pip.pypa.io`
+ * @install `pantry install pip.pypa.io`
  * @homepage https://pip.pypa.io/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@~3.11`, `crates.io/semverator@^0.4.3` - required only when building from source
@@ -42,12 +42,12 @@ export const pippypaioPackage = {
   homepageUrl: 'https://pip.pypa.io/' as const,
   githubUrl: 'https://github.com/pypa/pip' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pip.pypa.io' as const,
+  installCommand: 'pantry install pip.pypa.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pip.pypa.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pip.pypa.io' as const,
+  pantryInstallCommand: 'pantry install pip.pypa.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

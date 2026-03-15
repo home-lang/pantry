@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/platformdirs/platformdirs
+# Install with pantry
+pantry install github.com/platformdirs/platformdirs
 ```
 
 ## Programs

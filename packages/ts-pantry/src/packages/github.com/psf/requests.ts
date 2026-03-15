@@ -5,7 +5,7 @@
  * @version `2.32.5` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/psf/requests`
+ * @install `pantry install github.com/psf/requests`
  * @homepage https://requests.readthedocs.io/en/latest/
  * @dependencies `python.org~3.11`, `github.com/Ousret/charset_normalizer^3`, `github.com/kjd/idna^3`, ... (+2 more)
  *
@@ -39,12 +39,12 @@ export const requestsPackage = {
   homepageUrl: 'https://requests.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/psf/requests' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/psf/requests' as const,
+  installCommand: 'pantry install github.com/psf/requests' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/psf/requests -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/psf/requests' as const,
+  pantryInstallCommand: 'pantry install github.com/psf/requests' as const,
   programs: [] as const,
   companions: [] as const,
   /**

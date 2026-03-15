@@ -5,7 +5,7 @@
  * @version `1.16.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wpewebkit.org/wpebackend-fdo`
+ * @install `pantry install wpewebkit.org/wpebackend-fdo`
  * @dependencies `gnome.org/glib`, `github.com/anholt/libepoxy`, `wpewebkit.org/libwpe`, ... (+2 more)
  * @buildDependencies `gnu.org/gcc`, `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const wpewebkitorgwpebackendfdoPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/Igalia/WPEBackend-fdo' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wpewebkit.org/wpebackend-fdo' as const,
+  installCommand: 'pantry install wpewebkit.org/wpebackend-fdo' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wpewebkit.org/wpebackend-fdo -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wpewebkit.org/wpebackend-fdo' as const,
+  pantryInstallCommand: 'pantry install wpewebkit.org/wpebackend-fdo' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pip.pypa.io
+# Install with pantry
+pantry install pip.pypa.io
 ```
 
 ## Programs

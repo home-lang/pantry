@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libssh2.org
+# Install with pantry
+pantry install libssh2.org
 ```
 
 ## Programs

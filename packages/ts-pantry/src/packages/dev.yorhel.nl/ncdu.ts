@@ -6,7 +6,7 @@
  * @version `1.22.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dev.yorhel.nl/ncdu`
+ * @install `pantry install dev.yorhel.nl/ncdu`
  * @homepage https://dev.yorhel.nl/ncdu
  * @dependencies `invisible-island.net/ncurses`
  *
@@ -41,12 +41,12 @@ export const devyorhelnlncduPackage = {
   homepageUrl: 'https://dev.yorhel.nl/ncdu' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dev.yorhel.nl/ncdu' as const,
+  installCommand: 'pantry install dev.yorhel.nl/ncdu' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dev.yorhel.nl/ncdu -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dev.yorhel.nl/ncdu' as const,
+  pantryInstallCommand: 'pantry install dev.yorhel.nl/ncdu' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

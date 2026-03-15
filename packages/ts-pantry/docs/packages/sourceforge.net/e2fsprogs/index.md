@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceforge.net/e2fsprogs
+# Install with pantry
+pantry install sourceforge.net/e2fsprogs
 ```
 
 ## Programs

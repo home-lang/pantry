@@ -5,7 +5,7 @@
  * @version `12.1.0` (17 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fmt.dev`
+ * @install `pantry install fmt.dev`
  * @homepage https://fmt.dev
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const fmtdevPackage = {
   homepageUrl: 'https://fmt.dev' as const,
   githubUrl: 'https://github.com/fmtlib/fmt' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fmt.dev' as const,
+  installCommand: 'pantry install fmt.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fmt.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fmt.dev' as const,
+  pantryInstallCommand: 'pantry install fmt.dev' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

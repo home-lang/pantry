@@ -6,7 +6,7 @@
  * @version `2.5.4` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openjpeg.org`
+ * @install `pantry install openjpeg.org`
  * @homepage https://www.openjpeg.org/
  * @dependencies `libpng.org^1`, `simplesystems.org/libtiff^4`
  * @buildDependencies `cmake.org@^3` - required only when building from source
@@ -42,12 +42,12 @@ export const openjpegorgPackage = {
   homepageUrl: 'https://www.openjpeg.org/' as const,
   githubUrl: 'https://github.com/uclouvain/openjpeg' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openjpeg.org' as const,
+  installCommand: 'pantry install openjpeg.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openjpeg.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openjpeg.org' as const,
+  pantryInstallCommand: 'pantry install openjpeg.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install watchexec.github.io
+# Install with pantry
+pantry install watchexec.github.io
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `1.2.6` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install x.org/libSM`
+ * @install `pantry install x.org/libSM`
  * @dependencies `x.org/ice`
  * @buildDependencies `x.org/xtrans` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const xorglibsmPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install x.org/libSM' as const,
+  installCommand: 'pantry install x.org/libSM' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +x.org/libSM -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install x.org/libSM' as const,
+  pantryInstallCommand: 'pantry install x.org/libSM' as const,
   programs: [] as const,
   companions: [] as const,
   /**

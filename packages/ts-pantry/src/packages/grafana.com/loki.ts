@@ -6,7 +6,7 @@
  * @version `3.6.7` (42 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install grafana.com/loki`
+ * @install `pantry install grafana.com/loki`
  * @homepage https://grafana.com/loki
  * @buildDependencies `go.dev@=1.24.8`, `curl.se`, `gnu.org/patch` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const grafanacomlokiPackage = {
   homepageUrl: 'https://grafana.com/loki' as const,
   githubUrl: 'https://github.com/grafana/loki' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install grafana.com/loki' as const,
+  installCommand: 'pantry install grafana.com/loki' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +grafana.com/loki -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install grafana.com/loki' as const,
+  pantryInstallCommand: 'pantry install grafana.com/loki' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

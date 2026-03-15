@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install msgpack.org
+# Install with pantry
+pantry install msgpack.org
 ```
 
 ## Programs

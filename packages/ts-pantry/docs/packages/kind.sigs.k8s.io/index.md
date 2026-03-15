@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kind.sigs.k8s.io
+# Install with pantry
+pantry install kind.sigs.k8s.io
 ```
 
 ## Programs

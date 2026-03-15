@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cointop.sh
+# Install with pantry
+pantry install cointop.sh
 ```
 
 ## Programs

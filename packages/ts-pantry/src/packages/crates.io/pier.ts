@@ -6,7 +6,7 @@
  * @version `0.1.6` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/pier`
+ * @install `pantry install crates.io/pier`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiopierPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/pier-cli/pier' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/pier' as const,
+  installCommand: 'pantry install crates.io/pier' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/pier -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/pier' as const,
+  pantryInstallCommand: 'pantry install crates.io/pier' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

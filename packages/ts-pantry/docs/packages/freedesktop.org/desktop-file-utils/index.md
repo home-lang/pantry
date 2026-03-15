@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/desktop-file-utils
+# Install with pantry
+pantry install freedesktop.org/desktop-file-utils
 ```
 
 ## Programs

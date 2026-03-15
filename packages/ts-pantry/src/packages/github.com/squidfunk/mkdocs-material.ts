@@ -6,7 +6,7 @@
  * @version `9.7.5` (76 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/squidfunk/mkdocs-material`
+ * @install `pantry install github.com/squidfunk/mkdocs-material`
  * @homepage https://squidfunk.github.io/mkdocs-material/
  * @dependencies `pkgx.sh>=1`, `sass-lang.com/libsass^3.6`
  * @buildDependencies `python.org@>=3<3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const mkdocsmaterialPackage = {
   homepageUrl: 'https://squidfunk.github.io/mkdocs-material/' as const,
   githubUrl: 'https://github.com/squidfunk/mkdocs-material' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/squidfunk/mkdocs-material' as const,
+  installCommand: 'pantry install github.com/squidfunk/mkdocs-material' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/squidfunk/mkdocs-material -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/squidfunk/mkdocs-material' as const,
+  pantryInstallCommand: 'pantry install github.com/squidfunk/mkdocs-material' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

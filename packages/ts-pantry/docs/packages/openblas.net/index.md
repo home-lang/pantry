@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openblas.net
+# Install with pantry
+pantry install openblas.net
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.5.3` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install code.videolan.org/videolan/dav1d`
+ * @install `pantry install code.videolan.org/videolan/dav1d`
  * @homepage https://code.videolan.org/videolan/dav1d
  * @buildDependencies `mesonbuild.com@>=0.49` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const codevideolanorgvideolandav1dPackage = {
   homepageUrl: 'https://code.videolan.org/videolan/dav1d' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install code.videolan.org/videolan/dav1d' as const,
+  installCommand: 'pantry install code.videolan.org/videolan/dav1d' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +code.videolan.org/videolan/dav1d -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install code.videolan.org/videolan/dav1d' as const,
+  pantryInstallCommand: 'pantry install code.videolan.org/videolan/dav1d' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

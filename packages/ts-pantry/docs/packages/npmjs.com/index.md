@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install npm
+# Install with pantry
+pantry install npm
 ```
 
 ## Programs

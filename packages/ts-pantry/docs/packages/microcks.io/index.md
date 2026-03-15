@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install microcks.io
+# Install with pantry
+pantry install microcks.io
 ```
 
 ## Programs

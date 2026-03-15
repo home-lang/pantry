@@ -6,7 +6,7 @@
  * @version `0.181.0` (20 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install wundergraph.com`
+ * @install `pantry install wundergraph.com`
  * @homepage https://wundergraph.com
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const wundergraphcomPackage = {
   homepageUrl: 'https://wundergraph.com' as const,
   githubUrl: 'https://github.com/wundergraph/wundergraph' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install wundergraph.com' as const,
+  installCommand: 'pantry install wundergraph.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +wundergraph.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install wundergraph.com' as const,
+  pantryInstallCommand: 'pantry install wundergraph.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

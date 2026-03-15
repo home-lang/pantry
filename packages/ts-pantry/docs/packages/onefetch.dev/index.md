@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install onefetch.dev
+# Install with pantry
+pantry install onefetch.dev
 ```
 
 ## Programs

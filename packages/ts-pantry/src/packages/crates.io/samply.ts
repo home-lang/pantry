@@ -6,7 +6,7 @@
  * @version `0.13.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/samply`
+ * @install `pantry install crates.io/samply`
  *
  * @example
  * ```typescript
@@ -39,12 +39,12 @@ export const cratesiosamplyPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/mstange/samply' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/samply' as const,
+  installCommand: 'pantry install crates.io/samply' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/samply -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/samply' as const,
+  pantryInstallCommand: 'pantry install crates.io/samply' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/JuliaStrings/utf8proc
+# Install with pantry
+pantry install github.com/JuliaStrings/utf8proc
 ```
 
 ## Programs

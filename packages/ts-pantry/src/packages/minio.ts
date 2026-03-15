@@ -6,7 +6,7 @@
  * @version `2023.10.25.6.33.25` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install min.io`
+ * @install `pantry install min.io`
  * @homepage https://min.io
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const minioPackage = {
   homepageUrl: 'https://min.io' as const,
   githubUrl: 'https://github.com/minio/minio' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install min.io' as const,
+  installCommand: 'pantry install min.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +min.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install min.io' as const,
+  pantryInstallCommand: 'pantry install min.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

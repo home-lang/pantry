@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install numbat.dev
+# Install with pantry
+pantry install numbat.dev
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install virtualenv.pypa.io
+# Install with pantry
+pantry install virtualenv.pypa.io
 ```
 
 ## Programs

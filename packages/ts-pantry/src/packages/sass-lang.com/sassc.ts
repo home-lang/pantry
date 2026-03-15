@@ -6,7 +6,7 @@
  * @version `3.6.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sass-lang.com/sassc`
+ * @install `pantry install sass-lang.com/sassc`
  * @dependencies `sass-lang.com/libsass^3.6.5`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const sasslangcomsasscPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/sass/sassc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sass-lang.com/sassc' as const,
+  installCommand: 'pantry install sass-lang.com/sassc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sass-lang.com/sassc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sass-lang.com/sassc' as const,
+  pantryInstallCommand: 'pantry install sass-lang.com/sassc' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install go.dev/govulncheck
+# Install with pantry
+pantry install go.dev/govulncheck
 ```
 
 ## Programs

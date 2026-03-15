@@ -6,7 +6,7 @@
  * @version `0.3.95` (79 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/jameswoolfenden/pike`
+ * @install `pantry install github.com/jameswoolfenden/pike`
  * @homepage https://pike.lysator.liu.se/
  * @buildDependencies `go.dev@^1.22` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const pikePackage = {
   homepageUrl: 'https://pike.lysator.liu.se/' as const,
   githubUrl: 'https://github.com/JamesWoolfenden/pike' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/jameswoolfenden/pike' as const,
+  installCommand: 'pantry install github.com/jameswoolfenden/pike' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/jameswoolfenden/pike -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/jameswoolfenden/pike' as const,
+  pantryInstallCommand: 'pantry install github.com/jameswoolfenden/pike' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `0.17.1` (80 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/VikParuchuri/surya`
+ * @install `pantry install github.com/VikParuchuri/surya`
  * @homepage https://www.datalab.to
  * @dependencies `pkgx.sh>=1`, `linux:mesa3d.org^23.3`, `linux:gnome.org/glib^2`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `python.org@~3.11` - required only when building from source
@@ -42,12 +42,12 @@ export const suryaPackage = {
   homepageUrl: 'https://www.datalab.to' as const,
   githubUrl: 'https://github.com/VikParuchuri/surya' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/VikParuchuri/surya' as const,
+  installCommand: 'pantry install github.com/VikParuchuri/surya' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/VikParuchuri/surya -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/VikParuchuri/surya' as const,
+  pantryInstallCommand: 'pantry install github.com/VikParuchuri/surya' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

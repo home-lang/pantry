@@ -6,7 +6,7 @@
  * @version `0.10.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install scryer.pl`
+ * @install `pantry install scryer.pl`
  * @homepage https://www.scryer.pl
  * @dependencies `openssl.org^1.1`
  *
@@ -41,12 +41,12 @@ export const scryerplPackage = {
   homepageUrl: 'https://www.scryer.pl' as const,
   githubUrl: 'https://github.com/mthom/scryer-prolog' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install scryer.pl' as const,
+  installCommand: 'pantry install scryer.pl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +scryer.pl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install scryer.pl' as const,
+  pantryInstallCommand: 'pantry install scryer.pl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

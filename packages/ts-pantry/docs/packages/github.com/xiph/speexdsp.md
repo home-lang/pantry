@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/xiph/speexdsp
+# Install with pantry
+pantry install github.com/xiph/speexdsp
 ```
 
 ## Programs

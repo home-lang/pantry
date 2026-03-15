@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/xcb-util-image
+# Install with pantry
+pantry install freedesktop.org/xcb-util-image
 ```
 
 ## Programs

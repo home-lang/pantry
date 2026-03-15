@@ -6,7 +6,7 @@
  * @version `4.4.0` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install re2c.org`
+ * @install `pantry install re2c.org`
  * @homepage https://re2c.org
  * @buildDependencies `python.org@^3.10` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const re2corgPackage = {
   homepageUrl: 'https://re2c.org' as const,
   githubUrl: 'https://github.com/skvadrik/re2c' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install re2c.org' as const,
+  installCommand: 'pantry install re2c.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +re2c.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install re2c.org' as const,
+  pantryInstallCommand: 'pantry install re2c.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

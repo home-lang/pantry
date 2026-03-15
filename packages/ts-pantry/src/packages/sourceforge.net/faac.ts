@@ -6,7 +6,7 @@
  * @version `1.30.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sourceforge.net/faac`
+ * @install `pantry install sourceforge.net/faac`
  * @homepage https://sourceforge.net/projects/faac/
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const sourceforgenetfaacPackage = {
   homepageUrl: 'https://sourceforge.net/projects/faac/' as const,
   githubUrl: 'https://github.com/knik0/faac' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sourceforge.net/faac' as const,
+  installCommand: 'pantry install sourceforge.net/faac' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sourceforge.net/faac -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sourceforge.net/faac' as const,
+  pantryInstallCommand: 'pantry install sourceforge.net/faac' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

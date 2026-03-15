@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install astral.sh/ruff
+# Install with pantry
+pantry install astral.sh/ruff
 ```
 
 ## Programs

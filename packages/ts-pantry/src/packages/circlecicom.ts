@@ -6,7 +6,7 @@
  * @version `0.1.34770` (74 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install circleci.com`
+ * @install `pantry install circleci.com`
  * @homepage https://circleci.com/docs/2.0/local-cli/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const circlecicomPackage = {
   homepageUrl: 'https://circleci.com/docs/2.0/local-cli/' as const,
   githubUrl: 'https://github.com/CircleCI-Public/circleci-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install circleci.com' as const,
+  installCommand: 'pantry install circleci.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +circleci.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install circleci.com' as const,
+  pantryInstallCommand: 'pantry install circleci.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

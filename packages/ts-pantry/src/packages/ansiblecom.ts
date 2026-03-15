@@ -6,7 +6,7 @@
  * @version `2.20.3` (92 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ansible.com`
+ * @install `pantry install ansible.com`
  * @homepage https://www.ansible.com/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@>=3.12` - required only when building from source
@@ -42,12 +42,12 @@ export const ansiblecomPackage = {
   homepageUrl: 'https://www.ansible.com/' as const,
   githubUrl: 'https://github.com/ansible/ansible' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ansible.com' as const,
+  installCommand: 'pantry install ansible.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ansible.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ansible.com' as const,
+  pantryInstallCommand: 'pantry install ansible.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

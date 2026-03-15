@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kubectx.dev
+# Install with pantry
+pantry install kubectx.dev
 ```
 
 ## Programs

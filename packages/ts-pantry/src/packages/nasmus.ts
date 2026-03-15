@@ -6,7 +6,7 @@
  * @version `3.1.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nasm.us`
+ * @install `pantry install nasm.us`
  * @homepage https://www.nasm.us/
  *
  * @example
@@ -40,12 +40,12 @@ export const nasmusPackage = {
   homepageUrl: 'https://www.nasm.us/' as const,
   githubUrl: 'https://github.com/netwide-assembler/nasm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nasm.us' as const,
+  installCommand: 'pantry install nasm.us' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nasm.us -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nasm.us' as const,
+  pantryInstallCommand: 'pantry install nasm.us' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

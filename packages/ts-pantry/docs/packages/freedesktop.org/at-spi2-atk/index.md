@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freedesktop.org/at-spi2-atk
+# Install with pantry
+pantry install freedesktop.org/at-spi2-atk
 ```
 
 ## Programs

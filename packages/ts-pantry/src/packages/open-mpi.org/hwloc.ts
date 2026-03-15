@@ -6,7 +6,7 @@
  * @version `2.13.0` (11 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install open-mpi.org/hwloc`
+ * @install `pantry install open-mpi.org/hwloc`
  * @homepage https://www.open-mpi.org/projects/hwloc/
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/libtool` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const openmpiorghwlocPackage = {
   homepageUrl: 'https://www.open-mpi.org/projects/hwloc/' as const,
   githubUrl: 'https://github.com/open-mpi/hwloc' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install open-mpi.org/hwloc' as const,
+  installCommand: 'pantry install open-mpi.org/hwloc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +open-mpi.org/hwloc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install open-mpi.org/hwloc' as const,
+  pantryInstallCommand: 'pantry install open-mpi.org/hwloc' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

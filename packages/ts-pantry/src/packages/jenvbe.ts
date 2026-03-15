@@ -6,7 +6,7 @@
  * @version `0.6.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jenv.be`
+ * @install `pantry install jenv.be`
  * @homepage http://www.jenv.be
  *
  * @example
@@ -40,12 +40,12 @@ export const jenvbePackage = {
   homepageUrl: 'http://www.jenv.be' as const,
   githubUrl: 'https://github.com/jenv/jenv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jenv.be' as const,
+  installCommand: 'pantry install jenv.be' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jenv.be -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jenv.be' as const,
+  pantryInstallCommand: 'pantry install jenv.be' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

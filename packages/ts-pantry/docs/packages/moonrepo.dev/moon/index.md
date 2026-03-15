@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install moonrepo.dev/moon
+# Install with pantry
+pantry install moonrepo.dev/moon
 ```
 
 ## Programs

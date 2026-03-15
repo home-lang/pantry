@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gphoto.org/libgphoto2
+# Install with pantry
+pantry install gphoto.org/libgphoto2
 ```
 
 ## Programs

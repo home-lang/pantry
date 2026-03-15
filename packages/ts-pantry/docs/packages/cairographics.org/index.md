@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cairographics.org
+# Install with pantry
+pantry install cairographics.org
 ```
 
 ## Programs

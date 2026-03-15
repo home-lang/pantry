@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jenv.be
+# Install with pantry
+pantry install jenv.be
 ```
 
 ## Programs

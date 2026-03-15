@@ -6,7 +6,7 @@
  * @version `0.32.1` (38 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install docker.com/buildx`
+ * @install `pantry install docker.com/buildx`
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const dockercombuildxPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/docker/buildx' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install docker.com/buildx' as const,
+  installCommand: 'pantry install docker.com/buildx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +docker.com/buildx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install docker.com/buildx' as const,
+  pantryInstallCommand: 'pantry install docker.com/buildx' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

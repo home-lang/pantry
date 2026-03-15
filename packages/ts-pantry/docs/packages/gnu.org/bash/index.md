@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnu.org/bash
+# Install with pantry
+pantry install gnu.org/bash
 ```
 
 ## Programs

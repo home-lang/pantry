@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pypa.io/packaging
+# Install with pantry
+pantry install pypa.io/packaging
 ```
 
 ## Programs

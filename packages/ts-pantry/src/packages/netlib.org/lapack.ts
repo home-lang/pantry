@@ -5,7 +5,7 @@
  * @version `3.12.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install netlib.org/lapack`
+ * @install `pantry install netlib.org/lapack`
  * @dependencies `gnu.org/gcc^11 # libgfortran`
  * @buildDependencies `gnu.org/binutils`, `cmake.org@~3.24` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const netliborglapackPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/Reference-LAPACK/lapack' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install netlib.org/lapack' as const,
+  installCommand: 'pantry install netlib.org/lapack' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +netlib.org/lapack -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install netlib.org/lapack' as const,
+  pantryInstallCommand: 'pantry install netlib.org/lapack' as const,
   programs: [] as const,
   companions: [] as const,
   /**

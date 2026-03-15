@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install palletsprojects.com/click
+# Install with pantry
+pantry install palletsprojects.com/click
 ```
 
 ## Programs

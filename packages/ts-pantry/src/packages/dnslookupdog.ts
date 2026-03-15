@@ -6,7 +6,7 @@
  * @version `0.1.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install dns.lookup.dog`
+ * @install `pantry install dns.lookup.dog`
  * @homepage https://dns.lookup.dog/
  * @dependencies `openssl.org^1.1`
  *
@@ -41,12 +41,12 @@ export const dnslookupdogPackage = {
   homepageUrl: 'https://dns.lookup.dog/' as const,
   githubUrl: 'https://github.com/ogham/dog' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install dns.lookup.dog' as const,
+  installCommand: 'pantry install dns.lookup.dog' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +dns.lookup.dog -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install dns.lookup.dog' as const,
+  pantryInstallCommand: 'pantry install dns.lookup.dog' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

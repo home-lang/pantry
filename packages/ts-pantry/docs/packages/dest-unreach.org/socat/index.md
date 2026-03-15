@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install dest-unreach.org/socat
+# Install with pantry
+pantry install dest-unreach.org/socat
 ```
 
 ## Programs

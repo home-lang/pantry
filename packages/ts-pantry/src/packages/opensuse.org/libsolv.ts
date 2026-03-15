@@ -5,7 +5,7 @@
  * @version `0.7.36` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install opensuse.org/libsolv`
+ * @install `pantry install opensuse.org/libsolv`
  * @dependencies `zlib.net`, `tukaani.org/xz`, `sourceware.org/bzip2`, ... (+3 more)
  * @buildDependencies `cmake.org@^3` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const opensuseorglibsolvPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install opensuse.org/libsolv' as const,
+  installCommand: 'pantry install opensuse.org/libsolv' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +opensuse.org/libsolv -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install opensuse.org/libsolv' as const,
+  pantryInstallCommand: 'pantry install opensuse.org/libsolv' as const,
   programs: [] as const,
   companions: [] as const,
   /**

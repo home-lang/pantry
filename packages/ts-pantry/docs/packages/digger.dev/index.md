@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install digger.dev
+# Install with pantry
+pantry install digger.dev
 ```
 
 ## Programs

@@ -5,7 +5,7 @@
  * @version `21.1.8` (43 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openmp.llvm.org`
+ * @install `pantry install openmp.llvm.org`
  * @homepage http://llvm.org
  * @buildDependencies `cmake.org`, `llvm.org`, `gnu.org/wget`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const openmpllvmorgPackage = {
   homepageUrl: 'http://llvm.org' as const,
   githubUrl: 'https://github.com/llvm/llvm-project' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openmp.llvm.org' as const,
+  installCommand: 'pantry install openmp.llvm.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openmp.llvm.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openmp.llvm.org' as const,
+  pantryInstallCommand: 'pantry install openmp.llvm.org' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

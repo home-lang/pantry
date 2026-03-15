@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install onsi.github.io/ginkgo
+# Install with pantry
+pantry install onsi.github.io/ginkgo
 ```
 
 ## Programs

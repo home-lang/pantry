@@ -6,7 +6,7 @@
  * @version `1.1.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install denilson.sa.nom.br/prettyping`
+ * @install `pantry install denilson.sa.nom.br/prettyping`
  * @homepage https://denilsonsa.github.io/prettyping/
  *
  * @example
@@ -40,12 +40,12 @@ export const denilsonsanombrprettypingPackage = {
   homepageUrl: 'https://denilsonsa.github.io/prettyping/' as const,
   githubUrl: 'https://github.com/denilsonsa/prettyping' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install denilson.sa.nom.br/prettyping' as const,
+  installCommand: 'pantry install denilson.sa.nom.br/prettyping' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +denilson.sa.nom.br/prettyping -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install denilson.sa.nom.br/prettyping' as const,
+  pantryInstallCommand: 'pantry install denilson.sa.nom.br/prettyping' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

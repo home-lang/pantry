@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tailwindcss.com
+# Install with pantry
+pantry install tailwindcss.com
 ```
 
 ## Programs

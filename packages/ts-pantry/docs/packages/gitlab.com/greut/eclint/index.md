@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gitlab.com/greut/eclint
+# Install with pantry
+pantry install gitlab.com/greut/eclint
 ```
 
 ## Programs

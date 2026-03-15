@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cloudflare.com/cloudflared
+# Install with pantry
+pantry install cloudflare.com/cloudflared
 ```
 
 ## Programs

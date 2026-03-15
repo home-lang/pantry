@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/ivmai/libatomic_ops
+# Install with pantry
+pantry install github.com/ivmai/libatomic_ops
 ```
 
 ## Programs

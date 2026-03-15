@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install modernc.org/goyacc
+# Install with pantry
+pantry install modernc.org/goyacc
 ```
 
 ## Programs

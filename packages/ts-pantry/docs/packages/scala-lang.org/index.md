@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install scala
+# Install with pantry
+pantry install scala
 ```
 
 ## Programs

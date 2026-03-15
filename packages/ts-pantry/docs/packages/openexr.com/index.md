@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install openexr.com
+# Install with pantry
+pantry install openexr.com
 ```
 
 ## Programs

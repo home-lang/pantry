@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ceph.com/cephadm
+# Install with pantry
+pantry install ceph.com/cephadm
 ```
 
 ## Programs

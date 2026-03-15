@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fx.wtf
+# Install with pantry
+pantry install fx.wtf
 ```
 
 ## Programs

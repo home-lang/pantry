@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install bittensor.com
+# Install with pantry
+pantry install bittensor.com
 ```
 
 ## Programs

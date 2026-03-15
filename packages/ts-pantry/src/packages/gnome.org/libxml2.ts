@@ -6,7 +6,7 @@
  * @version `2.15.2` (41 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/libxml2`
+ * @install `pantry install gnome.org/libxml2`
  * @homepage http://xmlsoft.org/
  * @dependencies `zlib.net^1`
  * @buildDependencies `python.org@>=3<3.12`, `doxygen.nl` - required only when building from source
@@ -42,12 +42,12 @@ export const gnomeorglibxml2Package = {
   homepageUrl: 'http://xmlsoft.org/' as const,
   githubUrl: 'https://github.com/GNOME/libxml2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/libxml2' as const,
+  installCommand: 'pantry install gnome.org/libxml2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/libxml2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/libxml2' as const,
+  pantryInstallCommand: 'pantry install gnome.org/libxml2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

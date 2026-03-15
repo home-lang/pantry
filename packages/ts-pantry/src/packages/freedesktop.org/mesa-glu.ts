@@ -5,7 +5,7 @@
  * @version `9.0.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freedesktop.org/mesa-glu`
+ * @install `pantry install freedesktop.org/mesa-glu`
  * @dependencies `mesa3d.org`
  * @buildDependencies `gnu.org/make`, `mesonbuild.com` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const freedesktoporgmesagluPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freedesktop.org/mesa-glu' as const,
+  installCommand: 'pantry install freedesktop.org/mesa-glu' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freedesktop.org/mesa-glu -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freedesktop.org/mesa-glu' as const,
+  pantryInstallCommand: 'pantry install freedesktop.org/mesa-glu' as const,
   programs: [] as const,
   companions: [] as const,
   /**

@@ -6,7 +6,7 @@
  * @version `2021.1.15` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install khronos.org/SPIRV-Cross`
+ * @install `pantry install khronos.org/SPIRV-Cross`
  * @buildDependencies `cmake.org` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const khronosorgspirvcrossPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/KhronosGroup/SPIRV-Cross' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install khronos.org/SPIRV-Cross' as const,
+  installCommand: 'pantry install khronos.org/SPIRV-Cross' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +khronos.org/SPIRV-Cross -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install khronos.org/SPIRV-Cross' as const,
+  pantryInstallCommand: 'pantry install khronos.org/SPIRV-Cross' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

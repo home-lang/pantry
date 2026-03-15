@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nushell.sh
+# Install with pantry
+pantry install nushell.sh
 ```
 
 ## Programs

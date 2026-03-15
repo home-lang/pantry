@@ -6,7 +6,7 @@
  * @version `5.4.30` (116 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/nodenv/node-build`
+ * @install `pantry install github.com/nodenv/node-build`
  * @dependencies `openssl.org>=3.0.0`
  * @buildDependencies `gnu.org/autoconf` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const nodebuildPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/nodenv/node-build' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/nodenv/node-build' as const,
+  installCommand: 'pantry install github.com/nodenv/node-build' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/nodenv/node-build -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/nodenv/node-build' as const,
+  pantryInstallCommand: 'pantry install github.com/nodenv/node-build' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

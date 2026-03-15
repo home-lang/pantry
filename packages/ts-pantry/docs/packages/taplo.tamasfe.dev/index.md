@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install taplo.tamasfe.dev
+# Install with pantry
+pantry install taplo.tamasfe.dev
 ```
 
 ## Programs

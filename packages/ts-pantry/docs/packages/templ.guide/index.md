@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install templ.guide
+# Install with pantry
+pantry install templ.guide
 ```
 
 ## Programs

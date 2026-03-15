@@ -6,7 +6,7 @@
  * @version `3.0.5` (24 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sigstore.dev/cosign`
+ * @install `pantry install sigstore.dev/cosign`
  * @buildDependencies `go.dev@~1.24.3` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const sigstoredevcosignPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/sigstore/cosign' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sigstore.dev/cosign' as const,
+  installCommand: 'pantry install sigstore.dev/cosign' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sigstore.dev/cosign -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sigstore.dev/cosign' as const,
+  pantryInstallCommand: 'pantry install sigstore.dev/cosign' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

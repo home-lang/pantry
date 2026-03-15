@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/libass/libass
+# Install with pantry
+pantry install github.com/libass/libass
 ```
 
 ## Programs

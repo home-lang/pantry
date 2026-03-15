@@ -6,7 +6,7 @@
  * @version `1.39.0` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install crates.io/fnm`
+ * @install `pantry install crates.io/fnm`
  * @homepage https://fnm.vercel.app
  * @dependencies `darwin:zlib.net^1` (includes OS-specific dependencies with `os:package` format)
  *
@@ -41,12 +41,12 @@ export const cratesiofnmPackage = {
   homepageUrl: 'https://fnm.vercel.app' as const,
   githubUrl: 'https://github.com/Schniz/fnm' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install crates.io/fnm' as const,
+  installCommand: 'pantry install crates.io/fnm' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +crates.io/fnm -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install crates.io/fnm' as const,
+  pantryInstallCommand: 'pantry install crates.io/fnm' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

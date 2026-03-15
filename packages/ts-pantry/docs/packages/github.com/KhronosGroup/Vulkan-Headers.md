@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/KhronosGroup/Vulkan-Headers
+# Install with pantry
+pantry install github.com/KhronosGroup/Vulkan-Headers
 ```
 
 ## Programs

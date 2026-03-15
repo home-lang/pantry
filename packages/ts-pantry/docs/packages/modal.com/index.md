@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install modal.com
+# Install with pantry
+pantry install modal.com
 ```
 
 ## Programs

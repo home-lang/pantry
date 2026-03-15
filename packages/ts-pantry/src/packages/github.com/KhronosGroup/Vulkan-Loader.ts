@@ -5,7 +5,7 @@
  * @version `1.4.346` (84 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/KhronosGroup/Vulkan-Loader`
+ * @install `pantry install github.com/KhronosGroup/Vulkan-Loader`
  * @homepage https://vulkan.lunarg.com/doc/sdk/latest/linux/LoaderInterfaceArchitecture.html
  * @dependencies `github.com/KhronosGroup/Vulkan-Headers`, `linux:x.org/x11`, `linux:x.org/xcb`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `gnu.org/make`, `cmake.org`, `python.org@~3.11`, ... (+1 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -40,12 +40,12 @@ export const vulkanloaderPackage = {
   homepageUrl: 'https://vulkan.lunarg.com/doc/sdk/latest/linux/LoaderInterfaceArchitecture.html' as const,
   githubUrl: 'https://github.com/KhronosGroup/Vulkan-Loader' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/KhronosGroup/Vulkan-Loader' as const,
+  installCommand: 'pantry install github.com/KhronosGroup/Vulkan-Loader' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/KhronosGroup/Vulkan-Loader -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/KhronosGroup/Vulkan-Loader' as const,
+  pantryInstallCommand: 'pantry install github.com/KhronosGroup/Vulkan-Loader' as const,
   programs: [] as const,
   companions: [] as const,
   /**

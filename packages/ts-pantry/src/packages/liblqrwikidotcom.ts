@@ -5,7 +5,7 @@
  * @version `0.4.3` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install liblqr.wikidot.com`
+ * @install `pantry install liblqr.wikidot.com`
  * @dependencies `gnome.org/glib`
  *
  * @example
@@ -38,12 +38,12 @@ export const liblqrwikidotcomPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/carlobaldassi/liblqr' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install liblqr.wikidot.com' as const,
+  installCommand: 'pantry install liblqr.wikidot.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +liblqr.wikidot.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install liblqr.wikidot.com' as const,
+  pantryInstallCommand: 'pantry install liblqr.wikidot.com' as const,
   programs: [] as const,
   companions: [] as const,
   /**

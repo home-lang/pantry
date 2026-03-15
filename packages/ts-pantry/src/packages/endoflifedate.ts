@@ -6,7 +6,7 @@
  * @version `0.24.1` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install endoflife.date`
+ * @install `pantry install endoflife.date`
  * @homepage https://endoflife.date
  * @dependencies `python.org^3.12`
  * @buildDependencies `linux:llvm.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const endoflifedatePackage = {
   homepageUrl: 'https://endoflife.date' as const,
   githubUrl: 'https://github.com/hugovk/norwegianblue' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install endoflife.date' as const,
+  installCommand: 'pantry install endoflife.date' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +endoflife.date -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install endoflife.date' as const,
+  pantryInstallCommand: 'pantry install endoflife.date' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

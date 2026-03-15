@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/abanteai/rawdog
+# Install with pantry
+pantry install github.com/abanteai/rawdog
 ```
 
 ## Programs

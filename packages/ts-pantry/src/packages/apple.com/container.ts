@@ -6,7 +6,7 @@
  * @version `0.10.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install apple.com/container`
+ * @install `pantry install apple.com/container`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const applecomcontainerPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install apple.com/container' as const,
+  installCommand: 'pantry install apple.com/container' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +apple.com/container -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install apple.com/container' as const,
+  pantryInstallCommand: 'pantry install apple.com/container' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

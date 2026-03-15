@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install pwmt.org/girara
+# Install with pantry
+pantry install pwmt.org/girara
 ```
 
 ## Programs

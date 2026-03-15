@@ -6,7 +6,7 @@
  * @version `0.99.20` (118 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install projen.io`
+ * @install `pantry install projen.io`
  * @homepage https://projen.io
  * @dependencies `nodejs.org^20 || ^18`
  * @buildDependencies `classic.yarnpkg.com@^1`, `npmjs.com@~11.4.2`, `maven.apache.org@>=3.0.0`, ... (+2 more) - required only when building from source
@@ -42,12 +42,12 @@ export const projenioPackage = {
   homepageUrl: 'https://projen.io' as const,
   githubUrl: 'https://github.com/projen/projen' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install projen.io' as const,
+  installCommand: 'pantry install projen.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +projen.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install projen.io' as const,
+  pantryInstallCommand: 'pantry install projen.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

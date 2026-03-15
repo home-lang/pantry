@@ -6,7 +6,7 @@
  * @version `3.7.0` (96 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install vektra.github.io/mockery`
+ * @install `pantry install vektra.github.io/mockery`
  * @homepage https://vektra.github.io/mockery/
  * @buildDependencies `go.dev` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const vektragithubiomockeryPackage = {
   homepageUrl: 'https://vektra.github.io/mockery/' as const,
   githubUrl: 'https://github.com/vektra/mockery' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install vektra.github.io/mockery' as const,
+  installCommand: 'pantry install vektra.github.io/mockery' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +vektra.github.io/mockery -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install vektra.github.io/mockery' as const,
+  pantryInstallCommand: 'pantry install vektra.github.io/mockery' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

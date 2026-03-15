@@ -6,7 +6,7 @@
  * @version `0.0.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/matoszz/blowfish`
+ * @install `pantry install github.com/matoszz/blowfish`
  * @buildDependencies `go.dev` - required only when building from source
  *
  * @example
@@ -40,12 +40,12 @@ export const blowfishPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/matoszz/blowfish' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/matoszz/blowfish' as const,
+  installCommand: 'pantry install github.com/matoszz/blowfish' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/matoszz/blowfish -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/matoszz/blowfish' as const,
+  pantryInstallCommand: 'pantry install github.com/matoszz/blowfish' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

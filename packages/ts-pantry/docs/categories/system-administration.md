@@ -12,7 +12,7 @@ Improved top (interactive process viewer)
 
 **Programs**: htop
 
-**Install**: `launchpad install htop.dev`
+**Install**: `pantry install htop.dev`
 
 ---
 
@@ -22,7 +22,7 @@ An open source utility that provides fast incremental file transfer. It also has
 
 **Programs**: rsync, rsync-ssl
 
-**Install**: `launchpad install rsync.samba.org`
+**Install**: `pantry install rsync.samba.org`
 
 ---
 
@@ -32,7 +32,7 @@ strace is a diagnostic, debugging and instructional userspace utility for Linux
 
 **Programs**: strace
 
-**Install**: `launchpad install strace.io`
+**Install**: `pantry install strace.io`
 
 ---
 
@@ -42,7 +42,7 @@ The systemd System and Service Manager
 
 **Programs**: busctl, coredumpctl, hostnamectl, journalctl, kernel-install, localectl, loginctl, machinectl, networkctl, oomctl, portablectl, resolvectl, systemctl, systemd-ac-power, systemd-analyze, systemd-ask-password, systemd-cat, systemd-cgls, systemd-cgtop, systemd-confext, systemd-creds, systemd-delta, systemd-detect-virt, systemd-dissect, systemd-escape, systemd-firstboot, systemd-id128, systemd-inhibit, systemd-machine-id-setup, systemd-mount, systemd-notify, systemd-nspawn, systemd-path, systemd-repart, systemd-resolve, systemd-run, systemd-socket-activate, systemd-stdio-bridge, systemd-sysext, systemd-sysusers, systemd-tmpfiles, systemd-tty-ask-password-agent, systemd-umount, timedatectl, udevadm, userdbctl, halt, init, mount.ddi, poweroff, reboot, resolvconf, runlevel, shutdown, telinit
 
-**Install**: `launchpad install systemd.io`
+**Install**: `pantry install systemd.io`
 
 ---
 
@@ -52,7 +52,7 @@ the LIBpcap interface to various kernel packet capture mechanism
 
 **Programs**: pcap-config
 
-**Install**: `launchpad install tcpdump.org`
+**Install**: `pantry install tcpdump.org`
 
 ---
 

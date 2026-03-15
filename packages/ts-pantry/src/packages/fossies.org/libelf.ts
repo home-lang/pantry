@@ -5,7 +5,7 @@
  * @version `0.8.13` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install fossies.org/libelf`
+ * @install `pantry install fossies.org/libelf`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake` - required only when building from source
  *
  * @example
@@ -37,12 +37,12 @@ export const fossiesorglibelfPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install fossies.org/libelf' as const,
+  installCommand: 'pantry install fossies.org/libelf' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +fossies.org/libelf -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install fossies.org/libelf' as const,
+  pantryInstallCommand: 'pantry install fossies.org/libelf' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

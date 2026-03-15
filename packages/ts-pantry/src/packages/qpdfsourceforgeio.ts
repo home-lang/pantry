@@ -6,7 +6,7 @@
  * @version `12.3.2` (13 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install qpdf.sourceforge.io`
+ * @install `pantry install qpdf.sourceforge.io`
  * @homepage https://qpdf.sourceforge.io/
  * @dependencies `zlib.net^1`, `libjpeg-turbo.org^2`, `openssl.org^1.1`, ... (+2 more) (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3`, `pyyaml.org/libyaml`, `python.org@^3`, ... (+2 more) (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const qpdfsourceforgeioPackage = {
   homepageUrl: 'https://qpdf.sourceforge.io/' as const,
   githubUrl: 'https://github.com/qpdf/qpdf' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install qpdf.sourceforge.io' as const,
+  installCommand: 'pantry install qpdf.sourceforge.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +qpdf.sourceforge.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install qpdf.sourceforge.io' as const,
+  pantryInstallCommand: 'pantry install qpdf.sourceforge.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

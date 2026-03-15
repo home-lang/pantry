@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install maaslalani.com/slides
+# Install with pantry
+pantry install maaslalani.com/slides
 ```
 
 ## Programs

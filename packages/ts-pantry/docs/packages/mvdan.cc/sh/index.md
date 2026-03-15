@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install mvdan.cc/sh
+# Install with pantry
+pantry install mvdan.cc/sh
 ```
 
 ## Programs

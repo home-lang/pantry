@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install scryer.pl
+# Install with pantry
+pantry install scryer.pl
 ```
 
 ## Programs

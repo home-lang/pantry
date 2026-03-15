@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install logological.org/gpp
+# Install with pantry
+pantry install logological.org/gpp
 ```
 
 ## Programs

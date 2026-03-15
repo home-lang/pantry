@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sphinx-doc.org
+# Install with pantry
+pantry install sphinx-doc.org
 ```
 
 ## Programs

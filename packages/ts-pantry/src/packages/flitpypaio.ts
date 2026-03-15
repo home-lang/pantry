@@ -6,7 +6,7 @@
  * @version `3.12.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install flit.pypa.io`
+ * @install `pantry install flit.pypa.io`
  * @homepage https://flit.pypa.io/
  * @dependencies `python.org>=3<3.12`
  *
@@ -41,12 +41,12 @@ export const flitpypaioPackage = {
   homepageUrl: 'https://flit.pypa.io/' as const,
   githubUrl: 'https://github.com/pypa/flit' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install flit.pypa.io' as const,
+  installCommand: 'pantry install flit.pypa.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +flit.pypa.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install flit.pypa.io' as const,
+  pantryInstallCommand: 'pantry install flit.pypa.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

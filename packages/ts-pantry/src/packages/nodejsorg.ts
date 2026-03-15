@@ -6,7 +6,7 @@
  * @version `25.8.1` (177 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nodejs.org`
+ * @install `pantry install nodejs.org`
  * @name `node`
  * @homepage https://nodejs.org/
  * @dependencies `unicode.org^73 # v25`, `openssl.org@1.1`, `zlib.net@1`, ... (+1 more) (includes OS-specific dependencies with `os:package` format)
@@ -47,12 +47,12 @@ export const nodePackage = {
   homepageUrl: 'https://nodejs.org/' as const,
   githubUrl: 'https://github.com/nodejs/node' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nodejs.org' as const,
+  installCommand: 'pantry install nodejs.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nodejs.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nodejs.org' as const,
+  pantryInstallCommand: 'pantry install nodejs.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

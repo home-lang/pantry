@@ -6,7 +6,7 @@
  * @version `0.3.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/Virviil/oci2git`
+ * @install `pantry install github.com/Virviil/oci2git`
  *
  * @example
  * ```typescript
@@ -38,12 +38,12 @@ export const oci2gitPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/Virviil/oci2git' as const,
+  installCommand: 'pantry install github.com/Virviil/oci2git' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/Virviil/oci2git -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/Virviil/oci2git' as const,
+  pantryInstallCommand: 'pantry install github.com/Virviil/oci2git' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

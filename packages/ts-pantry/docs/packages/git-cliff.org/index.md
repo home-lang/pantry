@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install git-cliff.org
+# Install with pantry
+pantry install git-cliff.org
 ```
 
 ## Programs

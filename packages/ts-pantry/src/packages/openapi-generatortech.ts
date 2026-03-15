@@ -6,7 +6,7 @@
  * @version `7.20.0` (19 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install openapi-generator.tech`
+ * @install `pantry install openapi-generator.tech`
  * @homepage https://openapi-generator.tech/
  * @dependencies `openjdk.org^21`
  * @buildDependencies `maven.apache.org` - required only when building from source
@@ -42,12 +42,12 @@ export const openapigeneratortechPackage = {
   homepageUrl: 'https://openapi-generator.tech/' as const,
   githubUrl: 'https://github.com/OpenAPITools/openapi-generator' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install openapi-generator.tech' as const,
+  installCommand: 'pantry install openapi-generator.tech' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +openapi-generator.tech -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install openapi-generator.tech' as const,
+  pantryInstallCommand: 'pantry install openapi-generator.tech' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

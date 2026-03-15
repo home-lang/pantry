@@ -5,7 +5,7 @@
  * @version `2.0.16` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/numactl/numactl`
+ * @install `pantry install github.com/numactl/numactl`
  * @buildDependencies `gnu.org/autoconf@2`, `gnu.org/automake@1`, `gnu.org/libtool@2`, ... (+1 more) - required only when building from source
  *
  * @example
@@ -38,12 +38,12 @@ export const numactlPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/numactl/numactl' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/numactl/numactl' as const,
+  installCommand: 'pantry install github.com/numactl/numactl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/numactl/numactl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/numactl/numactl' as const,
+  pantryInstallCommand: 'pantry install github.com/numactl/numactl' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

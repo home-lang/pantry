@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ghostscript.com
+# Install with pantry
+pantry install ghostscript.com
 ```
 
 ## Programs

@@ -6,7 +6,7 @@
  * @version `1.4.1` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/chrusty/protoc-gen-jsonschema`
+ * @install `pantry install github.com/chrusty/protoc-gen-jsonschema`
  * @dependencies `protobuf.dev`
  * @buildDependencies `go.dev@^1.11` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const protocgenjsonschemaPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/chrusty/protoc-gen-jsonschema' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/chrusty/protoc-gen-jsonschema' as const,
+  installCommand: 'pantry install github.com/chrusty/protoc-gen-jsonschema' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/chrusty/protoc-gen-jsonschema -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/chrusty/protoc-gen-jsonschema' as const,
+  pantryInstallCommand: 'pantry install github.com/chrusty/protoc-gen-jsonschema' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

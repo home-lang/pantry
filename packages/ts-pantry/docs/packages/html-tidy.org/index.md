@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install html-tidy.org
+# Install with pantry
+pantry install html-tidy.org
 ```
 
 ## Programs

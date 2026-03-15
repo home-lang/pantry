@@ -6,7 +6,7 @@
  * @version `1.8.1` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install stedolan.github.io/jq`
+ * @install `pantry install stedolan.github.io/jq`
  * @homepage https://jqlang.github.io/jq/
  * @dependencies `github.com/kkos/oniguruma@6`
  *
@@ -41,12 +41,12 @@ export const stedolangithubiojqPackage = {
   homepageUrl: 'https://jqlang.github.io/jq/' as const,
   githubUrl: 'https://github.com/jqlang/jq' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install stedolan.github.io/jq' as const,
+  installCommand: 'pantry install stedolan.github.io/jq' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +stedolan.github.io/jq -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install stedolan.github.io/jq' as const,
+  pantryInstallCommand: 'pantry install stedolan.github.io/jq' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

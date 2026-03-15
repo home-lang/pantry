@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install tcpdump.org
+# Install with pantry
+pantry install tcpdump.org
 ```
 
 ## Programs

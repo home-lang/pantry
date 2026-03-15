@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libuv.org
+# Install with pantry
+pantry install libuv.org
 ```
 
 ## Programs

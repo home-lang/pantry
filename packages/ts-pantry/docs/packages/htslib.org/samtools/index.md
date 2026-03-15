@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install htslib.org/samtools
+# Install with pantry
+pantry install htslib.org/samtools
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install theora.org
+# Install with pantry
+pantry install theora.org
 ```
 
 ## Programs

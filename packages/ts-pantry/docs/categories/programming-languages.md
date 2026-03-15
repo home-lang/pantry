@@ -12,7 +12,7 @@ Fast and statically typed, compiled language with Ruby-like syntax
 
 **Programs**: crystal
 
-**Install**: `launchpad install crystal-lang.org`
+**Install**: `pantry install crystal-lang.org`
 
 ---
 
@@ -22,7 +22,7 @@ The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries,
 
 **Programs**: dart, dartaotruntime
 
-**Install**: `launchpad install dart.dev`
+**Install**: `pantry install dart.dev`
 
 ---
 
@@ -32,7 +32,7 @@ The Go programming language
 
 **Programs**: go, gofmt
 
-**Install**: `launchpad install go.dev`
+**Install**: `pantry install go.dev`
 
 ---
 
@@ -42,7 +42,7 @@ The Julia Programming Language
 
 **Programs**: julia
 
-**Install**: `launchpad install julialang.org`
+**Install**: `pantry install julialang.org`
 
 ---
 
@@ -52,7 +52,7 @@ Statically typed programming language for the JVM
 
 **Programs**: kapt, kotlin, kotlinc, kotlinc-js, kotlinc-jvm
 
-**Install**: `launchpad install kotlin`
+**Install**: `pantry install kotlin`
 
 ---
 
@@ -62,7 +62,7 @@ Powerful, lightweight programming language
 
 **Programs**: lua, luac
 
-**Install**: `launchpad install lua.org`
+**Install**: `pantry install lua.org`
 
 ---
 
@@ -72,7 +72,7 @@ Mirror of the LuaJIT git repository
 
 **Programs**: luajit, luajit-2.1.
 
-**Install**: `launchpad install luajit.org`
+**Install**: `pantry install luajit.org`
 
 ---
 
@@ -82,7 +82,7 @@ Platform built on V8 to build network applications
 
 **Programs**: node
 
-**Install**: `launchpad install nodejs.org`
+**Install**: `pantry install nodejs.org`
 
 ---
 
@@ -92,7 +92,7 @@ Highly capable, feature-rich programming language
 
 **Programs**: corelist, cpan, enc2xs, encguess, h2ph, h2xs, instmodsh, json_pp, libnetcfg, perl, perlbug, perldoc, perlivp, perlthanks, piconv, pl2pm, pod2html, pod2man, pod2text, pod2usage, podchecker, prove, ptar, ptardiff, ptargrep, shasum, splain, streamzip, xsubpp, zipdetails
 
-**Install**: `launchpad install perl.org`
+**Install**: `pantry install perl.org`
 
 ---
 
@@ -102,7 +102,7 @@ General-purpose scripting language
 
 **Programs**: pear, pecl, phar, php, php-cgi, php-config, phpdbg, phpize
 
-**Install**: `launchpad install php.net`
+**Install**: `pantry install php.net`
 
 ---
 
@@ -112,7 +112,7 @@ The Python programming language
 
 **Programs**: python, python3, python3.14
 
-**Install**: `launchpad install py`
+**Install**: `pantry install py`
 
 ---
 
@@ -122,7 +122,7 @@ Powerful, clean, object-oriented scripting language
 
 **Programs**: erb, irb, rake, rdoc, ri, ruby
 
-**Install**: `launchpad install ruby`
+**Install**: `pantry install ruby`
 
 ---
 
@@ -132,7 +132,7 @@ Empowering everyone to build reliable and efficient software.
 
 **Programs**: cargo-clippy, cargo-fmt, clippy-driver, rust-analyzer, rust-gdb, rust-gdbgui, rust-lldb, rustc, rustdoc, rustfmt
 
-**Install**: `launchpad install rust-lang.org`
+**Install**: `pantry install rust-lang.org`
 
 ---
 
@@ -142,7 +142,7 @@ The Scala 3 compiler, also known as Dotty.
 
 **Programs**: scalac, scala, scala-cli, sbtn, amm
 
-**Install**: `launchpad install scala`
+**Install**: `pantry install scala`
 
 ---
 
@@ -152,7 +152,7 @@ The Swift Programming Language
 
 **Programs**: docc, dsymutil, sourcekit-lsp, swift-api-checker.py, swift-build-sdk-interfaces, swift-build-tool, swift-demangle, swift-driver, swift-format, swift-frontend, swift-help, swift-package, swift-plugin-server, swift-stdlib-tool, swift, swift-api-digester, swift-api-extract, swift-autolink-extract, swift-build, swift-experimental-sdk, swift-package-collection, swift-package-registry, swift-run, swift-symbolgraph-extract, swift-test, swiftc
 
-**Install**: `launchpad install swift.org`
+**Install**: `pantry install swift.org`
 
 ---
 
@@ -162,7 +162,7 @@ Go compiler for small places. Microcontrollers, WebAssembly (WASM/WASI), and com
 
 **Programs**: tinygo
 
-**Install**: `launchpad install tinygo.org`
+**Install**: `pantry install tinygo.org`
 
 ---
 
@@ -172,7 +172,7 @@ General-purpose programming language and toolchain for maintaining robust, optim
 
 **Programs**: zig
 
-**Install**: `launchpad install ziglang.org`
+**Install**: `pantry install ziglang.org`
 
 ---
 

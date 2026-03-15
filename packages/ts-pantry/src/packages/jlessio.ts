@@ -6,7 +6,7 @@
  * @version `0.9.0` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jless.io`
+ * @install `pantry install jless.io`
  * @homepage https://jless.io/
  * @dependencies `linux:x.org/xcb@1` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `python.org@3` - required only when building from source
@@ -42,12 +42,12 @@ export const jlessioPackage = {
   homepageUrl: 'https://jless.io/' as const,
   githubUrl: 'https://github.com/PaulJuliusMartinez/jless' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jless.io' as const,
+  installCommand: 'pantry install jless.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jless.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jless.io' as const,
+  pantryInstallCommand: 'pantry install jless.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

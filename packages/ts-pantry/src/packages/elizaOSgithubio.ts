@@ -6,7 +6,7 @@
  * @version `1.7.2` (76 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install elizaOS.github.io`
+ * @install `pantry install elizaOS.github.io`
  * @homepage https://elizaOS.github.io/eliza/
  * @dependencies `python.org>=2.7`, `nodejs.org~23.3`, `pnpm.io`, ... (+1 more)
  * @buildDependencies `python.org@~3.10`, `pnpm.io@=9.15.7`, `curl.se`, ... (+2 more) - required only when building from source
@@ -42,12 +42,12 @@ export const elizaosgithubioPackage = {
   homepageUrl: 'https://elizaOS.github.io/eliza/' as const,
   githubUrl: 'https://github.com/elizaOS/eliza' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install elizaOS.github.io' as const,
+  installCommand: 'pantry install elizaOS.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +elizaOS.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install elizaOS.github.io' as const,
+  pantryInstallCommand: 'pantry install elizaOS.github.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

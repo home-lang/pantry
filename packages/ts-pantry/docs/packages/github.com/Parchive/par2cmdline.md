@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/Parchive/par2cmdline
+# Install with pantry
+pantry install github.com/Parchive/par2cmdline
 ```
 
 ## Programs

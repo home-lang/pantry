@@ -6,7 +6,7 @@
  * @version `1.86.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gnome.org/gobject-introspection`
+ * @install `pantry install gnome.org/gobject-introspection`
  * @homepage https://gi.readthedocs.io/en/latest/
  * @dependencies `gnome.org/glib@2`, `sourceware.org/libffi@3`, `gnu.org/bison^3 #NOTE macOS provides v2`, ... (+2 more)
  * @buildDependencies `mesonbuild.com@^1.2` - required only when building from source
@@ -42,12 +42,12 @@ export const gnomeorggobjectintrospectionPackage = {
   homepageUrl: 'https://gi.readthedocs.io/en/latest/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gnome.org/gobject-introspection' as const,
+  installCommand: 'pantry install gnome.org/gobject-introspection' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnome.org/gobject-introspection -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gnome.org/gobject-introspection' as const,
+  pantryInstallCommand: 'pantry install gnome.org/gobject-introspection' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

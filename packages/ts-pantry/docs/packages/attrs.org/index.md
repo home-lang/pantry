@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install attrs.org
+# Install with pantry
+pantry install attrs.org
 ```
 
 ## Programs

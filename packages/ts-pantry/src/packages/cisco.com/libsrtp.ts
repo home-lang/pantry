@@ -5,7 +5,7 @@
  * @version `2.8.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cisco.com/libsrtp`
+ * @install `pantry install cisco.com/libsrtp`
  * @dependencies `openssl.org~1`
  * @buildDependencies `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -39,12 +39,12 @@ export const ciscocomlibsrtpPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/cisco/libsrtp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cisco.com/libsrtp' as const,
+  installCommand: 'pantry install cisco.com/libsrtp' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cisco.com/libsrtp -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cisco.com/libsrtp' as const,
+  pantryInstallCommand: 'pantry install cisco.com/libsrtp' as const,
   programs: [] as const,
   companions: [] as const,
   /**

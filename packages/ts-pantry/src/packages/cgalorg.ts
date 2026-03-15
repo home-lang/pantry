@@ -6,7 +6,7 @@
  * @version `6.1.0` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install cgal.org`
+ * @install `pantry install cgal.org`
  * @homepage https://github.com/CGAL/cgal#readme
  * @dependencies `boost.org`, `eigen.tuxfamily.org`, `gnu.org/gmp`, ... (+2 more)
  * @buildDependencies `cmake.org`, `qt.io@~5`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const cgalorgPackage = {
   homepageUrl: 'https://github.com/CGAL/cgal#readme' as const,
   githubUrl: 'https://github.com/CGAL/cgal' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install cgal.org' as const,
+  installCommand: 'pantry install cgal.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +cgal.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install cgal.org' as const,
+  pantryInstallCommand: 'pantry install cgal.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

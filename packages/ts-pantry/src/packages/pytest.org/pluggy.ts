@@ -5,7 +5,7 @@
  * @version `1.6.0` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pytest.org/pluggy`
+ * @install `pantry install pytest.org/pluggy`
  * @homepage https://pluggy.readthedocs.io/en/latest/
  * @dependencies `python.org^3.12`
  * @buildDependencies `pypa.io/setuptools` - required only when building from source
@@ -40,12 +40,12 @@ export const pytestorgpluggyPackage = {
   homepageUrl: 'https://pluggy.readthedocs.io/en/latest/' as const,
   githubUrl: 'https://github.com/pytest-dev/pluggy' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pytest.org/pluggy' as const,
+  installCommand: 'pantry install pytest.org/pluggy' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pytest.org/pluggy -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pytest.org/pluggy' as const,
+  pantryInstallCommand: 'pantry install pytest.org/pluggy' as const,
   programs: [] as const,
   companions: [] as const,
   /**

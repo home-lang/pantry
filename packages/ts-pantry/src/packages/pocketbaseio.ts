@@ -6,7 +6,7 @@
  * @version `0.36.6` (108 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pocketbase.io`
+ * @install `pantry install pocketbase.io`
  * @homepage https://pocketbase.io/
  * @buildDependencies `go.dev@>=1.16` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const pocketbaseioPackage = {
   homepageUrl: 'https://pocketbase.io/' as const,
   githubUrl: 'https://github.com/pocketbase/pocketbase' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pocketbase.io' as const,
+  installCommand: 'pantry install pocketbase.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pocketbase.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pocketbase.io' as const,
+  pantryInstallCommand: 'pantry install pocketbase.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

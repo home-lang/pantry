@@ -6,7 +6,7 @@
  * @version `1.79.2` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install docbook.org/xsl`
+ * @install `pantry install docbook.org/xsl`
  * @dependencies `docbook.org^5`, `gnome.org/libxml2`
  * @buildDependencies `gnu.org/wget` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const docbookorgxslPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/docbook/xslt10-stylesheets' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install docbook.org/xsl' as const,
+  installCommand: 'pantry install docbook.org/xsl' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +docbook.org/xsl -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install docbook.org/xsl' as const,
+  pantryInstallCommand: 'pantry install docbook.org/xsl' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

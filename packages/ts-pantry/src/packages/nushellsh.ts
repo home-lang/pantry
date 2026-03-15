@@ -6,7 +6,7 @@
  * @version `0.111.0` (56 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install nushell.sh`
+ * @install `pantry install nushell.sh`
  * @homepage https://www.nushell.sh
  * @dependencies `openssl.org^1`
  *
@@ -41,12 +41,12 @@ export const nushellshPackage = {
   homepageUrl: 'https://www.nushell.sh' as const,
   githubUrl: 'https://github.com/nushell/nushell' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install nushell.sh' as const,
+  installCommand: 'pantry install nushell.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +nushell.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install nushell.sh' as const,
+  pantryInstallCommand: 'pantry install nushell.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

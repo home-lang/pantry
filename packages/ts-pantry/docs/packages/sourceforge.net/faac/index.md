@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceforge.net/faac
+# Install with pantry
+pantry install sourceforge.net/faac
 ```
 
 ## Programs

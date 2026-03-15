@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install terragrunt.gruntwork.io
+# Install with pantry
+pantry install terragrunt.gruntwork.io
 ```
 
 ## Programs

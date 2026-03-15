@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wundergraph.com
+# Install with pantry
+pantry install wundergraph.com
 ```
 
 ## Programs

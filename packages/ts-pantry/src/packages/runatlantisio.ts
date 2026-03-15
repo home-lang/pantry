@@ -6,7 +6,7 @@
  * @version `0.40.0` (26 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install runatlantis.io`
+ * @install `pantry install runatlantis.io`
  * @homepage https://www.runatlantis.io/
  * @buildDependencies `go.dev@^1.21` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const runatlantisioPackage = {
   homepageUrl: 'https://www.runatlantis.io/' as const,
   githubUrl: 'https://github.com/runatlantis/atlantis' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install runatlantis.io' as const,
+  installCommand: 'pantry install runatlantis.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +runatlantis.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install runatlantis.io' as const,
+  pantryInstallCommand: 'pantry install runatlantis.io' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

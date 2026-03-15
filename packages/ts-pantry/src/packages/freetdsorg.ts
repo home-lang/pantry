@@ -6,7 +6,7 @@
  * @version `1.5.14` (42 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install freetds.org`
+ * @install `pantry install freetds.org`
  * @homepage https://www.freetds.org/
  * @dependencies `openssl.org^1.1`, `unixodbc.org`, `kerberos.org`, ... (+1 more)
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/gettext`, `gnu.org/libtool`, ... (+2 more) - required only when building from source
@@ -42,12 +42,12 @@ export const freetdsorgPackage = {
   homepageUrl: 'https://www.freetds.org/' as const,
   githubUrl: 'https://github.com/FreeTDS/freetds' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install freetds.org' as const,
+  installCommand: 'pantry install freetds.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +freetds.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install freetds.org' as const,
+  pantryInstallCommand: 'pantry install freetds.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

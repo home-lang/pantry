@@ -5,7 +5,7 @@
  * @version `1.11.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install libssh2.org`
+ * @install `pantry install libssh2.org`
  * @homepage https://libssh2.org/
  * @dependencies `openssl.org^1.1`, `zlib.net^1.2`
  *
@@ -39,12 +39,12 @@ export const libssh2orgPackage = {
   homepageUrl: 'https://libssh2.org/' as const,
   githubUrl: 'https://github.com/libssh2/libssh2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install libssh2.org' as const,
+  installCommand: 'pantry install libssh2.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +libssh2.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install libssh2.org' as const,
+  pantryInstallCommand: 'pantry install libssh2.org' as const,
   programs: [] as const,
   companions: [] as const,
   /**

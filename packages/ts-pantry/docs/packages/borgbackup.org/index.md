@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install borgbackup.org
+# Install with pantry
+pantry install borgbackup.org
 ```
 
 ## Programs

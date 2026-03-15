@@ -6,7 +6,7 @@
  * @version `1.7.0` (4 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install asciinema.org/agg`
+ * @install `pantry install asciinema.org/agg`
  * @homepage https://docs.asciinema.org/manual/agg/
  * @dependencies `rust-lang.org^1.56`
  *
@@ -41,12 +41,12 @@ export const asciinemaorgaggPackage = {
   homepageUrl: 'https://docs.asciinema.org/manual/agg/' as const,
   githubUrl: 'https://github.com/asciinema/agg' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install asciinema.org/agg' as const,
+  installCommand: 'pantry install asciinema.org/agg' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +asciinema.org/agg -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install asciinema.org/agg' as const,
+  pantryInstallCommand: 'pantry install asciinema.org/agg' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

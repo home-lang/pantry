@@ -5,7 +5,7 @@
  * @version `2.3.0` (2 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install gflags.github.io`
+ * @install `pantry install gflags.github.io`
  * @homepage https://gflags.github.io/gflags/
  * @buildDependencies `cmake.org` - required only when building from source
  *
@@ -39,12 +39,12 @@ export const gflagsgithubioPackage = {
   homepageUrl: 'https://gflags.github.io/gflags/' as const,
   githubUrl: 'https://github.com/gflags/gflags' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install gflags.github.io' as const,
+  installCommand: 'pantry install gflags.github.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gflags.github.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install gflags.github.io' as const,
+  pantryInstallCommand: 'pantry install gflags.github.io' as const,
   programs: [] as const,
   companions: [] as const,
   dependencies: [] as const,

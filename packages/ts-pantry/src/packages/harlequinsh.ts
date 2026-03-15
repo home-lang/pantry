@@ -6,7 +6,7 @@
  * @version `2.5.1` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install harlequin.sh`
+ * @install `pantry install harlequin.sh`
  * @dependencies `pkgx.sh>=1`, `unixodbc.org`
  * @buildDependencies `python.org@~3.11` - required only when building from source
  *
@@ -40,12 +40,12 @@ export const harlequinshPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install harlequin.sh' as const,
+  installCommand: 'pantry install harlequin.sh' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +harlequin.sh -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install harlequin.sh' as const,
+  pantryInstallCommand: 'pantry install harlequin.sh' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

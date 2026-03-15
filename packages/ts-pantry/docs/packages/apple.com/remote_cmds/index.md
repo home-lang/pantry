@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install apple.com/remote_cmds
+# Install with pantry
+pantry install apple.com/remote_cmds
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/x-motemen/ghq
+# Install with pantry
+pantry install github.com/x-motemen/ghq
 ```
 
 ## Programs

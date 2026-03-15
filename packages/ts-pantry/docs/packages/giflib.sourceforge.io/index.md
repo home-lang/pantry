@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install giflib.sourceforge.io
+# Install with pantry
+pantry install giflib.sourceforge.io
 ```
 
 ## Programs

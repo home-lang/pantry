@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install project-copacetic.github.io
+# Install with pantry
+pantry install project-copacetic.github.io
 ```
 
 ## Programs

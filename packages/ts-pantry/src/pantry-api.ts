@@ -5,9 +5,9 @@ import process from 'node:process'
 import { deduplicateDependencies, parseDependencyFile, resolveDependencyFile, resolveTransitiveDependencies } from './dependency-resolver'
 
 /**
- * Simplified package info for Launchpad
+ * Simplified package info for Pantry
  */
-export interface LaunchpadPackage {
+export interface PantryPackage {
   /** Package domain name (e.g., 'bun.sh', 'gnu.org/grep') */
   name: string
   /** Resolved version (e.g., '1.2.19', '3.12.0') */
@@ -21,11 +21,11 @@ export interface LaunchpadPackage {
 }
 
 /**
- * Result returned by Launchpad API
+ * Result returned by Pantry API
  */
-export interface LaunchpadInstallResult {
+export interface PantryInstallResult {
   /** All packages that need to be installed (deduplicated) */
-  packages: LaunchpadPackage[]
+  packages: PantryPackage[]
   /** Number of direct dependencies from the file */
   directCount: number
   /** Total number of packages including transitive deps */
@@ -38,14 +38,14 @@ export interface LaunchpadInstallResult {
   }>
   /** Install command for pkgx */
   pkgxCommand: string
-  /** Install command for launchpad */
-  launchpadCommand: string
+  /** Install command for pantry */
+  pantryCommand: string
 }
 
 /**
- * Options for Launchpad dependency resolution
+ * Options for Pantry dependency resolution
  */
-export interface LaunchpadResolverOptions {
+export interface PantryResolverOptions {
   /** Target operating system */
   targetOs?: 'linux' | 'darwin' | 'windows'
   /** Include OS-specific dependencies */
@@ -57,7 +57,7 @@ export interface LaunchpadResolverOptions {
 }
 
 /**
- * Main API function for Launchpad to resolve dependencies from a file
+ * Main API function for Pantry to resolve dependencies from a file
  *
  * @param filePath Path to dependency file (deps.yaml, pkgx.yaml, etc.)
  * @param options Resolution options
@@ -65,7 +65,7 @@ export interface LaunchpadResolverOptions {
  *
  * @example
  * ```typescript
- * import { resolveDependencies } from 'ts-pkgx/launchpad'
+ * import { resolveDependencies } from 'ts-pantry'
  *
  * const result = await resolveDependencies('./deps.yaml', {
  *   targetOs: 'darwin',
@@ -73,18 +73,18 @@ export interface LaunchpadResolverOptions {
  * })
  *
  * console.log(`Installing ${result.totalCount} packages...`)
- * console.log(result.launchpadCommand)
+ * console.log(result.pantryCommand)
  *
  * // Install each package
  * for (const pkg of result.packages) {
- *   await launchpad.install(pkg.name, pkg.version)
+ *   await pantry.install(pkg.name, pkg.version)
  * }
  * ```
  */
 export async function resolveDependencies(
   filePath: string,
-  options: LaunchpadResolverOptions = {},
-): Promise<LaunchpadInstallResult> {
+  options: PantryResolverOptions = {},
+): Promise<PantryInstallResult> {
   const {
     targetOs = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : 'linux',
     includeOsSpecific = true,
@@ -103,8 +103,8 @@ export async function resolveDependencies(
   // Count direct dependencies
   const directDeps = parseDependencyFile(filePath)
 
-  // Convert to Launchpad format
-  const packages: LaunchpadPackage[] = result.allDependencies.map(dep => ({
+  // Convert to Pantry format
+  const packages: PantryPackage[] = result.allDependencies.map(dep => ({
     name: dep.name,
     version: dep.version,
     constraint: dep.constraint,
@@ -113,10 +113,10 @@ export async function resolveDependencies(
   }))
 
   // Generate install commands
-  // Both pkgx and launchpad auto-resolve transitive dependencies, so only install direct deps
+  // Both pkgx and pantry auto-resolve transitive dependencies, so only install direct deps
   const directPackageNames = directDeps.map(dep => dep.name)
   const pkgxCommand = `pkgx install ${directPackageNames.join(' ')}`
-  const launchpadCommand = `launchpad install ${directPackageNames.join(' ')}`
+  const pantryCommand = `pantry install ${directPackageNames.join(' ')}`
 
   // Format conflicts with resolution info
   const conflicts = result.conflicts.map((conflict) => {
@@ -134,7 +134,7 @@ export async function resolveDependencies(
     totalCount: packages.length,
     conflicts,
     pkgxCommand,
-    launchpadCommand,
+    pantryCommand,
   }
 }
 
@@ -160,8 +160,8 @@ export async function resolveDependencies(
  */
 export async function resolveDependenciesFromYaml(
   yamlContent: string,
-  options: LaunchpadResolverOptions = {},
-): Promise<LaunchpadInstallResult> {
+  options: PantryResolverOptions = {},
+): Promise<PantryInstallResult> {
   // Create a temporary file
   const tempFile = path.join(process.cwd(), `.temp-deps-${Date.now()}.yaml`)
 
@@ -192,8 +192,8 @@ export async function resolveDependenciesFromYaml(
  */
 export async function resolvePackageDependencies(
   packageName: string,
-  options: LaunchpadResolverOptions = {},
-): Promise<LaunchpadPackage[]> {
+  options: PantryResolverOptions = {},
+): Promise<PantryPackage[]> {
   const {
     targetOs = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : 'linux',
     includeOsSpecific = true,
@@ -233,17 +233,25 @@ export async function resolvePackageDependencies(
  * Get install command for a list of packages
  *
  * @param packages Array of package names (should be direct deps only)
- * @param format Command format ('pkgx' or 'launchpad')
+ * @param format Command format ('pkgx' or 'pantry')
  * @returns Install command string
  *
- * @note Both pkgx and launchpad auto-resolve transitive dependencies
+ * @note Both pkgx and pantry auto-resolve transitive dependencies
  */
-export function getInstallCommand(packages: string[], format: 'pkgx' | 'launchpad' = 'launchpad'): string {
+export function getInstallCommand(packages: string[], format: 'pkgx' | 'pantry' = 'pantry'): string {
   if (format === 'pkgx') {
     return `pkgx install ${packages.join(' ')}`
   }
-  return `launchpad install ${packages.join(' ')}`
+  return `pantry install ${packages.join(' ')}`
 }
+
+// Backward-compatible type aliases
+/** @deprecated Use PantryPackage instead */
+export type LaunchpadPackage = PantryPackage
+/** @deprecated Use PantryInstallResult instead */
+export type LaunchpadInstallResult = PantryInstallResult
+/** @deprecated Use PantryResolverOptions instead */
+export type LaunchpadResolverOptions = PantryResolverOptions
 
 // Export types for external use
 export type { Dependency, DependencyResolutionResult, DependencyResolverOptions }

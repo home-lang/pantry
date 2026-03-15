@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install graphqleditor.com/gql
+# Install with pantry
+pantry install graphqleditor.com/gql
 ```
 
 ## Programs

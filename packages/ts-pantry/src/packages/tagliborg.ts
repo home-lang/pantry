@@ -6,7 +6,7 @@
  * @version `2.2.1` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install taglib.org`
+ * @install `pantry install taglib.org`
  * @homepage https://taglib.org/
  * @dependencies `zlib.net^1`, `github.com/nemtrif/utfcpp^4`
  * @buildDependencies `cmake.org`, `linux:gnu.org/gcc` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const tagliborgPackage = {
   homepageUrl: 'https://taglib.org/' as const,
   githubUrl: 'https://github.com/taglib/taglib' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install taglib.org' as const,
+  installCommand: 'pantry install taglib.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +taglib.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install taglib.org' as const,
+  pantryInstallCommand: 'pantry install taglib.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

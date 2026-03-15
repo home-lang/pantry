@@ -6,7 +6,7 @@
  * @version `10.86.48` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install netpbm.sourceforge.net`
+ * @install `pantry install netpbm.sourceforge.net`
  * @homepage https://netpbm.sourceforge.net/
  * @dependencies `github.com/jasper-software/jasper`, `libjpeg-turbo.org`, `libpng.org`, ... (+3 more)
  * @buildDependencies `gnu.org/make`, `github.com/westes/flex`, `linux:perl.org` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const netpbmsourceforgenetPackage = {
   homepageUrl: 'https://netpbm.sourceforge.net/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install netpbm.sourceforge.net' as const,
+  installCommand: 'pantry install netpbm.sourceforge.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +netpbm.sourceforge.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install netpbm.sourceforge.net' as const,
+  pantryInstallCommand: 'pantry install netpbm.sourceforge.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

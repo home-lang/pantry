@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install ctop.sh
+# Install with pantry
+pantry install ctop.sh
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kpt.dev
+# Install with pantry
+pantry install kpt.dev
 ```
 
 ## Programs

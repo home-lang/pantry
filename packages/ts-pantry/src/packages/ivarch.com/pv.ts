@@ -6,7 +6,7 @@
  * @version `1.10.4` (21 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ivarch.com/pv`
+ * @install `pantry install ivarch.com/pv`
  * @homepage https://www.ivarch.com/programs/pv.shtml
  *
  * @example
@@ -40,12 +40,12 @@ export const ivarchcompvPackage = {
   homepageUrl: 'https://www.ivarch.com/programs/pv.shtml' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ivarch.com/pv' as const,
+  installCommand: 'pantry install ivarch.com/pv' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ivarch.com/pv -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ivarch.com/pv' as const,
+  pantryInstallCommand: 'pantry install ivarch.com/pv' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

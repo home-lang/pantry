@@ -6,7 +6,7 @@
  * @version `2.96.0` (117 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jfrog.com/jfrog-cli`
+ * @install `pantry install jfrog.com/jfrog-cli`
  * @homepage https://www.jfrog.com/confluence/display/CLI/JFrog+CLI
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const jfrogcomjfrogcliPackage = {
   homepageUrl: 'https://www.jfrog.com/confluence/display/CLI/JFrog+CLI' as const,
   githubUrl: 'https://github.com/jfrog/jfrog-cli' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jfrog.com/jfrog-cli' as const,
+  installCommand: 'pantry install jfrog.com/jfrog-cli' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jfrog.com/jfrog-cli -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jfrog.com/jfrog-cli' as const,
+  pantryInstallCommand: 'pantry install jfrog.com/jfrog-cli' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -6,7 +6,7 @@
  * @version `1.9.2602` (10 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install microsoft.com/dxc`
+ * @install `pantry install microsoft.com/dxc`
  * @dependencies `zlib.net^1`
  * @buildDependencies `cmake.org`, `python.org@>=3.7<3.12` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const microsoftcomdxcPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/microsoft/DirectXShaderCompiler' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install microsoft.com/dxc' as const,
+  installCommand: 'pantry install microsoft.com/dxc' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +microsoft.com/dxc -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install microsoft.com/dxc' as const,
+  pantryInstallCommand: 'pantry install microsoft.com/dxc' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

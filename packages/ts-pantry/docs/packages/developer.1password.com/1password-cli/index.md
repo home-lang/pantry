@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install developer.1password.com/1password-cli
+# Install with pantry
+pantry install developer.1password.com/1password-cli
 ```
 
 ## Programs

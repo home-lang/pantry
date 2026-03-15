@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install fishshell.com
+# Install with pantry
+pantry install fishshell.com
 ```
 
 ## Programs

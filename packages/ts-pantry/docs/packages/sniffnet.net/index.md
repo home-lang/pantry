@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sniffnet.net
+# Install with pantry
+pantry install sniffnet.net
 ```
 
 ## Programs

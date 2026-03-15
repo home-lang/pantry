@@ -6,7 +6,7 @@
  * @version `1.13.3` (82 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sing-box.app`
+ * @install `pantry install sing-box.app`
  * @homepage https://sing-box.sagernet.org
  * @buildDependencies `go.dev@^1.20` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const singboxappPackage = {
   homepageUrl: 'https://sing-box.sagernet.org' as const,
   githubUrl: 'https://github.com/SagerNet/sing-box' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sing-box.app' as const,
+  installCommand: 'pantry install sing-box.app' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sing-box.app -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sing-box.app' as const,
+  pantryInstallCommand: 'pantry install sing-box.app' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

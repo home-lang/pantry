@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install argbash.dev
+# Install with pantry
+pantry install argbash.dev
 ```
 
 ## Programs

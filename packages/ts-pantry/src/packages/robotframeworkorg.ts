@@ -6,7 +6,7 @@
  * @version `7.4.2` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install robotframework.org`
+ * @install `pantry install robotframework.org`
  * @homepage https://robotframework.org/
  * @dependencies `pkgx.sh>=1`
  * @buildDependencies `python.org@^3`, `cryptography.io`, `libsodium.org` - required only when building from source
@@ -42,12 +42,12 @@ export const robotframeworkorgPackage = {
   homepageUrl: 'https://robotframework.org/' as const,
   githubUrl: 'https://github.com/robotframework/robotframework' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install robotframework.org' as const,
+  installCommand: 'pantry install robotframework.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +robotframework.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install robotframework.org' as const,
+  pantryInstallCommand: 'pantry install robotframework.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

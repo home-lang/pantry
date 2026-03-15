@@ -6,7 +6,7 @@
  * @version `2.7.3` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install github.com/git-ecosystem/git-credential-manager`
+ * @install `pantry install github.com/git-ecosystem/git-credential-manager`
  * @dependencies `openssl.org^1.1.1`, `unicode.org^71`, `zlib.net^1.3`, ... (+1 more)
  * @buildDependencies `kerberos.org@^1.21.3`, `linux:gnu.org/gcc@>=12` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gitcredentialmanagerPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/git-ecosystem/git-credential-manager' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install github.com/git-ecosystem/git-credential-manager' as const,
+  installCommand: 'pantry install github.com/git-ecosystem/git-credential-manager' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +github.com/git-ecosystem/git-credential-manager -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install github.com/git-ecosystem/git-credential-manager' as const,
+  pantryInstallCommand: 'pantry install github.com/git-ecosystem/git-credential-manager' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hboehm.info/gc
+# Install with pantry
+pantry install hboehm.info/gc
 ```
 
 ## Programs

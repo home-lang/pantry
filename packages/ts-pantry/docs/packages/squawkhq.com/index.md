@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install squawkhq.com
+# Install with pantry
+pantry install squawkhq.com
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install soxr.sourceforge.net
+# Install with pantry
+pantry install soxr.sourceforge.net
 ```
 
 ## Programs

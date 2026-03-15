@@ -5,7 +5,7 @@
  * @version `20260107.1.0` (26 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install abseil.io`
+ * @install `pantry install abseil.io`
  * @homepage https://abseil.io
  * @dependencies `linux:gnu.org/gcc/libstdcxx^14 # since 20250814.0` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `cmake.org@^3`, `linux:gnu.org/gcc@^14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -40,12 +40,12 @@ export const abseilioPackage = {
   homepageUrl: 'https://abseil.io' as const,
   githubUrl: 'https://github.com/abseil/abseil-cpp' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install abseil.io' as const,
+  installCommand: 'pantry install abseil.io' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +abseil.io -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install abseil.io' as const,
+  pantryInstallCommand: 'pantry install abseil.io' as const,
   programs: [] as const,
   companions: [] as const,
   /**

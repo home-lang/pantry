@@ -6,7 +6,7 @@
  * @version `0.2.11` (3 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install code.videolan.org/rist/librist`
+ * @install `pantry install code.videolan.org/rist/librist`
  * @homepage https://code.videolan.org/rist/
  * @buildDependencies `mesonbuild.com@>=0.47<1`, `linux:sourceware.org/libffi@3` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const codevideolanorgristlibristPackage = {
   homepageUrl: 'https://code.videolan.org/rist/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install code.videolan.org/rist/librist' as const,
+  installCommand: 'pantry install code.videolan.org/rist/librist' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +code.videolan.org/rist/librist -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install code.videolan.org/rist/librist' as const,
+  pantryInstallCommand: 'pantry install code.videolan.org/rist/librist' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

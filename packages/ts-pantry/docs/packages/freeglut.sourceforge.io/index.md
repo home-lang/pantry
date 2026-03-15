@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install freeglut.sourceforge.io
+# Install with pantry
+pantry install freeglut.sourceforge.io
 ```
 
 ## Programs

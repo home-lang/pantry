@@ -6,7 +6,7 @@
  * @version `1.3.10` (12 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install makotemplates.org`
+ * @install `pantry install makotemplates.org`
  * @homepage https://www.makotemplates.org
  * @dependencies `python.org~3.11`
  *
@@ -41,12 +41,12 @@ export const makotemplatesorgPackage = {
   homepageUrl: 'https://www.makotemplates.org' as const,
   githubUrl: 'https://github.com/sqlalchemy/mako' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install makotemplates.org' as const,
+  installCommand: 'pantry install makotemplates.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +makotemplates.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install makotemplates.org' as const,
+  pantryInstallCommand: 'pantry install makotemplates.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

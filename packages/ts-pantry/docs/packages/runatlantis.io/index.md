@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install runatlantis.io
+# Install with pantry
+pantry install runatlantis.io
 ```
 
 ## Programs

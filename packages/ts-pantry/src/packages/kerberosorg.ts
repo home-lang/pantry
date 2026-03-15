@@ -6,7 +6,7 @@
  * @version `1.22.2` (9 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kerberos.org`
+ * @install `pantry install kerberos.org`
  * @dependencies `openssl.org^1.1`
  * @buildDependencies `gnu.org/bison@3` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const kerberosorgPackage = {
   homepageUrl: '' as const,
   githubUrl: 'https://github.com/krb5/krb5' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kerberos.org' as const,
+  installCommand: 'pantry install kerberos.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kerberos.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kerberos.org' as const,
+  pantryInstallCommand: 'pantry install kerberos.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

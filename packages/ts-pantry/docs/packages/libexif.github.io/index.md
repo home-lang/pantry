@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install libexif.github.io
+# Install with pantry
+pantry install libexif.github.io
 ```
 
 ## Programs

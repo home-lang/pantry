@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install nongnu.org/lzip
+# Install with pantry
+pantry install nongnu.org/lzip
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install planetscale.com
+# Install with pantry
+pantry install planetscale.com
 ```
 
 ## Programs

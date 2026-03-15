@@ -6,7 +6,7 @@
  * @version `2.6.0` (6 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install jonas.github.io/tig`
+ * @install `pantry install jonas.github.io/tig`
  * @homepage https://jonas.github.io/tig/
  * @dependencies `gnu.org/libiconv^1`, `invisible-island.net/ncurses^6`
  *
@@ -41,12 +41,12 @@ export const jonasgithubiotigPackage = {
   homepageUrl: 'https://jonas.github.io/tig/' as const,
   githubUrl: 'https://github.com/jonas/tig' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install jonas.github.io/tig' as const,
+  installCommand: 'pantry install jonas.github.io/tig' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +jonas.github.io/tig -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install jonas.github.io/tig' as const,
+  pantryInstallCommand: 'pantry install jonas.github.io/tig' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

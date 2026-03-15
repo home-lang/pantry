@@ -6,7 +6,7 @@
  * @version `22.6.0` (69 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install git-town.com`
+ * @install `pantry install git-town.com`
  * @homepage https://www.git-town.com/
  * @buildDependencies `go.dev@~1.23.10` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const gittowncomPackage = {
   homepageUrl: 'https://www.git-town.com/' as const,
   githubUrl: 'https://github.com/git-town/git-town' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install git-town.com' as const,
+  installCommand: 'pantry install git-town.com' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +git-town.com -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install git-town.com' as const,
+  pantryInstallCommand: 'pantry install git-town.com' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

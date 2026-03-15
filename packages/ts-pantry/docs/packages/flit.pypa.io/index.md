@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install flit.pypa.io
+# Install with pantry
+pantry install flit.pypa.io
 ```
 
 ## Programs

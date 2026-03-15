@@ -5,7 +5,7 @@
  * @version `1.0.4` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install ferzkopp.net/SDL2_gfx`
+ * @install `pantry install ferzkopp.net/SDL2_gfx`
  * @dependencies `libsdl.org@2`
  * @buildDependencies `gnu.org/autoconf`, `gnu.org/automake`, `gnu.org/libtool` - required only when building from source
  *
@@ -38,12 +38,12 @@ export const ferzkoppnetsdl2_gfxPackage = {
   homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install ferzkopp.net/SDL2_gfx' as const,
+  installCommand: 'pantry install ferzkopp.net/SDL2_gfx' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +ferzkopp.net/SDL2_gfx -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install ferzkopp.net/SDL2_gfx' as const,
+  pantryInstallCommand: 'pantry install ferzkopp.net/SDL2_gfx' as const,
   programs: [] as const,
   companions: [] as const,
   /**

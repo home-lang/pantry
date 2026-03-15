@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/sindresorhus/macos-term-size
+# Install with pantry
+pantry install github.com/sindresorhus/macos-term-size
 ```
 
 ## Programs

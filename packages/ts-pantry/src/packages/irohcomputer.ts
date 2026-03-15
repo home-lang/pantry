@@ -6,7 +6,7 @@
  * @version `0.96.1` (49 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install iroh.computer`
+ * @install `pantry install iroh.computer`
  * @homepage https://iroh.computer
  * @buildDependencies `linux:gnu.org/gcc@14` (includes OS-specific dependencies with `os:package` format) - required only when building from source
  *
@@ -41,12 +41,12 @@ export const irohcomputerPackage = {
   homepageUrl: 'https://iroh.computer' as const,
   githubUrl: 'https://github.com/n0-computer/iroh' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install iroh.computer' as const,
+  installCommand: 'pantry install iroh.computer' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +iroh.computer -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install iroh.computer' as const,
+  pantryInstallCommand: 'pantry install iroh.computer' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

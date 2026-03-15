@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install geoff.greer.fm/ag
+# Install with pantry
+pantry install geoff.greer.fm/ag
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install github.com/princjef/gomarkdoc
+# Install with pantry
+pantry install github.com/princjef/gomarkdoc
 ```
 
 ## Programs

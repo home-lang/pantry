@@ -6,7 +6,7 @@
  * @version `2.37.1` (8 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install direnv.net`
+ * @install `pantry install direnv.net`
  * @homepage https://direnv.net/
  * @buildDependencies `go.dev@^1.18` - required only when building from source
  *
@@ -41,12 +41,12 @@ export const direnvnetPackage = {
   homepageUrl: 'https://direnv.net/' as const,
   githubUrl: 'https://github.com/direnv/direnv' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install direnv.net' as const,
+  installCommand: 'pantry install direnv.net' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +direnv.net -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install direnv.net' as const,
+  pantryInstallCommand: 'pantry install direnv.net' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

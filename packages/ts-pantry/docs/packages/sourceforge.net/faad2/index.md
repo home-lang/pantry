@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install sourceforge.net/faad2
+# Install with pantry
+pantry install sourceforge.net/faad2
 ```
 
 ## Programs

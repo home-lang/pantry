@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gnupg.org/libgpg-error
+# Install with pantry
+pantry install gnupg.org/libgpg-error
 ```
 
 ## Programs

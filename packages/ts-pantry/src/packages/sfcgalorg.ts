@@ -6,7 +6,7 @@
  * @version `2.2.0` (7 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install sfcgal.org`
+ * @install `pantry install sfcgal.org`
  * @homepage https://sfcgal.gitlab.io/SFCGAL/
  * @dependencies `boost.org`, `cgal.org`, `gnu.org/gmp`, ... (+1 more)
  * @buildDependencies `cmake.org`, `linux:gnu.org/gcc`, `linux:gnu.org/make` (includes OS-specific dependencies with `os:package` format) - required only when building from source
@@ -42,12 +42,12 @@ export const sfcgalorgPackage = {
   homepageUrl: 'https://sfcgal.gitlab.io/SFCGAL/' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install sfcgal.org' as const,
+  installCommand: 'pantry install sfcgal.org' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +sfcgal.org -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install sfcgal.org' as const,
+  pantryInstallCommand: 'pantry install sfcgal.org' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

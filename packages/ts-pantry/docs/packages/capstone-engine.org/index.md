@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install capstone-engine.org
+# Install with pantry
+pantry install capstone-engine.org
 ```
 
 ## Programs

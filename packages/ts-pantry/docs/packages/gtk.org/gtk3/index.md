@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gtk.org/gtk3
+# Install with pantry
+pantry install gtk.org/gtk3
 ```
 
 ## Programs

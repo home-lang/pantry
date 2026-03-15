@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install kubernetes.io/minikube
+# Install with pantry
+pantry install kubernetes.io/minikube
 ```
 
 ## Programs

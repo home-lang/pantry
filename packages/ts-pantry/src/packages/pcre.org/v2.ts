@@ -6,7 +6,7 @@
  * @version `10.47.0` (5 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install pcre.org/v2`
+ * @install `pantry install pcre.org/v2`
  * @homepage https://www.pcre.org/
  * @dependencies `sourceware.org/bzip2@1`, `zlib.net@1`
  *
@@ -41,12 +41,12 @@ export const pcreorgv2Package = {
   homepageUrl: 'https://www.pcre.org/' as const,
   githubUrl: 'https://github.com/PCRE2Project/pcre2' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install pcre.org/v2' as const,
+  installCommand: 'pantry install pcre.org/v2' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +pcre.org/v2 -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install pcre.org/v2' as const,
+  pantryInstallCommand: 'pantry install pcre.org/v2' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

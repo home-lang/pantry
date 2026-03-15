@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install npmjs.com/pake-cli
+# Install with pantry
+pantry install npmjs.com/pake-cli
 ```
 
 ## Programs

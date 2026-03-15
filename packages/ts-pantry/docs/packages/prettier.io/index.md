@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install prettier.io
+# Install with pantry
+pantry install prettier.io
 ```
 
 ## Programs

@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install crystal-lang.org
+# Install with pantry
+pantry install crystal-lang.org
 ```
 
 ## Programs

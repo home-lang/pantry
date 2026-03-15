@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install anchore.com/syft
+# Install with pantry
+pantry install anchore.com/syft
 ```
 
 ## Programs

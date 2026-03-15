@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install gflags.github.io
+# Install with pantry
+pantry install gflags.github.io
 ```
 
 ## Programs

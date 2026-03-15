@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install cedarpolicy.com/cli
+# Install with pantry
+pantry install cedarpolicy.com/cli
 ```
 
 ## Programs

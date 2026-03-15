@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install wait4x.dev
+# Install with pantry
+pantry install wait4x.dev
 ```
 
 ## Programs

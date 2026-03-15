@@ -6,7 +6,7 @@
  * @version `0.39.3` (1 versions available)
  * @versions From newest version to oldest.
  *
- * @install `launchpad install kpt.dev`
+ * @install `pantry install kpt.dev`
  * @homepage https://kpt.dev
  * @dependencies `git-scm.org`
  * @buildDependencies `go.dev@^1.14` - required only when building from source
@@ -42,12 +42,12 @@ export const kptdevPackage = {
   homepageUrl: 'https://kpt.dev' as const,
   githubUrl: 'https://github.com/kptdev/kpt' as const,
   /**
-  * Command to install this package using launchpad.
-  * @example launchpad install package-name
+  * Command to install this package using pantry.
+  * @example pantry install package-name
   */
-  installCommand: 'launchpad install kpt.dev' as const,
+  installCommand: 'pantry install kpt.dev' as const,
   pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +kpt.dev -- $SHELL -i' as const,
-  launchpadInstallCommand: 'launchpad install kpt.dev' as const,
+  pantryInstallCommand: 'pantry install kpt.dev' as const,
   /**
   * Executable programs provided by this package.
   * These can be run after installation.

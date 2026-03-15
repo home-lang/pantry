@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install jedsoft.org/slang
+# Install with pantry
+pantry install jedsoft.org/slang
 ```
 
 ## Programs

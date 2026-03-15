@@ -12,8 +12,8 @@
 ## Installation
 
 ```bash
-# Install with launchpad
-launchpad install hashicorp.com/consul-template
+# Install with pantry
+pantry install hashicorp.com/consul-template
 ```
 
 ## Programs
