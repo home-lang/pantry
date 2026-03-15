@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 59 versions</summary>
+<summary>Show all 60 versions</summary>
 
+- `4.0.0`
 - `3.12.1`, `3.12.0`
 - `3.11.0`
 - `3.10.1`, `3.10.0`
@@ -61,13 +62,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.12.1`
+**Latest Version**: `4.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +localai.io@3.12.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +localai.io@4.0.0 -- $SHELL -i
 ```
 
 ## Dependencies
