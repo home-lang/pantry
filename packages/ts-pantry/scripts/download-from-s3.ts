@@ -12,7 +12,7 @@ import { execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { homedir, platform, arch } from 'node:os'
-import { S3Client } from '@stacksjs/ts-cloud/aws'
+import { S3Client } from '@stacksjs/ts-cloud'
 
 interface DownloadOptions {
   package: string

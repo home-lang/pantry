@@ -11,7 +11,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import * as crypto from 'node:crypto'
-import { S3Client } from '@stacksjs/ts-cloud/aws'
+import { S3Client } from '@stacksjs/ts-cloud'
 
 const DYNAMO_TABLE = process.env.DYNAMODB_TABLE || 'pantry-packages'
 

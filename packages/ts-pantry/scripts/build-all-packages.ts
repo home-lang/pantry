@@ -30,7 +30,7 @@ import { execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
-import { S3Client } from '@stacksjs/ts-cloud/aws'
+import { S3Client } from '@stacksjs/ts-cloud'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { packageOverrides } from './package-overrides.ts'
 

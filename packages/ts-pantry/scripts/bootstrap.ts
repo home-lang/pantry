@@ -197,7 +197,7 @@ function resolveVersion(pkg: PackageInfo, constraint?: string): string {
 // Check if package exists in S3
 async function existsInS3(domain: string, version: string, platform: string, bucket: string, region: string): Promise<boolean> {
   try {
-    const { S3Client } = await import('@stacksjs/ts-cloud/aws')
+    const { S3Client } = await import('@stacksjs/ts-cloud')
     const s3 = new S3Client(region)
     const metadataKey = `binaries/${domain}/metadata.json`
 
