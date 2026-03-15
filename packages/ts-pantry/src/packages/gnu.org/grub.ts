@@ -1,14 +1,11 @@
 /**
- * **grub** - GNU GRand Unified Bootloader
+ * **grub** - pkgx package
  *
  * @domain `gnu.org/grub`
- * @programs `grub-install`, `grub-mkconfig`, `grub-mkimage`, `grub-mkrescue` and more
- * @version `2.14.0` (7 versions available)
- * @versions From newest version to oldest.
  *
- * @install `pantry install gnu.org/grub`
- * @homepage https://www.gnu.org/software/grub/
- * @buildDependencies `gnu.org/bison`, `gnu.org/m4`, `github.com/westes/flex`, `gnu.org/autoconf`, `gnu.org/automake`, `freedesktop.org/pkg-config`, `python.org` - required only when building from source
+ * @install `launchpad install gnu.org/grub`
+ * @dependencies `gnu.org/gettext`, `sourceware.org/bzip2`, `tukaani.org/xz`, ... (+3 more)
+ * @buildDependencies `gnu.org/bison`, `gnu.org/m4`, `github.com/westes/flex`, ... (+3 more) - required only when building from source
  *
  * @example
  * ```typescript
@@ -16,12 +13,10 @@
  *
  * const pkg = pantry.gnuorggrub
  * console.log(pkg.name)        // "grub"
- * console.log(pkg.description) // "GNU GRand Unified Bootloader"
- * console.log(pkg.programs)    // ["grub-install", "grub-mkconfig", ...]
- * console.log(pkg.versions[0]) // "2.14.0" (latest)
  * ```
  *
- * @see https://www.gnu.org/software/grub/
+ * @see https://ts-pkgx.netlify.app/packages/gnu-org/grub.md
+ * @see https://ts-pkgx.netlify.app/usage
  */
 export const gnuorggrubPackage = {
   /**
@@ -35,44 +30,23 @@ export const gnuorggrubPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: 'GNU GRand Unified Bootloader' as const,
-  packageYmlUrl: '' as const,
-  homepageUrl: 'https://www.gnu.org/software/grub/' as const,
+  description: '' as const,
+  packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/gnu.org/grub/package.yml' as const,
+  homepageUrl: '' as const,
   githubUrl: '' as const,
   /**
-  * Command to install this package using pantry.
+  * Command to install this package using launchpad.
+  * @example launchpad install package-name
   */
-  installCommand: 'pantry install gnu.org/grub' as const,
-  pkgxInstallCommand: '' as const,
-  launchpadInstallCommand: 'pantry install gnu.org/grub' as const,
-  /**
-  * Executable programs provided by this package.
-  */
-  programs: [
-    'grub-bios-setup',
-    'grub-editenv',
-    'grub-file',
-    'grub-fstest',
-    'grub-install',
-    'grub-kbdcomp',
-    'grub-menulst2cfg',
-    'grub-mkconfig',
-    'grub-mkimage',
-    'grub-mklayout',
-    'grub-mknetdir',
-    'grub-mkpasswd-pbkdf2',
-    'grub-mkrelpath',
-    'grub-mkrescue',
-    'grub-mkstandalone',
-    'grub-mount',
-    'grub-probe',
-    'grub-reboot',
-    'grub-render-label',
-    'grub-script-check',
-    'grub-set-default',
-    'grub-syslinux2cfg',
-  ] as const,
+  installCommand: 'launchpad install gnu.org/grub' as const,
+  pkgxInstallCommand: 'sh <(curl https://pkgx.sh) +gnu.org/grub -- $SHELL -i' as const,
+  launchpadInstallCommand: 'launchpad install gnu.org/grub' as const,
+  programs: [] as const,
   companions: [] as const,
+  /**
+  * Runtime dependencies for this package.
+  * These are required when running the package.
+  */
   dependencies: [
     'gnu.org/gettext',
     'sourceware.org/bzip2',
@@ -83,6 +57,7 @@ export const gnuorggrubPackage = {
   ] as const,
   /**
   * Build dependencies for this package.
+  * These are only required when building the package from source.
   */
   buildDependencies: [
     'gnu.org/bison',
@@ -90,21 +65,9 @@ export const gnuorggrubPackage = {
     'github.com/westes/flex',
     'gnu.org/autoconf',
     'gnu.org/automake',
-    'freedesktop.org/pkg-config',
-    'python.org',
+    'python.org@~3.11',
   ] as const,
-  /**
-  * Available versions from newest to oldest.
-  */
-  versions: [
-    '2.14.0',
-    '2.12.0',
-    '2.6.0',
-    '2.4.0',
-    '2.2.0',
-    '2.0.0',
-    '1.99.0',
-  ] as const,
+  versions: [] as const,
   aliases: [] as const,
 }
 

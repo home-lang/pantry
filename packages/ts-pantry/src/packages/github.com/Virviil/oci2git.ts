@@ -2,7 +2,7 @@
  * **oci2git** - pkgx package
  *
  * @domain `github.com/Virviil/oci2git`
- * @version `0.2.5` (4 versions available)
+ * @version `0.3.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install github.com/Virviil/oci2git`
@@ -13,7 +13,7 @@
  *
  * const pkg = pantry.githubcomvirviiloci2git
  * console.log(pkg.name)        // "oci2git"
- * console.log(pkg.versions[0]) // "0.2.5" (latest)
+ * console.log(pkg.versions[0]) // "0.3.0" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/github-com/Virviil/oci2git.md
@@ -51,6 +51,7 @@ export const oci2gitPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.0',
     '0.2.5',
     '0.2.1',
     '0.2.0',
