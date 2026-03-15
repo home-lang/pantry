@@ -2,7 +2,7 @@
  * **device-mapper** - pkgx package
  *
  * @domain `sourceware.org/dm`
- * @version `2.3.38` (16 versions available)
+ * @version `2.3.39` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `launchpad install sourceware.org/dm`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.sourcewareorgdm
  * console.log(pkg.name)        // "device-mapper"
- * console.log(pkg.versions[0]) // "2.3.38" (latest)
+ * console.log(pkg.versions[0]) // "2.3.39" (latest)
  * ```
  *
  * @see https://ts-pkgx.netlify.app/packages/sourceware-org/dm.md
@@ -58,6 +58,7 @@ export const sourcewareorgdmPackage = {
   * @see https://ts-pkgx.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.3.39',
     '2.3.38',
     '2.3.37',
     '2.3.36',
