@@ -3,7 +3,7 @@
  *
  * @domain `pi.dev`
  * @programs `pi`, `pi-init`
- * @version `0.58.3` (14 versions available)
+ * @version `0.58.4` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install pi.dev`
@@ -17,7 +17,7 @@
  * const pkg = pantry.pidev
  * console.log(pkg.name)        // "pi"
  * console.log(pkg.programs)    // ["pi", "pi-init"]
- * console.log(pkg.versions[0]) // "0.58.3" (latest)
+ * console.log(pkg.versions[0]) // "0.58.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/pi-dev.md
@@ -78,6 +78,7 @@ export const pidevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.58.4',
     '0.58.3',
     '0.58.2',
     '0.58.1',
