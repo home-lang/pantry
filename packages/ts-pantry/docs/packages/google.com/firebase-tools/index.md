@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 143 versions</summary>
+<summary>Show all 144 versions</summary>
 
-- `15.10.0`
+- `15.10.1`, `15.10.0`
 - `15.9.1`, `15.9.0`
 - `15.8.0`
 - `15.7.0`
@@ -109,13 +109,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `15.10.0`
+**Latest Version**: `15.10.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +google.com/firebase-tools@15.10.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +google.com/firebase-tools@15.10.1 -- $SHELL -i
 ```
 
 ## Dependencies
