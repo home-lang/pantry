@@ -106,7 +106,8 @@ function parsePantryYaml(filePath: string): PantryYamlConfig | null {
 
       return config
     }
-  } catch {
+  }
+catch {
     // Fall through to manual parsing
   }
 
@@ -202,12 +203,14 @@ function resolveVersion(constraint: string, availableVersions: string[]): string
     if (constraint.startsWith('^')) {
       // Caret: compatible with major version
       return major === majorConstraint
-    } else if (constraint.startsWith('~')) {
+    }
+else if (constraint.startsWith('~')) {
       // Tilde: compatible with minor version
       const minorConstraint = parseInt(constraintParts[1] || '0', 10)
       const minor = parseInt(vParts[1] || '0', 10)
       return major === majorConstraint && minor === minorConstraint
-    } else {
+    }
+else {
       // Exact or prefix match
       return v.startsWith(cleanConstraint)
     }
@@ -255,7 +258,8 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
     try {
       const metadataContent = await s3.getObject(bucket, metadataKey)
       metadata = JSON.parse(metadataContent)
-    } catch (error) {
+    }
+catch (error) {
       console.log(`   ⚠️  Package not found in custom registry`)
 
       if (!skipFallback) {
@@ -271,7 +275,8 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
 
     if (version) {
       targetVersion = resolveVersion(version, availableVersions)
-    } else {
+    }
+else {
       targetVersion = metadata.latestVersion
     }
 
@@ -306,7 +311,8 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
     try {
       // Try AWS CLI first (most reliable for binary)
       execSync(`aws s3 cp "${s3Uri}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
-    } catch {
+    }
+catch {
       // Fallback: use curl with public URL (if bucket is public)
       const publicUrl = `https://${bucket}.s3.${region}.amazonaws.com/${platformInfo.tarball}`
       execSync(`curl -L -o "${tarballPath}" "${publicUrl}"`, { stdio: 'pipe' })
@@ -347,12 +353,14 @@ async function downloadPackage(options: DownloadOptions): Promise<boolean> {
     const currentLink = join(installDir, pkgName, 'current')
     try {
       execSync(`rm -f "${currentLink}" && ln -s "${targetVersion}" "${currentLink}"`)
-    } catch {
+    }
+catch {
       // Ignore symlink errors
     }
 
     return true
-  } catch (error: any) {
+  }
+catch (error: any) {
     console.error(`   ❌ Download failed: ${error.message}`)
     return false
   }
@@ -384,7 +392,8 @@ async function listAvailableVersions(
       }
       return 0
     })
-  } catch {
+  }
+catch {
     return []
   }
 }
@@ -445,7 +454,8 @@ async function installFromConfig(
 
     if (result) {
       success.push(pkg)
-    } else {
+    }
+else {
       failed.push(pkg)
     }
   }
@@ -474,31 +484,37 @@ function autoStartServices(services: PantryYamlConfig['services']): {
       execSync(`pantry service start ${serviceName}`, { stdio: 'pipe', timeout: 30000 })
       console.log(`   ✅ ${serviceName} started`)
       started.push(serviceName)
-    } catch {
+    }
+catch {
       console.log(`   ⚠️  ${serviceName} - trying fallback...`)
 
       try {
         if (serviceName === 'postgres' || serviceName === 'postgresql') {
           if (platform() === 'darwin') {
             execSync('brew services start postgresql@17 2>/dev/null || pg_ctl start 2>/dev/null || true', { stdio: 'pipe' })
-          } else {
+          }
+else {
             execSync('sudo systemctl start postgresql 2>/dev/null || true', { stdio: 'pipe' })
           }
           started.push(serviceName)
           console.log(`   ✅ ${serviceName} started (fallback)`)
-        } else if (serviceName === 'redis') {
+        }
+else if (serviceName === 'redis') {
           if (platform() === 'darwin') {
             execSync('brew services start redis 2>/dev/null || redis-server --daemonize yes 2>/dev/null || true', { stdio: 'pipe' })
-          } else {
+          }
+else {
             execSync('sudo systemctl start redis-server 2>/dev/null || redis-server --daemonize yes 2>/dev/null || true', { stdio: 'pipe' })
           }
           started.push(serviceName)
           console.log(`   ✅ ${serviceName} started (fallback)`)
-        } else {
+        }
+else {
           failed.push(serviceName)
           console.log(`   ❌ ${serviceName} failed to start`)
         }
-      } catch {
+      }
+catch {
         failed.push(serviceName)
         console.log(`   ❌ ${serviceName} failed to start`)
       }
@@ -621,10 +637,12 @@ Examples:
 
     if (success) {
       installedPackages.push(values.package)
-    } else {
+    }
+else {
       process.exit(1)
     }
-  } else {
+  }
+else {
     // Install from config file
     const configPath = values.config || positionals[0] || './pantry.yaml'
     const altConfigPath = './deps.yaml'

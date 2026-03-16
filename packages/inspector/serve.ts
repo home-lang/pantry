@@ -14,7 +14,8 @@ function discoverFiles(dir: string, base = ''): string[] {
     const rel = base ? `${base}/${entry.name}` : entry.name
     if (entry.isDirectory()) {
       files.push(...discoverFiles(join(dir, entry.name), rel))
-    } else if (entry.name.endsWith('.stx')) {
+    }
+else if (entry.name.endsWith('.stx')) {
       files.push(rel)
     }
   }
@@ -69,7 +70,8 @@ async function processStxFile(filePath: string, params: Record<string, string> =
     const { extractVariables, processDirectives, defaultConfig } = await import('@stacksjs/stx')
     try {
       await extractVariables(serverMatch[1], context, filePath)
-    } catch (e: any) {
+    }
+catch (e: any) {
       console.error(`extractVariables error for ${filePath}:`, e.message || e)
     }
     let output = templateContent
@@ -123,7 +125,8 @@ Bun.serve({
           return new Response(html, {
             headers: { 'Content-Type': 'text/html; charset=utf-8' },
           })
-        } catch (err: any) {
+        }
+catch (err: any) {
           console.error(`Error processing ${route.file}:`, err.message || err)
           return new Response(`<pre>Error: ${err.message || err}</pre>`, {
             status: 500,

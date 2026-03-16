@@ -65,7 +65,8 @@ function getGitRemoteUrl(targetDir: string): string | null {
     }
 
     return remoteUrl
-  } catch {
+  }
+catch {
     // Not a git repo or no remote configured
     return null
   }
@@ -216,7 +217,8 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
 
     if (!existingItem.Item) {
       (dbRecord as any).createdAt = new Date().toISOString()
-    } else {
+    }
+else {
       const existingRecord = DynamoDBClient.unmarshal(existingItem.Item) as { createdAt?: string }
       (dbRecord as any).createdAt = existingRecord.createdAt || new Date().toISOString()
     }
@@ -226,7 +228,8 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
       Item: DynamoDBClient.marshal(dbRecord),
     })
     console.log(`   ✓ Updated registry index for ${packageJson.name}`)
-  } catch (err) {
+  }
+catch (err) {
     console.error(`   ❌ Upload failed: ${err}`)
     process.exit(1)
   }
@@ -237,7 +240,8 @@ async function publish(targetDir: string = process.cwd()): Promise<void> {
   try {
     unlinkSync(tarballPath)
     console.log(`   ✓ Removed local tarball`)
-  } catch {
+  }
+catch {
     console.log(`   ⚠ Could not remove local tarball`)
   }
 
@@ -292,7 +296,8 @@ async function getOrCreateMetadata(
 
     // Invalid format, create new metadata
     throw new Error('Invalid metadata format')
-  } catch {
+  }
+catch {
     // Create new metadata
     const author = typeof packageJson.author === 'string'
       ? packageJson.author
@@ -353,10 +358,12 @@ function runPack(targetDir: string): Promise<{
             success: true,
             tarballPath: join(targetDir, tarballName),
           })
-        } else {
+        }
+else {
           resolve({ success: false })
         }
-      } else {
+      }
+else {
         console.error(stderr)
         resolve({ success: false })
       }

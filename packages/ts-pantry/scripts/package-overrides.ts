@@ -68,7 +68,8 @@ function replaceScriptStep(recipe: NormalizedRecipe, match: string, newRun: stri
     if (typeof step === 'string' && step.includes(match)) {
       const idx = recipe.build.script.indexOf(step)
       recipe.build.script[idx] = newRun
-    } else if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes(match)) {
+    }
+else if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes(match)) {
       step.run = newRun
     }
   }
@@ -175,7 +176,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
                 'done',
                 'head makeinfo',
               ].join('\n')
-            } else if (Array.isArray(step.run)) {
+            }
+else if (Array.isArray(step.run)) {
               const sedIdx = step.run.findIndex((s: string) => typeof s === 'string' && s.includes('sed -i'))
               if (sedIdx >= 0) {
                 step.run = [
@@ -239,7 +241,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         const fixFtpUrls = (s: string) => s.replace(/ftp\.gnu\.org/g, 'ftpmirror.gnu.org')
         if (typeof recipe.build.script === 'string') {
           recipe.build.script = fixFtpUrls(recipe.build.script)
-        } else if (Array.isArray(recipe.build.script)) {
+        }
+else if (Array.isArray(recipe.build.script)) {
           recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
             if (typeof step === 'string') return fixFtpUrls(step)
             if (typeof step === 'object' && typeof step.run === 'string') {
@@ -270,7 +273,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         )
         if (typeof recipe.build.script === 'string') {
           recipe.build.script = fixConfigure(recipe.build.script)
-        } else if (Array.isArray(recipe.build.script)) {
+        }
+else if (Array.isArray(recipe.build.script)) {
           recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
             if (typeof step === 'string') return fixConfigure(step)
             return step
@@ -291,7 +295,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         }
         if (typeof recipe.build.script === 'string') {
           recipe.build.script = fixScript(recipe.build.script)
-        } else if (Array.isArray(recipe.build.script)) {
+        }
+else if (Array.isArray(recipe.build.script)) {
           recipe.build.script = recipe.build.script.map((step: RecipeScriptStep) => {
             if (typeof step === 'string') return fixScript(step)
             if (typeof step === 'object' && typeof step.run === 'string') {
@@ -574,7 +579,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         for (const step of recipe.build.script) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('sed') && step.run.includes('iconv')) {
             step.run = `perl -ni -e 'print unless /Requires\\.private:.*iconv/' libarchive.pc`
-          } else if (typeof step === 'string' && step.includes('sed') && step.includes('iconv')) {
+          }
+else if (typeof step === 'string' && step.includes('sed') && step.includes('iconv')) {
             const idx = recipe.build.script.indexOf(step)
             recipe.build.script[idx] = `perl -ni -e 'print unless /Requires\\.private:.*iconv/' libarchive.pc`
           }
@@ -592,7 +598,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
             const idx = recipe.build.script.indexOf(step)
             recipe.build.script[idx] = step.replace(/sed -i '([^']*)'/g, `perl -pi -e '$1'`)
             recipe.build.script[idx] = recipe.build.script[idx].replace(/sed -i/g, 'perl -pi -e')
-          } else if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('sed -i')) {
+          }
+else if (typeof step === 'object' && step.run && typeof step.run === 'string' && step.run.includes('sed -i')) {
             step.run = step.run.replace(/sed -i '([^']*)'/g, `perl -pi -e '$1'`)
             step.run = step.run.replace(/sed -i/g, 'perl -pi -e')
           }
@@ -1024,7 +1031,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'string') {
             recipe.build.script[i] = step.replace('ENABLE_MAN=yes', 'ENABLE_MAN=no')
-          } else if (typeof step === 'object' && typeof step.run === 'string') {
+          }
+else if (typeof step === 'object' && typeof step.run === 'string') {
             step.run = step.run.replace('ENABLE_MAN=yes', 'ENABLE_MAN=no')
           }
         }
@@ -1150,10 +1158,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('ln -s ')) {
             recipe.build.script[i] = step.replace(/\bln -s /g, 'ln -sf ')
-          } else if (typeof step === 'object' && step.run) {
+          }
+else if (typeof step === 'object' && step.run) {
             if (typeof step.run === 'string') {
               step.run = step.run.replace(/\bln -s /g, 'ln -sf ')
-            } else if (Array.isArray(step.run)) {
+            }
+else if (Array.isArray(step.run)) {
               step.run = step.run.map((s: string) => s.replace(/\bln -s /g, 'ln -sf '))
             }
           }
@@ -1172,7 +1182,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       if (recipe.build?.script) {
         if (typeof recipe.build.script === 'string') {
           recipe.build.script = 'python -m pip install --prefix={{prefix}} .'
-        } else if (Array.isArray(recipe.build.script)) {
+        }
+else if (Array.isArray(recipe.build.script)) {
           recipe.build.script = ['python -m pip install --prefix={{prefix}} .']
         }
       }
@@ -1476,7 +1487,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
             recipe.build.script[i] = step
               .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
               .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
-          } else if (typeof step === 'object' && typeof step.run === 'string') {
+          }
+else if (typeof step === 'object' && typeof step.run === 'string') {
             step.run = step.run
               .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
               .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
@@ -1498,7 +1510,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
               .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
               .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
               .replace(/"\$SHELF"\/etc\/X11\/app-defaults/g, '"{{prefix}}/etc/X11/app-defaults"')
-          } else if (typeof step === 'object' && typeof step.run === 'string') {
+          }
+else if (typeof step === 'object' && typeof step.run === 'string') {
             step.run = step.run
               .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
               .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
@@ -1517,7 +1530,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         recipe.build.script = recipe.build.script
           .replace(/"\$SHELF"\/etc/g, '"{{prefix}}/etc"')
           .replace(/"\$SHELF"\/var/g, '"{{prefix}}/var"')
-      } else if (Array.isArray(recipe.build?.script)) {
+      }
+else if (Array.isArray(recipe.build?.script)) {
         for (let i = 0; i < recipe.build.script.length; i++) {
           const step = recipe.build.script[i]
           if (typeof step === 'string') {
@@ -2369,7 +2383,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
         // Remove --features nightly-frizbee (feature removed in newer versions)
         if (typeof step === 'string' && step.includes('nightly-frizbee')) {
           recipe.build.script[i] = step.replace(' --features nightly-frizbee', '')
-        } else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
+        }
+else if (typeof step === 'object' && typeof step.run === 'string' && step.run.includes('nightly-frizbee')) {
           step.run = step.run.replace(' --features nightly-frizbee', '')
         }
         // Pin nightly toolchain for skim 1.x (>=1.3<2): frizbee uses old std::simd APIs
@@ -2438,7 +2453,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('make')) {
             recipe.build.script[i] = step.replace(hwConcurrencyRe, '1')
-          } else if (typeof step === 'object' && typeof step.run === 'string'
+          }
+else if (typeof step === 'object' && typeof step.run === 'string'
             && step.run.includes('make')) {
             step.run = step.run.replace(hwConcurrencyRe, '1')
           }
@@ -3073,7 +3089,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak')) {
             recipe.build.script[i] = step.replaceAll('sed -i ', 'sed -i.bak ')
-          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
+          }
+else if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
             step.run = step.run.replaceAll('sed -i ', 'sed -i.bak ')
           }
@@ -3102,7 +3119,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
             const installStep = step.replace(hwConcRe, '1')
             recipe.build.script.splice(i, 1, buildStep, installStep)
             i++ // skip the newly inserted install step
-          } else if (typeof step === 'string' && step.includes('make')) {
+          }
+else if (typeof step === 'string' && step.includes('make')) {
             recipe.build.script[i] = step.replace(hwConcRe, '1')
           }
         }
@@ -3327,7 +3345,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'string' && step.includes('sha256sum')) {
             recipe.build.script[i] = step.replace(/sha256sum/g, 'shasum -a 256')
-          } else if (typeof step === 'object' && step.run && typeof step.run === 'string'
+          }
+else if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('sha256sum')) {
             step.run = step.run.replace(/sha256sum/g, 'shasum -a 256')
           }
@@ -5101,7 +5120,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
             const fixTclsh = (s: string) => s.replace(/^tclsh /m, '"$PREFIX/bin/tclsh" ')
             if (typeof step.run === 'string') {
               step.run = fixTclsh(step.run)
-            } else if (Array.isArray(step.run)) {
+            }
+else if (Array.isArray(step.run)) {
               step.run = step.run.map((s: string) => typeof s === 'string' ? fixTclsh(s) : s)
             }
           }
@@ -6371,7 +6391,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'string' && step.includes('sed -i') && !step.includes('sed -i.bak') && !step.includes('sed -i -f')) {
             const idx = recipe.build.script.indexOf(step)
             recipe.build.script[idx] = step.replace(/sed (-E )?-i([ \n])/g, 'sed $1-i.bak$2')
-          } else if (typeof step === 'object' && step.run && typeof step.run === 'string') {
+          }
+else if (typeof step === 'object' && step.run && typeof step.run === 'string') {
             if (step.run.includes('sed -i') && !step.run.includes('sed -i.bak')) {
               step.run = step.run.replace(/sed (-E )?-i([ \n])/g, 'sed $1-i.bak$2')
                 .replace(/sed -i -f /g, 'sed -i.bak -f ')
@@ -6712,7 +6733,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
       // Add -Accflags to pass poll.h include through Perl's Configure on Linux
       if (recipe.build?.env?.linux?.ARGS && Array.isArray(recipe.build.env.linux.ARGS)) {
         recipe.build.env.linux.ARGS.push('-Accflags=-D_GNU_SOURCE -Accflags=-include -Accflags=/usr/include/poll.h')
-      } else if (recipe.build?.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
+      }
+else if (recipe.build?.env?.ARGS && Array.isArray(recipe.build.env.ARGS)) {
         // If no linux-specific ARGS, add to the general list
         if (!recipe.build.env.linux) recipe.build.env.linux = {}
         recipe.build.env.linux.ARGS = ['-Accflags=-D_GNU_SOURCE -Accflags=-include -Accflags=/usr/include/poll.h']
@@ -7619,7 +7641,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
               /sed -i "s\/swift-tools-version:.*\/swift-tools-version:\$SWIFT_VERSION\/"/,
               'sed -i "s/swift-tools-version:.*/swift-tools-version:5.10/" ',
             )
-          } else if (typeof step === 'object' && Array.isArray(step.run)) {
+          }
+else if (typeof step === 'object' && Array.isArray(step.run)) {
             for (let j = 0; j < step.run.length; j++) {
               if (typeof step.run[j] === 'string' && step.run[j].includes('swift-tools-version')) {
                 step.run[j] = 'sed -i "s/swift-tools-version:.*/swift-tools-version:5.10/" Package.swift'
@@ -7800,10 +7823,12 @@ export const packageOverrides: Record<string, PackageOverride> = {
           const step = recipe.build.script[i]
           if (typeof step === 'string') {
             recipe.build.script[i] = fixSedInPlace(step)
-          } else if (typeof step === 'object' && step.run) {
+          }
+else if (typeof step === 'object' && step.run) {
             if (typeof step.run === 'string') {
               step.run = fixSedInPlace(step.run)
-            } else if (Array.isArray(step.run)) {
+            }
+else if (Array.isArray(step.run)) {
               step.run = step.run.map((s: string) => typeof s === 'string' ? fixSedInPlace(s) : s)
             }
             // Remove steps referencing HDF5 (disabled) or $PKGX_DIR/pkgx.prefix (pkgx-specific, undefined in our buildkit)
@@ -9846,7 +9871,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           if (typeof step === 'object' && step.run) {
             if (typeof step.run === 'string' && step.run.includes('rmdir') && step.run.includes('plugins')) {
               step.run = step.run.replace(/rmdir\s+/, 'rm -rf ')
-            } else if (Array.isArray(step.run)) {
+            }
+else if (Array.isArray(step.run)) {
               step.run = step.run.map((cmd: string) =>
                 typeof cmd === 'string' && cmd.includes('rmdir') && cmd.includes('plugins')
                   ? cmd.replace(/rmdir\s+/, 'rm -rf ')
@@ -9893,7 +9919,8 @@ export const packageOverrides: Record<string, PackageOverride> = {
           )
           if (Array.isArray(step.run)) {
             step.run = step.run.map((cmd: string) => typeof cmd === 'string' ? fixSed(cmd) : cmd)
-          } else if (typeof step.run === 'string') {
+          }
+else if (typeof step.run === 'string') {
             step.run = fixSed(step.run)
           }
           return step

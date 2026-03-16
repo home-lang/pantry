@@ -136,7 +136,8 @@ function collectPackageFiles(dir: string): string[] {
 
     if (stat.isDirectory()) {
       files.push(...collectPackageFiles(fullPath))
-    } else if (entry.endsWith('.ts') && entry !== 'index.ts') {
+    }
+else if (entry.endsWith('.ts') && entry !== 'index.ts') {
       files.push(fullPath)
     }
   }
@@ -188,7 +189,8 @@ async function extractPackageData(filePath: string): Promise<{
       homepageUrl: homepageMatch?.[1],
       githubUrl: githubMatch?.[1],
     }
-  } catch (error: any) {
+  }
+catch (error: any) {
     console.error(`  Failed to parse ${filePath}: ${error.message}`)
     return null
   }
@@ -241,7 +243,8 @@ Options:
 
   if (values.all) {
     filesToSync = collectPackageFiles(packagesDir)
-  } else {
+  }
+else {
     // Collect from --changed-files and positionals
     const changedFiles = [...(values['changed-files'] || []), ...positionals]
     for (const f of changedFiles) {
@@ -285,7 +288,8 @@ Options:
       await putPackageMetadata(pkg)
       console.log(`  + ${pkg.domain}@${pkg.latestVersion}`)
       synced++
-    } catch (error: any) {
+    }
+catch (error: any) {
       console.error(`  x ${pkg.domain}: ${error.message}`)
       failed++
     }

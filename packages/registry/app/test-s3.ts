@@ -29,13 +29,15 @@ async function testS3Connection(): Promise<void> {
     const exists = await s3.bucketExists(BUCKET_NAME)
     if (exists) {
       console.log(`  ✓ Bucket "${BUCKET_NAME}" exists`)
-    } else {
+    }
+else {
       console.log(`  ✗ Bucket "${BUCKET_NAME}" does not exist`)
       console.log('  Creating bucket...')
       await s3.createBucket(BUCKET_NAME)
       console.log(`  ✓ Bucket "${BUCKET_NAME}" created`)
     }
-  } catch (err) {
+  }
+catch (err) {
     console.error(`  ✗ Error checking bucket: ${err}`)
     process.exit(1)
   }
@@ -58,7 +60,8 @@ async function testS3Connection(): Promise<void> {
       contentType: 'application/json',
     })
     console.log(`  ✓ Successfully wrote "${testKey}"`)
-  } catch (err) {
+  }
+catch (err) {
     console.error(`  ✗ Error writing object: ${err}`)
     process.exit(1)
   }
@@ -70,7 +73,8 @@ async function testS3Connection(): Promise<void> {
     const body = await s3.getObject(BUCKET_NAME, testKey)
     console.log(`  ✓ Successfully read "${testKey}"`)
     console.log(`  Content: ${body}`)
-  } catch (err) {
+  }
+catch (err) {
     console.error(`  ✗ Error reading object: ${err}`)
     process.exit(1)
   }
@@ -85,7 +89,8 @@ async function testS3Connection(): Promise<void> {
     for (const obj of objects || []) {
       console.log(`    - ${obj.Key} (${obj.Size} bytes)`)
     }
-  } catch (err) {
+  }
+catch (err) {
     console.error(`  ✗ Error listing bucket: ${err}`)
     process.exit(1)
   }
@@ -96,7 +101,8 @@ async function testS3Connection(): Promise<void> {
   try {
     await s3.deleteObject(BUCKET_NAME, testKey)
     console.log(`  ✓ Deleted "${testKey}"`)
-  } catch (err) {
+  }
+catch (err) {
     console.log(`  ⚠ Could not delete test object: ${err}`)
   }
   console.log()

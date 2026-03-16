@@ -86,7 +86,8 @@ async function pack(targetDir: string = process.cwd()): Promise<string> {
     for (const file of filesToInclude) {
       console.log(`   - ${file}`)
     }
-  } else {
+  }
+else {
     for (const file of filesToInclude.slice(0, 5)) {
       console.log(`   - ${file}`)
     }
@@ -136,7 +137,8 @@ function listTarballContents(tarballPath: string): Promise<void> {
           console.log(`   ... and ${files.length - 15} more files`)
         }
         resolve()
-      } else {
+      }
+else {
         reject(new Error(`tar list exited with code ${code}`))
       }
     })
@@ -157,7 +159,8 @@ async function collectFiles(dir: string, packageJson: PackageJson): Promise<stri
       const matches = await globFiles(dir, pattern, false) // skipIgnore = false means don't ignore
       files.push(...matches)
     }
-  } else {
+  }
+else {
     // Otherwise, include all files except ignored ones
     const allFiles = await walkDir(dir, dir, true) // applyIgnore = true
     files.push(...allFiles)
@@ -224,7 +227,8 @@ async function walkDir(dir: string, baseDir: string, applyIgnore: boolean = true
     if (entry.isDirectory()) {
       const subFiles = await walkDir(fullPath, baseDir, applyIgnore)
       files.push(...subFiles)
-    } else if (entry.isFile()) {
+    }
+else if (entry.isFile()) {
       files.push(relativePath)
     }
   }
@@ -266,7 +270,8 @@ function createTarball(baseDir: string, outputPath: string, files: string[]): Pr
     tar.on('close', (code) => {
       if (code === 0) {
         resolve()
-      } else {
+      }
+else {
         reject(new Error(`tar exited with code ${code}`))
       }
     })

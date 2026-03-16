@@ -205,7 +205,8 @@ async function existsInS3(domain: string, version: string, platform: string, buc
     const parsed = JSON.parse(metadata)
 
     return !!(parsed.versions?.[version]?.platforms?.[platform])
-  } catch {
+  }
+catch {
     return false
   }
 }
@@ -327,7 +328,8 @@ async function bootstrap(options: BootstrapOptions): Promise<void> {
       built.push(domain)
       console.log(`✓ ${pkg.domain}@${version} uploaded`)
 
-    } catch (error: any) {
+    }
+catch (error: any) {
       console.error(`✗ Failed to build ${pkg.domain}: ${error.message}`)
       failed.push(domain)
 

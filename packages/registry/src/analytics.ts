@@ -590,7 +590,8 @@ export class InMemoryAnalytics implements AnalyticsStorage {
     if (existing) {
       existing.requestCount++
       existing.lastRequestedAt = new Date().toISOString()
-    } else {
+    }
+else {
       this.missingVersionRequests.set(key, {
         packageName,
         version,

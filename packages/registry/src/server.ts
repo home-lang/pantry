@@ -1032,9 +1032,11 @@ function resolveVersion(constraint: string, versions: string[], distTags?: Recor
     let ceiling: [number, number, number]
     if (major !== 0) {
       ceiling = [major + 1, 0, 0]
-    } else if (minor !== 0) {
+    }
+else if (minor !== 0) {
       ceiling = [0, minor + 1, 0]
-    } else {
+    }
+else {
       ceiling = [0, 0, patch + 1]
     }
     return findBest(versions, floor, ceiling)
@@ -1337,16 +1339,19 @@ async function handleNpmResolveGet(path: string, corsHeaders: Record<string, str
         if (secondAt === -1) {
           name = trimmed
           constraint = 'latest'
-        } else {
+        }
+else {
           name = trimmed.slice(0, secondAt)
           constraint = trimmed.slice(secondAt + 1)
         }
-      } else {
+      }
+else {
         const atIdx = trimmed.indexOf('@')
         if (atIdx === -1) {
           name = trimmed
           constraint = 'latest'
-        } else {
+        }
+else {
           name = trimmed.slice(0, atIdx)
           constraint = trimmed.slice(atIdx + 1)
         }

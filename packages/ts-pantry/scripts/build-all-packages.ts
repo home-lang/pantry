@@ -120,7 +120,8 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
     for (const entry of entries) {
       if (entry.isDirectory()) {
         findYamls(join(dir, entry.name), prefix ? `${prefix}/${entry.name}` : entry.name)
-      } else if (entry.name === 'package.yml') {
+      }
+else if (entry.name === 'package.yml') {
         const domain = prefix
         if (!domain) continue
 
@@ -201,7 +202,8 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
             hasProps: hasPropsDir,
             depDomains,
           })
-        } catch {
+        }
+catch {
           // Skip packages with parse errors
         }
       }
@@ -724,13 +726,16 @@ function isVersionSkipped(domain: string, version: string): boolean {
     if (spec.startsWith('>=')) {
       const threshold = spec.slice(2)
       if (compareVersions(version, threshold) >= 0) return true
-    } else if (spec.startsWith('>')) {
+    }
+else if (spec.startsWith('>')) {
       const threshold = spec.slice(1)
       if (compareVersions(version, threshold) > 0) return true
-    } else if (spec.startsWith('<=')) {
+    }
+else if (spec.startsWith('<=')) {
       const threshold = spec.slice(2)
       if (compareVersions(version, threshold) <= 0) return true
-    } else if (spec.startsWith('<')) {
+    }
+else if (spec.startsWith('<')) {
       const threshold = spec.slice(1)
       if (compareVersions(version, threshold) < 0) return true
     }
@@ -829,7 +834,8 @@ async function checkExistsInS3(domain: string, version: string, platform: string
       const metadata = await s3.getObject(bucket, metadataKey)
       const parsed = JSON.parse(metadata)
       return !!(parsed.versions?.[version]?.platforms?.[platform])
-    } catch (err: any) {
+    }
+catch (err: any) {
       const isNotFound = err?.message?.includes('404') || err?.message?.includes('NoSuchKey') || err?.message?.includes('Not Found')
       if (isNotFound) {
         // No metadata file = package never built, no need to retry
@@ -861,8 +867,10 @@ function tryBuildVersion(
   region: string,
 ): void {
   // Cleanup from previous attempt
-  try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
-  try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+  try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
+catch {}
+  try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
+catch {}
   mkdirSync(buildDir, { recursive: true })
   mkdirSync(installDir, { recursive: true })
 
@@ -913,7 +921,8 @@ async function buildAndUpload(
     if (fallback) {
       console.log(`   ⚠️  Version ${version} skipped, falling back to ${fallback}`)
       version = fallback
-    } else {
+    }
+else {
       console.log(`   ⚠️  Version ${version} skipped (known incompatibility)`)
       return { status: 'skipped' }
     }
@@ -926,7 +935,8 @@ async function buildAndUpload(
     if (realVersions.length > 0) {
       version = realVersions[0]
       console.log(`   ⚠️  Skipped sentinel version, using ${version}`)
-    } else {
+    }
+else {
       console.log(`   ⚠️  Only sentinel versions available, skipping`)
       return { status: 'skipped' }
     }
@@ -984,7 +994,8 @@ async function buildAndUpload(
       usedVersion = candidateVersion
       lastError = null
       break // Build succeeded
-    } catch (error: any) {
+    }
+catch (error: any) {
       lastError = error
       const errMsg = error.message || ''
 
@@ -1007,8 +1018,10 @@ async function buildAndUpload(
   if (lastError) {
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.error(`   ❌ Failed (${elapsed}s): ${lastError.message}`)
-    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
-    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
+catch {}
+    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
+catch {}
     return { status: 'failed', error: lastError.message }
   }
 
@@ -1033,19 +1046,26 @@ async function buildAndUpload(
     })
 
     // Cleanup
-    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
-    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
-    try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
+catch {}
+    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
+catch {}
+    try { execSync(`rm -rf "${artifactDir}"`, { stdio: 'pipe' }) }
+catch {}
 
     const elapsed = Math.round((Date.now() - pkgStartTime) / 1000)
     console.log(`   ✅ Uploaded ${domain}@${usedVersion} (${elapsed}s)`)
     return { status: 'uploaded' }
-  } catch (error: any) {
+  }
+catch (error: any) {
     console.error(`   ❌ Failed packaging/upload: ${error.message}`)
-    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) } catch {}
-    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${buildDir}"`, { stdio: 'pipe' }) }
+catch {}
+    try { execSync(`rm -rf "${installDir}"`, { stdio: 'pipe' }) }
+catch {}
     // Also clean artifacts to prevent stale tarballs leaking to next iteration
-    try { execSync(`rm -rf "${artifactsDir}"/*`, { stdio: 'pipe' }) } catch {}
+    try { execSync(`rm -rf "${artifactsDir}"/*`, { stdio: 'pipe' }) }
+catch {}
     return { status: 'failed', error: error.message }
   }
 }
@@ -1722,7 +1742,8 @@ Options:
           const exists = await checkExistsInS3(pkg.domain, v, platform, bucket, region)
           console.log(`      @${v} ${exists ? '(already in S3)' : '(would build)'}`)
         }
-      } else {
+      }
+else {
         const exists = await checkExistsInS3(pkg.domain, pkg.latestVersion, platform, bucket, region)
         console.log(`  - ${pkg.domain}@${pkg.latestVersion} ${exists ? '(already in S3)' : '(would build)'}`)
       }
@@ -1771,7 +1792,8 @@ Options:
               console.log(`   Including dev version: ${devVersion} (as ${sanitizedDev})`)
             }
           }
-        } catch { /* ignore fetch errors */ }
+        }
+catch { /* ignore fetch errors */ }
       }
 
       console.log(`\n📦 ${pkg.domain}: building ${versions.length} versions [${versions.join(', ')}]`)
@@ -1781,7 +1803,8 @@ Options:
         if (elapsed2 > BATCH_TIME_BUDGET_MS) break
 
         // Clean artifacts dir between iterations to prevent stale tarballs leaking
-        try { execSync('rm -rf /tmp/buildkit-artifacts/*', { stdio: 'pipe' }) } catch {}
+        try { execSync('rm -rf /tmp/buildkit-artifacts/*', { stdio: 'pipe' }) }
+catch {}
 
         // Create a modified package with ONLY this version (prevent fallback to other versions)
         const versionPkg = { ...pkg, latestVersion: ver, versions: [ver] }
@@ -1789,7 +1812,8 @@ Options:
         const key = `${pkg.domain}@${ver}`
         results[key] = { ...result, version: ver }
       }
-    } else {
+    }
+else {
       const result = await buildAndUpload(pkg, bucket, region, platform, force)
       results[pkg.domain] = { ...result, version: pkg.latestVersion }
     }

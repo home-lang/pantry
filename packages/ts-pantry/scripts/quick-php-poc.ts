@@ -67,7 +67,8 @@ function detectPlatform(): string {
 function getBrewPrefix(): string {
   try {
     return execSync('brew --prefix', { encoding: 'utf-8' }).trim()
-  } catch {
+  }
+catch {
     throw new Error('Homebrew not found. Please install Homebrew first.')
   }
 }
@@ -82,7 +83,8 @@ function checkBrewPackages(): { missing: string[], installed: string[] } {
     try {
       execSync(`brew list ${pkg} 2>/dev/null`, { stdio: 'pipe' })
       installed.push(pkg)
-    } catch {
+    }
+catch {
       missing.push(pkg)
     }
   }
@@ -246,7 +248,8 @@ async function buildPhp(options: BuildOptions): Promise<string> {
     for (const ext of requiredExtensions) {
       if (modules.includes(ext)) {
         console.log(`   ✓ ${ext}`)
-      } else {
+      }
+else {
         console.log(`   ✗ ${ext} (MISSING!)`)
         missing.push(ext)
       }
@@ -255,7 +258,8 @@ async function buildPhp(options: BuildOptions): Promise<string> {
     if (missing.length > 0) {
       console.error(`\n❌ Missing extensions: ${missing.join(', ')}`)
     }
-  } catch (error) {
+  }
+catch (error) {
     console.error('   Failed to verify extensions')
   }
 
@@ -263,7 +267,8 @@ async function buildPhp(options: BuildOptions): Promise<string> {
   try {
     const versionInfo = execSync(`${phpBin} --version`, { encoding: 'utf-8' })
     console.log(`\n${versionInfo}`)
-  } catch {}
+  }
+catch {}
 
   // Create tarball
   console.log(`\n📦 Creating tarball...`)
@@ -363,7 +368,8 @@ Extensions included:
 
     if (values['install-deps']) {
       installMissingPackages(missing)
-    } else {
+    }
+else {
       console.log('\n❌ Missing Homebrew packages. Run with --install-deps to auto-install, or:')
       console.log(`   brew install ${missing.join(' ')}`)
       process.exit(1)
@@ -382,7 +388,8 @@ Extensions included:
   // Upload to S3
   if (!values['skip-upload'] && values.bucket) {
     await uploadToS3(artifactsDir, version, values.bucket, values.region || 'us-east-1')
-  } else if (!values['skip-upload'] && !values.bucket) {
+  }
+else if (!values['skip-upload'] && !values.bucket) {
     console.log('\n⚠️  No bucket specified, skipping upload. Use -b <bucket> to upload.')
   }
 

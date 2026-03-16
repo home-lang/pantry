@@ -25,7 +25,8 @@ async function loadAllPackages(): Promise<Map<string, string[]>> {
 
       if (entry.isDirectory()) {
         await scanDirectory(fullPath)
-      } else if (entry.isFile() && entry.name.endsWith('.ts') && entry.name !== 'index.ts' && entry.name !== 'aliases.ts') {
+      }
+else if (entry.isFile() && entry.name.endsWith('.ts') && entry.name !== 'index.ts' && entry.name !== 'aliases.ts') {
         try {
           const module = await import(fullPath)
           const packageExport = Object.values(module).find(
@@ -35,7 +36,8 @@ async function loadAllPackages(): Promise<Map<string, string[]>> {
           if (packageExport && packageExport.domain && packageExport.versions) {
             domainToVersions.set(packageExport.domain, packageExport.versions)
           }
-        } catch (error) {
+        }
+catch (error) {
           console.warn(`Failed to load ${fullPath}:`, error)
         }
       }

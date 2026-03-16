@@ -279,7 +279,8 @@ function caretMatch(version: number[], constraint: number[]): boolean {
   if (upper[0] === 0) {
     upper[1] = (upper[1] ?? 0) + 1
     upper[2] = 0
-  } else {
+  }
+else {
     upper[0] = upper[0] + 1
     upper[1] = 0
     upper[2] = 0
@@ -350,7 +351,8 @@ export function platformReduce(
           if (!result[subKey]) result[subKey] = []
           else if (!Array.isArray(result[subKey])) result[subKey] = [result[subKey]]
           result[subKey].push(...subValue)
-        } else {
+        }
+else {
           result[subKey] = subValue
         }
       }
@@ -377,7 +379,8 @@ export function expandEnv(
 
     if (Array.isArray(value)) {
       expanded = value.map(v => transformEnvValue(v, tokens)).join(' ')
-    } else {
+    }
+else {
       expanded = transformEnvValue(value, tokens)
     }
 
@@ -441,7 +444,8 @@ export function processScript(
 
       if (Array.isArray(run)) {
         run = run.map((x: string) => applyTokens(String(x), tokens)).join('\n')
-      } else {
+      }
+else {
         run = applyTokens(String(run), tokens)
       }
 
@@ -549,7 +553,8 @@ export function generateBuildScript(
     // (e.g. pixman 0.40 has incompatible function pointer types)
     sections.push('export CFLAGS="-Wno-error=incompatible-function-pointer-types -Wno-error=int-conversion -Wno-error=implicit-function-declaration ${CFLAGS:-}"')
     sections.push('export CXXFLAGS="-Wno-error=incompatible-function-pointer-types ${CXXFLAGS:-}"')
-  } else if (osName === 'linux' && archName === 'x86-64') {
+  }
+else if (osName === 'linux' && archName === 'x86-64') {
     // Modern GCC/Clang treat certain warnings as errors (C23 defaults) — relax them
     // Note: -Wno-error=incompatible-function-pointer-types is Clang-only; GCC has
     // -Wno-error=incompatible-pointer-types instead (GCC errors on the Clang form)
@@ -950,7 +955,8 @@ export function generateBuildScript(
     // default search path, and adding it to CPATH causes CMake to emit
     // -isystem /usr/include, which changes header search order and breaks
     // GCC's #include_next <stdlib.h> in C++ standard library headers.
-  } else if (osName === 'darwin') {
+  }
+else if (osName === 'darwin') {
     depPkgConfigPaths.push('/opt/homebrew/lib/pkgconfig')
     depPkgConfigPaths.push('/opt/homebrew/share/pkgconfig')
     depPkgConfigPaths.push('/usr/local/lib/pkgconfig')
@@ -1089,7 +1095,8 @@ export function generateBuildScript(
         sections.push(`        ln -sf "$_base" "$_libdir/$_unver"`)
         sections.push(`      fi`)
         sections.push(`    done`)
-      } else {
+      }
+else {
         // Linux: versioned .so are libfoo.so.1.2.3
         sections.push(`    for _vlib in "$_libdir"/*.so.*; do`)
         sections.push(`      [ -f "$_vlib" ] || continue`)
@@ -1475,7 +1482,8 @@ SYSLIB_OVERRIDE_EOF`)
     sections.push('elif command -v go &>/dev/null; then')
     sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
     sections.push('fi')
-  } else {
+  }
+else {
     sections.push('if command -v go &>/dev/null; then')
     sections.push('  export GOROOT="$(go env GOROOT 2>/dev/null || true)"')
     sections.push('fi')
@@ -1589,7 +1597,8 @@ SYSLIB_OVERRIDE_EOF`)
   if (buildScript) {
     sections.push('# Build script from pantry recipe')
     sections.push(processScript(buildScript, tokens, platform, version))
-  } else {
+  }
+else {
     sections.push('echo "No build script found in recipe"')
     sections.push('exit 1')
   }

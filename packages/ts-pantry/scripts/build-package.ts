@@ -56,7 +56,8 @@ function findSystemPrefix(domain: string): string {
         return prefix
       }
     }
-  } catch { /* binary not found */ }
+  }
+catch { /* binary not found */ }
 
   // 1b. For rust/cargo: check well-known locations (command -v may miss it)
   if (binaryName === 'cargo' || domain.includes('rust-lang.org/cargo')) {
@@ -80,7 +81,8 @@ function findSystemPrefix(domain: string): string {
     try {
       const prefix = execSync(`pkg-config --variable=prefix ${pkgName} 2>/dev/null`, { encoding: 'utf-8' }).trim()
       if (prefix && existsSync(prefix)) return prefix
-    } catch { /* pkg-config failed */ }
+    }
+catch { /* pkg-config failed */ }
   }
 
   // 3. On macOS, try brew --prefix
@@ -90,7 +92,8 @@ function findSystemPrefix(domain: string): string {
       try {
         const prefix = execSync(`brew --prefix ${name} 2>/dev/null`, { encoding: 'utf-8' }).trim()
         if (prefix && existsSync(prefix)) return prefix
-      } catch { /* not installed via brew */ }
+      }
+catch { /* not installed via brew */ }
     }
   }
 
@@ -225,7 +228,8 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
   const stripArrayMatch = yamlContent.match(/strip:\s*\n\s+-\s*\/(.+)\//)
   if (stripInlineMatch) {
     stripRegex = new RegExp(stripInlineMatch[1])
-  } else if (stripArrayMatch) {
+  }
+else if (stripArrayMatch) {
     stripRegex = new RegExp(stripArrayMatch[1])
   }
 
@@ -236,7 +240,8 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
     try {
       // eslint-disable-next-line no-new-func
       transformFn = new Function(`return (${transformMatch[1].trim()})`)() as any
-    } catch { /* ignore parse errors — fall back to no transform */ }
+    }
+catch { /* ignore parse errors — fall back to no transform */ }
   }
 
   const token = process.env.GITHUB_TOKEN
@@ -311,7 +316,8 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
             try {
               const transformed = transformFn(stripped)
               if (transformed !== undefined) stripped = String(transformed)
-            } catch { /* ignore transform errors */ }
+            }
+catch { /* ignore transform errors */ }
           }
 
           // Normalize the stripped version and compare (handle trailing .0 mismatches)
@@ -321,7 +327,8 @@ async function resolveGitHubTag(yamlContent: string, version: string): Promise<{
           }
         }
       }
-    } catch (err: unknown) {
+    }
+catch (err: unknown) {
       console.log(`⚠️  GitHub API error for ${repo}: ${(err as Error).message}`)
       return null
     }
@@ -343,7 +350,8 @@ function getBuildOverrides(pkgName: string): BuildOverrides | null {
   try {
     const content = readFileSync(overridesPath, 'utf-8')
     return JSON.parse(content)
-  } catch (error: unknown) {
+  }
+catch (error: unknown) {
     console.log(`Warning: Failed to parse build-overrides.json for ${pkgName}: ${(error as Error).message}`)
     return null
   }
@@ -362,7 +370,8 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
   // Normalize recipe.build to object form up front so all code below can access .env/.dependencies/.script safely
   if (typeof recipe.build === 'string') {
     recipe.build = { script: [recipe.build] }
-  } else if (Array.isArray(recipe.build)) {
+  }
+else if (Array.isArray(recipe.build)) {
     recipe.build = { script: recipe.build }
   }
   // After normalization, build is RecipeBuildConfig | undefined — cast for type narrowing
@@ -455,7 +464,8 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
       let text = ''
       if (typeof step === 'string') {
         text = step
-      } else if (typeof step === 'object' && step !== null) {
+      }
+else if (typeof step === 'object' && step !== null) {
         const runText = typeof step.run === 'string' ? step.run
           : (Array.isArray(step.run) ? step.run.join(' ') : '')
         const propText = typeof step.prop === 'string' ? step.prop : ''
@@ -547,7 +557,8 @@ function applyRecipeOverrides(recipe: PackageRecipe, domain: string, platform: s
       const env = normalizedRecipe.build.env
       if (Array.isArray(env.ARGS)) {
         env.ARGS.push('--disable-local-transport')
-      } else {
+      }
+else {
         if (!env.linux) env.linux = {}
         if (!env.linux.ARGS) env.linux.ARGS = []
         if (!Array.isArray(env.linux.ARGS)) env.linux.ARGS = [env.linux.ARGS]
@@ -647,7 +658,8 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
   let urlPath: string
   try {
     urlPath = new URL(url.replace(/ /g, '%20')).pathname
-  } catch {
+  }
+catch {
     urlPath = url.split('?')[0] // fallback for malformed URLs
   }
   const matchedExt = nonArchiveExts.find(ext => urlPath.endsWith(ext))
@@ -671,11 +683,13 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
     const refArg = ref ? `--branch "${ref}" --single-branch` : ''
     try {
       execSync(`git clone --depth 1 ${refArg} "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
-    } catch {
+    }
+catch {
       // If shallow clone with ref fails, try full clone + checkout
       try {
         execSync(`git clone "${gitUrl}" "${destDir}/_git_clone"`, { stdio: 'inherit' })
-      } catch (cloneError: unknown) {
+      }
+catch (cloneError: unknown) {
         const err = new Error(`DOWNLOAD_FAILED: Failed to clone ${gitUrl}`) as any
         err._downloadFailure = true
         throw err
@@ -683,7 +697,8 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
       if (ref) {
         try {
           execSync(`cd "${destDir}/_git_clone" && git checkout "${ref}"`, { stdio: 'inherit' })
-        } catch {
+        }
+catch {
           console.log(`Warning: Could not checkout ref ${ref}, using default branch`)
         }
       }
@@ -706,7 +721,8 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
     // --max-time 600: abort if download takes >10 minutes (SourceForge can be very slow)
     // --retry 2 --retry-delay 5: retry on transient failures
     execSync(`curl -fSL --connect-timeout 30 --max-time 600 --retry 2 --retry-delay 5 -o "${tempFile}" "${encodedUrl}"`, { stdio: 'inherit' })
-  } catch (curlError: unknown) {
+  }
+catch (curlError: unknown) {
     const err = new Error(`DOWNLOAD_FAILED: Failed to download ${url}`) as any
     err._downloadFailure = true
     throw err
@@ -741,17 +757,20 @@ async function downloadSource(url: string, destDir: string, stripComponents: num
               currentDir = entryPath
               continue
             }
-          } catch { /* stat failed, not a directory */ }
+          }
+catch { /* stat failed, not a directory */ }
         }
         // Can't strip further (multiple entries or single file)
         break
       }
       execSync(`cp -a "${currentDir}/." "${destDir}/"`, { stdio: 'pipe' })
-    } else {
+    }
+else {
       execSync(`cp -a "${tmpExtract}/." "${destDir}/"`, { stdio: 'pipe' })
     }
     execSync(`rm -rf "${tmpExtract}"`)
-  } else {
+  }
+else {
     // tar auto-detects format (gz, xz, bz2, zstd)
     execSync(`tar -xf "${tempFile}" -C "${destDir}" --strip-components=${stripComponents}`, { stdio: 'inherit' })
   }
@@ -770,7 +789,8 @@ function runCommand(cmd: string, cwd: string, env: Record<string, string>): void
       stdio: 'inherit',
       shell: '/bin/bash',
     })
-  } catch (error: unknown) {
+  }
+catch (error: unknown) {
     console.error(`❌ Command failed: ${cmd}`)
     throw error
   }
@@ -830,7 +850,8 @@ function extractYamlDeps(depsObj: any, platform: string): string[] {
           }
         }
       }
-    } else if (key.includes('.') || key.includes('/')) {
+    }
+else if (key.includes('.') || key.includes('/')) {
       // Regular dependency domain — include constraint from value
       const constraint = typeof value === 'string' ? value.trim() : ''
       deps.push(constraint && constraint !== '*' ? `${key} ${constraint}` : key)
@@ -896,7 +917,8 @@ function versionSatisfies(version: string, constraint: string): boolean {
     if (m) {
       parts.push(m[1])
       remaining = m[2]
-    } else {
+    }
+else {
       break
     }
   }
@@ -1025,7 +1047,8 @@ async function downloadDependencies(
       try {
         const metadataContent = await s3.getObject(bucket, metadataKey)
         metadata = JSON.parse(metadataContent)
-      } catch {
+      }
+catch {
         const fallbackPrefix = findSystemPrefix(domain)
         console.log(`   - ${domain}: not in S3, falling back to system path → ${fallbackPrefix}`)
         // Still register the dep with a system fallback so {{deps.*.prefix}} templates resolve
@@ -1047,12 +1070,14 @@ async function downloadDependencies(
         try {
           try {
             execSync(`aws s3 cp "s3://${bucket}/${info.tarball}" "${tarballPath}" --region ${region}`, { stdio: 'pipe' })
-          } catch {
+          }
+catch {
             execSync(`curl -fsSL -o "${tarballPath}" "${dlUrl}"`, { stdio: 'pipe' })
           }
           execSync(`tar -xf "${tarballPath}" -C "${depInstallDir}"`, { stdio: 'pipe' })
           execSync(`rm "${tarballPath}"`)
-        } catch {
+        }
+catch {
           return false
         }
         // Fix pkg-config files
@@ -1069,7 +1094,8 @@ async function downloadDependencies(
                 })
                 if (replaced !== content) writeFileSync(pcPath, replaced)
               }
-            } catch { /* ignore */ }
+            }
+catch { /* ignore */ }
           }
         }
         // Register paths and version template variables
@@ -1099,7 +1125,8 @@ async function downloadDependencies(
           if (!info) continue
           if (v !== metadata.latestVersion) {
             console.log(`   - ${domain}: constraint "${constraint}" → ${v} (latest: ${metadata.latestVersion})`)
-          } else {
+          }
+else {
             console.log(`   - ${domain}@${v}`)
           }
           resolved = downloadAndRegisterDep(v, info)
@@ -1144,7 +1171,8 @@ async function downloadDependencies(
               systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe', env: { ...process.env, PATH: `/usr/local/bin:/opt/homebrew/bin:/usr/bin:${process.env.PATH}` } }).trim()
               // Don't use our own S3 meson as "system" meson
               if (systemMeson.includes('buildkit-deps')) systemMeson = ''
-            } catch { /* not found */ }
+            }
+catch { /* not found */ }
 
             if (!systemMeson) {
               // No system meson found — install via pip3 and try again
@@ -1153,14 +1181,16 @@ async function downloadDependencies(
                 execSync('pip3 install --break-system-packages meson 2>/dev/null || pip3 install meson', { stdio: 'pipe' })
                 systemMeson = execSync('which meson', { encoding: 'utf-8', stdio: 'pipe' }).trim()
                 if (systemMeson.includes('buildkit-deps')) systemMeson = ''
-              } catch { /* pip install failed */ }
+              }
+catch { /* pip install failed */ }
             }
 
             if (systemMeson) {
               // Always replace with wrapper that calls system meson
               writeFileSync(mesonBin, `#!/bin/sh\nexec "${systemMeson}" "$@"\n`, { mode: 0o755 })
               console.log(`   - Replaced S3 meson with system meson wrapper (${systemMeson})`)
-            } else {
+            }
+else {
               // No system meson even after pip — fix the S3 binary to use system python3
               const mesonContent = readFileSync(mesonBin, 'utf-8')
               if (mesonContent.includes('SCRIPT_DIR=') || mesonContent.includes('exec ')) {
@@ -1178,7 +1208,8 @@ async function downloadDependencies(
                   '',
                 ].join('\n'), { mode: 0o755 })
                 console.log(`   - Rewrote meson shell wrapper to use system python3 + venv site-packages`)
-              } else if (mesonContent.startsWith('#!') && !mesonContent.startsWith('#!/usr/bin/env python3')) {
+              }
+else if (mesonContent.startsWith('#!') && !mesonContent.startsWith('#!/usr/bin/env python3')) {
                 // Python script with wrong shebang — just fix the shebang
                 const fixedContent = mesonContent.replace(/^#!.*/, '#!/usr/bin/env python3')
                 writeFileSync(mesonBin, fixedContent, { mode: 0o755 })
@@ -1186,12 +1217,14 @@ async function downloadDependencies(
               }
             }
           }
-        } catch (e: unknown) {
+        }
+catch (e: unknown) {
           console.log(`   - Warning: Could not fix meson: ${(e as Error).message}`)
         }
       }
 
-    } catch (error: unknown) {
+    }
+catch (error: unknown) {
       console.log(`   - ${domain}: failed (${(error as Error).message})`)
     }
   }
@@ -1213,14 +1246,17 @@ function runHealthCheck(
   if (typeof test === 'string') {
     // Simple: test: "curl --version"
     testCommands = [test]
-  } else if (Array.isArray(test)) {
+  }
+else if (Array.isArray(test)) {
     // List: test:\n  - curl -i example.com\n  - curl --version
     testCommands = test.filter((t: RecipeScriptStep) => typeof t === 'string') as string[]
-  } else if (typeof test === 'object') {
+  }
+else if (typeof test === 'object') {
     // Object: test:\n  script: |\n    nim r hello.nim\n  fixture: |\n    echo "Hello"
     if (typeof test.script === 'string') {
       testCommands = test.script.split('\n').filter((l: string) => l.trim())
-    } else if (Array.isArray(test.script)) {
+    }
+else if (Array.isArray(test.script)) {
       for (const step of test.script) {
         if (typeof step === 'string') testCommands.push(step)
         else if (typeof step === 'object' && typeof step.run === 'string') {
@@ -1291,9 +1327,11 @@ function runHealthCheck(
       stdio: 'inherit',
       timeout: 30000, // 30s timeout for health checks
     })
-  } finally {
+  }
+finally {
     // Clean up test dir
-    try { execSync(`rm -rf "${testDir}"`, { stdio: 'ignore' }) } catch {}
+    try { execSync(`rm -rf "${testDir}"`, { stdio: 'ignore' }) }
+catch {}
   }
 }
 
@@ -1422,7 +1460,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         if (existingIsFromTs) {
           // Override replaces TS constraint entirely
           depByDomain.set(domain, dep)
-        } else if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
+        }
+else if (existingConstraint && newConstraint && existingConstraint !== newConstraint) {
           // Both from YAML (build + runtime) — merge constraints
           depByDomain.set(domain, `${domain} ${existingConstraint}${newConstraint}`)
         }
@@ -1452,7 +1491,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
               resolvedDomains.add(tdDomain)
             }
           }
-        } catch { /* skip deps whose YAML can't be read */ }
+        }
+catch { /* skip deps whose YAML can't be read */ }
       }
       if (transitiveDeps.length === 0) break
       console.log(`\nResolving ${transitiveDeps.length} transitive dependencies (depth ${depth + 1})...`)
@@ -1519,7 +1559,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       versionTag = resolved.tag
       versionRaw = resolved.rawVersion
       console.log(`📌 Resolved GitHub tag: ${resolved.tag} (raw: ${resolved.rawVersion})`)
-    } else {
+    }
+else {
       console.log(`⚠️  Could not resolve GitHub tag for ${version}, using heuristic: ${versionTag}`)
     }
   }
@@ -1569,14 +1610,16 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         await downloadSource(sourceUrl, buildDir, stripComponents, ref, pkgName, version)
         downloaded = true
         break
-      } catch {
+      }
+catch {
         console.log(`   ⚠️  Failed, trying next URL...`)
       }
     }
     if (!downloaded) {
       throw new Error(`All distributable URLs failed for ${pkgName}@${version}`)
     }
-  } else if (recipe.distributable?.url) {
+  }
+else if (recipe.distributable?.url) {
     const rawUrl = typeof recipe.distributable.url === 'string' ? recipe.distributable.url : String(recipe.distributable.url)
     const sourceUrl = interpolate(rawUrl, templateVars)
     // Default strip-components: 1 for tar (standard), 0 for zip (many recipes expect outer dir)
@@ -1586,7 +1629,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
     try {
       await downloadSource(sourceUrl, buildDir, stripComponents, ref, pkgName, version)
-    } catch (firstError: unknown) {
+    }
+catch (firstError: unknown) {
       let recovered = false
 
       // Retry 1: If URL or ref used version.tag and download failed, try alternate tag format
@@ -1601,7 +1645,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
           await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
           templateVars['version.tag'] = altTag
           recovered = true
-        } catch { /* continue to next retry */ }
+        }
+catch { /* continue to next retry */ }
       }
 
       // Retry 2: If version ends in .0, strip trailing .0 components
@@ -1623,7 +1668,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
           await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
           Object.assign(templateVars, altVars)
           recovered = true
-        } catch { /* continue to next retry */ }
+        }
+catch { /* continue to next retry */ }
       }
 
       // Retry 3: Strip ALL trailing .0 components (e.g., 20251022.0.0 → 20251022)
@@ -1645,7 +1691,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
             await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
             Object.assign(templateVars, altVars)
             recovered = true
-          } catch { /* continue to next retry */ }
+          }
+catch { /* continue to next retry */ }
         }
       }
 
@@ -1667,7 +1714,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
           await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
           Object.assign(templateVars, altVars)
           recovered = true
-        } catch { /* all retries exhausted */ }
+        }
+catch { /* all retries exhausted */ }
       }
 
       // Retry 5: For alternation strip patterns, try each alternative as version.tag
@@ -1689,7 +1737,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
               await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
               Object.assign(templateVars, altVars)
               recovered = true
-            } catch { /* try next alternative */ }
+            }
+catch { /* try next alternative */ }
           }
         }
       }
@@ -1720,7 +1769,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
                 await downloadSource(altUrl, buildDir, stripComponents, altRef, pkgName, version)
                 Object.assign(templateVars, altVars)
                 recovered = true
-              } catch { /* try next component */ }
+              }
+catch { /* try next component */ }
             }
           }
         }
@@ -1730,7 +1780,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         throw firstError
       }
     }
-  } else {
+  }
+else {
     // Vendored packages (distributable: ~) have no source to download.
     // The build script handles fetching (e.g. curl from GitHub releases).
     // Just ensure the source directory exists for the build script to run in.
@@ -1776,7 +1827,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
       if (typeof value === 'string') {
         buildEnv[key] = interpolate(value, templateVars)
-      } else if (Array.isArray(value)) {
+      }
+else if (Array.isArray(value)) {
         buildEnv[key] = value.map(v => interpolate(v, templateVars)).join(' ')
       }
     }
@@ -1789,7 +1841,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
         if (typeof value === 'string') {
           buildEnv[key] = interpolate(value, templateVars)
-        } else if (Array.isArray(value)) {
+        }
+else if (Array.isArray(value)) {
           buildEnv[key] = value.map((v: string) => interpolate(v, templateVars)).join(' ')
         }
       }
@@ -1800,7 +1853,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   for (const [key, value] of Object.entries(buildEnv)) {
     if (key === 'ARGS') {
       console.log(`   ${key}: ${value.slice(0, 80)}${value.length > 80 ? '...' : ''}`)
-    } else {
+    }
+else {
       console.log(`   ${key}: ${value}`)
     }
   }
@@ -1845,7 +1899,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
       stdio: 'inherit',
       shell: '/bin/bash',
     })
-  } catch (error: unknown) {
+  }
+catch (error: unknown) {
     console.error('❌ Build script failed')
     // Dump config.log if it exists (key for diagnosing "C compiler cannot create executables")
     const configLog = join(buildDir, 'config.log')
@@ -1860,7 +1915,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
         console.error('\n--- config.log (compiler test section) ---')
         console.error(logContent.slice(start, end))
         console.error('--- End compiler test section ---')
-      } else {
+      }
+else {
         // Fallback: show last 5000 chars
         const tail = logContent.length > 5000 ? logContent.slice(-5000) : logContent
         console.error('\n--- config.log (tail) ---')
@@ -1889,7 +1945,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     const installed = execSync(`ls -la "${prefix}"`, { encoding: 'utf-8' })
     console.log('\n📦 Installed contents:')
     console.log(installed)
-  } catch {
+  }
+catch {
     // Ignore errors listing directory
   }
 
@@ -1899,7 +1956,8 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     try {
       runHealthCheck(recipe.test, prefix, templateVars, depPaths, platform)
       console.log('✅ Health check passed!')
-    } catch (error: unknown) {
+    }
+catch (error: unknown) {
       console.error(`⚠️  Health check failed: ${(error as Error).message}`)
       // Health check failure is a warning, not a build failure.
       // The binary is still functional — the test may have external deps

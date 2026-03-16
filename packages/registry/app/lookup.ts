@@ -120,7 +120,8 @@ async function main() {
     const packages = await listPackages()
     if (packages.length === 0) {
       console.log('No packages found.')
-    } else {
+    }
+else {
       for (const pkg of packages) {
         console.log(`  ${pkg.packageName}@${pkg.latestVersion}`)
         if (pkg.description) {
@@ -143,7 +144,8 @@ async function main() {
     const packages = await searchPackages(query)
     if (packages.length === 0) {
       console.log('No packages found.')
-    } else {
+    }
+else {
       for (const pkg of packages) {
         console.log(`  ${pkg.packageName}@${pkg.latestVersion}`)
         if (pkg.description) {

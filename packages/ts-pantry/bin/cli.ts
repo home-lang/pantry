@@ -822,14 +822,17 @@ cli
             const destPath = path.join(destDir, entry.name)
             if (entry.isDirectory()) {
               mergeDir(srcPath, destPath)
-            } else if (entry.name === 'package.yml') {
+            }
+else if (entry.name === 'package.yml') {
               if (fs.existsSync(destPath)) {
                 skipped++
-              } else {
+              }
+else {
                 fs.renameSync(srcPath, destPath)
                 added++
               }
-            } else {
+            }
+else {
               // Non-package.yml files (fixtures, patches): only add if missing
               if (!fs.existsSync(destPath)) {
                 fs.renameSync(srcPath, destPath)
@@ -901,13 +904,15 @@ cli
               if (entry.isDirectory()) {
                 // Recurse into subdirectories (e.g. gnu.org/gcc/)
                 copyProps(srcPath, destPath)
-              } else if (entry.name !== 'package.yml') {
+              }
+else if (entry.name !== 'package.yml') {
                 // Copy non-package.yml files (patches, scripts, etc.)
                 fs.mkdirSync(destDir, { recursive: true })
                 fs.copyFileSync(srcPath, destPath)
                 if (fs.existsSync(destPath)) {
                   propsUpdated++
-                } else {
+                }
+else {
                   propsAdded++
                 }
               }
@@ -923,7 +928,8 @@ cli
         if (fs.existsSync(ghExtractDir)) {
           fs.rmSync(ghExtractDir, { recursive: true, force: true })
         }
-      } else {
+      }
+else {
         console.log(`Warning: Could not download GitHub archive (${ghResponse.status}), props files will be missing`)
       }
 

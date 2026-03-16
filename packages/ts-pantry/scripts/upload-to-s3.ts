@@ -199,7 +199,8 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
     if (sha256File) {
       const sha256Content = readFileSync(join(artifactPath, sha256File), 'utf-8')
       sha256Hash = sha256Content.split(' ')[0].trim()
-    } else {
+    }
+else {
       sha256Hash = crypto.createHash('sha256').update(tarballContent).digest('hex')
     }
 
@@ -243,7 +244,8 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
     const existingMetadata = await s3.getObject(bucket, metadataKey)
     metadata = JSON.parse(existingMetadata)
     console.log(`   Found existing metadata`)
-  } catch {
+  }
+catch {
     // Create new metadata
     metadata = {
       name: pkgName,
@@ -293,7 +295,8 @@ export async function uploadToS3(options: UploadOptions): Promise<void> {
     })
     await syncToDynamoDB(pkgName, metadata.latestVersion, availableVersions, region)
     console.log(`   ✓ Updated DynamoDB (${DYNAMO_TABLE}) — ${availableVersions.length} versions`)
-  } catch (error: any) {
+  }
+catch (error: any) {
     console.log(`   ⚠ DynamoDB sync failed (non-fatal): ${error.message}`)
   }
 

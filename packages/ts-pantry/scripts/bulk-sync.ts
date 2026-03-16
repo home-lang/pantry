@@ -69,7 +69,8 @@ async function getPackageList(startIndex: number, count: number): Promise<Packag
           githubUrl: pkg.githubUrl,
         })
       }
-    } catch (e) {
+    }
+catch (e) {
       // Skip packages that fail to import
     }
   }
@@ -85,7 +86,8 @@ async function checkExistsInS3(domain: string, version: string, platform: string
 
     const metadata = await response.json() as any
     return !!(metadata.versions?.[version]?.platforms?.[platform])
-  } catch {
+  }
+catch {
     return false
   }
 }
@@ -97,7 +99,8 @@ async function getPkgxVersions(domain: string): Promise<string[]> {
     if (!response.ok) return []
     const text = await response.text()
     return text.trim().split('\n').filter(v => v.length > 0)
-  } catch {
+  }
+catch {
     return []
   }
 }
@@ -147,7 +150,8 @@ async function downloadFromPkgx(domain: string, version: string, destDir: string
     if (pkgxVersion !== version) {
       console.log(`   Version mapped: ${version} -> ${pkgxVersion}`)
     }
-  } else {
+  }
+else {
     // No versions.txt - many packages don't have it, try direct download
     pkgxVersion = version
   }
@@ -189,7 +193,8 @@ async function downloadFromPkgx(domain: string, version: string, destDir: string
         downloadedVersion = tryVersion
         console.log(`   Downloaded: v${tryVersion}`)
         break
-      } catch {
+      }
+catch {
         continue
       }
     }
@@ -212,7 +217,8 @@ async function downloadFromPkgx(domain: string, version: string, destDir: string
     }
 
     return { success: true, actualVersion: downloadedVersion }
-  } catch (e) {
+  }
+catch (e) {
     return { success: false }
   }
 }
@@ -326,9 +332,11 @@ async function downloadFromGitHub(_domain: string, version: string, githubUrl: s
             execSync(`cp "${found}" "${destDir}/bin/${prog}"`)
             require('fs').chmodSync(join(destDir, 'bin', prog), 0o755)
           }
-        } catch {}
+        }
+catch {}
       }
-    } else if (name.endsWith('.zip')) {
+    }
+else if (name.endsWith('.zip')) {
       execSync(`cd "${destDir}" && unzip -o "${bestAsset.name}"`, { stdio: 'pipe' })
       execSync(`rm "${downloadPath}"`)
 
@@ -340,9 +348,11 @@ async function downloadFromGitHub(_domain: string, version: string, githubUrl: s
             execSync(`cp "${found}" "${destDir}/bin/${prog}"`)
             require('fs').chmodSync(join(destDir, 'bin', prog), 0o755)
           }
-        } catch {}
+        }
+catch {}
       }
-    } else {
+    }
+else {
       // Single binary file
       const progName = programs?.[0] || cleanRepo.toLowerCase()
       execSync(`mv "${downloadPath}" "${destDir}/bin/${progName}"`)
@@ -356,13 +366,15 @@ async function downloadFromGitHub(_domain: string, version: string, githubUrl: s
         console.log(`   No binaries found after extraction`)
         return { success: false }
       }
-    } catch {
+    }
+catch {
       return { success: false }
     }
 
     console.log(`   Downloaded from GitHub v${releaseVersion}`)
     return { success: true, actualVersion: releaseVersion }
-  } catch (e) {
+  }
+catch (e) {
     console.log(`   GitHub fallback failed`)
     return { success: false }
   }
@@ -509,7 +521,8 @@ Examples:
       await uploadToS3(installDir, pkg.domain, uploadVersion, platform, bucket, region)
       console.log(`   ✓ Uploaded ${pkg.domain}@${uploadVersion}`)
       results.success++
-    } catch (e: any) {
+    }
+catch (e: any) {
       console.log(`   ✗ Upload failed: ${e.message}`)
       failed.push(pkg.domain)
       results.failed++

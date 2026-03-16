@@ -25,7 +25,8 @@ async function testDynamoDB(): Promise<void> {
       console.log(`   - ${table}`)
     }
     console.log()
-  } catch (err) {
+  }
+catch (err) {
     console.error(`   Error: ${err}`)
     return
   }
@@ -37,11 +38,13 @@ async function testDynamoDB(): Promise<void> {
     console.log(`   Table exists! Status: ${tableInfo.Table?.TableStatus}`)
     console.log(`   Item count: ${tableInfo.Table?.ItemCount}`)
     console.log()
-  } catch (err: any) {
+  }
+catch (err: any) {
     if (err.message?.includes('ResourceNotFoundException') || err.code === 'ResourceNotFoundException') {
       console.log(`   Table '${TABLE_NAME}' does not exist. Creating...`)
       await createTable(dynamodb)
-    } else {
+    }
+else {
       console.error(`   Error: ${err}`)
       return
     }
@@ -91,7 +94,8 @@ async function testDynamoDB(): Promise<void> {
     console.log('   Deleted test item')
     console.log()
 
-  } catch (err) {
+  }
+catch (err) {
     console.error(`   Error: ${err}`)
     return
   }
@@ -145,7 +149,8 @@ async function createTable(dynamodb: DynamoDBClient): Promise<void> {
 
     console.log('   Table is now active!')
     console.log()
-  } catch (err) {
+  }
+catch (err) {
     console.error(`   Failed to create table: ${err}`)
     throw err
   }

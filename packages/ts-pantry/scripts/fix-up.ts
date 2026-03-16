@@ -23,7 +23,8 @@ export async function fixUp(prefix: string, platform: string, skips: string[] = 
   // Fix rpaths/install_names
   if (osName === 'darwin' && !skips.includes('fix-machos')) {
     fixMachoRpaths(prefix)
-  } else if (osName === 'linux' && !skips.includes('fix-patchelf')) {
+  }
+else if (osName === 'linux' && !skips.includes('fix-patchelf')) {
     fixElfRpaths(prefix)
   }
 
@@ -74,7 +75,8 @@ function fixMachoRpaths(prefix: string): void {
           if (rpath.startsWith('/tmp') || rpath.includes('+brewing') || rpath.includes('buildkit')) {
             try {
               execSync(`install_name_tool -delete_rpath "${rpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-            } catch { /* rpath might not exist */ }
+            }
+catch { /* rpath might not exist */ }
           }
         }
 
@@ -86,7 +88,8 @@ function fixMachoRpaths(prefix: string): void {
         if (!existingRpaths.includes(relRpath)) {
           try {
             execSync(`install_name_tool -add_rpath "${relRpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-          } catch { /* ignore */ }
+          }
+catch { /* ignore */ }
         }
 
         // Fix the dylib's own install ID (from brewkit's fix-machos.rb)
@@ -98,7 +101,8 @@ function fixMachoRpaths(prefix: string): void {
             const newId = `@rpath/${basename(filePath)}`
             try {
               execSync(`install_name_tool -id "${newId}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-            } catch { /* ignore */ }
+            }
+catch { /* ignore */ }
           }
         }
 
@@ -126,17 +130,21 @@ function fixMachoRpaths(prefix: string): void {
                 execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
                 execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
                 execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-                try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may already exist */ }
+                try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* may already exist */ }
                 // Recursively fix build-path refs in the copied library
                 bundleBuildDeps(destPath, prefix)
-                try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+                try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* ignore */ }
                 console.log(`    Bundled dep: ${depName}`)
-              } catch { /* could not copy, skip */ }
+              }
+catch { /* could not copy, skip */ }
             }
 
             try {
               execSync(`install_name_tool -change "${depPath}" "${newDepPath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-            } catch { /* ignore */ }
+            }
+catch { /* ignore */ }
           }
         }
 
@@ -154,7 +162,8 @@ function fixMachoRpaths(prefix: string): void {
           // Search in build directories and Homebrew
           try {
             const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
-              try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 } catch { return false }
+              try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 }
+catch { return false }
             })
             // Also search Homebrew lib dirs
             if (existsSync('/opt/homebrew/lib')) searchPaths.push('/opt/homebrew/lib')
@@ -166,13 +175,16 @@ function fixMachoRpaths(prefix: string): void {
               execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
               execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
               execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-              try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
+              try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* may exist */ }
               bundleBuildDeps(destPath, prefix)
               bundleHomebrewDylibs(destPath, prefix)
-              try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+              try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* ignore */ }
               console.log(`    Bundled @rpath dep: ${depName} (from ${findResult})`)
             }
-          } catch { /* find failed, skip */ }
+          }
+catch { /* find failed, skip */ }
         }
 
         // Bundle Homebrew dylibs into the package for full self-containment
@@ -182,13 +194,16 @@ function fixMachoRpaths(prefix: string): void {
         // Re-sign with entitlement preservation (from brewkit's fix-machos.rb)
         try {
           execSync(`codesign --force --sign - --preserve-metadata=entitlements "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-        } catch {
+        }
+catch {
           // If --preserve-metadata fails, fall back to simple re-sign
           try {
             execSync(`codesign --force --sign - "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-          } catch { /* ignore signing errors */ }
+          }
+catch { /* ignore signing errors */ }
         }
-      } catch {
+      }
+catch {
         // Not a Mach-O or otool failed, skip
       }
     })
@@ -208,7 +223,8 @@ function fixElfRpaths(prefix: string): void {
   // Check if patchelf is available
   try {
     execSync('which patchelf', { stdio: 'pipe' })
-  } catch {
+  }
+catch {
     console.log('  patchelf not found, skipping ELF rpath fixing')
     return
   }
@@ -236,7 +252,8 @@ function fixElfRpaths(prefix: string): void {
         try {
           const rp = execSync(`patchelf --print-rpath "${filePath}" 2>/dev/null`, { encoding: 'utf-8' }).trim()
           if (rp) existingRpaths = rp.split(':')
-        } catch { /* no rpath */ }
+        }
+catch { /* no rpath */ }
 
         // Build merged rpath: our relative path + existing $ORIGIN paths
         const relRpath = dir === 'lib' ? '$ORIGIN' : '$ORIGIN/../lib'
@@ -249,7 +266,8 @@ function fixElfRpaths(prefix: string): void {
 
         // Use --force-rpath: sets RPATH (not RUNPATH) — LD_LIBRARY_PATH takes precedence (brewkit)
         execSync(`patchelf --force-rpath --set-rpath "${mergedRpath}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-      } catch {
+      }
+catch {
         // Not an ELF or patchelf failed, skip
       }
     })
@@ -272,7 +290,8 @@ function fixPkgConfigFiles(prefix: string): void {
       const filePath = join(pkgconfigDir, file)
       try {
         // Ensure we have read/write permissions (some installs like CUPS set restrictive perms)
-        try { execSync(`chmod u+rw "${filePath}"`, { stdio: 'pipe' }) } catch { /* ignore */ }
+        try { execSync(`chmod u+rw "${filePath}"`, { stdio: 'pipe' }) }
+catch { /* ignore */ }
         const orig = readFileSync(filePath, 'utf-8')
         const relativePath = relative(dirname(filePath), prefix)
 
@@ -282,7 +301,8 @@ function fixPkgConfigFiles(prefix: string): void {
           console.log(`  Fixing pkg-config: ${file}`)
           writeFileSync(filePath, text)
         }
-      } catch (err: any) {
+      }
+catch (err: any) {
         console.log(`  ⚠️  Could not fix pkg-config ${file}: ${err.message}`)
       }
     }
@@ -344,7 +364,8 @@ function consolidateLib64(prefix: string): void {
   try {
     const stat = lstatSync(lib64)
     if (!stat.isDirectory()) return
-  } catch {
+  }
+catch {
     return
   }
 
@@ -358,7 +379,8 @@ function consolidateLib64(prefix: string): void {
     const dest = join(libDir, entry)
     try {
       renameSync(src, dest)
-    } catch {
+    }
+catch {
       // might fail if destination exists, skip
     }
   }
@@ -389,14 +411,18 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
             execSync(`cp -L "${depPath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
             execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
             execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-            try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may already exist */ }
+            try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* may already exist */ }
             bundleBuildDeps(destPath, prefix)
-            try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
-          } catch { /* skip */ }
+            try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* ignore */ }
+          }
+catch { /* skip */ }
         }
         try {
           execSync(`install_name_tool -change "${depPath}" "@rpath/${depName}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-        } catch { /* ignore */ }
+        }
+catch { /* ignore */ }
         continue
       }
 
@@ -407,7 +433,8 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
         if (existsSync(destPath)) continue
         try {
           const searchPaths = ['/tmp/buildkit-deps', '/tmp/buildkit-install-*', '/tmp/buildkit-deps-*'].filter(p => {
-            try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 } catch { return false }
+            try { return execSync(`ls -d ${p} 2>/dev/null`, { encoding: 'utf-8' }).trim().length > 0 }
+catch { return false }
           })
           if (existsSync('/opt/homebrew/lib')) searchPaths.push('/opt/homebrew/lib')
           if (existsSync('/opt/homebrew/opt')) searchPaths.push('/opt/homebrew/opt')
@@ -418,14 +445,18 @@ function bundleBuildDeps(filePath: string, prefix: string): void {
             execSync(`cp -L "${findResult}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
             execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
             execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-            try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
+            try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* may exist */ }
             bundleBuildDeps(destPath, prefix)
-            try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+            try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* ignore */ }
           }
-        } catch { /* find failed, skip */ }
+        }
+catch { /* find failed, skip */ }
       }
     }
-  } catch { /* otool failed, skip */ }
+  }
+catch { /* otool failed, skip */ }
 }
 
 // Bundle Homebrew dylibs into the package's lib/ directory for self-containment.
@@ -458,11 +489,14 @@ function bundleHomebrewDylibs(filePath: string, prefix: string, sourceDir?: stri
           execSync(`cp -L "${sourcePath}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
           execSync(`chmod u+w "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
           execSync(`install_name_tool -id "@rpath/${depName}" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-          try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* may exist */ }
+          try { execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* may exist */ }
           bundleHomebrewDylibs(destPath, prefix, sourceDir)
-          try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) } catch { /* ignore */ }
+          try { execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' }) }
+catch { /* ignore */ }
           console.log(`    Bundled @loader_path dep: ${depName} (from ${sourcePath})`)
-        } catch { /* skip */ }
+        }
+catch { /* skip */ }
         continue
       }
 
@@ -486,7 +520,8 @@ function bundleHomebrewDylibs(filePath: string, prefix: string, sourceDir?: stri
           // Add @loader_path rpath to the copied dylib
           try {
             execSync(`install_name_tool -add_rpath "@loader_path" "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-          } catch { /* may already exist */ }
+          }
+catch { /* may already exist */ }
 
           // Recursively bundle any Homebrew deps of this dylib (pass the source directory)
           bundleHomebrewDylibs(destPath, prefix, dirname(depPath))
@@ -494,8 +529,10 @@ function bundleHomebrewDylibs(filePath: string, prefix: string, sourceDir?: stri
           // Re-sign the copied dylib
           try {
             execSync(`codesign --force --sign - "${destPath}" 2>/dev/null`, { stdio: 'pipe' })
-          } catch { /* ignore */ }
-        } catch {
+          }
+catch { /* ignore */ }
+        }
+catch {
           // Could not copy dylib — skip
           continue
         }
@@ -504,9 +541,11 @@ function bundleHomebrewDylibs(filePath: string, prefix: string, sourceDir?: stri
       // Rewrite the reference in the original binary to use @rpath
       try {
         execSync(`install_name_tool -change "${depPath}" "@rpath/${depName}" "${filePath}" 2>/dev/null`, { stdio: 'pipe' })
-      } catch { /* ignore */ }
+      }
+catch { /* ignore */ }
     }
-  } catch {
+  }
+catch {
     // otool failed, skip
   }
 }
@@ -524,7 +563,8 @@ function walkFiles(dir: string, callback: (filePath: string) => void): void {
     const fullPath = join(dir, entry.name)
     if (entry.isDirectory()) {
       walkFiles(fullPath, callback)
-    } else if (entry.isFile()) {
+    }
+else if (entry.isFile()) {
       callback(fullPath)
     }
   }
@@ -547,7 +587,8 @@ function isMachO(filePath: string): boolean {
     return magic === 0xfeedface || magic === 0xfeedfacf
       || magic === 0xcafebabe || magic === 0xbebafeca
       || magic === 0xcffaedfe || magic === 0xcefaedfe
-  } catch {
+  }
+catch {
     return false
   }
 }
@@ -564,7 +605,8 @@ function isELF(filePath: string): boolean {
 
     // ELF magic: 7f454c46 (.ELF)
     return buffer[0] === 0x7f && buffer[1] === 0x45 && buffer[2] === 0x4c && buffer[3] === 0x46
-  } catch {
+  }
+catch {
     return false
   }
 }

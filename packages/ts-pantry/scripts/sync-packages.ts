@@ -55,7 +55,8 @@ async function checkExistsInS3(domain: string, version: string, platform: string
     const parsed = JSON.parse(metadata)
 
     return !!(parsed.versions?.[version]?.platforms?.[platform])
-  } catch {
+  }
+catch {
     return false
   }
 }
@@ -323,7 +324,8 @@ const packages: Record<string, PackageConfig> = {
       try {
         const tag = await githubLatestVersion('mysql/mysql-server')
         return tag
-      } catch {
+      }
+catch {
         return '9.2.0' // Fallback to a known recent version
       }
     },
@@ -370,14 +372,16 @@ const packages: Record<string, PackageConfig> = {
             execSync(`curl -fSL -o "${destDir}/mysql.tar.gz" "${url}"`, { stdio: 'inherit' })
             downloaded = true
             break
-          } catch { /* try next URL */ }
+          }
+catch { /* try next URL */ }
         }
         if (!downloaded) throw new Error(`Failed to download MySQL ${version} for darwin-${mysqlArch}`)
 
         console.log(`   Extracting...`)
         execSync(`cd "${destDir}" && tar -xf mysql.tar.gz --strip-components=1`, { stdio: 'pipe' })
         execSync(`rm "${destDir}/mysql.tar.gz"`)
-      } else {
+      }
+else {
         const mysqlArch = arch === 'arm64' ? 'aarch64' : 'x86_64'
         const urls = [
           `https://dev.mysql.com/get/Downloads/MySQL-${major}/mysql-${version}-linux-glibc2.28-${mysqlArch}.tar.xz`,
@@ -393,7 +397,8 @@ const packages: Record<string, PackageConfig> = {
             execSync(`curl -fSL -o "${destDir}/mysql.tar.xz" "${url}"`, { stdio: 'inherit' })
             downloaded = true
             break
-          } catch { /* try next URL */ }
+          }
+catch { /* try next URL */ }
         }
         if (!downloaded) throw new Error(`Failed to download MySQL ${version} for linux-${mysqlArch}`)
 
@@ -519,9 +524,12 @@ exec node "$(dirname "$0")/yarn.js" "$@"
 
       const { os } = detectPlatform()
       if (os === 'linux') {
-        try { execSync('sudo apt-get install -y libevent-dev 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
-      } else {
-        try { execSync('brew install libevent 2>/dev/null || true', { stdio: 'pipe' }) } catch {}
+        try { execSync('sudo apt-get install -y libevent-dev 2>/dev/null || true', { stdio: 'pipe' }) }
+catch {}
+      }
+else {
+        try { execSync('brew install libevent 2>/dev/null || true', { stdio: 'pipe' }) }
+catch {}
       }
 
       console.log('   Compiling Memcached...')
@@ -590,7 +598,8 @@ exec node "$(dirname "$0")/yarn.js" "$@"
         // Only x86_64 available for macOS (works via Rosetta on Apple Silicon)
         tsArch = 'amd64'
         tsPlatform = 'darwin'
-      } else {
+      }
+else {
         tsArch = arch === 'arm64' ? 'arm64' : 'amd64'
         tsPlatform = 'linux'
       }
@@ -623,7 +632,8 @@ exec node "$(dirname "$0")/yarn.js" "$@"
         // SHA256 file often contains the version in filename
         const match = text.match(/minio\.RELEASE\.(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z)/)
         if (match) return match[1]
-      } catch {}
+      }
+catch {}
       return 'latest'
     },
     download: async (version, platform, destDir) => {
@@ -752,7 +762,8 @@ async function syncPackage(
     if (explicitVersion) {
       version = explicitVersion
       console.log(`   Using explicit version: ${version}`)
-    } else {
+    }
+else {
       console.log(`   Fetching latest version...`)
       version = await config.getLatestVersion()
       console.log(`   Latest: ${version}`)
@@ -793,7 +804,8 @@ async function syncPackage(
     console.log(`   ✅ Uploaded ${config.domain}@${version}`)
     return { status: 'uploaded', version }
 
-  } catch (error: any) {
+  }
+catch (error: any) {
     console.error(`   ❌ Failed: ${error.message}`)
     return { status: 'failed', version: 'unknown' }
   }
@@ -916,7 +928,8 @@ Examples:
           const exists = await checkExistsInS3(config.domain, ver, platform, bucket, region)
           console.log(`  - ${config.domain}@${ver} ${exists ? '(already exists)' : '(would upload)'}`)
         }
-      } else {
+      }
+else {
         const version = values.version || await config.getLatestVersion()
         const exists = await checkExistsInS3(config.domain, version, platform, bucket, region)
         console.log(`  - ${config.domain}@${version} ${exists ? '(already exists)' : '(would upload)'}`)
@@ -937,7 +950,8 @@ Examples:
         const result = await syncPackage(key, config, bucket, region, values.force || false, ver)
         results[`${config.domain}@${ver}`] = result
       }
-    } else {
+    }
+else {
       results[config.domain] = await syncPackage(key, config, bucket, region, values.force || false, values.version)
     }
   }

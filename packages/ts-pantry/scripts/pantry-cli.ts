@@ -57,7 +57,8 @@ function parseConfig(path: string): Config {
       if (match) {
         config.dependencies[match[1].trim()] = match[2].trim().replace(/['"]/g, '')
       }
-    } else if (inDeps && !line.match(/^\s/) && trimmed !== '') {
+    }
+else if (inDeps && !line.match(/^\s/) && trimmed !== '') {
       inDeps = false
     }
   }
@@ -107,7 +108,8 @@ async function install(bucket: string, region: string): Promise<boolean> {
   try {
     execSync(cmd, { stdio: 'inherit' })
     return true
-  } catch (error) {
+  }
+catch (error) {
     return false
   }
 }
@@ -180,12 +182,15 @@ function showStatus(packages: string[]): void {
         const version = readFileSync(currentLink, 'utf-8').trim() ||
           execSync(`readlink "${currentLink}"`, { encoding: 'utf-8' }).trim()
         console.log(`  ✅ ${pkg} @ ${version}`)
-      } catch {
+      }
+catch {
         console.log(`  ✅ ${pkg}`)
       }
-    } else if (existsSync(pkgDir)) {
+    }
+else if (existsSync(pkgDir)) {
       console.log(`  ⚠️  ${pkg} (no current version linked)`)
-    } else {
+    }
+else {
       console.log(`  ❌ ${pkg} (not installed)`)
     }
   }
