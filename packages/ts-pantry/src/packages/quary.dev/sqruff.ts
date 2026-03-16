@@ -3,7 +3,7 @@
  *
  * @domain `quary.dev/sqruff`
  * @programs `bench`, `sqruff`
- * @version `0.36.0` (104 versions available)
+ * @version `0.36.1` (105 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install quary.dev/sqruff`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "sqruff"
  * console.log(pkg.description) // "Fast SQL formatter/linter"
  * console.log(pkg.programs)    // ["bench", "sqruff"]
- * console.log(pkg.versions[0]) // "0.36.0" (latest)
+ * console.log(pkg.versions[0]) // "0.36.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/quary-dev/sqruff.md
@@ -78,6 +78,7 @@ export const quarydevsqruffPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.36.1',
     '0.36.0',
     '0.35.4',
     '0.35.3',
