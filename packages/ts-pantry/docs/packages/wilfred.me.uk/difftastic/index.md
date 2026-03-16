@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 11 versions</summary>
+<summary>Show all 12 versions</summary>
 
+- `0.68.0`
 - `0.67.0`
 - `0.65.0`
 - `0.64.0`
@@ -41,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.67.0`
+**Latest Version**: `0.68.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +wilfred.me.uk/difftastic@0.67.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +wilfred.me.uk/difftastic@0.68.0 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -3,7 +3,7 @@
  *
  * @domain `wilfred.me.uk/difftastic`
  * @programs `difft`
- * @version `0.67.0` (11 versions available)
+ * @version `0.68.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install wilfred.me.uk/difftastic`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "difft"
  * console.log(pkg.description) // "a structural diff that understands syntax 🟥🟩"
  * console.log(pkg.programs)    // ["difft"]
- * console.log(pkg.versions[0]) // "0.67.0" (latest)
+ * console.log(pkg.versions[0]) // "0.68.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/wilfred-me-uk/difftastic.md
@@ -61,6 +61,7 @@ export const wilfredmeukdifftasticPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.68.0',
     '0.67.0',
     '0.65.0',
     '0.64.0',
