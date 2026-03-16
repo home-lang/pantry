@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 1 versions</summary>
+<summary>Show all 2 versions</summary>
 
-- `1.4.4`
+- `1.4.6`, `1.4.4`
 
 </details>
 
-**Latest Version**: `1.4.4`
+**Latest Version**: `1.4.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/so-fancy/diff-so-fancy@1.4.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/so-fancy/diff-so-fancy@1.4.6 -- $SHELL -i
 ```
 
 ## Usage Examples

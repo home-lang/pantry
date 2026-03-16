@@ -3,7 +3,7 @@
  *
  * @domain `github.com/licensee/licensed`
  * @programs `licensed`
- * @version `5.0.4` (1 versions available)
+ * @version `5.0.6` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/licensee/licensed`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "licensed"
  * console.log(pkg.description) // "A Ruby gem to cache and verify the licenses of ..."
  * console.log(pkg.programs)    // ["licensed"]
- * console.log(pkg.versions[0]) // "5.0.4" (latest)
+ * console.log(pkg.versions[0]) // "5.0.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/licensee/licensed.md
@@ -76,6 +76,7 @@ export const licensedPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.0.6',
     '5.0.4',
   ] as const,
   aliases: [] as const,

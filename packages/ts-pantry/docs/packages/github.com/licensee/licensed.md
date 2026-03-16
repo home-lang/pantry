@@ -25,19 +25,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 1 versions</summary>
+<summary>Show all 2 versions</summary>
 
-- `5.0.4`
+- `5.0.6`, `5.0.4`
 
 </details>
 
-**Latest Version**: `5.0.4`
+**Latest Version**: `5.0.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/licensee/licensed@5.0.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/licensee/licensed@5.0.6 -- $SHELL -i
 ```
 
 ## Dependencies

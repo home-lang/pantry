@@ -3,7 +3,7 @@
  *
  * @domain `github.com/so-fancy/diff-so-fancy`
  * @programs `diff-so-fancy`
- * @version `1.4.4` (1 versions available)
+ * @version `1.4.6` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/so-fancy/diff-so-fancy`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "diff-so-fancy"
  * console.log(pkg.description) // "Good-lookin' diffs. Actually… nah… The best-loo..."
  * console.log(pkg.programs)    // ["diff-so-fancy"]
- * console.log(pkg.versions[0]) // "1.4.4" (latest)
+ * console.log(pkg.versions[0]) // "1.4.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/so-fancy/diff-so-fancy.md
@@ -60,6 +60,7 @@ export const diffsofancyPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.6',
     '1.4.4',
   ] as const,
   aliases: [] as const,

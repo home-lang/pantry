@@ -3,7 +3,7 @@
  *
  * @domain `coder.com`
  * @programs `coder`
- * @version `2.31.5` (128 versions available)
+ * @version `2.31.5` (129 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install coder.com`
@@ -73,6 +73,7 @@ export const codercomPackage = {
     '2.31.3',
     '2.31.2',
     '2.31.1',
+    '2.30.4',
     '2.30.3',
     '2.30.2',
     '2.30.1',
