@@ -58,7 +58,6 @@
     "packages/*"
   ],
   "dependencies": {
-    "@cwcss/crosswind": "^0.1.6",
     "@stacksjs/ts-cloud": "^0.2.3"
   }
 }
