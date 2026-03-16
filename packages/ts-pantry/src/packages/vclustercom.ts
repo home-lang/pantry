@@ -3,7 +3,7 @@
  *
  * @domain `vcluster.com`
  * @programs `vcluster`
- * @version `0.32.1` (64 versions available)
+ * @version `0.33.0` (65 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install vcluster.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "vcluster"
  * console.log(pkg.description) // "vCluster - Create fully functional virtual Kube..."
  * console.log(pkg.programs)    // ["vcluster"]
- * console.log(pkg.versions[0]) // "0.32.1" (latest)
+ * console.log(pkg.versions[0]) // "0.33.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/vcluster-com.md
@@ -80,6 +80,7 @@ export const vclustercomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.33.0',
     '0.32.1',
     '0.32.0',
     '0.31.2',

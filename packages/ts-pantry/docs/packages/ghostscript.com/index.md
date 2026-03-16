@@ -57,8 +57,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 8 versions</summary>
+<summary>Show all 9 versions</summary>
 
+- `10.7.0`
 - `10.6.0`
 - `10.5.1`
 - `10.4.0`
@@ -68,13 +69,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.6.0`
+**Latest Version**: `10.7.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +ghostscript.com@10.6.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +ghostscript.com@10.7.0 -- $SHELL -i
 ```
 
 ## Dependencies

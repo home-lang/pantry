@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 64 versions</summary>
+<summary>Show all 65 versions</summary>
 
+- `0.33.0`
 - `0.32.1`, `0.32.0`
 - `0.31.2`, `0.31.1`, `0.31.0`
 - `0.30.4`, `0.30.3`, `0.30.2`, `0.30.1`, `0.30.0`
@@ -44,13 +45,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.32.1`
+**Latest Version**: `0.33.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +vcluster.com@0.32.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +vcluster.com@0.33.0 -- $SHELL -i
 ```
 
 ## Dependencies

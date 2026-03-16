@@ -3,7 +3,7 @@
  *
  * @domain `ghostscript.com`
  * @programs `dvipdf`, `eps2eps`, `gpcl6`, `gpcl6c`, `gpdlc`, ... (+28 more)
- * @version `10.6.0` (8 versions available)
+ * @version `10.7.0` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ghostscript.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "ghostscript"
  * console.log(pkg.description) // "This is purely for downloads, please check the ..."
  * console.log(pkg.programs)    // ["dvipdf", "eps2eps", ...]
- * console.log(pkg.versions[0]) // "10.6.0" (latest)
+ * console.log(pkg.versions[0]) // "10.7.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/ghostscript-com.md
@@ -110,6 +110,7 @@ export const ghostscriptcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.7.0',
     '10.6.0',
     '10.5.1',
     '10.4.0',
