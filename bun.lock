@@ -5,6 +5,7 @@
     "": {
       "name": "pantry",
       "dependencies": {
+        "@cwcss/crosswind": "^0.1.6",
         "@stacksjs/ts-cloud": "^0.2.3",
       },
       "devDependencies": {
@@ -13,7 +14,7 @@
     },
     "packages/action": {
       "name": "pantry-setup",
-      "version": "0.8.15",
+      "version": "0.8.16",
       "dependencies": {
         "@actions/cache": "^6.0.0",
         "@actions/core": "^1.11.1",
@@ -27,14 +28,14 @@
     },
     "packages/benchmark": {
       "name": "@pantry/benchmark",
-      "version": "0.8.15",
+      "version": "0.8.16",
       "devDependencies": {
         "mitata": "^1.0.34",
       },
     },
     "packages/inspector": {
       "name": "@stacksjs/pantry-inspector",
-      "version": "0.8.15",
+      "version": "0.8.16",
       "devDependencies": {
         "bun-types": "latest",
         "typescript": "^5.7.0",
@@ -42,20 +43,9 @@
     },
     "packages/registry": {
       "name": "@stacksjs/registry",
-      "version": "0.8.15",
+      "version": "0.8.16",
       "dependencies": {
-        "@cwcss/crosswind": "^0.1.6",
-      },
-      "devDependencies": {
-        "bun-types": "latest",
-        "typescript": "^5.7.0",
-      },
-    },
-    "packages/site": {
-      "name": "@stacksjs/pantry-site",
-      "version": "0.8.15",
-      "dependencies": {
-        "@stacksjs/stx": "^0.2.6",
+        "@stacksjs/stx": "^0.2.9",
       },
       "devDependencies": {
         "bun-types": "latest",
@@ -64,7 +54,7 @@
     },
     "packages/ts-pantry": {
       "name": "ts-pantry",
-      "version": "0.8.15",
+      "version": "0.8.16",
       "bin": {
         "ts-pantry": "./dist/bin/cli.js",
         "pantry-ts": "./scripts/pantry-cli.ts",
@@ -151,8 +141,6 @@
     "@stacksjs/logsmith": ["@stacksjs/logsmith@0.2.1", "", { "dependencies": { "@stacksjs/clapp": "^0.2.0", "bunfig": "^0.15.6", "pickier": "^0.1.7" }, "bin": { "logsmith": "dist/bin/cli.js", "@stacksjs/logsmith": "dist/bin/cli.js" } }, "sha512-JbAnn0dWZDEBjks7qRd/L0kWbsD3Qi0uSFmCPkEU9fH0+eP6Fdl7mtnok2oVDUaNitWu97OJZHlFe/MV2ilgnA=="],
 
     "@stacksjs/pantry-inspector": ["@stacksjs/pantry-inspector@workspace:packages/inspector"],
-
-    "@stacksjs/pantry-site": ["@stacksjs/pantry-site@workspace:packages/site"],
 
     "@stacksjs/registry": ["@stacksjs/registry@workspace:packages/registry"],
 
