@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 93 versions</summary>
+<summary>Show all 94 versions</summary>
 
-- `2.101.19`, `2.101.18`, `2.101.17`, `2.101.16`, `2.101.15`, `2.101.14`, `2.101.13`, `2.101.12`, `2.101.11`, `2.101.10`, `2.101.9`, `2.101.8`, `2.101.7`, `2.101.6`, `2.101.5`, `2.101.4`, `2.101.3`, `2.101.2`, `2.101.1`, `2.101.0`
+- `2.101.20`, `2.101.19`, `2.101.18`, `2.101.17`, `2.101.16`, `2.101.15`, `2.101.14`, `2.101.13`, `2.101.12`, `2.101.11`, `2.101.10`, `2.101.9`, `2.101.8`, `2.101.7`, `2.101.6`, `2.101.5`, `2.101.4`, `2.101.3`, `2.101.2`, `2.101.1`, `2.101.0`
 - `2.100.14`, `2.100.13`, `2.100.12`, `2.100.10`, `2.100.9`, `2.100.8`, `2.100.7`, `2.100.6`, `2.100.5`, `2.100.4`, `2.100.3`, `2.100.2`, `2.100.1`, `2.100.0`
 - `2.99.1`, `2.99.0`
 - `2.98.1`, `2.98.0`
@@ -63,13 +63,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.101.19`
+**Latest Version**: `2.101.20`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +depot.dev@2.101.19 -- $SHELL -i
+sh <(curl https://pkgx.sh) +depot.dev@2.101.20 -- $SHELL -i
 ```
 
 ## Usage Examples
