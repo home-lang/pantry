@@ -3,7 +3,7 @@
  *
  * @domain `pocketbase.io`
  * @programs `pocketbase`
- * @version `0.36.6` (108 versions available)
+ * @version `0.36.6` (109 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install pocketbase.io`
@@ -133,6 +133,7 @@ export const pocketbaseioPackage = {
     '0.23.2',
     '0.23.1',
     '0.23.0',
+    '0.22.40',
     '0.22.37',
     '0.22.36',
     '0.22.35',
