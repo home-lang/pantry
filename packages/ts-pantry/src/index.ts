@@ -49,3 +49,4 @@ export {
 } from './utils'
 export * from './version-utils'
 export * from './config-types'
+export * from './testing'

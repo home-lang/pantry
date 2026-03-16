@@ -205,13 +205,23 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 
         // If we're in a workspace, handle that first
         if (lookup.workspace_file) |ws_file| {
-            // Free deps_file if we also found one (workspace takes precedence)
-            if (lookup.deps_file) |df| allocator.free(df.path);
-            defer {
+            const ws_result = workspace.installWorkspaceCommandWithOptions(allocator, ws_file.root_dir, ws_file.path, options);
+            if (ws_result) |result| {
+                // Workspace install succeeded — free deps_file if we also found one
+                if (lookup.deps_file) |df| allocator.free(df.path);
+                defer {
+                    allocator.free(ws_file.path);
+                    allocator.free(ws_file.root_dir);
+                }
+                return result;
+            } else |err| {
+                // Workspace config couldn't be loaded (e.g. no valid workspaces patterns,
+                // JSON parse error, or "workspaces" was just a substring match).
+                // Fall through to normal dep handling.
                 allocator.free(ws_file.path);
                 allocator.free(ws_file.root_dir);
+                if (err != error.NoWorkspacePatternsFound) return err;
             }
-            return try workspace.installWorkspaceCommandWithOptions(allocator, ws_file.root_dir, ws_file.path, options);
         }
 
         // Try standard dep file detection first (fast: just filesystem access checks)
