@@ -202,8 +202,13 @@ export function createHandler(
         return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
       }
 
-      // Search
+      // Search — serve HTML for browsers, JSON for API clients
       if (path === '/search' && req.method === 'GET') {
+        const accept = req.headers.get('accept') || ''
+        if (accept.includes('text/html')) {
+          const q = url.searchParams.get('q') || ''
+          return await handleSiteSearch(q, registry, binaryStorage)
+        }
         const query = url.searchParams.get('q') || ''
         const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
         const results = await registry.search(query, limit)
@@ -401,12 +406,6 @@ export function createHandler(
       // Homepage
       if (path === '/' || path === '') {
         return await handleSiteHome(binaryStorage)
-      }
-
-      // Search page (browser — returns HTML, not JSON)
-      if (path === '/site/search' || (path === '/search' && req.headers.get('accept')?.includes('text/html'))) {
-        const q = url.searchParams.get('q') || ''
-        return await handleSiteSearch(q, registry, binaryStorage)
       }
 
       // Package detail page
@@ -1616,8 +1615,13 @@ async function handleDashboard(
 
 async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Promise<any> {
   try {
-    if (!storage) return null
-    const buffer = await storage.getObject(`binaries/${domain}/metadata.json`)
+    const store: BinaryStorage = storage || (() => {
+      const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
+      const s3Region = process.env.AWS_REGION || 'us-east-1'
+      const s3 = new S3Client(s3Region)
+      return { getObject: (key: string) => s3.getObjectBuffer(s3Bucket, key) }
+    })()
+    const buffer = await store.getObject(`binaries/${domain}/metadata.json`)
     return JSON.parse(Buffer.from(buffer).toString('utf-8'))
   }
   catch { return null }
