@@ -35,9 +35,9 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 22 versions</summary>
+<summary>Show all 23 versions</summary>
 
-- `2.3.10`, `2.3.0`
+- `2.3.20`, `2.3.10`, `2.3.0`
 - `2.2.21`, `2.2.20`, `2.2.10`, `2.2.0`
 - `2.1.21`, `2.1.20`, `2.1.10`, `2.1.0`
 - `2.0.21`, `2.0.20`, `2.0.10`, `2.0.0`
@@ -45,13 +45,13 @@ This package can also be accessed using these aliases:
 
 </details>
 
-**Latest Version**: `2.3.10`
+**Latest Version**: `2.3.20`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +kotlinlang.org@2.3.10 -- $SHELL -i
+sh <(curl https://pkgx.sh) +kotlinlang.org@2.3.20 -- $SHELL -i
 ```
 
 ## Dependencies

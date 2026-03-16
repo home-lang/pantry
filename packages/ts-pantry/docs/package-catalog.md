@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-16T09:19:42.182Z
+- **Last Updated**: 2026-03-16T10:20:36.551Z
 
 ## Table of Contents
 
@@ -49,7 +49,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[dart.dev](./packages/dart.dev/index.md)** () | The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries, and more. | dart, dartaotruntime | 3.11.2 (+55) | `pkgx dart` |
 | **[go.dev](./packages/go.dev/index.md)** () | The Go programming language | go, gofmt | 1.26.1 (+89) | `pkgx go` |
 | **[julialang.org](./packages/julialang.org/index.md)** () | The Julia Programming Language | julia | 1.12.5 (+29) | `pkgx julia` |
-| **[kotlinlang.org](./packages/kotlinlang.org/index.md)** (kotlin) | Statically typed programming language for the JVM | kapt, kotlin, kotlinc, ... (+2) | 2.3.10 (+21) | `pkgx kotlin` |
+| **[kotlinlang.org](./packages/kotlinlang.org/index.md)** (kotlin) | Statically typed programming language for the JVM | kapt, kotlin, kotlinc, ... (+2) | 2.3.20 (+22) | `pkgx kotlin` |
 | **[lua.org](./packages/lua.org/index.md)** () | Powerful, lightweight programming language | lua, luac | 5.5.0 (+4) | `pkgx lua` |
 | **[luajit.org](./packages/luajit.org/index.md)** () | Mirror of the LuaJIT git repository | luajit, luajit-&lbrace;&lbrace;version.marketing&rbrace;&rbrace;. | 2.1.0 (+0) | `pkgx luajit` |
 | **[nodejs.org](./packages/nodejs.org/index.md)** () | Platform built on V8 to build network applications | node | 25.8.1 (+176) | `pkgx node` |
