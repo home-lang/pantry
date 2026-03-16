@@ -43,7 +43,8 @@ jobs:
             sudo /root/.bun/bin/bun install
 
             # Build bunpress docs (served at /docs)
-            sudo /root/.bun/bin/bun run build:docs 2>/dev/null || echo "::warning::Docs build skipped"
+            # Use npx-style resolution to use project-local bunpress (which can find crosswind from root node_modules)
+            sudo /root/.bun/bin/bun ./node_modules/@stacksjs/bunpress/dist/bin/cli.js build docs 2>/dev/null || echo "::warning::Docs build skipped"
 
             # Stop old site service if it exists (merged into registry)
             sudo systemctl stop pantry-site 2>/dev/null || true
