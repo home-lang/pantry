@@ -119,12 +119,17 @@ function extractSystemDeps(): string[] {
       const deps: string[] = []
       let inDeps = false
       for (const line of content.split('\n')) {
-        if (/^dependencies:\s*$/.test(line.trim())) { inDeps = true; continue }
+        if (/^dependencies:\s*$/.test(line.trim())) {
+          inDeps = true
+          continue
+        }
         if (inDeps && /^\s+\S/.test(line)) {
           const name = line.trim().split(':')[0].trim()
           if (name) deps.push(name)
         }
-        else if (inDeps && /^\S/.test(line)) { inDeps = false }
+        else if (inDeps && /^\S/.test(line)) {
+          inDeps = false
+        }
       }
       if (deps.length > 0) return deps
     }

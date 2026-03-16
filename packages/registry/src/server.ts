@@ -1485,8 +1485,10 @@ const DASHBOARD_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_
 function getDashboardAuth(req: Request, url?: URL): boolean {
   // Check cookie first (direct access / cookie-forwarding CDN)
   const cookieHeader = req.headers.get('cookie') || ''
+  // eslint-disable-next-line max-statements-per-line -- semicolon is inside regex, not a statement separator
   const cookieMatch = cookieHeader.match(/pantry_token=([^;]+)/)
-  if (cookieMatch && cookieMatch[1] === DASHBOARD_TOKEN) return true
+  if (cookieMatch && cookieMatch[1] === DASHBOARD_TOKEN)
+    return true
 
   // Check Authorization header (CloudFront forwards this)
   const authHeader = req.headers.get('authorization') || ''
@@ -1516,6 +1518,7 @@ async function handleDashboard(
 
   // Helper to build dashboard URLs that preserve the auth token
   const tokenParam = url.searchParams.get('token') || ''
+  // eslint-disable-next-line max-statements-per-line -- semicolon is inside regex, not a statement separator
   const tokenFromCookie = (req.headers.get('cookie') || '').match(/pantry_token=([^;]+)/)?.[1] || ''
   const activeToken = tokenParam || tokenFromCookie
   const qs = activeToken ? `?token=${encodeURIComponent(activeToken)}` : ''

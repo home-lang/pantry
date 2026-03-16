@@ -469,7 +469,7 @@ else if (typeof step === 'object' && step !== null) {
         const runText = typeof step.run === 'string' ? step.run
           : (Array.isArray(step.run) ? step.run.join(' ') : '')
         const propText = typeof step.prop === 'string' ? step.prop : ''
-        text = runText + ' ' + propText
+        text = `${runText} ${propText}`
       }
       // Remove steps that are entirely fix-shebangs calls
       if (/^\s*fix-shebangs\.ts\b/.test(text.trim()) || /^\s*run:\s*fix-shebangs\.ts\b/.test(text.trim())) {
@@ -890,7 +890,7 @@ function parseDepConstraint(dep: string): string | null {
   let constraint = match[1].trim()
   // Strip wrapping quotes
   if ((constraint.startsWith('"') && constraint.endsWith('"')) ||
-      (constraint.startsWith("'") && constraint.endsWith("'"))) {
+      (constraint.startsWith('\'') && constraint.endsWith('\''))) {
     constraint = constraint.slice(1, -1)
   }
   // "*" means any version
@@ -899,7 +899,11 @@ function parseDepConstraint(dep: string): string | null {
 }
 
 // Parse a semver string into components
-function parseSemver(v: string): { major: number; minor: number; patch: number } {
+function parseSemver(v: string): {
+  major: number
+  minor: number
+  patch: number
+} {
   const parts = v.split('.').map(Number)
   return { major: parts[0] || 0, minor: parts[1] || 0, patch: parts[2] || 0 }
 }
@@ -934,7 +938,11 @@ else {
 }
 
 function checkSingleConstraint(
-  v: { major: number; minor: number; patch: number },
+  v: {
+    major: number
+    minor: number
+    patch: number
+  },
   constraint: string,
 ): boolean {
   // ~3.11 means >=3.11.0 <3.12.0 (tilde: patch-level changes)

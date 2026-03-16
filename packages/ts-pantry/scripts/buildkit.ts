@@ -22,7 +22,11 @@ export interface Token {
 // ── Parsed YAML recipe types ──────────────────────────────────────────
 
 /** Inline prop content — either a string or object with content/extname */
-export type RecipePropValue = string | { content?: string; contents?: string; extname?: string }
+export type RecipePropValue = string | {
+  content?: string
+  contents?: string
+  extname?: string
+}
 
 /** A single step in a build/test script — either a bare command string or a structured object */
 export type RecipeScriptStep = string | {
@@ -31,7 +35,10 @@ export type RecipeScriptStep = string | {
   if?: string
   'if:'?: string
   prop?: RecipePropValue
-  fixture?: string | { extname: string; content: string }
+  fixture?: string | {
+    extname: string
+    content: string
+  }
 }
 
 /** Source distributable configuration */
@@ -69,7 +76,10 @@ export interface RecipeBuildConfig {
 /** Test configuration */
 export type RecipeTest = string | string[] | {
   script?: string | string[] | RecipeScriptStep[]
-  fixture?: string | { extname: string; content: string }
+  fixture?: string | {
+    extname: string
+    content: string
+  }
   dependencies?: RecipeDependencyMap
   env?: RecipeBuildEnv
 }
@@ -82,7 +92,11 @@ export interface PackageRecipe {
   distributable?: RecipeDistributable
   dependencies?: RecipeDependencyMap
   build?: RecipeBuildConfig | string | RecipeScriptStep[]
-  versions?: { github?: string; strip?: string | RegExp; [key: string]: unknown }
+  versions?: {
+    github?: string
+    strip?: string | RegExp
+    [key: string]: unknown
+  }
   provides?: string[] | Record<string, string[]>
   platforms?: string[]
   test?: RecipeTest

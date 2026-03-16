@@ -288,6 +288,7 @@ else if (Array.isArray(recipe.build.script)) {
           s = s.replace(/ftp\.gnu\.org/g, 'ftpmirror.gnu.org')
           // Make the for loop fault-tolerant: wrap curl+tar+configure+make in a subshell with || true
           s = s.replace(
+            // eslint-disable-next-line quotes, max-statements-per-line -- regex pattern
             /for url in "\$\{urls\[@\]\}"; do\n([\s\S]*?)done/,
             'for url in "${urls[@]}"; do\n      (\n$1    ) || echo "WARN: Failed to install dict $url, continuing..."\n    done',
           )
@@ -7834,7 +7835,7 @@ else if (Array.isArray(step.run)) {
             // Remove steps referencing HDF5 (disabled) or $PKGX_DIR/pkgx.prefix (pkgx-specific, undefined in our buildkit)
             const runText = Array.isArray(step.run) ? step.run.join(' ') : String(step.run)
             const propText = typeof step.prop === 'string' ? step.prop : ''
-            const fullText = runText + ' ' + propText
+            const fullText = `${runText} ${propText}`
             if (fullText.includes('hdf5') || fullText.includes('HDF5') || fullText.includes('PKGX_DIR') || fullText.includes('pkgx.prefix')) {
               recipe.build.script.splice(i, 1)
               i--
@@ -8629,6 +8630,7 @@ else if (Array.isArray(step.run)) {
           if (typeof step === 'object' && step.run && typeof step.run === 'string'
             && step.run.includes('ls') && step.run.includes('.dylib')) {
             step.run = step.run.replace(
+              // eslint-disable-next-line max-statements-per-line -- regex pattern
               /if \[ -n "\$\(ls [^)]+\.dylib\)" \]; then\s*\n\s*rm [^\n]+\.dylib\s*\n\s*fi/,
               'find {{prefix}}/lib -name "*.dylib" -delete 2>/dev/null || true',
             )
