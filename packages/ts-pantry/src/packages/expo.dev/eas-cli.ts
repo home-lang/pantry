@@ -3,7 +3,7 @@
  *
  * @domain `expo.dev/eas-cli`
  * @programs `eas`
- * @version `18.3.0` (181 versions available)
+ * @version `18.4.0` (182 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install expo.dev/eas-cli`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "eas"
  * console.log(pkg.description) // "Fastest way to build, submit, and update iOS an..."
  * console.log(pkg.programs)    // ["eas"]
- * console.log(pkg.versions[0]) // "18.3.0" (latest)
+ * console.log(pkg.versions[0]) // "18.4.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/expo-dev/eas-cli.md
@@ -78,6 +78,7 @@ export const expodeveascliPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '18.4.0',
     '18.3.0',
     '18.2.0',
     '18.1.0',
