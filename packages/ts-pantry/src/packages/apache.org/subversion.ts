@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.apacheorgsubversion
  * console.log(pkg.name)        // "svn"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.14.5" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/apache-org/subversion.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/apache-org/subversion.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const apacheorgsubversionPackage = {
   /**
@@ -93,7 +93,7 @@ export const apacheorgsubversionPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.14.5',

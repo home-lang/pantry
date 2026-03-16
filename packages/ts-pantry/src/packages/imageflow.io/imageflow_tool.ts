@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.imageflowioimageflow_tool
  * console.log(pkg.name)        // "imageflow_tool"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2023.9.25" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/imageflow-io/imageflow_tool.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/imageflow-io/imageflow_tool.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const imageflowioimageflow_toolPackage = {
   /**
@@ -73,7 +73,7 @@ export const imageflowioimageflow_toolPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2023.9.25',

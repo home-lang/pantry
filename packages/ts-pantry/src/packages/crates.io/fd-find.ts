@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiofdfind
  * console.log(pkg.name)        // "fd"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "10.4.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/fd-find.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/fd-find.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiofdfindPackage = {
   /**
@@ -57,7 +57,7 @@ export const cratesiofdfindPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '10.4.2',

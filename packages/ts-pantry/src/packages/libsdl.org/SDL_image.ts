@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libsdlorgsdl_image
  * console.log(pkg.name)        // "SDL_image"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "3.4.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libsdl-org/SDL_image.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libsdl-org/SDL_image.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libsdlorgsdl_imagePackage = {
   /**
@@ -68,7 +68,7 @@ export const libsdlorgsdl_imagePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.4.0',

@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiozellij
  * console.log(pkg.name)        // "zellij"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.43.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/zellij.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/zellij.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiozellijPackage = {
   /**
@@ -74,7 +74,7 @@ export const cratesiozellijPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.43.1',

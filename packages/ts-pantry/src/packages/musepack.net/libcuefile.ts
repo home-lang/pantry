@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.musepacknetlibcuefile
  * console.log(pkg.name)        // "libcuefile"
  * console.log(pkg.versions[0]) // "475.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/musepack-net/libcuefile.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/musepack-net/libcuefile.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const musepacknetlibcuefilePackage = {
   /**
@@ -57,7 +57,7 @@ export const musepacknetlibcuefilePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '475.0.0',

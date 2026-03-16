@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomkkosoniguruma
  * console.log(pkg.name)        // "onig-config"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "6.9.10" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/kkos/oniguruma.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/kkos/oniguruma.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const onigurumaPackage = {
   /**
@@ -57,7 +57,7 @@ export const onigurumaPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '6.9.10',

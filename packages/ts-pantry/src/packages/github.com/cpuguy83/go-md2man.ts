@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomcpuguy83gomd2man
  * console.log(pkg.name)        // "go-md2man"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.0.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/cpuguy83/go-md2man.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/cpuguy83/go-md2man.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gomd2manPackage = {
   /**
@@ -64,7 +64,7 @@ export const gomd2manPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.0.7',

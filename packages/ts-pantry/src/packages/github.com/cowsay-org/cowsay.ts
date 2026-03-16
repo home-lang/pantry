@@ -14,7 +14,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomcowsayorgcowsay
  * console.log(pkg.name)        // "cowsay"
@@ -23,8 +23,8 @@
  * console.log(pkg.versions[0]) // "3.8.4" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/cowsay-org/cowsay.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/cowsay-org/cowsay.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cowsayPackage = {
   /**
@@ -79,7 +79,7 @@ export const cowsayPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.8.4',

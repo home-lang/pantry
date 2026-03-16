@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomlimethethaddrgen
  * console.log(pkg.name)        // "ethaddrgen"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.0.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/Limeth/ethaddrgen.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/Limeth/ethaddrgen.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const ethaddrgenPackage = {
   /**
@@ -64,7 +64,7 @@ export const ethaddrgenPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.0.7',

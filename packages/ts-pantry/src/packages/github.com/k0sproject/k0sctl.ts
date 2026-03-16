@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomk0sprojectk0sctl
  * console.log(pkg.name)        // "k0sctl"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.28.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/k0sproject/k0sctl.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/k0sproject/k0sctl.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const k0sctlPackage = {
   /**
@@ -64,7 +64,7 @@ export const k0sctlPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.28.0',

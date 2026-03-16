@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.freedesktoporgslirp
  * console.log(pkg.name)        // "slirp"
  * console.log(pkg.versions[0]) // "4.9.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/slirp.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/freedesktop-org/slirp.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const freedesktoporgslirpPackage = {
   /**
@@ -62,7 +62,7 @@ export const freedesktoporgslirpPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.9.1',

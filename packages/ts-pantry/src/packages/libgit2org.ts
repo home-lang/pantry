@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libgit2org
  * console.log(pkg.name)        // "git2"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.9.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libgit2-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libgit2-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libgit2orgPackage = {
   /**
@@ -72,7 +72,7 @@ export const libgit2orgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.9.2',

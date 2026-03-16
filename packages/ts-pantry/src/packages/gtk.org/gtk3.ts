@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gtkorggtk3
  * console.log(pkg.name)        // "gtk3"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "3.24.38" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gtk-org/gtk3.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gtk-org/gtk3.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gtkorggtk3Package = {
   /**
@@ -107,7 +107,7 @@ export const gtkorggtk3Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.24.38',

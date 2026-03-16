@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.tsl0922githubiottyd
  * console.log(pkg.name)        // "ttyd"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.7.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/tsl0922-github-io/ttyd.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/tsl0922-github-io/ttyd.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const tsl0922githubiottydPackage = {
   /**
@@ -75,7 +75,7 @@ export const tsl0922githubiottydPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.7.7',

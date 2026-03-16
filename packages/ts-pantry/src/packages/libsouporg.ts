@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libsouporg
  * console.log(pkg.name)        // "libsoup"
  * console.log(pkg.versions[0]) // "3.6.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libsoup-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libsoup-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libsouporgPackage = {
   /**
@@ -76,7 +76,7 @@ export const libsouporgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.6.6',

@@ -14,7 +14,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access the package
  * const pkg = pantry.go
@@ -27,8 +27,8 @@
  * console.log(pkg.versions[0]) // "1.26.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/go-dev.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/go-dev.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const goPackage = {
   /**
@@ -79,7 +79,7 @@ export const goPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.26.1',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiospotify_player
  * console.log(pkg.name)        // "spotify_player"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.22.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/spotify_player.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/spotify_player.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiospotify_playerPackage = {
   /**
@@ -68,7 +68,7 @@ export const cratesiospotify_playerPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.22.1',

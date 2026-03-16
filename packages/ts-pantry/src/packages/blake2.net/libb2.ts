@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.blake2netlibb2
  * console.log(pkg.name)        // "libb2"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "0.98.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/blake2-net/libb2.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/blake2-net/libb2.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const blake2netlibb2Package = {
   /**
@@ -56,7 +56,7 @@ export const blake2netlibb2Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.98.1',

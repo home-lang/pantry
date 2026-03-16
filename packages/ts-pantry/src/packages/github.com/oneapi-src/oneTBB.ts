@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomoneapisrconetbb
  * console.log(pkg.name)        // "tbb"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2022.3.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/oneapi-src/oneTBB.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/oneapi-src/oneTBB.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const onetbbPackage = {
   /**
@@ -65,7 +65,7 @@ export const onetbbPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2022.3.0',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.sfnetoptipng
  * console.log(pkg.name)        // "optipng"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "7.9.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/sf-net/optipng.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/sf-net/optipng.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const sfnetoptipngPackage = {
   /**
@@ -66,7 +66,7 @@ export const sfnetoptipngPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '7.9.1',

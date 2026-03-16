@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomlmsensorslmsensors
  * console.log(pkg.name)        // "sensors"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.6.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/lm-sensors/lm-sensors.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/lm-sensors/lm-sensors.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const lmsensorsPackage = {
   /**
@@ -67,7 +67,7 @@ export const lmsensorsPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.6.0',

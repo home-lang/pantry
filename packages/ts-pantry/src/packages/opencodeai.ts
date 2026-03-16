@@ -3,7 +3,7 @@
  *
  * @domain `opencode.ai`
  * @programs `opencode`
- * @version `1.2.26` (508 versions available)
+ * @version `1.2.27` (509 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install opencode.ai`
@@ -11,16 +11,16 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.opencodeai
  * console.log(pkg.name)        // "opencode.ai"
  * console.log(pkg.programs)    // ["opencode"]
- * console.log(pkg.versions[0]) // "1.2.26" (latest)
+ * console.log(pkg.versions[0]) // "1.2.27" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/opencode-ai.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/opencode-ai.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const opencodeaiPackage = {
   /**
@@ -67,9 +67,10 @@ export const opencodeaiPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2.27',
     '1.2.26',
     '1.2.25',
     '1.2.24',

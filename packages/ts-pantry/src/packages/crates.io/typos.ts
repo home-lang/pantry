@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiotypos
  * console.log(pkg.name)        // "typos"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "1.44.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/typos.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/typos.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiotyposPackage = {
   /**
@@ -57,7 +57,7 @@ export const cratesiotyposPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.44.0',

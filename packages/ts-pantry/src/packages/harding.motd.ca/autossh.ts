@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.hardingmotdcaautossh
  * console.log(pkg.name)        // "autossh"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.4f" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/harding-motd-ca/autossh.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/harding-motd-ca/autossh.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const hardingmotdcaautosshPackage = {
   /**
@@ -73,7 +73,7 @@ export const hardingmotdcaautosshPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.4f',

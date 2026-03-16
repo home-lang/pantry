@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.oberhumercomlzo
  * console.log(pkg.name)        // "lzo"
  * console.log(pkg.versions[0]) // "2.10.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/oberhumer-com/lzo.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/oberhumer-com/lzo.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const oberhumercomlzoPackage = {
   /**
@@ -48,7 +48,7 @@ export const oberhumercomlzoPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.10.0',

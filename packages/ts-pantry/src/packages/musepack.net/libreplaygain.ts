@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.musepacknetlibreplaygain
  * console.log(pkg.name)        // "libreplaygain"
  * console.log(pkg.versions[0]) // "475.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/musepack-net/libreplaygain.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/musepack-net/libreplaygain.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const musepacknetlibreplaygainPackage = {
   /**
@@ -57,7 +57,7 @@ export const musepacknetlibreplaygainPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '475.0.0',

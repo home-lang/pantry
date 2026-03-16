@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.treesittergithubio
  * console.log(pkg.name)        // "tree-sitter"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.26.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/tree-sitter-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/tree-sitter-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const treesittergithubioPackage = {
   /**
@@ -58,7 +58,7 @@ export const treesittergithubioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.26.7',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.microsoftcomazurecli
  * console.log(pkg.name)        // "az"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "2.84.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/microsoft-com/azure-cli.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/microsoft-com/azure-cli.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const microsoftcomazurecliPackage = {
   /**
@@ -67,7 +67,7 @@ export const microsoftcomazurecliPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.84.0',

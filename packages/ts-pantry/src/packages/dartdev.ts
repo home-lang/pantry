@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.dartdev
  * console.log(pkg.name)        // "dart"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.11.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/dart-dev.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/dart-dev.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const dartdevPackage = {
   /**
@@ -68,7 +68,7 @@ export const dartdevPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.11.2',

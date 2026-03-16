@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.abseilio
  * console.log(pkg.name)        // "abseil"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "20260107.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/abseil-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/abseil-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const abseilioPackage = {
   /**
@@ -67,7 +67,7 @@ export const abseilioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '20260107.1.0',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.rpmorgrpm
  * console.log(pkg.name)        // "rpm"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "6.0.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/rpm-org/rpm.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/rpm-org/rpm.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rpmorgrpmPackage = {
   /**
@@ -89,7 +89,7 @@ export const rpmorgrpmPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '6.0.1',

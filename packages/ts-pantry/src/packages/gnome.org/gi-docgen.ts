@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnomeorggidocgen
  * console.log(pkg.name)        // "gi-docgen"
  * console.log(pkg.versions[0]) // "2026.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnome-org/gi-docgen.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnome-org/gi-docgen.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnomeorggidocgenPackage = {
   /**
@@ -62,7 +62,7 @@ export const gnomeorggidocgenPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2026.1.0',

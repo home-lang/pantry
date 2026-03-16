@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pytestorgpluggy
  * console.log(pkg.name)        // "pluggy"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.6.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/pytest-org/pluggy.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/pytest-org/pluggy.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pytestorgpluggyPackage = {
   /**
@@ -64,7 +64,7 @@ export const pytestorgpluggyPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.6.0',

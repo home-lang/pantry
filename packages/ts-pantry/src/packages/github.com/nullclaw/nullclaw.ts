@@ -3,7 +3,7 @@
  *
  * @domain `github.com/nullclaw/nullclaw`
  * @programs `nullclaw`, `nullclaw-init`
- * @version `2026.3.14` (14 versions available)
+ * @version `2026.3.15` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/nullclaw/nullclaw`
@@ -12,16 +12,16 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomnullclawnullclaw
  * console.log(pkg.name)        // "nullclaw"
  * console.log(pkg.programs)    // ["nullclaw", "nullclaw-init"]
- * console.log(pkg.versions[0]) // "2026.3.14" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.15" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/nullclaw/nullclaw.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/nullclaw/nullclaw.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const nullclawPackage = {
   /**
@@ -74,9 +74,10 @@ export const nullclawPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.15',
     '2026.3.14',
     '2026.3.13',
     '2026.3.12',

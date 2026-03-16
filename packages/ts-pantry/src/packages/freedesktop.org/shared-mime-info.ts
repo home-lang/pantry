@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.freedesktoporgsharedmimeinfo
  * console.log(pkg.name)        // "update-mime-database"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2.4.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/shared-mime-info.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/freedesktop-org/shared-mime-info.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const freedesktoporgsharedmimeinfoPackage = {
   /**
@@ -74,7 +74,7 @@ export const freedesktoporgsharedmimeinfoPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.4.0',

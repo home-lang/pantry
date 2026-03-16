@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomadrienvergeyamllint
  * console.log(pkg.name)        // "yamllint"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.38.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/adrienverge/yamllint.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/adrienverge/yamllint.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const yamllintPackage = {
   /**
@@ -65,7 +65,7 @@ export const yamllintPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.38.0',

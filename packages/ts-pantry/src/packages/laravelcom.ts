@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.laravelcom
  * console.log(pkg.name)        // "laravel"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "5.24.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/laravel-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/laravel-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const laravelcomPackage = {
   /**
@@ -74,7 +74,7 @@ export const laravelcomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.24.7',

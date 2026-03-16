@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gstreamerfreedesktoporgorc
  * console.log(pkg.name)        // "orc"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.4.42" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gstreamer-freedesktop-org/orc.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gstreamer-freedesktop-org/orc.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gstreamerfreedesktoporgorcPackage = {
   /**
@@ -66,7 +66,7 @@ export const gstreamerfreedesktoporgorcPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.4.42',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomnpryceadrtools
  * console.log(pkg.name)        // "adr"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "3.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/npryce/adr-tools.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/npryce/adr-tools.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const adrtoolsPackage = {
   /**
@@ -64,7 +64,7 @@ export const adrtoolsPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.0.0',

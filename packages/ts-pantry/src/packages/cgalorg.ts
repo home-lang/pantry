@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cgalorg
  * console.log(pkg.name)        // "cgal"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "6.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/cgal-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/cgal-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cgalorgPackage = {
   /**
@@ -81,7 +81,7 @@ export const cgalorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '6.1.0',

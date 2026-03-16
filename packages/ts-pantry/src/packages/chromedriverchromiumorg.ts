@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.chromedriverchromiumorg
  * console.log(pkg.name)        // "chromedriver"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "114.0.5735.90" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/chromedriver-chromium-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/chromedriver-chromium-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const chromedriverchromiumorgPackage = {
   /**
@@ -73,7 +73,7 @@ export const chromedriverchromiumorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '114.0.5735.90',

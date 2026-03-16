@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnomeorggsettingsdesktopschemas
  * console.log(pkg.name)        // "gsettings-desktop-schemas"
  * console.log(pkg.versions[0]) // "50.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnome-org/gsettings-desktop-schemas.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnome-org/gsettings-desktop-schemas.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnomeorggsettingsdesktopschemasPackage = {
   /**
@@ -64,7 +64,7 @@ export const gnomeorggsettingsdesktopschemasPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '50.0.0',

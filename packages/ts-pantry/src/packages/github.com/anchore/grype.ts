@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomanchoregrype
  * console.log(pkg.name)        // "grype"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.109.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/anchore/grype.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/anchore/grype.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const grypePackage = {
   /**
@@ -64,7 +64,7 @@ export const grypePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.109.1',

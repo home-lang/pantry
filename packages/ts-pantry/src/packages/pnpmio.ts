@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pnpmio
  * console.log(pkg.name)        // "pnp"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "10.32.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/pnpm-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/pnpm-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pnpmioPackage = {
   /**
@@ -66,7 +66,7 @@ export const pnpmioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '10.32.1',

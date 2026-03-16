@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.nghttp2org
  * console.log(pkg.name)        // "nghttp2"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "1.68.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/nghttp2-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/nghttp2-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const nghttp2orgPackage = {
   /**
@@ -50,7 +50,7 @@ export const nghttp2orgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.68.0',

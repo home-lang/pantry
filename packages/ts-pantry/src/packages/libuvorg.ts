@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libuvorg
  * console.log(pkg.name)        // "libuv"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "1.52.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libuv-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libuv-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libuvorgPackage = {
   /**
@@ -57,7 +57,7 @@ export const libuvorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.52.1',

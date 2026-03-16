@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnupgorglibksba
  * console.log(pkg.name)        // "libksba"
  * console.log(pkg.versions[0]) // "1.6.8" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnupg-org/libksba.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnupg-org/libksba.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnupgorglibksbaPackage = {
   /**
@@ -48,7 +48,7 @@ export const gnupgorglibksbaPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.6.8',

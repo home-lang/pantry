@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnomeorgglibnetworking
  * console.log(pkg.name)        // "glib-networking"
  * console.log(pkg.versions[0]) // "2.80.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnome-org/glib-networking.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnome-org/glib-networking.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnomeorgglibnetworkingPackage = {
   /**
@@ -66,7 +66,7 @@ export const gnomeorgglibnetworkingPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.80.1',

@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.wpewebkitorgwpebackendfdo
  * console.log(pkg.name)        // "wpebackend-fdo"
  * console.log(pkg.versions[0]) // "1.16.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/wpewebkit-org/wpebackend-fdo.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/wpewebkit-org/wpebackend-fdo.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const wpewebkitorgwpebackendfdoPackage = {
   /**
@@ -67,7 +67,7 @@ export const wpewebkitorgwpebackendfdoPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.16.1',

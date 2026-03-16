@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomaristocratosbtop
  * console.log(pkg.name)        // "btop"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.4.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/aristocratos/btop.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/aristocratos/btop.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const btopPackage = {
   /**
@@ -74,7 +74,7 @@ export const btopPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.4.6',

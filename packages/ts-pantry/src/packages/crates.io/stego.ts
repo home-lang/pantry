@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiostego
  * console.log(pkg.name)        // "stego"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2019.10.22" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/stego.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/stego.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiostegoPackage = {
   /**
@@ -57,7 +57,7 @@ export const cratesiostegoPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2019.10.22',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.getzolaorg
  * console.log(pkg.name)        // "zola"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.22.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/getzola-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/getzola-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const getzolaorgPackage = {
   /**
@@ -58,7 +58,7 @@ export const getzolaorgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.22.1',

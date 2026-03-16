@@ -3,7 +3,7 @@
  *
  * @domain `ast-grep.github.io`
  * @programs `sg`, `ast-grep`
- * @version `0.41.1` (101 versions available)
+ * @version `0.42.0` (102 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ast-grep.github.io`
@@ -11,17 +11,17 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.astgrepgithubio
  * console.log(pkg.name)        // "ast-grep.github"
  * console.log(pkg.description) // "⚡A CLI tool for code structural search, lint an..."
  * console.log(pkg.programs)    // ["sg", "ast-grep"]
- * console.log(pkg.versions[0]) // "0.41.1" (latest)
+ * console.log(pkg.versions[0]) // "0.42.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/ast-grep-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/ast-grep-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const astgrepgithubioPackage = {
   /**
@@ -59,9 +59,10 @@ export const astgrepgithubioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.42.0',
     '0.41.1',
     '0.41.0',
     '0.40.5',

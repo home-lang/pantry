@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomkdavebtrfsprogs
  * console.log(pkg.name)        // "btrfs-progs"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "6.19.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/kdave/btrfs-progs.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/kdave/btrfs-progs.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const btrfsprogsPackage = {
   /**
@@ -89,7 +89,7 @@ export const btrfsprogsPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '6.19.0',

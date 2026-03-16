@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.developersyubicocomlibfido2
  * console.log(pkg.name)        // "fido2"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.16.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/developers-yubico-com/libfido2.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/developers-yubico-com/libfido2.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const developersyubicocomlibfido2Package = {
   /**
@@ -78,7 +78,7 @@ export const developersyubicocomlibfido2Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.16.0',

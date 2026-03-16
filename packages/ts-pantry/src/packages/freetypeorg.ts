@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.freetypeorg
  * console.log(pkg.name)        // "freetype"
  * console.log(pkg.versions[0]) // "2.14.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/freetype-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/freetype-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const freetypeorgPackage = {
   /**
@@ -64,7 +64,7 @@ export const freetypeorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.14.2',

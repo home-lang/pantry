@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.facebookcommvfst
  * console.log(pkg.name)        // "mvfst"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2026.3.9.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/facebook-com/mvfst.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/facebook-com/mvfst.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const facebookcommvfstPackage = {
   /**
@@ -76,7 +76,7 @@ export const facebookcommvfstPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2026.3.9.0',

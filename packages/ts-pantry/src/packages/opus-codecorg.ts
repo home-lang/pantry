@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.opuscodecorg
  * console.log(pkg.name)        // "opus-codec"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "1.6.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/opus-codec-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/opus-codec-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const opuscodecorgPackage = {
   /**
@@ -60,7 +60,7 @@ export const opuscodecorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.6.1',

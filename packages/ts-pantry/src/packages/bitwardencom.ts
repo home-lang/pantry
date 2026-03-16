@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.bitwardencom
  * console.log(pkg.name)        // "bw"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2026.2.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/bitwarden-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/bitwarden-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const bitwardencomPackage = {
   /**
@@ -74,7 +74,7 @@ export const bitwardencomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2026.2.0',

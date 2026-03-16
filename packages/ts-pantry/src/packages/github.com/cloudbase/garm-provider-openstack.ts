@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomcloudbasegarmprovideropenstack
  * console.log(pkg.name)        // "cloudbase/garm-provider-openstack"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.1.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/cloudbase/garm-provider-openstack.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/cloudbase/garm-provider-openstack.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const garmprovideropenstackPackage = {
   /**
@@ -64,7 +64,7 @@ export const garmprovideropenstackPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.1.3',

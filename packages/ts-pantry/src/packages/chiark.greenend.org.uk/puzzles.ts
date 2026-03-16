@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.chiarkgreenendorgukpuzzles
  * console.log(pkg.name)        // "puzzles"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "20260309.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/chiark-greenend-org-uk/puzzles.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/chiark-greenend-org-uk/puzzles.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const chiarkgreenendorgukpuzzlesPackage = {
   /**
@@ -115,7 +115,7 @@ export const chiarkgreenendorgukpuzzlesPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '20260309.0.0',

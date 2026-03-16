@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.kerberosorg
  * console.log(pkg.name)        // "kerberos"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.22.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/kerberos-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/kerberos-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const kerberosorgPackage = {
   /**
@@ -97,7 +97,7 @@ export const kerberosorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.22.2',

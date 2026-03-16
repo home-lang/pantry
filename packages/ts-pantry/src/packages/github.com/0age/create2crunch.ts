@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcom0agecreate2crunch
  * console.log(pkg.name)        // "create2crunch"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2024.12.23" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/0age/create2crunch.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/0age/create2crunch.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const create2crunchPackage = {
   /**
@@ -57,7 +57,7 @@ export const create2crunchPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2024.12.23',

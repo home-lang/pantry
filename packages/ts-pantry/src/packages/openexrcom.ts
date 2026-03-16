@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.openexrcom
  * console.log(pkg.name)        // "exr"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "3.4.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/openexr-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/openexr-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const openexrcomPackage = {
   /**
@@ -84,7 +84,7 @@ export const openexrcomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.4.7',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pocketbaseio
  * console.log(pkg.name)        // "pocketbase"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.36.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/pocketbase-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/pocketbase-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pocketbaseioPackage = {
   /**
@@ -65,7 +65,7 @@ export const pocketbaseioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.36.6',

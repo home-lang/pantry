@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.videolanorglibplacebo
  * console.log(pkg.name)        // "libplacebo"
  * console.log(pkg.versions[0]) // "7.360.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/videolan-org/libplacebo.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/videolan-org/libplacebo.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const videolanorglibplaceboPackage = {
   /**
@@ -67,7 +67,7 @@ export const videolanorglibplaceboPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '7.360.1',

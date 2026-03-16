@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.curlsetrurl
  * console.log(pkg.name)        // "trurl"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.16.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/curl-se/trurl.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/curl-se/trurl.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const curlsetrurlPackage = {
   /**
@@ -72,7 +72,7 @@ export const curlsetrurlPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.16.1',

@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libziporg
  * console.log(pkg.name)        // "zip"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.11.4" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libzip-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libzip-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libziporgPackage = {
   /**
@@ -79,7 +79,7 @@ export const libziporgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.11.4',

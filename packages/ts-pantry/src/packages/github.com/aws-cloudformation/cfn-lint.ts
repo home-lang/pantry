@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomawscloudformationcfnlint
  * console.log(pkg.name)        // "cfn-lint"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.46.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/aws-cloudformation/cfn-lint.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/aws-cloudformation/cfn-lint.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cfnlintPackage = {
   /**
@@ -73,7 +73,7 @@ export const cfnlintPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.46.0',

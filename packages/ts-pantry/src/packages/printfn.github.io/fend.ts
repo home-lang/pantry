@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.printfngithubiofend
  * console.log(pkg.name)        // "fend"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.5.8" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/printfn-github-io/fend.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/printfn-github-io/fend.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const printfngithubiofendPackage = {
   /**
@@ -65,7 +65,7 @@ export const printfngithubiofendPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.5.8',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.chezmoiio
  * console.log(pkg.name)        // "chezmoi"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "2.70.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/chezmoi-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/chezmoi-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const chezmoiioPackage = {
   /**
@@ -68,7 +68,7 @@ export const chezmoiioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.70.0',

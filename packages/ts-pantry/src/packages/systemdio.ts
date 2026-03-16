@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.systemdio
  * console.log(pkg.name)        // "systemd"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "257.13.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/systemd-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/systemd-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const systemdioPackage = {
   /**
@@ -148,7 +148,7 @@ export const systemdioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '257.13.0',

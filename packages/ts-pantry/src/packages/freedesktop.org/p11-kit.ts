@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.freedesktoporgp11kit
  * console.log(pkg.name)        // "p11-kit"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.26.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/p11-kit.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/freedesktop-org/p11-kit.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const freedesktoporgp11kitPackage = {
   /**
@@ -77,7 +77,7 @@ export const freedesktoporgp11kitPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.26.2',

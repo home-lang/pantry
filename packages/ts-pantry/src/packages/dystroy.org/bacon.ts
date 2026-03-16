@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.dystroyorgbacon
  * console.log(pkg.name)        // "bacon"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.22.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/dystroy-org/bacon.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/dystroy-org/bacon.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const dystroyorgbaconPackage = {
   /**
@@ -66,7 +66,7 @@ export const dystroyorgbaconPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.22.0',

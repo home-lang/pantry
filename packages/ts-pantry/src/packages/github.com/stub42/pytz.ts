@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomstub42pytz
  * console.log(pkg.name)        // "pytz"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2026.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/stub42/pytz.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/stub42/pytz.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pytzPackage = {
   /**
@@ -65,7 +65,7 @@ export const pytzPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2026.1.0',

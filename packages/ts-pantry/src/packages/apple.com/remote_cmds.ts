@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.applecomremote_cmds
  * console.log(pkg.name)        // "telnet"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "306.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/apple-com/remote_cmds.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/apple-com/remote_cmds.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const applecomremote_cmdsPackage = {
   /**
@@ -64,7 +64,7 @@ export const applecomremote_cmdsPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '306.0.0',

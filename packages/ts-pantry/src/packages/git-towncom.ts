@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gittowncom
  * console.log(pkg.name)        // "git-town"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "22.6.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/git-town-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/git-town-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gittowncomPackage = {
   /**
@@ -65,7 +65,7 @@ export const gittowncomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '22.6.0',

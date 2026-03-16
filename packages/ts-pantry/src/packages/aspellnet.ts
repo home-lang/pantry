@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.aspellnet
  * console.log(pkg.name)        // "aspell"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.60.8.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/aspell-net.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/aspell-net.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const aspellnetPackage = {
   /**
@@ -76,7 +76,7 @@ export const aspellnetPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.60.8.2',

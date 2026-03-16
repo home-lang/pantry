@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnupgorglibgpgerror
  * console.log(pkg.name)        // "libgpg-error"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.59.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnupg-org/libgpg-error.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnupg-org/libgpg-error.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnupgorglibgpgerrorPackage = {
   /**
@@ -61,7 +61,7 @@ export const gnupgorglibgpgerrorPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.59.0',

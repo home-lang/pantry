@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcompromptexecutionjustmcp
  * console.log(pkg.name)        // "just-mcp"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "0.1.5" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/promptexecution/just-mcp.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/promptexecution/just-mcp.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const justmcpPackage = {
   /**
@@ -56,7 +56,7 @@ export const justmcpPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.1.5',

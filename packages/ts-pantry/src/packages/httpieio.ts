@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.httpieio
  * console.log(pkg.name)        // "httpie"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.2.4" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/httpie-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/httpie-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const httpieioPackage = {
   /**
@@ -67,7 +67,7 @@ export const httpieioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.2.4',

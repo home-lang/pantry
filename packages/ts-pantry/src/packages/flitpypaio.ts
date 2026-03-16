@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.flitpypaio
  * console.log(pkg.name)        // "flit"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.12.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/flit-pypa-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/flit-pypa-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const flitpypaioPackage = {
   /**
@@ -65,7 +65,7 @@ export const flitpypaioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.12.0',

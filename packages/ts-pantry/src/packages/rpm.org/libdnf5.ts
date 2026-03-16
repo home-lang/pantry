@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.rpmorglibdnf5
  * console.log(pkg.name)        // "libdnf5"
  * console.log(pkg.versions[0]) // "5.4.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/rpm-org/libdnf5.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/rpm-org/libdnf5.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rpmorglibdnf5Package = {
   /**
@@ -79,7 +79,7 @@ export const rpmorglibdnf5Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.4.0.0',

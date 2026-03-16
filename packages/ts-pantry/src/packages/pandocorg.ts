@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pandocorg
  * console.log(pkg.name)        // "pandoc"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "3.9.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/pandoc-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/pandoc-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pandocorgPackage = {
   /**
@@ -77,7 +77,7 @@ export const pandocorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.9.0',

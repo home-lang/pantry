@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.microsoftcompyright
  * console.log(pkg.name)        // "pyright"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.1.408" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/microsoft-com/pyright.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/microsoft-com/pyright.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const microsoftcompyrightPackage = {
   /**
@@ -71,7 +71,7 @@ export const microsoftcompyrightPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.1.408',

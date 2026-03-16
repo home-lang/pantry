@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomlsoforglsof
  * console.log(pkg.name)        // "lsof"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "4.99.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/lsof-org/lsof.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/lsof-org/lsof.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const lsofPackage = {
   /**
@@ -67,7 +67,7 @@ export const lsofPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.99.6',

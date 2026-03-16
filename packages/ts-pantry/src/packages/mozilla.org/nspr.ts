@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.mozillaorgnspr
  * console.log(pkg.name)        // "nspr-config"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "4.38.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/mozilla-org/nspr.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/mozilla-org/nspr.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mozillaorgnsprPackage = {
   /**
@@ -58,7 +58,7 @@ export const mozillaorgnsprPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.38.1',

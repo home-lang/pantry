@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.googlecomdoubleconversion
  * console.log(pkg.name)        // "double-conversion"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "3.4.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/google-com/double-conversion.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/google-com/double-conversion.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const googlecomdoubleconversionPackage = {
   /**
@@ -56,7 +56,7 @@ export const googlecomdoubleconversionPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.4.0',

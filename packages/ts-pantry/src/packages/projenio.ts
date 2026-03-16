@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.projenio
  * console.log(pkg.name)        // "projen"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.99.20" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/projen-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/projen-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const projenioPackage = {
   /**
@@ -76,7 +76,7 @@ export const projenioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.99.20',

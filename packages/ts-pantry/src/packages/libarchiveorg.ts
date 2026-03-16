@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libarchiveorg
  * console.log(pkg.name)        // "libarchive"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.8.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libarchive-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libarchive-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libarchiveorgPackage = {
   /**
@@ -73,7 +73,7 @@ export const libarchiveorgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.8.6',

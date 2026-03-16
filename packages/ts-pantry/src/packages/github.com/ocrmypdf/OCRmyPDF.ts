@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomocrmypdfocrmypdf
  * console.log(pkg.name)        // "ocrmypdf"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "17.3.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/ocrmypdf/OCRmyPDF.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/ocrmypdf/OCRmyPDF.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const ocrmypdfPackage = {
   /**
@@ -73,7 +73,7 @@ export const ocrmypdfPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '17.3.0',

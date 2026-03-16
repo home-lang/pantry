@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.herokucom
  * console.log(pkg.name)        // "heroku"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "10.17.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/heroku-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/heroku-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const herokucomPackage = {
   /**
@@ -72,7 +72,7 @@ export const herokucomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '10.17.0',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.rhashsourceforgenet
  * console.log(pkg.name)        // "rhash.sourceforge"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.4.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/rhash-sourceforge-net.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/rhash-sourceforge-net.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rhashsourceforgenetPackage = {
   /**
@@ -69,7 +69,7 @@ export const rhashsourceforgenetPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.4.6',

@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.bashlydannybco
  * console.log(pkg.name)        // "bashly"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.3.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/bashly-dannyb-co.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/bashly-dannyb-co.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const bashlydannybcoPackage = {
   /**
@@ -73,7 +73,7 @@ export const bashlydannybcoPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.3.6',

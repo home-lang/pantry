@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.developersyubicocomyubikeymanager
  * console.log(pkg.name)        // "yubikey-manager"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "5.9.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/developers-yubico-com/yubikey-manager.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/developers-yubico-com/yubikey-manager.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const developersyubicocomyubikeymanagerPackage = {
   /**
@@ -75,7 +75,7 @@ export const developersyubicocomyubikeymanagerPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.9.0',

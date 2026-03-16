@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.groongaorg
  * console.log(pkg.name)        // "groonga"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "16.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/groonga-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/groonga-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const groongaorgPackage = {
   /**
@@ -81,7 +81,7 @@ export const groongaorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '16.0.0',

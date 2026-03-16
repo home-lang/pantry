@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gitlabcomaomediacodecsvtav1
  * console.log(pkg.name)        // "SvtAv1EncApp"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "4.0.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gitlab-com/AOMediaCodec/SVT-AV1.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gitlab-com/AOMediaCodec/SVT-AV1.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gitlabcomaomediacodecsvtav1Package = {
   /**
@@ -66,7 +66,7 @@ export const gitlabcomaomediacodecsvtav1Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.0.1',

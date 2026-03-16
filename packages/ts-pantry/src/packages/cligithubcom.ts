@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cligithubcom
  * console.log(pkg.name)        // "gh"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "2.88.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/cli-github-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/cli-github-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cligithubcomPackage = {
   /**
@@ -65,7 +65,7 @@ export const cligithubcomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.88.1',

@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnomeorgpango
  * console.log(pkg.name)        // "pango"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.57.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnome-org/pango.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnome-org/pango.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnomeorgpangoPackage = {
   /**
@@ -81,7 +81,7 @@ export const gnomeorgpangoPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.57.0',

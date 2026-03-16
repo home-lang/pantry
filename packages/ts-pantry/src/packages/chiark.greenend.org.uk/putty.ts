@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.chiarkgreenendorgukputty
  * console.log(pkg.name)        // "putty"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.83.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/chiark-greenend-org-uk/putty.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/chiark-greenend-org-uk/putty.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const chiarkgreenendorgukputtyPackage = {
   /**
@@ -72,7 +72,7 @@ export const chiarkgreenendorgukputtyPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.83.0',

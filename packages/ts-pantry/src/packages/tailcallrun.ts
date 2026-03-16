@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.tailcallrun
  * console.log(pkg.name)        // "tailcall"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.6.14" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/tailcall-run.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/tailcall-run.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const tailcallrunPackage = {
   /**
@@ -65,7 +65,7 @@ export const tailcallrunPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.6.14',

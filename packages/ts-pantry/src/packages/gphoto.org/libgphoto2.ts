@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gphotoorglibgphoto2
  * console.log(pkg.name)        // "gphoto2"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2.5.33" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gphoto-org/libgphoto2.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gphoto-org/libgphoto2.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gphotoorglibgphoto2Package = {
   /**
@@ -81,7 +81,7 @@ export const gphotoorglibgphoto2Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.5.33',

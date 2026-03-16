@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.microsoftcomdxc
  * console.log(pkg.name)        // "dxc"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.9.2602" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/microsoft-com/dxc.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/microsoft-com/dxc.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const microsoftcomdxcPackage = {
   /**
@@ -76,7 +76,7 @@ export const microsoftcomdxcPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.9.2602',

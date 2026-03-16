@@ -15,7 +15,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access via alias (recommended)
  * const pkg = pantry.cdk
@@ -28,8 +28,8 @@
  * console.log(pkg.versions[0]) // "3.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/aws-amazon-com/cdk.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/aws-amazon-com/cdk.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cdkPackage = {
   /**
@@ -78,7 +78,7 @@ export const cdkPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.0.0',

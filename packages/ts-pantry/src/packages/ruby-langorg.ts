@@ -14,7 +14,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access via alias (recommended)
  * const pkg = pantry.ruby
@@ -27,8 +27,8 @@
  * console.log(pkg.versions[0]) // "4.0.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/ruby-lang-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/ruby-lang-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rubyPackage = {
   /**
@@ -90,7 +90,7 @@ export const rubyPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.0.1',

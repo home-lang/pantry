@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.miniupnpfreefr
  * console.log(pkg.name)        // "miniupnp.free.fr"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "2.3.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/miniupnp-free-fr.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/miniupnp-free-fr.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const miniupnpfreefrPackage = {
   /**
@@ -58,7 +58,7 @@ export const miniupnpfreefrPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.3.3',

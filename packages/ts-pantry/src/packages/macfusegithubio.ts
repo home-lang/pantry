@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.macfusegithubio
  * console.log(pkg.name)        // "macfuse.github"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "5.1.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/macfuse-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/macfuse-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const macfusegithubioPackage = {
   /**
@@ -56,7 +56,7 @@ export const macfusegithubioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.1.3',

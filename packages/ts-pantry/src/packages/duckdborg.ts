@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.duckdborg
  * console.log(pkg.name)        // "duckdb"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.5.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/duckdb-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/duckdb-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const duckdborgPackage = {
   /**
@@ -66,7 +66,7 @@ export const duckdborgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.5.0',

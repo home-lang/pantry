@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomggerganovllamacpp
  * console.log(pkg.name)        // "LLaMA.cpp"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "8368.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/ggerganov/llama-cpp.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/ggerganov/llama-cpp.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const llamacppPackage = {
   /**
@@ -79,7 +79,7 @@ export const llamacppPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '8368.0.0',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.depotdev
  * console.log(pkg.name)        // "depot"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "2.101.19" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/depot-dev.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/depot-dev.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const depotdevPackage = {
   /**
@@ -66,7 +66,7 @@ export const depotdevPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.101.19',

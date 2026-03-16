@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.hdfgrouporghdf5
  * console.log(pkg.name)        // "HDF5"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/hdfgroup-org/HDF5.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/hdfgroup-org/HDF5.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const hdfgrouporghdf5Package = {
   /**
@@ -98,7 +98,7 @@ export const hdfgrouporghdf5Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.1.0',

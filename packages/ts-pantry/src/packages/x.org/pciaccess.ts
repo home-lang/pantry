@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.xorgpciaccess
  * console.log(pkg.name)        // "pciaccess"
  * console.log(pkg.versions[0]) // "0.17.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/x-org/pciaccess.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/x-org/pciaccess.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const xorgpciaccessPackage = {
   /**
@@ -48,7 +48,7 @@ export const xorgpciaccessPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.17.0',

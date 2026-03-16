@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.symfonycomcs
  * console.log(pkg.name)        // "php-cs-fixer"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.94.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/symfony-com/cs.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/symfony-com/cs.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const symfonycomcsPackage = {
   /**
@@ -65,7 +65,7 @@ export const symfonycomcsPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.94.2',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.lz4org
  * console.log(pkg.name)        // "lz4"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.10.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/lz4-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/lz4-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const lz4orgPackage = {
   /**
@@ -58,7 +58,7 @@ export const lz4orgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.10.0',

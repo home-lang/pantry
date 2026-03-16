@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiospider_cli
  * console.log(pkg.name)        // "spider"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.47.24" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/spider_cli.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/spider_cli.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiospider_cliPackage = {
   /**
@@ -58,7 +58,7 @@ export const cratesiospider_cliPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.47.24',

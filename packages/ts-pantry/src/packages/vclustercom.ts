@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.vclustercom
  * console.log(pkg.name)        // "vcluster"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.32.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/vcluster-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/vcluster-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const vclustercomPackage = {
   /**
@@ -77,7 +77,7 @@ export const vclustercomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.32.1',

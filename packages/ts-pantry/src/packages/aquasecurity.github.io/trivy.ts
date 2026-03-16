@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.aquasecuritygithubiotrivy
  * console.log(pkg.name)        // "trivy"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.69.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/aquasecurity-github-io/trivy.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/aquasecurity-github-io/trivy.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const aquasecuritygithubiotrivyPackage = {
   /**
@@ -75,7 +75,7 @@ export const aquasecuritygithubiotrivyPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.69.3',

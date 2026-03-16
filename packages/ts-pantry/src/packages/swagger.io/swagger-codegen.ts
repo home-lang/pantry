@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.swaggerioswaggercodegen
  * console.log(pkg.name)        // "swagger-codegen"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "3.0.77" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/swagger-io/swagger-codegen.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/swagger-io/swagger-codegen.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const swaggerioswaggercodegenPackage = {
   /**
@@ -72,7 +72,7 @@ export const swaggerioswaggercodegenPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.0.77',

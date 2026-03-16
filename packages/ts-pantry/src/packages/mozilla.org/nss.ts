@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.mozillaorgnss
  * console.log(pkg.name)        // "nss"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "3.92.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/mozilla-org/nss.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/mozilla-org/nss.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mozillaorgnssPackage = {
   /**
@@ -136,7 +136,7 @@ export const mozillaorgnssPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.92.0',

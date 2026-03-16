@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.bloomreachcoms4cmd
  * console.log(pkg.name)        // "s4cmd"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/bloomreach-com/s4cmd.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/bloomreach-com/s4cmd.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const bloomreachcoms4cmdPackage = {
   /**
@@ -64,7 +64,7 @@ export const bloomreachcoms4cmdPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.1.0',

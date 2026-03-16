@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.xorgxxf86vm
  * console.log(pkg.name)        // "xxf86vm"
  * console.log(pkg.versions[0]) // "1.1.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/x-org/xxf86vm.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/x-org/xxf86vm.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const xorgxxf86vmPackage = {
   /**
@@ -57,7 +57,7 @@ export const xorgxxf86vmPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.1.7',

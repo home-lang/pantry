@@ -14,7 +14,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.freedesktoporgintltool
  * console.log(pkg.name)        // "intltool"
@@ -23,8 +23,8 @@
  * console.log(pkg.versions[0]) // "0.51.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/intltool.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/freedesktop-org/intltool.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const freedesktoporgintltoolPackage = {
   /**
@@ -89,7 +89,7 @@ export const freedesktoporgintltoolPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.51.0',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.fluxcdioflux2
  * console.log(pkg.name)        // "flux"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "2.8.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/fluxcd-io/flux2.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/fluxcd-io/flux2.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const fluxcdioflux2Package = {
   /**
@@ -67,7 +67,7 @@ export const fluxcdioflux2Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.8.2',

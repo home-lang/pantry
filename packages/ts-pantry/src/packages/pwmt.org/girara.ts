@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pwmtorggirara
  * console.log(pkg.name)        // "girara"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2026.2.4" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/pwmt-org/girara.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/pwmt-org/girara.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pwmtorggiraraPackage = {
   /**
@@ -67,7 +67,7 @@ export const pwmtorggiraraPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2026.2.4',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.rustlangorgrustbindgen
  * console.log(pkg.name)        // "bindgen"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.72.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/rust-lang-org/rust-bindgen.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/rust-lang-org/rust-bindgen.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rustlangorgrustbindgenPackage = {
   /**
@@ -66,7 +66,7 @@ export const rustlangorgrustbindgenPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.72.1',

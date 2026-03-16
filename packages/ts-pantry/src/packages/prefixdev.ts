@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.prefixdev
  * console.log(pkg.name)        // "pixi"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.65.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/prefix-dev.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/prefix-dev.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const prefixdevPackage = {
   /**
@@ -66,7 +66,7 @@ export const prefixdevPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.65.0',

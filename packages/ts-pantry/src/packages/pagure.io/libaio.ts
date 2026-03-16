@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pagureiolibaio
  * console.log(pkg.name)        // "libaio"
  * console.log(pkg.versions[0]) // "0.3.113" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/pagure-io/libaio.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/pagure-io/libaio.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pagureiolibaioPackage = {
   /**
@@ -48,7 +48,7 @@ export const pagureiolibaioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.3.113',

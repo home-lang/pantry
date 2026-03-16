@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.symfonycom
  * console.log(pkg.name)        // "symfony"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "5.16.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/symfony-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/symfony-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const symfonycomPackage = {
   /**
@@ -72,7 +72,7 @@ export const symfonycomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.16.1',

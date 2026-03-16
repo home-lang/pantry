@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomxeolioxeol
  * console.log(pkg.name)        // "xeol"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.10.8" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/xeol-io/xeol.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/xeol-io/xeol.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const xeolPackage = {
   /**
@@ -65,7 +65,7 @@ export const xeolPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.10.8',

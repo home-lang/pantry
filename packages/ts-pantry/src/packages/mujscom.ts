@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.mujscom
  * console.log(pkg.name)        // "mujs"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.3.9" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/mujs-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/mujs-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mujscomPackage = {
   /**
@@ -78,7 +78,7 @@ export const mujscomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.3.9',

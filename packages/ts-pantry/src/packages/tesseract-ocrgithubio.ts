@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.tesseractocrgithubio
  * console.log(pkg.name)        // "tesseract"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "5.5.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/tesseract-ocr-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/tesseract-ocr-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const tesseractocrgithubioPackage = {
   /**
@@ -79,7 +79,7 @@ export const tesseractocrgithubioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.5.2',

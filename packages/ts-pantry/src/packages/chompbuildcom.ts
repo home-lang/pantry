@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.chompbuildcom
  * console.log(pkg.name)        // "chomp"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.2.23" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/chompbuild-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/chompbuild-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const chompbuildcomPackage = {
   /**
@@ -65,7 +65,7 @@ export const chompbuildcomPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.2.23',

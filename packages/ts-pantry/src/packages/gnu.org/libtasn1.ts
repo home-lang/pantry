@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnuorglibtasn1
  * console.log(pkg.name)        // "asn1"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "4.21.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnu-org/libtasn1.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnu-org/libtasn1.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnuorglibtasn1Package = {
   /**
@@ -60,7 +60,7 @@ export const gnuorglibtasn1Package = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.21.0',

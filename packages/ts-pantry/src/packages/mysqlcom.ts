@@ -14,7 +14,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access the package
  * const pkg = pantry.mysql
@@ -27,8 +27,8 @@
  * console.log(pkg.versions[0]) // "9.6.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/mysql-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/mysql-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mysqlPackage = {
   /**
@@ -121,7 +121,7 @@ export const mysqlPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '9.6.0',

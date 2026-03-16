@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.terratagio
  * console.log(pkg.name)        // "terratag"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "0.7.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/terratag-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/terratag-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const terratagioPackage = {
   /**
@@ -73,7 +73,7 @@ export const terratagioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.7.6',

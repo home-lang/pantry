@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.ipythonorg
  * console.log(pkg.name)        // "ipython"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "9.11.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/ipython-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/ipython-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const ipythonorgPackage = {
   /**
@@ -73,7 +73,7 @@ export const ipythonorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '9.11.0',

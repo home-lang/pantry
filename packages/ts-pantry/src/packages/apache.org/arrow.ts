@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.apacheorgarrow
  * console.log(pkg.name)        // "arrow"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "23.0.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/apache-org/arrow.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/apache-org/arrow.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const apacheorgarrowPackage = {
   /**
@@ -96,7 +96,7 @@ export const apacheorgarrowPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '23.0.1',

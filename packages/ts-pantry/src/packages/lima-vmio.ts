@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.limavmio
  * console.log(pkg.name)        // "lima-vm"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2.0.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/lima-vm-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/lima-vm-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const limavmioPackage = {
   /**
@@ -80,7 +80,7 @@ export const limavmioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.0.3',

@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiohuniq
  * console.log(pkg.name)        // "huniq"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2022.12.10" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/huniq.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/huniq.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiohuniqPackage = {
   /**
@@ -57,7 +57,7 @@ export const cratesiohuniqPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2022.12.10',

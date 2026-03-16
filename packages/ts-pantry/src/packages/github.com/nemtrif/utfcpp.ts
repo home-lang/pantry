@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomnemtrifutfcpp
  * console.log(pkg.name)        // "utf8cpp"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "4.9.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/nemtrif/utfcpp.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/nemtrif/utfcpp.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const utfcppPackage = {
   /**
@@ -58,7 +58,7 @@ export const utfcppPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.9.0',

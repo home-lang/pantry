@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.openaicomcodex
  * console.log(pkg.name)        // "codex"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "0.114.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/openai-com/codex.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/openai-com/codex.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const openaicomcodexPackage = {
   /**
@@ -67,7 +67,7 @@ export const openaicomcodexPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.114.0',

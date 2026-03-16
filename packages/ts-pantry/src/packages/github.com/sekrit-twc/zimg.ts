@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomsekrittwczimg
  * console.log(pkg.name)        // "zimg"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "3.0.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/sekrit-twc/zimg.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/sekrit-twc/zimg.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const zimgPackage = {
   /**
@@ -58,7 +58,7 @@ export const zimgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.0.6',

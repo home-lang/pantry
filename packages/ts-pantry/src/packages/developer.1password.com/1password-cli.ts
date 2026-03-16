@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.developer1passwordcom1passwordcli
  * console.log(pkg.name)        // "1Password CLI"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2.32.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/developer-1password-com/1password-cli.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/developer-1password-com/1password-cli.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const developer1passwordcom1passwordcliPackage = {
   /**
@@ -64,7 +64,7 @@ export const developer1passwordcom1passwordcliPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.32.0',

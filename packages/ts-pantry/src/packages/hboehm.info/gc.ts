@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.hboehminfogc
  * console.log(pkg.name)        // "gc"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "8.2.12" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/hboehm-info/gc.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/hboehm-info/gc.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const hboehminfogcPackage = {
   /**
@@ -50,7 +50,7 @@ export const hboehminfogcPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '8.2.12',

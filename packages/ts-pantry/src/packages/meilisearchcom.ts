@@ -8,15 +8,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.meilisearchcom
  * console.log(pkg.name)        // "meilisearch"
  * console.log(pkg.programs)    // ["meilisearch"]
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/meilisearch-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/meilisearch-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const meilisearchcomPackage = {
   /**

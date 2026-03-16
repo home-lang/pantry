@@ -15,7 +15,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access the package
  * const pkg = pantry.python
@@ -28,8 +28,8 @@
  * console.log(pkg.versions[0]) // "3.14.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/python-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/python-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pythonPackage = {
   /**
@@ -94,7 +94,7 @@ export const pythonPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.14.3',

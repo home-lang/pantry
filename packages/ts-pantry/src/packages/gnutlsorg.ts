@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnutlsorg
  * console.log(pkg.name)        // "gnutls"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "3.8.12" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnutls-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnutls-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnutlsorgPackage = {
   /**
@@ -86,7 +86,7 @@ export const gnutlsorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.8.12',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.psycopgorgpsycopg3
  * console.log(pkg.name)        // "psycopg3"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "3.3.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/psycopg-org/psycopg3.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/psycopg-org/psycopg3.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const psycopgorgpsycopg3Package = {
   /**
@@ -58,7 +58,7 @@ export const psycopgorgpsycopg3Package = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.3.3',

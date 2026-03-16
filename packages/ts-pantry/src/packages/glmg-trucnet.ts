@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.glmgtrucnet
  * console.log(pkg.name)        // "glm.g-truc"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "1.0.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/glm-g-truc-net.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/glm-g-truc-net.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const glmgtrucnetPackage = {
   /**
@@ -57,7 +57,7 @@ export const glmgtrucnetPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.0.3',

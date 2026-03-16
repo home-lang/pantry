@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomkiliankoeswiftoutdated
  * console.log(pkg.name)        // "swift-outdated"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "0.11.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/kiliankoe/swift-outdated.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/kiliankoe/swift-outdated.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const swiftoutdatedPackage = {
   /**
@@ -57,7 +57,7 @@ export const swiftoutdatedPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.11.0',

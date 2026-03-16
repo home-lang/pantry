@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libcxxllvmorg
  * console.log(pkg.name)        // "libcxx.llvm"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "22.1.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libcxx-llvm-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libcxx-llvm-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libcxxllvmorgPackage = {
   /**
@@ -59,7 +59,7 @@ export const libcxxllvmorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '22.1.1',

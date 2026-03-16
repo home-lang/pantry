@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.facebookcomzstd
  * console.log(pkg.name)        // "zstd"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.5.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/facebook-com/zstd.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/facebook-com/zstd.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const facebookcomzstdPackage = {
   /**
@@ -80,7 +80,7 @@ export const facebookcomzstdPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.5.7',

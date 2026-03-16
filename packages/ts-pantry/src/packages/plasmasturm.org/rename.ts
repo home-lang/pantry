@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.plasmasturmorgrename
  * console.log(pkg.name)        // "rename"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.601.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/plasmasturm-org/rename.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/plasmasturm-org/rename.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const plasmasturmorgrenamePackage = {
   /**
@@ -65,7 +65,7 @@ export const plasmasturmorgrenamePackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.601.0',

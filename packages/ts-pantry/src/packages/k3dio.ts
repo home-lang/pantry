@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.k3dio
  * console.log(pkg.name)        // "k3d"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "5.8.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/k3d-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/k3d-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const k3dioPackage = {
   /**
@@ -65,7 +65,7 @@ export const k3dioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.8.3',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcompeaks5cmd
  * console.log(pkg.name)        // "s5cmd"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.3.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/peak/s5cmd.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/peak/s5cmd.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const s5cmdPackage = {
   /**
@@ -64,7 +64,7 @@ export const s5cmdPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.3.0',

@@ -14,7 +14,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access via alias (recommended)
  * const pkg = pantry.yarn
@@ -27,8 +27,8 @@
  * console.log(pkg.versions[0]) // "1.22.22" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/classic-yarnpkg-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/classic-yarnpkg-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const classicYarnPackage = {
   /**
@@ -79,7 +79,7 @@ export const classicYarnPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.22.22',

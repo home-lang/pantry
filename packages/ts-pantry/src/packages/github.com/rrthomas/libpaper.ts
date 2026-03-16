@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomrrthomaslibpaper
  * console.log(pkg.name)        // "paper"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.2.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/rrthomas/libpaper.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/rrthomas/libpaper.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libpaperPackage = {
   /**
@@ -65,7 +65,7 @@ export const libpaperPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.2.7',

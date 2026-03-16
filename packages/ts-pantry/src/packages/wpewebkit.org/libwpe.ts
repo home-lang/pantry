@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.wpewebkitorglibwpe
  * console.log(pkg.name)        // "libwpe"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "1.16.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/wpewebkit-org/libwpe.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/wpewebkit-org/libwpe.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const wpewebkitorglibwpePackage = {
   /**
@@ -65,7 +65,7 @@ export const wpewebkitorglibwpePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.16.3',

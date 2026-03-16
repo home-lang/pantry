@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cryptographyio
  * console.log(pkg.name)        // "cryptography"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "46.0.5" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/cryptography-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/cryptography-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cryptographyioPackage = {
   /**
@@ -59,7 +59,7 @@ export const cryptographyioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '46.0.5',

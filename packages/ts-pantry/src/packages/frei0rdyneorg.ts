@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.frei0rdyneorg
  * console.log(pkg.name)        // "frei0r.dyne"
  * console.log(pkg.versions[0]) // "1.8.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/frei0r-dyne-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/frei0r-dyne-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const frei0rdyneorgPackage = {
   /**
@@ -55,7 +55,7 @@ export const frei0rdyneorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.8.0',

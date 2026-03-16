@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libpipelinegitlabiolibpipeline
  * console.log(pkg.name)        // "libpipeline"
  * console.log(pkg.versions[0]) // "1.5.8" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libpipeline-gitlab-io/libpipeline.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libpipeline-gitlab-io/libpipeline.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libpipelinegitlabiolibpipelinePackage = {
   /**
@@ -55,7 +55,7 @@ export const libpipelinegitlabiolibpipelinePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.5.8',

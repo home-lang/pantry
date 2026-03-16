@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.leolangorg
  * console.log(pkg.name)        // "leo"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "3.5.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/leo-lang-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/leo-lang-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const leolangorgPackage = {
   /**
@@ -73,7 +73,7 @@ export const leolangorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.5.0',

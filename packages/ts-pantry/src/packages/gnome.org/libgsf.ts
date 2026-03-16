@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnomeorglibgsf
  * console.log(pkg.name)        // "gsf"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.14.55" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnome-org/libgsf.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnome-org/libgsf.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnomeorglibgsfPackage = {
   /**
@@ -67,7 +67,7 @@ export const gnomeorglibgsfPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.14.55',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.charmshmods
  * console.log(pkg.name)        // "mods"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.8.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/charm-sh/mods.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/charm-sh/mods.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const charmshmodsPackage = {
   /**
@@ -64,7 +64,7 @@ export const charmshmodsPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.8.1',

@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesioportfolio_rs
  * console.log(pkg.name)        // "portfolio_rs"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.7.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/portfolio_rs.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/portfolio_rs.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesioportfolio_rsPackage = {
   /**
@@ -58,7 +58,7 @@ export const cratesioportfolio_rsPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.7.0',

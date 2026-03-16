@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gflagsgithubio
  * console.log(pkg.name)        // "gflags.github"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2.3.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gflags-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gflags-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gflagsgithubioPackage = {
   /**
@@ -57,7 +57,7 @@ export const gflagsgithubioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.3.0',

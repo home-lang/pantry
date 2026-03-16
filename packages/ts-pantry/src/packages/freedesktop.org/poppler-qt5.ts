@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.freedesktoporgpopplerqt5
  * console.log(pkg.name)        // "poppler-qt5"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "26.3.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/freedesktop-org/poppler-qt5.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/freedesktop-org/poppler-qt5.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const freedesktoporgpopplerqt5Package = {
   /**
@@ -107,7 +107,7 @@ export const freedesktoporgpopplerqt5Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '26.3.0',

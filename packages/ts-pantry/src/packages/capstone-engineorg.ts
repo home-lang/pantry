@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.capstoneengineorg
  * console.log(pkg.name)        // "cstool"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "5.0.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/capstone-engine-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/capstone-engine-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const capstoneengineorgPackage = {
   /**
@@ -65,7 +65,7 @@ export const capstoneengineorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.0.7',

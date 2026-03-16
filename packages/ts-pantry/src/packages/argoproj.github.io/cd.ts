@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.argoprojgithubiocd
  * console.log(pkg.name)        // "argo-cd"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "3.3.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/argoproj-github-io/cd.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/argoproj-github-io/cd.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const argoprojgithubiocdPackage = {
   /**
@@ -67,7 +67,7 @@ export const argoprojgithubiocdPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '3.3.3',

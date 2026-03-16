@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcomjjjakeinternetarchive
  * console.log(pkg.name)        // "ia"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "5.8.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/jjjake/internetarchive.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/jjjake/internetarchive.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const internetarchivePackage = {
   /**
@@ -65,7 +65,7 @@ export const internetarchivePackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.8.0',

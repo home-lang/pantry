@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.miniomc
  * console.log(pkg.name)        // "mc"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "2023.10.24.21.42.22" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/min-io/mc.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/min-io/mc.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const miniomcPackage = {
   /**
@@ -65,7 +65,7 @@ export const miniomcPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2023.10.24.21.42.22',

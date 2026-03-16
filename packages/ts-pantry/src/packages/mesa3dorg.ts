@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.mesa3dorg
  * console.log(pkg.name)        // "mesa3d"
  * console.log(pkg.versions[0]) // "26.0.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/mesa3d-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/mesa3d-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mesa3dorgPackage = {
   /**
@@ -95,7 +95,7 @@ export const mesa3dorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '26.0.2',

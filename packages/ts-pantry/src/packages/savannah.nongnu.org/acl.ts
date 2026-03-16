@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.savannahnongnuorgacl
  * console.log(pkg.name)        // "acl"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2.3.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/savannah-nongnu-org/acl.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/savannah-nongnu-org/acl.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const savannahnongnuorgaclPackage = {
   /**
@@ -68,7 +68,7 @@ export const savannahnongnuorgaclPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.3.2',

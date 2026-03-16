@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.jbig2deccom
  * console.log(pkg.name)        // "jbig2dec"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.19.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/jbig2dec-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/jbig2dec-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const jbig2deccomPackage = {
   /**
@@ -66,7 +66,7 @@ export const jbig2deccomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.19.0',

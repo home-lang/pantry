@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.elixirlangorgotp27
  * console.log(pkg.name)        // "otp-27"
  * console.log(pkg.versions[0]) // "1.19.5" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/elixir-lang-org/otp-27.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/elixir-lang-org/otp-27.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const elixirlangorgotp27Package = {
   /**
@@ -55,7 +55,7 @@ export const elixirlangorgotp27Package = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.19.5',

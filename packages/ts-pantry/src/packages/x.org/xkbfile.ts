@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.xorgxkbfile
  * console.log(pkg.name)        // "xkbfile"
  * console.log(pkg.versions[0]) // "1.2.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/x-org/xkbfile.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/x-org/xkbfile.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const xorgxkbfilePackage = {
   /**
@@ -62,7 +62,7 @@ export const xorgxkbfilePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.2.0',

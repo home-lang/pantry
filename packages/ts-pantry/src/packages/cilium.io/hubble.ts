@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.ciliumiohubble
  * console.log(pkg.name)        // "hubble"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.18.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/cilium-io/hubble.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/cilium-io/hubble.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const ciliumiohubblePackage = {
   /**
@@ -64,7 +64,7 @@ export const ciliumiohubblePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.18.6',

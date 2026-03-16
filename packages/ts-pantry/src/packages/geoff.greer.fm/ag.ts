@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.geoffgreerfmag
  * console.log(pkg.name)        // "The Silver Searcher"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2.2.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/geoff-greer-fm/ag.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/geoff-greer-fm/ag.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const geoffgreerfmagPackage = {
   /**
@@ -74,7 +74,7 @@ export const geoffgreerfmagPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.2.0',

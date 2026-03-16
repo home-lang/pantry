@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.aux4io
  * console.log(pkg.name)        // "aux4"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "5.1.18" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/aux4-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/aux4-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const aux4ioPackage = {
   /**
@@ -65,7 +65,7 @@ export const aux4ioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.1.18',

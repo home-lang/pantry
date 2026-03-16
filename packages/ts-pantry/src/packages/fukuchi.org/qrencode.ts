@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.fukuchiorgqrencode
  * console.log(pkg.name)        // "qrencode"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "4.1.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/fukuchi-org/qrencode.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/fukuchi-org/qrencode.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const fukuchiorgqrencodePackage = {
   /**
@@ -75,7 +75,7 @@ export const fukuchiorgqrencodePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.1.1',

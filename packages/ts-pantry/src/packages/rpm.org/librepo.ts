@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.rpmorglibrepo
  * console.log(pkg.name)        // "librepo"
  * console.log(pkg.versions[0]) // "1.20.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/rpm-org/librepo.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/rpm-org/librepo.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rpmorglibrepoPackage = {
   /**
@@ -73,7 +73,7 @@ export const rpmorglibrepoPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.20.0',

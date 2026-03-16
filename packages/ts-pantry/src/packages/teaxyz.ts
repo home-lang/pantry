@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.teaxyz
  * console.log(pkg.name)        // "tea/cli"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "0.39.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/tea-xyz.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/tea-xyz.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const teaxyzPackage = {
   /**
@@ -57,7 +57,7 @@ export const teaxyzPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.39.6',

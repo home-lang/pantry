@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.taku910githubiomecab
  * console.log(pkg.name)        // "mecab"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "0.996.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/taku910-github-io/mecab.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/taku910-github-io/mecab.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const taku910githubiomecabPackage = {
   /**
@@ -57,7 +57,7 @@ export const taku910githubiomecabPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.996.0',

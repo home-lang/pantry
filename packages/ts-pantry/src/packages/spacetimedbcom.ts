@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.spacetimedbcom
  * console.log(pkg.name)        // "spacetime"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2023.12.8" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/spacetimedb-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/spacetimedb-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const spacetimedbcomPackage = {
   /**
@@ -73,7 +73,7 @@ export const spacetimedbcomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2023.12.8',

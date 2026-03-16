@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * // Access via alias (recommended)
  * const pkg = pantry.ripgrep
@@ -25,8 +25,8 @@
  * console.log(pkg.versions[0]) // "15.1.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/ripgrep.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/ripgrep.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const ripgrepPackage = {
   /**
@@ -63,7 +63,7 @@ export const ripgrepPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '15.1.0',

@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.zeromqorg
  * console.log(pkg.name)        // "zeromq"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "4.3.5" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/zeromq-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/zeromq-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const zeromqorgPackage = {
   /**
@@ -50,7 +50,7 @@ export const zeromqorgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '4.3.5',

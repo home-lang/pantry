@@ -3,7 +3,7 @@
  *
  * @domain `scala-sbt.org`
  * @programs `sbt`
- * @version `1.12.5` (32 versions available)
+ * @version `1.12.6` (33 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install scala-sbt.org`
@@ -12,17 +12,17 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.scalasbtorg
  * console.log(pkg.name)        // "sbt"
  * console.log(pkg.description) // "sbt, the interactive build tool"
  * console.log(pkg.programs)    // ["sbt"]
- * console.log(pkg.versions[0]) // "1.12.5" (latest)
+ * console.log(pkg.versions[0]) // "1.12.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/scala-sbt-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/scala-sbt-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const scalasbtorgPackage = {
   /**
@@ -65,9 +65,10 @@ export const scalasbtorgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.12.6',
     '1.12.5',
     '1.12.4',
     '1.12.3',

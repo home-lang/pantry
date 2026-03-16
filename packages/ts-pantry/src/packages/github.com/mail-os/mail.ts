@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.githubcommailosmail
  * console.log(pkg.name)        // "mail"
  * console.log(pkg.programs)    // ["mail"]
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/github-com/mail-os/mail.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/github-com/mail-os/mail.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mailPackage = {
   /**

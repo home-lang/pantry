@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.videolanorgx264
  * console.log(pkg.name)        // "x264"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.164.3095" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/videolan-org/x264.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/videolan-org/x264.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const videolanorgx264Package = {
   /**
@@ -66,7 +66,7 @@ export const videolanorgx264Package = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.164.3095',

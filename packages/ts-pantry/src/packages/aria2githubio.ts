@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.aria2githubio
  * console.log(pkg.name)        // "aria2c"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.37.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/aria2-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/aria2-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const aria2githubioPackage = {
   /**
@@ -75,7 +75,7 @@ export const aria2githubioPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.37.0',

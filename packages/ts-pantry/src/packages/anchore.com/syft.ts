@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.anchorecomsyft
  * console.log(pkg.name)        // "syft"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "1.42.2" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/anchore-com/syft.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/anchore-com/syft.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const anchorecomsyftPackage = {
   /**
@@ -64,7 +64,7 @@ export const anchorecomsyftPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.42.2',

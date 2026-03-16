@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.ohmyposhdev
  * console.log(pkg.name)        // "oh-my-posh"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "29.9.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/ohmyposh-dev.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/ohmyposh-dev.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const ohmyposhdevPackage = {
   /**
@@ -65,7 +65,7 @@ export const ohmyposhdevPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '29.9.0',

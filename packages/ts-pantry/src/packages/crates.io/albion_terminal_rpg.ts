@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesioalbion_terminal_rpg
  * console.log(pkg.name)        // "albionrpg"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "2024.5.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/albion_terminal_rpg.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/albion_terminal_rpg.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesioalbion_terminal_rpgPackage = {
   /**
@@ -57,7 +57,7 @@ export const cratesioalbion_terminal_rpgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2024.5.7',

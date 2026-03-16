@@ -11,7 +11,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.watchexecgithubio
  * console.log(pkg.name)        // "watchexec"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "2.5.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/watchexec-github-io.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/watchexec-github-io.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const watchexecgithubioPackage = {
   /**
@@ -58,7 +58,7 @@ export const watchexecgithubioPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.5.0',

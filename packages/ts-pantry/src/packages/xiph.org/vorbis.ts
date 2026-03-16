@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.xiphorgvorbis
  * console.log(pkg.name)        // "vorbis"
@@ -18,8 +18,8 @@
  * console.log(pkg.versions[0]) // "1.3.7" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/xiph-org/vorbis.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/xiph-org/vorbis.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const xiphorgvorbisPackage = {
   /**
@@ -56,7 +56,7 @@ export const xiphorgvorbisPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.3.7',

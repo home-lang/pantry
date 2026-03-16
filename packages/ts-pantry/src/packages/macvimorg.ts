@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.macvimorg
  * console.log(pkg.name)        // "macvim"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "182.0.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/macvim-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/macvim-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const macvimorgPackage = {
   /**
@@ -89,7 +89,7 @@ export const macvimorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '182.0.0',

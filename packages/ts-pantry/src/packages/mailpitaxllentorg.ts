@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.mailpitaxllentorg
  * console.log(pkg.name)        // "mailpit"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "1.29.3" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/mailpit-axllent-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/mailpit-axllent-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const mailpitaxllentorgPackage = {
   /**
@@ -75,7 +75,7 @@ export const mailpitaxllentorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.29.3',

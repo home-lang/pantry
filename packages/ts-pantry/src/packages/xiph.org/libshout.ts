@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.xiphorglibshout
  * console.log(pkg.name)        // "shout"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "2.4.6" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/xiph-org/libshout.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/xiph-org/libshout.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const xiphorglibshoutPackage = {
   /**
@@ -79,7 +79,7 @@ export const xiphorglibshoutPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2.4.6',

@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.otssnipttcom
  * console.log(pkg.name)        // "ots"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "0.3.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/ots-sniptt-com.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/ots-sniptt-com.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const otssnipttcomPackage = {
   /**
@@ -65,7 +65,7 @@ export const otssnipttcomPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.3.1',

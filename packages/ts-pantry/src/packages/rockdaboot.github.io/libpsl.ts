@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.rockdabootgithubiolibpsl
  * console.log(pkg.name)        // "libpsl"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "0.21.5" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/rockdaboot-github-io/libpsl.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/rockdaboot-github-io/libpsl.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const rockdabootgithubiolibpslPackage = {
   /**
@@ -67,7 +67,7 @@ export const rockdabootgithubiolibpslPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.21.5',

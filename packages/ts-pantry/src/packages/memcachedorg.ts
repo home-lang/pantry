@@ -9,15 +9,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.memcachedorg
  * console.log(pkg.name)        // "memcached"
  * console.log(pkg.programs)    // ["memcached"]
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/memcached-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/memcached-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const memcachedorgPackage = {
   /**

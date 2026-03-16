@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.gnuorgautoconfarchive
  * console.log(pkg.name)        // "autoconf-archive"
  * console.log(pkg.versions[0]) // "2024.10.16" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/gnu-org/autoconf-archive.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/gnu-org/autoconf-archive.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const gnuorgautoconfarchivePackage = {
   /**
@@ -55,7 +55,7 @@ export const gnuorgautoconfarchivePackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '2024.10.16',

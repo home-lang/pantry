@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.libpngorg
  * console.log(pkg.name)        // "libpng"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "1.6.55" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/libpng-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/libpng-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const libpngorgPackage = {
   /**
@@ -68,7 +68,7 @@ export const libpngorgPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '1.6.55',

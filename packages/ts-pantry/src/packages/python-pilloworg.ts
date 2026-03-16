@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.pythonpilloworg
  * console.log(pkg.name)        // "python-pillow"
@@ -20,8 +20,8 @@
  * console.log(pkg.versions[0]) // "12.1.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/python-pillow-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/python-pillow-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const pythonpilloworgPackage = {
   /**
@@ -73,7 +73,7 @@ export const pythonpilloworgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '12.1.1',

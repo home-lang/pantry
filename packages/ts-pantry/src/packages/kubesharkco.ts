@@ -12,7 +12,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.kubesharkco
  * console.log(pkg.name)        // "kubeshark"
@@ -21,8 +21,8 @@
  * console.log(pkg.versions[0]) // "72.3.83" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/kubeshark-co.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/kubeshark-co.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const kubesharkcoPackage = {
   /**
@@ -66,7 +66,7 @@ export const kubesharkcoPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '72.3.83',

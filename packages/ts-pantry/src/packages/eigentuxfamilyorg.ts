@@ -11,15 +11,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.eigentuxfamilyorg
  * console.log(pkg.name)        // "eigen.tuxfamily"
  * console.log(pkg.versions[0]) // "5.0.1" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/eigen-tuxfamily-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/eigen-tuxfamily-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const eigentuxfamilyorgPackage = {
   /**
@@ -63,7 +63,7 @@ export const eigentuxfamilyorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '5.0.1',

@@ -10,15 +10,15 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.curlsessl3
  * console.log(pkg.name)        // "ssl3"
  * console.log(pkg.versions[0]) // "8.19.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/curl-se/ssl3.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/curl-se/ssl3.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const curlsessl3Package = {
   /**
@@ -58,7 +58,7 @@ export const curlsessl3Package = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '8.19.0',

@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.cratesiocomrak
  * console.log(pkg.name)        // "comrak"
@@ -19,8 +19,8 @@
  * console.log(pkg.versions[0]) // "0.51.0" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/crates-io/comrak.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/crates-io/comrak.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const cratesiocomrakPackage = {
   /**
@@ -57,7 +57,7 @@ export const cratesiocomrakPackage = {
   buildDependencies: [] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '0.51.0',

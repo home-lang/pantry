@@ -13,7 +13,7 @@
  *
  * @example
  * ```typescript
- * import { pantry } from 'ts-pkgx'
+ * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.swiftorg
  * console.log(pkg.name)        // "swift"
@@ -22,8 +22,8 @@
  * console.log(pkg.versions[0]) // "6.2.4" (latest)
  * ```
  *
- * @see https://ts-pkgx.netlify.app/packages/swift-org.md
- * @see https://ts-pkgx.netlify.app/usage
+ * @see https://ts-pantry.netlify.app/packages/swift-org.md
+ * @see https://ts-pantry.netlify.app/usage
  */
 export const swiftorgPackage = {
   /**
@@ -104,7 +104,7 @@ export const swiftorgPackage = {
   ] as const,
   /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
     '6.2.4',
