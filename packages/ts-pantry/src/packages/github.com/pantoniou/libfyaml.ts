@@ -3,7 +3,7 @@
  *
  * @domain `github.com/pantoniou/libfyaml`
  * @programs `fy-compose`, `fy-dump`, `fy-filter`, `fy-join`, `fy-testsuite`, ... (+2 more)
- * @version `0.9.5` (6 versions available)
+ * @version `0.9.6` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/pantoniou/libfyaml`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcompantonioulibfyaml
  * console.log(pkg.name)        // "libfyaml"
  * console.log(pkg.programs)    // ["fy-compose", "fy-dump", ...]
- * console.log(pkg.versions[0]) // "0.9.5" (latest)
+ * console.log(pkg.versions[0]) // "0.9.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/pantoniou/libfyaml.md
@@ -73,6 +73,7 @@ export const libfyamlPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.9.6',
     '0.9.5',
     '0.9.4',
     '0.9.3',

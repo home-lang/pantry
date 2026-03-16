@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 98 versions</summary>
+<summary>Show all 99 versions</summary>
 
+- `0.276.0`
 - `0.275.0`
 - `0.274.0`
 - `0.273.0`
@@ -128,13 +129,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.275.0`
+**Latest Version**: `0.276.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +planetscale.com@0.275.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +planetscale.com@0.276.0 -- $SHELL -i
 ```
 
 ## Usage Examples

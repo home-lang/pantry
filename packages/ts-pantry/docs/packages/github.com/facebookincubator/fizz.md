@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 139 versions</summary>
+<summary>Show all 140 versions</summary>
 
-- `2026.3.9.0`, `2026.3.2.0`
+- `2026.3.16.0`, `2026.3.9.0`, `2026.3.2.0`
 - `2026.2.23.0`, `2026.2.16.0`, `2026.2.9.0`, `2026.2.2.0`
 - `2026.1.26.0`, `2026.1.19.0`, `2026.1.12.0`, `2026.1.5.0`
 - `2025.12.29.0`, `2025.12.22.0`, `2025.12.15.0`
@@ -65,13 +65,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2026.3.9.0`
+**Latest Version**: `2026.3.16.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/facebookincubator/fizz@2026.3.9.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/facebookincubator/fizz@2026.3.16.0 -- $SHELL -i
 ```
 
 ## Dependencies
