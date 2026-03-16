@@ -3,7 +3,7 @@
  *
  * @domain `gitlab.com/OldManProgrammer/unix-tree`
  * @programs `tree`
- * @version `2.3.1` (8 versions available)
+ * @version `2.3.2` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gitlab.com/OldManProgrammer/unix-tree`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "tree"
  * console.log(pkg.description) // "Display directories as trees (with optional col..."
  * console.log(pkg.programs)    // ["tree"]
- * console.log(pkg.versions[0]) // "2.3.1" (latest)
+ * console.log(pkg.versions[0]) // "2.3.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gitlab-com/OldManProgrammer/unix-tree.md
@@ -69,6 +69,7 @@ export const gitlabcomoldmanprogrammerunixtreePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.3.2',
     '2.3.1',
     '2.3.0',
     '2.2.1',
