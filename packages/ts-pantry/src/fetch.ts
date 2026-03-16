@@ -79,7 +79,7 @@ function getPropertyJSDoc(key: string, value: any): string | null {
       if (Array.isArray(value) && value.length > 0) {
         return `  /**
   * Available versions from newest to oldest.
-  * @see https://ts-pkgx.netlify.app/usage for installation instructions
+  * @see https://ts-pantry.netlify.app/usage for installation instructions
   */`
       }
       break
@@ -365,7 +365,7 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
   // Usage example
   lines.push(' * @example')
   lines.push(' * ```typescript')
-  lines.push(' * import { pantry } from \'ts-pkgx\'')
+  lines.push(' * import { pantry } from \'ts-pantry\'')
   lines.push(' *')
 
   // Show both alias and domain access if valid aliases exist
@@ -429,8 +429,8 @@ function generatePackageJSDoc(packageInfo: PkgxPackage, domainName: string, pack
   lines.push(' *')
 
   // Links to documentation
-  lines.push(` * @see https://ts-pkgx.netlify.app/packages/${domainName.replace(/\./g, '-')}.md`)
-  lines.push(` * @see https://ts-pkgx.netlify.app/usage`)
+  lines.push(` * @see https://ts-pantry.netlify.app/packages/${domainName.replace(/\./g, '-')}.md`)
+  lines.push(` * @see https://ts-pantry.netlify.app/usage`)
 
   lines.push(' */')
 
@@ -936,7 +936,7 @@ async function fetchVersionsFromGitHub(packageName: string): Promise<string[]> {
     const response = await fetch(`https://api.github.com/repos/pkgxdev/pantry/contents/projects/${packageName}`, {
       headers: {
         'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'ts-pkgx',
+        'User-Agent': 'ts-pantry',
       },
       // Add a timeout to prevent hanging
       signal: AbortSignal.timeout(15000),
@@ -1128,7 +1128,7 @@ export async function fetchAndSaveAllPackages(options: PackageFetchOptions = {})
         try {
           const response = await fetch('https://api.github.com/repos/pkgxdev/pantry/contents/projects', {
             headers: {
-              'User-Agent': 'ts-pkgx-fetcher',
+              'User-Agent': 'ts-pantry-fetcher',
               'Accept': 'application/vnd.github.v3+json',
             },
           })

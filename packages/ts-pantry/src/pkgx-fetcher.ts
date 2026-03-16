@@ -98,7 +98,7 @@ async function fetchFromPkgxAPI(
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'ts-pkgx',
+        'User-Agent': 'ts-pantry',
         'Accept': 'application/json',
       },
       signal: controller.signal,
@@ -153,7 +153,7 @@ async function fetchFromGitHub(
     const url = `https://raw.githubusercontent.com/pkgxdev/pantry/${branch}/projects/${packageName}/package.yml`
 
     const headers: Record<string, string> = {
-      'User-Agent': 'ts-pkgx',
+      'User-Agent': 'ts-pantry',
     }
 
     if (githubToken) {
@@ -305,7 +305,7 @@ export async function listPkgxPackages(
   try {
     const response = await fetch('https://pkgx.dev/pkgs/index.json', {
       headers: {
-        'User-Agent': 'ts-pkgx',
+        'User-Agent': 'ts-pantry',
         'Accept': 'application/json',
       },
       signal: controller.signal,

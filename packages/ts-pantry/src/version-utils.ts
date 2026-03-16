@@ -1,5 +1,5 @@
 /**
- * Version resolution utilities for ts-pkgx packages
+ * Version resolution utilities for ts-pantry packages
  */
 
 import type { PackageAlias, PackageDomain, PackageInfo, PackageName, VersionSpec } from './package-types'
@@ -106,7 +106,7 @@ export function getPhpVersionsForWorkflow(options: {
 
 /**
  * Dynamically detect which PHP branches are currently supported
- * Based on available versions in ts-pkgx
+ * Based on available versions in ts-pantry
  */
 function detectSupportedPhpBranches(versions: string[]): string[] {
   const branchCounts = new Map<string, number>()

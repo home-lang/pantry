@@ -1,5 +1,5 @@
 /**
- * CLI utilities for ts-pkgx package management
+ * CLI utilities for ts-pantry package management
  */
 
 import type { PackageInfo, PackageName, SupportedArchitecture, SupportedPlatform } from './package-types'

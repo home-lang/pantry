@@ -1,5 +1,5 @@
 /**
- * Comprehensive TypeScript types and utilities for ts-pkgx
+ * Comprehensive TypeScript types and utilities for ts-pantry
  */
 
 import type { Packages } from './packages'

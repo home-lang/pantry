@@ -208,7 +208,7 @@ export async function generateZigDefinitions(packagesDir: string, outputFile: st
 function generateZigFile(packages: ZigPackageDefinition[]): string {
   const packageStructs = packages.map(pkg => packageToZigStruct(pkg)).join(',\n')
 
-  return `//! Package definitions generated from ts-pkgx
+  return `//! Package definitions generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
 //! Generated on: ${new Date().toISOString()}
 //! Total packages: ${packages.length}
@@ -365,7 +365,7 @@ export async function generateZigAliases(packagesDir: string, outputFile: string
     .map(([alias, domain]) => `    .{ .alias = "${escapeZigString(alias)}", .domain = "${escapeZigString(domain)}" }`)
     .join(',\n')
 
-  const zigCode = `//! Package aliases generated from ts-pkgx
+  const zigCode = `//! Package aliases generated from ts-pantry
 //! DO NOT EDIT MANUALLY - This file is auto-generated
 //! Generated on: ${new Date().toISOString()}
 

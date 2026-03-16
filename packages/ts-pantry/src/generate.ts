@@ -1841,7 +1841,7 @@ async function generatePackageCatalog(outputDir: string, packagesDir?: string): 
 
   let content = `# Package Catalog
 
-This comprehensive catalog lists all ${domainToPackage.size}+ packages available in ts-pkgx, organized by category.
+This comprehensive catalog lists all ${domainToPackage.size}+ packages available in ts-pantry, organized by category.
 
 Each package can be accessed using \`getPackage(name)\` or directly via \`pantry.domain\`.
 

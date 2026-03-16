@@ -69,7 +69,7 @@ async function fetchPkgxJson(packageName: string, timeout: number): Promise<any 
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'ts-pkgx',
+        'User-Agent': 'ts-pantry',
       },
       signal: AbortSignal.timeout(timeout),
     })
@@ -105,7 +105,7 @@ async function fetchVersions(packageName: string, timeout: number): Promise<stri
       const response = await fetch(url, {
         headers: {
           'Accept': 'text/plain',
-          'User-Agent': 'ts-pkgx',
+          'User-Agent': 'ts-pantry',
         },
         signal: AbortSignal.timeout(timeout),
       })
@@ -161,7 +161,7 @@ async function fetchPantryData(packageName: string, timeout: number): Promise<Pa
     const response = await fetch(url, {
       headers: {
         'Accept': 'text/plain',
-        'User-Agent': 'ts-pkgx',
+        'User-Agent': 'ts-pantry',
       },
       signal: AbortSignal.timeout(timeout),
     })
