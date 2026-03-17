@@ -3,15 +3,18 @@
  *
  * Generates SVG path strings and chart data on the server,
  * which are embedded directly into STX templates as inline SVGs.
+ *
+ * Uses @ts-charts/scale, @ts-charts/shape, @ts-charts/array, @ts-charts/format
+ * for proper D3-compatible chart primitives.
  */
 
-import { scaleLinear, scaleTime, scaleBand, scaleOrdinal } from '@ts-charts/scale'
-import { line, area, arc, pie } from '@ts-charts/shape'
-import { max, extent, sum } from '@ts-charts/array'
+import { scaleLinear, scaleTime } from '@ts-charts/scale'
+import { line, area } from '@ts-charts/shape'
+import { max, extent } from '@ts-charts/array'
 import { format as d3format } from '@ts-charts/format'
 
 // ---------------------------------------------------------------------------
-// Color palette (OKLCH-compatible hex fallbacks for SVG attributes)
+// Color palette (hex for SVG attributes)
 // ---------------------------------------------------------------------------
 const CHART_COLORS = [
   '#5b9cf5', // accent blue
@@ -25,7 +28,7 @@ const CHART_COLORS = [
 ]
 
 // ---------------------------------------------------------------------------
-// Internal types for chart data
+// Internal types
 // ---------------------------------------------------------------------------
 interface TimePoint {
   date: Date
@@ -157,7 +160,7 @@ export function generateLineChart(
     value: d.count,
   }))
 
-  // X-axis labels: show ~5 evenly spaced dates
+  // X-axis labels: ~5 evenly spaced dates
   const xTicks = xScale.ticks(5)
   const xLabels = xTicks.map((d: Date) => ({
     x: xScale(d)!,
@@ -185,7 +188,7 @@ export function generateLineChart(
 }
 
 // ---------------------------------------------------------------------------
-// Horizontal bar chart — for version distribution, etc.
+// Horizontal bar chart — for version distribution
 // ---------------------------------------------------------------------------
 export interface HBarChartBar {
   x: number
@@ -211,17 +214,12 @@ export function generateHorizontalBarChart(
   const chartHeight = items.length * (barHeight + gap)
   const barAreaWidth = width - labelWidth - 10
   const maxVal = max(items, (d: { label: string, value: number }) => d.value) || 1
-  const total = sum(items, (d: { label: string, value: number }) => d.value) || 1
+  const total = items.reduce((sum, d) => sum + d.value, 0) || 1
 
   const xScale = scaleLinear()
     .domain([0, maxVal])
     .range([0, barAreaWidth])
 
-  const colorScale = scaleOrdinal<string>()
-    .domain(items.map(d => d.label))
-    .range(CHART_COLORS)
-
-  const fmt = d3format(',')
   const bars: HBarChartBar[] = items.map((d, i) => ({
     x: labelWidth,
     y: i * (barHeight + gap),
@@ -229,64 +227,12 @@ export function generateHorizontalBarChart(
     height: barHeight,
     label: d.label,
     value: d.value,
-    formattedValue: fmt(d.value),
+    formattedValue: formatCount(d.value),
     percentage: `${((d.value / total) * 100).toFixed(1)}%`,
-    color: colorScale(d.label)!,
+    color: CHART_COLORS[i % CHART_COLORS.length],
   }))
 
   return { bars, chartWidth: width, chartHeight }
-}
-
-// ---------------------------------------------------------------------------
-// Pie / Donut chart
-// ---------------------------------------------------------------------------
-export interface PieSlice {
-  path: string
-  label: string
-  value: number
-  percentage: string
-  color: string
-  centroidX: number
-  centroidY: number
-}
-
-export function generatePieChart(
-  items: Array<{ label: string, value: number }>,
-  outerRadius = 80,
-  innerRadius = 45,
-): { slices: PieSlice[], size: number } {
-  if (items.length === 0) return { slices: [], size: outerRadius * 2 }
-
-  const total = sum(items, (d: { label: string, value: number }) => d.value) || 1
-
-  const pieGen = pie<{ label: string, value: number }>()
-    .value((d: { label: string, value: number }) => d.value)
-    .sort(null)
-
-  const arcGen = arc()
-    .innerRadius(innerRadius)
-    .outerRadius(outerRadius)
-
-  const colorScale = scaleOrdinal<string>()
-    .domain(items.map(d => d.label))
-    .range(CHART_COLORS)
-
-  const arcs = pieGen(items)
-
-  const slices: PieSlice[] = arcs.map((a: any) => {
-    const centroid = arcGen.centroid(a)
-    return {
-      path: arcGen(a) || '',
-      label: a.data.label,
-      value: a.data.value,
-      percentage: `${((a.data.value / total) * 100).toFixed(1)}%`,
-      color: colorScale(a.data.label)!,
-      centroidX: centroid[0],
-      centroidY: centroid[1],
-    }
-  })
-
-  return { slices, size: outerRadius * 2 }
 }
 
 // ---------------------------------------------------------------------------
@@ -329,7 +275,6 @@ export function generateMultiLineChart(
   const innerW = width - margin.left - margin.right
   const innerH = height - margin.top - margin.bottom
 
-  // Find global date extent and max count
   const allDates: Date[] = []
   let globalMax = 0
   for (const s of series) {
@@ -351,11 +296,7 @@ export function generateMultiLineChart(
     .range([margin.top + innerH, margin.top])
     .nice()
 
-  const colorScale = scaleOrdinal<string>()
-    .domain(series.map(s => s.label))
-    .range(CHART_COLORS)
-
-  const datasets: MultiLineDataset[] = series.map((s) => {
+  const datasets: MultiLineDataset[] = series.map((s, idx) => {
     const chartData: TimePoint[] = s.timeline.map((d: { date: string, count: number }) => ({
       date: new Date(d.date),
       count: d.count,
@@ -373,7 +314,7 @@ export function generateMultiLineChart(
 
     return {
       label: s.label,
-      color: colorScale(s.label)!,
+      color: CHART_COLORS[idx % CHART_COLORS.length],
       path: lineGen(chartData) || '',
       points,
     }
@@ -396,7 +337,7 @@ export function generateMultiLineChart(
 }
 
 // ---------------------------------------------------------------------------
-// Utility: Format numbers for display
+// Formatting utility
 // ---------------------------------------------------------------------------
 export function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
