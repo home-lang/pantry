@@ -75,13 +75,16 @@ const FEATURED_PACKAGES = [
 
 async function renderSitePage(file: string, context: Record<string, unknown> = {}): Promise<string> {
   const title = (context.title as string) || 'pantry'
-  return renderTemplate(resolve(SITE_DIR, file), {
+  let html = await renderTemplate(resolve(SITE_DIR, file), {
     context: { ...context, title },
     layout: SITE_LAYOUT,
     options: { componentsDir: SITE_COMPONENTS },
     injectCSS: true,
     wrapInDocument: false,
   })
+  // Strip STX-injected default meta tags that duplicate our custom ones
+  html = html.replace(/<meta[^>]*content="A website built with stx templating engine"[^>]*>\n?/g, '')
+  return html
 }
 
 async function renderDashboardPage(file: string, context: Record<string, unknown> = {}): Promise<string> {
