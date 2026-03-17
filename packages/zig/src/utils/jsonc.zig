@@ -90,6 +90,68 @@ pub fn stripComments(allocator: std.mem.Allocator, jsonc: []const u8) ![]const u
     return result.toOwnedSlice(allocator);
 }
 
+/// Strip trailing commas from JSON content (e.g. `{"a": 1,}` → `{"a": 1}`)
+/// Handles commas before `]` and `}`, skipping whitespace between them.
+/// Preserves strings containing comma sequences.
+pub fn stripTrailingCommas(allocator: std.mem.Allocator, json: []const u8) ![]const u8 {
+    var result = try std.ArrayList(u8).initCapacity(allocator, json.len);
+    errdefer result.deinit(allocator);
+
+    var i: usize = 0;
+    var in_string = false;
+    var escape_next = false;
+
+    while (i < json.len) {
+        const char = json[i];
+
+        if (in_string and escape_next) {
+            try result.append(allocator, char);
+            escape_next = false;
+            i += 1;
+            continue;
+        }
+
+        if (char == '"' and !escape_next) {
+            in_string = !in_string;
+            try result.append(allocator, char);
+            i += 1;
+            continue;
+        }
+
+        if (in_string and char == '\\') {
+            escape_next = true;
+            try result.append(allocator, char);
+            i += 1;
+            continue;
+        }
+
+        if (in_string) {
+            try result.append(allocator, char);
+            i += 1;
+            continue;
+        }
+
+        // Outside strings: check if this comma is trailing
+        if (char == ',') {
+            // Look ahead past whitespace for ] or }
+            var j = i + 1;
+            while (j < json.len and (json[j] == ' ' or json[j] == '\t' or json[j] == '\n' or json[j] == '\r')) {
+                j += 1;
+            }
+            if (j < json.len and (json[j] == ']' or json[j] == '}')) {
+                // Skip the trailing comma
+                i += 1;
+                continue;
+            }
+        }
+
+        try result.append(allocator, char);
+        i += 1;
+    }
+
+    return result.toOwnedSlice(allocator);
+}
+
 test "stripComments - single line comment" {
     const allocator = std.testing.allocator;
     const input =
@@ -174,4 +236,67 @@ test "stripComments - trailing comma comment" {
     try std.testing.expect(std.mem.indexOf(u8, result, "trailing comma is ok") == null);
     try std.testing.expect(std.mem.indexOf(u8, result, "\"name\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, result, "\"version\"") != null);
+}
+
+test "stripTrailingCommas - object trailing comma" {
+    const allocator = std.testing.allocator;
+    const input =
+        \\{"a": 1, "b": 2,}
+    ;
+    const result = try stripTrailingCommas(allocator, input);
+    defer allocator.free(result);
+
+    // Should parse as valid JSON after stripping
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, result, .{});
+    defer parsed.deinit();
+    try std.testing.expect(parsed.value == .object);
+}
+
+test "stripTrailingCommas - array trailing comma" {
+    const allocator = std.testing.allocator;
+    const input =
+        \\[1, 2, 3,]
+    ;
+    const result = try stripTrailingCommas(allocator, input);
+    defer allocator.free(result);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, result, .{});
+    defer parsed.deinit();
+    try std.testing.expect(parsed.value == .array);
+    try std.testing.expectEqual(@as(usize, 3), parsed.value.array.items.len);
+}
+
+test "stripTrailingCommas - nested trailing commas" {
+    const allocator = std.testing.allocator;
+    const input =
+        \\{
+        \\  "deps": {
+        \\    "stacks": "workspace:*",
+        \\  },
+        \\  "workspaces": [
+        \\    "packages/*",
+        \\  ]
+        \\}
+    ;
+    const result = try stripTrailingCommas(allocator, input);
+    defer allocator.free(result);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, result, .{});
+    defer parsed.deinit();
+    try std.testing.expect(parsed.value == .object);
+    try std.testing.expect(parsed.value.object.get("workspaces") != null);
+}
+
+test "stripTrailingCommas - preserves commas in strings" {
+    const allocator = std.testing.allocator;
+    const input =
+        \\{"msg": "hello,}world", "x": 1,}
+    ;
+    const result = try stripTrailingCommas(allocator, input);
+    defer allocator.free(result);
+
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, result, .{});
+    defer parsed.deinit();
+    const msg = parsed.value.object.get("msg").?.string;
+    try std.testing.expectEqualStrings("hello,}world", msg);
 }

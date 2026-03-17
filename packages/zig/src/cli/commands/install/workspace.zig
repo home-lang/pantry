@@ -663,7 +663,13 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     if (ws_skipped_count == all_deps_count) {
-        style.print("{s}{s}{s} All {d} packages already up to date\n", .{ style.green, style.check, style.reset, all_deps_count });
+        const ws_count = workspace_config.members.len;
+        const ws_label = if (ws_count == 1) "workspace member" else "workspace members";
+        style.print("{s}{s}{s} {s}{d}{s} packages + {s}{d}{s} {s} up to date\n", .{
+            style.green,      style.check,  style.reset,
+            style.green_bold, all_deps_count, style.reset,
+            style.green_bold, ws_count,     style.reset, ws_label,
+        });
         return .{ .exit_code = 0 };
     }
 

@@ -108,6 +108,14 @@ pub const PublishCommitOptions = publish_commit_commands.PublishCommitOptions;
 pub const publishCommitCommand = publish_commit_commands.publishCommitCommand;
 
 // ============================================================================
+// Re-export Publish Binary Command (native binary publishing to S3)
+// ============================================================================
+
+pub const publish_binary_commands = @import("commands/publish_binary.zig");
+pub const PublishBinaryOptions = publish_binary_commands.PublishBinaryOptions;
+pub const publishBinaryCommand = publish_binary_commands.publishBinaryCommand;
+
+// ============================================================================
 // Re-export Px Command
 // ============================================================================
 

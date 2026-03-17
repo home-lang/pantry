@@ -91,7 +91,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
             const end_ts = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
             const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-            style.printUpToDate(lockfile.packages.count(), elapsed_ms);
+            style.printUpToDate(lockfile.packages.count(), lockfile.workspaces.count(), elapsed_ms);
             return .{ .exit_code = 0 };
         }
         return null; // Not up to date, fall through to slow path
@@ -132,7 +132,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     const end_ts = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-    style.printUpToDate(checked_count, elapsed_ms);
+    style.printUpToDate(checked_count, 0, elapsed_ms);
     return .{ .exit_code = 0 };
 }
 
@@ -232,8 +232,17 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer if (deps_file_path) |path| allocator.free(path);
 
         if (lookup.deps_file) |deps_file| {
-            deps_file_path = deps_file.path;
-            deps = try parser.inferDependencies(allocator, deps_file);
+            if (parser.inferDependencies(allocator, deps_file)) |parsed_deps| {
+                deps_file_path = deps_file.path;
+                deps = parsed_deps;
+            } else |err| {
+                allocator.free(deps_file.path);
+                if (err == error.NoRuntimeAvailable) {
+                    // TS config file detected but no bun/node runtime available — exit silently.
+                    return .{ .exit_code = 0, .message = null };
+                }
+                return err;
+            }
         } else {
             // No standard dep file, try config file (pantry.config.ts, etc.)
             const config_deps = try helpers.loadDependenciesFromConfig(allocator, cwd);

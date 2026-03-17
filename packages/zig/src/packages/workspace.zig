@@ -315,11 +315,15 @@ fn loadWorkspaceConfigFromPackageJson(
 
     // Strip JSONC comments if present (pantry.jsonc files have comments)
     const is_jsonc = std.mem.endsWith(u8, file_path, ".jsonc");
-    const json_content = if (is_jsonc)
+    const stripped_comments = if (is_jsonc)
         lib.utils.jsonc.stripComments(allocator, content) catch content
     else
         content;
-    defer if (is_jsonc and json_content.ptr != content.ptr) allocator.free(json_content);
+    defer if (is_jsonc and stripped_comments.ptr != content.ptr) allocator.free(stripped_comments);
+
+    // Strip trailing commas (common in package.json files used by bun/node)
+    const json_content = lib.utils.jsonc.stripTrailingCommas(allocator, stripped_comments) catch stripped_comments;
+    defer if (json_content.ptr != stripped_comments.ptr) allocator.free(json_content);
 
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch {
         return error.NoWorkspacePatternsFound;

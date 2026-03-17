@@ -868,6 +868,43 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn publishBinaryAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const domain = ctx.getOption("domain") orelse {
+        style.print("Error: --domain is required\n", .{});
+        std.process.exit(1);
+    };
+    const version = ctx.getOption("version") orelse {
+        style.print("Error: --version is required\n", .{});
+        std.process.exit(1);
+    };
+    const binary = ctx.getOption("binary") orelse {
+        style.print("Error: --binary is required\n", .{});
+        std.process.exit(1);
+    };
+
+    const options = lib.commands.PublishBinaryOptions{
+        .domain = domain,
+        .version = version,
+        .binary_path = binary,
+        .platform = ctx.getOption("platform"),
+        .dry_run = ctx.hasOption("dry-run"),
+    };
+
+    const result = try lib.commands.publishBinaryCommand(allocator, &[_][]const u8{}, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn publishCommitAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -3400,6 +3437,29 @@ pub fn main() !void {
 
     _ = publish_commit_cmd.setAction(publishCommitAction);
     _ = try root.addCommand(publish_commit_cmd);
+
+    // ========================================================================
+    // Publish Binary Command (native binary publishing to S3)
+    // ========================================================================
+    var publish_binary_cmd = try cli.BaseCommand.init(allocator, "publish:binary", "Publish a native binary to the pantry S3 registry");
+
+    const pb_domain_opt = cli.Option.init("domain", "domain", "Package domain (e.g., github.com/stacksjs/craft)", .string);
+    _ = try publish_binary_cmd.addOption(pb_domain_opt);
+
+    const pb_version_opt = cli.Option.init("version", "version", "Package version", .string);
+    _ = try publish_binary_cmd.addOption(pb_version_opt);
+
+    const pb_binary_opt = cli.Option.init("binary", "binary", "Path to the binary file", .string);
+    _ = try publish_binary_cmd.addOption(pb_binary_opt);
+
+    const pb_platform_opt = cli.Option.init("platform", "platform", "Target platform (e.g., darwin-arm64)", .string);
+    _ = try publish_binary_cmd.addOption(pb_platform_opt);
+
+    const pb_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Show what would be published", .bool);
+    _ = try publish_binary_cmd.addOption(pb_dry_run_opt);
+
+    _ = publish_binary_cmd.setAction(publishBinaryAction);
+    _ = try root.addCommand(publish_binary_cmd);
 
     // ========================================================================
     // Link Command

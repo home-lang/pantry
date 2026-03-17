@@ -18,7 +18,7 @@ pub const PackageInfo = struct {
     versions: []const []const u8,
 };
 
-/// All known packages (1656 total)
+/// All known packages (1657 total)
 pub const packages = [_]PackageInfo{
     .{
         .name = "abseil",
@@ -1823,6 +1823,17 @@ pub const packages = [_]PackageInfo{
         .build_dependencies = &[_][]const u8{  },
         .aliases = &[_][]const u8{  },
         .versions = &[_][]const u8{ "3.1.1", "3.1.0", "3.0.1", "3.0.0", "2.2.0", "2.1.0" },
+    },
+    .{
+        .name = "craft",
+        .domain = "github.com/stacksjs/craft",
+        .description = "Build desktop apps with web languages",
+        .homepage_url = "https://github.com/stacksjs/craft",
+        .programs = &[_][]const u8{ "craft" },
+        .dependencies = &[_][]const u8{  },
+        .build_dependencies = &[_][]const u8{  },
+        .aliases = &[_][]const u8{  },
+        .versions = &[_][]const u8{ "0.0.4" },
     },
     .{
         .name = "craftql",

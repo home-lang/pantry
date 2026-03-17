@@ -143,15 +143,23 @@ pub fn printHeader(command: []const u8, version: []const u8, hash: []const u8) v
 }
 
 /// Print the "all up to date" summary (bun-style)
-pub fn printUpToDate(pkg_count: usize, elapsed_ms: f64) void {
+pub fn printUpToDate(pkg_count: usize, workspace_count: usize, elapsed_ms: f64) void {
     const pkg_label = if (pkg_count == 1) "package" else "packages";
-    const install_label = if (pkg_count == 1) "install" else "installs";
-    print("\nChecked {s}{d}{s} {s} across {s}{d}{s} {s} {s}(no changes) [{s}{d:.0}{s}ms]{s}\n", .{
-        green_bold, pkg_count, reset,      install_label,
-        green_bold, pkg_count, reset,      pkg_label,
-        dim,        bold,      elapsed_ms, dim,
-        reset,
-    });
+    if (workspace_count > 0) {
+        const ws_label = if (workspace_count == 1) "workspace member" else "workspace members";
+        print("\n{s}{d}{s} {s} + {s}{d}{s} {s} up to date {s}(no changes) [{s}{d:.0}{s}ms]{s}\n", .{
+            green_bold, pkg_count,       reset, pkg_label,
+            green_bold, workspace_count, reset, ws_label,
+            dim,        bold,            elapsed_ms, dim,
+            reset,
+        });
+    } else {
+        print("\n{s}{d}{s} {s} up to date {s}(no changes) [{s}{d:.0}{s}ms]{s}\n", .{
+            green_bold, pkg_count, reset, pkg_label,
+            dim,        bold,      elapsed_ms, dim,
+            reset,
+        });
+    }
 }
 
 /// Print the install summary line: "N packages installed [Xms]"

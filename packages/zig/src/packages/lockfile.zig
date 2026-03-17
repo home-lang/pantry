@@ -115,18 +115,37 @@ fn appendJsonEscaped(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: [
 }
 
 /// Write a string-keyed hashmap as a JSON object
+/// Collect and sort keys from a StringHashMap for deterministic output
+fn sortedKeys(allocator: std.mem.Allocator, map: anytype) ![]const []const u8 {
+    const count = map.count();
+    var keys = try allocator.alloc([]const u8, count);
+    var i: usize = 0;
+    var it = map.iterator();
+    while (it.next()) |entry| {
+        keys[i] = entry.key_ptr.*;
+        i += 1;
+    }
+    std.mem.sort([]const u8, keys, {}, struct {
+        fn cmp(_: void, a: []const u8, b: []const u8) bool {
+            return std.mem.order(u8, a, b) == .lt;
+        }
+    }.cmp);
+    return keys;
+}
+
 fn writeJsonStringMap(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, map: *const std.StringHashMap([]const u8), indent: []const u8) !void {
     try buf.appendSlice(allocator, "{\n");
-    var it = map.iterator();
+    const keys = try sortedKeys(allocator, map.*);
+    defer allocator.free(keys);
     var first_entry = true;
-    while (it.next()) |entry| {
+    for (keys) |key| {
         if (!first_entry) try buf.appendSlice(allocator, ",\n");
         first_entry = false;
         try buf.appendSlice(allocator, indent);
         try buf.appendSlice(allocator, "  \"");
-        try appendJsonEscaped(buf, allocator, entry.key_ptr.*);
+        try appendJsonEscaped(buf, allocator, key);
         try buf.appendSlice(allocator, "\": \"");
-        try appendJsonEscaped(buf, allocator, entry.value_ptr.*);
+        try appendJsonEscaped(buf, allocator, map.get(key).?);
         try buf.appendSlice(allocator, "\"");
     }
     try buf.appendSlice(allocator, "\n");
@@ -152,42 +171,44 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         try buf.appendSlice(allocator, s);
     }
 
-    // Write workspaces section
+    // Write workspaces section (sorted for deterministic output)
     if (lockfile.workspaces.count() > 0) {
         try buf.appendSlice(allocator, "  \"workspaces\": {\n");
-        var ws_it = lockfile.workspaces.iterator();
+        const ws_keys = try sortedKeys(allocator, lockfile.workspaces);
+        defer allocator.free(ws_keys);
         var ws_first = true;
-        while (ws_it.next()) |entry| {
+        for (ws_keys) |ws_key| {
+            const ws = lockfile.workspaces.getPtr(ws_key).?;
             if (!ws_first) try buf.appendSlice(allocator, ",\n");
             ws_first = false;
 
             try buf.appendSlice(allocator, "    \"");
-            try appendJsonEscaped(&buf, allocator, entry.key_ptr.*);
+            try appendJsonEscaped(&buf, allocator, ws_key);
             try buf.appendSlice(allocator, "\": {\n      \"name\": \"");
-            try appendJsonEscaped(&buf, allocator, entry.value_ptr.name);
+            try appendJsonEscaped(&buf, allocator, ws.name);
             try buf.appendSlice(allocator, "\"");
 
-            if (entry.value_ptr.version) |v| {
+            if (ws.version) |v| {
                 try buf.appendSlice(allocator, ",\n      \"version\": \"");
                 try appendJsonEscaped(&buf, allocator, v);
                 try buf.appendSlice(allocator, "\"");
             }
 
-            if (entry.value_ptr.dependencies) |*deps| {
+            if (ws.dependencies) |*deps| {
                 if (deps.count() > 0) {
                     try buf.appendSlice(allocator, ",\n      \"dependencies\": ");
                     try writeJsonStringMap(&buf, allocator, deps, "      ");
                 }
             }
 
-            if (entry.value_ptr.dev_dependencies) |*deps| {
+            if (ws.dev_dependencies) |*deps| {
                 if (deps.count() > 0) {
                     try buf.appendSlice(allocator, ",\n      \"devDependencies\": ");
                     try writeJsonStringMap(&buf, allocator, deps, "      ");
                 }
             }
 
-            if (entry.value_ptr.system) |*deps| {
+            if (ws.system) |*deps| {
                 if (deps.count() > 0) {
                     try buf.appendSlice(allocator, ",\n      \"system\": ");
                     try writeJsonStringMap(&buf, allocator, deps, "      ");
@@ -199,38 +220,40 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         try buf.appendSlice(allocator, "\n  },\n");
     }
 
-    // Write packages section
+    // Write packages section (sorted for deterministic output)
     try buf.appendSlice(allocator, "  \"packages\": {\n");
 
-    var it = lockfile.packages.iterator();
+    const pkg_keys = try sortedKeys(allocator, lockfile.packages);
+    defer allocator.free(pkg_keys);
     var first = true;
-    while (it.next()) |entry| {
+    for (pkg_keys) |pkg_key| {
+        const pkg = lockfile.packages.getPtr(pkg_key).?;
         if (!first) try buf.appendSlice(allocator, ",\n");
         first = false;
 
         try buf.appendSlice(allocator, "    \"");
-        try appendJsonEscaped(&buf, allocator, entry.key_ptr.*);
+        try appendJsonEscaped(&buf, allocator, pkg_key);
         try buf.appendSlice(allocator, "\": {\n      \"name\": \"");
-        try appendJsonEscaped(&buf, allocator, entry.value_ptr.name);
+        try appendJsonEscaped(&buf, allocator, pkg.name);
         try buf.appendSlice(allocator, "\",\n      \"version\": \"");
-        try appendJsonEscaped(&buf, allocator, entry.value_ptr.version);
+        try appendJsonEscaped(&buf, allocator, pkg.version);
         try buf.appendSlice(allocator, "\",\n      \"source\": \"");
-        try buf.appendSlice(allocator, entry.value_ptr.source.toString());
+        try buf.appendSlice(allocator, pkg.source.toString());
         try buf.appendSlice(allocator, "\"");
 
-        if (entry.value_ptr.resolved) |resolved| {
+        if (pkg.resolved) |resolved| {
             try buf.appendSlice(allocator, ",\n      \"resolved\": \"");
             try appendJsonEscaped(&buf, allocator, resolved);
             try buf.appendSlice(allocator, "\"");
         }
-        if (entry.value_ptr.integrity) |integrity| {
+        if (pkg.integrity) |integrity| {
             try buf.appendSlice(allocator, ",\n      \"integrity\": \"");
             try appendJsonEscaped(&buf, allocator, integrity);
             try buf.appendSlice(allocator, "\"");
         }
 
         // Write dependencies
-        if (entry.value_ptr.dependencies) |*deps| {
+        if (pkg.dependencies) |*deps| {
             if (deps.count() > 0) {
                 try buf.appendSlice(allocator, ",\n      \"dependencies\": ");
                 try writeJsonStringMap(&buf, allocator, deps, "      ");
@@ -238,7 +261,7 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         }
 
         // Write peerDependencies
-        if (entry.value_ptr.peer_dependencies) |*deps| {
+        if (pkg.peer_dependencies) |*deps| {
             if (deps.count() > 0) {
                 try buf.appendSlice(allocator, ",\n      \"peerDependencies\": ");
                 try writeJsonStringMap(&buf, allocator, deps, "      ");
@@ -246,24 +269,25 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         }
 
         // Write bin entries
-        if (entry.value_ptr.bin) |*b| {
+        if (pkg.bin) |*b| {
             if (b.count() > 0) {
                 try buf.appendSlice(allocator, ",\n      \"bin\": ");
                 try writeJsonStringMap(&buf, allocator, b, "      ");
             }
         }
 
-        // Write optionalPeers
-        if (entry.value_ptr.optional_peers) |*op| {
+        // Write optionalPeers (sorted)
+        if (pkg.optional_peers) |*op| {
             if (op.count() > 0) {
                 try buf.appendSlice(allocator, ",\n      \"optionalPeers\": [");
-                var op_it = op.iterator();
+                const op_keys = try sortedKeys(allocator, op.*);
+                defer allocator.free(op_keys);
                 var first_op = true;
-                while (op_it.next()) |op_entry| {
+                for (op_keys) |op_key| {
                     if (!first_op) try buf.appendSlice(allocator, ", ");
                     first_op = false;
                     try buf.appendSlice(allocator, "\"");
-                    try appendJsonEscaped(&buf, allocator, op_entry.key_ptr.*);
+                    try appendJsonEscaped(&buf, allocator, op_key);
                     try buf.appendSlice(allocator, "\"");
                 }
                 try buf.appendSlice(allocator, "]");
