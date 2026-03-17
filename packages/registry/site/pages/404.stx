@@ -1,0 +1,13 @@
+<section class="flex flex-col items-center justify-center px-6 py-20 text-center" style="min-height: calc(100vh - 3.5rem - 8rem);">
+  <div class="max-w-md">
+    <p class="text-6xl font-bold font-mono mb-4" style="color: var(--accent);">404</p>
+    <h1 class="text-2xl font-semibold mb-3">Page not found</h1>
+    <p class="mb-8" style="font-size: 0.9375rem; color: var(--fg-muted);">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+    <div class="flex gap-3 justify-center">
+      <a href="/" class="text-sm px-5 py-2.5 rounded-lg font-medium transition-colors" style="background: var(--accent); color: var(--bg);">Go home</a>
+      <a href="/search" class="text-sm px-5 py-2.5 rounded-lg border border-[var(--border)] hvr-fg transition-colors" style="color: var(--fg-muted);">Search packages</a>
+    </div>
+  </div>
+</section>

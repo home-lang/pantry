@@ -8,7 +8,16 @@
   @else
   <title>{{ title }} - pantry</title>
   @endif
+  @if (metaDescription)
+  <meta name="description" content="{{ metaDescription }}" />
+  @else
   <meta name="description" content="A fast, modern package manager for your system. Install pre-built binaries for open source tools with a single command." />
+  @endif
+
+  <!-- Canonical URL -->
+  @if (canonicalUrl)
+  <link rel="canonical" href="{{ canonicalUrl }}" />
+  @endif
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website" />
@@ -18,11 +27,27 @@
   @else
   <meta property="og:title" content="{{ title }} - pantry" />
   @endif
+  @if (metaDescription)
+  <meta property="og:description" content="{{ metaDescription }}" />
+  @else
   <meta property="og:description" content="A fast, modern package manager for your system. Install pre-built binaries for open source tools with a single command." />
+  @endif
+  @if (canonicalUrl)
+  <meta property="og:url" content="{{ canonicalUrl }}" />
+  @else
   <meta property="og:url" content="https://pantry.dev" />
+  @endif
   <meta name="twitter:card" content="summary_large_image" />
+  @if (title === 'pantry')
   <meta name="twitter:title" content="pantry - a fast, modern package manager" />
+  @else
+  <meta name="twitter:title" content="{{ title }} - pantry" />
+  @endif
+  @if (metaDescription)
+  <meta name="twitter:description" content="{{ metaDescription }}" />
+  @else
   <meta name="twitter:description" content="Install pre-built binaries for open source tools with a single command." />
+  @endif
 
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F4E6;</text></svg>" />

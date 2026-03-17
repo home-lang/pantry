@@ -84,6 +84,8 @@ async function renderSitePage(file: string, context: Record<string, unknown> = {
   })
   // Strip STX-injected default meta tags that duplicate our custom ones
   html = html.replace(/<meta[^>]*content="A website built with stx templating engine"[^>]*>\n?/g, '')
+  // Strip STX-injected duplicate og:title (keeps our suffixed version)
+  html = html.replace(/<meta property="og:title" content="[^"]*">\n?/g, '')
   return html
 }
 
@@ -448,9 +450,9 @@ export function createHandler(
       }
 
       // Static pages
-      if (path === '/about') return htmlResponse(await renderSitePage('about.stx', { title: 'About' }))
-      if (path === '/privacy') return htmlResponse(await renderSitePage('privacy.stx', { title: 'Privacy Policy' }))
-      if (path === '/accessibility') return htmlResponse(await renderSitePage('accessibility.stx', { title: 'Accessibility' }))
+      if (path === '/about') return htmlResponse(await renderSitePage('about.stx', { title: 'About', canonicalUrl: 'https://pantry.dev/about' }))
+      if (path === '/privacy') return htmlResponse(await renderSitePage('privacy.stx', { title: 'Privacy Policy', canonicalUrl: 'https://pantry.dev/privacy' }))
+      if (path === '/accessibility') return htmlResponse(await renderSitePage('accessibility.stx', { title: 'Accessibility', canonicalUrl: 'https://pantry.dev/accessibility' }))
 
       // API 404 (JSON) for /api/* and /packages/* paths
       if (path.startsWith('/api/') || path.startsWith('/packages/') || path.startsWith('/analytics/')) {
@@ -461,7 +463,7 @@ export function createHandler(
       }
 
       // HTML 404 for everything else
-      return new Response('Not found', { status: 404, headers: { 'Content-Type': 'text/html' } })
+      return htmlResponse(await renderSitePage('404.stx', { title: 'Not Found' }), 404)
     }
     catch (error) {
       console.error('Server error:', error)
@@ -1794,7 +1796,7 @@ async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: 
   }
 
   const totalPackages = _knownVersions.size || 500
-  const html = await renderSitePage('index.stx', { packages, totalPackages, topPackages, stats })
+  const html = await renderSitePage('index.stx', { packages, totalPackages, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
   return htmlResponse(html)
 }
 
@@ -1863,6 +1865,8 @@ async function handleSiteSearch(
     sort,
     view,
     title: query ? `search: ${query}` : 'search',
+    metaDescription: query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
+    canonicalUrl: 'https://pantry.dev/search',
   })
   return htmlResponse(html)
 }
@@ -1913,6 +1917,7 @@ async function handleSitePackage(
       .slice(0, 8)
     const versionDistribution = generateHorizontalBarChart(versionItems, 600, 28, 6, 120)
 
+    const pkgDescription = meta.description || `${name} — ${versions.length} versions available for macOS and Linux`
     const html = await renderSitePage('package.stx', {
       name,
       notFound: false,
@@ -1925,6 +1930,8 @@ async function handleSitePackage(
       lineChart,
       versionDistribution,
       title: name,
+      metaDescription: `${pkgDescription} — Install with pantry.`,
+      canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
   }
@@ -1945,6 +1952,8 @@ async function handleSitePackage(
     lineChart: fbLineChart,
     versionDistribution: { bars: [] },
     title: name,
+    metaDescription: `${name} — Install with pantry.`,
+    canonicalUrl: `https://pantry.dev/package/${name}`,
   })
   return htmlResponse(html)
 }
@@ -1968,6 +1977,8 @@ async function handleSiteCompare(
       comparePackages: [],
       packagesQuery: packagesParam,
       title: 'Compare',
+      metaDescription: 'Compare packages side by side on pantry.dev — downloads, versions, and platform support.',
+      canonicalUrl: 'https://pantry.dev/compare',
     })
     return htmlResponse(html)
   }
@@ -2057,6 +2068,8 @@ async function handleSiteCompare(
     multiLineChart,
     downloadsBarChart,
     title: `Compare: ${packageNames.join(' vs ')}`,
+    metaDescription: `Compare ${packageNames.join(', ')} — downloads, versions, and platform support on pantry.dev.`,
+    canonicalUrl: 'https://pantry.dev/compare',
   })
   return htmlResponse(html)
 }
@@ -2127,6 +2140,8 @@ async function handleSiteStats(
     stats,
     globalChart,
     title: 'Stats',
+    metaDescription: 'pantry registry statistics — download trends, top packages, and install analytics.',
+    canonicalUrl: 'https://pantry.dev/stats',
   })
   return htmlResponse(html)
 }
