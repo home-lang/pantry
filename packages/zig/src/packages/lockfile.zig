@@ -26,6 +26,16 @@ pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
     // Compare lockfile_version
     if (a.lockfile_version != b.lockfile_version) return false;
 
+    // Compare aliases
+    if (a.aliases.count() != b.aliases.count()) return false;
+    {
+        var alias_it = a.aliases.iterator();
+        while (alias_it.next()) |entry| {
+            const b_val = b.aliases.get(entry.key_ptr.*) orelse return false;
+            if (!std.mem.eql(u8, entry.value_ptr.*, b_val)) return false;
+        }
+    }
+
     // Compare workspace count
     if (a.workspaces.count() != b.workspaces.count()) return false;
 
@@ -37,6 +47,7 @@ pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
         const b_ws = b.workspaces.get(key) orelse return false;
 
         if (!std.mem.eql(u8, a_ws.name, b_ws.name)) return false;
+        if (a_ws.isolation != b_ws.isolation) return false;
         if (!stringMapsEqual(a_ws.dependencies, b_ws.dependencies)) return false;
         if (!stringMapsEqual(a_ws.dev_dependencies, b_ws.dev_dependencies)) return false;
         if (!stringMapsEqual(a_ws.system, b_ws.system)) return false;
@@ -171,6 +182,13 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
         try buf.appendSlice(allocator, s);
     }
 
+    // Write aliases section (sorted for deterministic output)
+    if (lockfile.aliases.count() > 0) {
+        try buf.appendSlice(allocator, "  \"aliases\": ");
+        try writeJsonStringMap(&buf, allocator, @constCast(&lockfile.aliases), "  ");
+        try buf.appendSlice(allocator, ",\n");
+    }
+
     // Write workspaces section (sorted for deterministic output)
     if (lockfile.workspaces.count() > 0) {
         try buf.appendSlice(allocator, "  \"workspaces\": {\n");
@@ -191,6 +209,13 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
             if (ws.version) |v| {
                 try buf.appendSlice(allocator, ",\n      \"version\": \"");
                 try appendJsonEscaped(&buf, allocator, v);
+                try buf.appendSlice(allocator, "\"");
+            }
+
+            // Write isolation mode (only if non-default)
+            if (ws.isolation != .shared) {
+                try buf.appendSlice(allocator, ",\n      \"isolation\": \"");
+                try buf.appendSlice(allocator, ws.isolation.toString());
                 try buf.appendSlice(allocator, "\"");
             }
 
@@ -357,9 +382,25 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
         .lockfile_version = lockfile_version,
         .workspaces = std.StringHashMap(types.WorkspaceLockEntry).init(allocator),
         .packages = std.StringHashMap(types.LockfileEntry).init(allocator),
+        .aliases = std.StringHashMap([]const u8).init(allocator),
         .generated_at = generated_at,
     };
     errdefer lockfile.deinit(allocator);
+
+    // Parse aliases
+    if (root.object.get("aliases")) |aliases_value| {
+        if (aliases_value == .object) {
+            var alias_it = aliases_value.object.iterator();
+            while (alias_it.next()) |entry| {
+                if (entry.value_ptr.* == .string) {
+                    try lockfile.aliases.put(
+                        try allocator.dupe(u8, entry.key_ptr.*),
+                        try allocator.dupe(u8, entry.value_ptr.string),
+                    );
+                }
+            }
+        }
+    }
 
     // Parse workspaces
     if (root.object.get("workspaces")) |ws_value| {
@@ -406,12 +447,19 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
                     }
                 }
 
+                // Parse isolation mode
+                const ws_isolation = if (ws_val.object.get("isolation")) |iso_val|
+                    if (iso_val == .string) types.WorkspaceIsolation.fromString(iso_val.string) orelse .shared else .shared
+                else
+                    .shared;
+
                 try lockfile.workspaces.put(try allocator.dupe(u8, ws_key), .{
                     .name = try allocator.dupe(u8, ws_name),
                     .version = ws_version,
                     .dependencies = ws_deps,
                     .dev_dependencies = ws_dev_deps,
                     .system = ws_system,
+                    .isolation = ws_isolation,
                 });
             }
         }

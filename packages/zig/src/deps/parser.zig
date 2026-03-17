@@ -1033,6 +1033,98 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
     return try deps.toOwnedSlice(allocator);
 }
 
+/// Parse user-defined aliases from a pantry.json/pantry.jsonc config file.
+/// Aliases map short names to canonical domains for clash avoidance.
+/// Example: { "aliases": { "meilisearch": "meilisearch.com" } }
+pub fn parseAliases(allocator: std.mem.Allocator, file_path: []const u8) !?std.StringHashMap([]const u8) {
+    const content = io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024) catch return null;
+    defer allocator.free(content);
+
+    const json_content = stripJsonComments(allocator, content) catch return null;
+    defer allocator.free(json_content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch return null;
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return null;
+
+    // Check top-level "aliases" field
+    const aliases_val = parsed.value.object.get("aliases") orelse {
+        // Also check pantry.aliases for package.json compat
+        if (parsed.value.object.get("pantry")) |pantry_val| {
+            if (pantry_val == .object) {
+                if (pantry_val.object.get("aliases")) |pa| {
+                    return parseAliasObject(allocator, pa);
+                }
+            }
+        }
+        return null;
+    };
+
+    return parseAliasObject(allocator, aliases_val);
+}
+
+fn parseAliasObject(allocator: std.mem.Allocator, val: std.json.Value) !?std.StringHashMap([]const u8) {
+    if (val != .object) return null;
+
+    var map = std.StringHashMap([]const u8).init(allocator);
+    errdefer {
+        var it = map.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            allocator.free(entry.value_ptr.*);
+        }
+        map.deinit();
+    }
+
+    var it = val.object.iterator();
+    while (it.next()) |entry| {
+        if (entry.value_ptr.* == .string) {
+            try map.put(
+                try allocator.dupe(u8, entry.key_ptr.*),
+                try allocator.dupe(u8, entry.value_ptr.string),
+            );
+        }
+    }
+
+    if (map.count() == 0) {
+        map.deinit();
+        return null;
+    }
+
+    return map;
+}
+
+/// Parse workspace isolation config from a pantry.json/pantry.jsonc config file.
+/// Returns the isolation mode string or null if not configured.
+/// Example: { "workspaces": { "isolation": "isolated" } }
+///          { "workspaces": { "packages": ["packages/*"], "isolation": "inherit" } }
+pub fn parseWorkspaceIsolation(allocator: std.mem.Allocator, file_path: []const u8) !?[]const u8 {
+    const content = io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024) catch return null;
+    defer allocator.free(content);
+
+    const json_content = stripJsonComments(allocator, content) catch return null;
+    defer allocator.free(json_content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, json_content, .{}) catch return null;
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return null;
+
+    // Check workspaces.isolation
+    if (parsed.value.object.get("workspaces")) |ws_val| {
+        if (ws_val == .object) {
+            if (ws_val.object.get("isolation")) |iso_val| {
+                if (iso_val == .string) {
+                    return try allocator.dupe(u8, iso_val.string);
+                }
+            }
+        }
+    }
+
+    return null;
+}
+
 /// Strip JSON comments (// and /* */) and trailing commas for JSONC support
 fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const u8 {
     // Single-pass: strip comments AND trailing commas in one allocation

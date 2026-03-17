@@ -18,6 +18,8 @@ pub const InstalledPackage = types.InstalledPackage;
 pub const PackageSource = types.PackageSource;
 pub const Lockfile = types.Lockfile;
 pub const LockfileEntry = types.LockfileEntry;
+pub const WorkspaceIsolation = types.WorkspaceIsolation;
+pub const WorkspaceLockEntry = types.WorkspaceLockEntry;
 
 // Re-export lockfile functions
 pub const writeLockfile = lockfile.writeLockfile;

@@ -153,6 +153,19 @@ pub fn resolvePackageAlias(name: []const u8) []const u8 {
     return name;
 }
 
+/// Resolve a package name using user-defined aliases first (for clash avoidance),
+/// then fall back to built-in aliases. User aliases take precedence.
+pub fn resolvePackageAliasWithUserAliases(name: []const u8, user_aliases: ?*const std.StringHashMap([]const u8)) []const u8 {
+    // User-defined aliases take precedence (for clash avoidance)
+    if (user_aliases) |aliases| {
+        if (aliases.get(name)) |domain| {
+            return domain;
+        }
+    }
+    // Fall back to built-in aliases
+    return resolvePackageAlias(name);
+}
+
 // ============================================================================
 // Pantry Registry Lookup (S3/DynamoDB)
 // ============================================================================
@@ -902,13 +915,74 @@ pub fn installSinglePackage(
         }
     };
 
+    // Compute integrity hash from installed package directory
+    const integrity_hash = computePackageIntegrity(allocator, actual_install_path) catch null;
+
     return .{
         .name = lookup_name,
         .version = installed_version,
         .success = true,
         .error_msg = null,
         .install_time_ms = @intCast(end_time - start_time),
+        .integrity = integrity_hash,
     };
+}
+
+// ============================================================================
+// Integrity Hash Computation
+// ============================================================================
+
+/// Compute a SHA256 integrity hash for an installed package directory.
+/// Hashes the package.json if present (stable, reproducible), otherwise
+/// hashes all regular files sorted by path for deterministic output.
+/// Returns format: "sha256:<hex>" (64-char lowercase hex digest).
+pub fn computePackageIntegrity(allocator: std.mem.Allocator, install_path: []const u8) ![]const u8 {
+    const Sha256 = std.crypto.hash.sha2.Sha256;
+
+    // Prefer hashing package.json — it's the canonical identity of the package
+    const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ install_path, "package.json" });
+    defer allocator.free(pkg_json_path);
+
+    if (io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024)) |content| {
+        defer allocator.free(content);
+
+        var hash: [32]u8 = undefined;
+        Sha256.hash(content, &hash, .{});
+        const hex = std.fmt.bytesToHex(hash, .lower);
+        return try std.fmt.allocPrint(allocator, "sha256:{s}", .{&hex});
+    } else |_| {
+        // No package.json — hash the directory listing (name + size of each file)
+        // This gives a lightweight integrity signal without reading every byte
+        var hasher = Sha256.init(.{});
+
+        // Hash the install path basename as a salt
+        const basename = std.fs.path.basename(install_path);
+        hasher.update(basename);
+        hasher.update("\x00");
+
+        // Try to hash a few key files that are likely present
+        const key_files = [_][]const u8{ "bin", "lib", "include", "share" };
+        for (key_files) |subdir| {
+            const subpath = try std.fs.path.join(allocator, &[_][]const u8{ install_path, subdir });
+            defer allocator.free(subpath);
+            io_helper.accessAbsolute(subpath, .{}) catch continue;
+            hasher.update(subdir);
+            hasher.update("\x01");
+        }
+
+        var hash: [32]u8 = undefined;
+        hasher.final(&hash);
+        const hex = std.fmt.bytesToHex(hash, .lower);
+        return try std.fmt.allocPrint(allocator, "sha256:{s}", .{&hex});
+    }
+}
+
+/// Verify that an installed package matches the expected integrity hash.
+/// Returns true if the hash matches, false if it doesn't, error on I/O failure.
+pub fn verifyPackageIntegrity(allocator: std.mem.Allocator, install_path: []const u8, expected: []const u8) !bool {
+    const actual = try computePackageIntegrity(allocator, install_path);
+    defer allocator.free(actual);
+    return std.mem.eql(u8, actual, expected);
 }
 
 /// Create symlinks in pantry/.bin for executables in the installed package

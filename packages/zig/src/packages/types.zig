@@ -171,6 +171,31 @@ pub const LockfileEntry = struct {
     }
 };
 
+/// Workspace dependency isolation mode
+pub const WorkspaceIsolation = enum {
+    /// Shared: all workspace members share the same dependency versions (default)
+    shared,
+    /// Isolated: each workspace member resolves its own dependency versions
+    isolated,
+    /// Inherit: use the root workspace's dependencies, members can override
+    inherit,
+
+    pub fn toString(self: WorkspaceIsolation) []const u8 {
+        return switch (self) {
+            .shared => "shared",
+            .isolated => "isolated",
+            .inherit => "inherit",
+        };
+    }
+
+    pub fn fromString(s: []const u8) ?WorkspaceIsolation {
+        if (std.mem.eql(u8, s, "shared")) return .shared;
+        if (std.mem.eql(u8, s, "isolated")) return .isolated;
+        if (std.mem.eql(u8, s, "inherit")) return .inherit;
+        return null;
+    }
+};
+
 /// Workspace member entry in the lockfile
 /// Records what each workspace member declared as dependencies
 pub const WorkspaceLockEntry = struct {
@@ -179,6 +204,8 @@ pub const WorkspaceLockEntry = struct {
     dependencies: ?std.StringHashMap([]const u8) = null,
     dev_dependencies: ?std.StringHashMap([]const u8) = null,
     system: ?std.StringHashMap([]const u8) = null,
+    /// Per-workspace dependency isolation mode
+    isolation: WorkspaceIsolation = .shared,
 
     pub fn deinit(self: *WorkspaceLockEntry, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
@@ -199,23 +226,33 @@ pub const WorkspaceLockEntry = struct {
 /// Complete lockfile structure
 pub const Lockfile = struct {
     version: []const u8,
-    lockfile_version: u32 = 1,
+    lockfile_version: u32 = 2,
     workspaces: std.StringHashMap(WorkspaceLockEntry),
     packages: std.StringHashMap(LockfileEntry),
+    /// User-defined aliases for clash avoidance (e.g., "meilisearch" -> "meilisearch.com")
+    /// Stored in lockfile so resolvers use the same mapping across installs.
+    aliases: std.StringHashMap([]const u8),
     generated_at: i64,
 
     pub fn init(allocator: std.mem.Allocator, version: []const u8) !Lockfile {
         return Lockfile{
             .version = try allocator.dupe(u8, version),
-            .lockfile_version = 1,
+            .lockfile_version = 2,
             .workspaces = std.StringHashMap(WorkspaceLockEntry).init(allocator),
             .packages = std.StringHashMap(LockfileEntry).init(allocator),
+            .aliases = std.StringHashMap([]const u8).init(allocator),
             .generated_at = (io_helper.clockGettime()).sec,
         };
     }
 
     pub fn deinit(self: *Lockfile, allocator: std.mem.Allocator) void {
         allocator.free(self.version);
+        var alias_it = self.aliases.iterator();
+        while (alias_it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            allocator.free(entry.value_ptr.*);
+        }
+        self.aliases.deinit();
         var ws_it = self.workspaces.iterator();
         while (ws_it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
@@ -238,6 +275,15 @@ pub const Lockfile = struct {
 
     pub fn addWorkspace(self: *Lockfile, allocator: std.mem.Allocator, path: []const u8, entry: WorkspaceLockEntry) !void {
         try self.workspaces.put(try allocator.dupe(u8, path), entry);
+    }
+
+    pub fn addAlias(self: *Lockfile, allocator: std.mem.Allocator, alias: []const u8, domain: []const u8) !void {
+        try self.aliases.put(try allocator.dupe(u8, alias), try allocator.dupe(u8, domain));
+    }
+
+    /// Resolve an alias to its canonical domain. Returns the alias itself if no mapping exists.
+    pub fn resolveAlias(self: *const Lockfile, name: []const u8) []const u8 {
+        return self.aliases.get(name) orelse name;
     }
 };
 

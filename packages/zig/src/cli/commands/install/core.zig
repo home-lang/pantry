@@ -128,6 +128,20 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
 
     if (checked_count == 0) return null;
 
+    // 4b. Verify integrity hashes for locked packages (if present)
+    var pkg_it = lockfile.packages.iterator();
+    while (pkg_it.next()) |entry| {
+        const pkg = entry.value_ptr.*;
+        if (pkg.integrity) |expected_integrity| {
+            const pkg_path = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_dir, modules_dir, pkg.name }) catch continue;
+            defer allocator.free(pkg_path);
+            const valid = helpers.verifyPackageIntegrity(allocator, pkg_path, expected_integrity) catch continue;
+            if (!valid) {
+                return null; // Integrity mismatch → fall through to slow path for reinstall
+            }
+        }
+    }
+
     // 5. All up-to-date!
     const end_ts = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
@@ -843,6 +857,25 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             defer allocator.free(lockfile_path);
 
             var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
+
+            // Parse and store user-defined aliases from config file
+            if (deps_file_path) |dfp| {
+                const alias_parser = @import("../../../deps/parser.zig");
+                if (try alias_parser.parseAliases(allocator, dfp)) |aliases| {
+                    var alias_it = aliases.iterator();
+                    while (alias_it.next()) |entry| {
+                        lockfile.addAlias(allocator, entry.key_ptr.*, entry.value_ptr.*) catch {};
+                    }
+                    // Free the alias map (values were duped by addAlias)
+                    var alias_cleanup = aliases;
+                    var cleanup_it = alias_cleanup.iterator();
+                    while (cleanup_it.next()) |entry| {
+                        allocator.free(entry.key_ptr.*);
+                        allocator.free(entry.value_ptr.*);
+                    }
+                    alias_cleanup.deinit();
+                }
+            }
             defer lockfile.deinit(allocator);
 
             // Add entries for all installed packages
@@ -867,13 +900,19 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 else
                     dep.version;
 
+                // Capture integrity hash from install result
+                const integrity = if (i < install_results.len and install_results[i].success and install_results[i].integrity != null)
+                    try allocator.dupe(u8, install_results[i].integrity.?)
+                else
+                    null;
+
                 const entry = lib.packages.LockfileEntry{
                     .name = try allocator.dupe(u8, clean_name),
                     .version = try allocator.dupe(u8, resolved_version),
                     .source = source,
                     .url = if (source == .local) try allocator.dupe(u8, dep.version) else null,
                     .resolved = null,
-                    .integrity = null,
+                    .integrity = integrity,
                     .dependencies = null,
                 };
 
@@ -905,7 +944,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 const clean_name = helpers.normalizePackageName(result.name);
                 const resolved_url = try std.fmt.allocPrint(allocator, "registry:{s}@{s}", .{ clean_name, result.version });
                 defer allocator.free(resolved_url);
-                try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, null);
+                try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, result.integrity);
 
                 // Record successful package installation in checkpoint
                 checkpoint.recordPackage(clean_name) catch |err| {

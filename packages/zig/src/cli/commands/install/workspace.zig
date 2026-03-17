@@ -910,13 +910,69 @@ pub fn installWorkspaceCommandWithOptions(
                     else
                         workspace_config.name;
 
+                    // Parse workspace isolation mode from root config
+                    const ws_isolation = blk: {
+                        if (root_parsed.value.object.get("workspaces")) |ws_val| {
+                            if (ws_val == .object) {
+                                if (ws_val.object.get("isolation")) |iso_val| {
+                                    if (iso_val == .string) {
+                                        break :blk lib.packages.WorkspaceIsolation.fromString(iso_val.string) orelse .shared;
+                                    }
+                                }
+                            }
+                        }
+                        // Also check pantry.workspaces.isolation
+                        if (root_parsed.value.object.get("pantry")) |pantry_val| {
+                            if (pantry_val == .object) {
+                                if (pantry_val.object.get("workspaces")) |ws_val| {
+                                    if (ws_val == .object) {
+                                        if (ws_val.object.get("isolation")) |iso_val| {
+                                            if (iso_val == .string) {
+                                                break :blk lib.packages.WorkspaceIsolation.fromString(iso_val.string) orelse .shared;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        break :blk .shared;
+                    };
+
                     try lockfile.addWorkspace(allocator, "", .{
                         .name = try allocator.dupe(u8, root_name),
                         .version = null,
                         .dependencies = root_ws_deps,
                         .dev_dependencies = root_ws_dev_deps,
                         .system = root_ws_system,
+                        .isolation = ws_isolation,
                     });
+
+                    // Parse and store user-defined aliases from root config
+                    if (root_parsed.value.object.get("aliases")) |aliases_val| {
+                        if (aliases_val == .object) {
+                            var alias_it = aliases_val.object.iterator();
+                            while (alias_it.next()) |alias_entry| {
+                                if (alias_entry.value_ptr.* == .string) {
+                                    lockfile.addAlias(allocator, alias_entry.key_ptr.*, alias_entry.value_ptr.string) catch {};
+                                }
+                            }
+                        }
+                    }
+                    // Also check pantry.aliases
+                    if (root_parsed.value.object.get("pantry")) |pantry_val| {
+                        if (pantry_val == .object) {
+                            if (pantry_val.object.get("aliases")) |aliases_val| {
+                                if (aliases_val == .object) {
+                                    var alias_it = aliases_val.object.iterator();
+                                    while (alias_it.next()) |alias_entry| {
+                                        if (alias_entry.value_ptr.* == .string) {
+                                            lockfile.addAlias(allocator, alias_entry.key_ptr.*, alias_entry.value_ptr.string) catch {};
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             } else |_| {}
         } else |_| {}
@@ -971,12 +1027,67 @@ pub fn installWorkspaceCommandWithOptions(
             else
                 member.path;
 
+            // Parse per-member isolation override (from member's pantry field)
+            const member_isolation = member_iso: {
+                if (m_parsed.value.object.get("pantry")) |pantry_val| {
+                    if (pantry_val == .object) {
+                        if (pantry_val.object.get("isolation")) |iso_val| {
+                            if (iso_val == .string) {
+                                break :member_iso lib.packages.WorkspaceIsolation.fromString(iso_val.string) orelse .shared;
+                            }
+                        }
+                    }
+                }
+                break :member_iso .shared;
+            };
+
+            // Parse per-member system deps
+            var m_system: ?std.StringHashMap([]const u8) = null;
+            if (m_parsed.value.object.get("system")) |system_val| {
+                if (system_val == .object) {
+                    var smap = std.StringHashMap([]const u8).init(allocator);
+                    var s_it = system_val.object.iterator();
+                    while (s_it.next()) |s_entry| {
+                        if (s_entry.value_ptr.* == .string) {
+                            smap.put(
+                                allocator.dupe(u8, s_entry.key_ptr.*) catch continue,
+                                allocator.dupe(u8, s_entry.value_ptr.string) catch continue,
+                            ) catch {};
+                        }
+                    }
+                    if (smap.count() > 0) m_system = smap else smap.deinit();
+                }
+            }
+            // Also check pantry.system
+            if (m_system == null) {
+                if (m_parsed.value.object.get("pantry")) |pantry_val| {
+                    if (pantry_val == .object) {
+                        if (pantry_val.object.get("system")) |system_val| {
+                            if (system_val == .object) {
+                                var smap = std.StringHashMap([]const u8).init(allocator);
+                                var s_it = system_val.object.iterator();
+                                while (s_it.next()) |s_entry| {
+                                    if (s_entry.value_ptr.* == .string) {
+                                        smap.put(
+                                            allocator.dupe(u8, s_entry.key_ptr.*) catch continue,
+                                            allocator.dupe(u8, s_entry.value_ptr.string) catch continue,
+                                        ) catch {};
+                                    }
+                                }
+                                if (smap.count() > 0) m_system = smap else smap.deinit();
+                            }
+                        }
+                    }
+                }
+            }
+
             try lockfile.addWorkspace(allocator, rel_path, .{
                 .name = try allocator.dupe(u8, m_name),
                 .version = m_version,
                 .dependencies = m_deps,
                 .dev_dependencies = m_dev_deps,
-                .system = null,
+                .system = m_system,
+                .isolation = member_isolation,
             });
         }
     }

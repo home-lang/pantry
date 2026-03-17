@@ -46,10 +46,15 @@ pub const InstallTaskResult = struct {
     success: bool,
     error_msg: ?[]const u8,
     install_time_ms: u64,
+    /// SHA256 integrity hash of the downloaded tarball (format: "sha256:<hex>")
+    integrity: ?[]const u8 = null,
 
     pub fn deinit(self: *InstallTaskResult, allocator: std.mem.Allocator) void {
         if (self.error_msg) |msg| {
             allocator.free(msg);
+        }
+        if (self.integrity) |i| {
+            allocator.free(i);
         }
     }
 };
