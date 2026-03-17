@@ -153,19 +153,6 @@ pub fn resolvePackageAlias(name: []const u8) []const u8 {
     return name;
 }
 
-/// Resolve a package name using user-defined aliases first (for clash avoidance),
-/// then fall back to built-in aliases. User aliases take precedence.
-pub fn resolvePackageAliasWithUserAliases(name: []const u8, user_aliases: ?*const std.StringHashMap([]const u8)) []const u8 {
-    // User-defined aliases take precedence (for clash avoidance)
-    if (user_aliases) |aliases| {
-        if (aliases.get(name)) |domain| {
-            return domain;
-        }
-    }
-    // Fall back to built-in aliases
-    return resolvePackageAlias(name);
-}
-
 // ============================================================================
 // Pantry Registry Lookup (S3/DynamoDB)
 // ============================================================================

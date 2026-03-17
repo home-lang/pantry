@@ -946,33 +946,6 @@ pub fn installWorkspaceCommandWithOptions(
                         .system = root_ws_system,
                         .isolation = ws_isolation,
                     });
-
-                    // Parse and store user-defined aliases from root config
-                    if (root_parsed.value.object.get("aliases")) |aliases_val| {
-                        if (aliases_val == .object) {
-                            var alias_it = aliases_val.object.iterator();
-                            while (alias_it.next()) |alias_entry| {
-                                if (alias_entry.value_ptr.* == .string) {
-                                    lockfile.addAlias(allocator, alias_entry.key_ptr.*, alias_entry.value_ptr.string) catch {};
-                                }
-                            }
-                        }
-                    }
-                    // Also check pantry.aliases
-                    if (root_parsed.value.object.get("pantry")) |pantry_val| {
-                        if (pantry_val == .object) {
-                            if (pantry_val.object.get("aliases")) |aliases_val| {
-                                if (aliases_val == .object) {
-                                    var alias_it = aliases_val.object.iterator();
-                                    while (alias_it.next()) |alias_entry| {
-                                        if (alias_entry.value_ptr.* == .string) {
-                                            lockfile.addAlias(allocator, alias_entry.key_ptr.*, alias_entry.value_ptr.string) catch {};
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             } else |_| {}
         } else |_| {}

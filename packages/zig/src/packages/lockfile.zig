@@ -26,16 +26,6 @@ pub fn lockfilesEqual(a: *const types.Lockfile, b: *const types.Lockfile) bool {
     // Compare lockfile_version
     if (a.lockfile_version != b.lockfile_version) return false;
 
-    // Compare aliases
-    if (a.aliases.count() != b.aliases.count()) return false;
-    {
-        var alias_it = a.aliases.iterator();
-        while (alias_it.next()) |entry| {
-            const b_val = b.aliases.get(entry.key_ptr.*) orelse return false;
-            if (!std.mem.eql(u8, entry.value_ptr.*, b_val)) return false;
-        }
-    }
-
     // Compare workspace count
     if (a.workspaces.count() != b.workspaces.count()) return false;
 
@@ -180,13 +170,6 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
     {
         const s = std.fmt.bufPrint(&fmt_buf, "  \"lockfileVersion\": {d},\n", .{lockfile.lockfile_version}) catch return error.FormatError;
         try buf.appendSlice(allocator, s);
-    }
-
-    // Write aliases section (sorted for deterministic output)
-    if (lockfile.aliases.count() > 0) {
-        try buf.appendSlice(allocator, "  \"aliases\": ");
-        try writeJsonStringMap(&buf, allocator, @constCast(&lockfile.aliases), "  ");
-        try buf.appendSlice(allocator, ",\n");
     }
 
     // Write workspaces section (sorted for deterministic output)
@@ -382,25 +365,9 @@ pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.
         .lockfile_version = lockfile_version,
         .workspaces = std.StringHashMap(types.WorkspaceLockEntry).init(allocator),
         .packages = std.StringHashMap(types.LockfileEntry).init(allocator),
-        .aliases = std.StringHashMap([]const u8).init(allocator),
         .generated_at = generated_at,
     };
     errdefer lockfile.deinit(allocator);
-
-    // Parse aliases
-    if (root.object.get("aliases")) |aliases_value| {
-        if (aliases_value == .object) {
-            var alias_it = aliases_value.object.iterator();
-            while (alias_it.next()) |entry| {
-                if (entry.value_ptr.* == .string) {
-                    try lockfile.aliases.put(
-                        try allocator.dupe(u8, entry.key_ptr.*),
-                        try allocator.dupe(u8, entry.value_ptr.string),
-                    );
-                }
-            }
-        }
-    }
 
     // Parse workspaces
     if (root.object.get("workspaces")) |ws_value| {
@@ -605,7 +572,7 @@ test "lockfile write and read" {
     defer read_lockfile.deinit(allocator);
 
     try std.testing.expectEqualStrings("1.0.0", read_lockfile.version);
-    try std.testing.expectEqual(@as(u32, 1), read_lockfile.lockfile_version);
+    try std.testing.expectEqual(@as(u32, 2), read_lockfile.lockfile_version);
     try std.testing.expectEqual(@as(usize, 1), read_lockfile.packages.count());
 }
 

@@ -229,9 +229,6 @@ pub const Lockfile = struct {
     lockfile_version: u32 = 2,
     workspaces: std.StringHashMap(WorkspaceLockEntry),
     packages: std.StringHashMap(LockfileEntry),
-    /// User-defined aliases for clash avoidance (e.g., "meilisearch" -> "meilisearch.com")
-    /// Stored in lockfile so resolvers use the same mapping across installs.
-    aliases: std.StringHashMap([]const u8),
     generated_at: i64,
 
     pub fn init(allocator: std.mem.Allocator, version: []const u8) !Lockfile {
@@ -240,19 +237,12 @@ pub const Lockfile = struct {
             .lockfile_version = 2,
             .workspaces = std.StringHashMap(WorkspaceLockEntry).init(allocator),
             .packages = std.StringHashMap(LockfileEntry).init(allocator),
-            .aliases = std.StringHashMap([]const u8).init(allocator),
             .generated_at = (io_helper.clockGettime()).sec,
         };
     }
 
     pub fn deinit(self: *Lockfile, allocator: std.mem.Allocator) void {
         allocator.free(self.version);
-        var alias_it = self.aliases.iterator();
-        while (alias_it.next()) |entry| {
-            allocator.free(entry.key_ptr.*);
-            allocator.free(entry.value_ptr.*);
-        }
-        self.aliases.deinit();
         var ws_it = self.workspaces.iterator();
         while (ws_it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
@@ -275,15 +265,6 @@ pub const Lockfile = struct {
 
     pub fn addWorkspace(self: *Lockfile, allocator: std.mem.Allocator, path: []const u8, entry: WorkspaceLockEntry) !void {
         try self.workspaces.put(try allocator.dupe(u8, path), entry);
-    }
-
-    pub fn addAlias(self: *Lockfile, allocator: std.mem.Allocator, alias: []const u8, domain: []const u8) !void {
-        try self.aliases.put(try allocator.dupe(u8, alias), try allocator.dupe(u8, domain));
-    }
-
-    /// Resolve an alias to its canonical domain. Returns the alias itself if no mapping exists.
-    pub fn resolveAlias(self: *const Lockfile, name: []const u8) []const u8 {
-        return self.aliases.get(name) orelse name;
     }
 };
 

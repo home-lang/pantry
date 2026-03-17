@@ -857,25 +857,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             defer allocator.free(lockfile_path);
 
             var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
-
-            // Parse and store user-defined aliases from config file
-            if (deps_file_path) |dfp| {
-                const alias_parser = @import("../../../deps/parser.zig");
-                if (try alias_parser.parseAliases(allocator, dfp)) |aliases| {
-                    var alias_it = aliases.iterator();
-                    while (alias_it.next()) |entry| {
-                        lockfile.addAlias(allocator, entry.key_ptr.*, entry.value_ptr.*) catch {};
-                    }
-                    // Free the alias map (values were duped by addAlias)
-                    var alias_cleanup = aliases;
-                    var cleanup_it = alias_cleanup.iterator();
-                    while (cleanup_it.next()) |entry| {
-                        allocator.free(entry.key_ptr.*);
-                        allocator.free(entry.value_ptr.*);
-                    }
-                    alias_cleanup.deinit();
-                }
-            }
             defer lockfile.deinit(allocator);
 
             // Add entries for all installed packages
