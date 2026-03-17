@@ -82,10 +82,12 @@ async function renderSitePage(file: string, context: Record<string, unknown> = {
     injectCSS: true,
     wrapInDocument: false,
   })
-  // Strip STX-injected default meta tags that duplicate our custom ones
-  html = html.replace(/<meta[^>]*content="A website built with stx templating engine"[^>]*>\n?/g, '')
-  // Strip STX-injected duplicate og:title (keeps our suffixed version)
-  html = html.replace(/<meta property="og:title" content="[^"]*">\n?/g, '')
+  // Strip STX-injected default meta tags that duplicate our custom ones in layout.stx.
+  // STX auto-generates bare meta tags (no leading whitespace) — ours are indented.
+  // Match only lines starting with < (no leading whitespace) to preserve our indented versions.
+  html = html.replace(/^<meta[^>]*content="A website built with stx templating engine"[^>]*>\n?/gm, '')
+  html = html.replace(/^<meta property="og:title" content="[^"]*">\n?/gm, '')
+  html = html.replace(/^<meta name="twitter:title" content="[^"]*">\n?/gm, '')
   return html
 }
 
