@@ -3492,7 +3492,7 @@ fn reportDownloadAnalytics(allocator: std.mem.Allocator, domain: []const u8, ver
             "5",
             "--max-time",
             "10",
-            "https://pantry.dev/analytics/events",
+            "https://registry.pantry.dev/analytics/events",
         }) catch continue;
         allocator.free(result.stdout);
         allocator.free(result.stderr);
