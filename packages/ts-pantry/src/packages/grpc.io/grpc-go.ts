@@ -3,7 +3,7 @@
  *
  * @domain `grpc.io/grpc-go`
  * @programs `protoc-gen-go-grpc`
- * @version `1.79.2` (43 versions available)
+ * @version `1.79.3` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install grpc.io/grpc-go`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "protoc-gen-go-grpc"
  * console.log(pkg.description) // "The Go language implementation of gRPC. HTTP/2 ..."
  * console.log(pkg.programs)    // ["protoc-gen-go-grpc"]
- * console.log(pkg.versions[0]) // "1.79.2" (latest)
+ * console.log(pkg.versions[0]) // "1.79.3" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/grpc-io/grpc-go.md
@@ -75,6 +75,7 @@ export const grpciogrpcgoPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.79.3',
     '1.79.2',
     '1.79.1',
     '1.79.0',
