@@ -2,7 +2,7 @@
  * **libwebsockets** - canonical libwebsockets.org networking library
  *
  * @domain `libwebsockets.org`
- * @version `4.5.5` (20 versions available)
+ * @version `4.5.6` (21 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install libwebsockets.org`
@@ -17,7 +17,7 @@
  * const pkg = pantry.libwebsocketsorg
  * console.log(pkg.name)        // "libwebsockets"
  * console.log(pkg.description) // "canonical libwebsockets.org networking library"
- * console.log(pkg.versions[0]) // "4.5.5" (latest)
+ * console.log(pkg.versions[0]) // "4.5.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/libwebsockets-org.md
@@ -68,6 +68,7 @@ export const libwebsocketsorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.5.6',
     '4.5.5',
     '4.5.4',
     '4.5.3',

@@ -3,7 +3,7 @@
  *
  * @domain `ffmpeg.org`
  * @programs `ffmpeg`, `ffplay`, `ffprobe`
- * @version `8.0.0` (32 versions available)
+ * @version `8.1.0` (33 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ffmpeg.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "ffmpeg"
  * console.log(pkg.description) // "Play, record, convert, and stream audio and video"
  * console.log(pkg.programs)    // ["ffmpeg", "ffplay", ...]
- * console.log(pkg.versions[0]) // "8.0.0" (latest)
+ * console.log(pkg.versions[0]) // "8.1.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/ffmpeg-org.md
@@ -78,6 +78,7 @@ export const ffmpegorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.1.0',
     '8.0.0',
     '7.1.3',
     '7.1.2',

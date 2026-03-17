@@ -3,7 +3,7 @@
  *
  * @domain `ruby-lang.org`
  * @programs `erb`, `irb`, `rake`, `rdoc`, `ri`, ... (+1 more)
- * @version `4.0.1` (53 versions available)
+ * @version `4.0.2` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ruby-lang.org`
@@ -24,7 +24,7 @@
  * console.log(pkg.name)        // "ruby-lang"
  * console.log(pkg.description) // "Powerful, clean, object-oriented scripting lang..."
  * console.log(pkg.programs)    // ["erb", "irb", ...]
- * console.log(pkg.versions[0]) // "4.0.1" (latest)
+ * console.log(pkg.versions[0]) // "4.0.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/ruby-lang-org.md
@@ -93,6 +93,7 @@ export const rubyPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.0.2',
     '4.0.1',
     '4.0.0',
     '3.4.9',
