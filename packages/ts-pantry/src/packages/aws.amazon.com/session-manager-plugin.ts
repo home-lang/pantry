@@ -3,7 +3,7 @@
  *
  * @domain `aws.amazon.com/session-manager-plugin`
  * @programs `session-manager-plugin`
- * @version `1.2.779.0` (2 versions available)
+ * @version `1.2.792.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install aws.amazon.com/session-manager-plugin`
@@ -16,7 +16,7 @@
  * const pkg = pantry.awsamazoncomsessionmanagerplugin
  * console.log(pkg.name)        // "session-manager-plugin"
  * console.log(pkg.programs)    // ["session-manager-plugin"]
- * console.log(pkg.versions[0]) // "1.2.779.0" (latest)
+ * console.log(pkg.versions[0]) // "1.2.792.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/aws-amazon-com/session-manager-plugin.md
@@ -67,6 +67,7 @@ export const awsamazoncomsessionmanagerpluginPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2.792.0',
     '1.2.779.0',
     '1.2.764.0',
   ] as const,
