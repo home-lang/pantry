@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 43 versions</summary>
+<summary>Show all 44 versions</summary>
 
+- `2.8.1`
 - `2.7.0`
 - `2.6.0`
 - `2.5.10`, `2.5.9`, `2.5.8`, `2.5.7`, `2.5.6`, `2.5.5`, `2.5.3`, `2.5.2`, `2.5.1`, `2.5.0`
@@ -38,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.7.0`
+**Latest Version**: `2.8.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +mongodb.com/shell@2.7.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +mongodb.com/shell@2.8.1 -- $SHELL -i
 ```
 
 ## Dependencies

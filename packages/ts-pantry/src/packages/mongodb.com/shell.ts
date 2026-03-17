@@ -3,7 +3,7 @@
  *
  * @domain `mongodb.com/shell`
  * @programs `mongosh`
- * @version `2.7.0` (43 versions available)
+ * @version `2.8.1` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mongodb.com/shell`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mongosh"
  * console.log(pkg.description) // "MongoDB Shell to connect, configure, query, and..."
  * console.log(pkg.programs)    // ["mongosh"]
- * console.log(pkg.versions[0]) // "2.7.0" (latest)
+ * console.log(pkg.versions[0]) // "2.8.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/mongodb-com/shell.md
@@ -77,6 +77,7 @@ export const mongodbcomshellPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.8.1',
     '2.7.0',
     '2.6.0',
     '2.5.10',
