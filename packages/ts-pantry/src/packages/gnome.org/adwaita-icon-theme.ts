@@ -2,7 +2,7 @@
  * **adwaita-icon-theme** - pkgx package
  *
  * @domain `gnome.org/adwaita-icon-theme`
- * @version `49.0.0` (7 versions available)
+ * @version `50.0.0` (8 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnome.org/adwaita-icon-theme`
@@ -14,7 +14,7 @@
  *
  * const pkg = pantry.gnomeorgadwaitaicontheme
  * console.log(pkg.name)        // "adwaita-icon-theme"
- * console.log(pkg.versions[0]) // "49.0.0" (latest)
+ * console.log(pkg.versions[0]) // "50.0.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnome-org/adwaita-icon-theme.md
@@ -61,6 +61,7 @@ export const gnomeorgadwaitaiconthemePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '50.0.0',
     '49.0.0',
     '48.1.0',
     '48.0.0',
