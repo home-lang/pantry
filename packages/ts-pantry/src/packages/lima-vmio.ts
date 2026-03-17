@@ -3,7 +3,7 @@
  *
  * @domain `lima-vm.io`
  * @programs `apptainer.lima`, `docker.lima`, `kubectl.lima`, `lima`, `limactl`, ... (+2 more)
- * @version `2.0.3` (33 versions available)
+ * @version `2.1.0` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install lima-vm.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "lima-vm"
  * console.log(pkg.description) // "Linux virtual machines, with a focus on running..."
  * console.log(pkg.programs)    // ["apptainer.lima", "docker.lima", ...]
- * console.log(pkg.versions[0]) // "2.0.3" (latest)
+ * console.log(pkg.versions[0]) // "2.1.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/lima-vm-io.md
@@ -83,6 +83,7 @@ export const limavmioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.1.0',
     '2.0.3',
     '2.0.2',
     '2.0.1',
