@@ -1,10 +1,3 @@
-<script server>
-  const pkgList = comparePackages || []
-  const hasPackages = pkgList.length > 0
-  const downloadChart = multiLineChart || {}
-  const barChart = downloadsBarChart || {}
-  const currentQuery = packagesQuery || ''
-</script>
 
 <section class="py-12 px-6 pb-20">
   <div class="max-w-5xl mx-auto">
@@ -25,7 +18,7 @@
           <input
             type="text"
             name="packages"
-            value="{{ currentQuery }}"
+            value="{{ packagesQuery }}"
             placeholder="e.g. bun.sh, nodejs.org, deno.land"
             aria-label="Package names to compare"
             class="flex-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
@@ -52,7 +45,7 @@
           <thead>
             <tr style="border-bottom: 1px solid var(--border);">
               <th class="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Metric</th>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <th class="text-center px-4 py-3">
                 <a href="/package/{{ pkg.name }}" class="font-mono text-sm font-medium hvr-accent transition-colors" style="color: var(--accent);">{{ pkg.name }}</a>
               </th>
@@ -62,31 +55,31 @@
           <tbody>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-3 text-sm" style="color: var(--fg-muted);">Latest Version</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-3 text-center font-mono text-sm" style="color: var(--fg);">{{ pkg.latestVersion }}</td>
               @endforeach
             </tr>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-3 text-sm" style="color: var(--fg-muted);">Total Downloads</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-3 text-center font-mono text-sm" style="color: var(--fg);">{{ pkg.formattedDownloads }}</td>
               @endforeach
             </tr>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-3 text-sm" style="color: var(--fg-muted);">Weekly Downloads</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-3 text-center font-mono text-sm" style="color: var(--fg);">{{ pkg.formattedWeekly }}</td>
               @endforeach
             </tr>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-3 text-sm" style="color: var(--fg-muted);">Versions</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-3 text-center font-mono text-sm" style="color: var(--fg);">{{ pkg.versionCount }}</td>
               @endforeach
             </tr>
             <tr>
               <td class="px-4 py-3 text-sm" style="color: var(--fg-muted);">Platforms</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-3 text-center font-mono text-sm" style="color: var(--fg);">{{ pkg.platformCount }}</td>
               @endforeach
             </tr>
@@ -96,31 +89,31 @@
     </div>
 
     <!-- Download trends chart (multi-line, ts-charts) -->
-    @if (downloadChart.datasets && downloadChart.datasets.length > 0)
+    @if (multiLineChart.datasets && multiLineChart.datasets.length > 0)
     <div class="mb-10">
       <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Download Trends (Last 30 Days)</h2>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto">
-        <svg width="{{ downloadChart.width }}" height="{{ downloadChart.height }}" viewBox="0 0 {{ downloadChart.width }} {{ downloadChart.height }}" style="width: 100%; height: auto;">
+        <svg width="{{ multiLineChart.width }}" height="{{ multiLineChart.height }}" viewBox="0 0 {{ multiLineChart.width }} {{ multiLineChart.height }}" style="width: 100%; height: auto;">
           <!-- Grid lines -->
-          @foreach (downloadChart.yLabels as yLabel)
-          <line x1="45" y1="{{ yLabel.y }}" x2="{{ downloadChart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
+          @foreach (multiLineChart.yLabels as yLabel)
+          <line x1="45" y1="{{ yLabel.y }}" x2="{{ multiLineChart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
           <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! yLabel.label !!}</text>
           @endforeach
 
           <!-- Lines for each package -->
-          @foreach (downloadChart.datasets as dataset)
+          @foreach (multiLineChart.datasets as dataset)
           <path d="{!! dataset.path !!}" fill="none" stroke="{{ dataset.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
           @endforeach
 
           <!-- X-axis labels -->
-          @foreach (downloadChart.xLabels as xLabel)
-          <text x="{{ xLabel.x }}" y="{{ downloadChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
+          @foreach (multiLineChart.xLabels as xLabel)
+          <text x="{{ xLabel.x }}" y="{{ multiLineChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
           @endforeach
         </svg>
 
         <!-- Legend -->
         <div class="flex flex-wrap gap-4 mt-3 pt-3 border-t border-[var(--border)]">
-          @foreach (downloadChart.datasets as dataset)
+          @foreach (multiLineChart.datasets as dataset)
           <div class="flex items-center gap-2">
             <span class="inline-block w-3 h-3 rounded-full" style="background: {{ dataset.color }};"></span>
             <span class="font-mono text-xs" style="color: var(--fg-muted);">{{ dataset.label }}</span>
@@ -132,12 +125,12 @@
     @endif
 
     <!-- Downloads comparison bar chart -->
-    @if (barChart.bars && barChart.bars.length > 0)
+    @if (downloadsBarChart.bars && downloadsBarChart.bars.length > 0)
     <div class="mb-10">
       <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Total Downloads Comparison</h2>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
         <div class="flex flex-col gap-3">
-          @foreach (barChart.bars as bar)
+          @foreach (downloadsBarChart.bars as bar)
           <div class="flex items-center gap-3">
             <a href="/package/{{ bar.label }}" class="font-mono text-xs shrink-0 hvr-accent transition-colors" style="width: 120px; color: var(--accent); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">{{ bar.label }}</a>
             <div class="flex-1 h-7 rounded-sm overflow-hidden" style="background: var(--bg-muted);">
@@ -160,7 +153,7 @@
           <thead>
             <tr style="border-bottom: 1px solid var(--border);">
               <th class="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Platform</th>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <th class="text-center px-4 py-3 font-mono text-xs" style="color: var(--accent);">{{ pkg.name }}</th>
               @endforeach
             </tr>
@@ -168,7 +161,7 @@
           <tbody>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-2.5 text-sm" style="color: var(--fg-muted);">macOS (Apple Silicon)</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-2.5 text-center">
                 @if (pkg.hasDarwinArm64)
                 <span style="color: var(--green);">&#10003;</span>
@@ -180,7 +173,7 @@
             </tr>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-2.5 text-sm" style="color: var(--fg-muted);">macOS (Intel)</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-2.5 text-center">
                 @if (pkg.hasDarwinX86)
                 <span style="color: var(--green);">&#10003;</span>
@@ -192,7 +185,7 @@
             </tr>
             <tr style="border-bottom: 1px solid var(--border);">
               <td class="px-4 py-2.5 text-sm" style="color: var(--fg-muted);">Linux (ARM64)</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-2.5 text-center">
                 @if (pkg.hasLinuxArm64)
                 <span style="color: var(--green);">&#10003;</span>
@@ -204,7 +197,7 @@
             </tr>
             <tr>
               <td class="px-4 py-2.5 text-sm" style="color: var(--fg-muted);">Linux (x86_64)</td>
-              @foreach (pkgList as pkg)
+              @foreach (comparePackages as pkg)
               <td class="px-4 py-2.5 text-center">
                 @if (pkg.hasLinuxX86)
                 <span style="color: var(--green);">&#10003;</span>
@@ -220,7 +213,7 @@
     </div>
     @endif
 
-    @if (!hasPackages && !currentQuery)
+    @if (!hasPackages && !packagesQuery)
     <!-- Empty state -->
     <div class="text-center py-16">
       <svg class="mx-auto mb-4" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--fg-subtle)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>

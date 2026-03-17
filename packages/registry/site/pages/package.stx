@@ -1,46 +1,3 @@
-<script server>
-  const versionCount = (versions || []).length
-  const platformCount = (platforms || []).length
-  const totalDownloads = (stats || {}).totalDownloads || 0
-  const weeklyDownloads = (stats || {}).weeklyDownloads || 0
-  const monthlyDownloads = (stats || {}).monthlyDownloads || 0
-
-  const formatNumber = (n) => {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
-    return String(n)
-  }
-
-  const formattedDownloads = formatNumber(totalDownloads)
-  const formattedWeekly = formatNumber(weeklyDownloads)
-  const formattedMonthly = formatNumber(monthlyDownloads)
-
-  const platformLabels = (platforms || []).map(p => {
-    if (p.includes('darwin-arm64')) return 'macOS (Apple Silicon)'
-    if (p.includes('darwin-x86-64') || p.includes('darwin-x64')) return 'macOS (Intel)'
-    if (p.includes('linux-arm64') || p.includes('linux-aarch64')) return 'Linux (ARM64)'
-    if (p.includes('linux-x86-64') || p.includes('linux-x64')) return 'Linux (x86_64)'
-    return p
-  })
-
-  const description = (meta || {}).description || ''
-  const homepage = (meta || {}).homepage || ''
-  const source = (meta || {}).source || (meta || {}).repository || ''
-
-  const sortedVersions = [...(versions || [])].reverse()
-  const recentVersions = sortedVersions.slice(0, 10)
-  const hasMoreVersions = sortedVersions.length > 10
-  const remainingVersions = sortedVersions.slice(10)
-
-  const deps = (meta || {}).dependencies || {}
-  const depList = Object.keys(deps)
-  const hasDeps = depList.length > 0
-
-  // Chart data (generated server-side via ts-charts)
-  const chart = lineChart || {}
-  const versionDist = versionDistribution || {}
-  const versionPie = versionPieChart || {}
-</script>
 
 <section class="py-12 px-6 pb-20">
   <div class="max-w-4xl mx-auto">
@@ -77,8 +34,8 @@
         </div>
         <span class="shrink-0 bg-[var(--bg-muted)] px-2.5 py-1 rounded font-mono text-xs mt-1" style="color: var(--accent);">{{ latestVersion }}</span>
       </div>
-      @if (description)
-      <p class="mb-3" style="font-size: 0.9375rem; color: var(--fg-muted);">{{ description }}</p>
+      @if (pkgDescription)
+      <p class="mb-3" style="font-size: 0.9375rem; color: var(--fg-muted);">{{ pkgDescription }}</p>
       @endif
       <div class="flex flex-wrap items-center gap-3" style="font-size: 0.8125rem; color: var(--fg-subtle);">
         @if (homepage)
@@ -171,39 +128,30 @@
         <label for="tab-platforms" class="tab-label">Platforms ({{ platformCount }})</label>
         @if (hasDeps)
         <input type="radio" name="pkg-tab" id="tab-deps" class="tab-radio" />
-        <label for="tab-deps" class="tab-label">Dependencies ({{ depList.length }})</label>
+        <label for="tab-deps" class="tab-label">Dependencies ({{ depCount }})</label>
         @endif
 
         <!-- Overview tab content -->
         <div class="tab-content tab-panel-overview w-full pt-6">
           <!-- Download timeline chart (ts-charts generated SVG) -->
-          @if (chart.linePath)
+          @if (lineChart && lineChart.linePath)
           <div class="mb-8">
             <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Downloads (Last 30 Days)</h2>
             <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto">
-              <svg width="{{ chart.width }}" height="{{ chart.height }}" viewBox="0 0 {{ chart.width }} {{ chart.height }}" style="width: 100%; height: auto;">
-                <!-- Grid lines -->
-                @foreach (chart.yLabels as yLabel)
-                <line x1="45" y1="{{ yLabel.y }}" x2="{{ chart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
+              <svg width="{{ lineChart.width }}" height="{{ lineChart.height }}" viewBox="0 0 {{ lineChart.width }} {{ lineChart.height }}" style="width: 100%; height: auto;">
+                @foreach (lineChart.yLabels as yLabel)
+                <line x1="45" y1="{{ yLabel.y }}" x2="{{ lineChart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
                 <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! yLabel.label !!}</text>
                 @endforeach
-
-                <!-- Area fill -->
-                <path d="{!! chart.areaPath !!}" fill="var(--accent)" opacity="0.1" />
-
-                <!-- Line -->
-                <path d="{!! chart.linePath !!}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-
-                <!-- Data points -->
-                @foreach (chart.points as point)
+                <path d="{!! lineChart.areaPath !!}" fill="var(--accent)" opacity="0.1" />
+                <path d="{!! lineChart.linePath !!}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                @foreach (lineChart.points as point)
                 <circle class="chart-dot" cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="var(--accent)" opacity="0.7">
                   <title>{{ point.label }}: {{ point.value }} downloads</title>
                 </circle>
                 @endforeach
-
-                <!-- X-axis labels -->
-                @foreach (chart.xLabels as xLabel)
-                <text x="{{ xLabel.x }}" y="{{ chart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
+                @foreach (lineChart.xLabels as xLabel)
+                <text x="{{ xLabel.x }}" y="{{ lineChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
                 @endforeach
               </svg>
             </div>
@@ -211,12 +159,12 @@
           @endif
 
           <!-- Version distribution -->
-          @if (versionDist.bars && versionDist.bars.length > 0)
+          @if (versionDistribution && versionDistribution.bars && versionDistribution.bars.length > 0)
           <div class="mb-8">
             <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Version Distribution</h2>
             <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4">
               <div class="flex flex-col gap-2">
-                @foreach (versionDist.bars as bar)
+                @foreach (versionDistribution.bars as bar)
                 <div class="flex items-center gap-3">
                   <span class="font-mono text-xs shrink-0" style="width: 100px; color: var(--fg-muted);">{{ bar.label }}</span>
                   <div class="flex-1 h-5 rounded-sm overflow-hidden" style="background: var(--bg-muted);">
@@ -234,7 +182,7 @@
           <!-- Dependencies preview -->
           @if (hasDeps)
           <div class="mb-8">
-            <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Dependencies ({{ depList.length }})</h2>
+            <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Dependencies ({{ depCount }})</h2>
             <div class="flex flex-wrap gap-2">
               @foreach (depList as dep)
               <a href="/package/{{ dep }}" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">{{ dep }}</a>
@@ -259,7 +207,7 @@
             </div>
             @if (hasMoreVersions)
             <p class="mt-2 px-3" style="font-size: 0.75rem; color: var(--fg-subtle);">
-              and {{ remainingVersions.length }} more &mdash; see Versions tab
+              and {{ remainingCount }} more &mdash; see Versions tab
             </p>
             @endif
           </div>
@@ -328,7 +276,6 @@
                 />
                 <span class="font-mono text-sm" style="color: var(--fg-muted);">{{ dep }}</span>
               </div>
-              <span class="font-mono text-xs" style="color: var(--fg-subtle);">{{ deps[dep] || '' }}</span>
             </a>
             @endforeach
           </div>

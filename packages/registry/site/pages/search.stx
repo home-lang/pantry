@@ -1,12 +1,3 @@
-<script server>
-  const count = (results || []).length
-  const hasResults = count > 0
-  const hasQuery = (query || '').length > 0
-  const currentSort = sort || 'relevance'
-  const currentView = view || 'list'
-
-  const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org', 'bun.sh', 'rust-lang.org']
-</script>
 
 <section class="py-12 px-6 pb-20">
   <div class="max-w-3xl mx-auto">
@@ -41,17 +32,17 @@
         <div class="flex items-center gap-3">
           <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Sort:</label>
           <select name="sort" class="sort-select" onchange="this.form.submit()">
-            <option value="relevance" @if (currentSort === 'relevance') selected @endif>Relevance</option>
-            <option value="downloads" @if (currentSort === 'downloads') selected @endif>Downloads</option>
-            <option value="name" @if (currentSort === 'name') selected @endif>Name (A-Z)</option>
+            <option value="relevance" @if (sort === 'relevance') selected @endif>Relevance</option>
+            <option value="downloads" @if (sort === 'downloads') selected @endif>Downloads</option>
+            <option value="name" @if (sort === 'name') selected @endif>Name (A-Z)</option>
           </select>
         </div>
 
         <div class="view-toggle">
-          <button type="submit" name="view" value="list" class="@if (currentView === 'list') active @endif" aria-label="List view">
+          <button type="submit" name="view" value="list" class="@if (view === 'list') active @endif" aria-label="List view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button type="submit" name="view" value="grid" class="@if (currentView === 'grid') active @endif" aria-label="Grid view">
+          <button type="submit" name="view" value="grid" class="@if (view === 'grid') active @endif" aria-label="Grid view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           </button>
         </div>
@@ -99,7 +90,7 @@
     </p>
 
     <!-- Grid view -->
-    @if (currentView === 'grid')
+    @if (view === 'grid')
     <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
@@ -144,7 +135,7 @@
     @endif
 
     <!-- List view (default) -->
-    @if (currentView !== 'grid')
+    @if (view !== 'grid')
     <div class="flex flex-col gap-2">
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">

@@ -1,9 +1,3 @@
-<script server>
-  const pkgCount = totalPackages || 0
-  const pkgs = packages || []
-  const registryStats = stats || {}
-  const topPkgs = topPackages || []
-</script>
 
 <!-- Hero -->
 <section class="flex flex-col items-center justify-center px-6 py-16 text-center" style="min-height: calc(100vh - 3.5rem - 6rem);">
@@ -15,9 +9,9 @@
       a fast, modern package manager for your system
     </p>
 
-    @if (pkgCount > 0)
+    @if (totalPackages > 0)
     <p class="mb-10" style="font-size: 0.875rem; color: var(--fg-subtle);">
-      <span class="font-semibold font-mono" style="color: var(--accent);">{{ pkgCount }}+</span> packages available
+      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> packages available
     </p>
     @endif
 
@@ -53,13 +47,13 @@
   <div class="max-w-6xl mx-auto">
     <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));">
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
-        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--accent);">{{ pkgCount }}+</p>
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--accent);">{{ totalPackages }}+</p>
         <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Packages</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--green);">
-          @if (registryStats.totalDownloads)
-          {{ registryStats.formattedDownloads }}
+          @if (stats.totalDownloads)
+          {{ stats.formattedDownloads }}
           @else
           --
           @endif
@@ -145,7 +139,7 @@
 </section>
 
 <!-- Trending packages (top by downloads) -->
-@if (topPkgs.length > 0)
+@if (topPackages.length > 0)
 <section class="px-6 pb-16">
   <div class="max-w-6xl mx-auto">
     <div class="flex items-center justify-between mb-6">
@@ -163,7 +157,7 @@
           </tr>
         </thead>
         <tbody>
-          @foreach (topPkgs as pkg)
+          @foreach (topPackages as pkg)
           <tr class="hover:bg-[var(--bg-muted)] transition-colors" style="border-bottom: 1px solid var(--border);">
             <td class="px-4 py-2.5 font-mono text-xs" style="color: var(--fg-subtle);">{{ pkg.rank }}</td>
             <td class="px-4 py-2.5">
@@ -195,7 +189,7 @@
     </div>
 
     <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
-      @foreach (pkgs as pkg)
+      @foreach (packages as pkg)
       <a href="/package/{{ pkg.domain }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1.5">
           <div class="flex items-center gap-2.5">

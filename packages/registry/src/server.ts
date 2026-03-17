@@ -1861,11 +1861,16 @@ async function handleSiteSearch(
     }
   }
 
+  const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org', 'bun.sh', 'rust-lang.org']
   const html = await renderSitePage('search.stx', {
     query,
     results,
     sort,
     view,
+    count: results.length,
+    hasResults: results.length > 0,
+    hasQuery: query.length > 0,
+    suggestions,
     title: query ? `search: ${query}` : 'search',
     metaDescription: query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
     canonicalUrl: 'https://pantry.dev/search',
@@ -1907,28 +1912,61 @@ async function handleSitePackage(
     const latestData = meta.versions?.[latestVersion] || {}
     const platforms = Object.keys(latestData.platforms || {})
 
+    // Pre-compute all template values (STX <script server> locals aren't accessible in template body)
+    const pkgStats = stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} }
+    const versionCount = versions.length
+    const platformCount = platforms.length
+
+    const platformLabels = platforms.map((p: string) => {
+      if (p.includes('darwin-arm64')) return 'macOS (Apple Silicon)'
+      if (p.includes('darwin-x86-64') || p.includes('darwin-x64')) return 'macOS (Intel)'
+      if (p.includes('linux-arm64') || p.includes('linux-aarch64')) return 'Linux (ARM64)'
+      if (p.includes('linux-x86-64') || p.includes('linux-x64')) return 'Linux (x86_64)'
+      return p
+    })
+
+    const deps = meta.dependencies || {}
+    const depList = Object.keys(deps)
+    const hasDeps = depList.length > 0
+    const depCount = depList.length
+
+    const sortedVersions = [...versions].reverse()
+    const recentVersions = sortedVersions.slice(0, 10)
+    const hasMoreVersions = sortedVersions.length > 10
+    const remainingCount = sortedVersions.length - 10
+
     // Generate charts via ts-charts
     const timelineData = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
     const lineChart = generateLineChart(timelineData, 700, 200)
 
     // Version distribution chart
-    const versionDownloads = (stats || {}).versionDownloads || {}
+    const versionDownloads = pkgStats.versionDownloads || {}
     const versionItems = Object.entries(versionDownloads)
       .map(([label, value]) => ({ label, value: value as number }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 8)
     const versionDistribution = generateHorizontalBarChart(versionItems, 600, 28, 6, 120)
 
-    const pkgDescription = meta.description || `${name} — ${versions.length} versions available for macOS and Linux`
+    const pkgDescription = meta.description || `${name} — ${versionCount} versions available for macOS and Linux`
     const html = await renderSitePage('package.stx', {
       name,
       notFound: false,
-      meta,
       latestVersion,
-      versions,
-      platforms,
-      stats: stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} },
-      timeline: timeline || [],
+      versionCount,
+      platformCount,
+      platformLabels,
+      formattedDownloads: chartFormatCount(pkgStats.totalDownloads),
+      formattedWeekly: chartFormatCount(pkgStats.weeklyDownloads),
+      pkgDescription: meta.description || '',
+      homepage: meta.homepage || '',
+      source: meta.source || meta.repository || '',
+      depList,
+      hasDeps,
+      depCount,
+      sortedVersions,
+      recentVersions,
+      hasMoreVersions,
+      remainingCount,
       lineChart,
       versionDistribution,
       title: name,
@@ -1941,16 +1979,29 @@ async function handleSitePackage(
   // Fallback for packages only in npm registry (not S3)
   const fbTimeline = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
   const fbLineChart = generateLineChart(fbTimeline, 700, 200)
+  const fbStats = stats || { totalDownloads: (pkgInfo as any)?.downloads || 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} }
+  const fbVersion = (pkgInfo as any)?.version || 'unknown'
+  const fbVersions = fbVersion !== 'unknown' ? [fbVersion] : []
 
   const html = await renderSitePage('package.stx', {
     name,
     notFound: false,
-    meta: pkgInfo,
-    latestVersion: (pkgInfo as any).version || 'unknown',
-    versions: (pkgInfo as any).version ? [(pkgInfo as any).version] : [],
-    platforms: [],
-    stats: stats || { totalDownloads: (pkgInfo as any).downloads || 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} },
-    timeline: timeline || [],
+    latestVersion: fbVersion,
+    versionCount: fbVersions.length,
+    platformCount: 0,
+    platformLabels: [],
+    formattedDownloads: chartFormatCount(fbStats.totalDownloads),
+    formattedWeekly: chartFormatCount(fbStats.weeklyDownloads),
+    pkgDescription: '',
+    homepage: '',
+    source: '',
+    depList: [],
+    hasDeps: false,
+    depCount: 0,
+    sortedVersions: [...fbVersions].reverse(),
+    recentVersions: fbVersions.slice(0, 10),
+    hasMoreVersions: false,
+    remainingCount: 0,
     lineChart: fbLineChart,
     versionDistribution: { bars: [] },
     title: name,
@@ -1977,6 +2028,7 @@ async function handleSiteCompare(
   if (packageNames.length === 0) {
     const html = await renderSitePage('compare.stx', {
       comparePackages: [],
+      hasPackages: false,
       packagesQuery: packagesParam,
       title: 'Compare',
       metaDescription: 'Compare packages side by side on pantry.dev — downloads, versions, and platform support.',
@@ -2066,6 +2118,7 @@ async function handleSiteCompare(
 
   const html = await renderSitePage('compare.stx', {
     comparePackages,
+    hasPackages: comparePackages.length > 0,
     packagesQuery: packagesParam,
     multiLineChart,
     downloadsBarChart,
