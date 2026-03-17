@@ -3,7 +3,7 @@
  *
  * @domain `github.com/ramonvermeulen/whosthere`
  * @programs `whosthere`
- * @version `0.6.1` (1 versions available)
+ * @version `0.7.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/ramonvermeulen/whosthere`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcomramonvermeulenwhosthere
  * console.log(pkg.name)        // "whosthere"
  * console.log(pkg.programs)    // ["whosthere"]
- * console.log(pkg.versions[0]) // "0.6.1" (latest)
+ * console.log(pkg.versions[0]) // "0.7.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/ramonvermeulen/whosthere.md
@@ -66,6 +66,7 @@ export const whostherePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.7.0',
     '0.6.1',
   ] as const,
   aliases: [] as const,
