@@ -44,6 +44,8 @@ jobs:
 
       - name: Setup Pantry
         uses: ./packages/action
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Install dependencies
         run: bun install

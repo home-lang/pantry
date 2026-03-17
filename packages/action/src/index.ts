@@ -29,7 +29,7 @@ async function resolveVersion(version: string): Promise<string> {
   if (version !== 'latest')
     return version.replace(/^v/, '')
 
-  // Try gh CLI first (uses GITHUB_TOKEN automatically)
+  // Try gh CLI first (uses GH_TOKEN/GITHUB_TOKEN automatically)
   let output = ''
   await exec.exec('gh', ['release', 'view', '--repo', REPO, '--json', 'tagName', '--jq', '.tagName'], {
     listeners: { stdout: (data: Buffer) => { output += data.toString() } },
@@ -39,11 +39,27 @@ async function resolveVersion(version: string): Promise<string> {
   if (output.trim())
     return output.trim().replace(/^v/, '')
 
-  // Fallback: GitHub API with auth token if available
-  const token = process.env.GITHUB_TOKEN || ''
-  const authHeader = token ? `-H "Authorization: token ${token}"` : ''
+  // Fallback: follow the GitHub releases/latest redirect to get the tag
+  let redirectOutput = ''
+  await exec.exec('curl', ['-sI', '-o', '/dev/null', '-w', '%{url_effective}', '-L', `https://github.com/${REPO}/releases/latest`], {
+    listeners: { stdout: (data: Buffer) => { redirectOutput += data.toString() } },
+    silent: true,
+  }).catch(() => { redirectOutput = '' })
+
+  // URL will be like https://github.com/home-lang/pantry/releases/tag/v0.8.16
+  const tagMatch = redirectOutput.trim().match(/\/tag\/(.+)$/)
+  if (tagMatch)
+    return tagMatch[1].replace(/^v/, '')
+
+  // Last resort: GitHub API with auth
+  const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN || ''
+  const curlArgs = ['-sL']
+  if (token)
+    curlArgs.push('-H', `Authorization: token ${token}`)
+  curlArgs.push(`https://api.github.com/repos/${REPO}/releases/latest`)
+
   let apiOutput = ''
-  await exec.exec('bash', ['-c', `curl -sL ${authHeader} "https://api.github.com/repos/${REPO}/releases/latest"`], {
+  await exec.exec('curl', curlArgs, {
     listeners: { stdout: (data: Buffer) => { apiOutput += data.toString() } },
     silent: true,
   }).catch(() => { apiOutput = '' })
