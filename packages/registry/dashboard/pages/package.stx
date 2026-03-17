@@ -1,5 +1,6 @@
 <script server>
   const totalDownloads = stats.totalDownloads || 0
+  const weeklyDownloads = stats.weeklyDownloads || 0
   const lastDownload = stats.lastDownload ? new Date(stats.lastDownload).toLocaleDateString() : 'N/A'
   const versions = stats.versionDownloads || {}
   const versionCount = Object.keys(versions).length
@@ -8,10 +9,8 @@
   const sortedVersions = Object.entries(versions)
     .sort((a, b) => Number(b[1]) - Number(a[1]))
 
-  const chartData = JSON.stringify(timeline.map(d => ({
-    date: d.date,
-    downloads: d.count || 0,
-  })))
+  const chart = lineChart || {}
+  const verChart = versionChart || {}
 </script>
 
 <!DOCTYPE html>
@@ -20,6 +19,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ packageName }} - Pantry Dashboard</title>
+  <style>
+    .chart-dot:hover { r: 5; }
+  </style>
 </head>
 <body class="bg-slate-900 text-white min-h-screen">
   <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4">
@@ -38,6 +40,7 @@
     <div class="flex items-center gap-3 mb-6">
       <a href="/dashboard{{ qs }}" class="text-slate-400 hover:text-white">&larr;</a>
       <h1 class="text-2xl font-bold">{{ packageName }}</h1>
+      <a href="/package/{{ packageName }}" class="text-xs text-slate-500 hover:text-blue-400 ml-2">(public page)</a>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -46,29 +49,76 @@
         <div class="text-2xl font-bold">{{ totalDownloads.toLocaleString() }}</div>
       </div>
       <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div class="text-sm text-slate-400 mb-1">Last Download</div>
-        <div class="text-2xl font-bold">{{ lastDownload }}</div>
-      </div>
-      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
-        <div class="text-sm text-slate-400 mb-1">Versions Tracked</div>
-        <div class="text-2xl font-bold">{{ versionCount }}</div>
+        <div class="text-sm text-slate-400 mb-1">Weekly Downloads</div>
+        <div class="text-2xl font-bold">{{ weeklyDownloads.toLocaleString() }}</div>
       </div>
       <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
         <div class="text-sm text-slate-400 mb-1">30d Downloads</div>
         <div class="text-2xl font-bold">{{ monthlyDownloads.toLocaleString() }}</div>
       </div>
+      <div class="bg-slate-800 rounded-lg p-6 border border-slate-700">
+        <div class="text-sm text-slate-400 mb-1">Versions Tracked</div>
+        <div class="text-2xl font-bold">{{ versionCount }}</div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Downloads line chart (ts-charts SVG) -->
       <div class="bg-slate-800 rounded-lg border border-slate-700 p-6">
         <h2 class="text-lg font-semibold mb-4">Downloads (30 days)</h2>
-        <canvas id="chart" height="200"></canvas>
+        @if (chart.linePath)
+        <div class="overflow-x-auto">
+          <svg width="{{ chart.width }}" height="{{ chart.height }}" viewBox="0 0 {{ chart.width }} {{ chart.height }}" style="width: 100%; height: auto;">
+            @foreach (chart.yLabels as yLabel)
+            <line x1="45" y1="{{ yLabel.y }}" x2="{{ chart.width - 10 }}" y2="{{ yLabel.y }}" stroke="#334155" stroke-width="0.5" stroke-dasharray="4,4" />
+            <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="#94a3b8" style="font-size: 10px; font-family: monospace;">{!! yLabel.label !!}</text>
+            @endforeach
+            <defs>
+              <linearGradient id="pkgGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.25" />
+                <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.02" />
+              </linearGradient>
+            </defs>
+            <path d="{!! chart.areaPath !!}" fill="url(#pkgGrad)" />
+            <path d="{!! chart.linePath !!}" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            @foreach (chart.points as point)
+            <circle class="chart-dot" cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="#60a5fa" opacity="0.7">
+              <title>{{ point.label }}: {{ point.value }} downloads</title>
+            </circle>
+            @endforeach
+            @foreach (chart.xLabels as xLabel)
+            <text x="{{ xLabel.x }}" y="{{ chart.height - 4 }}" text-anchor="middle" fill="#94a3b8" style="font-size: 10px; font-family: monospace;">{!! xLabel.label !!}</text>
+            @endforeach
+          </svg>
+        </div>
+        @else
+        <p class="text-slate-400 text-sm">No download data available.</p>
+        @endif
       </div>
 
+      <!-- Version breakdown -->
       <div class="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-700">
           <h2 class="text-lg font-semibold">Version Breakdown</h2>
         </div>
+
+        <!-- Version distribution bar chart -->
+        @if (verChart.bars && verChart.bars.length > 0)
+        <div class="px-6 pt-4 pb-2">
+          <div class="flex flex-col gap-1.5">
+            @foreach (verChart.bars as bar)
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-slate-400 shrink-0" style="width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ bar.label }}</span>
+              <div class="flex-1 h-4 rounded-sm overflow-hidden bg-slate-700">
+                <div class="h-full rounded-sm" style="width: {{ bar.percentage }}; background: {{ bar.color }};"></div>
+              </div>
+              <span class="text-xs font-mono text-slate-500 shrink-0" style="width: 40px; text-align: right;">{{ bar.percentage }}</span>
+            </div>
+            @endforeach
+          </div>
+        </div>
+        @endif
+
         <table class="w-full">
           <thead>
             <tr class="text-slate-400 text-sm border-b border-slate-700">
@@ -92,67 +142,5 @@
       </div>
     </div>
   </main>
-
-  <script client>
-    const data = JSON.parse(document.getElementById('chart-data').textContent)
-    const canvas = document.getElementById('chart')
-    const ctx = canvas.getContext('2d')
-    const dpr = window.devicePixelRatio || 1
-    const W = canvas.offsetWidth
-    const H = 200
-    canvas.width = W * dpr
-    canvas.height = H * dpr
-    canvas.style.width = W + 'px'
-    canvas.style.height = H + 'px'
-    ctx.scale(dpr, dpr)
-
-    const maxVal = Math.max(...data.map(d => d.downloads), 1)
-    const barW = Math.max(2, (W - 60) / data.length - 2)
-    const pad = { top: 20, right: 10, bottom: 24, left: 50 }
-    const plotW = W - pad.left - pad.right
-    const plotH = H - pad.top - pad.bottom
-
-    // Background
-    ctx.fillStyle = '#1e293b'
-    ctx.fillRect(0, 0, W, H)
-
-    // Grid lines
-    ctx.strokeStyle = '#334155'
-    ctx.lineWidth = 0.5
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.top + (plotH / 4) * i
-      ctx.beginPath()
-      ctx.moveTo(pad.left, y)
-      ctx.lineTo(W - pad.right, y)
-      ctx.stroke()
-    }
-
-    // Bars
-    data.forEach((d, i) => {
-      const x = pad.left + i * (plotW / data.length)
-      const h = (d.downloads / maxVal) * plotH
-      const gradient = ctx.createLinearGradient(x, pad.top + plotH - h, x, pad.top + plotH)
-      gradient.addColorStop(0, '#60a5fa')
-      gradient.addColorStop(1, '#3b82f6')
-      ctx.fillStyle = gradient
-      ctx.fillRect(x + 1, pad.top + plotH - h, barW, h)
-    })
-
-    // Labels
-    ctx.fillStyle = '#94a3b8'
-    ctx.font = '10px system-ui, sans-serif'
-    ctx.textAlign = 'right'
-    for (let i = 0; i <= 4; i++) {
-      const val = Math.round(maxVal * (4 - i) / 4)
-      ctx.fillText(val.toLocaleString(), pad.left - 6, pad.top + (plotH / 4) * i + 4)
-    }
-    ctx.textAlign = 'left'
-    if (data.length > 0) {
-      ctx.fillText(data[0].date.slice(5), pad.left, H - 4)
-      ctx.textAlign = 'right'
-      ctx.fillText(data[data.length - 1].date.slice(5), W - pad.right, H - 4)
-    }
-  </script>
-  <script type="application/json" id="chart-data">{!! chartData !!}</script>
 </body>
 </html>

@@ -1613,7 +1613,20 @@ async function handleDashboard(
       analytics.getPackageStats(packageName),
       analytics.getDownloadTimeline(packageName, 30),
     ])
-    const html = await renderDashboardPage('package.stx', { packageName, stats, timeline, qs, qsAmp })
+
+    // Generate charts via ts-charts
+    const timelineData = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
+    const lineChart = generateLineChart(timelineData, 600, 200)
+
+    // Version distribution chart
+    const versionDownloads = stats?.versionDownloads || {}
+    const versionItems = Object.entries(versionDownloads)
+      .map(([label, value]) => ({ label, value: value as number }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10)
+    const versionChart = generateHorizontalBarChart(versionItems, 500, 24, 4, 100)
+
+    const html = await renderDashboardPage('package.stx', { packageName, stats, timeline, lineChart, versionChart, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1622,7 +1635,19 @@ async function handleDashboard(
     const allRequests = await analytics.getAllMissingVersionRequests(500)
     const filter = url.searchParams.get('filter') || 'known'
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await renderDashboardPage('requested-versions.stx', { requests: allRequests, filter, page, perPage: 25, qs, qsAmp })
+
+    // Top requested packages bar chart
+    const pkgCounts = new Map<string, number>()
+    for (const r of allRequests) {
+      pkgCounts.set(r.packageName, (pkgCounts.get(r.packageName) || 0) + (r.requestCount || 0))
+    }
+    const topRequested = [...pkgCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([label, value]) => ({ label, value }))
+    const requestsChart = generateHorizontalBarChart(topRequested, 600, 24, 4, 140)
+
+    const html = await renderDashboardPage('requested-versions.stx', { requests: allRequests, filter, page, perPage: 25, requestsChart, qs, qsAmp })
     return new Response(html, { headers: htmlHeaders })
   }
 
@@ -1630,7 +1655,51 @@ async function handleDashboard(
   if (path === '/dashboard' || path === '/dashboard/') {
     const topPackages = await analytics.getTopPackages(100)
     const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-    const html = await renderDashboardPage('overview.stx', { packages: topPackages, page, perPage: 25, qs, qsAmp })
+
+    // Generate sparklines for visible packages on current page
+    const startIdx = (page - 1) * 25
+    const visiblePkgs = topPackages.slice(startIdx, startIdx + 25)
+    const pkgsWithSparklines = await Promise.all(
+      visiblePkgs.map(async (pkg) => {
+        const tl = await analytics.getDownloadTimeline(pkg.name, 14).catch(() => [])
+        const sparkData = (tl || []).map((d: any) => d.count || 0)
+        const sparkline = generateSparkline(sparkData, 80, 24)
+        return { ...pkg, sparklinePath: sparkline.path, sparklineAreaPath: sparkline.areaPath }
+      }),
+    )
+
+    // Build aggregate timeline for global chart from top 15 packages
+    const allTimelines = await Promise.all(
+      topPackages.slice(0, 15).map(async (pkg) => {
+        const tl = await analytics.getDownloadTimeline(pkg.name, 30).catch(() => [])
+        return tl || []
+      }),
+    )
+    const dateMap = new Map<string, number>()
+    for (const tl of allTimelines) {
+      for (const d of tl) {
+        dateMap.set(d.date, (dateMap.get(d.date) || 0) + (d.count || 0))
+      }
+    }
+    const globalTimeline = [...dateMap.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }))
+    const globalChart = generateLineChart(globalTimeline, 700, 180)
+
+    // Downloads distribution bar chart (top 10)
+    const top10Items = topPackages.slice(0, 10).map(p => ({ label: p.name, value: p.downloads }))
+    const downloadsBar = generateHorizontalBarChart(top10Items, 600, 24, 4, 140)
+
+    const html = await renderDashboardPage('overview.stx', {
+      packages: topPackages,
+      pkgsWithSparklines,
+      page,
+      perPage: 25,
+      globalChart,
+      downloadsBar,
+      qs,
+      qsAmp,
+    })
     return new Response(html, { headers: htmlHeaders })
   }
 

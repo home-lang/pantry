@@ -19,6 +19,8 @@
   const unknownUrl = filterBase + qs + (qs ? '&' : '?') + 'filter=unknown'
   const allUrl = filterBase + qs + (qs ? '&' : '?') + 'filter=all'
   const pageBase = filterBase + '?filter=' + filter + (qsAmp || '')
+
+  const reqChart = requestsChart || {}
 </script>
 
 <!DOCTYPE html>
@@ -67,6 +69,24 @@
         <div class="text-xs text-slate-500 mt-1">{{ (totalKnownCount + totalUnknownCount).toLocaleString() }} total hits</div>
       </div>
     </div>
+
+    <!-- Top requested packages chart -->
+    @if (reqChart.bars && reqChart.bars.length > 0)
+    <div class="bg-slate-800 rounded-lg border border-slate-700 p-6 mb-6">
+      <h2 class="text-lg font-semibold mb-4">Most Requested Packages</h2>
+      <div class="flex flex-col gap-2">
+        @foreach (reqChart.bars as bar)
+        <div class="flex items-center gap-3">
+          <a href="/dashboard/package/{{ encodeURIComponent(bar.label) }}{{ qs }}" class="text-xs font-mono text-blue-400 hover:text-blue-300 shrink-0" style="width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ bar.label }}</a>
+          <div class="flex-1 h-5 rounded-sm overflow-hidden bg-slate-700">
+            <div class="h-full rounded-sm" style="width: {{ bar.percentage }}; background: {{ bar.color }};"></div>
+          </div>
+          <span class="text-xs font-mono text-slate-400 shrink-0" style="width: 55px; text-align: right;">{{ bar.formattedValue }}</span>
+        </div>
+        @endforeach
+      </div>
+    </div>
+    @endif
 
     <div class="flex items-center gap-2 mb-4">
       @if (filter === 'known')
