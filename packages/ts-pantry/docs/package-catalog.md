@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-17T07:24:15.715Z
+- **Last Updated**: 2026-03-17T10:14:38.779Z
 
 ## Table of Contents
 
@@ -46,7 +46,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[crystal-lang.org](./packages/crystal-lang.org/index.md)** () | Fast and statically typed, compiled language with Ruby-like syntax | crystal | 1.19.1 (+25) | `pkgx crystal` |
-| **[dart.dev](./packages/dart.dev/index.md)** () | The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries, and more. | dart, dartaotruntime | 3.11.2 (+55) | `pkgx dart` |
+| **[dart.dev](./packages/dart.dev/index.md)** () | The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries, and more. | dart, dartaotruntime | 3.11.3 (+56) | `pkgx dart` |
 | **[go.dev](./packages/go.dev/index.md)** () | The Go programming language | go, gofmt | 1.26.1 (+89) | `pkgx go` |
 | **[julialang.org](./packages/julialang.org/index.md)** () | The Julia Programming Language | julia | 1.12.5 (+29) | `pkgx julia` |
 | **[kotlinlang.org](./packages/kotlinlang.org/index.md)** (kotlin) | Statically typed programming language for the JVM | kapt, kotlin, kotlinc, ... (+2) | 2.3.20 (+22) | `pkgx kotlin` |
