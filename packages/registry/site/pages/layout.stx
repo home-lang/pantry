@@ -32,7 +32,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
   <!-- Prevent FOUC: apply saved theme before paint -->
-  <script>
+  <script client>
     (function(){var t=localStorage.getItem('pantry-theme');if(t==='light')document.documentElement.dataset.theme='light'})()
   </script>
 
@@ -275,7 +275,7 @@
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
   </button>
 
-  <script>
+  <script client>
     // Theme toggle
     var toggle = document.getElementById('theme-toggle')
     if (toggle) {

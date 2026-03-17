@@ -80,6 +80,7 @@ async function renderSitePage(file: string, context: Record<string, unknown> = {
     layout: SITE_LAYOUT,
     options: { componentsDir: SITE_COMPONENTS },
     injectCSS: true,
+    wrapInDocument: false,
   })
 }
 
@@ -1789,7 +1790,7 @@ async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: 
     catch { /* analytics are optional */ }
   }
 
-  const totalPackages = 500 // approximate
+  const totalPackages = _knownVersions.size || 500
   const html = await renderSitePage('index.stx', { packages, totalPackages, topPackages, stats })
   return htmlResponse(html)
 }
@@ -2112,7 +2113,7 @@ async function handleSiteStats(
   const globalChart = generateLineChart(globalTimeline, 700, 220)
 
   const stats = {
-    totalPackages: 500,
+    totalPackages: _knownVersions.size || 500,
     formatted30d: chartFormatCount(totalDownloads30),
     formatted90d: chartFormatCount(totalDownloads90),
     installAnalytics: installAnalytics30,
