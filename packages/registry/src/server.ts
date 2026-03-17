@@ -212,16 +212,19 @@ export function createHandler(
       // Search — serve HTML for browsers, JSON for API clients
       if (path === '/search' && req.method === 'GET') {
         const accept = req.headers.get('accept') || ''
-        if (accept.includes('text/html')) {
-          const q = url.searchParams.get('q') || ''
-          const sort = url.searchParams.get('sort') || 'relevance'
-          const view = url.searchParams.get('view') || 'list'
-          return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view)
+        // Serve JSON only if explicitly requesting JSON (API clients)
+        const wantsJson = accept.includes('application/json') && !accept.includes('text/html')
+        if (wantsJson) {
+          const query = url.searchParams.get('q') || ''
+          const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
+          const results = await registry.search(query, limit)
+          return Response.json({ results }, { headers: corsHeaders })
         }
-        const query = url.searchParams.get('q') || ''
-        const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
-        const results = await registry.search(query, limit)
-        return Response.json({ results }, { headers: corsHeaders })
+        // Default to HTML for browsers
+        const q = url.searchParams.get('q') || ''
+        const sort = url.searchParams.get('sort') || 'relevance'
+        const view = url.searchParams.get('view') || 'list'
+        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view)
       }
 
       // Publish
@@ -1826,17 +1829,19 @@ async function handleSiteSearch(
       }
     }
 
-    // Enrich results with download stats for sorting
-    if (analyticsStorage && (sort === 'downloads' || true)) {
+    // Enrich results with download stats (limit to first 20 to avoid excessive API calls)
+    if (analyticsStorage) {
+      const enrichLimit = Math.min(results.length, 20)
       const statsResults = await Promise.allSettled(
-        results.map(async (r: any) => {
-          const stats = await analyticsStorage.getPackageStats(r.name)
-          return { ...r, downloads: stats ? chartFormatCount(stats.totalDownloads) : '', downloadCount: stats?.totalDownloads || 0 }
+        results.slice(0, enrichLimit).map(async (r: any) => {
+          const pkgStats = await analyticsStorage.getPackageStats(r.name)
+          return { ...r, downloads: pkgStats ? chartFormatCount(pkgStats.totalDownloads) : '', downloadCount: pkgStats?.totalDownloads || 0 }
         }),
       )
-      results = statsResults.map((r, i) =>
+      const enriched = statsResults.map((r, i) =>
         r.status === 'fulfilled' ? r.value : { ...results[i], downloads: '', downloadCount: 0 },
       )
+      results = [...enriched, ...results.slice(enrichLimit)]
     }
 
     // Sort results
