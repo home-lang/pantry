@@ -3,7 +3,7 @@
  *
  * @domain `stripe.com`
  * @programs `stripe`
- * @version `1.37.4` (69 versions available)
+ * @version `1.37.5` (70 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install stripe.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "stripe"
  * console.log(pkg.description) // "A command-line tool for Stripe"
  * console.log(pkg.programs)    // ["stripe"]
- * console.log(pkg.versions[0]) // "1.37.4" (latest)
+ * console.log(pkg.versions[0]) // "1.37.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/stripe-com.md
@@ -68,6 +68,7 @@ export const stripecomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.37.5',
     '1.37.4',
     '1.37.3',
     '1.37.2',

@@ -3,7 +3,7 @@
  *
  * @domain `github.com/fiatjaf/nak`
  * @programs `nak`
- * @version `0.19.0` (41 versions available)
+ * @version `0.19.1` (42 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/fiatjaf/nak`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "nak"
  * console.log(pkg.description) // "a command line tool for doing all things nostr"
  * console.log(pkg.programs)    // ["nak"]
- * console.log(pkg.versions[0]) // "0.19.0" (latest)
+ * console.log(pkg.versions[0]) // "0.19.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/fiatjaf/nak.md
@@ -71,6 +71,7 @@ export const nakPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.19.1',
     '0.19.0',
     '0.18.7',
     '0.18.6',
