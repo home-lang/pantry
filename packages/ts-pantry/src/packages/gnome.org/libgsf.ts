@@ -3,7 +3,7 @@
  *
  * @domain `gnome.org/libgsf`
  * @programs `gsf`, `gsf-office-thumbnailer`, `gsf-vba-dump`
- * @version `1.14.55` (6 versions available)
+ * @version `1.14.56` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnome.org/libgsf`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gsf"
  * console.log(pkg.description) // "I/O abstraction library for dealing with struct..."
  * console.log(pkg.programs)    // ["gsf", "gsf-office-thumbnailer", ...]
- * console.log(pkg.versions[0]) // "1.14.55" (latest)
+ * console.log(pkg.versions[0]) // "1.14.56" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnome-org/libgsf.md
@@ -70,6 +70,7 @@ export const gnomeorglibgsfPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.14.56',
     '1.14.55',
     '1.14.54',
     '1.14.53',

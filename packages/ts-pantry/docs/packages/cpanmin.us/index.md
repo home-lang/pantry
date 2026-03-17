@@ -25,21 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 4 versions</summary>
 
+- `1.7049.0`
 - `1.7048.0`
 - `1.7047.0`
 - `1.7046.0`
 
 </details>
 
-**Latest Version**: `1.7048.0`
+**Latest Version**: `1.7049.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cpanmin.us@1.7048.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cpanmin.us@1.7049.0 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -3,7 +3,7 @@
  *
  * @domain `cpanmin.us`
  * @programs `cpanm`
- * @version `1.7048.0` (3 versions available)
+ * @version `1.7049.0` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install cpanmin.us`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "cpanm"
  * console.log(pkg.description) // "cpanminus - get, unpack, build and install modu..."
  * console.log(pkg.programs)    // ["cpanm"]
- * console.log(pkg.versions[0]) // "1.7048.0" (latest)
+ * console.log(pkg.versions[0]) // "1.7049.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/cpanmin-us.md
@@ -76,6 +76,7 @@ export const cpanminusPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.7049.0',
     '1.7048.0',
     '1.7047.0',
     '1.7046.0',

@@ -3,7 +3,7 @@
  *
  * @domain `rbenv.org/ruby-build`
  * @programs `ruby-build`
- * @version `20260311.0.0` (65 versions available)
+ * @version `20260317.0.0` (66 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install rbenv.org/ruby-build`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ruby-build"
  * console.log(pkg.description) // "A tool to download, compile, and install Ruby o..."
  * console.log(pkg.programs)    // ["ruby-build"]
- * console.log(pkg.versions[0]) // "20260311.0.0" (latest)
+ * console.log(pkg.versions[0]) // "20260317.0.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/rbenv-org/ruby-build.md
@@ -81,6 +81,7 @@ export const rbenvorgrubybuildPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '20260317.0.0',
     '20260311.0.0',
     '20260222.0.0',
     '20260121.0.0',

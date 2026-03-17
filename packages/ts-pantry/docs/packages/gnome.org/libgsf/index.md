@@ -27,19 +27,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
-- `1.14.55`, `1.14.54`, `1.14.53`, `1.14.52`, `1.14.51`, `1.14.50`
+- `1.14.56`, `1.14.55`, `1.14.54`, `1.14.53`, `1.14.52`, `1.14.51`, `1.14.50`
 
 </details>
 
-**Latest Version**: `1.14.55`
+**Latest Version**: `1.14.56`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnome.org/libgsf@1.14.55 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnome.org/libgsf@1.14.56 -- $SHELL -i
 ```
 
 ## Dependencies
