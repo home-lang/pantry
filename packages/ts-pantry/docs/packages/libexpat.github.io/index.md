@@ -25,22 +25,22 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
-- `2.7.4`, `2.7.3`, `2.7.2`, `2.7.1`, `2.7.0`
+- `2.7.5`, `2.7.4`, `2.7.3`, `2.7.2`, `2.7.1`, `2.7.0`
 - `2.6.4`, `2.6.3`, `2.6.2`, `2.6.1`, `2.6.0`
 - `2.5.0`
 - `2.4.9`
 
 </details>
 
-**Latest Version**: `2.7.4`
+**Latest Version**: `2.7.5`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +libexpat.github.io@2.7.4 -- $SHELL -i
+sh <(curl https://pkgx.sh) +libexpat.github.io@2.7.5 -- $SHELL -i
 ```
 
 ## Usage Examples

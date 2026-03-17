@@ -3,7 +3,7 @@
  *
  * @domain `gnome.org/librsvg`
  * @programs `rsvg-convert`
- * @version `2.62.0` (41 versions available)
+ * @version `2.62.1` (42 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnome.org/librsvg`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "rsvg-convert"
  * console.log(pkg.description) // "Read-only mirror of https://gitlab.gnome.org/GN..."
  * console.log(pkg.programs)    // ["rsvg-convert"]
- * console.log(pkg.versions[0]) // "2.62.0" (latest)
+ * console.log(pkg.versions[0]) // "2.62.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnome-org/librsvg.md
@@ -80,6 +80,7 @@ export const gnomeorglibrsvgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.62.1',
     '2.62.0',
     '2.61.4',
     '2.61.3',

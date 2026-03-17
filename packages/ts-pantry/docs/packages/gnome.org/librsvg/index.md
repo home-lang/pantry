@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 41 versions</summary>
+<summary>Show all 42 versions</summary>
 
-- `2.62.0`
+- `2.62.1`, `2.62.0`
 - `2.61.4`, `2.61.3`, `2.61.2`, `2.61.1`, `2.61.0`
 - `2.60.2`, `2.60.1`, `2.60.0`
 - `2.59.2`, `2.59.1`, `2.59.0`
@@ -41,13 +41,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.62.0`
+**Latest Version**: `2.62.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gnome.org/librsvg@2.62.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gnome.org/librsvg@2.62.1 -- $SHELL -i
 ```
 
 ## Dependencies

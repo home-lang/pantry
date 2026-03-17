@@ -28,8 +28,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 78 versions</summary>
+<summary>Show all 79 versions</summary>
 
+- `4.3.0`
 - `4.2.3`, `4.2.2`, `4.2.1`, `4.2.0`
 - `4.1.5`, `4.1.4`, `4.1.3`, `4.1.2`, `4.1.1`, `4.1.0`
 - `4.0.6`, `4.0.5`, `4.0.4`, `4.0.3`, `4.0.2`, `4.0.1`, `4.0.0`
@@ -44,13 +45,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.2.3`
+**Latest Version**: `4.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +cmake.org@4.2.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +cmake.org@4.3.0 -- $SHELL -i
 ```
 
 ## Dependencies
