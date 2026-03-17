@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 33 versions</summary>
+<summary>Show all 34 versions</summary>
 
+- `0.29.0`
 - `0.28.0`
 - `0.27.1`, `0.27.0`
 - `0.26.0`
@@ -53,13 +54,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.28.0`
+**Latest Version**: `0.29.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +llm.datasette.io@0.28.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +llm.datasette.io@0.29.0 -- $SHELL -i
 ```
 
 ## Dependencies

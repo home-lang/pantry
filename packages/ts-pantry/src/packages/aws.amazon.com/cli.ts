@@ -3,7 +3,7 @@
  *
  * @domain `aws.amazon.com/cli`
  * @programs `aws`
- * @version `2.34.10` (1282 versions available)
+ * @version `2.34.11` (1284 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install aws.amazon.com/cli`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "aws/cli"
  * console.log(pkg.description) // "Universal Command Line Interface for Amazon Web..."
  * console.log(pkg.programs)    // ["aws"]
- * console.log(pkg.versions[0]) // "2.34.10" (latest)
+ * console.log(pkg.versions[0]) // "2.34.11" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/aws-amazon-com/cli.md
@@ -76,6 +76,7 @@ export const awsamazoncomcliPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.34.11',
     '2.34.10',
     '2.34.9',
     '2.34.8',
@@ -645,6 +646,7 @@ export const awsamazoncomcliPackage = {
     '2.11.7',
     '2.10.4',
     '2.10.3',
+    '1.44.60',
     '1.44.59',
     '1.44.58',
     '1.44.57',
