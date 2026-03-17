@@ -119,10 +119,11 @@
     .animate-fade-in-delay-2 { animation: fade-in 0.5s ease-out 0.3s both; }
 
     /* CSS-only tabs */
+    .tab-container { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
     .tab-radio { display: none; }
-    .tab-label { cursor: pointer; padding: 0.5rem 1rem; font-size: 0.8125rem; color: var(--fg-subtle); border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab-label { cursor: pointer; padding: 0.5rem 1rem; font-size: 0.8125rem; color: var(--fg-subtle); border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
     .tab-label:hover { color: var(--fg-muted); }
-    .tab-content { display: none; }
+    .tab-content { display: none; order: 99; width: 100%; padding-top: 1.5rem; }
     .tab-radio:checked + .tab-label { color: var(--accent); border-bottom-color: var(--accent); }
     #tab-overview:checked ~ .tab-panel-overview,
     #tab-versions:checked ~ .tab-panel-versions,

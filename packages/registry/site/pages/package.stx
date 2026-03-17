@@ -119,7 +119,7 @@
 
     <!-- Tabbed content -->
     <div class="mb-8">
-      <div class="flex border-b border-[var(--border)] mb-6">
+      <div class="tab-container">
         <input type="radio" name="pkg-tab" id="tab-overview" class="tab-radio" checked />
         <label for="tab-overview" class="tab-label">Overview</label>
         <input type="radio" name="pkg-tab" id="tab-versions" class="tab-radio" />
@@ -132,7 +132,7 @@
         @endif
 
         <!-- Overview tab content -->
-        <div class="tab-content tab-panel-overview w-full pt-6">
+        <div class="tab-content tab-panel-overview">
           <!-- Download timeline chart (ts-charts generated SVG) -->
           @if (lineChart && lineChart.linePath)
           <div class="mb-8">
@@ -215,7 +215,7 @@
         </div>
 
         <!-- Versions tab content -->
-        <div class="tab-content tab-panel-versions w-full pt-6">
+        <div class="tab-content tab-panel-versions">
           @if (versionCount > 0)
           <div class="flex flex-col gap-1">
             @foreach (sortedVersions as ver)
@@ -236,7 +236,7 @@
         </div>
 
         <!-- Platforms tab content -->
-        <div class="tab-content tab-panel-platforms w-full pt-6">
+        <div class="tab-content tab-panel-platforms">
           @if (platformCount > 0)
           <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));">
             @foreach (platformLabels as label)
@@ -260,7 +260,7 @@
 
         <!-- Dependencies tab content -->
         @if (hasDeps)
-        <div class="tab-content tab-panel-deps w-full pt-6">
+        <div class="tab-content tab-panel-deps">
           <div class="flex flex-col gap-2">
             @foreach (depList as dep)
             <a href="/package/{{ dep }}" class="flex items-center justify-between bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-4 py-3 hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors">
