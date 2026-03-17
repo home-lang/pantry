@@ -3,7 +3,7 @@
  *
  * @domain `developer.1password.com/1password-cli`
  * @programs `op`
- * @version `2.32.0` (4 versions available)
+ * @version `2.33.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install developer.1password.com/1password-cli`
@@ -16,7 +16,7 @@
  * const pkg = pantry.developer1passwordcom1passwordcli
  * console.log(pkg.name)        // "1Password CLI"
  * console.log(pkg.programs)    // ["op"]
- * console.log(pkg.versions[0]) // "2.32.0" (latest)
+ * console.log(pkg.versions[0]) // "2.33.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/developer-1password-com/1password-cli.md
@@ -67,6 +67,7 @@ export const developer1passwordcom1passwordcliPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.33.0',
     '2.32.0',
     '2.31.1',
     '2.31.0',

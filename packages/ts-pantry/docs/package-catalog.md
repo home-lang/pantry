@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-17T16:24:01.033Z
+- **Last Updated**: 2026-03-17T17:26:27.498Z
 
 ## Table of Contents
 
@@ -100,7 +100,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.6.0 (+25) | `pkgx postgrest` |
 | **[redis.io](./packages/redis.io/index.md)** () | Redis is an in-memory database that persists on disk. The data model is key-value, but many diffe... | redis-server, redis-cli, redis-benchmark | 8.6.0 (+59) | `pkgx redis` |
 | **[sqlite.org](./packages/sqlite.org/index.md)** (sqlite) | Official Git mirror of the SQLite source tree | sqlite3 | 3.52.0 (+33) | `pkgx sqlite` |
-| **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+68) | `pkgx surreal` |
+| **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+69) | `pkgx surreal` |
 | **[turso.tech](./packages/turso.tech/index.md)** () | Command line interface to Turso. | turso | 1.0.17 (+95) | `pkgx turso` |
 | **[valkey.io](./packages/valkey.io/index.md)** () | A flexible distributed key-value datastore that is optimized for caching and other realtime workl... | valkey-server, valkey-cli, valkey-benchmark | 9.0.3 (+25) | `pkgx valkey` |
 
@@ -127,7 +127,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[docker.com/cli](./packages/docker.com/cli/index.md)** (docker) | Pack, ship and run any application as a lightweight container | docker | 29.3.0 (+73) | `pkgx docker` |
 | **[docker.com/compose](./packages/docker.com/compose/index.md)** () | Define and run multi-container applications with Docker | docker-compose | 5.1.0 (+69) | `pkgx docker-compose` |
 | **[fluxcd.io/flux2](./packages/fluxcd.io/flux2/index.md)** () | Open and extensible continuous delivery solution for Kubernetes. Powered by GitOps Toolkit. | flux | 2.8.3 (+23) | `pkgx flux` |
-| **[github.com/aws-cloudformation/cfn-lint](./packages/github.com/aws-cloudformation/cfn-lint.md)** () | Validate CloudFormation templates against the CloudFormation spec | cfn-lint | 1.46.0 (+172) | `pkgx cfn-lint` |
+| **[github.com/aws-cloudformation/cfn-lint](./packages/github.com/aws-cloudformation/cfn-lint.md)** () | Validate CloudFormation templates against the CloudFormation spec | cfn-lint | 1.47.0 (+173) | `pkgx cfn-lint` |
 | **[github.com/minamijoyo/tfupdate](./packages/github.com/minamijoyo/tfupdate.md)** () | Update version constraints in your Terraform configurations | tfupdate | 0.9.3 (+9) | `pkgx tfupdate` |
 | **[github.com/terraform-linters/tflint](./packages/github.com/terraform-linters/tflint.md)** () | A Pluggable Terraform Linter | tflint | 0.61.0 (+22) | `pkgx tflint` |
 | **[helm.sh](./packages/helm.sh/index.md)** () | The Kubernetes Package Manager | helm | 4.1.3 (+54) | `pkgx helm` |

@@ -3,7 +3,7 @@
  *
  * @domain `github.com/github/spec-kit`
  * @programs `specify`
- * @version `0.3.0` (75 versions available)
+ * @version `0.3.1` (76 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/github/spec-kit`
@@ -17,7 +17,7 @@
  * const pkg = pantry.githubcomgithubspeckit
  * console.log(pkg.name)        // "spec-kit"
  * console.log(pkg.programs)    // ["specify"]
- * console.log(pkg.versions[0]) // "0.3.0" (latest)
+ * console.log(pkg.versions[0]) // "0.3.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/github/spec-kit.md
@@ -73,6 +73,7 @@ export const speckitPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.1',
     '0.3.0',
     '0.2.1',
     '0.2.0',

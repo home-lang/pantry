@@ -25,21 +25,21 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 22 versions</summary>
 
-- `4.5.6`, `4.5.5`, `4.5.4`, `4.5.3`, `4.5.2`, `4.5.1`, `4.5.0`
+- `4.5.7`, `4.5.6`, `4.5.5`, `4.5.4`, `4.5.3`, `4.5.2`, `4.5.1`, `4.5.0`
 - `4.4.4`, `4.4.3`, `4.4.2`, `4.4.1`, `4.4.0`
 - `4.3.10`, `4.3.9`, `4.3.8`, `4.3.7`, `4.3.6`, `4.3.5`, `4.3.4`, `4.3.3`, `4.3.2`
 
 </details>
 
-**Latest Version**: `4.5.6`
+**Latest Version**: `4.5.7`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +libwebsockets.org@4.5.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +libwebsockets.org@4.5.7 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 173 versions</summary>
+<summary>Show all 174 versions</summary>
 
+- `1.47.0`
 - `1.46.0`
 - `1.45.0`
 - `1.44.0`
@@ -83,13 +84,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.46.0`
+**Latest Version**: `1.47.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/aws-cloudformation/cfn-lint@1.46.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/aws-cloudformation/cfn-lint@1.47.0 -- $SHELL -i
 ```
 
 ## Dependencies
