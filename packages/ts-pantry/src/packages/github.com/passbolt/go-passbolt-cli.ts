@@ -3,7 +3,7 @@
  *
  * @domain `github.com/passbolt/go-passbolt-cli`
  * @programs `passbolt`
- * @version `0.4.1` (4 versions available)
+ * @version `0.4.2` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/passbolt/go-passbolt-cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "go-passbolt-cli"
  * console.log(pkg.description) // "A CLI tool to interact  with Passbolt, a Open s..."
  * console.log(pkg.programs)    // ["passbolt"]
- * console.log(pkg.versions[0]) // "0.4.1" (latest)
+ * console.log(pkg.versions[0]) // "0.4.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/passbolt/go-passbolt-cli.md
@@ -68,6 +68,7 @@ export const gopassboltcliPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.4.2',
     '0.4.1',
     '0.4.0',
     '0.3.2',

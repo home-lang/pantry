@@ -25,20 +25,20 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4 versions</summary>
+<summary>Show all 5 versions</summary>
 
-- `0.4.1`, `0.4.0`
+- `0.4.2`, `0.4.1`, `0.4.0`
 - `0.3.2`, `0.3.1`
 
 </details>
 
-**Latest Version**: `0.4.1`
+**Latest Version**: `0.4.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/passbolt/go-passbolt-cli@0.4.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/passbolt/go-passbolt-cli@0.4.2 -- $SHELL -i
 ```
 
 ## Usage Examples

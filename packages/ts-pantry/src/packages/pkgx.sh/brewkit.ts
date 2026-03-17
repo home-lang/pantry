@@ -1,5 +1,5 @@
 /**
- * **brewkit** - build infra & `$ bk build`
+ * **brewkit** - pkgx package
  *
  * @domain `pkgx.sh/brewkit`
  * @programs `bk`
@@ -15,7 +15,6 @@
  *
  * const pkg = pantry.pkgxshbrewkit
  * console.log(pkg.name)        // "brewkit"
- * console.log(pkg.description) // "build infra & `$ bk build`"
  * console.log(pkg.programs)    // ["bk"]
  * console.log(pkg.versions[0]) // "1.19.3" (latest)
  * ```
@@ -35,10 +34,10 @@ export const pkgxshbrewkitPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: 'build infra & `$ bk build`' as const,
+  description: '' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/pkgx.sh/brewkit/package.yml' as const,
   homepageUrl: '' as const,
-  githubUrl: 'https://github.com/pkgxdev/brewkit' as const,
+  githubUrl: '' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
