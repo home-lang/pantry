@@ -694,6 +694,11 @@ pub const Installer = struct {
         const end_ts_ = io_helper.clockGettime();
         const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
 
+        // Report download analytics (fire-and-forget, never blocks install)
+        if (!used_cache) {
+            reportDownloadAnalytics(self.allocator, domain, resolved_spec.version);
+        }
+
         return InstallResult{
             .name = try self.allocator.dupe(u8, resolved_spec.name),
             .version = try self.allocator.dupe(u8, resolved_spec.version),
@@ -3458,4 +3463,39 @@ test "Installer basic operations" {
 
     // Clean up
     try installer.uninstall("test-pkg", "1.0.0");
+}
+
+/// Report a package download to the pantry.dev analytics API.
+/// Fire-and-forget: failures are silently ignored so installs are never blocked.
+fn reportDownloadAnalytics(allocator: std.mem.Allocator, domain: []const u8, version: []const u8) void {
+    // Build JSON body
+    const body = std.fmt.allocPrint(
+        allocator,
+        "{{\"packageName\":\"{s}\",\"category\":\"download\",\"version\":\"{s}\"}}",
+        .{ domain, version },
+    ) catch return;
+    defer allocator.free(body);
+
+    // Use curl subprocess (fire-and-forget) — most reliable across platforms
+    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
+    for (curl_paths) |curl_bin| {
+        const result = io_helper.childRun(allocator, &[_][]const u8{
+            curl_bin,
+            "-sf",
+            "-X",
+            "POST",
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            body,
+            "--connect-timeout",
+            "5",
+            "--max-time",
+            "10",
+            "https://pantry.dev/analytics/events",
+        }) catch continue;
+        allocator.free(result.stdout);
+        allocator.free(result.stderr);
+        return; // Sent successfully (or at least attempted)
+    }
 }

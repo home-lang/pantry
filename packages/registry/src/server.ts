@@ -623,19 +623,38 @@ async function handleAnalyticsEvent(
       )
     }
 
-    if (!category || !['install', 'install_on_request', 'build_error'].includes(category)) {
+    if (!category || !['install', 'install_on_request', 'build_error', 'download'].includes(category)) {
       return Response.json(
-        { error: 'Missing or invalid category. Must be one of: install, install_on_request, build_error' },
+        { error: 'Missing or invalid category. Must be one of: install, install_on_request, build_error, download' },
         { status: 400, headers: corsHeaders },
       )
     }
 
-    await analytics.trackEvent({
-      packageName,
-      category: category as AnalyticsCategory,
-      timestamp: new Date().toISOString(),
-      version: version || undefined,
-    })
+    // 'download' category tracks both download stats and install event
+    if (category === 'download') {
+      await Promise.all([
+        analytics.trackDownload({
+          packageName,
+          version: version || 'unknown',
+          timestamp: new Date().toISOString(),
+          userAgent: req.headers.get('user-agent') || undefined,
+        }),
+        analytics.trackEvent({
+          packageName,
+          category: 'install' as AnalyticsCategory,
+          timestamp: new Date().toISOString(),
+          version: version || undefined,
+        }),
+      ])
+    }
+    else {
+      await analytics.trackEvent({
+        packageName,
+        category: category as AnalyticsCategory,
+        timestamp: new Date().toISOString(),
+        version: version || undefined,
+      })
+    }
 
     return Response.json({ success: true }, { headers: corsHeaders })
   }
