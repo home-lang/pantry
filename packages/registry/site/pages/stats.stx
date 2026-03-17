@@ -1,0 +1,146 @@
+<script server>
+  const topPkgs = topPackages || []
+  const registryStats = stats || {}
+  const chart = globalChart || {}
+  const piChart = platformPie || {}
+</script>
+
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h1 class="text-3xl font-semibold tracking-tight mb-1">stats</h1>
+        <p style="font-size: 0.8125rem; color: var(--fg-subtle);">Registry statistics and trends</p>
+      </div>
+      <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
+    </div>
+
+    <!-- Summary stats -->
+    <div class="grid gap-4 mb-10" style="grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));">
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Total Packages</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--accent);">{{ registryStats.totalPackages || '--' }}</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Downloads (30d)</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--green);">{{ registryStats.formatted30d || '--' }}</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Downloads (90d)</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--yellow);">{{ registryStats.formatted90d || '--' }}</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Platforms</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--purple);">4</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS + Linux (ARM64 & x86_64)</p>
+      </div>
+    </div>
+
+    <!-- Global download trend -->
+    @if (chart.linePath)
+    <div class="mb-10">
+      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Download Trend (Last 30 Days)</h2>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto">
+        <svg width="{{ chart.width }}" height="{{ chart.height }}" viewBox="0 0 {{ chart.width }} {{ chart.height }}" style="width: 100%; height: auto;">
+          <!-- Grid lines -->
+          @foreach (chart.yLabels as yLabel)
+          <line x1="45" y1="{{ yLabel.y }}" x2="{{ chart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
+          <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! yLabel.label !!}</text>
+          @endforeach
+
+          <!-- Area fill -->
+          <defs>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2" />
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02" />
+            </linearGradient>
+          </defs>
+          <path d="{!! chart.areaPath !!}" fill="url(#areaGradient)" />
+
+          <!-- Line -->
+          <path d="{!! chart.linePath !!}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+          <!-- Data points -->
+          @foreach (chart.points as point)
+          <circle class="chart-dot" cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="var(--accent)" opacity="0.7">
+            <title>{{ point.label }}: {{ point.value }} downloads</title>
+          </circle>
+          @endforeach
+
+          <!-- X-axis labels -->
+          @foreach (chart.xLabels as xLabel)
+          <text x="{{ xLabel.x }}" y="{{ chart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
+          @endforeach
+        </svg>
+      </div>
+    </div>
+    @endif
+
+    <!-- Top packages table -->
+    @if (topPkgs.length > 0)
+    <div class="mb-10">
+      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Top Packages by Downloads</h2>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg overflow-hidden">
+        <table class="w-full" style="border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border);">
+              <th class="text-left px-4 py-2.5 text-xs uppercase tracking-widest font-medium w-12" style="color: var(--fg-subtle);">#</th>
+              <th class="text-left px-4 py-2.5 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Package</th>
+              <th class="text-right px-4 py-2.5 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Downloads</th>
+              <th class="text-right px-4 py-2.5 text-xs uppercase tracking-widest font-medium hidden sm:table-cell" style="color: var(--fg-subtle);">Share</th>
+              <th class="text-right px-4 py-2.5 text-xs uppercase tracking-widest font-medium hidden md:table-cell" style="color: var(--fg-subtle);">Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (topPkgs as pkg)
+            <tr class="hover:bg-[var(--bg-muted)] transition-colors" style="border-bottom: 1px solid var(--border);">
+              <td class="px-4 py-2.5 font-mono text-xs" style="color: var(--fg-subtle);">{{ pkg.rank }}</td>
+              <td class="px-4 py-2.5">
+                <a href="/package/{{ pkg.name }}" class="font-mono text-sm font-medium hvr-accent transition-colors" style="color: var(--accent);">{{ pkg.name }}</a>
+              </td>
+              <td class="px-4 py-2.5 text-right font-mono text-sm" style="color: var(--fg-muted);">{{ pkg.formattedDownloads }}</td>
+              <td class="px-4 py-2.5 text-right hidden sm:table-cell">
+                <div class="inline-flex items-center gap-2">
+                  <div class="w-16 h-1.5 rounded-full overflow-hidden" style="background: var(--bg-muted);">
+                    <div class="h-full rounded-full" style="width: {{ pkg.sharePct }}%; background: var(--accent);"></div>
+                  </div>
+                  <span class="font-mono text-xs" style="color: var(--fg-subtle);">{{ pkg.sharePct }}%</span>
+                </div>
+              </td>
+              <td class="px-4 py-2.5 text-right hidden md:table-cell">
+                @if (pkg.sparklinePath)
+                <svg width="80" height="24" viewBox="0 0 80 24" class="inline-block" style="vertical-align: middle;">
+                  <path d="{!! pkg.sparklineAreaPath !!}" fill="var(--accent)" opacity="0.15" />
+                  <path d="{!! pkg.sparklinePath !!}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                @endif
+              </td>
+            </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+    </div>
+    @endif
+
+    <!-- Category analytics -->
+    @if (registryStats.installAnalytics)
+    <div class="mb-10">
+      <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Install Analytics (30 Days)</h2>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));">
+          <div class="text-center">
+            <p class="text-2xl font-bold font-mono" style="color: var(--accent);">{{ registryStats.installAnalytics.total_count || 0 }}</p>
+            <p class="text-xs uppercase tracking-widest mt-1" style="color: var(--fg-subtle);">Total Installs</p>
+          </div>
+          <div class="text-center">
+            <p class="text-2xl font-bold font-mono" style="color: var(--green);">{{ registryStats.installAnalytics.total_items || 0 }}</p>
+            <p class="text-xs uppercase tracking-widest mt-1" style="color: var(--fg-subtle);">Unique Packages</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    @endif
+  </div>
+</section>

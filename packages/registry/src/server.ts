@@ -7,6 +7,13 @@ import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
 import { S3Client } from './storage/aws-client'
 import { renderTemplate } from '@stacksjs/stx'
+import {
+  generateSparkline,
+  generateLineChart,
+  generateHorizontalBarChart,
+  generateMultiLineChart,
+  formatCount as chartFormatCount,
+} from './charts'
 
 // Build domain→versions lookup from ts-pantry package metadata for version validation
 const _knownVersions = new Map<string, Set<string>>()
@@ -207,7 +214,9 @@ export function createHandler(
         const accept = req.headers.get('accept') || ''
         if (accept.includes('text/html')) {
           const q = url.searchParams.get('q') || ''
-          return await handleSiteSearch(q, registry, binaryStorage)
+          const sort = url.searchParams.get('sort') || 'relevance'
+          const view = url.searchParams.get('view') || 'list'
+          return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view)
         }
         const query = url.searchParams.get('q') || ''
         const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
@@ -405,7 +414,7 @@ export function createHandler(
 
       // Homepage
       if (path === '/' || path === '') {
-        return await handleSiteHome(binaryStorage)
+        return await handleSiteHome(binaryStorage, analyticsStorage)
       }
 
       // Package detail page
@@ -413,6 +422,17 @@ export function createHandler(
       if (sitePkgMatch) {
         const name = decodeURIComponent(sitePkgMatch[1])
         return await handleSitePackage(name, analyticsStorage, binaryStorage, registry)
+      }
+
+      // Compare page
+      if (path === '/compare') {
+        const packagesParam = url.searchParams.get('packages') || ''
+        return await handleSiteCompare(packagesParam, analyticsStorage, binaryStorage)
+      }
+
+      // Stats page
+      if (path === '/stats') {
+        return await handleSiteStats(analyticsStorage)
       }
 
       // Docs — serve bunpress-built static docs
@@ -1635,28 +1655,81 @@ async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Pr
   catch { return null }
 }
 
-async function handleSiteHome(binaryStorage?: BinaryStorage): Promise<Response> {
+async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage): Promise<Response> {
+  // Fetch featured package metadata + sparkline data in parallel
   const metaResults = await Promise.allSettled(
     FEATURED_PACKAGES.map(async (pkg) => {
-      const meta = await fetchPackageMetadata(pkg.domain, binaryStorage)
+      const [meta, timeline] = await Promise.all([
+        fetchPackageMetadata(pkg.domain, binaryStorage),
+        analyticsStorage?.getDownloadTimeline(pkg.domain, 14).catch(() => []) ?? [],
+      ])
+      const sparkData = (timeline || []).map((d: any) => d.count || 0)
+      const sparkline = generateSparkline(sparkData, 60, 20)
       return {
         ...pkg,
         version: meta?.latestVersion || null,
         versionCount: meta?.versions ? Object.keys(meta.versions).length : 0,
+        sparklinePath: sparkline.path,
+        sparklineAreaPath: sparkline.areaPath,
       }
     }),
   )
 
   const packages = metaResults.map((r, i) =>
-    r.status === 'fulfilled' ? r.value : { ...FEATURED_PACKAGES[i], version: null, versionCount: 0 },
+    r.status === 'fulfilled' ? r.value : { ...FEATURED_PACKAGES[i], version: null, versionCount: 0, sparklinePath: '', sparklineAreaPath: '' },
   )
 
+  // Fetch top packages and aggregate stats
+  let topPackages: any[] = []
+  let stats: Record<string, any> = {}
+  if (analyticsStorage) {
+    try {
+      const [top, installAnalytics] = await Promise.all([
+        analyticsStorage.getTopPackages(10),
+        analyticsStorage.getInstallAnalytics(30).catch(() => null),
+      ])
+
+      const totalDownloads = top.reduce((sum, p) => sum + p.downloads, 0)
+
+      // Generate sparklines for top packages
+      const topWithSparklines = await Promise.all(
+        top.map(async (pkg, i) => {
+          const timeline = await analyticsStorage.getDownloadTimeline(pkg.name, 14).catch(() => [])
+          const sparkData = (timeline || []).map((d: any) => d.count || 0)
+          const sparkline = generateSparkline(sparkData, 80, 24)
+          return {
+            ...pkg,
+            rank: i + 1,
+            formattedDownloads: chartFormatCount(pkg.downloads),
+            sparklinePath: sparkline.path,
+            sparklineAreaPath: sparkline.areaPath,
+          }
+        }),
+      )
+      topPackages = topWithSparklines
+
+      stats = {
+        totalDownloads,
+        formattedDownloads: chartFormatCount(totalDownloads),
+        totalCount: installAnalytics?.total_count || 0,
+      }
+    }
+    catch { /* analytics are optional */ }
+  }
+
   const totalPackages = 500 // approximate
-  const html = await renderSitePage('index.stx', { packages, totalPackages })
+  const html = await renderSitePage('index.stx', { packages, totalPackages, topPackages, stats })
   return htmlResponse(html)
 }
 
-async function handleSiteSearch(query: string, registry: Registry, binaryStorage?: BinaryStorage): Promise<Response> {
+async function handleSiteSearch(
+  query: string,
+  registry: Registry,
+  binaryStorage?: BinaryStorage,
+  analyticsStorage?: AnalyticsStorage,
+  sort = 'relevance',
+  view = 'list',
+): Promise<Response> {
   let results: any[] = []
   if (query) {
     const searchResults = await registry.search(query, 50)
@@ -1683,9 +1756,36 @@ async function handleSiteSearch(query: string, registry: Registry, binaryStorage
         })
       }
     }
+
+    // Enrich results with download stats for sorting
+    if (analyticsStorage && (sort === 'downloads' || true)) {
+      const statsResults = await Promise.allSettled(
+        results.map(async (r: any) => {
+          const stats = await analyticsStorage.getPackageStats(r.name)
+          return { ...r, downloads: stats ? chartFormatCount(stats.totalDownloads) : '', downloadCount: stats?.totalDownloads || 0 }
+        }),
+      )
+      results = statsResults.map((r, i) =>
+        r.status === 'fulfilled' ? r.value : { ...results[i], downloads: '', downloadCount: 0 },
+      )
+    }
+
+    // Sort results
+    if (sort === 'downloads') {
+      results.sort((a: any, b: any) => (b.downloadCount || 0) - (a.downloadCount || 0))
+    }
+    else if (sort === 'name') {
+      results.sort((a: any, b: any) => (a.name || '').localeCompare(b.name || ''))
+    }
   }
 
-  const html = await renderSitePage('search.stx', { query, results, title: query ? `search: ${query}` : 'search' })
+  const html = await renderSitePage('search.stx', {
+    query,
+    results,
+    sort,
+    view,
+    title: query ? `search: ${query}` : 'search',
+  })
   return htmlResponse(html)
 }
 
@@ -1723,6 +1823,18 @@ async function handleSitePackage(
     const latestData = meta.versions?.[latestVersion] || {}
     const platforms = Object.keys(latestData.platforms || {})
 
+    // Generate charts via ts-charts
+    const timelineData = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
+    const lineChart = generateLineChart(timelineData, 700, 200)
+
+    // Version distribution chart
+    const versionDownloads = (stats || {}).versionDownloads || {}
+    const versionItems = Object.entries(versionDownloads)
+      .map(([label, value]) => ({ label, value: value as number }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8)
+    const versionDistribution = generateHorizontalBarChart(versionItems, 600, 28, 6, 120)
+
     const html = await renderSitePage('package.stx', {
       name,
       notFound: false,
@@ -1730,12 +1842,18 @@ async function handleSitePackage(
       latestVersion,
       versions,
       platforms,
-      stats: stats || { totalDownloads: 0, versionDownloads: {} },
+      stats: stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} },
       timeline: timeline || [],
+      lineChart,
+      versionDistribution,
       title: name,
     })
     return htmlResponse(html)
   }
+
+  // Fallback for packages only in npm registry (not S3)
+  const fbTimeline = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
+  const fbLineChart = generateLineChart(fbTimeline, 700, 200)
 
   const html = await renderSitePage('package.stx', {
     name,
@@ -1744,9 +1862,193 @@ async function handleSitePackage(
     latestVersion: (pkgInfo as any).version || 'unknown',
     versions: (pkgInfo as any).version ? [(pkgInfo as any).version] : [],
     platforms: [],
-    stats: stats || { totalDownloads: (pkgInfo as any).downloads || 0, versionDownloads: {} },
+    stats: stats || { totalDownloads: (pkgInfo as any).downloads || 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} },
     timeline: timeline || [],
+    lineChart: fbLineChart,
+    versionDistribution: { bars: [] },
     title: name,
+  })
+  return htmlResponse(html)
+}
+
+// ============================================================================
+// Compare page handler
+// ============================================================================
+async function handleSiteCompare(
+  packagesParam: string,
+  analyticsStorage: AnalyticsStorage,
+  binaryStorage?: BinaryStorage,
+): Promise<Response> {
+  const packageNames = packagesParam
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .slice(0, 4)
+
+  if (packageNames.length === 0) {
+    const html = await renderSitePage('compare.stx', {
+      comparePackages: [],
+      packagesQuery: packagesParam,
+      title: 'Compare',
+    })
+    return htmlResponse(html)
+  }
+
+  // Fetch data for all packages in parallel
+  const pkgDataResults = await Promise.allSettled(
+    packageNames.map(async (name) => {
+      const [meta, pkgStats, timeline] = await Promise.all([
+        fetchPackageMetadata(name, binaryStorage),
+        analyticsStorage.getPackageStats(name),
+        analyticsStorage.getDownloadTimeline(name, 30).catch(() => []),
+      ])
+
+      const versions = meta?.versions ? Object.keys(meta.versions) : []
+      const latestVersion = meta?.latestVersion || versions[0] || 'unknown'
+      const latestData = meta?.versions?.[latestVersion] || {}
+      const platforms = Object.keys(latestData.platforms || {})
+
+      return {
+        name,
+        latestVersion,
+        totalDownloads: pkgStats?.totalDownloads || 0,
+        formattedDownloads: chartFormatCount(pkgStats?.totalDownloads || 0),
+        weeklyDownloads: pkgStats?.weeklyDownloads || 0,
+        formattedWeekly: chartFormatCount(pkgStats?.weeklyDownloads || 0),
+        versionCount: versions.length,
+        platformCount: platforms.length,
+        platforms,
+        hasDarwinArm64: platforms.some(p => p.includes('darwin-arm64') || p.includes('darwin+aarch64')),
+        hasDarwinX86: platforms.some(p => p.includes('darwin-x86') || p.includes('darwin+x86-64')),
+        hasLinuxArm64: platforms.some(p => p.includes('linux-arm64') || p.includes('linux+aarch64')),
+        hasLinuxX86: platforms.some(p => p.includes('linux-x86') || p.includes('linux+x86-64')),
+        timeline: (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 })),
+      }
+    }),
+  )
+
+  const comparePackages = pkgDataResults
+    // eslint-disable-next-line no-unused-vars
+    .map((r, i) =>
+      r.status === 'fulfilled'
+        ? r.value
+        : {
+            name: packageNames[i],
+            latestVersion: '--',
+            totalDownloads: 0,
+            formattedDownloads: '--',
+            weeklyDownloads: 0,
+            formattedWeekly: '--',
+            versionCount: 0,
+            platformCount: 0,
+            platforms: [],
+            hasDarwinArm64: false,
+            hasDarwinX86: false,
+            hasLinuxArm64: false,
+            hasLinuxX86: false,
+            timeline: [],
+          },
+    )
+
+  // Generate multi-line download trend chart (ts-charts)
+  const multiLineChart = generateMultiLineChart(
+    comparePackages.map(pkg => ({
+      label: pkg.name,
+      timeline: pkg.timeline,
+    })),
+    700,
+    250,
+  )
+
+  // Generate downloads bar chart for comparison
+  const maxDownloads = Math.max(...comparePackages.map(p => p.totalDownloads), 1)
+  const COMPARE_COLORS = ['#5b9cf5', '#6dd97a', '#e6c84d', '#e25c5c']
+  const downloadsBarChart = {
+    bars: comparePackages.map((pkg, i) => ({
+      label: pkg.name,
+      value: pkg.totalDownloads,
+      formattedValue: pkg.formattedDownloads,
+      widthPct: Math.max((pkg.totalDownloads / maxDownloads) * 100, 2).toFixed(1),
+      color: COMPARE_COLORS[i % COMPARE_COLORS.length],
+    })),
+  }
+
+  const html = await renderSitePage('compare.stx', {
+    comparePackages,
+    packagesQuery: packagesParam,
+    multiLineChart,
+    downloadsBarChart,
+    title: `Compare: ${packageNames.join(' vs ')}`,
+  })
+  return htmlResponse(html)
+}
+
+// ============================================================================
+// Stats page handler
+// ============================================================================
+// eslint-disable-next-line no-unused-vars
+async function handleSiteStats(
+  analyticsStorage: AnalyticsStorage,
+): Promise<Response> {
+  const [topPkgs, installAnalytics30, installAnalytics90] = await Promise.all([
+    analyticsStorage.getTopPackages(25),
+    analyticsStorage.getInstallAnalytics(30).catch(() => null),
+    analyticsStorage.getInstallAnalytics(90).catch(() => null),
+  ])
+
+  const totalDownloads30 = topPkgs.reduce((sum, p) => sum + p.downloads, 0)
+  const totalDownloads90 = (installAnalytics90 as any)?.total_count || totalDownloads30
+
+  // Generate sparklines for each top package
+  const topPackages = await Promise.all(
+    topPkgs.map(async (pkg, i) => {
+      const timeline = await analyticsStorage.getDownloadTimeline(pkg.name, 30).catch(() => [])
+      const sparkData = (timeline || []).map((d: any) => d.count || 0)
+      const sparkline = generateSparkline(sparkData, 80, 24)
+      return {
+        ...pkg,
+        rank: i + 1,
+        formattedDownloads: chartFormatCount(pkg.downloads),
+        sharePct: totalDownloads30 > 0 ? ((pkg.downloads / totalDownloads30) * 100).toFixed(1) : '0',
+        sparklinePath: sparkline.path,
+        sparklineAreaPath: sparkline.areaPath,
+      }
+    }),
+  )
+
+  // Build aggregate timeline for global chart
+  const allTimelines = await Promise.all(
+    topPkgs.slice(0, 15).map(async (pkg) => {
+      const tl = await analyticsStorage.getDownloadTimeline(pkg.name, 30).catch(() => [])
+      return tl || []
+    }),
+  )
+
+  // Aggregate by date
+  const dateMap = new Map<string, number>()
+  for (const tl of allTimelines) {
+    for (const d of tl) {
+      dateMap.set(d.date, (dateMap.get(d.date) || 0) + (d.count || 0))
+    }
+  }
+  const globalTimeline = [...dateMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({ date, count }))
+
+  const globalChart = generateLineChart(globalTimeline, 700, 220)
+
+  const stats = {
+    totalPackages: 500,
+    formatted30d: chartFormatCount(totalDownloads30),
+    formatted90d: chartFormatCount(totalDownloads90),
+    installAnalytics: installAnalytics30,
+  }
+
+  const html = await renderSitePage('stats.stx', {
+    topPackages,
+    stats,
+    globalChart,
+    title: 'Stats',
   })
   return htmlResponse(html)
 }

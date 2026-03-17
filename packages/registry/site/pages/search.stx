@@ -2,8 +2,10 @@
   const count = (results || []).length
   const hasResults = count > 0
   const hasQuery = (query || '').length > 0
+  const currentSort = sort || 'relevance'
+  const currentView = view || 'list'
 
-  const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org']
+  const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org', 'bun.sh', 'rust-lang.org']
 </script>
 
 <section class="py-12 px-6 pb-20">
@@ -13,23 +15,48 @@
       <h1 class="text-3xl font-semibold tracking-tight">search</h1>
     </div>
 
-    <!-- Search form -->
-    <form action="/search" method="get" class="flex gap-2 mb-8">
-      <div class="relative flex-1">
-        <input
-          type="text"
-          name="q"
-          value="{{ query }}"
-          placeholder="search packages..."
-          autofocus
-          aria-label="Search packages"
-          class="w-full bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
-          style="color: var(--fg); font-size: 0.9375rem;"
-        />
+    <!-- Search form with sort and view controls -->
+    <form action="/search" method="get" class="mb-8">
+      <div class="flex gap-2 mb-3">
+        <div class="relative flex-1">
+          <input
+            type="text"
+            name="q"
+            value="{{ query }}"
+            placeholder="search packages..."
+            autofocus
+            aria-label="Search packages"
+            class="w-full bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-4 py-3 outline-none transition-colors focus:border-[var(--accent)]"
+            style="color: var(--fg); font-size: 0.9375rem;"
+            id="search-input"
+          />
+        </div>
+        <button type="submit" class="rounded-lg px-5 py-3 font-medium text-sm cursor-pointer transition-colors" style="background: var(--accent); color: var(--bg);">
+          search
+        </button>
       </div>
-      <button type="submit" class="rounded-lg px-5 py-3 font-medium text-sm cursor-pointer transition-colors" style="background: var(--accent); color: var(--bg);">
-        search
-      </button>
+
+      @if (hasQuery)
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Sort:</label>
+          <select name="sort" class="sort-select" onchange="this.form.submit()">
+            <option value="relevance" @if (currentSort === 'relevance') selected @endif>Relevance</option>
+            <option value="downloads" @if (currentSort === 'downloads') selected @endif>Downloads</option>
+            <option value="name" @if (currentSort === 'name') selected @endif>Name (A-Z)</option>
+          </select>
+        </div>
+
+        <div class="view-toggle">
+          <button type="submit" name="view" value="list" class="@if (currentView === 'list') active @endif" aria-label="List view">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button type="submit" name="view" value="grid" class="@if (currentView === 'grid') active @endif" aria-label="Grid view">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </button>
+        </div>
+      </div>
+      @endif
     </form>
 
     @if (!hasQuery)
@@ -71,12 +98,69 @@
       @endif
     </p>
 
-    <!-- Results list -->
+    <!-- Grid view -->
+    @if (currentView === 'grid')
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
+      @foreach (results as result)
+      <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <img
+              src="https://www.google.com/s2/favicons?domain={{ result.name }}&sz=16"
+              alt=""
+              width="14"
+              height="14"
+              loading="lazy"
+              class="rounded-sm"
+              onerror="this.style.display='none'"
+            />
+            <span class="font-mono text-sm font-medium">{{ result.name }}</span>
+          </div>
+          @if (result.version)
+          <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ result.version }}</span>
+          @endif
+        </div>
+        @if (result.description)
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">{{ result.description }}</p>
+        @endif
+        <div class="flex items-center justify-between mt-2">
+          @if (result.downloads)
+          <span class="flex items-center gap-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            {{ result.downloads }}
+          </span>
+          @endif
+          @if (result.platforms)
+          <div class="flex gap-1">
+            @foreach (result.platforms as plat)
+            <span class="rounded px-1.5 py-0.5 bg-[var(--bg-muted)]" style="font-size: 0.625rem; color: var(--fg-subtle);">{{ plat }}</span>
+            @endforeach
+          </div>
+          @endif
+        </div>
+      </a>
+      @endforeach
+    </div>
+    @endif
+
+    <!-- List view (default) -->
+    @if (currentView !== 'grid')
     <div class="flex flex-col gap-2">
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
         <div class="flex items-center justify-between mb-1">
-          <span class="font-mono text-sm font-medium">{{ result.name }}</span>
+          <div class="flex items-center gap-2">
+            <img
+              src="https://www.google.com/s2/favicons?domain={{ result.name }}&sz=16"
+              alt=""
+              width="14"
+              height="14"
+              loading="lazy"
+              class="rounded-sm"
+              onerror="this.style.display='none'"
+            />
+            <span class="font-mono text-sm font-medium">{{ result.name }}</span>
+          </div>
           <div class="flex items-center gap-2">
             @if (result.downloads)
             <span class="flex items-center gap-1" style="font-size: 0.6875rem; color: var(--fg-subtle);">
@@ -102,6 +186,7 @@
       </a>
       @endforeach
     </div>
+    @endif
     @endif
   </div>
 </section>

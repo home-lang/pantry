@@ -45,6 +45,11 @@
       "version": "0.8.16",
       "dependencies": {
         "@stacksjs/stx": "^0.2.9",
+        "@ts-charts/array": "^0.1.1",
+        "@ts-charts/format": "^0.1.1",
+        "@ts-charts/path": "^0.1.1",
+        "@ts-charts/scale": "^0.1.1",
+        "@ts-charts/shape": "^0.1.1",
       },
       "devDependencies": {
         "bun-types": "latest",
@@ -160,6 +165,26 @@
     "@stacksjs/ts-md": ["@stacksjs/ts-md@0.1.1", "", { "bin": { "md": "./bin/cli.ts" } }, "sha512-kvsSg7S3vHq65fnHIRggTLudN4n1sjkos86xLB62V6PVRa8iosYAmFKVDTGaJk+0MdsIoRwQbJ2vLWVcNQsgGw=="],
 
     "@stacksjs/ts-xml": ["@stacksjs/ts-xml@0.1.0", "", { "bin": { "bin-name": "./dist/bin/cli.js" } }, "sha512-YB7FSlFcPqopUOmjK1Qqr5E6QaarerIFJzWfUXOO/EuR1qX+IRRKxOKbWRmCvN72Mnchz8EfXhlvxEK+Zz/mQQ=="],
+
+    "@ts-charts/array": ["@ts-charts/array@0.1.1", "", { "dependencies": { "@ts-charts/internmap": "0.1.1" } }, "sha512-AMJwq2+yiwzDzgAeKeqNmYK2giVKucCcvfJUyvjUlws+k20UxgjtmNhGobEdWnGh+nimjXbnIzvO+tAG3OvYCQ=="],
+
+    "@ts-charts/color": ["@ts-charts/color@0.1.1", "", {}, "sha512-R1TwDRUPVttb5BaWlXH/cpJ4qG4sAizJ/FXwlABEQpxPaglZSf22oJbSfXmbIjVXbPGKcnfkaDcBZNfkXqP93Q=="],
+
+    "@ts-charts/format": ["@ts-charts/format@0.1.1", "", {}, "sha512-53uOlcxYr5vVkHVy1ZDaXTOdV9uK7Mv4BbUm33jQszX2mXhGs47hD27nY2aU/TSfVlxkS1gk2OK6nVGr00KXTg=="],
+
+    "@ts-charts/internmap": ["@ts-charts/internmap@0.1.1", "", {}, "sha512-XFhgfo7eU+Hl2RVBeeQzdVpv6ajBsigxMKc2DTQRjKvqEMA45ehI6tvygWVaeGgah4SIt7VcST5xQePKQzTUUA=="],
+
+    "@ts-charts/interpolate": ["@ts-charts/interpolate@0.1.1", "", { "dependencies": { "@ts-charts/color": "0.1.1" } }, "sha512-Z+r3jXPAXXDG814X/sMR6v1USBTU/E4Dc+4y4A1E4a/pezhJE+tF9nnMIJttiPRTHr7taudVCAbzes8l4cc36A=="],
+
+    "@ts-charts/path": ["@ts-charts/path@0.1.1", "", {}, "sha512-FyJ1OJo77/fwGw9cF2YsXY3KW1ag9V/uXnea1aZDAD13zYk5sY+RH/WZ0zHtuZSlIRGZZj2V4fKX95prmbwCbQ=="],
+
+    "@ts-charts/scale": ["@ts-charts/scale@0.1.1", "", { "dependencies": { "@ts-charts/array": "0.1.1", "@ts-charts/format": "0.1.1", "@ts-charts/interpolate": "0.1.1", "@ts-charts/time": "0.1.1", "@ts-charts/time-format": "0.1.1" } }, "sha512-2jqSikNHE7GR1Qb9BOujIlTHPFCUUg9oUrnNHSNaJT6GFOPU5wCtb76Mxh5y0Tsdk/a6kyGN02BTMEGSzyv1KA=="],
+
+    "@ts-charts/shape": ["@ts-charts/shape@0.1.1", "", { "dependencies": { "@ts-charts/path": "0.1.1" } }, "sha512-23IldtrYppreQT9vkqvrnfVijs+OJ8c3RiyWxHgl/JcofOm0vnvLGPACkLXJNYUUFkxpazWnPUXh88j7Sv7EtQ=="],
+
+    "@ts-charts/time": ["@ts-charts/time@0.1.1", "", { "dependencies": { "@ts-charts/array": "0.1.1" } }, "sha512-ITSqF+cDc2ICSHBdy/B1JZdebC71s/i2QFUc/alvY48sDJTxbNnifCCkroKYmB5cUuNb75LRXrS9LzCTH9oLdw=="],
+
+    "@ts-charts/time-format": ["@ts-charts/time-format@0.1.1", "", { "dependencies": { "@ts-charts/time": "0.1.1" } }, "sha512-Bi1X++Snjyg2vZgTCYDZib3JnqQbw8Hyi3FWJANEKMN9KYtg5cWF2PVU+wR4NT1QZVL6HYq7+4OYBoum+bM/zQ=="],
 
     "@ts-cloud/aws-types": ["@ts-cloud/aws-types@0.2.3", "", {}, "sha512-f12OpxUfRCh3Yf1+yJUPIor5FL8JtlI7/YCHYi715nx6OqH7G4A2LQu/fQbmyiAiKH0vRfKLU03RBDyUsLd9OQ=="],
 

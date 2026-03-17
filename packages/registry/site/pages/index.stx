@@ -1,6 +1,8 @@
 <script server>
   const pkgCount = totalPackages || 0
   const pkgs = packages || []
+  const registryStats = stats || {}
+  const topPkgs = topPackages || []
 </script>
 
 <!-- Hero -->
@@ -42,6 +44,36 @@
     <!-- Install hint -->
     <div class="flex items-center justify-center gap-2 mb-12 animate-fade-in-delay-2">
       <code class="bg-[var(--bg-subtle)] px-3 py-1.5 rounded-md border border-[var(--border)]" style="font-size: 0.8125rem; color: var(--fg-subtle);">curl -fsSL https://pantry.dev | sh</code>
+    </div>
+  </div>
+</section>
+
+<!-- Registry stats banner -->
+<section class="px-6 pb-16">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));">
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--accent);">{{ pkgCount }}+</p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Packages</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--green);">
+          @if (registryStats.totalDownloads)
+          {{ registryStats.formattedDownloads }}
+          @else
+          --
+          @endif
+        </p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Downloads (30d)</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">4</p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Platforms</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--purple);">2</p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Architectures</p>
+      </div>
     </div>
   </div>
 </section>
@@ -112,6 +144,49 @@
   </div>
 </section>
 
+<!-- Trending packages (top by downloads) -->
+@if (topPkgs.length > 0)
+<section class="px-6 pb-16">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Trending Packages</h2>
+      <a href="/stats" class="text-xs hvr-accent transition-colors" style="color: var(--accent);">view all stats &rarr;</a>
+    </div>
+    <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg overflow-hidden">
+      <table class="w-full" style="border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th class="text-left px-4 py-2.5 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">#</th>
+            <th class="text-left px-4 py-2.5 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Package</th>
+            <th class="text-right px-4 py-2.5 text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Downloads</th>
+            <th class="text-right px-4 py-2.5 text-xs uppercase tracking-widest font-medium hidden sm:table-cell" style="color: var(--fg-subtle);">Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (topPkgs as pkg)
+          <tr class="hover:bg-[var(--bg-muted)] transition-colors" style="border-bottom: 1px solid var(--border);">
+            <td class="px-4 py-2.5 font-mono text-xs" style="color: var(--fg-subtle);">{{ pkg.rank }}</td>
+            <td class="px-4 py-2.5">
+              <a href="/package/{{ pkg.name }}" class="font-mono text-sm font-medium hvr-accent transition-colors" style="color: var(--accent);">{{ pkg.name }}</a>
+            </td>
+            <td class="px-4 py-2.5 text-right font-mono text-sm" style="color: var(--fg-muted);">{{ pkg.formattedDownloads }}</td>
+            <td class="px-4 py-2.5 text-right hidden sm:table-cell">
+              @if (pkg.sparklinePath)
+              <svg width="80" height="24" viewBox="0 0 80 24" class="inline-block" style="vertical-align: middle;">
+                <path d="{!! pkg.sparklineAreaPath !!}" fill="var(--accent)" opacity="0.15" />
+                <path d="{!! pkg.sparklinePath !!}" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              @endif
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+@endif
+
 <!-- Featured packages -->
 <section class="px-6 pb-16">
   <div class="max-w-6xl mx-auto">
@@ -141,9 +216,17 @@
           @endif
         </div>
         <p style="font-size: 0.8125rem; color: var(--fg-muted);">{{ pkg.desc }}</p>
-        @if (pkg.versionCount > 0)
-        <p class="mt-1.5" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ pkg.versionCount }} versions</p>
-        @endif
+        <div class="flex items-center justify-between mt-1.5">
+          @if (pkg.versionCount > 0)
+          <span style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ pkg.versionCount }} versions</span>
+          @endif
+          @if (pkg.sparklinePath)
+          <svg width="60" height="20" viewBox="0 0 60 20" style="vertical-align: middle;">
+            <path d="{!! pkg.sparklineAreaPath !!}" fill="var(--accent)" opacity="0.1" />
+            <path d="{!! pkg.sparklinePath !!}" fill="none" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" />
+          </svg>
+          @endif
+        </div>
       </a>
       @endforeach
     </div>
@@ -170,12 +253,3 @@
     </div>
   </div>
 </section>
-
-<script>
-  document.addEventListener('keydown', (e) => {
-    if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
-      e.preventDefault()
-      document.getElementById('search-input')?.focus()
-    }
-  })
-</script>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -30,8 +30,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Prevent FOUC: apply saved theme before paint -->
+  <script>
+    (function(){var t=localStorage.getItem('pantry-theme');if(t==='light')document.documentElement.dataset.theme='light'})()
+  </script>
+
   <style>
-    :root {
+    /* ===== Dark theme (default) ===== */
+    :root, [data-theme="dark"] {
       --bg: oklch(0.171 0 0);
       --bg-subtle: oklch(0.198 0 0);
       --bg-muted: oklch(0.236 0 0);
@@ -46,14 +53,35 @@
       --green: oklch(0.723 0.15 155);
       --yellow: oklch(0.795 0.15 85);
       --red: oklch(0.637 0.2 25);
+      --purple: oklch(0.7 0.15 300);
     }
+
+    /* ===== Light theme ===== */
+    [data-theme="light"] {
+      --bg: oklch(0.985 0 0);
+      --bg-subtle: oklch(0.965 0 0);
+      --bg-muted: oklch(0.935 0 0);
+      --bg-elevated: oklch(0.955 0 0);
+      --fg: oklch(0.15 0 0);
+      --fg-muted: oklch(0.4 0 0);
+      --fg-subtle: oklch(0.55 0 0);
+      --border: oklch(0.88 0 0);
+      --border-hover: oklch(0.78 0 0);
+      --accent: oklch(0.55 0.18 230.318);
+      --accent-hover: oklch(0.45 0.18 230.318);
+      --green: oklch(0.5 0.17 155);
+      --yellow: oklch(0.6 0.15 85);
+      --red: oklch(0.5 0.2 25);
+      --purple: oklch(0.55 0.15 300);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-family: 'Inter', system-ui, -apple-system, sans-serif !important; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
     a { color: inherit; text-decoration: none; }
     code, .font-mono { font-family: 'JetBrains Mono', monospace !important; }
 
-    /* Hover text color utilities (crosswind text-[var()] resolves to font-size, not color) */
+    /* Hover text color utilities */
     .hvr-fg:hover { color: var(--fg) !important; }
     .hvr-accent:hover { color: var(--accent-hover) !important; }
 
@@ -73,7 +101,8 @@
     .tab-radio:checked + .tab-label { color: var(--accent); border-bottom-color: var(--accent); }
     #tab-overview:checked ~ .tab-panel-overview,
     #tab-versions:checked ~ .tab-panel-versions,
-    #tab-platforms:checked ~ .tab-panel-platforms { display: block; }
+    #tab-platforms:checked ~ .tab-panel-platforms,
+    #tab-deps:checked ~ .tab-panel-deps { display: block; }
 
     /* Copy button */
     .copy-btn { cursor: pointer; background: none; border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.25rem 0.5rem; color: var(--fg-subtle); font-size: 0.6875rem; transition: all 0.2s; }
@@ -89,6 +118,43 @@
       .header-nav form { width: 100%; }
       .header-nav form input { width: 100%; }
     }
+
+    /* Theme toggle button */
+    .theme-toggle { background: none; border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem; cursor: pointer; color: var(--fg-muted); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+    .theme-toggle:hover { border-color: var(--border-hover); color: var(--fg); }
+    [data-theme="dark"] .theme-icon-sun { display: none; }
+    [data-theme="dark"] .theme-icon-moon { display: block; }
+    [data-theme="light"] .theme-icon-sun { display: block; }
+    [data-theme="light"] .theme-icon-moon { display: none; }
+
+    /* Keyboard shortcuts modal */
+    .shortcuts-dialog { position: fixed; inset: 0; z-index: 100; display: none; }
+    .shortcuts-dialog.open { display: flex; align-items: center; justify-content: center; }
+    .shortcuts-backdrop { position: absolute; inset: 0; background: oklch(0 0 0 / 0.6); backdrop-filter: blur(4px); }
+    .shortcuts-panel { position: relative; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; max-width: 28rem; width: 90vw; max-height: 85vh; overflow-y: auto; }
+    .shortcut-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .shortcut-row:last-child { border-bottom: none; }
+    .shortcut-key { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; padding: 0.125rem 0.5rem; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--fg-muted); }
+
+    /* Scroll-to-top button */
+    .scroll-top { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 50; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.625rem; cursor: pointer; color: var(--fg-muted); opacity: 0; pointer-events: none; transition: all 0.3s ease; box-shadow: 0 2px 8px oklch(0 0 0 / 0.15); }
+    .scroll-top.visible { opacity: 1; pointer-events: auto; }
+    .scroll-top:hover { border-color: var(--border-hover); color: var(--fg); transform: translateY(-2px); }
+
+    /* Chart styles */
+    .chart-tooltip { position: absolute; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 0.625rem; font-size: 0.75rem; color: var(--fg); pointer-events: none; white-space: nowrap; z-index: 10; }
+    .chart-dot { transition: r 0.15s ease; }
+    .chart-dot:hover { r: 5; }
+
+    /* View mode toggle */
+    .view-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 0.375rem; overflow: hidden; }
+    .view-toggle button { background: none; border: none; padding: 0.375rem 0.625rem; cursor: pointer; color: var(--fg-subtle); transition: all 0.2s; }
+    .view-toggle button.active { background: var(--bg-muted); color: var(--accent); }
+    .view-toggle button:hover:not(.active) { color: var(--fg-muted); }
+
+    /* Sort select */
+    .sort-select { appearance: none; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 2rem 0.375rem 0.75rem; color: var(--fg); font-size: 0.8125rem; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; }
+    .sort-select:focus { border-color: var(--accent); outline: none; }
   </style>
 </head>
 <body>
@@ -114,9 +180,17 @@
             style="color: var(--fg); font-size: 0.8125rem;"
           />
         </form>
+        <a href="/stats" class="hvr-fg transition-colors" style="color: var(--fg-muted);">stats</a>
+        <a href="/compare" class="hvr-fg transition-colors" style="color: var(--fg-muted);">compare</a>
         <a href="/docs" class="hvr-fg transition-colors" style="color: var(--fg-muted);">docs</a>
         <a href="/about" class="hvr-fg transition-colors" style="color: var(--fg-muted);">about</a>
         <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">github</a>
+
+        <!-- Theme toggle -->
+        <button class="theme-toggle" aria-label="Toggle theme" id="theme-toggle">
+          <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
       </nav>
     </div>
   </header>
@@ -134,16 +208,129 @@
           <p class="text-sm" style="color: var(--fg-muted);">a fast, modern package manager for your system</p>
           <p class="text-xs mt-2" style="color: var(--fg-subtle);">built by <a href="https://stacksjs.com" class="hvr-accent transition-colors" style="color: var(--accent);">Stacks.js</a></p>
         </div>
-        <nav class="flex gap-6" style="font-size: 0.8125rem; color: var(--fg-muted);" aria-label="footer navigation">
-          <a href="/docs" class="hvr-fg transition-colors">docs</a>
-          <a href="/about" class="hvr-fg transition-colors">about</a>
-          <a href="/privacy" class="hvr-fg transition-colors">privacy</a>
-          <a href="/accessibility" class="hvr-fg transition-colors">accessibility</a>
-          <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors">source</a>
-          <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="hvr-fg transition-colors">chat</a>
-        </nav>
+        <div class="flex flex-col items-end gap-3">
+          <nav class="flex gap-6" style="font-size: 0.8125rem; color: var(--fg-muted);" aria-label="footer navigation">
+            <a href="/stats" class="hvr-fg transition-colors">stats</a>
+            <a href="/compare" class="hvr-fg transition-colors">compare</a>
+            <a href="/docs" class="hvr-fg transition-colors">docs</a>
+            <a href="/about" class="hvr-fg transition-colors">about</a>
+            <a href="/privacy" class="hvr-fg transition-colors">privacy</a>
+            <a href="/accessibility" class="hvr-fg transition-colors">accessibility</a>
+            <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors">source</a>
+            <a href="https://discord.gg/stacksjs" target="_blank" rel="noopener" class="hvr-fg transition-colors">chat</a>
+          </nav>
+          <button onclick="document.getElementById('shortcuts-dialog').classList.add('open')" style="font-size: 0.6875rem; color: var(--fg-subtle); background: none; border: none; cursor: pointer;" class="hvr-fg transition-colors">
+            press <kbd class="shortcut-key" style="font-size: 0.625rem; padding: 0 0.25rem;">?</kbd> for shortcuts
+          </button>
+        </div>
       </div>
     </div>
   </footer>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="shortcuts-dialog" class="shortcuts-dialog" role="dialog" aria-label="Keyboard shortcuts">
+    <div class="shortcuts-backdrop" onclick="this.parentElement.classList.remove('open')"></div>
+    <div class="shortcuts-panel">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-semibold">Keyboard Shortcuts</h2>
+        <button onclick="this.closest('.shortcuts-dialog').classList.remove('open')" style="background: none; border: none; cursor: pointer; color: var(--fg-subtle); padding: 0.25rem;" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div class="flex flex-col">
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Focus search</span>
+          <kbd class="shortcut-key">/</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Show shortcuts</span>
+          <kbd class="shortcut-key">?</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Go home</span>
+          <kbd class="shortcut-key">h</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Compare packages</span>
+          <kbd class="shortcut-key">c</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">View stats</span>
+          <kbd class="shortcut-key">t</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Toggle theme</span>
+          <kbd class="shortcut-key">d</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Close dialog</span>
+          <kbd class="shortcut-key">Esc</kbd>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scroll-to-top button -->
+  <button id="scroll-top" class="scroll-top" aria-label="Scroll to top">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+
+  <script>
+    // Theme toggle
+    var toggle = document.getElementById('theme-toggle')
+    if (toggle) {
+      toggle.addEventListener('click', function() {
+        var html = document.documentElement
+        var current = html.dataset.theme || 'dark'
+        var next = current === 'dark' ? 'light' : 'dark'
+        html.dataset.theme = next
+        localStorage.setItem('pantry-theme', next)
+      })
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      var tag = document.activeElement && document.activeElement.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+
+      var dialog = document.getElementById('shortcuts-dialog')
+
+      if (e.key === 'Escape') {
+        if (dialog) dialog.classList.remove('open')
+        return
+      }
+      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.querySelector('input[name="q"]'); if (si) si.focus(); return }
+      if (e.key === '?') { if (dialog) dialog.classList.add('open'); return }
+      if (e.key === 'h') { window.location.href = '/'; return }
+      if (e.key === 'c') { window.location.href = '/compare'; return }
+      if (e.key === 't') { window.location.href = '/stats'; return }
+      if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; localStorage.setItem('pantry-theme', n); return }
+    })
+
+    // Scroll-to-top
+    var scrollBtn = document.getElementById('scroll-top')
+    if (scrollBtn) {
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) { scrollBtn.classList.add('visible') }
+        else { scrollBtn.classList.remove('visible') }
+      }, { passive: true })
+      scrollBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      })
+    }
+
+    // Copy buttons
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.copy-btn')
+      if (!btn) return
+      var text = btn.getAttribute('data-copy')
+      if (!text) return
+      navigator.clipboard.writeText(text).then(function() {
+        btn.textContent = 'copied!'
+        btn.classList.add('copied')
+        setTimeout(function() { btn.textContent = 'copy'; btn.classList.remove('copied') }, 2000)
+      })
+    })
+  </script>
 </body>
 </html>
