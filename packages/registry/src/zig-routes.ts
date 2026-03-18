@@ -150,7 +150,7 @@ export async function handleZigRoutes(
 }
 
 // Simple token for authentication (replace with proper auth in production)
-const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || 'ABCD1234'
+const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
 
 /**
  * Validate authorization token
