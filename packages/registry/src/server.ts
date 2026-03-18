@@ -554,7 +554,7 @@ export function createHandler(
       const sitePkgMatch = path.match(/^\/package\/(.+)$/)
       if (sitePkgMatch) {
         const name = decodeURIComponent(sitePkgMatch[1])
-        return await handleSitePackage(name, analyticsStorage, binaryStorage, registry)
+        return await handleSitePackage(name, analyticsStorage, binaryStorage, registry, zigPackageStorage)
       }
 
       // Compare page
@@ -2065,18 +2065,23 @@ async function handleSitePackage(
   analytics: AnalyticsStorage,
   binaryStorage?: BinaryStorage,
   registry?: Registry,
+  zigStorage?: ZigPackageStorage,
 ): Promise<Response> {
-  const [meta, stats, timeline, pkgInfo] = await Promise.all([
+  const [meta, stats, timeline, pkgInfo, zigPkg] = await Promise.all([
     fetchPackageMetadata(name, binaryStorage),
     analytics.getPackageStats(name),
     analytics.getDownloadTimeline(name, 30),
     registry?.getPackage(name) ?? null,
+    zigStorage?.getPackage(name) ?? null,
   ])
+  const isZigPackage = zigPkg !== null
 
-  if (!meta && !pkgInfo) {
+  if (!meta && !pkgInfo && !zigPkg) {
     const html = await renderSitePage('package.stx', {
       name,
       notFound: true,
+      isZigPackage: false,
+      zigFetchUrl: '',
       meta: null,
       latestVersion: '',
       versions: [],
@@ -2086,6 +2091,43 @@ async function handleSitePackage(
       title: `${name} - not found`,
     })
     return htmlResponse(html, 404)
+  }
+
+  // Zig-only package (no S3 binary metadata or npm entry)
+  if (!meta && !pkgInfo && zigPkg) {
+    const zigVersions = zigStorage ? await zigStorage.listVersions(name) : []
+    const zigTimeline = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
+    const zigLineChart = generateLineChart(zigTimeline, 700, 200)
+    const zigStats = stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} }
+
+    const html = await renderSitePage('package.stx', {
+      name,
+      notFound: false,
+      isZigPackage: true,
+      zigFetchUrl: zigPkg.tarballUrl || '',
+      latestVersion: zigPkg.version || 'unknown',
+      versionCount: zigVersions.length || 1,
+      platformCount: 0,
+      platformLabels: [],
+      formattedDownloads: chartFormatCount(zigStats.totalDownloads),
+      formattedWeekly: chartFormatCount(zigStats.weeklyDownloads),
+      pkgDescription: zigPkg.description || '',
+      homepage: zigPkg.homepage || '',
+      source: zigPkg.repository || '',
+      depList: [],
+      hasDeps: false,
+      depCount: 0,
+      sortedVersions: zigVersions.length ? zigVersions : [zigPkg.version],
+      recentVersions: (zigVersions.length ? zigVersions : [zigPkg.version]).slice(0, 10),
+      hasMoreVersions: zigVersions.length > 10,
+      remainingCount: Math.max(0, zigVersions.length - 10),
+      lineChart: zigLineChart,
+      versionDistribution: { bars: [] },
+      title: name,
+      metaDescription: `${zigPkg.description || name} — A Zig package on pantry.dev`,
+      canonicalUrl: `https://pantry.dev/package/${name}`,
+    })
+    return htmlResponse(html)
   }
 
   if (meta) {
@@ -2133,6 +2175,8 @@ async function handleSitePackage(
     const html = await renderSitePage('package.stx', {
       name,
       notFound: false,
+      isZigPackage,
+      zigFetchUrl: zigPkg?.tarballUrl || '',
       latestVersion,
       versionCount,
       platformCount,
@@ -2168,6 +2212,8 @@ async function handleSitePackage(
   const html = await renderSitePage('package.stx', {
     name,
     notFound: false,
+    isZigPackage,
+    zigFetchUrl: zigPkg?.tarballUrl || '',
     latestVersion: fbVersion,
     versionCount: fbVersions.length,
     platformCount: 0,

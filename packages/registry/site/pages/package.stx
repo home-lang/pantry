@@ -61,6 +61,22 @@
     <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 mb-8 animate-fade-in-delay">
       <p class="uppercase tracking-widest mb-3" style="font-size: 0.6875rem; color: var(--fg-subtle);">Install</p>
       <div class="flex flex-col gap-2">
+        @if (isZigPackage)
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">zig</span>
+            <code class="text-sm" style="color: var(--accent);">zig fetch --save {{ zigFetchUrl }}</code>
+          </div>
+          <button class="copy-btn" data-copy="zig fetch --save {{ zigFetchUrl }}">copy</button>
+        </div>
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">build.zig.zon</span>
+            <code class="text-sm" style="color: var(--fg-muted);">.@"{{ name }}" = .{ .url = "{{ zigFetchUrl }}" }</code>
+          </div>
+          <button class="copy-btn" data-copy='.@"{{ name }}" = .{ .url = "{{ zigFetchUrl }}" }'>copy</button>
+        </div>
+        @else
         <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
           <div>
             <span class="text-xs mr-2" style="color: var(--fg-subtle);">pantry</span>
@@ -82,6 +98,7 @@
           </div>
           <button class="copy-btn" data-copy="curl -fsSL pantry.dev | sh -s -- install {{ name }}">copy</button>
         </div>
+        @endif
       </div>
     </div>
 
