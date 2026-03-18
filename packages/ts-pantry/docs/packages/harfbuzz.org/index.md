@@ -28,9 +28,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 50 versions</summary>
+<summary>Show all 51 versions</summary>
 
 - `999.999.999`
+- `13.2.0`
 - `13.1.1`, `13.1.0`
 - `13.0.1`, `13.0.0`
 - `12.3.2`, `12.3.1`, `12.3.0`
