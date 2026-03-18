@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-18T21:11:22.687Z
+- **Last Updated**: 2026-03-18T21:54:53.717Z
 
 ## Table of Contents
 
@@ -228,7 +228,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[mise.jdx.dev](./packages/mise.jdx.dev/index.md)** () | dev tools, env vars, task runner | rtx, mise | 2026.3.9 (+457) | `pkgx mise` |
 | **[nixpacks.com](./packages/nixpacks.com/index.md)** () | App source + Nix packages + Docker = Image | nixpacks | 1.41.0 (+34) | `pkgx nixpacks` |
 | **[nodejs.org/corepack](./packages/nodejs.org/corepack/index.md)** () | Platform built on V8 to build network applications | corepack | 0.34.6 (+18) | `pkgx corepack` |
-| **[npmjs.com](./packages/npmjs.com/index.md)** (npm) | the package manager for JavaScript | npm, npx | 11.11.1 (+78) | `pkgx npm` |
+| **[npmjs.com](./packages/npmjs.com/index.md)** (npm) | the package manager for JavaScript | npm, npx | 11.12.0 (+79) | `pkgx npm` |
 | **[pdm.fming.dev](./packages/pdm.fming.dev/index.md)** () | A modern Python package and dependency manager supporting the latest PEP standards | pdm | 2.26.6 (+80) | `pkgx pdm` |
 | **[pip.pypa.io](./packages/pip.pypa.io/index.md)** () | The Python package installer | pip, pip3.8, pip3.9, ... (+2) | 26.0.1 (+30) | `pkgx pip` |
 | **[pipenv.pypa.io](./packages/pipenv.pypa.io/index.md)** () | Python Development Workflow for Humans. | pipenv | 3000.0.0 (+55) | `pkgx pipenv` |
@@ -249,7 +249,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.112.0 (+44) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
-| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.195 (+2861) | `pkgx vi` |
+| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.198 (+2864) | `pkgx vi` |
 | **[wezfurlong.org/wezterm](./packages/wezfurlong.org/wezterm/index.md)** () | A GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemente... | wezterm | 2024.2.3 (+0) | `pkgx wezterm` |
 
 ## CLI Tools & Utilities

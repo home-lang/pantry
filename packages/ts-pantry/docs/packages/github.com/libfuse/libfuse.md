@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 7 versions</summary>
+<summary>Show all 8 versions</summary>
 
-- `3.18.1`, `3.18.0`
+- `3.18.2`, `3.18.1`, `3.18.0`
 - `3.17.4`, `3.17.3`, `3.17.2`, `3.17.1`
 - `2.9.9`
 
 </details>
 
-**Latest Version**: `3.18.1`
+**Latest Version**: `3.18.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/libfuse/libfuse@3.18.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/libfuse/libfuse@3.18.2 -- $SHELL -i
 ```
 
 ## Usage Examples
