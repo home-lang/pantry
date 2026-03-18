@@ -34,9 +34,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 18 versions</summary>
+<summary>Show all 19 versions</summary>
 
-- `6.19.0`
+- `6.19.1`, `6.19.0`
 - `6.17.1`, `6.17.0`
 - `6.16.1`, `6.16.0`
 - `6.15.0`
@@ -51,13 +51,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `6.19.0`
+**Latest Version**: `6.19.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/kdave/btrfs-progs@6.19.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/kdave/btrfs-progs@6.19.1 -- $SHELL -i
 ```
 
 ## Dependencies

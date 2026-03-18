@@ -3,7 +3,7 @@
  *
  * @domain `github.com/kdave/btrfs-progs`
  * @programs `btrfs`, `btrfsck`, `btrfs-convert`, `btrfs-find-root`, `btrfs-image`, ... (+5 more)
- * @version `6.19.0` (18 versions available)
+ * @version `6.19.1` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/kdave/btrfs-progs`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "btrfs-progs"
  * console.log(pkg.description) // "Userspace utilities to manage btrfs filesystems"
  * console.log(pkg.programs)    // ["btrfs", "btrfsck", ...]
- * console.log(pkg.versions[0]) // "6.19.0" (latest)
+ * console.log(pkg.versions[0]) // "6.19.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/kdave/btrfs-progs.md
@@ -92,6 +92,7 @@ export const btrfsprogsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.19.1',
     '6.19.0',
     '6.17.1',
     '6.17.0',

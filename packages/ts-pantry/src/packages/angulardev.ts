@@ -3,7 +3,7 @@
  *
  * @domain `angular.dev`
  * @programs `ng`
- * @version `21.2.2` (166 versions available)
+ * @version `21.2.3` (167 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install angular.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ng"
  * console.log(pkg.description) // "CLI tool for Angular"
  * console.log(pkg.programs)    // ["ng"]
- * console.log(pkg.versions[0]) // "21.2.2" (latest)
+ * console.log(pkg.versions[0]) // "21.2.3" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/angular-dev.md
@@ -75,6 +75,7 @@ export const angulardevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '21.2.3',
     '21.2.2',
     '21.2.1',
     '21.2.0',

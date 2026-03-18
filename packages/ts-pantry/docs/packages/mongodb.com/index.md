@@ -27,9 +27,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 62 versions</summary>
+<summary>Show all 63 versions</summary>
 
-- `8.2.5`, `8.2.4`, `8.2.3`, `8.2.2`, `8.2.1`, `8.2.0`
+- `8.2.6`, `8.2.5`, `8.2.4`, `8.2.3`, `8.2.2`, `8.2.1`, `8.2.0`
 - `8.1.3`, `8.1.2`, `8.1.1`, `8.1.0`
 - `8.0.20`, `8.0.19`, `8.0.18`, `8.0.17`, `8.0.16`, `8.0.15`, `8.0.14`, `8.0.13`, `8.0.12`, `8.0.11`, `8.0.10`, `8.0.9`, `8.0.8`, `8.0.7`, `8.0.6`, `8.0.5`, `8.0.4`, `8.0.3`, `8.0.2`, `8.0.1`, `8.0.0`
 - `7.3.4`, `7.3.3`
@@ -38,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `8.2.5`
+**Latest Version**: `8.2.6`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +mongodb.com@8.2.5 -- $SHELL -i
+sh <(curl https://pkgx.sh) +mongodb.com@8.2.6 -- $SHELL -i
 ```
 
 ## Dependencies

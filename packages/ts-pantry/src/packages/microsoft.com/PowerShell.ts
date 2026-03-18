@@ -3,7 +3,7 @@
  *
  * @domain `microsoft.com/PowerShell`
  * @programs `pwsh`
- * @version `7.5.5` (14 versions available)
+ * @version `7.6.0` (15 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install microsoft.com/PowerShell`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "pwsh"
  * console.log(pkg.description) // "PowerShell for every system!"
  * console.log(pkg.programs)    // ["pwsh"]
- * console.log(pkg.versions[0]) // "7.5.5" (latest)
+ * console.log(pkg.versions[0]) // "7.6.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/microsoft-com/PowerShell.md
@@ -77,6 +77,7 @@ export const microsoftcompowershellPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.6.0',
     '7.5.5',
     '7.5.4',
     '7.5.3',

@@ -3,7 +3,7 @@
  *
  * @domain `mongodb.com`
  * @programs `install_compass`, `mongod`, `mongos`
- * @version `8.2.5` (62 versions available)
+ * @version `8.2.6` (63 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mongodb.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "mongodb"
  * console.log(pkg.description) // "The MongoDB Database"
  * console.log(pkg.programs)    // ["install_compass", "mongod", ...]
- * console.log(pkg.versions[0]) // "8.2.5" (latest)
+ * console.log(pkg.versions[0]) // "8.2.6" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/mongodb-com.md
@@ -71,6 +71,7 @@ export const mongodbcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.2.6',
     '8.2.5',
     '8.2.4',
     '8.2.3',
