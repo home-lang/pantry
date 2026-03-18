@@ -25,9 +25,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 53 versions</summary>
+<summary>Show all 54 versions</summary>
 
 - `34.0.0`
+- `33.6.0`
 - `33.5.0`
 - `33.4.0`
 - `33.3.0`

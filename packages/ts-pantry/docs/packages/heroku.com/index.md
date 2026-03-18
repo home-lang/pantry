@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 43 versions</summary>
+<summary>Show all 44 versions</summary>
 
+- `11.0.0`
 - `10.17.0`
 - `10.16.0`
 - `10.15.1`, `10.15.0`
@@ -56,13 +57,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `10.17.0`
+**Latest Version**: `11.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +heroku.com@10.17.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +heroku.com@11.0.0 -- $SHELL -i
 ```
 
 ## Dependencies

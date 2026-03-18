@@ -3,7 +3,7 @@
  *
  * @domain `llvm.org/clang-format`
  * @programs `clang-format`, `git-clang-format`
- * @version `21.1.8` (43 versions available)
+ * @version `22.1.1` (45 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install llvm.org/clang-format`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "clang-format"
  * console.log(pkg.description) // "The LLVM Project is a collection of modular and..."
  * console.log(pkg.programs)    // ["clang-format", "git-clang-format"]
- * console.log(pkg.versions[0]) // "21.1.8" (latest)
+ * console.log(pkg.versions[0]) // "22.1.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/llvm-org/clang-format.md
@@ -80,6 +80,8 @@ export const llvmorgclangformatPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '22.1.1',
+    '22.1.0',
     '21.1.8',
     '21.1.7',
     '21.1.6',

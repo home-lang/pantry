@@ -3,7 +3,7 @@
  *
  * @domain `flutter.dev`
  * @programs `flutter`, `dart`
- * @version `3.41.4` (76 versions available)
+ * @version `3.41.5` (77 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install flutter.dev`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "flutter"
  * console.log(pkg.description) // "Flutter makes it easy and fast to build beautif..."
  * console.log(pkg.programs)    // ["flutter", "dart"]
- * console.log(pkg.versions[0]) // "3.41.4" (latest)
+ * console.log(pkg.versions[0]) // "3.41.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/flutter-dev.md
@@ -75,6 +75,7 @@ export const flutterdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.41.5',
     '3.41.4',
     '3.41.3',
     '3.41.2',

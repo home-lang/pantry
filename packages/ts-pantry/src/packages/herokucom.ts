@@ -3,7 +3,7 @@
  *
  * @domain `heroku.com`
  * @programs `heroku`
- * @version `10.17.0` (43 versions available)
+ * @version `11.0.0` (44 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install heroku.com`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "heroku"
  * console.log(pkg.description) // "CLI for Heroku"
  * console.log(pkg.programs)    // ["heroku"]
- * console.log(pkg.versions[0]) // "10.17.0" (latest)
+ * console.log(pkg.versions[0]) // "11.0.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/heroku-com.md
@@ -75,6 +75,7 @@ export const herokucomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '11.0.0',
     '10.17.0',
     '10.16.0',
     '10.15.1',

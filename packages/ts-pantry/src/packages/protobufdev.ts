@@ -3,7 +3,7 @@
  *
  * @domain `protobuf.dev`
  * @programs `protoc`
- * @version `34.0.0` (53 versions available)
+ * @version `34.0.0` (54 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install protobuf.dev`
@@ -78,6 +78,7 @@ export const protobufdevPackage = {
   */
   versions: [
     '34.0.0',
+    '33.6.0',
     '33.5.0',
     '33.4.0',
     '33.3.0',
