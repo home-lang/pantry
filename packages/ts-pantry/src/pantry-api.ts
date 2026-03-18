@@ -245,5 +245,118 @@ export function getInstallCommand(packages: string[], format: 'pkgx' | 'pantry' 
   return `pantry install ${packages.join(' ')}`
 }
 
+/**
+ * Information about a project dependency from the pantry directory
+ */
+export interface ProjectDependency {
+  /** Package name (e.g., '@stacksjs/cli', 'better-dx') */
+  name: string
+  /** Package version from its package.json */
+  version: string
+  /** Whether this is a workspace package */
+  isWorkspace: boolean
+  /** Whether this is a scoped package */
+  isScoped: boolean
+}
+
+/**
+ * Summary of a project's pantry dependencies
+ */
+export interface ProjectDependencies {
+  /** All discovered dependencies */
+  packages: ProjectDependency[]
+  /** Number of third-party (non-workspace) packages */
+  thirdPartyCount: number
+  /** Number of workspace packages */
+  workspaceCount: number
+  /** Total package count */
+  totalCount: number
+}
+
+/**
+ * Read project dependencies from the pantry directory and pantry.lock.
+ * This is a synchronous API suitable for use in STX server-side scripts.
+ *
+ * @param projectRoot Path to the project root (containing pantry/ and pantry.lock)
+ * @returns Project dependency information
+ *
+ * @example
+ * ```typescript
+ * const deps = readProjectDependencies('/path/to/project')
+ * console.log(`${deps.thirdPartyCount} third-party packages`)
+ * ```
+ */
+export function readProjectDependencies(projectRoot: string): ProjectDependencies {
+  const packages: ProjectDependency[] = []
+
+  // Read from the pantry directory (actual installed packages)
+  const pantryDir = path.join(projectRoot, 'pantry')
+  try {
+    const entries = fs.readdirSync(pantryDir, { withFileTypes: true })
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue
+
+      // Handle scoped packages (@scope/name)
+      if (entry.name.startsWith('@')) {
+        const scopeDir = path.join(pantryDir, entry.name)
+        try {
+          const scopedEntries = fs.readdirSync(scopeDir, { withFileTypes: true })
+          for (const scopedEntry of scopedEntries) {
+            if (!scopedEntry.isDirectory()) continue
+            const pkgName = `${entry.name}/${scopedEntry.name}`
+            const pkgJsonPath = path.join(scopeDir, scopedEntry.name, 'package.json')
+            const version = readPackageVersion(pkgJsonPath)
+            packages.push({
+              name: pkgName,
+              version,
+              isWorkspace: pkgName.startsWith('@stacksjs/'),
+              isScoped: true,
+            })
+          }
+        }
+        catch {
+          // Skip unreadable scope directories
+        }
+      }
+      else {
+        const pkgJsonPath = path.join(pantryDir, entry.name, 'package.json')
+        const version = readPackageVersion(pkgJsonPath)
+        packages.push({
+          name: entry.name,
+          version,
+          isWorkspace: false,
+          isScoped: false,
+        })
+      }
+    }
+  }
+  catch {
+    // pantry directory may not exist
+  }
+
+  packages.sort((a, b) => a.name.localeCompare(b.name))
+
+  const workspaceCount = packages.filter(p => p.isWorkspace).length
+  const thirdPartyCount = packages.length - workspaceCount
+
+  return {
+    packages,
+    thirdPartyCount,
+    workspaceCount,
+    totalCount: packages.length,
+  }
+}
+
+function readPackageVersion(pkgJsonPath: string): string {
+  try {
+    const content = fs.readFileSync(pkgJsonPath, 'utf-8')
+    const pkg = JSON.parse(content)
+    return pkg.version || '0.0.0'
+  }
+  catch {
+    return '0.0.0'
+  }
+}
+
 // Export types for external use
 export type { Dependency, DependencyResolutionResult, DependencyResolverOptions }
