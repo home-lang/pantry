@@ -272,6 +272,7 @@ const WorkspaceThreadContext = struct {
     shared_installer: *install.Installer,
     lockfile_packages: ?*const std.StringHashMap(lib.packages.LockfileEntry),
     lockfile_name_set: ?*const helpers.LockfileNameSet,
+    constraint_map: ?*const helpers.LockfileConstraintMap,
 
     fn worker(ctx: *WorkspaceThreadContext) void {
         while (true) {
@@ -280,7 +281,7 @@ const WorkspaceThreadContext = struct {
 
             // Skip packages that match lockfile and exist at destination (O(1) via name set)
             if (ctx.lockfile_name_set) |ns| {
-                if (helpers.canSkipFromLockfileWithNameSet(ns, ctx.deps[i].name, ctx.workspace_root, ctx.shared_installer.modules_dir)) {
+                if (helpers.canSkipFromLockfileWithNameSet(ns, ctx.deps[i].name, ctx.deps[i].version, ctx.constraint_map, ctx.workspace_root, ctx.shared_installer.modules_dir)) {
                     const clean = helpers.stripDisplayPrefix(ctx.deps[i].name);
                     ctx.results[i] = .{
                         .name = clean,
@@ -646,16 +647,20 @@ pub fn installWorkspaceCommandWithOptions(
         resolution_map.deinit();
     }
 
-    // Check if all packages can be skipped (lockfile + destination match)
+    // Check if all packages can be skipped (lockfile + destination match + version constraint match)
     // Build name set once for O(1) lookups instead of O(n) iteration per dep
     var ws_skipped_count: usize = 0;
     var ws_name_set: ?helpers.LockfileNameSet = null;
     defer if (ws_name_set) |*ns| ns.deinit();
+    var ws_constraint_map: ?helpers.LockfileConstraintMap = null;
+    defer if (ws_constraint_map) |*cm| cm.deinit();
     if (existing_lockfile) |*lf| {
         ws_name_set = helpers.buildLockfileNameSet(&lf.packages, allocator);
+        ws_constraint_map = helpers.buildConstraintMapFromWorkspaces(&lf.workspaces, allocator);
         if (ws_name_set) |*ns| {
+            const cm_ptr: ?*const helpers.LockfileConstraintMap = if (ws_constraint_map) |*cm| cm else null;
             for (all_deps) |dep| {
-                if (helpers.canSkipFromLockfileWithNameSet(ns, dep.name, workspace_root, options.modules_dir)) {
+                if (helpers.canSkipFromLockfileWithNameSet(ns, dep.name, dep.version, cm_ptr, workspace_root, options.modules_dir)) {
                     ws_skipped_count += 1;
                 }
             }
@@ -797,6 +802,7 @@ pub fn installWorkspaceCommandWithOptions(
             .shared_installer = &shared_installer,
             .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
             .lockfile_name_set = if (ws_name_set) |*ns| ns else null,
+            .constraint_map = if (ws_constraint_map) |*cm| cm else null,
         };
 
         // Spawn worker threads scaled to CPU count

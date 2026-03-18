@@ -462,6 +462,10 @@ pub fn resolveLinkVersion(allocator: std.mem.Allocator, version: []const u8) !?[
 /// Build once with `buildLockfileNameSet`, then use with `canSkipFromLockfileWithNameSet`.
 pub const LockfileNameSet = std.StringHashMap(void);
 
+/// Map of package name → version constraint from lockfile workspace entries.
+/// Used to detect when a version constraint in package.json has changed.
+pub const LockfileConstraintMap = std.StringHashMap([]const u8);
+
 /// Build a set of package names from lockfile entries for O(1) lookups.
 /// The lockfile keys are "name@resolved_version", so we extract the name part.
 /// Caller must call `deinit()` on the returned set when done.
@@ -478,15 +482,49 @@ pub fn buildLockfileNameSet(
     return name_set;
 }
 
+/// Build a map of package name → version constraint from lockfile workspace entries.
+/// Collects constraints from all workspace members' dependencies and devDependencies.
+/// The stored values are the original constraint strings (e.g., "^1.0.0") as recorded
+/// when the lockfile was written, NOT resolved versions.
+pub fn buildConstraintMapFromWorkspaces(
+    lockfile_workspaces: *const std.StringHashMap(lib.packages.WorkspaceLockEntry),
+    allocator: std.mem.Allocator,
+) LockfileConstraintMap {
+    var map = LockfileConstraintMap.init(allocator);
+    var ws_it = lockfile_workspaces.iterator();
+    while (ws_it.next()) |ws_entry| {
+        inline for (.{ "dependencies", "dev_dependencies" }) |field_name| {
+            if (@field(ws_entry.value_ptr.*, field_name)) |deps| {
+                var dep_it = deps.iterator();
+                while (dep_it.next()) |dep| {
+                    map.put(dep.key_ptr.*, dep.value_ptr.*) catch {};
+                }
+            }
+        }
+    }
+    return map;
+}
+
 /// Fast version of canSkipFromLockfile that uses a pre-built name set for O(1) lookup.
+/// When a constraint_map is provided, also verifies that the version constraint from
+/// the current package.json matches what was recorded in the lockfile.
 pub fn canSkipFromLockfileWithNameSet(
     name_set: *const LockfileNameSet,
     dep_name: []const u8,
+    dep_version: []const u8,
+    constraint_map: ?*const LockfileConstraintMap,
     proj_dir: []const u8,
     modules_dir: []const u8,
 ) bool {
     const clean_name = normalizePackageName(dep_name);
     if (!name_set.contains(clean_name)) return false;
+
+    // Check if version constraint has changed since lockfile was written
+    if (constraint_map) |cm| {
+        if (cm.get(clean_name)) |stored_constraint| {
+            if (!std.mem.eql(u8, stored_constraint, dep_version)) return false;
+        }
+    }
 
     // Check if destination directory actually exists
     var dest_buf: [std.fs.max_path_bytes]u8 = undefined;

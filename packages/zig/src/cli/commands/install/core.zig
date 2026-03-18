@@ -88,6 +88,33 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
         }
 
         if (all_exist) {
+            // Also check if any workspace member's package.json was modified after the lockfile.
+            // This detects bumped dependency versions, added/removed deps, etc.
+            const lockfile_mtime_ns: i128 = @as(i128, lockfile.generated_at) * 1_000_000_000;
+            var ws_dep_it = lockfile.workspaces.iterator();
+            while (ws_dep_it.next()) |ws_entry| {
+                const ws_rel_path = ws_entry.key_ptr.*;
+                var pkg_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+                const pkg_path = if (ws_rel_path.len == 0)
+                    std.fmt.bufPrint(&pkg_path_buf, "{s}/package.json", .{effective_dir}) catch continue
+                else
+                    std.fmt.bufPrint(&pkg_path_buf, "{s}/{s}/package.json", .{ effective_dir, ws_rel_path }) catch continue;
+                const stat = io_helper.statFile(pkg_path) catch continue;
+                if (stat.mtime > lockfile_mtime_ns) {
+                    return null; // package.json modified after lockfile — fall through to slow path
+                }
+            }
+
+            // Also check the root workspace file itself (may not be key "" in workspaces)
+            if (ws_path_alloc) |ws_file| {
+                const ws_stat = io_helper.statFile(ws_file) catch null;
+                if (ws_stat) |s| {
+                    if (s.mtime > lockfile_mtime_ns) {
+                        return null;
+                    }
+                }
+            }
+
             const end_ts = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
             const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
@@ -117,10 +144,12 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     // 4. Check all deps against lockfile + verify dirs exist (O(1) per dep via name set)
     var name_set = helpers.buildLockfileNameSet(&lockfile.packages, allocator);
     defer name_set.deinit();
+    var constraint_map = helpers.buildConstraintMapFromWorkspaces(&lockfile.workspaces, allocator);
+    defer constraint_map.deinit();
 
     var checked_count: usize = 0;
     for (deps) |dep| {
-        if (!helpers.canSkipFromLockfileWithNameSet(&name_set, dep.name, cwd, modules_dir)) {
+        if (!helpers.canSkipFromLockfileWithNameSet(&name_set, dep.name, dep.version, &constraint_map, cwd, modules_dir)) {
             return null; // At least one package needs work → fall through to slow path
         }
         checked_count += 1;
