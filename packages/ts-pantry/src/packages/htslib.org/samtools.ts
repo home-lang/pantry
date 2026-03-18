@@ -3,7 +3,7 @@
  *
  * @domain `htslib.org/samtools`
  * @programs `ace2sam`, `blast2sam.pl`, `bowtie2sam.pl`, `export2sam.pl`, `fasta-sanitize.pl`, ... (+17 more)
- * @version `1.23.0` (10 versions available)
+ * @version `1.23.1` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install htslib.org/samtools`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "samtools"
  * console.log(pkg.description) // "Tools (written in C using htslib) for manipulat..."
  * console.log(pkg.programs)    // ["ace2sam", "blast2sam.pl", ...]
- * console.log(pkg.versions[0]) // "1.23.0" (latest)
+ * console.log(pkg.versions[0]) // "1.23.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/htslib-org/samtools.md
@@ -91,7 +91,9 @@ export const htsliborgsamtoolsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.23.1',
     '1.23.0',
+    '1.22.2',
     '1.22.1',
     '1.22.0',
     '1.21.1',

@@ -27,10 +27,10 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 11 versions</summary>
 
-- `1.23.0`
-- `1.22.1`, `1.22.0`
+- `1.23.1`, `1.23.0`
+- `1.22.2`, `1.22.1`, `1.22.0`
 - `1.21.1`, `1.21.0`
 - `1.20.0`
 - `1.19.1`, `1.19.0`
@@ -38,13 +38,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.23.0`
+**Latest Version**: `1.23.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +htslib.org@1.23.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +htslib.org@1.23.1 -- $SHELL -i
 ```
 
 ## Dependencies

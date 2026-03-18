@@ -3,7 +3,7 @@
  *
  * @domain `htslib.org`
  * @programs `bgzip`, `htsfile`, `tabix`
- * @version `1.23.0` (9 versions available)
+ * @version `1.23.1` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install htslib.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "htslib"
  * console.log(pkg.description) // "C library for high-throughput sequencing data f..."
  * console.log(pkg.programs)    // ["bgzip", "htsfile", ...]
- * console.log(pkg.versions[0]) // "1.23.0" (latest)
+ * console.log(pkg.versions[0]) // "1.23.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/htslib-org.md
@@ -82,7 +82,9 @@ export const htsliborgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.23.1',
     '1.23.0',
+    '1.22.2',
     '1.22.1',
     '1.22.0',
     '1.21.1',

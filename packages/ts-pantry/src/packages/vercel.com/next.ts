@@ -3,7 +3,7 @@
  *
  * @domain `vercel.com/next`
  * @programs `next`
- * @version `16.1.7` (3 versions available)
+ * @version `16.2.0` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install vercel.com/next`
@@ -17,7 +17,7 @@
  * const pkg = pantry.vercelcomnext
  * console.log(pkg.name)        // "next"
  * console.log(pkg.programs)    // ["next"]
- * console.log(pkg.versions[0]) // "16.1.7" (latest)
+ * console.log(pkg.versions[0]) // "16.2.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/vercel-com/next.md
@@ -73,6 +73,7 @@ export const vercelcomnextPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '16.2.0',
     '16.1.7',
     '16.1.6',
     '15.5.13',
