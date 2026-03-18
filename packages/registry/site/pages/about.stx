@@ -11,24 +11,28 @@
       <div>
         <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">What We Are</h2>
         <p class="leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
-          pantry is a fast, modern package manager for your system. It lets you install, update, and manage pre-built binaries for open source tools &mdash; like curl, Python, Node.js, Go, and hundreds more &mdash; with a single command.
+          pantry is a fast, modern package manager that handles both system-level binaries and JavaScript/TypeScript packages. Install tools like curl, Python, Node.js, Go, and 1,600+ more as pre-built binaries &mdash; plus the entire npm ecosystem with 3M+ packages.
         </p>
         <p class="leading-relaxed mt-3" style="font-size: 0.9375rem; color: var(--fg-muted);">
-          Every package is built from source via <a href="https://github.com/pkgxdev/pantry" class="hvr-accent" style="color: var(--accent);">pkgx pantry</a> recipes, compiled for macOS and Linux (both x86_64 and ARM64), and distributed as tarballs through our CDN-backed registry.
+          System packages are built from source via <a href="https://github.com/pkgxdev/pantry" class="hvr-accent" style="color: var(--accent);">pkgx pantry</a> recipes, compiled for macOS and Linux (both x86_64 and ARM64), and distributed as tarballs through our CDN-backed registry. npm packages are resolved and installed natively through the full npm registry.
         </p>
       </div>
 
-      <!-- What we are not -->
+      <!-- What makes us different -->
       <div>
-        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">What We Are Not</h2>
+        <h2 class="text-xs uppercase font-medium mb-4" style="letter-spacing: 0.15em; color: var(--fg-subtle);">What Makes Us Different</h2>
         <div class="flex flex-col gap-3">
           <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
             <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
-            <span><strong style="color: var(--fg);">Not a language package manager</strong> &mdash; pantry installs system-level binaries, not library dependencies. Use npm, pip, cargo, or go modules for language packages.</span>
+            <span><strong style="color: var(--fg);">One tool for everything</strong> &mdash; pantry manages both system-level binaries (curl, Python, Redis) and JavaScript/TypeScript packages from npm. No need to juggle Homebrew, nvm, and npm separately.</span>
           </div>
           <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
             <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
-            <span><strong style="color: var(--fg);">Not a replacement for Homebrew</strong> &mdash; pantry focuses on fast, reproducible binary installation without compiling from source on your machine.</span>
+            <span><strong style="color: var(--fg);">Pre-built, not compiled</strong> &mdash; system packages are pre-built in CI and downloaded as binaries. No compiling from source on your machine, no Xcode CLT required.</span>
+          </div>
+          <div class="flex gap-3 leading-relaxed" style="font-size: 0.9375rem; color: var(--fg-muted);">
+            <span class="shrink-0" style="color: var(--fg-subtle);">&mdash;</span>
+            <span><strong style="color: var(--fg);">Full npm compatibility</strong> &mdash; pantry acts as a drop-in npm client with access to the entire npm registry. Install, publish, and manage JS/TS packages with workspace and monorepo support.</span>
           </div>
         </div>
       </div>

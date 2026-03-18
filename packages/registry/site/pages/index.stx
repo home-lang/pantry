@@ -9,11 +9,9 @@
       a fast, modern package manager for your system
     </p>
 
-    @if (totalPackages > 0)
     <p class="mb-10" style="font-size: 0.875rem; color: var(--fg-subtle);">
-      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> packages available
+      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> system packages &middot; <span class="font-semibold font-mono" style="color: var(--green);">3M+</span> npm packages
     </p>
-    @endif
 
     <!-- Search -->
     <form action="/search" method="get" class="flex gap-2 max-w-md mx-auto mb-6 animate-fade-in-delay">
@@ -48,25 +46,23 @@
     <div class="grid gap-4" style="grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));">
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--accent);">{{ totalPackages }}+</p>
-        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Packages</p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">System Packages</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">pre-built binaries</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
-        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--green);">
-          @if (stats.totalDownloads)
-          {{ stats.formattedDownloads }}
-          @else
-          --
-          @endif
-        </p>
-        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Downloads (30d)</p>
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--green);">3M+</p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">npm Packages</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">full npm registry</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">4</p>
         <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Platforms</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS &amp; Linux</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--purple);">2</p>
         <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Architectures</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">ARM64 &amp; x86_64</p>
       </div>
     </div>
   </div>
@@ -90,7 +86,7 @@
           <span class="font-mono font-bold" style="color: var(--accent);">2</span>
         </div>
         <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Add Packages</h3>
-        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Install any package from the registry. Pre-built, fast downloads.</p>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">System binaries from the registry or JS/TS packages from npm. One tool for everything.</p>
         <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">pantry install bun.sh</code>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-6 text-center">
@@ -124,9 +120,9 @@
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
-          <span style="color: var(--accent);">&#128230;</span> Pre-built
+          <span style="color: var(--accent);">&#128230;</span> Universal
         </h3>
-        <p style="font-size: 0.8125rem; color: var(--fg-muted);">No compiling on your machine. Every package is pre-built from source in CI and served from CDN.</p>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">System binaries are pre-built and served from CDN. npm packages are resolved and installed natively.</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">

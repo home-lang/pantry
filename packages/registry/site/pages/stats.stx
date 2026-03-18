@@ -12,21 +12,23 @@
     <!-- Summary stats -->
     <div class="grid gap-4 mb-10" style="grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));">
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
-        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Total Packages</p>
-        <p class="text-3xl font-bold font-mono" style="color: var(--accent);">{{ stats.totalPackages }}</p>
+        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">System Packages</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--accent);">{{ stats.totalPackages }}+</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">pre-built binaries</p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">npm Packages</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--green);">3M+</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">full npm registry</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Downloads (30d)</p>
-        <p class="text-3xl font-bold font-mono" style="color: var(--green);">{{ stats.formatted30d }}</p>
-      </div>
-      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
-        <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Downloads (90d)</p>
-        <p class="text-3xl font-bold font-mono" style="color: var(--yellow);">{{ stats.formatted90d }}</p>
+        <p class="text-3xl font-bold font-mono" style="color: var(--yellow);">{{ stats.formatted30d }}</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <p class="text-xs uppercase tracking-widest mb-2" style="color: var(--fg-subtle);">Platforms</p>
         <p class="text-3xl font-bold font-mono" style="color: var(--purple);">4</p>
-        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS + Linux (ARM64 & x86_64)</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS &amp; Linux (ARM64 &amp; x86_64)</p>
       </div>
     </div>
 
