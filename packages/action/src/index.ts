@@ -190,6 +190,8 @@ export async function run(): Promise<void> {
       packages: core.getInput('packages') || '',
       configPath: core.getInput('config-path') || 'pantry.config.ts',
       setupOnly: core.getInput('install') !== 'true',
+      publish: core.getInput('publish') || '',
+      registryUrl: core.getInput('registry-url') || 'https://registry.pantry.dev',
     }
 
     const platform = detectPlatform()
@@ -307,11 +309,131 @@ export async function run(): Promise<void> {
       // bun not in deps
     }
 
+    // ── Publish ──
+    if (inputs.publish) {
+      await publishPackage(inputs.publish, inputs.registryUrl, cwd)
+    }
+
     core.info('Setup complete')
   }
   catch (error) {
     core.setFailed(error instanceof Error ? error.message : String(error))
   }
+}
+
+/**
+ * Publish a package to the pantry registry.
+ * - "zig": reads build.zig.zon, creates tarball, POSTs to /zig/publish
+ * - "npm": runs `pantry publish --npm --access public`
+ */
+async function publishPackage(type: string, registryUrl: string, cwd: string): Promise<void> {
+  const token = process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
+  if (!token) {
+    throw new Error('PANTRY_TOKEN environment variable is required for publishing')
+  }
+
+  if (type === 'zig') {
+    await publishZigPackage(registryUrl, token, cwd)
+  }
+  else if (type === 'npm') {
+    core.startGroup('Publishing to npm via pantry')
+    await exec.exec('pantry', ['publish', '--npm', '--access', 'public'])
+    core.endGroup()
+  }
+  else {
+    throw new Error(`Unknown publish type: "${type}". Use "zig" or "npm".`)
+  }
+}
+
+async function publishZigPackage(registryUrl: string, token: string, cwd: string): Promise<void> {
+  core.startGroup('Publishing Zig package')
+
+  const zonPath = path.join(cwd, 'build.zig.zon')
+  if (!fs.existsSync(zonPath)) {
+    throw new Error('build.zig.zon not found in current directory')
+  }
+
+  const zonContent = fs.readFileSync(zonPath, 'utf-8')
+
+  // Extract name and version from build.zig.zon
+  // .name = .package_name or .name = "package-name"
+  const nameMatch = zonContent.match(/\.name\s*=\s*(?:\.(\w+)|"([^"]+)")/)
+  const versionMatch = zonContent.match(/\.version\s*=\s*"([^"]+)"/)
+
+  if (!nameMatch) throw new Error('Could not parse .name from build.zig.zon')
+  if (!versionMatch) throw new Error('Could not parse .version from build.zig.zon')
+
+  const name = nameMatch[1] || nameMatch[2]
+  const version = versionMatch[1]
+  core.info(`Package: ${name}@${version}`)
+
+  // Collect paths from build.zig.zon .paths field
+  const pathsMatch = zonContent.match(/\.paths\s*=\s*\.?\{([^}]+)\}/)
+  let includePaths: string[] = []
+  if (pathsMatch) {
+    includePaths = pathsMatch[1]
+      .split(',')
+      .map(p => p.trim().replace(/^"/, '').replace(/"$/, '').trim())
+      .filter(p => p.length > 0)
+  }
+
+  // Create tarball
+  const tarballName = `${name}-${version}.tar.gz`
+  const tarballPath = path.join(os.tmpdir(), tarballName)
+
+  if (includePaths.length > 0) {
+    // Use explicit paths from build.zig.zon
+    core.info(`Including: ${includePaths.join(', ')}`)
+    await exec.exec('tar', ['czf', tarballPath, ...includePaths])
+  }
+  else {
+    // Fallback: include common zig package files
+    await exec.exec('tar', ['czf', tarballPath, 'build.zig', 'build.zig.zon', 'src'])
+  }
+
+  const stat = fs.statSync(tarballPath)
+  core.info(`Tarball: ${tarballName} (${(stat.size / 1024).toFixed(1)} KB)`)
+
+  // Upload to registry via multipart POST
+  const url = `${registryUrl}/zig/publish`
+  core.info(`Publishing to ${url}`)
+
+  // Use curl for multipart upload (simpler than FormData in Node)
+  let output = ''
+  await exec.exec('curl', [
+    '-s', '-f',
+    '-X', 'POST', url,
+    '-H', `Authorization: Bearer ${token}`,
+    '-F', `tarball=@${tarballPath};filename=${tarballName}`,
+    '-F', `manifest=${zonContent}`,
+  ], {
+    listeners: { stdout: (d: Buffer) => { output += d.toString() } },
+  })
+
+  // Clean up
+  fs.unlinkSync(tarballPath)
+
+  try {
+    const result = JSON.parse(output)
+    if (result.success) {
+      core.info(`Published ${name}@${version}`)
+      core.info(`Hash: ${result.hash}`)
+      core.info(`URL: ${result.tarballUrl}`)
+    }
+    else {
+      throw new Error(result.error || 'Publish failed')
+    }
+  }
+  catch (e) {
+    if (output.includes('already exists')) {
+      core.info(`${name}@${version} already published — skipping`)
+    }
+    else {
+      throw e
+    }
+  }
+
+  core.endGroup()
 }
 
 run()

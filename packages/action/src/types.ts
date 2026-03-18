@@ -3,6 +3,8 @@ export interface ActionInputs {
   packages: string
   configPath: string
   setupOnly: boolean
+  publish: string
+  registryUrl: string
 }
 
 export interface Platform {

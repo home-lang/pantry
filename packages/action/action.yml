@@ -23,6 +23,14 @@ inputs:
     description: Run pantry install after setup (reads pantry.jsonc/package.json)
     required: false
     default: 'true'
+  publish:
+    description: Publish package to pantry registry. Set to "zig" for Zig packages (reads build.zig.zon) or "npm" for JS/TS packages.
+    required: false
+    default: ''
+  registry-url:
+    description: Pantry registry URL for publishing
+    required: false
+    default: 'https://registry.pantry.dev'
 
 outputs:
   pantry-path:
