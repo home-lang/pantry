@@ -14,7 +14,7 @@
           pantry is a fast, modern package manager that handles both system-level binaries and JavaScript/TypeScript packages. Install tools like curl, Python, Node.js, Go, and 1,600+ more as pre-built binaries &mdash; plus the entire npm ecosystem with 3M+ packages.
         </p>
         <p class="leading-relaxed mt-3" style="font-size: 0.9375rem; color: var(--fg-muted);">
-          System packages are built from source via <a href="https://github.com/pkgxdev/pantry" class="hvr-accent" style="color: var(--accent);">pkgx pantry</a> recipes, compiled for macOS and Linux (both x86_64 and ARM64), and distributed as tarballs through our CDN-backed registry. npm packages are resolved and installed natively through the full npm registry.
+          System packages are built from source via <a href="https://github.com/pkgxdev/pantry" class="hvr-accent" style="color: var(--accent);">pkgx pantry</a> recipes, compiled for macOS, Linux, and Windows (both x86_64 and ARM64), and distributed as tarballs through our CDN-backed registry. npm packages are resolved and installed natively through the full npm registry.
         </p>
       </div>
 

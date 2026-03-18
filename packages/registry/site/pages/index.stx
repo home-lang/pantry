@@ -65,9 +65,9 @@
         <p class="text-xs mt-1" style="color: var(--fg-subtle);">via <a href="/search?q=&type=php" class="hvr-accent" style="color: var(--fg-subtle);">Packagist</a></p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
-        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">4</p>
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">6</p>
         <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Platforms</p>
-        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS &amp; Linux &middot; ARM64 &amp; x86_64</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS, Linux &amp; Windows &middot; ARM64 &amp; x86_64</p>
       </div>
     </div>
   </div>
@@ -121,7 +121,7 @@
         <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
           <span style="color: var(--accent);">&#127760;</span> Cross-platform
         </h3>
-        <p style="font-size: 0.8125rem; color: var(--fg-muted);">macOS and Linux, both x86_64 and ARM64. Same packages, same commands everywhere.</p>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">macOS, Linux, and Windows — both x86_64 and ARM64. Same packages, same commands everywhere.</p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
         <h3 class="font-medium mb-2 flex items-center gap-2" style="font-size: 0.9375rem;">
