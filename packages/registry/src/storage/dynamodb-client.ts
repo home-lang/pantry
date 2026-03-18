@@ -176,6 +176,16 @@ export class DynamoDBClient {
   }
 
   /**
+   * Delete an item from a table
+   */
+  async deleteItem(params: {
+    TableName: string
+    Key: Record<string, AttributeValue>
+  }): Promise<void> {
+    await this.request('DeleteItem', params)
+  }
+
+  /**
    * Update an item in a table
    */
   async updateItem(params: {

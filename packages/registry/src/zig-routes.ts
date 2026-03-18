@@ -77,6 +77,18 @@ export async function handleZigRoutes(
     return handleZigPublish(req, storage, baseUrl, corsHeaders)
   }
 
+  // DELETE /zig/packages/{name}
+  const deleteMatch = zigPath.match(/^\/packages\/([^/]+)$/)
+  if (deleteMatch && req.method === 'DELETE') {
+    const authResult = validateToken(req.headers.get('authorization'))
+    if (!authResult.valid) {
+      return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
+    }
+    const packageName = decodeURIComponent(deleteMatch[1])
+    await storage.deletePackage(packageName)
+    return Response.json({ success: true, message: `Deleted ${packageName}` }, { headers: corsHeaders })
+  }
+
   // Package routes: /zig/packages/{name}...
   const packageMatch = zigPath.match(/^\/packages\/([^/]+)(?:\/(.+))?$/)
   if (packageMatch) {

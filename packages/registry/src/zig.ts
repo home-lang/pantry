@@ -175,6 +175,8 @@ export interface ZigPackageStorage {
   exists(name: string, version: string): Promise<boolean>
   downloadTarball(name: string, version: string): Promise<ArrayBuffer | null>
   getByHash(hash: string): Promise<{ name: string, version: string, tarballUrl: string } | null>
+  /** Delete a package and all its versions */
+  deletePackage(name: string): Promise<void>
   /** Return total number of published Zig packages */
   count(): Promise<number>
 }
@@ -288,6 +290,19 @@ export class InMemoryZigStorage implements ZigPackageStorage {
       name: info.name,
       version: info.version,
       tarballUrl: metadata.tarballUrl,
+    }
+  }
+
+  async deletePackage(name: string): Promise<void> {
+    const record = this.packages.get(name)
+    if (record) {
+      for (const version of Object.keys(record.versions)) {
+        const key = `${name}@${version}`
+        this.tarballs.delete(key)
+        const meta = record.versions[version]
+        if (meta?.hash) this.hashIndex.delete(meta.hash)
+      }
+      this.packages.delete(name)
     }
   }
 }
@@ -512,6 +527,38 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
     if (!result.Item) return null
     const d = this.unmarshal(result.Item)
     return { name: d.name, version: d.version, tarballUrl: d.tarballUrl }
+  }
+
+  async deletePackage(name: string): Promise<void> {
+    // Get all version records for this package
+    const result = await this.db.query({
+      TableName: this.tableName,
+      KeyConditionExpression: 'PK = :pk',
+      ExpressionAttributeValues: {
+        ':pk': { S: `ZIG_PACKAGE#${name}` },
+      },
+    })
+
+    // Delete each version's hash index and S3 tarball
+    for (const item of result.Items) {
+      const d = this.unmarshal(item)
+      if (d.hash) {
+        await this.db.deleteItem({
+          TableName: this.tableName,
+          Key: { PK: { S: `ZIG_HASH#${d.hash}` }, SK: { S: 'ZIG_HASH' } },
+        })
+      }
+      if (d.version) {
+        const s3Key = this.s3Key(name, d.version)
+        try { await this.s3.deleteObject(this.bucket, s3Key) }
+        catch { /* ignore missing */ }
+      }
+      // Delete the DynamoDB record (METADATA or VERSION#x.y.z)
+      await this.db.deleteItem({
+        TableName: this.tableName,
+        Key: { PK: { S: `ZIG_PACKAGE#${name}` }, SK: item.SK },
+      })
+    }
   }
 }
 
