@@ -49,6 +49,7 @@ export {
   generateFetchCommand,
   createZigStorage,
   InMemoryZigStorage,
+  DynamoDBZigStorage,
 } from './zig'
 export type {
   ZigManifest,
