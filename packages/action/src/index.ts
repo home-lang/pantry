@@ -217,8 +217,14 @@ export async function run(): Promise<void> {
     core.info(`pantry ${ver.trim() || resolvedVersion}`)
     core.endGroup()
 
-    if (inputs.setupOnly && !inputs.packages)
+    // If setup-only with no packages, skip to publish (if any)
+    if (inputs.setupOnly && !inputs.packages) {
+      if (inputs.publish) {
+        await publishPackage(inputs.publish, inputs.registryUrl, cwd)
+      }
+      core.info('Setup complete')
       return
+    }
 
     // ── Install deps with caching ──
     const lockfile = findLockfile()
@@ -356,14 +362,14 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   const zonContent = fs.readFileSync(zonPath, 'utf-8')
 
   // Extract name and version from build.zig.zon
-  // .name = .package_name or .name = "package-name"
-  const nameMatch = zonContent.match(/\.name\s*=\s*(?:\.(\w+)|"([^"]+)")/)
+  // .name = .package_name or .name = .@"package-name" or .name = "package-name"
+  const nameMatch = zonContent.match(/\.name\s*=\s*(?:\.@"([^"]+)"|\.(\w+)|"([^"]+)")/)
   const versionMatch = zonContent.match(/\.version\s*=\s*"([^"]+)"/)
 
   if (!nameMatch) throw new Error('Could not parse .name from build.zig.zon')
   if (!versionMatch) throw new Error('Could not parse .version from build.zig.zon')
 
-  const name = nameMatch[1] || nameMatch[2]
+  const name = nameMatch[1] || nameMatch[2] || nameMatch[3]
   const version = versionMatch[1]
   core.info(`Package: ${name}@${version}`)
 
