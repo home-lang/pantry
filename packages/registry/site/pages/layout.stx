@@ -52,13 +52,27 @@
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F4E6;</text></svg>" />
 
+  <!-- OpenSearch: lets browsers offer pantry.dev as a search engine -->
+  <link rel="search" type="application/opensearchdescription+xml" title="pantry" href="/opensearch.xml" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <!-- Prevent FOUC: apply saved theme before paint -->
+  <!-- Prevent FOUC: apply saved theme + accent color before paint -->
   <script client>
-    (function(){var t=localStorage.getItem('pantry-theme');if(t==='light')document.documentElement.dataset.theme='light'})()
+    (function(){
+      var t=localStorage.getItem('pantry-theme');
+      if(t==='system'){var d=window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.dataset.theme=d?'dark':'light'}
+      else if(t==='light'){document.documentElement.dataset.theme='light'}
+      var a=localStorage.getItem('pantry-accent');
+      if(a){
+        var m={blue:['oklch(0.787 0.128 230.318)','oklch(0.55 0.18 230.318)'],purple:['oklch(0.7 0.15 300)','oklch(0.55 0.15 300)'],green:['oklch(0.723 0.15 155)','oklch(0.5 0.17 155)'],amber:['oklch(0.795 0.15 85)','oklch(0.6 0.15 85)'],red:['oklch(0.637 0.2 25)','oklch(0.5 0.2 25)'],pink:['oklch(0.7 0.15 350)','oklch(0.55 0.15 350)'],teal:['oklch(0.75 0.12 190)','oklch(0.5 0.15 190)'],orange:['oklch(0.75 0.15 55)','oklch(0.55 0.15 55)']};
+        var c=m[a];if(c){var isDark=(document.documentElement.dataset.theme||'dark')==='dark';document.documentElement.style.setProperty('--accent',isDark?c[0]:c[1])}
+      }
+      if(localStorage.getItem('pantry-compact')==='true')document.documentElement.classList.add('compact');
+      if(localStorage.getItem('pantry-animations')==='false')document.documentElement.classList.add('no-animations');
+    })()
   </script>
 
   <style>
@@ -181,6 +195,75 @@
     /* Sort select */
     .sort-select { appearance: none; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 2rem 0.375rem 0.75rem; color: var(--fg); font-size: 0.8125rem; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; }
     .sort-select:focus { border-color: var(--accent); outline: none; }
+
+    /* Tooltips */
+    [data-tooltip] { position: relative; }
+    [data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(4px); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.6875rem; color: var(--fg-muted); white-space: nowrap; pointer-events: none; opacity: 0; transition: all 0.15s ease; z-index: 60; }
+    [data-tooltip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Collapsible sections */
+    .collapsible-toggle { cursor: pointer; user-select: none; }
+    .collapsible-toggle .collapse-icon { transition: transform 0.2s ease; }
+    .collapsible-toggle.collapsed .collapse-icon { transform: rotate(-90deg); }
+    .collapsible-content { overflow: hidden; transition: max-height 0.3s ease, opacity 0.2s ease; }
+    .collapsible-content.collapsed { max-height: 0 !important; opacity: 0; padding-top: 0 !important; padding-bottom: 0 !important; }
+
+    /* Sticky package header */
+    .pkg-sticky-header { position: sticky; top: 3.5rem; z-index: 40; background: color-mix(in oklch, var(--bg), transparent 5%); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0.625rem 1.5rem; transform: translateY(-100%); opacity: 0; pointer-events: none; transition: all 0.2s ease; }
+    .pkg-sticky-header.visible { transform: translateY(0); opacity: 1; pointer-events: auto; }
+
+    /* Instant search dropdown */
+    .search-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.5rem; max-height: 20rem; overflow-y: auto; z-index: 60; box-shadow: 0 8px 24px oklch(0 0 0 / 0.2); display: none; }
+    .search-dropdown.open { display: block; }
+    .search-dropdown-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.8125rem; cursor: pointer; transition: background 0.1s; }
+    .search-dropdown-item:hover, .search-dropdown-item.highlighted { background: var(--bg-muted); }
+    .search-dropdown-item .item-name { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .search-dropdown-item .item-desc { color: var(--fg-subtle); font-size: 0.75rem; margin-left: auto; max-width: 50%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+
+    /* Pagination */
+    .pagination { display: flex; align-items: center; gap: 0.25rem; }
+    .pagination a, .pagination span { display: inline-flex; align-items: center; justify-content: center; min-width: 2rem; height: 2rem; padding: 0 0.5rem; border-radius: 0.375rem; font-size: 0.8125rem; font-family: 'JetBrains Mono', monospace; transition: all 0.15s; }
+    .pagination a { color: var(--fg-muted); border: 1px solid var(--border); }
+    .pagination a:hover { border-color: var(--border-hover); color: var(--fg); background: var(--bg-muted); }
+    .pagination .active { background: var(--accent); color: var(--bg); border: 1px solid var(--accent); }
+    .pagination .ellipsis { color: var(--fg-subtle); border: none; }
+
+    /* Table view for search */
+    .search-table { width: 100%; border-collapse: collapse; }
+    .search-table th { text-align: left; padding: 0.625rem 0.75rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 500; color: var(--fg-subtle); border-bottom: 1px solid var(--border); }
+    .search-table td { padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--border); font-size: 0.8125rem; }
+    .search-table tr:hover td { background: var(--bg-muted); }
+    .search-table .col-name { font-family: 'JetBrains Mono', monospace; font-weight: 500; }
+    .search-table .col-downloads { font-family: 'JetBrains Mono', monospace; text-align: right; color: var(--fg-muted); }
+    .search-table .col-version { font-family: 'JetBrains Mono', monospace; color: var(--fg-subtle); font-size: 0.75rem; }
+    .search-table .col-platform { text-align: right; }
+
+    /* Filter chips */
+    .filter-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .filter-chip { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.25rem 0.625rem; background: color-mix(in oklch, var(--accent), transparent 85%); border: 1px solid color-mix(in oklch, var(--accent), transparent 60%); border-radius: 99px; font-size: 0.6875rem; color: var(--accent); }
+    .filter-chip button { background: none; border: none; color: inherit; cursor: pointer; padding: 0; display: flex; }
+
+    /* Share button */
+    .share-btn { cursor: pointer; background: none; border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 0.75rem; color: var(--fg-subtle); font-size: 0.75rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.375rem; }
+    .share-btn:hover { border-color: var(--border-hover); color: var(--fg-muted); }
+    .share-btn.shared { border-color: var(--green); color: var(--green); }
+
+    /* Compact mode */
+    .compact section { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .compact .gap-3 { gap: 0.5rem; }
+    .compact .gap-4 { gap: 0.625rem; }
+    .compact .mb-8 { margin-bottom: 1rem; }
+    .compact .mb-6 { margin-bottom: 0.75rem; }
+    .compact .py-12 { padding-top: 1.5rem; }
+    .compact .pb-20 { padding-bottom: 2rem; }
+
+    /* No-animations mode */
+    .no-animations .animate-fade-in, .no-animations .animate-fade-in-delay, .no-animations .animate-fade-in-delay-2 { animation: none !important; }
+    .no-animations * { transition-duration: 0s !important; }
+
+    /* Export button */
+    .export-btn { cursor: pointer; background: none; border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 0.75rem; color: var(--fg-subtle); font-size: 0.75rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.375rem; }
+    .export-btn:hover { border-color: var(--border-hover); color: var(--fg-muted); }
   </style>
 </head>
 <body>
@@ -196,24 +279,35 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
       </button>
       <nav class="header-nav flex items-center gap-6 text-sm" aria-label="main navigation">
-        <form action="/search" method="get" class="flex">
+        <form action="/search" method="get" class="flex" style="position: relative;" id="header-search-form">
           <input
             type="text"
             name="q"
             placeholder="search packages..."
             aria-label="Search packages"
+            autocomplete="off"
             class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 w-60 outline-none transition-colors focus:border-[var(--accent)]"
             style="color: var(--fg); font-size: 0.8125rem;"
+            id="header-search-input"
           />
+          <kbd class="hidden sm:inline-flex absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--bg-muted)] border border-[var(--border)] rounded px-1 py-0.5 pointer-events-none" style="font-size: 0.5625rem; color: var(--fg-subtle);" id="header-search-kbd">/</kbd>
+          <div class="search-dropdown" id="header-search-dropdown" role="listbox"></div>
         </form>
-        <a href="/stats" class="hvr-fg transition-colors" style="color: var(--fg-muted);">stats</a>
-        <a href="/compare" class="hvr-fg transition-colors" style="color: var(--fg-muted);">compare</a>
+        <a href="/stats" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="View stats (t)">stats</a>
+        <a href="/compare" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Compare packages (c)">compare</a>
         <a href="/docs" class="hvr-fg transition-colors" style="color: var(--fg-muted);">docs</a>
         <a href="/about" class="hvr-fg transition-colors" style="color: var(--fg-muted);">about</a>
-        <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">github</a>
+        <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+
+        <!-- Settings -->
+        <a href="/settings" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Settings (,)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </a>
 
         <!-- Theme toggle -->
-        <button class="theme-toggle" aria-label="Toggle theme" id="theme-toggle">
+        <button class="theme-toggle" aria-label="Toggle theme" id="theme-toggle" data-tooltip="Toggle theme (d)">
           <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         </button>
@@ -235,11 +329,12 @@
           <p class="text-xs mt-2" style="color: var(--fg-subtle);">built by <a href="https://stacksjs.com" class="hvr-accent transition-colors" style="color: var(--accent);">Stacks.js</a></p>
         </div>
         <div class="flex flex-col items-end gap-3">
-          <nav class="flex gap-6" style="font-size: 0.8125rem; color: var(--fg-muted);" aria-label="footer navigation">
+          <nav class="flex flex-wrap gap-6" style="font-size: 0.8125rem; color: var(--fg-muted);" aria-label="footer navigation">
             <a href="/stats" class="hvr-fg transition-colors">stats</a>
             <a href="/compare" class="hvr-fg transition-colors">compare</a>
             <a href="/docs" class="hvr-fg transition-colors">docs</a>
             <a href="/about" class="hvr-fg transition-colors">about</a>
+            <a href="/settings" class="hvr-fg transition-colors">settings</a>
             <a href="/privacy" class="hvr-fg transition-colors">privacy</a>
             <a href="/accessibility" class="hvr-fg transition-colors">accessibility</a>
             <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors">source</a>
@@ -289,6 +384,14 @@
           <kbd class="shortcut-key">d</kbd>
         </div>
         <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Open settings</span>
+          <kbd class="shortcut-key">,</kbd>
+        </div>
+        <div class="shortcut-row">
+          <span style="font-size: 0.8125rem; color: var(--fg-muted);">Go to docs</span>
+          <kbd class="shortcut-key">g d</kbd>
+        </div>
+        <div class="shortcut-row">
           <span style="font-size: 0.8125rem; color: var(--fg-muted);">Close dialog</span>
           <kbd class="shortcut-key">Esc</kbd>
         </div>
@@ -314,22 +417,36 @@
       })
     }
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts (with chord support for g+d)
+    var _pendingChord = ''
     document.addEventListener('keydown', function(e) {
+      if (localStorage.getItem('pantry-shortcuts') === 'false') return
       var tag = document.activeElement && document.activeElement.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
 
       var dialog = document.getElementById('shortcuts-dialog')
 
-      if (e.key === 'Escape') {
-        if (dialog) dialog.classList.remove('open')
+      // Handle chord sequences
+      if (_pendingChord === 'g') {
+        _pendingChord = ''
+        if (e.key === 'd') { window.location.href = '/docs'; return }
         return
       }
-      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.querySelector('input[name="q"]'); if (si) si.focus(); return }
+
+      if (e.key === 'Escape') {
+        if (dialog) dialog.classList.remove('open')
+        // Close search dropdown
+        var dd = document.getElementById('header-search-dropdown')
+        if (dd) dd.classList.remove('open')
+        return
+      }
+      if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) si.focus(); return }
       if (e.key === '?') { if (dialog) dialog.classList.add('open'); return }
       if (e.key === 'h') { window.location.href = '/'; return }
       if (e.key === 'c') { window.location.href = '/compare'; return }
       if (e.key === 't') { window.location.href = '/stats'; return }
+      if (e.key === ',') { window.location.href = '/settings'; return }
+      if (e.key === 'g') { _pendingChord = 'g'; setTimeout(function() { _pendingChord = '' }, 1000); return }
       if (e.key === 'd') { var html = document.documentElement; var c = html.dataset.theme || 'dark'; var n = c === 'dark' ? 'light' : 'dark'; html.dataset.theme = n; localStorage.setItem('pantry-theme', n); return }
     })
 
@@ -352,11 +469,92 @@
       var text = btn.getAttribute('data-copy')
       if (!text) return
       navigator.clipboard.writeText(text).then(function() {
+        var orig = btn.textContent
         btn.textContent = 'copied!'
         btn.classList.add('copied')
-        setTimeout(function() { btn.textContent = 'copy'; btn.classList.remove('copied') }, 2000)
+        setTimeout(function() { btn.textContent = orig || 'copy'; btn.classList.remove('copied') }, 2000)
       })
     })
+
+    // Share buttons
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('.share-btn')
+      if (!btn) return
+      var url = btn.getAttribute('data-share') || window.location.href
+      navigator.clipboard.writeText(url).then(function() {
+        var orig = btn.innerHTML
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> copied!'
+        btn.classList.add('shared')
+        setTimeout(function() { btn.innerHTML = orig; btn.classList.remove('shared') }, 2000)
+      })
+    })
+
+    // Collapsible sections
+    document.addEventListener('click', function(e) {
+      var toggle = e.target.closest('.collapsible-toggle')
+      if (!toggle) return
+      var target = document.getElementById(toggle.getAttribute('data-target'))
+      if (!target) return
+      toggle.classList.toggle('collapsed')
+      target.classList.toggle('collapsed')
+    })
+
+    // Instant search (header)
+    ;(function() {
+      var input = document.getElementById('header-search-input')
+      var dropdown = document.getElementById('header-search-dropdown')
+      var kbd = document.getElementById('header-search-kbd')
+      if (!input || !dropdown) return
+
+      var debounceTimer = null
+      var highlightIdx = -1
+      var currentResults = []
+
+      input.addEventListener('focus', function() {
+        if (kbd) kbd.style.display = 'none'
+      })
+      input.addEventListener('blur', function() {
+        if (kbd) kbd.style.display = ''
+        setTimeout(function() { dropdown.classList.remove('open') }, 200)
+      })
+
+      input.addEventListener('input', function() {
+        var q = this.value.trim()
+        if (q.length < 2) { dropdown.classList.remove('open'); return }
+        clearTimeout(debounceTimer)
+        debounceTimer = setTimeout(function() {
+          fetch('/search?q=' + encodeURIComponent(q) + '&format=json&limit=8')
+            .then(function(r) { return r.json() })
+            .then(function(data) {
+              currentResults = data.results || []
+              highlightIdx = -1
+              if (currentResults.length === 0) { dropdown.classList.remove('open'); return }
+              dropdown.innerHTML = currentResults.map(function(r, i) {
+                return '<a href="/package/' + r.name + '" class="search-dropdown-item" role="option">'
+                  + '<span class="item-name">' + r.name + '</span>'
+                  + (r.version ? '<span class="col-version">' + r.version + '</span>' : '')
+                  + (r.description ? '<span class="item-desc">' + r.description + '</span>' : '')
+                  + '</a>'
+              }).join('')
+                + '<a href="/search?q=' + encodeURIComponent(q) + '" class="search-dropdown-item" style="color: var(--accent); border-top: 1px solid var(--border);">View all results</a>'
+              dropdown.classList.add('open')
+            })
+            .catch(function() { dropdown.classList.remove('open') })
+        }, 200)
+      })
+
+      input.addEventListener('keydown', function(e) {
+        if (!dropdown.classList.contains('open')) return
+        var items = dropdown.querySelectorAll('.search-dropdown-item')
+        if (e.key === 'ArrowDown') { e.preventDefault(); highlightIdx = Math.min(highlightIdx + 1, items.length - 1); updateHighlight(items) }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); highlightIdx = Math.max(highlightIdx - 1, 0); updateHighlight(items) }
+        else if (e.key === 'Enter' && highlightIdx >= 0) { e.preventDefault(); items[highlightIdx].click() }
+      })
+
+      function updateHighlight(items) {
+        items.forEach(function(el, i) { el.classList.toggle('highlighted', i === highlightIdx) })
+      }
+    })()
   </script>
 </body>
 </html>

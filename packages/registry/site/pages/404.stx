@@ -1,13 +1,45 @@
+
 <section class="flex flex-col items-center justify-center px-6 py-20 text-center" style="min-height: calc(100vh - 3.5rem - 8rem);">
-  <div class="max-w-md">
-    <p class="text-6xl font-bold font-mono mb-4" style="color: var(--accent);">404</p>
+  <div class="max-w-lg">
+    <p class="text-7xl font-bold font-mono mb-4" style="color: var(--accent); opacity: 0.7;">404</p>
     <h1 class="text-2xl font-semibold mb-3">Page not found</h1>
     <p class="mb-8" style="font-size: 0.9375rem; color: var(--fg-muted);">
       The page you're looking for doesn't exist or has been moved.
     </p>
-    <div class="flex gap-3 justify-center">
+
+    <!-- Search box -->
+    <form action="/search" method="get" class="flex gap-2 max-w-sm mx-auto mb-8">
+      <input
+        type="text"
+        name="q"
+        placeholder="search for a package..."
+        autofocus
+        aria-label="Search packages"
+        class="flex-1 bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-4 py-2.5 outline-none transition-colors focus:border-[var(--accent)]"
+        style="color: var(--fg); font-size: 0.875rem;"
+      />
+      <button type="submit" class="rounded-lg px-4 py-2.5 font-medium text-sm cursor-pointer transition-colors" style="background: var(--accent); color: var(--bg);">
+        search
+      </button>
+    </form>
+
+    <div class="flex gap-3 justify-center mb-10">
       <a href="/" class="text-sm px-5 py-2.5 rounded-lg font-medium transition-colors" style="background: var(--accent); color: var(--bg);">Go home</a>
-      <a href="/search" class="text-sm px-5 py-2.5 rounded-lg border border-[var(--border)] hvr-fg transition-colors" style="color: var(--fg-muted);">Search packages</a>
+      <a href="/stats" class="text-sm px-5 py-2.5 rounded-lg border border-[var(--border)] hvr-fg transition-colors" style="color: var(--fg-muted);">View stats</a>
+      <a href="/compare" class="text-sm px-5 py-2.5 rounded-lg border border-[var(--border)] hvr-fg transition-colors" style="color: var(--fg-muted);">Compare</a>
+    </div>
+
+    <!-- Popular packages -->
+    <div>
+      <p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--fg-subtle);">Popular packages</p>
+      <div class="flex flex-wrap justify-center gap-2">
+        <a href="/package/bun.sh" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">bun.sh</a>
+        <a href="/package/nodejs.org" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">nodejs.org</a>
+        <a href="/package/python.org" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">python.org</a>
+        <a href="/package/go.dev" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">go.dev</a>
+        <a href="/package/rust-lang.org" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">rust-lang.org</a>
+        <a href="/package/redis.io" class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-md px-3 py-1.5 font-mono text-xs hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)] transition-colors" style="color: var(--fg-muted);">redis.io</a>
+      </div>
     </div>
   </div>
 </section>

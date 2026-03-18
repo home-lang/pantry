@@ -218,15 +218,16 @@ export function createHandler(
         return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
       }
 
-      // Search — serve HTML for browsers, JSON for API clients
+      // Search — serve HTML for browsers, JSON for API clients / instant search
       if (path === '/search' && req.method === 'GET') {
         const accept = req.headers.get('accept') || ''
-        // Serve JSON only if explicitly requesting JSON (API clients)
-        const wantsJson = accept.includes('application/json') && !accept.includes('text/html')
+        const format = url.searchParams.get('format')
+        // Serve JSON if format=json (instant search) or Accept: application/json (API clients)
+        const wantsJson = format === 'json' || (accept.includes('application/json') && !accept.includes('text/html'))
         if (wantsJson) {
           const query = url.searchParams.get('q') || ''
           const limit = Number.parseInt(url.searchParams.get('limit') || '20', 10)
-          const results = await registry.search(query, limit)
+          const results = await registry.search(query, Math.min(limit, 50))
           return Response.json({ results }, { headers: corsHeaders })
         }
         // Default to HTML for browsers
@@ -234,7 +235,8 @@ export function createHandler(
         const sort = url.searchParams.get('sort') || 'relevance'
         const view = url.searchParams.get('view') || 'list'
         const type = url.searchParams.get('type') || 'all'
-        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage)
+        const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
+        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage, page)
       }
 
       // Publish
@@ -571,6 +573,39 @@ export function createHandler(
       // Docs — serve bunpress-built static docs
       if (path === '/docs' || path.startsWith('/docs/')) {
         return await handleDocs(path)
+      }
+
+      // Settings page
+      if (path === '/settings') {
+        return htmlResponse(await renderSitePage('settings.stx', {
+          title: 'Settings',
+          metaDescription: 'Customize your pantry.dev experience — theme, accent color, and preferences.',
+          canonicalUrl: 'https://pantry.dev/settings',
+        }))
+      }
+
+      // OpenSearch description
+      if (path === '/opensearch.xml') {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>pantry</ShortName>
+  <Description>Search packages on pantry.dev</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Url type="text/html" template="https://pantry.dev/search?q={searchTerms}"/>
+  <Url type="application/json" template="https://pantry.dev/search?q={searchTerms}&amp;format=json&amp;limit=8"/>
+</OpenSearchDescription>`
+        return new Response(xml, {
+          headers: { 'Content-Type': 'application/opensearchdescription+xml; charset=utf-8', 'Cache-Control': 'public, max-age=86400' },
+        })
+      }
+
+      // Badge API — generates SVG badges for packages
+      if (path.startsWith('/api/badge/') && req.method === 'GET') {
+        const badgeParts = path.replace('/api/badge/', '').split('/')
+        const badgeType = badgeParts[0]
+        const badgePkg = decodeURIComponent(badgeParts.slice(1).join('/'))
+        if (!badgePkg) return Response.json({ error: 'Missing package name' }, { status: 400 })
+        return await handleBadge(badgeType, badgePkg, binaryStorage, analyticsStorage)
       }
 
       // Static pages
@@ -1961,6 +1996,7 @@ async function handleSiteSearch(
   view = 'list',
   type = 'all',
   zigStorage?: ZigPackageStorage,
+  page = 1,
 ): Promise<Response> {
   let results: any[] = []
 
@@ -2042,17 +2078,42 @@ async function handleSiteSearch(
     }
   }
 
+  // Pagination
+  const perPage = 20
+  const totalResults = results.length
+  const totalPages = Math.max(1, Math.ceil(totalResults / perPage))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = (safePage - 1) * perPage + 1
+  const pageEnd = Math.min(safePage * perPage, totalResults)
+  const pagedResults = results.slice((safePage - 1) * perPage, safePage * perPage)
+
+  // Generate page numbers with ellipsis (represented as -1)
+  const pageNumbers: number[] = []
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= safePage - 1 && i <= safePage + 1)) {
+      pageNumbers.push(i)
+    }
+    else if (pageNumbers[pageNumbers.length - 1] !== -1) {
+      pageNumbers.push(-1)
+    }
+  }
+
   const suggestions = ['python.org', 'nodejs.org', 'curl.se', 'go.dev', 'redis.io', 'postgresql.org', 'bun.sh', 'rust-lang.org']
   const html = await renderSitePage('search.stx', {
     query,
-    results,
+    results: pagedResults,
     sort,
     view,
     type,
-    count: results.length,
-    hasResults: results.length > 0 || type === 'zig',
+    count: totalResults,
+    hasResults: totalResults > 0 || type === 'zig',
     hasQuery: query.length > 0 || type === 'zig',
     suggestions,
+    page: safePage,
+    totalPages,
+    pageStart,
+    pageEnd,
+    pageNumbers,
     title: type === 'zig' ? 'zig packages' : query ? `search: ${query}` : 'search',
     metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
     canonicalUrl: 'https://pantry.dev/search',
@@ -2278,9 +2339,12 @@ async function handleSiteCompare(
       const latestVersion = meta?.latestVersion || versions[0] || 'unknown'
       const latestData = meta?.versions?.[latestVersion] || {}
       const platforms = Object.keys(latestData.platforms || {})
+      const deps = meta?.dependencies || {}
+      const depCount = Object.keys(deps).length
 
       return {
         name,
+        description: meta?.description || '',
         latestVersion,
         totalDownloads: pkgStats?.totalDownloads || 0,
         formattedDownloads: chartFormatCount(pkgStats?.totalDownloads || 0),
@@ -2288,6 +2352,7 @@ async function handleSiteCompare(
         formattedWeekly: chartFormatCount(pkgStats?.weeklyDownloads || 0),
         versionCount: versions.length,
         platformCount: platforms.length,
+        depCount,
         platforms,
         hasDarwinArm64: platforms.some(p => p.includes('darwin-arm64') || p.includes('darwin+aarch64')),
         hasDarwinX86: platforms.some(p => p.includes('darwin-x86') || p.includes('darwin+x86-64')),
@@ -2305,6 +2370,7 @@ async function handleSiteCompare(
         ? r.value
         : {
             name: packageNames[i],
+            description: '',
             latestVersion: '--',
             totalDownloads: 0,
             formattedDownloads: '--',
@@ -2312,6 +2378,7 @@ async function handleSiteCompare(
             formattedWeekly: '--',
             versionCount: 0,
             platformCount: 0,
+            depCount: 0,
             platforms: [],
             hasDarwinArm64: false,
             hasDarwinX86: false,
@@ -2427,6 +2494,75 @@ async function handleSiteStats(
     canonicalUrl: 'https://pantry.dev/stats',
   })
   return htmlResponse(html)
+}
+
+// ============================================================================
+// Badge API handler
+// ============================================================================
+async function handleBadge(
+  type: string,
+  packageName: string,
+  binaryStorage?: BinaryStorage,
+  analyticsStorage?: AnalyticsStorage,
+): Promise<Response> {
+  let label = 'pantry'
+  let value = 'unknown'
+  let color = '#5b9cf5'
+
+  try {
+    if (type === 'version') {
+      const meta = await fetchPackageMetadata(packageName, binaryStorage)
+      value = meta?.latestVersion || 'unknown'
+      color = '#6dd97a'
+    }
+    else if (type === 'downloads') {
+      const stats = analyticsStorage ? await analyticsStorage.getPackageStats(packageName) : null
+      value = stats ? chartFormatCount(stats.totalDownloads) : '0'
+      label = 'downloads'
+    }
+    else if (type === 'platforms') {
+      const meta = await fetchPackageMetadata(packageName, binaryStorage)
+      const platforms = meta?.versions?.[meta?.latestVersion || '']?.platforms || {}
+      value = `${Object.keys(platforms).length}`
+      label = 'platforms'
+      color = '#e6c84d'
+    }
+    else {
+      return Response.json({ error: `Unknown badge type: ${type}` }, { status: 400 })
+    }
+  }
+  catch {
+    value = 'error'
+    color = '#e25c5c'
+  }
+
+  // Generate SVG badge (shields.io style)
+  const labelWidth = label.length * 7 + 12
+  const valueWidth = value.length * 7 + 12
+  const totalWidth = labelWidth + valueWidth
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="${label}: ${value}">
+  <title>${label}: ${value}</title>
+  <linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+  <clipPath id="r"><rect width="${totalWidth}" height="20" rx="3" fill="#fff"/></clipPath>
+  <g clip-path="url(#r)">
+    <rect width="${labelWidth}" height="20" fill="#555"/>
+    <rect x="${labelWidth}" width="${valueWidth}" height="20" fill="${color}"/>
+    <rect width="${totalWidth}" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11">
+    <text x="${labelWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${label}</text>
+    <text x="${labelWidth / 2}" y="14">${label}</text>
+    <text x="${labelWidth + valueWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${value}</text>
+    <text x="${labelWidth + valueWidth / 2}" y="14">${value}</text>
+  </g>
+</svg>`
+
+  return new Response(svg, {
+    headers: {
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+    },
+  })
 }
 
 /** Lazily built set of doc page paths for link rewriting */

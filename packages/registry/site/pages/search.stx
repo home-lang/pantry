@@ -28,7 +28,7 @@
       </div>
 
       @if (hasQuery)
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between flex-wrap gap-2">
         <div class="flex items-center gap-3">
           <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Type:</label>
           <select name="type" class="sort-select" onchange="this.form.submit()">
@@ -44,14 +44,39 @@
         </div>
 
         <div class="view-toggle">
-          <button type="submit" name="view" value="list" class="@if (view === 'list') active @endif" aria-label="List view">
+          <button type="submit" name="view" value="list" class="@if (view === 'list') active @endif" aria-label="List view" data-tooltip="List view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button type="submit" name="view" value="grid" class="@if (view === 'grid') active @endif" aria-label="Grid view">
+          <button type="submit" name="view" value="grid" class="@if (view === 'grid') active @endif" aria-label="Grid view" data-tooltip="Grid view">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </button>
+          <button type="submit" name="view" value="table" class="@if (view === 'table') active @endif" aria-label="Table view" data-tooltip="Table view">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
           </button>
         </div>
       </div>
+
+      <!-- Active filter chips -->
+      @if (type !== 'all' || sort !== 'relevance')
+      <div class="filter-chips mt-3">
+        @if (type !== 'all')
+        <span class="filter-chip">
+          type: {{ type }}
+          <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}" aria-label="Remove type filter">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </a>
+        </span>
+        @endif
+        @if (sort !== 'relevance')
+        <span class="filter-chip">
+          sort: {{ sort }}
+          <a href="/search?q={{ query }}&type={{ type }}&view={{ view }}" aria-label="Remove sort filter">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </a>
+        </span>
+        @endif
+      </div>
+      @endif
       @endif
     </form>
 
@@ -139,8 +164,51 @@
     </div>
     @endif
 
+    <!-- Table view -->
+    @if (view === 'table')
+    <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg overflow-x-auto">
+      <table class="search-table">
+        <thead>
+          <tr>
+            <th>Package</th>
+            <th>Description</th>
+            <th style="text-align: right;">Downloads</th>
+            <th style="text-align: right;">Version</th>
+            <th class="hidden sm:table-cell" style="text-align: right;">Platforms</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach (results as result)
+          <tr>
+            <td>
+              <a href="/package/{{ result.name }}" class="col-name hvr-accent transition-colors" style="color: var(--accent);">
+                <span class="inline-flex items-center gap-1.5">
+                  <img src="https://www.google.com/s2/favicons?domain={{ result.name }}&sz=16" alt="" width="12" height="12" loading="lazy" class="rounded-sm" onerror="this.style.display='none'" />
+                  {{ result.name }}
+                </span>
+              </a>
+            </td>
+            <td style="color: var(--fg-muted); max-width: 20rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ result.description }}</td>
+            <td class="col-downloads">{{ result.downloads }}</td>
+            <td class="col-version" style="text-align: right;">{{ result.version }}</td>
+            <td class="col-platform hidden sm:table-cell">
+              @if (result.platforms)
+              <div class="flex flex-wrap gap-1 justify-end">
+                @foreach (result.platforms as plat)
+                <span class="rounded px-1 py-0.5 bg-[var(--bg-muted)]" style="font-size: 0.5625rem; color: var(--fg-subtle);">{{ plat }}</span>
+                @endforeach
+              </div>
+              @endif
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+    @endif
+
     <!-- List view (default) -->
-    @if (view !== 'grid')
+    @if (view === 'list')
     <div class="flex flex-col gap-2">
       @foreach (results as result)
       <a href="/package/{{ result.name }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
@@ -181,6 +249,32 @@
         @endif
       </a>
       @endforeach
+    </div>
+    @endif
+
+    <!-- Pagination -->
+    @if (totalPages > 1)
+    <div class="flex items-center justify-between mt-6">
+      <p class="text-xs" style="color: var(--fg-subtle);">
+        Showing {{ pageStart }}-{{ pageEnd }} of {{ count }}
+      </p>
+      <div class="pagination">
+        @if (page > 1)
+        <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ page - 1 }}">&larr;</a>
+        @endif
+        @foreach (pageNumbers as pn)
+        @if (pn === page)
+        <span class="active">{{ pn }}</span>
+        @elseif (pn === -1)
+        <span class="ellipsis">&hellip;</span>
+        @else
+        <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ pn }}">{{ pn }}</a>
+        @endif
+        @endforeach
+        @if (page < totalPages)
+        <a href="/search?q={{ query }}&sort={{ sort }}&view={{ view }}&type={{ type }}&page={{ page + 1 }}">&rarr;</a>
+        @endif
+      </div>
     </div>
     @endif
     @endif

@@ -1,0 +1,322 @@
+
+<section class="py-12 px-6 pb-20">
+  <div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-10">
+      <div>
+        <h1 class="text-3xl font-semibold tracking-tight mb-1">settings</h1>
+        <p style="font-size: 0.8125rem; color: var(--fg-subtle);">Customize your pantry experience</p>
+      </div>
+      <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
+    </div>
+
+    <div class="flex flex-col gap-8">
+      <!-- Theme -->
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Theme</h2>
+        <div class="flex gap-2" id="theme-selector">
+          <button data-theme-value="dark" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
+            <svg class="mx-auto mb-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <span class="text-sm">Dark</span>
+          </button>
+          <button data-theme-value="light" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
+            <svg class="mx-auto mb-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <span class="text-sm">Light</span>
+          </button>
+          <button data-theme-value="system" class="theme-option flex-1 rounded-lg border border-[var(--border)] p-4 text-center cursor-pointer transition-all hover:border-[var(--border-hover)]" style="background: var(--bg);">
+            <svg class="mx-auto mb-2" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span class="text-sm">System</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Accent color -->
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Accent Color</h2>
+        <div class="flex flex-wrap gap-3" id="accent-selector">
+          <button data-accent="blue" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.787 0.128 230.318);" aria-label="Blue"></button>
+          <button data-accent="purple" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.7 0.15 300);" aria-label="Purple"></button>
+          <button data-accent="green" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.723 0.15 155);" aria-label="Green"></button>
+          <button data-accent="amber" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.795 0.15 85);" aria-label="Amber"></button>
+          <button data-accent="red" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.637 0.2 25);" aria-label="Red"></button>
+          <button data-accent="pink" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.7 0.15 350);" aria-label="Pink"></button>
+          <button data-accent="teal" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.75 0.12 190);" aria-label="Teal"></button>
+          <button data-accent="orange" class="accent-option w-10 h-10 rounded-full border-2 border-transparent cursor-pointer transition-all hover:scale-110" style="background: oklch(0.75 0.15 55);" aria-label="Orange"></button>
+        </div>
+        <p class="mt-3" style="font-size: 0.75rem; color: var(--fg-subtle);">Changes apply immediately across the site.</p>
+      </div>
+
+      <!-- Preferences -->
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Preferences</h2>
+        <div class="flex flex-col gap-4">
+          <!-- Keyboard shortcuts -->
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium">Keyboard shortcuts</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Use / ? h c t d to navigate</p>
+            </div>
+            <label class="settings-toggle">
+              <input type="checkbox" id="pref-shortcuts" checked />
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Compact mode -->
+          <div class="flex items-center justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div>
+              <p class="text-sm font-medium">Compact mode</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Reduce spacing for denser layouts</p>
+            </div>
+            <label class="settings-toggle">
+              <input type="checkbox" id="pref-compact" />
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Animations -->
+          <div class="flex items-center justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div>
+              <p class="text-sm font-medium">Animations</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Enable fade-in and transition animations</p>
+            </div>
+            <label class="settings-toggle">
+              <input type="checkbox" id="pref-animations" checked />
+              <span class="settings-toggle-slider"></span>
+            </label>
+          </div>
+
+          <!-- Default install method -->
+          <div class="flex items-center justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div>
+              <p class="text-sm font-medium">Default install method</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred package manager for install commands</p>
+            </div>
+            <select id="pref-install-method" class="sort-select">
+              <option value="pantry">pantry</option>
+              <option value="brew">brew</option>
+              <option value="curl">curl</option>
+            </select>
+          </div>
+
+          <!-- Search view preference -->
+          <div class="flex items-center justify-between" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div>
+              <p class="text-sm font-medium">Default search view</p>
+              <p style="font-size: 0.75rem; color: var(--fg-subtle);">Preferred layout for search results</p>
+            </div>
+            <select id="pref-search-view" class="sort-select">
+              <option value="list">List</option>
+              <option value="grid">Grid</option>
+              <option value="table">Table</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data & Privacy -->
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Data & Privacy</h2>
+        <p class="mb-4" style="font-size: 0.8125rem; color: var(--fg-muted);">
+          All settings are stored locally in your browser. No data is sent to our servers.
+        </p>
+        <button id="reset-settings" class="text-sm px-4 py-2 rounded-lg border border-[var(--border)] cursor-pointer hvr-fg transition-colors" style="color: var(--fg-muted); background: none;">
+          Reset all settings
+        </button>
+      </div>
+
+      <!-- Keyboard shortcuts reference -->
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5">
+        <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Keyboard Shortcuts</h2>
+        <div class="grid gap-0" style="grid-template-columns: 1fr 1fr;">
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Focus search</span>
+            <kbd class="shortcut-key">/</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Show shortcuts</span>
+            <kbd class="shortcut-key">?</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Go home</span>
+            <kbd class="shortcut-key">h</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Compare packages</span>
+            <kbd class="shortcut-key">c</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">View stats</span>
+            <kbd class="shortcut-key">t</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Toggle theme</span>
+            <kbd class="shortcut-key">d</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Open settings</span>
+            <kbd class="shortcut-key">,</kbd>
+          </div>
+          <div class="flex items-center justify-between px-3 py-2" style="border-bottom: 1px solid var(--border);">
+            <span style="font-size: 0.8125rem; color: var(--fg-muted);">Close dialog</span>
+            <kbd class="shortcut-key">Esc</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Settings toggle switch */
+  .settings-toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .settings-toggle input { opacity: 0; width: 0; height: 0; }
+  .settings-toggle-slider { position: absolute; cursor: pointer; inset: 0; background: var(--bg-muted); border: 1px solid var(--border); border-radius: 24px; transition: all 0.2s; }
+  .settings-toggle-slider::before { content: ''; position: absolute; height: 18px; width: 18px; left: 2px; bottom: 2px; background: var(--fg-subtle); border-radius: 50%; transition: all 0.2s; }
+  .settings-toggle input:checked + .settings-toggle-slider { background: var(--accent); border-color: var(--accent); }
+  .settings-toggle input:checked + .settings-toggle-slider::before { transform: translateX(20px); background: white; }
+  .settings-toggle input:focus-visible + .settings-toggle-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Accent selector active state */
+  .accent-option.active { border-color: var(--fg) !important; transform: scale(1.15); box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+
+  /* Theme selector active state */
+  .theme-option.active { border-color: var(--accent) !important; background: color-mix(in oklch, var(--accent), transparent 90%) !important; }
+</style>
+
+<script client>
+  (function() {
+    var ACCENT_MAP = {
+      blue: { dark: 'oklch(0.787 0.128 230.318)', light: 'oklch(0.55 0.18 230.318)', hover_dark: 'oklch(0.85 0.128 230.318)', hover_light: 'oklch(0.45 0.18 230.318)' },
+      purple: { dark: 'oklch(0.7 0.15 300)', light: 'oklch(0.55 0.15 300)', hover_dark: 'oklch(0.76 0.15 300)', hover_light: 'oklch(0.45 0.15 300)' },
+      green: { dark: 'oklch(0.723 0.15 155)', light: 'oklch(0.5 0.17 155)', hover_dark: 'oklch(0.78 0.15 155)', hover_light: 'oklch(0.4 0.17 155)' },
+      amber: { dark: 'oklch(0.795 0.15 85)', light: 'oklch(0.6 0.15 85)', hover_dark: 'oklch(0.85 0.15 85)', hover_light: 'oklch(0.5 0.15 85)' },
+      red: { dark: 'oklch(0.637 0.2 25)', light: 'oklch(0.5 0.2 25)', hover_dark: 'oklch(0.7 0.2 25)', hover_light: 'oklch(0.4 0.2 25)' },
+      pink: { dark: 'oklch(0.7 0.15 350)', light: 'oklch(0.55 0.15 350)', hover_dark: 'oklch(0.76 0.15 350)', hover_light: 'oklch(0.45 0.15 350)' },
+      teal: { dark: 'oklch(0.75 0.12 190)', light: 'oklch(0.5 0.15 190)', hover_dark: 'oklch(0.8 0.12 190)', hover_light: 'oklch(0.4 0.15 190)' },
+      orange: { dark: 'oklch(0.75 0.15 55)', light: 'oklch(0.55 0.15 55)', hover_dark: 'oklch(0.8 0.15 55)', hover_light: 'oklch(0.45 0.15 55)' }
+    }
+
+    function getTheme() { return document.documentElement.dataset.theme || 'dark' }
+    function getSavedAccent() { return localStorage.getItem('pantry-accent') || 'blue' }
+
+    function applyAccent(name) {
+      var colors = ACCENT_MAP[name]
+      if (!colors) return
+      var isDark = getTheme() === 'dark'
+      document.documentElement.style.setProperty('--accent', isDark ? colors.dark : colors.light)
+      document.documentElement.style.setProperty('--accent-hover', isDark ? colors.hover_dark : colors.hover_light)
+      localStorage.setItem('pantry-accent', name)
+      updateAccentUI(name)
+    }
+
+    function updateAccentUI(name) {
+      document.querySelectorAll('.accent-option').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-accent') === name)
+      })
+    }
+
+    function updateThemeUI(theme) {
+      document.querySelectorAll('.theme-option').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-theme-value') === theme)
+      })
+    }
+
+    // Theme selector
+    document.querySelectorAll('.theme-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var value = this.getAttribute('data-theme-value')
+        if (value === 'system') {
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light'
+          localStorage.setItem('pantry-theme', 'system')
+        } else {
+          document.documentElement.dataset.theme = value
+          localStorage.setItem('pantry-theme', value)
+        }
+        updateThemeUI(value)
+        applyAccent(getSavedAccent())
+      })
+    })
+
+    // Accent color selector
+    document.querySelectorAll('.accent-option').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        applyAccent(this.getAttribute('data-accent'))
+      })
+    })
+
+    // Preference toggles
+    var prefShortcuts = document.getElementById('pref-shortcuts')
+    var prefCompact = document.getElementById('pref-compact')
+    var prefAnimations = document.getElementById('pref-animations')
+    var prefInstall = document.getElementById('pref-install-method')
+    var prefView = document.getElementById('pref-search-view')
+
+    if (prefShortcuts) {
+      prefShortcuts.checked = localStorage.getItem('pantry-shortcuts') !== 'false'
+      prefShortcuts.addEventListener('change', function() {
+        localStorage.setItem('pantry-shortcuts', this.checked)
+      })
+    }
+    if (prefCompact) {
+      prefCompact.checked = localStorage.getItem('pantry-compact') === 'true'
+      prefCompact.addEventListener('change', function() {
+        localStorage.setItem('pantry-compact', this.checked)
+        document.documentElement.classList.toggle('compact', this.checked)
+      })
+    }
+    if (prefAnimations) {
+      prefAnimations.checked = localStorage.getItem('pantry-animations') !== 'false'
+      prefAnimations.addEventListener('change', function() {
+        localStorage.setItem('pantry-animations', this.checked)
+        document.documentElement.classList.toggle('no-animations', !this.checked)
+      })
+    }
+    if (prefInstall) {
+      prefInstall.value = localStorage.getItem('pantry-install-method') || 'pantry'
+      prefInstall.addEventListener('change', function() {
+        localStorage.setItem('pantry-install-method', this.value)
+      })
+    }
+    if (prefView) {
+      prefView.value = localStorage.getItem('pantry-search-view') || 'list'
+      prefView.addEventListener('change', function() {
+        localStorage.setItem('pantry-search-view', this.value)
+      })
+    }
+
+    // Reset button
+    var resetBtn = document.getElementById('reset-settings')
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function() {
+        localStorage.removeItem('pantry-theme')
+        localStorage.removeItem('pantry-accent')
+        localStorage.removeItem('pantry-shortcuts')
+        localStorage.removeItem('pantry-compact')
+        localStorage.removeItem('pantry-animations')
+        localStorage.removeItem('pantry-install-method')
+        localStorage.removeItem('pantry-search-view')
+        document.documentElement.dataset.theme = 'dark'
+        document.documentElement.style.removeProperty('--accent')
+        document.documentElement.style.removeProperty('--accent-hover')
+        document.documentElement.classList.remove('compact', 'no-animations')
+        updateThemeUI('dark')
+        updateAccentUI('blue')
+        if (prefShortcuts) prefShortcuts.checked = true
+        if (prefCompact) prefCompact.checked = false
+        if (prefAnimations) prefAnimations.checked = true
+        if (prefInstall) prefInstall.value = 'pantry'
+        if (prefView) prefView.value = 'list'
+      })
+    }
+
+    // Init UI state
+    var savedTheme = localStorage.getItem('pantry-theme') || 'dark'
+    updateThemeUI(savedTheme)
+    var savedAccent = getSavedAccent()
+    applyAccent(savedAccent)
+    if (localStorage.getItem('pantry-compact') === 'true') document.documentElement.classList.add('compact')
+    if (localStorage.getItem('pantry-animations') === 'false') document.documentElement.classList.add('no-animations')
+  })()
+</script>

@@ -6,7 +6,13 @@
         <h1 class="text-3xl font-semibold tracking-tight mb-1">stats</h1>
         <p style="font-size: 0.8125rem; color: var(--fg-subtle);">Registry statistics and trends</p>
       </div>
-      <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
+      <div class="flex items-center gap-3">
+        <button class="share-btn" data-share="https://pantry.dev/stats">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          share
+        </button>
+        <a href="/" class="hvr-fg transition-colors" style="font-size: 0.8125rem; color: var(--fg-subtle);">&larr; back</a>
+      </div>
     </div>
 
     <!-- Summary stats -->

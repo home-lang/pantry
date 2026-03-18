@@ -17,8 +17,29 @@
     @endif
 
     @if (!notFound)
+    <!-- Sticky package header (appears on scroll) -->
+    <div class="pkg-sticky-header" id="pkg-sticky">
+      <div class="max-w-4xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <img src="https://www.google.com/s2/favicons?domain={{ name }}&sz=16" alt="" width="16" height="16" class="rounded-sm" onerror="this.style.display='none'" />
+          <span class="font-mono text-sm font-medium">{{ name }}</span>
+          <span class="font-mono text-xs" style="color: var(--fg-subtle);">{{ latestVersion }}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="copy-btn" data-copy="pantry install {{ name }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -2px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            install
+          </button>
+          <button class="share-btn" data-share="https://pantry.dev/package/{{ name }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            share
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Package header -->
-    <div class="mb-6 animate-fade-in">
+    <div class="mb-6 animate-fade-in" id="pkg-header">
       <div class="flex items-start justify-between gap-4 mb-2">
         <div class="flex items-center gap-3">
           <img
@@ -31,8 +52,17 @@
             onerror="this.style.display='none'"
           />
           <h1 class="text-3xl font-semibold tracking-tight font-mono">{{ name }}</h1>
+          <button class="copy-btn" data-copy="{{ name }}" data-tooltip="Copy package name" style="font-size: 0.625rem; padding: 0.125rem 0.375rem;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; vertical-align: -2px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
         </div>
-        <span class="shrink-0 bg-[var(--bg-muted)] px-2.5 py-1 rounded font-mono text-xs mt-1" style="color: var(--accent);">{{ latestVersion }}</span>
+        <div class="flex items-center gap-2">
+          <span class="shrink-0 bg-[var(--bg-muted)] px-2.5 py-1 rounded font-mono text-xs" style="color: var(--accent);">{{ latestVersion }}</span>
+          <button class="share-btn" data-share="https://pantry.dev/package/{{ name }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            share
+          </button>
+        </div>
       </div>
       @if (pkgDescription)
       <p class="mb-3" style="font-size: 0.9375rem; color: var(--fg-muted);">{{ pkgDescription }}</p>
@@ -54,8 +84,26 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           Compare
         </a>
+        <!-- Badge embed link -->
+        <a href="/api/badge/version/{{ name }}" target="_blank" class="inline-flex items-center gap-1 hvr-accent transition-colors" style="color: var(--fg-subtle);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          Badge
+        </a>
       </div>
     </div>
+
+    <!-- Sticky header scroll observer -->
+    <script client>
+      (function() {
+        var header = document.getElementById('pkg-header')
+        var sticky = document.getElementById('pkg-sticky')
+        if (!header || !sticky) return
+        var observer = new IntersectionObserver(function(entries) {
+          sticky.classList.toggle('visible', !entries[0].isIntersecting)
+        }, { threshold: 0, rootMargin: '-56px 0px 0px 0px' })
+        observer.observe(header)
+      })()
+    </script>
 
     <!-- Install commands -->
     <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 mb-8 animate-fade-in-delay">
@@ -153,14 +201,23 @@
           <!-- Download timeline chart (ts-charts generated SVG) -->
           @if (lineChart && lineChart.linePath)
           <div class="mb-8">
-            <h2 class="text-xs uppercase tracking-widest font-medium mb-4" style="color: var(--fg-subtle);">Downloads (Last 30 Days)</h2>
-            <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto">
+            <h2 class="text-xs uppercase tracking-widest font-medium mb-4 collapsible-toggle flex items-center gap-2" data-target="chart-downloads" style="color: var(--fg-subtle);">
+              <svg class="collapse-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              Downloads (Last 30 Days)
+            </h2>
+            <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 overflow-x-auto collapsible-content" id="chart-downloads">
               <svg width="{{ lineChart.width }}" height="{{ lineChart.height }}" viewBox="0 0 {{ lineChart.width }} {{ lineChart.height }}" style="width: 100%; height: auto;">
                 @foreach (lineChart.yLabels as yLabel)
                 <line x1="45" y1="{{ yLabel.y }}" x2="{{ lineChart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
                 <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! yLabel.label !!}</text>
                 @endforeach
-                <path d="{!! lineChart.areaPath !!}" fill="var(--accent)" opacity="0.1" />
+                <defs>
+                  <linearGradient id="pkgAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.2" />
+                    <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.02" />
+                  </linearGradient>
+                </defs>
+                <path d="{!! lineChart.areaPath !!}" fill="url(#pkgAreaGradient)" />
                 <path d="{!! lineChart.linePath !!}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 @foreach (lineChart.points as point)
                 <circle class="chart-dot" cx="{{ point.x }}" cy="{{ point.y }}" r="3" fill="var(--accent)" opacity="0.7">
