@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 22 versions</summary>
 
-- `1.68.0`
+- `1.68.1`, `1.68.0`
 - `1.67.1`, `1.67.0`
 - `1.66.0`
 - `1.65.0`
@@ -48,13 +48,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `1.68.0`
+**Latest Version**: `1.68.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +nghttp2.org@1.68.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +nghttp2.org@1.68.1 -- $SHELL -i
 ```
 
 ## Usage Examples
