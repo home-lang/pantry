@@ -106,10 +106,10 @@ export function parseZigZon(content: string): ZigManifest {
     version: '',
   }
 
-  // Extract name (handles both .name = .identifier and .name = "string")
-  const nameMatch = content.match(/\.name\s*=\s*(?:\.(\w+)|"([^"]+)")/)
+  // Extract name (handles .name = .@"quoted-name", .name = .identifier, and .name = "string")
+  const nameMatch = content.match(/\.name\s*=\s*(?:\.@"([^"]+)"|\.(\w+)|"([^"]+)")/)
   if (nameMatch) {
-    manifest.name = nameMatch[1] || nameMatch[2]
+    manifest.name = nameMatch[1] || nameMatch[2] || nameMatch[3]
   }
 
   // Extract version
