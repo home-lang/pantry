@@ -20,25 +20,30 @@ fn getLinksDir(allocator: std.mem.Allocator) ![]const u8 {
     return try std.fmt.allocPrint(allocator, "{s}/.pantry/links", .{home});
 }
 
-/// Get the package name from pantry.json in the given directory
+/// Get the package name from pantry.json or package.json in the given directory
 fn getPackageName(allocator: std.mem.Allocator, dir: []const u8) !?[]const u8 {
-    const config_path = try std.fmt.allocPrint(allocator, "{s}/pantry.json", .{dir});
-    defer allocator.free(config_path);
+    // Try pantry.json first, then fall back to package.json
+    const config_files = [_][]const u8{ "pantry.json", "package.json" };
+    for (config_files) |config_file| {
+        const config_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ dir, config_file });
+        defer allocator.free(config_path);
 
-    const content = io_helper.readFileAlloc(allocator, config_path, 64 * 1024) catch {
-        return null;
-    };
-    defer allocator.free(content);
+        const content = io_helper.readFileAlloc(allocator, config_path, 64 * 1024) catch {
+            continue;
+        };
+        defer allocator.free(content);
 
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
-        return null;
-    };
-    defer parsed.deinit();
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+            continue;
+        };
+        defer parsed.deinit();
 
-    if (parsed.value != .object) return null;
-    const name_val = parsed.value.object.get("name") orelse return null;
-    if (name_val != .string) return null;
-    return try allocator.dupe(u8, name_val.string);
+        if (parsed.value != .object) continue;
+        const name_val = parsed.value.object.get("name") orelse continue;
+        if (name_val != .string) continue;
+        return try allocator.dupe(u8, name_val.string);
+    }
+    return null;
 }
 
 /// Get the basename of a path (last component)
@@ -81,6 +86,11 @@ pub fn linkCommand(allocator: std.mem.Allocator, name: ?[]const u8) !CommandResu
         const dest_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir, pkg_name });
         defer allocator.free(dest_path);
 
+        // Ensure parent directory exists for scoped packages (e.g., @scope/name)
+        if (std.fs.path.dirname(dest_path)) |parent| {
+            io_helper.makePath(parent) catch {};
+        }
+
         io_helper.deleteFile(dest_path) catch {};
         io_helper.deleteTree(dest_path) catch {};
         io_helper.symLink(source_path, dest_path) catch {
@@ -101,6 +111,11 @@ pub fn linkCommand(allocator: std.mem.Allocator, name: ?[]const u8) !CommandResu
 
         const link_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ links_dir, pkg_name });
         defer allocator.free(link_path);
+
+        // Ensure parent directory exists for scoped packages (e.g., @scope/name)
+        if (std.fs.path.dirname(link_path)) |parent| {
+            io_helper.makePath(parent) catch {};
+        }
 
         // Remove existing link if present
         io_helper.deleteFile(link_path) catch {};
