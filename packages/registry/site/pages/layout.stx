@@ -196,9 +196,9 @@
     .sort-select { appearance: none; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.375rem 2rem 0.375rem 0.75rem; color: var(--fg); font-size: 0.8125rem; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.5rem center; }
     .sort-select:focus { border-color: var(--accent); outline: none; }
 
-    /* Tooltips */
+    /* Tooltips (default: below element) */
     [data-tooltip] { position: relative; }
-    [data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(4px); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.6875rem; color: var(--fg-muted); white-space: nowrap; pointer-events: none; opacity: 0; transition: all 0.15s ease; z-index: 60; }
+    [data-tooltip]::after { content: attr(data-tooltip); position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-4px); background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 0.375rem; padding: 0.25rem 0.5rem; font-size: 0.6875rem; color: var(--fg-muted); white-space: nowrap; pointer-events: none; opacity: 0; transition: all 0.15s ease; z-index: 60; }
     [data-tooltip]:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     /* Collapsible sections */
@@ -294,7 +294,7 @@
           <div class="search-dropdown" id="header-search-dropdown" role="listbox"></div>
         </form>
         <a href="/stats" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="View stats (t)">stats</a>
-        <a href="/compare" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Compare packages (c)">compare</a>
+        <a href="/compare" class="hvr-fg transition-colors" style="color: var(--fg-muted);" data-tooltip="Compare packages (p)">compare</a>
         <a href="/docs" class="hvr-fg transition-colors" style="color: var(--fg-muted);">docs</a>
         <a href="/about" class="hvr-fg transition-colors" style="color: var(--fg-muted);">about</a>
         <a href="https://github.com/home-lang/pantry" target="_blank" rel="noopener" class="hvr-fg transition-colors" style="color: var(--fg-muted);">
@@ -373,7 +373,7 @@
         </div>
         <div class="shortcut-row">
           <span style="font-size: 0.8125rem; color: var(--fg-muted);">Compare packages</span>
-          <kbd class="shortcut-key">c</kbd>
+          <kbd class="shortcut-key">p</kbd>
         </div>
         <div class="shortcut-row">
           <span style="font-size: 0.8125rem; color: var(--fg-muted);">View stats</span>
@@ -443,7 +443,7 @@
       if (e.key === '/') { e.preventDefault(); var si = document.getElementById('search-input') || document.getElementById('header-search-input') || document.querySelector('input[name="q"]'); if (si) si.focus(); return }
       if (e.key === '?') { if (dialog) dialog.classList.add('open'); return }
       if (e.key === 'h') { window.location.href = '/'; return }
-      if (e.key === 'c') { window.location.href = '/compare'; return }
+      if (e.key === 'p') { window.location.href = '/compare'; return }
       if (e.key === 't') { window.location.href = '/stats'; return }
       if (e.key === ',') { window.location.href = '/settings'; return }
       if (e.key === 'g') { _pendingChord = 'g'; setTimeout(function() { _pendingChord = '' }, 1000); return }

@@ -36,6 +36,7 @@
     <!-- Install hint -->
     <div class="flex items-center justify-center gap-2 mb-12 animate-fade-in-delay-2">
       <code class="bg-[var(--bg-subtle)] px-3 py-1.5 rounded-md border border-[var(--border)]" style="font-size: 0.8125rem; color: var(--fg-subtle);">curl -fsSL https://pantry.dev | sh</code>
+      <button class="copy-btn" data-copy="curl -fsSL https://pantry.dev | sh">copy</button>
     </div>
   </div>
 </section>
@@ -99,7 +100,7 @@
           <span class="font-mono font-bold" style="color: var(--accent);">3</span>
         </div>
         <h3 class="font-medium mb-2" style="font-size: 0.9375rem;">Run</h3>
-        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Binaries are symlinked into your PATH. Just run them.</p>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">Pantry automatically ensures your PATH is accurate. Just run them.</p>
         <code class="inline-block mt-3 text-xs px-2 py-1 rounded bg-[var(--bg-muted)]" style="color: var(--fg-subtle);">bun --version</code>
       </div>
     </div>
