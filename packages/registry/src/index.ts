@@ -76,6 +76,13 @@ export type {
   PhpPackageStorage,
 } from './php'
 
+// Packagist fallback (PHP ecosystem)
+export {
+  searchPackagist,
+  fetchFromPackagist,
+  getPackagistCount,
+} from './packagist-fallback'
+
 // Paywall
 export {
   checkPaywallAccess,

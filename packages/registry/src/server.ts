@@ -7,6 +7,7 @@ import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
 import { handlePhpRoutes, createPhpStorage } from './php-routes'
 import type { PhpPackageStorage } from './php'
+import { getPackagistCount, searchPackagist, fetchFromPackagist } from './packagist-fallback'
 import { S3Client } from './storage/aws-client'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
 import { renderTemplate } from '@stacksjs/stx'
@@ -560,7 +561,7 @@ export function createHandler(
 
       // Homepage
       if (path === '/' || path === '') {
-        return await handleSiteHome(binaryStorage, analyticsStorage, zigPackageStorage, phpPackageStorage)
+        return await handleSiteHome(binaryStorage, analyticsStorage, zigPackageStorage)
       }
 
       // Package detail page
@@ -1937,7 +1938,7 @@ async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Pr
   catch { return null }
 }
 
-async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage, zigStorage?: ZigPackageStorage, phpStorage?: PhpPackageStorage): Promise<Response> {
+async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage, zigStorage?: ZigPackageStorage): Promise<Response> {
   // Fetch featured package metadata + sparkline data in parallel
   const metaResults = await Promise.allSettled(
     FEATURED_PACKAGES.map(async (pkg) => {
@@ -2001,7 +2002,8 @@ async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: 
 
   const totalPackages = _knownVersions.size || 500
   const zigPackageCount = zigStorage ? await zigStorage.count().catch(() => 0) : 0
-  const phpPackageCount = phpStorage ? await phpStorage.count().catch(() => 0) : 0
+  const phpPackageCountRaw = await getPackagistCount().catch(() => 350000)
+  const phpPackageCount = phpPackageCountRaw >= 1000 ? `${Math.floor(phpPackageCountRaw / 1000)}K` : String(phpPackageCountRaw)
   const html = await renderSitePage('index.stx', { packages, totalPackages, zigPackageCount, phpPackageCount, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
   return htmlResponse(html)
 }
@@ -2020,16 +2022,30 @@ async function handleSiteSearch(
 ): Promise<Response> {
   let results: any[] = []
 
-  // PHP-only search
-  if (type === 'php' && phpStorage) {
-    const phpResults = await phpStorage.search(query || '', 50)
-    results = phpResults.map(r => ({
-      name: r.name,
-      version: r.latest,
-      description: r.description || '',
-      keywords: r.keywords,
-      packageType: 'php',
-    }))
+  // PHP-only search — local storage first, then Packagist fallback
+  if (type === 'php') {
+    if (phpStorage) {
+      const phpResults = await phpStorage.search(query || '', 50)
+      results = phpResults.map(r => ({
+        name: r.name,
+        version: r.latest,
+        description: r.description || '',
+        keywords: r.keywords,
+        packageType: 'php',
+      }))
+    }
+    // Fall back to Packagist if no local results and we have a query
+    if (results.length === 0 && query) {
+      const packagistResults = await searchPackagist(query, 30).catch(() => [])
+      results = packagistResults.map(r => ({
+        name: r.name,
+        version: '',
+        description: r.description,
+        downloads: r.downloads > 1000000 ? `${(r.downloads / 1000000).toFixed(1)}M` : r.downloads > 1000 ? `${(r.downloads / 1000).toFixed(0)}K` : String(r.downloads),
+        downloadCount: r.downloads,
+        packageType: 'php',
+      }))
+    }
   }
 
   // Zig-only search
@@ -2065,18 +2081,21 @@ async function handleSiteSearch(
     }
 
     // Also search PHP packages and merge if type is 'all'
-    if (type === 'all' && phpStorage) {
-      const phpResults = await phpStorage.search(query, 20).catch(() => [])
-      const existingPhpNames = new Set(results.map((r: any) => r.name))
-      for (const pr of phpResults) {
-        if (!existingPhpNames.has(pr.name)) {
-          results.push({
-            name: pr.name,
-            version: pr.latest,
-            description: pr.description || '',
-            keywords: pr.keywords,
-            packageType: 'php',
-          })
+    if (type === 'all') {
+      // Local PHP storage
+      if (phpStorage) {
+        const phpResults = await phpStorage.search(query, 10).catch(() => [])
+        const existingPhpNames = new Set(results.map((r: any) => r.name))
+        for (const pr of phpResults) {
+          if (!existingPhpNames.has(pr.name)) {
+            results.push({
+              name: pr.name,
+              version: pr.latest,
+              description: pr.description || '',
+              keywords: pr.keywords,
+              packageType: 'php',
+            })
+          }
         }
       }
     }
@@ -2189,7 +2208,13 @@ async function handleSitePackage(
   const isZigPackage = zigPkg !== null
   const isPhpPackage = phpPkg !== null
 
-  if (!meta && !pkgInfo && !zigPkg && !phpPkg) {
+  // Packagist fallback for PHP packages (vendor/package format)
+  let packagistPkg: any = null
+  if (!meta && !pkgInfo && !zigPkg && !phpPkg && name.includes('/')) {
+    packagistPkg = await fetchFromPackagist(name).catch(() => null)
+  }
+
+  if (!meta && !pkgInfo && !zigPkg && !phpPkg && !packagistPkg) {
     const html = await renderSitePage('package.stx', {
       name,
       notFound: true,
@@ -2279,6 +2304,45 @@ async function handleSitePackage(
       versionDistribution: { bars: [] },
       title: name,
       metaDescription: `${phpPkg.description || name} — A PHP/Composer package on pantry.dev`,
+      canonicalUrl: `https://pantry.dev/package/${name}`,
+    })
+    return htmlResponse(html)
+  }
+
+  // Packagist fallback — render PHP package from packagist.org
+  if (packagistPkg) {
+    const pkgTimeline = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
+    const pkgLineChart = generateLineChart(pkgTimeline, 700, 200)
+    const pkgStats = stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} }
+    const pkgDeps = Object.keys(packagistPkg.require || {}).filter((d: string) => d !== 'php' && !d.startsWith('ext-'))
+    const pkgVersions = (packagistPkg.versions || []) as string[]
+
+    const html = await renderSitePage('package.stx', {
+      name,
+      notFound: false,
+      isZigPackage: false,
+      isPhpPackage: true,
+      zigFetchUrl: '',
+      latestVersion: packagistPkg.version || 'unknown',
+      versionCount: pkgVersions.length,
+      platformCount: 0,
+      platformLabels: [],
+      formattedDownloads: chartFormatCount(packagistPkg.downloads || pkgStats.totalDownloads),
+      formattedWeekly: chartFormatCount(pkgStats.weeklyDownloads),
+      pkgDescription: packagistPkg.description || '',
+      homepage: packagistPkg.homepage || '',
+      source: packagistPkg.repository || '',
+      depList: pkgDeps,
+      hasDeps: pkgDeps.length > 0,
+      depCount: pkgDeps.length,
+      sortedVersions: pkgVersions.slice(0, 50),
+      recentVersions: pkgVersions.slice(0, 10),
+      hasMoreVersions: pkgVersions.length > 10,
+      remainingCount: Math.max(0, pkgVersions.length - 10),
+      lineChart: pkgLineChart,
+      versionDistribution: { bars: [] },
+      title: name,
+      metaDescription: `${packagistPkg.description || name} — A PHP/Composer package on pantry.dev`,
       canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
