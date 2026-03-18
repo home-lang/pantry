@@ -133,6 +133,50 @@ export interface MissingVersionRequest {
 }
 
 /**
+ * Paywall configuration for a package
+ */
+export interface PackagePaywall {
+  /** Package name */
+  name: string
+  /** Whether the paywall is active */
+  enabled: boolean
+  /** Price in cents (e.g., 999 = $9.99) */
+  price: number
+  /** Currency code (default: "usd") */
+  currency: string
+  /** Stripe account ID of the package owner (for Stripe Connect payouts) */
+  stripeAccountId?: string
+  /** Stripe price ID (created when paywall is configured) */
+  stripePriceId?: string
+  /** Stripe product ID */
+  stripeProductId?: string
+  /** Optional: versions that are free (e.g., ["1.0.0", "2.0.0"]) */
+  freeVersions?: string[]
+  /** Optional: trial period in days */
+  trialDays?: number
+  /** When the paywall was created */
+  createdAt: string
+  /** When the paywall was last updated */
+  updatedAt: string
+}
+
+/**
+ * Access grant — records that a token has paid for access to a package
+ */
+export interface PackageAccessGrant {
+  /** Package name */
+  packageName: string
+  /** Access token that was granted access */
+  token: string
+  /** Stripe payment intent or subscription ID */
+  stripePaymentId?: string
+  /** When access was granted */
+  grantedAt: string
+  /** When access expires (undefined = lifetime) */
+  expiresAt?: string
+}
+
+/**
  * Storage interface for tarball storage
  */
 export interface TarballStorage {
@@ -160,4 +204,11 @@ export interface MetadataStorage {
   getCommitPublish(sha: string, name: string): Promise<CommitPublish | null>
   getCommitPackages(sha: string): Promise<CommitPublish[]>
   getPackageCommits(name: string, limit?: number): Promise<CommitPublish[]>
+
+  // Paywall operations
+  getPaywall(name: string): Promise<PackagePaywall | null>
+  putPaywall(paywall: PackagePaywall): Promise<void>
+  deletePaywall(name: string): Promise<void>
+  getAccessGrant(packageName: string, token: string): Promise<PackageAccessGrant | null>
+  putAccessGrant(grant: PackageAccessGrant): Promise<void>
 }

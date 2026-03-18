@@ -623,13 +623,20 @@ fn handleInstallError(
         else => false,
     };
 
+    const is_payment_required = switch (err) {
+        error.PaymentRequired => true,
+        else => false,
+    };
+
     if (suggestion) |s| {
         if (!quiet or is_package_not_found) {
             s.print();
         }
     }
 
-    const error_msg = if (is_package_not_found)
+    const error_msg = if (is_payment_required)
+        (std.fmt.allocPrint(allocator, "payment required — visit https://pantry.dev/packages/{s}/checkout to purchase access", .{lookup_name}) catch null)
+    else if (is_package_not_found)
         (std.fmt.allocPrint(allocator, "not found in registry", .{}) catch null)
     else
         (std.fmt.allocPrint(allocator, "failed: {}", .{err}) catch null);

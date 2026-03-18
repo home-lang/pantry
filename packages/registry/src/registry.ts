@@ -282,6 +282,11 @@ export class Registry {
       metadata: this.metadataStorage,
     }
   }
+
+  /** Public accessor for metadata storage (used by paywall, etc.) */
+  get metadata(): MetadataStorage {
+    return this.metadataStorage
+  }
 }
 
 /**

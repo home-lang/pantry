@@ -6,6 +6,7 @@ import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from '
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
 import { S3Client } from './storage/aws-client'
+import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
 import { renderTemplate } from '@stacksjs/stx'
 import {
   generateSparkline,
@@ -240,6 +241,22 @@ export function createHandler(
         return handlePublish(req, registry, corsHeaders)
       }
 
+      // Stripe webhook
+      if (path === '/webhooks/stripe' && req.method === 'POST') {
+        const signature = req.headers.get('stripe-signature')
+        if (!signature) {
+          return Response.json({ error: 'Missing stripe-signature header' }, { status: 400, headers: corsHeaders })
+        }
+        try {
+          const rawBody = await req.text()
+          const result = await handleStripeWebhook(registry.metadata, rawBody, signature)
+          return Response.json(result, { headers: corsHeaders })
+        }
+        catch (err: any) {
+          return Response.json({ error: err.message }, { status: 400, headers: corsHeaders })
+        }
+      }
+
       // Category analytics API (JSON endpoints)
       const categoryApiMatch = path.match(/^\/api\/analytics\/(install|install-on-request|build-error)\/(30|90|365)d\.json$/)
       if (categoryApiMatch && req.method === 'GET') {
@@ -358,9 +375,113 @@ export function createHandler(
           return Response.json({ versions }, { headers: corsHeaders })
         }
 
+        // GET /packages/{name}/paywall — get paywall info
+        if (rest === 'paywall' && req.method === 'GET') {
+          const paywall = await registry.metadata.getPaywall(packageName)
+          if (!paywall || !paywall.enabled) {
+            return Response.json({ enabled: false }, { headers: corsHeaders })
+          }
+          return Response.json({
+            enabled: true,
+            price: paywall.price,
+            currency: paywall.currency,
+            formattedPrice: formatPrice(paywall.price, paywall.currency),
+            freeVersions: paywall.freeVersions || [],
+          }, { headers: corsHeaders })
+        }
+
+        // POST /packages/{name}/paywall — configure paywall (requires publish token)
+        if (rest === 'paywall' && req.method === 'POST') {
+          const authResult = validateToken(req.headers.get('authorization'))
+          if (!authResult.valid) {
+            return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
+          }
+
+          const body = await req.json() as { price: number, currency?: string, freeVersions?: string[], trialDays?: number }
+          if (!body.price || typeof body.price !== 'number' || body.price < 100) {
+            return Response.json({ error: 'Price must be at least 100 cents ($1.00)' }, { status: 400, headers: corsHeaders })
+          }
+
+          const paywall = await configurePaywall(registry.metadata, packageName, body)
+          return Response.json({
+            success: true,
+            paywall: {
+              enabled: paywall.enabled,
+              price: paywall.price,
+              currency: paywall.currency,
+              formattedPrice: formatPrice(paywall.price, paywall.currency),
+            },
+          }, { status: 200, headers: corsHeaders })
+        }
+
+        // DELETE /packages/{name}/paywall — remove paywall (requires publish token)
+        if (rest === 'paywall' && req.method === 'DELETE') {
+          const authResult = validateToken(req.headers.get('authorization'))
+          if (!authResult.valid) {
+            return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
+          }
+          await registry.metadata.deletePaywall(packageName)
+          return Response.json({ success: true }, { headers: corsHeaders })
+        }
+
+        // GET /packages/{name}/checkout — create Stripe checkout session
+        if (rest === 'checkout' && req.method === 'GET') {
+          const token = url.searchParams.get('token')
+          if (!token) {
+            return Response.json(
+              { error: 'Token required — run `pantry auth login` first' },
+              { status: 400, headers: corsHeaders },
+            )
+          }
+          try {
+            const session = await createCheckoutSession(registry.metadata, packageName, token, baseUrl)
+            // Redirect browser to Stripe Checkout
+            return new Response(null, {
+              status: 302,
+              headers: { ...corsHeaders, Location: session.url },
+            })
+          }
+          catch (err: any) {
+            return Response.json({ error: err.message }, { status: 400, headers: corsHeaders })
+          }
+        }
+
+        // GET /packages/{name}/checkout/success — post-payment landing
+        if (rest === 'checkout/success' && req.method === 'GET') {
+          const html = `<!DOCTYPE html>
+<html><head><title>Payment Successful</title></head>
+<body style="font-family: system-ui; max-width: 480px; margin: 80px auto; text-align: center;">
+<h1>Payment Successful</h1>
+<p>You now have access to <strong>${packageName}</strong>.</p>
+<p>Run <code>pantry install ${packageName}</code> to install it.</p>
+</body></html>`
+          return htmlResponse(html)
+        }
+
         // GET /packages/{name}/{version}/tarball
         if (rest?.endsWith('/tarball') && req.method === 'GET') {
           const version = rest.replace('/tarball', '')
+
+          // Check paywall before serving tarball
+          const authToken = extractBearerToken(req.headers.get('authorization'))
+            || url.searchParams.get('token')
+          const access = await checkPaywallAccess(registry.metadata, packageName, version, authToken)
+          if (!access.allowed && access.paywall) {
+            const checkoutUrl = `${baseUrl}/packages/${encodeURIComponent(packageName)}/checkout`
+            return Response.json(
+              {
+                error: 'Payment required',
+                package: packageName,
+                price: access.paywall.price,
+                currency: access.paywall.currency,
+                formattedPrice: formatPrice(access.paywall.price, access.paywall.currency),
+                checkoutUrl,
+                message: `This package requires payment (${formatPrice(access.paywall.price, access.paywall.currency)}). Visit ${checkoutUrl} to purchase access, or run: pantry auth login`,
+              },
+              { status: 402, headers: corsHeaders },
+            )
+          }
+
           const tarball = await registry.downloadTarball(packageName, version)
 
           if (!tarball) {
@@ -668,6 +789,14 @@ async function handleAnalyticsEvent(
 
 // Simple token for authentication (replace with proper auth in production)
 const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
+
+/**
+ * Extract bearer token from Authorization header (returns null if not present)
+ */
+function extractBearerToken(authHeader: string | null): string | null {
+  if (!authHeader) return null
+  return authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
+}
 
 /**
  * Validate authorization token

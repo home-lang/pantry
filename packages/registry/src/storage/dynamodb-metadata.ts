@@ -13,7 +13,9 @@
 import type {
   CommitPublish,
   MetadataStorage,
+  PackageAccessGrant,
   PackageMetadata,
+  PackagePaywall,
   PackageRecord,
   SearchResult,
 } from '../types'
@@ -445,6 +447,110 @@ export class DynamoDBMetadataStorage implements MetadataStorage {
         publishedAt: data.publishedAt,
         repository: data.repository,
       }
+    })
+  }
+
+  // ===========================================================================
+  // Paywall Operations
+  // ===========================================================================
+
+  async getPaywall(name: string): Promise<PackagePaywall | null> {
+    const result = await this.db.getItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `PACKAGE#${name}` },
+        SK: { S: 'PAYWALL' },
+      },
+    })
+
+    if (!result.Item) return null
+
+    const data = DynamoDBClient.unmarshal(result.Item)
+    return {
+      name: data.name,
+      enabled: data.enabled ?? true,
+      price: data.price,
+      currency: data.currency || 'usd',
+      stripeAccountId: data.stripeAccountId || undefined,
+      stripePriceId: data.stripePriceId || undefined,
+      stripeProductId: data.stripeProductId || undefined,
+      freeVersions: data.freeVersions || undefined,
+      trialDays: data.trialDays || undefined,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    }
+  }
+
+  async putPaywall(paywall: PackagePaywall): Promise<void> {
+    await this.db.putItem({
+      TableName: this.tableName,
+      Item: DynamoDBClient.marshal({
+        PK: `PACKAGE#${paywall.name}`,
+        SK: 'PAYWALL',
+        name: paywall.name,
+        enabled: paywall.enabled,
+        price: paywall.price,
+        currency: paywall.currency || 'usd',
+        stripeAccountId: paywall.stripeAccountId || '',
+        stripePriceId: paywall.stripePriceId || '',
+        stripeProductId: paywall.stripeProductId || '',
+        freeVersions: paywall.freeVersions || [],
+        trialDays: paywall.trialDays || 0,
+        createdAt: paywall.createdAt,
+        updatedAt: paywall.updatedAt,
+      }),
+    })
+  }
+
+  async deletePaywall(name: string): Promise<void> {
+    // Disable the paywall by setting enabled=false (DynamoDB client doesn't expose deleteItem)
+    const existing = await this.getPaywall(name)
+    if (existing) {
+      existing.enabled = false
+      existing.updatedAt = new Date().toISOString()
+      await this.putPaywall(existing)
+    }
+  }
+
+  async getAccessGrant(packageName: string, token: string): Promise<PackageAccessGrant | null> {
+    const result = await this.db.getItem({
+      TableName: this.tableName,
+      Key: {
+        PK: { S: `ACCESS#${packageName}` },
+        SK: { S: `TOKEN#${token}` },
+      },
+    })
+
+    if (!result.Item) return null
+
+    const data = DynamoDBClient.unmarshal(result.Item)
+
+    // Check if access has expired
+    if (data.expiresAt && new Date(data.expiresAt) < new Date()) {
+      return null
+    }
+
+    return {
+      packageName: data.packageName,
+      token: data.token,
+      stripePaymentId: data.stripePaymentId || undefined,
+      grantedAt: data.grantedAt,
+      expiresAt: data.expiresAt || undefined,
+    }
+  }
+
+  async putAccessGrant(grant: PackageAccessGrant): Promise<void> {
+    await this.db.putItem({
+      TableName: this.tableName,
+      Item: DynamoDBClient.marshal({
+        PK: `ACCESS#${grant.packageName}`,
+        SK: `TOKEN#${grant.token}`,
+        packageName: grant.packageName,
+        token: grant.token,
+        stripePaymentId: grant.stripePaymentId || '',
+        grantedAt: grant.grantedAt,
+        expiresAt: grant.expiresAt || '',
+      }),
     })
   }
 

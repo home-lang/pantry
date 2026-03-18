@@ -1,7 +1,9 @@
 import type {
   CommitPublish,
   MetadataStorage,
+  PackageAccessGrant,
   PackageMetadata,
+  PackagePaywall,
   PackageRecord,
   SearchResult,
 } from '../types'
@@ -12,6 +14,8 @@ import type {
  */
 export class InMemoryMetadataStorage implements MetadataStorage {
   private packages: Map<string, PackageRecord> = new Map()
+  private paywalls: Map<string, PackagePaywall> = new Map()
+  private accessGrants: Map<string, PackageAccessGrant> = new Map()
 
   async getPackage(name: string): Promise<PackageRecord | null> {
     return this.packages.get(name) || null
@@ -173,6 +177,37 @@ export class InMemoryMetadataStorage implements MetadataStorage {
   /**
    * Simple semver comparison
    */
+  async getPaywall(name: string): Promise<PackagePaywall | null> {
+    const paywall = this.paywalls.get(name)
+    if (!paywall || !paywall.enabled) return null
+    return paywall
+  }
+
+  async putPaywall(paywall: PackagePaywall): Promise<void> {
+    this.paywalls.set(paywall.name, paywall)
+  }
+
+  async deletePaywall(name: string): Promise<void> {
+    const paywall = this.paywalls.get(name)
+    if (paywall) {
+      paywall.enabled = false
+      paywall.updatedAt = new Date().toISOString()
+    }
+  }
+
+  async getAccessGrant(packageName: string, token: string): Promise<PackageAccessGrant | null> {
+    const key = `${packageName}:${token}`
+    const grant = this.accessGrants.get(key)
+    if (!grant) return null
+    if (grant.expiresAt && new Date(grant.expiresAt) < new Date()) return null
+    return grant
+  }
+
+  async putAccessGrant(grant: PackageAccessGrant): Promise<void> {
+    const key = `${grant.packageName}:${grant.token}`
+    this.accessGrants.set(key, grant)
+  }
+
   private isNewerVersion(a: string, b: string): boolean {
     const [aMajor, aMinor, aPatch] = a.split('.').map(Number)
     const [bMajor, bMinor, bPatch] = b.split('.').map(Number)

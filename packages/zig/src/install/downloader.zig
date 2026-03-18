@@ -5,6 +5,7 @@ const style = @import("../cli/style.zig");
 
 pub const DownloadError = error{
     HttpRequestFailed,
+    PaymentRequired,
     InvalidUrl,
     FileWriteFailed,
     NetworkError,

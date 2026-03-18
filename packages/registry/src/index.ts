@@ -58,11 +58,22 @@ export type {
   ZigPackageStorage,
 } from './zig'
 
+// Paywall
+export {
+  checkPaywallAccess,
+  configurePaywall,
+  createCheckoutSession,
+  handleStripeWebhook,
+  formatPrice,
+} from './paywall'
+
 // Types
 export type {
   PackageMetadata,
   PackageVersion,
   PackageRecord,
+  PackagePaywall,
+  PackageAccessGrant,
   SearchResult,
   PublishRequest,
   RegistryConfig,

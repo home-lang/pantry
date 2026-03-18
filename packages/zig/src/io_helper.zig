@@ -1284,6 +1284,7 @@ pub fn getEnvMap(allocator: std.mem.Allocator) !EnvMap {
 
 pub const HttpError = error{
     HttpRequestFailed,
+    PaymentRequired,
     InvalidUrl,
     NetworkError,
     FileWriteFailed,
@@ -1417,10 +1418,14 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
     stream.response = stream.req.receiveHead(&stream.redirect_buf) catch return error.HttpRequestFailed;
 
     if (stream.response.head.status != .ok) {
+        const status_code = @intFromEnum(stream.response.head.status);
+        // 402 Payment Required — package has a paywall
+        if (status_code == 402) {
+            return error.PaymentRequired;
+        }
         // Log non-200 status only in interactive mode (CI has too much noise)
         const style = @import("cli/style.zig");
         if (!style.isCI()) {
-            const status_code = @intFromEnum(stream.response.head.status);
             style.print("  {s}(http status: {d} for {s}){s}\n", .{ style.dim, status_code, url, style.reset });
         }
         return error.HttpRequestFailed;
