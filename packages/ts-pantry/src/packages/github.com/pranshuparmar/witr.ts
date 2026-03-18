@@ -3,7 +3,7 @@
  *
  * @domain `github.com/pranshuparmar/witr`
  * @programs `witr`
- * @version `0.3.0` (3 versions available)
+ * @version `0.3.1` (4 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/pranshuparmar/witr`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcompranshuparmarwitr
  * console.log(pkg.name)        // "witr"
  * console.log(pkg.programs)    // ["witr"]
- * console.log(pkg.versions[0]) // "0.3.0" (latest)
+ * console.log(pkg.versions[0]) // "0.3.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/pranshuparmar/witr.md
@@ -66,6 +66,7 @@ export const witrPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.1',
     '0.3.0',
     '0.2.7',
     '0.2.6',
