@@ -67,12 +67,7 @@
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">4</p>
         <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Platforms</p>
-        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS &amp; Linux</p>
-      </div>
-      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
-        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--purple);">2</p>
-        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Architectures</p>
-        <p class="text-xs mt-1" style="color: var(--fg-subtle);">ARM64 &amp; x86_64</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);">macOS &amp; Linux &middot; ARM64 &amp; x86_64</p>
       </div>
     </div>
   </div>
