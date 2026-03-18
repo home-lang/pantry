@@ -4,6 +4,8 @@ import { startPostgres, stopPostgres, usePostgres, withPostgres } from '../src/t
 
 /** Check whether `pantry start` can work (needs launchd/systemd) */
 function canManageServices(): boolean {
+  // CI environments (GitHub Actions, etc.) lack a service manager bus
+  if (process.env.CI || process.env.GITHUB_ACTIONS) return false
   try {
     execSync('pantry inspect postgres', { stdio: 'pipe', timeout: 5000 })
     return true
