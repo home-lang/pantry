@@ -104,6 +104,11 @@ pub const registryPublishCommand = registry_commands.registryPublishCommand;
 // ============================================================================
 
 pub const publish_commit_commands = @import("commands/publish_commit.zig");
+
+// Release command (bump + changelog + commit + tag + push)
+pub const release_commands = @import("commands/release.zig");
+pub const ReleaseOptions = release_commands.ReleaseOptions;
+pub const releaseCommand = release_commands.releaseCommand;
 pub const PublishCommitOptions = publish_commit_commands.PublishCommitOptions;
 pub const publishCommitCommand = publish_commit_commands.publishCommitCommand;
 

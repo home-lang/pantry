@@ -868,6 +868,40 @@ fn registryPublishAction(ctx: *cli.BaseCommand.ParseContext) !void {
     std.process.exit(result.exit_code);
 }
 
+fn releaseAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    const allocator = ctx.allocator;
+
+    const release_type = ctx.getArgument(0) orelse "patch";
+    const preid = ctx.getOption("preid");
+    const tag_name = ctx.getOption("tag-name");
+    const yes = ctx.hasOption("yes");
+    const dry_run = ctx.hasOption("dry-run");
+    const no_changelog = ctx.hasOption("no-changelog");
+    const no_push = ctx.hasOption("no-push");
+
+    const options = lib.commands.ReleaseOptions{
+        .release_type = release_type,
+        .preid = preid,
+        .tag_name = tag_name,
+        .yes = yes,
+        .dry_run = dry_run,
+        .no_changelog = no_changelog,
+        .no_push = no_push,
+    };
+
+    const result = try lib.commands.releaseCommand(allocator, options);
+    defer {
+        var r = result;
+        r.deinit(allocator);
+    }
+
+    if (result.message) |msg| {
+        style.print("{s}\n", .{msg});
+    }
+
+    std.process.exit(result.exit_code);
+}
+
 fn publishBinaryAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
@@ -3460,6 +3494,37 @@ pub fn main() !void {
 
     _ = publish_binary_cmd.setAction(publishBinaryAction);
     _ = try root.addCommand(publish_binary_cmd);
+
+    // ========================================================================
+    // Release Command (bump + changelog + commit + tag + push)
+    // ========================================================================
+    var release_cmd = try cli.BaseCommand.init(allocator, "release", "Release a new version (bump, changelog, commit, tag, push)");
+
+    const rel_type_arg = cli.Argument.init("type", "Release type: patch, minor, major, premajor, preminor, prepatch, prerelease, or exact version", .string)
+        .withRequired(false);
+    _ = try release_cmd.addArgument(rel_type_arg);
+
+    const rel_preid_opt = cli.Option.init("preid", "preid", "Prerelease identifier (alpha, beta, rc)", .string);
+    _ = try release_cmd.addOption(rel_preid_opt);
+
+    const rel_tag_name_opt = cli.Option.init("tag-name", "tag-name", "Custom tag name pattern (default: v{version})", .string);
+    _ = try release_cmd.addOption(rel_tag_name_opt);
+
+    const rel_yes_opt = cli.Option.init("yes", "yes", "Skip confirmation prompts", .bool)
+        .withShort('y');
+    _ = try release_cmd.addOption(rel_yes_opt);
+
+    const rel_dry_run_opt = cli.Option.init("dry-run", "dry-run", "Preview changes without applying", .bool);
+    _ = try release_cmd.addOption(rel_dry_run_opt);
+
+    const rel_no_changelog_opt = cli.Option.init("no-changelog", "no-changelog", "Skip changelog generation", .bool);
+    _ = try release_cmd.addOption(rel_no_changelog_opt);
+
+    const rel_no_push_opt = cli.Option.init("no-push", "no-push", "Skip git push", .bool);
+    _ = try release_cmd.addOption(rel_no_push_opt);
+
+    _ = release_cmd.setAction(releaseAction);
+    _ = try root.addCommand(release_cmd);
 
     // ========================================================================
     // Link Command
