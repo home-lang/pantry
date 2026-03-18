@@ -3,7 +3,7 @@
  *
  * @domain `yt-dlp.org`
  * @programs `yt-dlp`
- * @version `2026.3.13` (67 versions available)
+ * @version `2026.3.17` (68 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install yt-dlp.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "yt-dlp"
  * console.log(pkg.description) // "A feature-rich command-line audio/video downloader"
  * console.log(pkg.programs)    // ["yt-dlp"]
- * console.log(pkg.versions[0]) // "2026.3.13" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.17" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/yt-dlp-org.md
@@ -69,6 +69,7 @@ export const ytdlporgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.17',
     '2026.3.13',
     '2026.3.3',
     '2026.2.21',

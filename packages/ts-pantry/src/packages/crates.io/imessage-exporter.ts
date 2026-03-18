@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/imessage-exporter`
  * @programs `imessage-exporter`
- * @version `3.3.2` (23 versions available)
+ * @version `4.0.0` (24 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/imessage-exporter`
@@ -16,7 +16,7 @@
  * console.log(pkg.name)        // "imessage-exporter"
  * console.log(pkg.description) // "Command-line tool to export and inspect local i..."
  * console.log(pkg.programs)    // ["imessage-exporter"]
- * console.log(pkg.versions[0]) // "3.3.2" (latest)
+ * console.log(pkg.versions[0]) // "4.0.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/imessage-exporter.md
@@ -60,6 +60,7 @@ export const cratesioimessageexporterPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.0.0',
     '3.3.2',
     '3.3.1',
     '3.3.0',
