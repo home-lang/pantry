@@ -512,7 +512,7 @@ export class DynamoDBZigStorage implements ZigPackageStorage {
     const key = this.s3Key(name, version)
     try {
       const buf = await this.s3.getObjectBuffer(this.bucket, key)
-      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+      return (buf.buffer as ArrayBuffer).slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
     }
     catch {
       return null

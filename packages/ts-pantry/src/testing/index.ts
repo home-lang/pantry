@@ -1,4 +1,4 @@
-export { PantryService, type ServiceConfig, type ServiceStatus } from './service'
+export { PantryService, type TestServiceConfig, type TestServiceStatus } from './service'
 export {
   usePostgres,
   withPostgres,

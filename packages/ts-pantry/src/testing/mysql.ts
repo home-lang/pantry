@@ -41,8 +41,8 @@ export function useMysql(config?: MysqlConfig) {
       if (!connection) throw new Error('MySQL not started. Ensure beforeAll has run.')
       return connection
     },
-    beforeAll: async () => { connection = await startMysql(config) },
-    afterAll: async () => { await stopMysql(); connection = null },
+    beforeAll: async (): Promise<void> => { connection = await startMysql(config) },
+    afterAll: async (): Promise<void> => { await stopMysql(); connection = null },
   }
 }
 

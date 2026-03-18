@@ -474,7 +474,7 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       })
       const html = await res.text()
       expect(html).toContain('Total Downloads')
-      expect(html).toContain('Last Download')
+      expect(html).toContain('Weekly Downloads')
       expect(html).toContain('Versions Tracked')
       expect(html).toContain('30d Downloads')
     })
@@ -488,13 +488,12 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       expect(html).toContain('5')
     })
 
-    it('renders chart canvas element', async () => {
+    it('renders chart SVG element', async () => {
       const res = await fetch(`${baseUrl}/dashboard/package/curl.se`, {
         headers: { 'Cookie': `pantry_token=${TEST_TOKEN}` },
       })
       const html = await res.text()
-      expect(html).toContain('<canvas id="chart"')
-      expect(html).toContain('getContext(')
+      expect(html).toContain('<svg')
       expect(html).toContain('Downloads (30 days)')
     })
 

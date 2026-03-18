@@ -35,9 +35,9 @@ async function stripeRequest(method: string, path: string, body?: Record<string,
   if (body) {
     headers['Content-Type'] = 'application/x-www-form-urlencoded'
     fetchBody = new URLSearchParams(
-      Object.entries(body).flatMap(([k, v]) => {
-        if (Array.isArray(v)) return v.map((item, i) => [`${k}[${i}]`, String(item)])
-        return [[k, String(v)]]
+      Object.entries(body).flatMap(([k, v]): [string, string][] => {
+        if (Array.isArray(v)) return v.map((item, i) => [`${k}[${i}]`, String(item)] as [string, string])
+        return [[k, String(v)] as [string, string]]
       }),
     ).toString()
   }

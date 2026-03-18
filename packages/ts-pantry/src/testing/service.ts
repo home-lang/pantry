@@ -6,7 +6,7 @@
  */
 import { execSync, type ExecSyncOptions } from 'node:child_process'
 
-export interface ServiceConfig {
+export interface TestServiceConfig {
   /** Service name as known by pantry (e.g. 'postgres', 'redis', 'mysql') */
   name: string
   /** Port to check for readiness (optional — uses pantry inspect to detect) */
@@ -19,7 +19,7 @@ export interface ServiceConfig {
   quiet?: boolean
 }
 
-export interface ServiceStatus {
+export interface TestServiceStatus {
   name: string
   running: boolean
   port: number | null
@@ -60,7 +60,7 @@ function pantryExec(cmd: string, quiet = false): string {
   return execSync(`pantry ${cmd}`, opts) as string
 }
 
-function parsePantryInspect(output: string): ServiceStatus {
+function parsePantryInspect(output: string): TestServiceStatus {
   const name = output.match(/Name:\s+(\S+)/)?.[1] ?? ''
   const running = /Status:\s+running/i.test(output)
   const portMatch = output.match(/Port:\s+(\d+)/)
@@ -88,10 +88,10 @@ function parsePantryInspect(output: string): ServiceStatus {
  * ```
  */
 export class PantryService {
-  private config: Required<ServiceConfig>
+  private config: Required<TestServiceConfig>
   private _startedByUs = false
 
-  constructor(config: ServiceConfig) {
+  constructor(config: TestServiceConfig) {
     this.config = {
       name: config.name,
       port: config.port ?? 0,
@@ -113,7 +113,7 @@ export class PantryService {
   }
 
   /** Get current service status via `pantry inspect` */
-  status(): ServiceStatus {
+  status(): TestServiceStatus {
     try {
       const output = pantryExec(`inspect ${this.config.name}`, true)
       return parsePantryInspect(output)
@@ -137,7 +137,7 @@ export class PantryService {
    * Start the service via `pantry start`.
    * No-op if already running.
    */
-  async start(): Promise<ServiceStatus> {
+  async start(): Promise<TestServiceStatus> {
     registerCleanup()
 
     if (this.isRunning()) {
@@ -190,7 +190,7 @@ export class PantryService {
    * Ensure the service is running. Starts it if not.
    * Returns connection info.
    */
-  async ensureRunning(): Promise<ServiceStatus> {
+  async ensureRunning(): Promise<TestServiceStatus> {
     if (this.isRunning()) return this.status()
     return this.start()
   }

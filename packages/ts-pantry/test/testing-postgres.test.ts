@@ -1,8 +1,23 @@
+import { execSync } from 'node:child_process'
 import { describe, expect, test } from 'bun:test'
 import { startPostgres, stopPostgres, usePostgres, withPostgres } from '../src/testing/postgres'
 
+/** Check whether `pantry start` can work (needs launchd/systemd) */
+function canManageServices(): boolean {
+  try {
+    execSync('pantry inspect postgres', { stdio: 'pipe', timeout: 5000 })
+    return true
+  }
+  catch {
+    return false
+  }
+}
+
+const hasServiceManager = canManageServices()
+const serviceTest = hasServiceManager ? test : test.skip
+
 describe('Postgres helpers', () => {
-  test('startPostgres returns connection info', async () => {
+  serviceTest('startPostgres returns connection info', async () => {
     const conn = await startPostgres()
     expect(conn.port).toBe(5432)
     expect(conn.host).toBe('localhost')
@@ -11,7 +26,7 @@ describe('Postgres helpers', () => {
     await stopPostgres()
   })
 
-  test('withPostgres provides connection and cleans up', async () => {
+  serviceTest('withPostgres provides connection and cleans up', async () => {
     let capturedPort = 0
     await withPostgres(async (conn) => {
       capturedPort = conn.port
@@ -27,7 +42,7 @@ describe('Postgres helpers', () => {
     expect(typeof pg.afterAll).toBe('function')
   })
 
-  test('usePostgres lifecycle works', async () => {
+  serviceTest('usePostgres lifecycle works', async () => {
     const pg = usePostgres()
     await pg.beforeAll()
     expect(pg.connection.port).toBe(5432)
@@ -35,7 +50,7 @@ describe('Postgres helpers', () => {
     await pg.afterAll()
   })
 
-  test('custom config is respected', async () => {
+  serviceTest('custom config is respected', async () => {
     const conn = await startPostgres({
       database: 'test_db',
       username: 'testuser',

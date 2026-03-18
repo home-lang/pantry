@@ -97,11 +97,11 @@ export function usePostgres(config?: PostgresConfig) {
       return connection
     },
 
-    beforeAll: async () => {
+    beforeAll: async (): Promise<void> => {
       connection = await startPostgres(config)
     },
 
-    afterAll: async () => {
+    afterAll: async (): Promise<void> => {
       await stopPostgres()
       connection = null
     },

@@ -35,8 +35,8 @@ export function useRedis(config?: RedisConfig) {
       if (!connection) throw new Error('Redis not started. Ensure beforeAll has run.')
       return connection
     },
-    beforeAll: async () => { connection = await startRedis(config) },
-    afterAll: async () => { await stopRedis(); connection = null },
+    beforeAll: async (): Promise<void> => { connection = await startRedis(config) },
+    afterAll: async (): Promise<void> => { await stopRedis(); connection = null },
   }
 }
 
