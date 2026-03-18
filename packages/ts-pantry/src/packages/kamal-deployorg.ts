@@ -3,7 +3,7 @@
  *
  * @domain `kamal-deploy.org`
  * @programs `kamal`
- * @version `2.10.1` (1 versions available)
+ * @version `2.11.0` (2 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kamal-deploy.org`
@@ -17,7 +17,7 @@
  * const pkg = pantry.kamaldeployorg
  * console.log(pkg.name)        // "kamal-deploy"
  * console.log(pkg.programs)    // ["kamal"]
- * console.log(pkg.versions[0]) // "2.10.1" (latest)
+ * console.log(pkg.versions[0]) // "2.11.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/kamal-deploy-org.md
@@ -74,6 +74,7 @@ export const kamaldeployorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.11.0',
     '2.10.1',
   ] as const,
   aliases: [] as const,

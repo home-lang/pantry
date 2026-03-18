@@ -31,19 +31,19 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 6 versions</summary>
+<summary>Show all 7 versions</summary>
 
-- `1.0.16`, `1.0.15`, `1.0.14`, `1.0.13`, `1.0.12`, `1.0.11`
+- `1.0.17`, `1.0.16`, `1.0.15`, `1.0.14`, `1.0.13`, `1.0.12`, `1.0.11`
 
 </details>
 
-**Latest Version**: `1.0.16`
+**Latest Version**: `1.0.17`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/strukturag/libde265@1.0.16 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/strukturag/libde265@1.0.17 -- $SHELL -i
 ```
 
 ## Usage Examples

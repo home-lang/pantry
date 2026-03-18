@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 37 versions</summary>
+<summary>Show all 38 versions</summary>
 
-- `3.9.0`
+- `3.9.0.1`, `3.9.0`
 - `3.8.3`, `3.8.2.1`, `3.8.2`, `3.8.1`, `3.8.0`
 - `3.7.0.2`, `3.7.0.1`, `3.7.0`
 - `3.6.4`, `3.6.3`, `3.6.2`, `3.6.1`, `3.6.0`
@@ -40,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.9.0`
+**Latest Version**: `3.9.0.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +pandoc.org@3.9.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +pandoc.org@3.9.0.1 -- $SHELL -i
 ```
 
 ## Dependencies

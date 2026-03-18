@@ -3,7 +3,7 @@
  *
  * @domain `github.com/strukturag/libde265`
  * @programs `acceleration_speed`, `bjoentegaard`, `block-rate-estim`, `gen-enc-table`, `rd-curves`, ... (+2 more)
- * @version `1.0.16` (6 versions available)
+ * @version `1.0.17` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/strukturag/libde265`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "libde265"
  * console.log(pkg.description) // "Open h.265 video codec implementation."
  * console.log(pkg.programs)    // ["acceleration_speed", "bjoentegaard", ...]
- * console.log(pkg.versions[0]) // "1.0.16" (latest)
+ * console.log(pkg.versions[0]) // "1.0.17" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/strukturag/libde265.md
@@ -74,6 +74,7 @@ export const libde265Package = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.0.17',
     '1.0.16',
     '1.0.15',
     '1.0.14',
