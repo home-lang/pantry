@@ -36,8 +36,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 9 versions</summary>
+<summary>Show all 10 versions</summary>
 
+- `78.3.0`
 - `78.2.0`
 - `78.1.0`
 - `77.1.0`
@@ -50,13 +51,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `78.2.0`
+**Latest Version**: `78.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +unicode.org@78.2.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +unicode.org@78.3.0 -- $SHELL -i
 ```
 
 ## Usage Examples

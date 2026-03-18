@@ -3,7 +3,7 @@
  *
  * @domain `unicode.org`
  * @programs `derb`, `genbrk`, `gencfu`, `gencnval`, `gendict`, ... (+7 more)
- * @version `78.2.0` (9 versions available)
+ * @version `78.3.0` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install unicode.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "unicode"
  * console.log(pkg.description) // "The home of the ICU project source code."
  * console.log(pkg.programs)    // ["derb", "genbrk", ...]
- * console.log(pkg.versions[0]) // "78.2.0" (latest)
+ * console.log(pkg.versions[0]) // "78.3.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/unicode-org.md
@@ -81,6 +81,7 @@ export const unicodeorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '78.3.0',
     '78.2.0',
     '78.1.0',
     '77.1.0',
