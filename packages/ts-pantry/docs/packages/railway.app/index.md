@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 103 versions</summary>
+<summary>Show all 104 versions</summary>
 
+- `4.32.0`
 - `4.31.0`
 - `4.30.5`, `4.30.4`, `4.30.3`, `4.30.2`, `4.30.1`, `4.30.0`
 - `4.29.0`
@@ -79,13 +80,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.31.0`
+**Latest Version**: `4.32.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +railway.app@4.31.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +railway.app@4.32.0 -- $SHELL -i
 ```
 
 ## Usage Examples

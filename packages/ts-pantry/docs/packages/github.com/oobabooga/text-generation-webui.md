@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 57 versions</summary>
+<summary>Show all 58 versions</summary>
 
-- `4.1.0`
+- `4.1.1`, `4.1.0`
 - `4.0.0`
 - `3.23.0`
 - `3.22.0`
@@ -77,13 +77,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.1.0`
+**Latest Version**: `4.1.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/oobabooga/text-generation-webui@4.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/oobabooga/text-generation-webui@4.1.1 -- $SHELL -i
 ```
 
 ## Dependencies
