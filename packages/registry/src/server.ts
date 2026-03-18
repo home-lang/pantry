@@ -233,7 +233,8 @@ export function createHandler(
         const q = url.searchParams.get('q') || ''
         const sort = url.searchParams.get('sort') || 'relevance'
         const view = url.searchParams.get('view') || 'list'
-        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view)
+        const type = url.searchParams.get('type') || 'all'
+        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage)
       }
 
       // Publish
@@ -546,7 +547,7 @@ export function createHandler(
 
       // Homepage
       if (path === '/' || path === '') {
-        return await handleSiteHome(binaryStorage, analyticsStorage)
+        return await handleSiteHome(binaryStorage, analyticsStorage, zigPackageStorage)
       }
 
       // Package detail page
@@ -1883,7 +1884,7 @@ async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Pr
   catch { return null }
 }
 
-async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage): Promise<Response> {
+async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage, zigStorage?: ZigPackageStorage): Promise<Response> {
   // Fetch featured package metadata + sparkline data in parallel
   const metaResults = await Promise.allSettled(
     FEATURED_PACKAGES.map(async (pkg) => {
@@ -1946,7 +1947,8 @@ async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: 
   }
 
   const totalPackages = _knownVersions.size || 500
-  const html = await renderSitePage('index.stx', { packages, totalPackages, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
+  const zigPackageCount = zigStorage ? await zigStorage.count().catch(() => 0) : 0
+  const html = await renderSitePage('index.stx', { packages, totalPackages, zigPackageCount, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
   return htmlResponse(html)
 }
 
@@ -1957,11 +1959,42 @@ async function handleSiteSearch(
   analyticsStorage?: AnalyticsStorage,
   sort = 'relevance',
   view = 'list',
+  type = 'all',
+  zigStorage?: ZigPackageStorage,
 ): Promise<Response> {
   let results: any[] = []
-  if (query) {
+
+  // Zig-only search
+  if (type === 'zig' && zigStorage) {
+    const zigResults = await zigStorage.search(query || '', 50)
+    results = zigResults.map(r => ({
+      name: r.name,
+      version: r.latest,
+      description: r.description || '',
+      keywords: r.keywords,
+      packageType: 'zig',
+    }))
+  }
+  else if (query) {
     const searchResults = await registry.search(query, 50)
     results = searchResults || []
+
+    // Also search Zig packages and merge if type is 'all'
+    if (type === 'all' && zigStorage) {
+      const zigResults = await zigStorage.search(query, 20).catch(() => [])
+      const existingNames = new Set(results.map((r: any) => r.name))
+      for (const zr of zigResults) {
+        if (!existingNames.has(zr.name)) {
+          results.push({
+            name: zr.name,
+            version: zr.latest,
+            description: zr.description || '',
+            keywords: zr.keywords,
+            packageType: 'zig',
+          })
+        }
+      }
+    }
 
     const metaData = await fetchPackageMetadata(query, binaryStorage)
     if (metaData && metaData.name) {
@@ -2015,12 +2048,13 @@ async function handleSiteSearch(
     results,
     sort,
     view,
+    type,
     count: results.length,
-    hasResults: results.length > 0,
-    hasQuery: query.length > 0,
+    hasResults: results.length > 0 || type === 'zig',
+    hasQuery: query.length > 0 || type === 'zig',
     suggestions,
-    title: query ? `search: ${query}` : 'search',
-    metaDescription: query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
+    title: type === 'zig' ? 'zig packages' : query ? `search: ${query}` : 'search',
+    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
     canonicalUrl: 'https://pantry.dev/search',
   })
   return htmlResponse(html)

@@ -30,6 +30,11 @@
       @if (hasQuery)
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
+          <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Type:</label>
+          <select name="type" class="sort-select" onchange="this.form.submit()">
+            <option value="all" @if (type === 'all') selected @endif>All</option>
+            <option value="zig" @if (type === 'zig') selected @endif>Zig</option>
+          </select>
           <label class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Sort:</label>
           <select name="sort" class="sort-select" onchange="this.form.submit()">
             <option value="relevance" @if (sort === 'relevance') selected @endif>Relevance</option>

@@ -173,6 +173,8 @@ export interface ZigPackageStorage {
   exists(name: string, version: string): Promise<boolean>
   downloadTarball(name: string, version: string): Promise<ArrayBuffer | null>
   getByHash(hash: string): Promise<{ name: string, version: string, tarballUrl: string } | null>
+  /** Return total number of published Zig packages */
+  count(): Promise<number>
 }
 
 /**
@@ -182,6 +184,10 @@ export class InMemoryZigStorage implements ZigPackageStorage {
   private packages: Map<string, ZigPackageRecord> = new Map()
   private tarballs: Map<string, ArrayBuffer> = new Map()
   private hashIndex: Map<string, { name: string, version: string }> = new Map()
+
+  async count(): Promise<number> {
+    return this.packages.size
+  }
 
   async getPackage(name: string, version?: string): Promise<ZigPackageMetadata | null> {
     const record = this.packages.get(name)
