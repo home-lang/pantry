@@ -59,6 +59,23 @@ export type {
   ZigPackageStorage,
 } from './zig'
 
+// PHP/Composer package support
+export {
+  computePhpChecksum,
+  parseComposerJson,
+  generateComposerRequire,
+  createPhpStorage,
+  InMemoryPhpStorage,
+  DynamoDBPhpStorage,
+} from './php'
+export type {
+  ComposerManifest,
+  ComposerAuthor,
+  PhpPackageMetadata,
+  PhpPackageRecord,
+  PhpPackageStorage,
+} from './php'
+
 // Paywall
 export {
   checkPaywallAccess,

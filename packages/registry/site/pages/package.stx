@@ -124,6 +124,21 @@
           </div>
           <button class="copy-btn" data-copy='.@"{{ name }}" = .{ .url = "{{ zigFetchUrl }}" }'>copy</button>
         </div>
+        @elseif (isPhpPackage)
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">composer</span>
+            <code class="text-sm" style="color: var(--accent);">composer require {{ name }}:^{{ latestVersion }}</code>
+          </div>
+          <button class="copy-btn" data-copy="composer require {{ name }}:^{{ latestVersion }}">copy</button>
+        </div>
+        <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
+          <div>
+            <span class="text-xs mr-2" style="color: var(--fg-subtle);">composer.json</span>
+            <code class="text-sm" style="color: var(--fg-muted);">"{{ name }}": "^{{ latestVersion }}"</code>
+          </div>
+          <button class="copy-btn" data-copy='"{{ name }}": "^{{ latestVersion }}"'>copy</button>
+        </div>
         @else
         <div class="flex items-center justify-between gap-3 bg-[var(--bg)] rounded-md px-4 py-2.5 border border-[var(--border)]">
           <div>

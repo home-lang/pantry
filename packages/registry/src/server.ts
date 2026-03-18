@@ -5,6 +5,8 @@ import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry
 import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from './analytics'
 import { handleZigRoutes, createZigStorage } from './zig-routes'
 import type { ZigPackageStorage } from './zig'
+import { handlePhpRoutes, createPhpStorage } from './php-routes'
+import type { PhpPackageStorage } from './php'
 import { S3Client } from './storage/aws-client'
 import { checkPaywallAccess, configurePaywall, createCheckoutSession, handleStripeWebhook, formatPrice } from './paywall'
 import { renderTemplate } from '@stacksjs/stx'
@@ -181,6 +183,7 @@ export function createHandler(
   zigPackageStorage: ZigPackageStorage,
   baseUrl: string,
   binaryStorage?: BinaryStorage,
+  phpPackageStorage?: PhpPackageStorage,
 ): (req: Request) => Promise<Response> {
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url)
@@ -236,7 +239,7 @@ export function createHandler(
         const view = url.searchParams.get('view') || 'list'
         const type = url.searchParams.get('type') || 'all'
         const page = Math.max(1, Number.parseInt(url.searchParams.get('page') || '1', 10))
-        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage, page)
+        return await handleSiteSearch(q, registry, binaryStorage, analyticsStorage, sort, view, type, zigPackageStorage, page, phpPackageStorage)
       }
 
       // Publish
@@ -345,6 +348,14 @@ export function createHandler(
         const zigResponse = await handleZigRoutes(path, req, url, zigPackageStorage, baseUrl, corsHeaders)
         if (zigResponse) {
           return zigResponse
+        }
+      }
+
+      // PHP package routes
+      if (path.startsWith('/php/') && phpPackageStorage) {
+        const phpResponse = await handlePhpRoutes(path, req, url, phpPackageStorage, baseUrl, corsHeaders)
+        if (phpResponse) {
+          return phpResponse
         }
       }
 
@@ -549,14 +560,14 @@ export function createHandler(
 
       // Homepage
       if (path === '/' || path === '') {
-        return await handleSiteHome(binaryStorage, analyticsStorage, zigPackageStorage)
+        return await handleSiteHome(binaryStorage, analyticsStorage, zigPackageStorage, phpPackageStorage)
       }
 
       // Package detail page
       const sitePkgMatch = path.match(/^\/package\/(.+)$/)
       if (sitePkgMatch) {
         const name = decodeURIComponent(sitePkgMatch[1])
-        return await handleSitePackage(name, analyticsStorage, binaryStorage, registry, zigPackageStorage)
+        return await handleSitePackage(name, analyticsStorage, binaryStorage, registry, zigPackageStorage, phpPackageStorage)
       }
 
       // Compare page
@@ -640,12 +651,14 @@ export function createServer(
   analytics?: AnalyticsStorage,
   zigStorage?: ZigPackageStorage,
   binaryStorage?: BinaryStorage,
+  phpStorage?: PhpPackageStorage,
 ): { start: () => void, stop: () => void } {
   let server: ReturnType<typeof Bun.serve> | null = null
   const analyticsStorage = analytics || createAnalytics()
   const zigPackageStorage = zigStorage || createZigStorage()
+  const phpPackageStorage = phpStorage || createPhpStorage()
   const baseUrl = process.env.BASE_URL || `http://localhost:${port}`
-  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl, binaryStorage)
+  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl, binaryStorage, phpPackageStorage)
 
   const start = () => {
     server = Bun.serve({
@@ -677,6 +690,11 @@ export function createServer(
     console.log('Zig packages:')
     console.log('  GET  /zig/packages/{name}       - Get Zig package metadata')
     console.log('  GET  /zig/packages/{name}/{version}/tarball - Download')
+    console.log('PHP/Composer packages:')
+    console.log('  GET  /php/packages/{vendor}/{package} - Get PHP package metadata')
+    console.log('  GET  /php/packages/{vendor}/{package}/{version}/tarball - Download')
+    console.log('  GET  /php/search?q={query}      - Search PHP packages')
+    console.log('  POST /php/publish               - Publish PHP package')
     console.log('  GET  /zig/hash/{hash}           - Lookup by content hash')
     console.log('  GET  /zig/search?q={query}      - Search Zig packages')
     console.log('  POST /zig/publish               - Publish Zig package')
@@ -1919,7 +1937,7 @@ async function fetchPackageMetadata(domain: string, storage?: BinaryStorage): Pr
   catch { return null }
 }
 
-async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage, zigStorage?: ZigPackageStorage): Promise<Response> {
+async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: AnalyticsStorage, zigStorage?: ZigPackageStorage, phpStorage?: PhpPackageStorage): Promise<Response> {
   // Fetch featured package metadata + sparkline data in parallel
   const metaResults = await Promise.allSettled(
     FEATURED_PACKAGES.map(async (pkg) => {
@@ -1983,7 +2001,8 @@ async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: 
 
   const totalPackages = _knownVersions.size || 500
   const zigPackageCount = zigStorage ? await zigStorage.count().catch(() => 0) : 0
-  const html = await renderSitePage('index.stx', { packages, totalPackages, zigPackageCount, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
+  const phpPackageCount = phpStorage ? await phpStorage.count().catch(() => 0) : 0
+  const html = await renderSitePage('index.stx', { packages, totalPackages, zigPackageCount, phpPackageCount, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
   return htmlResponse(html)
 }
 
@@ -1997,11 +2016,24 @@ async function handleSiteSearch(
   type = 'all',
   zigStorage?: ZigPackageStorage,
   page = 1,
+  phpStorage?: PhpPackageStorage,
 ): Promise<Response> {
   let results: any[] = []
 
+  // PHP-only search
+  if (type === 'php' && phpStorage) {
+    const phpResults = await phpStorage.search(query || '', 50)
+    results = phpResults.map(r => ({
+      name: r.name,
+      version: r.latest,
+      description: r.description || '',
+      keywords: r.keywords,
+      packageType: 'php',
+    }))
+  }
+
   // Zig-only search
-  if (type === 'zig' && zigStorage) {
+  else if (type === 'zig' && zigStorage) {
     const zigResults = await zigStorage.search(query || '', 50)
     results = zigResults.map(r => ({
       name: r.name,
@@ -2027,6 +2059,23 @@ async function handleSiteSearch(
             description: zr.description || '',
             keywords: zr.keywords,
             packageType: 'zig',
+          })
+        }
+      }
+    }
+
+    // Also search PHP packages and merge if type is 'all'
+    if (type === 'all' && phpStorage) {
+      const phpResults = await phpStorage.search(query, 20).catch(() => [])
+      const existingPhpNames = new Set(results.map((r: any) => r.name))
+      for (const pr of phpResults) {
+        if (!existingPhpNames.has(pr.name)) {
+          results.push({
+            name: pr.name,
+            version: pr.latest,
+            description: pr.description || '',
+            keywords: pr.keywords,
+            packageType: 'php',
           })
         }
       }
@@ -2106,16 +2155,16 @@ async function handleSiteSearch(
     view,
     type,
     count: totalResults,
-    hasResults: totalResults > 0 || type === 'zig',
-    hasQuery: query.length > 0 || type === 'zig',
+    hasResults: totalResults > 0 || type === 'zig' || type === 'php',
+    hasQuery: query.length > 0 || type === 'zig' || type === 'php',
     suggestions,
     page: safePage,
     totalPages,
     pageStart,
     pageEnd,
     pageNumbers,
-    title: type === 'zig' ? 'zig packages' : query ? `search: ${query}` : 'search',
-    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
+    title: type === 'zig' ? 'zig packages' : type === 'php' ? 'php packages' : query ? `search: ${query}` : 'search',
+    metaDescription: type === 'zig' ? 'Browse Zig packages on pantry.dev' : type === 'php' ? 'Browse PHP/Composer packages on pantry.dev' : query ? `Search results for "${query}" on pantry.dev` : 'Search packages on pantry.dev',
     canonicalUrl: 'https://pantry.dev/search',
   })
   return htmlResponse(html)
@@ -2127,21 +2176,25 @@ async function handleSitePackage(
   binaryStorage?: BinaryStorage,
   registry?: Registry,
   zigStorage?: ZigPackageStorage,
+  phpStorage?: PhpPackageStorage,
 ): Promise<Response> {
-  const [meta, stats, timeline, pkgInfo, zigPkg] = await Promise.all([
+  const [meta, stats, timeline, pkgInfo, zigPkg, phpPkg] = await Promise.all([
     fetchPackageMetadata(name, binaryStorage),
     analytics.getPackageStats(name),
     analytics.getDownloadTimeline(name, 30),
     registry?.getPackage(name) ?? null,
     zigStorage?.getPackage(name) ?? null,
+    phpStorage?.getPackage(name) ?? null,
   ])
   const isZigPackage = zigPkg !== null
+  const isPhpPackage = phpPkg !== null
 
-  if (!meta && !pkgInfo && !zigPkg) {
+  if (!meta && !pkgInfo && !zigPkg && !phpPkg) {
     const html = await renderSitePage('package.stx', {
       name,
       notFound: true,
       isZigPackage: false,
+      isPhpPackage: false,
       zigFetchUrl: '',
       meta: null,
       latestVersion: '',
@@ -2165,6 +2218,7 @@ async function handleSitePackage(
       name,
       notFound: false,
       isZigPackage: true,
+      isPhpPackage: false,
       zigFetchUrl: zigPkg.tarballUrl || '',
       latestVersion: zigPkg.version || 'unknown',
       versionCount: zigVersions.length || 1,
@@ -2186,6 +2240,45 @@ async function handleSitePackage(
       versionDistribution: { bars: [] },
       title: name,
       metaDescription: `${zigPkg.description || name} — A Zig package on pantry.dev`,
+      canonicalUrl: `https://pantry.dev/package/${name}`,
+    })
+    return htmlResponse(html)
+  }
+
+  // PHP-only package (no S3 binary metadata or npm entry)
+  if (!meta && !pkgInfo && phpPkg) {
+    const phpVersions = phpStorage ? await phpStorage.listVersions(name) : []
+    const phpTimeline = (timeline || []).map((d: any) => ({ date: d.date, count: d.count || 0 }))
+    const phpLineChart = generateLineChart(phpTimeline, 700, 200)
+    const phpStats = stats || { totalDownloads: 0, weeklyDownloads: 0, monthlyDownloads: 0, versionDownloads: {} }
+    const phpDeps = phpPkg.require ? Object.keys(phpPkg.require).filter(d => d !== 'php') : []
+
+    const html = await renderSitePage('package.stx', {
+      name,
+      notFound: false,
+      isZigPackage: false,
+      isPhpPackage: true,
+      zigFetchUrl: '',
+      latestVersion: phpPkg.version || 'unknown',
+      versionCount: phpVersions.length || 1,
+      platformCount: 0,
+      platformLabels: [],
+      formattedDownloads: chartFormatCount(phpStats.totalDownloads),
+      formattedWeekly: chartFormatCount(phpStats.weeklyDownloads),
+      pkgDescription: phpPkg.description || '',
+      homepage: phpPkg.homepage || '',
+      source: phpPkg.repository || '',
+      depList: phpDeps,
+      hasDeps: phpDeps.length > 0,
+      depCount: phpDeps.length,
+      sortedVersions: phpVersions.length ? phpVersions : [phpPkg.version],
+      recentVersions: (phpVersions.length ? phpVersions : [phpPkg.version]).slice(0, 10),
+      hasMoreVersions: phpVersions.length > 10,
+      remainingCount: Math.max(0, phpVersions.length - 10),
+      lineChart: phpLineChart,
+      versionDistribution: { bars: [] },
+      title: name,
+      metaDescription: `${phpPkg.description || name} — A PHP/Composer package on pantry.dev`,
       canonicalUrl: `https://pantry.dev/package/${name}`,
     })
     return htmlResponse(html)
@@ -2237,6 +2330,7 @@ async function handleSitePackage(
       name,
       notFound: false,
       isZigPackage,
+      isPhpPackage,
       zigFetchUrl: zigPkg?.tarballUrl || '',
       latestVersion,
       versionCount,
@@ -2274,6 +2368,7 @@ async function handleSitePackage(
     name,
     notFound: false,
     isZigPackage,
+    isPhpPackage,
     zigFetchUrl: zigPkg?.tarballUrl || '',
     latestVersion: fbVersion,
     versionCount: fbVersions.length,

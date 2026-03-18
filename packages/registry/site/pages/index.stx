@@ -10,7 +10,7 @@
     </p>
 
     <p class="mb-10" style="font-size: 0.875rem; color: var(--fg-subtle);">
-      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> system packages &middot; <span class="font-semibold font-mono" style="color: var(--green);">3M+</span> npm packages &middot; <span class="font-semibold font-mono" style="color: var(--yellow);">{{ zigPackageCount }}</span> zig packages
+      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> system packages &middot; <span class="font-semibold font-mono" style="color: var(--green);">3M+</span> npm packages &middot; <span class="font-semibold font-mono" style="color: var(--yellow);">{{ zigPackageCount }}</span> zig packages &middot; <span class="font-semibold font-mono" style="color: var(--purple);">{{ phpPackageCount }}</span> php packages
     </p>
 
     <!-- Search -->
@@ -58,6 +58,11 @@
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">{{ zigPackageCount }}</p>
         <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">Zig Packages</p>
         <p class="text-xs mt-1" style="color: var(--fg-subtle);"><a href="/search?q=&type=zig" class="hvr-accent" style="color: var(--fg-subtle);">browse all</a></p>
+      </div>
+      <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
+        <p class="text-3xl font-bold font-mono mb-1" style="color: var(--purple);">{{ phpPackageCount }}</p>
+        <p class="text-xs uppercase tracking-widest" style="color: var(--fg-subtle);">PHP Packages</p>
+        <p class="text-xs mt-1" style="color: var(--fg-subtle);"><a href="/search?q=&type=php" class="hvr-accent" style="color: var(--fg-subtle);">browse all</a></p>
       </div>
       <div class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-5 text-center">
         <p class="text-3xl font-bold font-mono mb-1" style="color: var(--yellow);">4</p>
