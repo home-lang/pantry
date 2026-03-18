@@ -3,7 +3,7 @@
  *
  * @domain `checkov.io`
  * @programs `checkov`
- * @version `3.2.509` (536 versions available)
+ * @version `3.2.510` (537 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install checkov.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "checkov"
  * console.log(pkg.description) // "Prevent cloud misconfigurations and find vulner..."
  * console.log(pkg.programs)    // ["checkov"]
- * console.log(pkg.versions[0]) // "3.2.509" (latest)
+ * console.log(pkg.versions[0]) // "3.2.510" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/checkov-io.md
@@ -76,6 +76,7 @@ export const checkovioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.2.510',
     '3.2.509',
     '3.2.508',
     '3.2.507',

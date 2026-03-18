@@ -29,9 +29,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 13 versions</summary>
+<summary>Show all 14 versions</summary>
 
-- `8.18.0`
+- `8.18.1`, `8.18.0`
 - `8.17.3`, `8.17.2`, `8.17.1`, `8.17.0`
 - `8.16.1`, `8.16.0`
 - `8.15.5`, `8.15.3`, `8.15.2`, `8.15.1`, `8.15.0`
@@ -39,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `8.18.0`
+**Latest Version**: `8.18.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +libvips.org@8.18.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +libvips.org@8.18.1 -- $SHELL -i
 ```
 
 ## Dependencies
