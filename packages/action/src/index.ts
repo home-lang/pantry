@@ -404,20 +404,24 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   const url = `${registryUrl}/zig/publish`
   core.info(`Publishing to ${url}`)
 
-  // Use curl for multipart upload (simpler than FormData in Node)
+  // Write manifest to temp file to avoid shell escaping issues with multiline content
+  const manifestPath = path.join(os.tmpdir(), `${name}-manifest.zon`)
+  fs.writeFileSync(manifestPath, zonContent)
+
   let output = ''
   await exec.exec('curl', [
     '-s', '-f',
     '-X', 'POST', url,
     '-H', `Authorization: Bearer ${token}`,
     '-F', `tarball=@${tarballPath};filename=${tarballName}`,
-    '-F', `manifest=${zonContent}`,
+    '-F', `manifest=<${manifestPath}`,
   ], {
     listeners: { stdout: (d: Buffer) => { output += d.toString() } },
   })
 
   // Clean up
   fs.unlinkSync(tarballPath)
+  fs.unlinkSync(manifestPath)
 
   try {
     const result = JSON.parse(output)
