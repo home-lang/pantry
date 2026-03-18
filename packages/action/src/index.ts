@@ -409,22 +409,45 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   fs.writeFileSync(manifestPath, zonContent)
 
   let output = ''
-  await exec.exec('curl', [
-    '-s', '-f',
+  let stderr = ''
+  const exitCode = await exec.exec('curl', [
+    '-s', '-w', '\\n%{http_code}',
     '-X', 'POST', url,
     '-H', `Authorization: Bearer ${token}`,
     '-F', `tarball=@${tarballPath};filename=${tarballName}`,
     '-F', `manifest=<${manifestPath}`,
   ], {
-    listeners: { stdout: (d: Buffer) => { output += d.toString() } },
+    listeners: {
+      stdout: (d: Buffer) => { output += d.toString() },
+      stderr: (d: Buffer) => { stderr += d.toString() },
+    },
+    ignoreReturnCode: true,
   })
 
   // Clean up
   fs.unlinkSync(tarballPath)
   fs.unlinkSync(manifestPath)
 
+  if (exitCode !== 0) {
+    throw new Error(`curl failed (exit ${exitCode}): ${stderr || output}`)
+  }
+
+  // Parse response — last line is HTTP status code from -w
+  const lines = output.trim().split('\n')
+  const httpCode = Number.parseInt(lines.pop() || '0', 10)
+  const body = lines.join('\n')
+
+  if (httpCode === 409 || body.includes('already exists')) {
+    core.info(`${name}@${version} already published — skipping`)
+    return
+  }
+
+  if (httpCode >= 400) {
+    throw new Error(`Publish failed (HTTP ${httpCode}): ${body}`)
+  }
+
   try {
-    const result = JSON.parse(output)
+    const result = JSON.parse(body)
     if (result.success) {
       core.info(`Published ${name}@${version}`)
       core.info(`Hash: ${result.hash}`)
@@ -435,12 +458,8 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
     }
   }
   catch (e) {
-    if (output.includes('already exists')) {
-      core.info(`${name}@${version} already published — skipping`)
-    }
-    else {
-      throw e
-    }
+    core.warning(`Unexpected response: ${body}`)
+    throw e
   }
 
   core.endGroup()
