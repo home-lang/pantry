@@ -3,7 +3,7 @@
  *
  * @domain `tailwindcss.com`
  * @programs `tailwindcss`
- * @version `4.2.1` (56 versions available)
+ * @version `4.2.2` (57 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install tailwindcss.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "tailwindcss"
  * console.log(pkg.description) // "A utility-first CSS framework for rapid UI deve..."
  * console.log(pkg.programs)    // ["tailwindcss"]
- * console.log(pkg.versions[0]) // "4.2.1" (latest)
+ * console.log(pkg.versions[0]) // "4.2.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/tailwindcss-com.md
@@ -68,6 +68,7 @@ export const tailwindcsscomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.2.2',
     '4.2.1',
     '4.2.0',
     '4.1.18',

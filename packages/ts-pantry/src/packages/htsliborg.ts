@@ -3,7 +3,7 @@
  *
  * @domain `htslib.org`
  * @programs `bgzip`, `htsfile`, `tabix`
- * @version `1.23.0` (8 versions available)
+ * @version `1.23.0` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install htslib.org`
@@ -85,6 +85,7 @@ export const htsliborgPackage = {
     '1.23.0',
     '1.22.1',
     '1.22.0',
+    '1.21.1',
     '1.21.0',
     '1.20.0',
     '1.19.1',
