@@ -149,18 +149,29 @@ const NpmCache = struct {
         self.registry_map.deinit();
     }
 
-    /// Level 2: Look up a cached resolution. Returns borrowed pointers (valid until cache is cleared).
-    /// Perf: No string duplication on cache hit — callers must not outlive the cache.
+    /// Level 2: Look up a cached resolution. Returns caller-owned copies of the strings.
     fn getResolution(self: *NpmCache, key: []const u8, allocator: std.mem.Allocator) ?Installer.NpmResolution {
-        _ = allocator;
         self.resolution_mutex.lock();
         defer self.resolution_mutex.unlock();
         const entry = self.resolution_map.get(key) orelse return null;
-        return Installer.NpmResolution{
-            .version = entry.version,
-            .tarball_url = entry.tarball_url,
-            .integrity = entry.integrity,
+        const ver = allocator.dupe(u8, entry.version) catch return null;
+        const url = allocator.dupe(u8, entry.tarball_url) catch {
+            allocator.free(ver);
+            return null;
         };
+        const integ = if (entry.integrity) |i| (allocator.dupe(u8, i) catch null) else null;
+        return Installer.NpmResolution{
+            .version = ver,
+            .tarball_url = url,
+            .integrity = integ,
+        };
+    }
+
+    /// Level 2: Check if a resolution exists without allocating (for hasNpmResolution).
+    fn containsResolution(self: *NpmCache, key: []const u8) bool {
+        self.resolution_mutex.lock();
+        defer self.resolution_mutex.unlock();
+        return self.resolution_map.contains(key);
     }
 
     /// Level 2: Store a resolution result (skip if another thread already cached it).
@@ -366,9 +377,9 @@ pub const Installer = struct {
         }
         body_buf.appendSlice(self.allocator, "}}") catch return;
 
-        // POST to our registry's bulk resolver
+        // POST to our registry's bulk resolver (uses shared HTTP client for connection pooling)
         const registry_url = "https://registry.pantry.dev/npm/resolve";
-        const response = io_helper.httpPostJson(self.allocator, registry_url, body_buf.items) catch return;
+        const response = io_helper.httpPostJsonWithClient(self.http_client, self.allocator, registry_url, body_buf.items) catch return;
         defer self.allocator.free(response);
 
         if (response.len == 0) return;
@@ -405,6 +416,16 @@ pub const Installer = struct {
                 self.npm_cache.putResolution(key, version, tarball, integrity);
             }
         }
+    }
+
+    /// Check if a package has been pre-resolved in the npm cache
+    /// (e.g. via bulkResolveViaPantryRegistry or lockfile-first resolution).
+    /// Used to skip expensive pantry registry lookups when resolution is already cached.
+    /// Non-allocating: just checks existence in the cache.
+    pub fn hasNpmResolution(self: *Installer, name: []const u8, version: []const u8) bool {
+        var cache_key_buf: [512]u8 = undefined;
+        const cache_key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ name, version }) catch return false;
+        return self.npm_cache.containsResolution(cache_key);
     }
 
     /// Batch install all packages from lockfile in parallel.
@@ -3498,9 +3519,29 @@ test "Installer basic operations" {
 }
 
 /// Report a package download to the pantry.dev analytics API.
-/// Fire-and-forget: failures are silently ignored so installs are never blocked.
+/// Truly fire-and-forget: runs in a detached thread so installs are never blocked.
 fn reportDownloadAnalytics(allocator: std.mem.Allocator, domain: []const u8, version: []const u8) void {
-    // Build JSON body
+    // Dupe strings for the detached thread (caller's memory may be freed)
+    const owned_domain = allocator.dupe(u8, domain) catch return;
+    const owned_version = allocator.dupe(u8, version) catch {
+        allocator.free(owned_domain);
+        return;
+    };
+
+    const thread = std.Thread.spawn(.{ .stack_size = 64 * 1024 }, analyticsWorker, .{ allocator, owned_domain, owned_version }) catch {
+        allocator.free(owned_domain);
+        allocator.free(owned_version);
+        return;
+    };
+    thread.detach();
+}
+
+fn analyticsWorker(allocator: std.mem.Allocator, domain: []const u8, version: []const u8) void {
+    defer {
+        allocator.free(domain);
+        allocator.free(version);
+    }
+
     const body = std.fmt.allocPrint(
         allocator,
         "{{\"packageName\":\"{s}\",\"category\":\"download\",\"version\":\"{s}\"}}",
@@ -3508,26 +3549,6 @@ fn reportDownloadAnalytics(allocator: std.mem.Allocator, domain: []const u8, ver
     ) catch return;
     defer allocator.free(body);
 
-    // Use curl subprocess (fire-and-forget) — most reliable across platforms
-    const curl_paths = [_][]const u8{ "/usr/bin/curl", "curl" };
-    for (curl_paths) |curl_bin| {
-        const result = io_helper.childRun(allocator, &[_][]const u8{
-            curl_bin,
-            "-sf",
-            "-X",
-            "POST",
-            "-H",
-            "Content-Type: application/json",
-            "-d",
-            body,
-            "--connect-timeout",
-            "5",
-            "--max-time",
-            "10",
-            "https://registry.pantry.dev/analytics/events",
-        }) catch continue;
-        allocator.free(result.stdout);
-        allocator.free(result.stderr);
-        return; // Sent successfully (or at least attempted)
-    }
+    // Use native HTTP POST instead of spawning curl subprocess
+    _ = io_helper.httpPostJson(allocator, "https://registry.pantry.dev/analytics/events", body) catch return;
 }

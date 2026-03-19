@@ -563,3 +563,93 @@
   </script>
 </body>
 </html>
+
+
+❯ please improve our Pantry PM and the shell integration where need be, bc this should not have taken as long, ti should be REALLY fast:
+
+
+
+../Tools/pantry
+> Installing 25 packages...
+    + minimatch@3.1.5
+    + brace-expansion@1.1.12
+    + @ts-charts/internmap@0.2.0
+    + @protobuf-ts/runtime-rpc@2.11.1
+    + @azure/core-rest-pipeline@1.23.1-alpha.20260306.4
+    + concat-map@0.0.1
+    + balanced-match@1.0.2
+    + @ts-charts/time@0.2.0
+    + @ts-charts/interpolate@0.2.0
+    + @ts-charts/time-format@0.2.0
+    + @ts-charts/color@0.2.0
+    + @azure/storage-blob@12.32.0-beta.1
+    + tslib@2.8.1
+    + @azure/core-auth@1.10.2-alpha.20251031.2
+    + @azure/core-tracing@1.3.2-alpha.20251031.2
+    + events@3.3.0
+    + @azure/abort-controller@2.1.3-alpha.20240412.3
+    + @azure/core-xml@1.5.1-alpha.20250718.3
+    + @azure/logger@1.3.1-alpha.20250711.2
+    + @azure/core-paging@1.6.3-alpha.20240412.3
+    + @azure/core-util@1.13.2-alpha.20251031.2
+    + @azure/core-http-compat@2.3.3-alpha.20260210.1
+    + @azure/core-client@1.10.2-alpha.20251031.2
+    + @typespec/ts-http-runtime@1.0.0-alpha.20231023.3
+    + @protobuf-ts/runtime@2.11.1
+    + @azure/core-lro@2.7.3-alpha.20240412.3
+    + @azure/storage-common@12.4.0-beta.1
+    + form-data@4.0.5
+    + http-proxy-agent@5.0.0
+    + https-proxy-agent@5.0.1
+    + es-set-tostringtag@2.1.0
+    + combined-stream@1.0.8
+    + asynckit@0.4.0
+    + hasown@2.0.2
+    + mime-types@2.1.35
+    + agent-base@6.0.0
+    + @tootallnate/once@2.0.0
+    + function-bind@1.1.2
+    + delayed-stream@1.0.0
+    + has-tostringtag@1.0.2
+    + es-errors@1.3.0
+    + mime-db@1.52.0
+    + get-intrinsic@1.3.1
+    + es-define-property@1.0.1
+    + has-symbols@1.1.0
+    + generator-function@2.0.1
+    + async-generator-function@1.0.0
+    + async-function@1.0.0
+    + get-proto@1.0.1
+    + gopd@1.2.0
+    + es-object-atoms@1.1.1
+    + math-intrinsics@1.1.0
+    + call-bind-apply-helpers@1.0.2
+    + dunder-proto@1.0.1
++ zig-config@0.1.0
++ zig-cli@0.1.0
++ zig-test-framework@0.1.0
++ zig-bump@0.1.1
++ bun.sh@1.3.11
++ ziglang.org@0.16.0-dev.2736_3b515fbed
++ better-dx@0.2.6
++ mitata@1.0.34
++ @stacksjs/ts-cloud@0.1.14
++ bunfig@0.15.6
++ ts-web-scraper@0.1.1
++ better-dx@0.2.6
++ bun-types@1.3.10
++ typescriptlang.org@5.9.3
++ @actions/cache@6.0.0
++ @actions/core@1.11.1
++ @actions/exec@1.1.1
++ @actions/glob@0.6.1
++ @actions/tool-cache@2.0.2
++ @stacksjs/stx@0.2.10
++ @ts-charts/array@0.2.0
++ @ts-charts/format@0.2.0
++ @ts-charts/path@0.2.0
++ @ts-charts/scale@0.2.0
++ @ts-charts/shape@0.2.0
+Linked 6 workspace package(s)
+
+done Workspace setup complete! Installed 25 package(s) (85343ms)

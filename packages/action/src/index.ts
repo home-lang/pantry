@@ -192,6 +192,15 @@ export async function run(): Promise<void> {
       setupOnly: core.getInput('install') !== 'true',
       publish: core.getInput('publish') || '',
       registryUrl: core.getInput('registry-url') || 'https://registry.pantry.dev',
+      token: core.getInput('token') || '',
+    }
+
+    // Export registry token as env vars for subsequent steps (e.g. pantry publish:commit)
+    const token = inputs.token || process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
+    if (token) {
+      core.exportVariable('PANTRY_TOKEN', token)
+      core.exportVariable('PANTRY_REGISTRY_TOKEN', token)
+      core.setSecret(token)
     }
 
     const platform = detectPlatform()

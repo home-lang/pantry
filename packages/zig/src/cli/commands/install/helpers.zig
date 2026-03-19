@@ -169,103 +169,95 @@ pub const PantryPackageInfo = struct {
     }
 };
 
-/// Look up a package in the Pantry registry.
-/// First tries DynamoDB, then falls back to direct S3 metadata.json lookup.
-/// Returns package info if found, null if not found or query fails.
-pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?PantryPackageInfo {
-    // Detect current platform (used by both paths)
-    const os_str = comptime switch (@import("builtin").os.tag) {
+/// Platform string for current OS/arch (comptime)
+const current_platform = blk: {
+    const os_str = switch (@import("builtin").os.tag) {
         .macos => "darwin",
         .linux => "linux",
         else => "linux",
     };
-    const arch_str = comptime switch (@import("builtin").cpu.arch) {
+    const arch_str = switch (@import("builtin").cpu.arch) {
         .aarch64 => "arm64",
         .x86_64 => "x86-64",
         else => "x86-64",
     };
-    const platform = os_str ++ "-" ++ arch_str;
+    break :blk os_str ++ "-" ++ arch_str;
+};
 
-    // Try DynamoDB first
-    const dynamo_result = lookupViaDynamoDB(allocator, name, platform);
-    if (dynamo_result) |info| return info;
+/// Look up a package in the Pantry registry.
+/// First tries the registry REST API, then falls back to direct S3 metadata.json lookup.
+/// Returns package info if found, null if not found or query fails.
+pub fn lookupPantryRegistry(allocator: std.mem.Allocator, name: []const u8) !?PantryPackageInfo {
+    // Try registry REST API first (native HTTP, no subprocess)
+    const api_result = lookupViaRegistryApi(allocator, name, current_platform, null);
+    if (api_result) |info| return info;
 
     // Fallback: try direct S3 metadata.json lookup
-    return lookupViaS3Metadata(allocator, name, platform);
+    return lookupViaS3Metadata(allocator, name, current_platform, null);
+}
+
+/// Variant with shared HTTP client for connection pooling (used from workspace install threads).
+pub fn lookupPantryRegistryWithClient(allocator: std.mem.Allocator, name: []const u8, client: *std.http.Client) !?PantryPackageInfo {
+    const api_result = lookupViaRegistryApi(allocator, name, current_platform, client);
+    if (api_result) |info| return info;
+    return lookupViaS3Metadata(allocator, name, current_platform, client);
 }
 
 /// Lightweight S3-only lookup (no AWS CLI subprocess, just HTTP).
 /// Used for non-domain packages like "zig-config" that are in our S3 registry
 /// but would be incorrectly skipped by the domain-style check.
 pub fn lookupPantryS3Only(allocator: std.mem.Allocator, name: []const u8) ?PantryPackageInfo {
-    const os_str = comptime switch (@import("builtin").os.tag) {
-        .macos => "darwin",
-        .linux => "linux",
-        else => "linux",
-    };
-    const arch_str = comptime switch (@import("builtin").cpu.arch) {
-        .aarch64 => "arm64",
-        .x86_64 => "x86-64",
-        else => "x86-64",
-    };
-    const platform = os_str ++ "-" ++ arch_str;
-    return lookupViaS3Metadata(allocator, name, platform);
+    return lookupViaS3Metadata(allocator, name, current_platform, null);
 }
 
-/// Try looking up package via DynamoDB (requires AWS CLI credentials).
-fn lookupViaDynamoDB(allocator: std.mem.Allocator, name: []const u8, platform: []const u8) ?PantryPackageInfo {
-    const table_name = "pantry-packages";
+/// Variant with shared HTTP client for connection pooling.
+pub fn lookupPantryS3OnlyWithClient(allocator: std.mem.Allocator, name: []const u8, client: *std.http.Client) ?PantryPackageInfo {
+    return lookupViaS3Metadata(allocator, name, current_platform, client);
+}
 
-    const key_json = std.fmt.allocPrint(allocator, "{{\"packageName\": {{\"S\": \"{s}\"}}}}", .{name}) catch return null;
-    defer allocator.free(key_json);
+/// Try looking up package via the pantry registry REST API (native HTTP, no subprocess).
+/// Returns package info if found, null on any error.
+fn lookupViaRegistryApi(allocator: std.mem.Allocator, name: []const u8, platform: []const u8, client: ?*std.http.Client) ?PantryPackageInfo {
+    // Perf: Stack buffer for URL (avoids heap alloc)
+    var url_buf: [512]u8 = undefined;
+    const api_url = std.fmt.bufPrint(&url_buf, "https://registry.pantry.dev/packages/{s}", .{name}) catch return null;
 
-    const result = io_helper.childRun(allocator, &[_][]const u8{
-        "aws",
-        "dynamodb",
-        "get-item",
-        "--table-name",
-        table_name,
-        "--key",
-        key_json,
-        "--projection-expression",
-        "s3Path, latestVersion, safeName",
-    }) catch return null;
-    defer allocator.free(result.stdout);
-    defer allocator.free(result.stderr);
+    const response = if (client) |c|
+        io_helper.httpGetWithClient(c, allocator, api_url) catch return null
+    else
+        io_helper.httpGet(allocator, api_url) catch return null;
+    defer allocator.free(response);
 
-    if (result.term != .exited or result.term.exited != 0) return null;
-    if (result.stdout.len == 0) return null;
+    if (response.len == 0) return null;
 
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, result.stdout, .{}) catch return null;
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response, .{}) catch return null;
     defer parsed.deinit();
 
-    const root = parsed.value;
-    if (root != .object) return null;
+    if (parsed.value != .object) return null;
+    // Error response (404, etc.)
+    if (parsed.value.object.get("error") != null) return null;
 
-    const item = root.object.get("Item") orelse return null;
-    if (item != .object) return null;
-    if (item.object.count() == 0) return null;
+    const version = if (parsed.value.object.get("version")) |v| (if (v == .string) v.string else return null) else return null;
 
-    const s3_path_obj = item.object.get("s3Path") orelse return null;
-    if (s3_path_obj != .object) return null;
-    const s3_path = if (s3_path_obj.object.get("S")) |v|
-        if (v == .string) v.string else return null
-    else
-        return null;
+    // If the response has a direct tarball URL, use it
+    if (parsed.value.object.get("tarballUrl")) |t| {
+        if (t == .string and t.string.len > 0) {
+            return PantryPackageInfo{
+                .s3_path = allocator.dupe(u8, name) catch return null,
+                .version = allocator.dupe(u8, version) catch return null,
+                .tarball_url = allocator.dupe(u8, t.string) catch return null,
+            };
+        }
+    }
 
-    const version_obj = item.object.get("latestVersion") orelse return null;
-    if (version_obj != .object) return null;
-    const version = if (version_obj.object.get("S")) |v|
-        if (v == .string) v.string else return null
-    else
-        return null;
-
-    return resolveFromMetadataUrl(allocator, s3_path, version, platform);
+    // Otherwise, resolve via S3 metadata for platform-specific tarball
+    return lookupViaS3Metadata(allocator, name, platform, client);
 }
 
 /// Try looking up package via direct S3 metadata.json URL.
-/// This works without AWS credentials — just needs HTTP access to registry.pantry.dev.
-fn lookupViaS3Metadata(allocator: std.mem.Allocator, name: []const u8, platform: []const u8) ?PantryPackageInfo {
+/// This works without AWS credentials — just needs HTTP access to S3.
+/// Accepts optional shared HTTP client for connection pooling.
+fn lookupViaS3Metadata(allocator: std.mem.Allocator, name: []const u8, platform: []const u8, client: ?*std.http.Client) ?PantryPackageInfo {
     const metadata_url = std.fmt.allocPrint(
         allocator,
         "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
@@ -273,7 +265,10 @@ fn lookupViaS3Metadata(allocator: std.mem.Allocator, name: []const u8, platform:
     ) catch return null;
     defer allocator.free(metadata_url);
 
-    const metadata_response = io_helper.httpGet(allocator, metadata_url) catch return null;
+    const metadata_response = if (client) |c|
+        io_helper.httpGetWithClient(c, allocator, metadata_url) catch return null
+    else
+        io_helper.httpGet(allocator, metadata_url) catch return null;
     defer allocator.free(metadata_response);
 
     const meta_parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch return null;
@@ -336,6 +331,8 @@ fn resolveFromMetadataUrl(allocator: std.mem.Allocator, s3_path: []const u8, ver
     ) catch return null;
     defer allocator.free(metadata_url);
 
+    // Note: resolveFromMetadataUrl is only called from legacy codepaths;
+    // the main lookup functions now use the client-aware variants directly.
     const metadata_response = io_helper.httpGet(allocator, metadata_url) catch return null;
     defer allocator.free(metadata_response);
 

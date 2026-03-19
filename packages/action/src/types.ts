@@ -5,6 +5,7 @@ export interface ActionInputs {
   setupOnly: boolean
   publish: string
   registryUrl: string
+  token: string
 }
 
 export interface Platform {

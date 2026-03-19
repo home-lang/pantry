@@ -3146,12 +3146,16 @@ if (import.meta.main) {
   const awsRegion = process.env.AWS_REGION || 'us-east-1'
 
   // Use environment-based config (supports both local and production)
+  const dynamoTable = process.env.DYNAMODB_TABLE || 'pantry-registry'
   const registry = createRegistryFromEnv()
   const analytics = createAnalytics(
     analyticsTable ? { tableName: analyticsTable, region: awsRegion } : undefined,
   )
 
-  const { start } = createServer(registry, port, analytics)
+  // Ensure auth storage uses the same DynamoDB table as the registry
+  const authStorage = createAuthStorage(dynamoTable, awsRegion)
+
+  const { start } = createServer(registry, port, analytics, undefined, undefined, undefined, authStorage)
   start()
 
   console.log('\nEnvironment:')

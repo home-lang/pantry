@@ -31,6 +31,10 @@ inputs:
     description: Pantry registry URL for publishing
     required: false
     default: 'https://registry.pantry.dev'
+  token:
+    description: Pantry registry token for publishing (e.g. from secrets.PANTRY_TOKEN). Exported as PANTRY_TOKEN and PANTRY_REGISTRY_TOKEN for subsequent steps.
+    required: false
+    default: ''
 
 outputs:
   pantry-path:

@@ -58,18 +58,22 @@ fn installSingleWorkspaceDep(
     // For npm/auto packages, try Pantry registry then npm registry.
     // Domain-style: full DynamoDB + S3 lookup. Non-domain: S3-only (lightweight).
     // Skip entirely for scoped npm packages (@scope/name).
+    // PERF: Skip pantry registry lookup entirely if the bulk resolver already pre-resolved
+    // this package (avoids per-package HTTP to S3 / AWS CLI subprocess to DynamoDB).
     const is_scoped = clean_name.len > 0 and clean_name[0] == '@';
     const is_domain_style = std.mem.indexOfScalar(u8, clean_name, '.') != null;
+    const bulk_resolved = shared_installer.hasNpmResolution(clean_name, dep.version);
     if (is_npm_package or (pkg_source == .pantry and
         pkg_registry.getPackageByName(clean_name) == null))
     {
-        // Try Pantry registry first
-        const pantry_lookup: ?helpers.PantryPackageInfo = if (is_scoped)
+        // Try Pantry registry first — but skip if bulk resolver already has this package.
+        // Uses shared HTTP client for connection pooling across worker threads.
+        const pantry_lookup: ?helpers.PantryPackageInfo = if (bulk_resolved or is_scoped)
             null
         else if (is_domain_style)
-            helpers.lookupPantryRegistry(allocator, clean_name) catch null
+            helpers.lookupPantryRegistryWithClient(allocator, clean_name, shared_installer.http_client) catch null
         else
-            helpers.lookupPantryS3Only(allocator, clean_name);
+            helpers.lookupPantryS3OnlyWithClient(allocator, clean_name, shared_installer.http_client);
 
         if (pantry_lookup) |pantry_info_val| {
             var pantry_info = pantry_info_val;
@@ -319,6 +323,25 @@ pub fn installWorkspaceCommandWithOptions(
 ) !types.CommandResult {
     const workspace_module = @import("../../../packages/workspace.zig");
     const parser = @import("../../../deps/parser.zig");
+    const offline = @import("../../../install/offline.zig");
+    const recovery = @import("../../../install/recovery.zig");
+
+    // Offline mode detection
+    const is_offline = offline.isOfflineMode();
+    if (is_offline) {
+        style.print("{s}⚡ Offline mode{s} — installing from cache only\n", .{ style.dim, style.reset });
+    }
+
+    // Load recovery checkpoint (for resuming interrupted installs)
+    var checkpoint = recovery.InstallCheckpoint.loadFromDisk(allocator, workspace_root) catch null orelse recovery.InstallCheckpoint.init(allocator);
+    defer checkpoint.deinit();
+
+    const resuming = checkpoint.installed_packages.count() > 0;
+    if (resuming) {
+        style.print("{s}{s}{s} Resuming — {d} packages already installed\n", .{ style.green, style.check, style.reset, checkpoint.installed_packages.count() });
+    }
+
+    checkpoint.setCheckpointPath(workspace_root) catch {};
 
     // Load workspace configuration
     var workspace_config = try workspace_module.loadWorkspaceConfig(
@@ -549,6 +572,19 @@ pub fn installWorkspaceCommandWithOptions(
         return .{ .exit_code = 0 };
     }
 
+    // Execute pre-install hook
+    const lf_hooks = @import("lockfile_hooks.zig");
+    if (try lf_hooks.executePreInstallHook(allocator, workspace_root, options.verbose)) |*pre_result| {
+        defer {
+            var r = pre_result.*;
+            r.deinit(allocator);
+        }
+        if (!pre_result.success) {
+            style.printWarn("Pre-install hook failed\n", .{});
+            return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Pre-install hook failed") };
+        }
+    }
+
     style.printInstalling(all_deps_count);
 
     const install_start_ts = io_helper.clockGettime();
@@ -580,6 +616,10 @@ pub fn installWorkspaceCommandWithOptions(
     defer allocator.free(bin_dir);
     try io_helper.makePath(bin_dir);
 
+    // Load .npmrc configuration for custom registries and auth tokens
+    var npmrc_config = lib.config.loadNpmrc(allocator, workspace_root) catch lib.config.NpmrcConfig.init(allocator);
+    defer npmrc_config.deinit();
+
     // Install each dependency using a shared installer for deduplication
     var pkg_cache = try cache.PackageCache.init(allocator);
     defer pkg_cache.deinit();
@@ -589,12 +629,49 @@ pub fn installWorkspaceCommandWithOptions(
     shared_installer.data_dir = try allocator.dupe(u8, env_dir);
     shared_installer.modules_dir = options.modules_dir;
 
+    // Configure installer with .npmrc settings (custom registry URL)
+    if (npmrc_config.registry) |custom_registry| {
+        shared_installer.setRegistryUrl(custom_registry);
+    }
+
     // Wire up resolution lockfile for lockfile-first resolution (avoids npm registry queries for locked packages)
     const lockfile_hooks = @import("lockfile_hooks.zig");
     var ws_resolution_lockfile = lockfile_hooks.loadOrCreateLockfile(allocator, workspace_root) catch null;
     defer if (ws_resolution_lockfile) |*lf| lf.deinit();
     if (ws_resolution_lockfile) |*lf| {
         shared_installer.setLockfile(lf);
+    }
+
+    // ── FAST PATH: batch install from lockfile ──
+    // If lockfile has packages resolved but they're missing from disk (e.g. after
+    // clean checkout), extract them all in parallel without any resolution/registry queries.
+    if (shared_installer.installAllFromLockfile(workspace_root)) |batch_count_opt| {
+        if (batch_count_opt) |batch_count| {
+            if (batch_count > 0) {
+                style.print("{s}{s}{s} Restored {d} packages from lockfile\n", .{ style.green, style.check, style.reset, batch_count });
+            }
+        }
+    } else |_| {}
+
+    // ── PRE-RESOLVE: bulk npm resolution via pantry registry ──
+    // Single HTTP POST resolves ALL deps at once instead of N individual requests
+    // to registry.npmjs.org. Pre-populates the L2 npm cache so resolveNpmPackage()
+    // returns instantly from cache during parallel install.
+    {
+        var stack_bulk: [1024]install.Installer.BulkDep = undefined;
+        var bi: usize = 0;
+        for (all_deps_buffer[0..all_deps_count]) |dep| {
+            if (helpers.isLocalDependency(dep)) continue;
+            if (bi >= stack_bulk.len) break;
+            stack_bulk[bi] = .{
+                .name = helpers.normalizePackageName(dep.name),
+                .version = dep.version,
+            };
+            bi += 1;
+        }
+        if (bi > 0) {
+            shared_installer.bulkResolveViaPantryRegistry(stack_bulk[0..bi]);
+        }
     }
 
     defer shared_installer.deinit();
@@ -843,6 +920,9 @@ pub fn installWorkspaceCommandWithOptions(
             if (result.success) {
                 style.printInstalled(result.name, result.version);
                 success_count += 1;
+
+                // Record in checkpoint for resume capability
+                checkpoint.recordPackage(result.name) catch {};
 
                 // Capture resolution data for lockfile
                 if (result.resolved_version != null or result.tarball_url != null or result.integrity != null) {
@@ -1328,6 +1408,55 @@ pub fn installWorkspaceCommandWithOptions(
                 style.print("Warning: Composer delegation failed: {}\n", .{err});
             }
         };
+    }
+
+    // Execute post-install hook
+    if (try lf_hooks.executePostInstallHook(allocator, workspace_root, options.verbose)) |*post_result| {
+        defer {
+            var r = post_result.*;
+            r.deinit(allocator);
+        }
+        if (!post_result.success) {
+            style.printWarn("Post-install hook failed\n", .{});
+        }
+    }
+
+    // Update env cache so shell:lookup finds this env on next cd (no binary re-scan needed)
+    {
+        const string = lib.string;
+        var env_cache = lib.cache.EnvCache.initWithPersistence(allocator) catch null;
+        if (env_cache) |*ec| {
+            defer ec.deinit();
+
+            const project_hash = string.md5Hash(workspace_root);
+            const dep_mtime: i128 = blk: {
+                const f = io_helper.cwd().openFile(io_helper.io, workspace_file_path, .{}) catch break :blk 0;
+                defer f.close(io_helper.io);
+                const fstat = f.stat(io_helper.io) catch break :blk 0;
+                break :blk @divFloor(fstat.mtime.toNanoseconds(), std.time.ns_per_s);
+            };
+
+            const now = @as(i64, @intCast((io_helper.clockGettime()).sec));
+            const entry = allocator.create(lib.cache.env_cache.Entry) catch null;
+            if (entry) |e| {
+                e.* = .{
+                    .hash = project_hash,
+                    .dep_file = allocator.dupe(u8, workspace_file_path) catch "",
+                    .dep_mtime = dep_mtime,
+                    .path = allocator.dupe(u8, env_dir) catch "",
+                    .env_vars = std.StringHashMap([]const u8).init(allocator),
+                    .created_at = now,
+                    .cached_at = now,
+                    .last_validated = now,
+                };
+                ec.put(e) catch {};
+            }
+        }
+    }
+
+    // Clean up checkpoint on success (no resume needed)
+    if (failed_count == 0) {
+        checkpoint.cleanup();
     }
 
     // Summary

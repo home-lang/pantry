@@ -1468,7 +1468,11 @@ pub fn httpPostJson(allocator: std.mem.Allocator, url: []const u8, json_body: []
         .io = io,
     };
     defer client.deinit();
+    return httpPostJsonWithClient(&client, allocator, url, json_body);
+}
 
+/// HTTP POST with JSON body using a shared client for connection pooling.
+pub fn httpPostJsonWithClient(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8, json_body: []const u8) ![]u8 {
     var alloc_writer = std.Io.Writer.Allocating.init(allocator);
     errdefer alloc_writer.deinit();
 
