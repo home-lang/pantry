@@ -25,7 +25,7 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 30 versions</summary>
+<summary>Show all 31 versions</summary>
 
 - `4.0.3`, `4.0.1`, `4.0.0`
 - `3.6.19`, `3.6.14`, `3.6.13`, `3.6.12`, `3.6.11`, `3.6.10`, `3.6.9`, `3.6.8`, `3.6.7`, `3.6.6`, `3.6.5`, `3.6.4`, `3.6.3`, `3.6.2`, `3.6.1`, `3.6.0`
@@ -33,7 +33,7 @@ This package provides the following executable programs:
 - `3.4.6`
 - `3.3.7`
 - `3.1.10`
-- `2.9.53`, `2.9.52`, `2.9.51`
+- `2.9.56`, `2.9.53`, `2.9.52`, `2.9.51`
 
 </details>
 
