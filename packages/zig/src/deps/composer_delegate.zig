@@ -171,35 +171,22 @@ fn downloadAndExtract(allocator: std.mem.Allocator, name: []const u8, vendor_dir
     var api_url_buf: [512]u8 = undefined;
     const api_url = std.fmt.bufPrint(&api_url_buf, "https://repo.packagist.org/p2/{s}.json", .{name}) catch return false;
 
-    const meta_result = io_helper.childRun(allocator, &.{ "curl", "-sf", api_url }) catch return false;
-    defer allocator.free(meta_result.stdout);
-    defer allocator.free(meta_result.stderr);
-
-    const meta_exit: u32 = switch (meta_result.term) {
-        .exited => |code| code,
-        else => 1,
-    };
-    if (meta_exit != 0 or meta_result.stdout.len == 0) return false;
+    // Perf: Native HTTP instead of shelling out to curl (saves ~5ms process spawn per package)
+    const meta_response = io_helper.httpGet(allocator, api_url) catch return false;
+    defer allocator.free(meta_response);
+    if (meta_response.len == 0) return false;
 
     // Perf #5: Use JSON parser instead of string search for dist URL
-    const dist_url = extractDistUrlJson(allocator, meta_result.stdout, name) catch {
+    const dist_url = extractDistUrlJson(allocator, meta_response, name) catch {
         // Fallback to string search
         return false;
     };
     defer allocator.free(dist_url);
 
-    // Perf #6 + #8: Download zip directly to cache file (curl -o, no stdout buffering)
-    const dl_result = io_helper.childRunWithOptions(allocator, &.{
-        "curl", "-sfL", dist_url, "-o", cache_path,
-    }, .{}) catch return false;
-    defer allocator.free(dl_result.stdout);
-    defer allocator.free(dl_result.stderr);
-
-    const dl_exit: u32 = switch (dl_result.term) {
-        .exited => |code| code,
-        else => 1,
-    };
-    if (dl_exit != 0) return false;
+    // Perf: Native HTTP download — uses Zig's std.http.Client with streaming I/O
+    // No curl subprocess spawn (~5ms saved per package)
+    const downloader = @import("../install/downloader.zig");
+    downloader.downloadFileQuiet(allocator, dist_url, cache_path, true) catch return false;
 
     // Extract from cache
     const unzip_result = io_helper.childRunWithOptions(allocator, &.{
