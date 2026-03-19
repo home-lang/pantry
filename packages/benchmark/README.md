@@ -226,23 +226,26 @@ bun run benchmark:composer     # Pantry vs Composer only
 
 ### Pantry vs Composer (PHP)
 
-A dedicated head-to-head benchmark comparing pantry and Composer across PHP-specific dependency trees:
+Head-to-head comparison installing identical PHP dependencies from the same `composer.json`.
 
 ```bash
 bun run benchmark:vs-composer
 ```
 
-Tests cold install, warm install, reinstall, add package, and remove package using real Composer dependencies (Laravel, Symfony, Doctrine, etc.).
+**Results (Apple M3 Pro, PHP 8.4, Composer 2.9, pantry 0.8.16):**
 
-| Scenario | Pantry | Composer | Speedup |
-|----------|--------|----------|---------|
-| Cold install (3 deps) | ~80ms | ~4,500ms | **56x** |
-| Cold install (8 deps) | ~180ms | ~12,000ms | **67x** |
-| Cold install (18 deps) | ~350ms | ~28,000ms | **80x** |
-| Warm install | <50us | ~3,200ms | **64,000x** |
-| Reinstall / no-op | <50us | ~1,800ms | **36,000x** |
+| Scenario | Pantry | Composer | Winner |
+|----------|--------|----------|--------|
+| Cold install (3 deps) | 3.10s | 1.51s | Composer 2.1x |
+| Cold install (8 deps) | 3.17s | 6.86s | **Pantry 2.2x** |
+| Cold install (18 deps) | 3.23s | 9.17s | **Pantry 2.8x** |
+| Warm install (3 deps) | 3.68s | 1.21s | Composer 3.0x |
+| Warm install (8 deps) | 3.38s | 5.80s | **Pantry 1.7x** |
+| Warm install (18 deps) | 3.23s | 7.01s | **Pantry 2.2x** |
+| Reinstall (3 deps) | 3.14s | 381ms | Composer 8.3x |
+| Reinstall (18 deps) | 3.11s | 2.06s | Composer 1.5x |
 
-**Why pantry is faster**: Zig-compiled binary with zero startup overhead, parallel downloads, binary caching, and lock-free algorithms. Composer is a PHP script that must boot the PHP interpreter, resolve dependencies single-threaded, and re-extract packages on every install.
+**Takeaway**: Pantry has a constant ~3s base overhead. Composer scales linearly. For medium+ projects, pantry's parallel downloads and compiled resolver win. For small projects or no-op reinstalls, Composer's lower per-invocation overhead wins.
 
 ## 🔧 Implementation Impact
 
