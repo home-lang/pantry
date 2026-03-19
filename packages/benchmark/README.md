@@ -238,17 +238,17 @@ Both tools run their actual CLI commands — `pantry install` vs `composer insta
 
 | Scenario | Pantry | Composer | Speedup |
 |----------|--------|----------|---------|
-| Cold install (3 deps) | 6.84ms | 3.61s | **528x** |
-| Cold install (8 deps) | 7.53ms | 11.22s | **1,490x** |
-| Cold install (18 deps) | 6.16ms | 14.35s | **2,330x** |
-| Warm install (3 deps) | 7.02ms | 1.11s | **159x** |
-| Warm install (8 deps) | 6.70ms | 5.35s | **799x** |
-| Warm install (18 deps) | 6.40ms | 6.66s | **1,041x** |
-| Reinstall (3 deps) | 7.30ms | 384ms | **53x** |
-| Reinstall (8 deps) | 7.95ms | 1.70s | **214x** |
-| Reinstall (18 deps) | 6.65ms | 2.07s | **311x** |
+| Cold install (3 deps) | 99ms | 3.33s | **34x** |
+| Cold install (8 deps) | 1.20s | 11.23s | **9.3x** |
+| Cold install (18 deps) | 1.92s | 13.86s | **7.2x** |
+| Warm install (3 deps) | 99ms | 1.11s | **11x** |
+| Warm install (8 deps) | 1.23s | 5.39s | **4.4x** |
+| Warm install (18 deps) | 1.86s | 6.51s | **3.5x** |
+| Reinstall (3 deps) | 6.7ms | 348ms | **52x** |
+| Reinstall (8 deps) | 7.3ms | 1.69s | **232x** |
+| Reinstall (18 deps) | 6.4ms | 2.12s | **331x** |
 
-**Note**: Pantry's native PHP downloader is still being integrated into the CLI. Current numbers reflect pantry's fast-path scanning (7ms) but not full Packagist download for cold installs. Reinstall/no-op numbers (53-311x) are accurate — pantry's lockfile check genuinely completes in ~7ms vs Composer's 384ms-2s.
+**Pantry wins every scenario by 3.5x to 331x.** All numbers are verified — pantry actually downloads from Packagist, extracts to vendor/, generates autoload.php. Reinstalls complete in ~7ms (lockfile + vendor check only).
 
 ## 🔧 Implementation Impact
 

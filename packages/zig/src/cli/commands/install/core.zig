@@ -398,6 +398,32 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const deps_to_install = filtered_deps.items;
 
         if (deps_to_install.len == 0) {
+            // Even with zero npm/system deps, check for PHP deps (composer.json)
+            // and Zig deps (build.zig.zon) that need post-install handling
+            const proj_dir_early = if (deps_file_path) |path|
+                std.fs.path.dirname(path) orelse cwd
+            else
+                cwd;
+
+            // Run Composer delegate for PHP deps
+            {
+                const composer_delegate = @import("../../../deps/composer_delegate.zig");
+                const php_installed = composer_delegate.installPhpDeps(allocator, proj_dir_early, options.verbose) catch false;
+                if (php_installed) {
+                    const end_ts = io_helper.clockGettime();
+                    const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
+                    const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
+                    style.printSummary(0, 0, elapsed_ms);
+                    return .{ .exit_code = 0 };
+                }
+            }
+
+            // Sync build.zig.zon for Zig deps
+            {
+                const zig_zon_sync = @import("../../../deps/zig_zon_sync.zig");
+                zig_zon_sync.syncBuildZigZon(allocator, proj_dir_early, opts.modules_dir, opts.verbose) catch {};
+            }
+
             if (deps_file_path) |path| {
                 style.print("No dependencies to install from {s}\n", .{path});
             } else {

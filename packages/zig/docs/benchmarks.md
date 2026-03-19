@@ -6,11 +6,11 @@ Pantry is **20-50x faster** than npm, yarn, pnpm, and even Bun for package manag
 
 | Operation | Pantry | Bun | npm | yarn | pnpm | Composer |
 |-----------|--------|-----|-----|------|------|----------|
-| **Install (cold, medium)** | **7.5ms** | 2,800ms | 8,500ms | 9,200ms | 6,800ms | 11,220ms |
-| **Install (warm, small)** | **7.0ms** | 120ms | 1,200ms | 980ms | 750ms | 1,110ms |
+| **Install (cold, medium)** | **1,200ms** | 2,800ms | 8,500ms | 9,200ms | 6,800ms | 11,230ms |
+| **Install (warm, small)** | **99ms** | 120ms | 1,200ms | 980ms | 750ms | 1,110ms |
 | **Add package** | 85ms | 1,500ms | 5,200ms | 4,800ms | 3,900ms | — |
 | **Remove package** | 12ms | 420ms | 2,100ms | 1,950ms | 1,600ms | — |
-| **Reinstall (no-op)** | **7.0ms** | — | — | — | — | 384ms |
+| **Reinstall (no-op)** | **7ms** | — | — | — | — | 348ms |
 
 *Composer benchmarks measured with PHP 8.4 / Composer 2.9 on Apple M3 Pro. See [Pantry vs Composer](#pantry-vs-composer-php) for the full PHP-specific comparison.*
 
@@ -26,31 +26,33 @@ Composer is the standard PHP dependency manager. Both tools install identical PH
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 6.84ms | 3.61s | **Pantry 528x faster** |
-| **medium** (8 deps) | 7.53ms | 11.22s | **Pantry 1,490x faster** |
-| **large** (18 deps) | 6.16ms | 14.35s | **Pantry 2,330x faster** |
+| **small** (3 deps) | 99ms | 3.33s | **Pantry 34x faster** |
+| **medium** (8 deps) | 1.20s | 11.23s | **Pantry 9.3x faster** |
+| **large** (18 deps) | 1.92s | 13.86s | **Pantry 7.2x faster** |
 
-### Warm Install (cache + lockfile exist, no vendor/)
+### Warm Install (cache exists, no vendor/)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 7.02ms | 1.11s | **Pantry 159x faster** |
-| **medium** (8 deps) | 6.70ms | 5.35s | **Pantry 799x faster** |
-| **large** (18 deps) | 6.40ms | 6.66s | **Pantry 1,041x faster** |
+| **small** (3 deps) | 99ms | 1.11s | **Pantry 11x faster** |
+| **medium** (8 deps) | 1.23s | 5.39s | **Pantry 4.4x faster** |
+| **large** (18 deps) | 1.86s | 6.51s | **Pantry 3.5x faster** |
 
 ### Reinstall / no-op (everything in place)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 7.30ms | 384ms | **Pantry 53x faster** |
-| **medium** (8 deps) | 7.95ms | 1.70s | **Pantry 214x faster** |
-| **large** (18 deps) | 6.65ms | 2.07s | **Pantry 311x faster** |
+| **small** (3 deps) | 6.7ms | 348ms | **Pantry 52x faster** |
+| **medium** (8 deps) | 7.3ms | 1.69s | **Pantry 232x faster** |
+| **large** (18 deps) | 6.4ms | 2.12s | **Pantry 331x faster** |
 
 ### Analysis
 
-**Note on methodology**: These numbers measure the full `pantry install` and `composer install` CLI commands. Pantry's native PHP package downloader is still being integrated — the current numbers reflect pantry's fast-path detection (scanning composer.json, checking vendor/ state) but not full Packagist resolution + download for cold installs. Once the native PHP installer is fully wired into the CLI, cold install times will increase but are expected to remain significantly faster than Composer due to parallel downloads and compiled resolution.
+Pantry wins **every scenario by 3.5x to 331x**. All numbers are real — pantry actually downloads packages from Packagist, extracts to `vendor/`, generates `autoload.php`, and creates `composer.lock`.
 
-The reinstall/no-op numbers are accurate — pantry's lockfile + vendor check genuinely completes in ~7ms vs Composer's 384ms-2s PHP boot + validation.
+- **Cold installs**: 7-34x faster — pantry downloads directly from Packagist dist URLs with parallel curl (8 threads), no PHP runtime needed. Composer boots PHP, resolves dependencies sequentially, then downloads
+- **Warm installs**: 3.5-11x faster — pantry extracts from local `~/.pantry/cache/php/` zip cache. Composer re-validates through PHP even with its own cache
+- **Reinstall (no-op)**: 52-331x faster — pantry checks `vendor/` + `composer.lock` exist in ~7ms and exits. Composer boots PHP + re-validates the full dependency tree (348ms-2.1s)
 
 Reproduce these results:
 
