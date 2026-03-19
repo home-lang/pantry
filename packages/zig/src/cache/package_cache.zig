@@ -86,20 +86,26 @@ pub const PackageCache = struct {
     }
 
     /// Get cache key for package
+    /// Perf: Stack buffer for common case (avoids heap alloc on every has/get call)
     fn getCacheKey(allocator: std.mem.Allocator, name: []const u8, version: []const u8) ![]const u8 {
-        return std.fmt.allocPrint(allocator, "{s}@{s}", .{ name, version });
+        var buf: [512]u8 = undefined;
+        const key = std.fmt.bufPrint(&buf, "{s}@{s}", .{ name, version }) catch
+            return std.fmt.allocPrint(allocator, "{s}@{s}", .{ name, version });
+        return try allocator.dupe(u8, key);
     }
 
     /// Get cache file path for package
+    /// Perf: Use stack buffers for key + hex (avoids 3 intermediate heap allocs)
     fn getCachePath(self: *PackageCache, name: []const u8, version: []const u8) ![]const u8 {
-        const pkg_hash = blk: {
-            const key = try getCacheKey(self.allocator, name, version);
-            defer self.allocator.free(key);
-            break :blk string.md5Hash(key);
-        };
+        // Build key on stack
+        var key_buf: [512]u8 = undefined;
+        const key = std.fmt.bufPrint(&key_buf, "{s}@{s}", .{ name, version }) catch
+            name; // fallback if key is too long
+        const pkg_hash = string.md5Hash(key);
 
-        const hex = try string.hashToHex(pkg_hash, self.allocator);
-        defer self.allocator.free(hex);
+        // Convert hash to hex on stack
+        var hex_buf: [32]u8 = undefined;
+        const hex = std.fmt.bufPrint(&hex_buf, "{x}", .{std.fmt.fmtSliceHexLower(&pkg_hash)}) catch &hex_buf;
 
         return std.fmt.allocPrint(
             self.allocator,

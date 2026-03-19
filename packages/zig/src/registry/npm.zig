@@ -662,24 +662,41 @@ pub const SemverConstraint = struct {
     };
 
     /// Parse a semver version string into major.minor.patch
-    pub fn parseVersion(version: []const u8) !struct { major: u32, minor: u32, patch: u32 } {
-        var clean_version = version;
+    pub const Version = struct { major: u32, minor: u32, patch: u32 };
 
-        // Strip 'v' prefix if present
-        if (std.mem.startsWith(u8, clean_version, "v")) {
-            clean_version = clean_version[1..];
+    /// Perf: Direct character scanning instead of splitAny iterator.
+    /// Called thousands of times during version resolution — every cycle matters.
+    pub fn parseVersion(version: []const u8) !Version {
+        var s = version;
+        // Strip 'v' prefix
+        if (s.len > 0 and s[0] == 'v') s = s[1..];
+        if (s.len == 0) return error.InvalidVersion;
+
+        // Parse major (scan digits until non-digit)
+        var i: usize = 0;
+        while (i < s.len and s[i] >= '0' and s[i] <= '9') : (i += 1) {}
+        if (i == 0) return error.InvalidVersion;
+        const major = std.fmt.parseInt(u32, s[0..i], 10) catch return error.InvalidVersion;
+        s = s[i..];
+
+        // Parse minor
+        var minor: u32 = 0;
+        if (s.len > 0 and s[0] == '.') {
+            s = s[1..];
+            i = 0;
+            while (i < s.len and s[i] >= '0' and s[i] <= '9') : (i += 1) {}
+            minor = std.fmt.parseInt(u32, s[0..i], 10) catch 0;
+            s = s[i..];
         }
 
-        // Split by '.' and '-' (for pre-release versions)
-        var parts = std.mem.splitAny(u8, clean_version, ".-+");
-
-        const major_str = parts.next() orelse return error.InvalidVersion;
-        const minor_str = parts.next() orelse "0";
-        const patch_str = parts.next() orelse "0";
-
-        const major = std.fmt.parseInt(u32, major_str, 10) catch return error.InvalidVersion;
-        const minor = std.fmt.parseInt(u32, minor_str, 10) catch 0;
-        const patch = std.fmt.parseInt(u32, patch_str, 10) catch 0;
+        // Parse patch
+        var patch: u32 = 0;
+        if (s.len > 0 and s[0] == '.') {
+            s = s[1..];
+            i = 0;
+            while (i < s.len and s[i] >= '0' and s[i] <= '9') : (i += 1) {}
+            patch = std.fmt.parseInt(u32, s[0..i], 10) catch 0;
+        }
 
         return .{ .major = major, .minor = minor, .patch = patch };
     }
@@ -702,28 +719,37 @@ pub const SemverConstraint = struct {
             };
         }
 
-        // Detect constraint type and strip prefix
-        if (std.mem.startsWith(u8, version_str, "^")) {
-            constraint_type = .caret;
-            version_str = version_str[1..];
-        } else if (std.mem.startsWith(u8, version_str, "~")) {
-            constraint_type = .tilde;
-            version_str = version_str[1..];
-        } else if (std.mem.startsWith(u8, version_str, ">=")) {
-            constraint_type = .gte;
-            version_str = version_str[2..];
-        } else if (std.mem.startsWith(u8, version_str, "<=")) {
-            constraint_type = .lte;
-            version_str = version_str[2..];
-        } else if (std.mem.startsWith(u8, version_str, ">")) {
-            constraint_type = .gt;
-            version_str = version_str[1..];
-        } else if (std.mem.startsWith(u8, version_str, "<")) {
-            constraint_type = .lt;
-            version_str = version_str[1..];
-        } else if (std.mem.startsWith(u8, version_str, "=")) {
-            constraint_type = .exact;
-            version_str = version_str[1..];
+        // Perf: Single character switch instead of 7 sequential startsWith calls
+        if (version_str.len > 0) {
+            switch (version_str[0]) {
+                '^' => {
+                    constraint_type = .caret;
+                    version_str = version_str[1..];
+                },
+                '~' => {
+                    constraint_type = .tilde;
+                    version_str = version_str[1..];
+                },
+                '>' => if (version_str.len > 1 and version_str[1] == '=') {
+                    constraint_type = .gte;
+                    version_str = version_str[2..];
+                } else {
+                    constraint_type = .gt;
+                    version_str = version_str[1..];
+                },
+                '<' => if (version_str.len > 1 and version_str[1] == '=') {
+                    constraint_type = .lte;
+                    version_str = version_str[2..];
+                } else {
+                    constraint_type = .lt;
+                    version_str = version_str[1..];
+                },
+                '=' => {
+                    constraint_type = .exact;
+                    version_str = version_str[1..];
+                },
+                else => {},
+            }
         }
 
         const version = try parseVersion(version_str);
@@ -736,13 +762,16 @@ pub const SemverConstraint = struct {
         };
     }
 
-    /// Check if a version satisfies this constraint
+    /// Check if a version satisfies this constraint (string version — parses first)
     pub fn satisfies(self: SemverConstraint, version_str: []const u8) bool {
-        // Any constraint matches everything
         if (self.type == .any) return true;
-
         const version = parseVersion(version_str) catch return false;
+        return self.satisfiesParsed(version);
+    }
 
+    /// Perf: Check satisfaction with pre-parsed version (avoids re-parsing in loops)
+    pub fn satisfiesParsed(self: SemverConstraint, version: Version) bool {
+        if (self.type == .any) return true;
         return switch (self.type) {
             .exact => version.major == self.major and
                 version.minor == self.minor and
@@ -796,6 +825,14 @@ pub const SemverConstraint = struct {
 };
 
 /// Compare two semver versions, returns >0 if a > b, <0 if a < b, 0 if equal
+/// Perf: Also provide compareVersionsParsed for pre-parsed values
+pub fn compareVersionsParsed(va: SemverConstraint.Version, vb: SemverConstraint.Version) i32 {
+    if (va.major != vb.major) return if (va.major > vb.major) @as(i32, 1) else @as(i32, -1);
+    if (va.minor != vb.minor) return if (va.minor > vb.minor) @as(i32, 1) else @as(i32, -1);
+    if (va.patch != vb.patch) return if (va.patch > vb.patch) @as(i32, 1) else @as(i32, -1);
+    return 0;
+}
+
 fn compareVersions(a: []const u8, b: []const u8) i32 {
     const va = SemverConstraint.parseVersion(a) catch return 0;
     const vb = SemverConstraint.parseVersion(b) catch return 0;

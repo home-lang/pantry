@@ -223,6 +223,10 @@ pub fn isTrusted(
 // ============================================================================
 
 /// Extract lifecycle scripts from package.json
+/// Perf: Only extract lifecycle scripts we actually use (preinstall, postinstall, prepare, etc.)
+/// instead of duplicating every script in package.json
+const LIFECYCLE_SCRIPTS = [_][]const u8{ "preinstall", "postinstall", "prepare", "prepublishOnly", "prepack", "postpack" };
+
 pub fn extractScripts(
     allocator: std.mem.Allocator,
     package_json: std.json.Parsed(std.json.Value),
@@ -235,14 +239,15 @@ pub fn extractScripts(
     if (root.get("scripts")) |scripts_obj| {
         if (scripts_obj != .object) return scripts;
 
-        var it = scripts_obj.object.iterator();
-        while (it.next()) |entry| {
-            const script_name = try allocator.dupe(u8, entry.key_ptr.*);
-            const script_cmd = switch (entry.value_ptr.*) {
-                .string => |s| try allocator.dupe(u8, s),
-                else => continue,
-            };
-            try scripts.put(script_name, script_cmd);
+        // Only extract lifecycle-relevant scripts (not "build", "test", "lint", etc.)
+        for (LIFECYCLE_SCRIPTS) |script_name| {
+            if (scripts_obj.object.get(script_name)) |val| {
+                if (val == .string) {
+                    const key = try allocator.dupe(u8, script_name);
+                    const cmd = try allocator.dupe(u8, val.string);
+                    try scripts.put(key, cmd);
+                }
+            }
         }
     }
 

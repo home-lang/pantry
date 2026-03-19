@@ -175,6 +175,7 @@ pub const pantryConfigLoader = struct {
     }
 
     /// Try to find a config file with specific directory, name, and extension
+    /// Perf: Stack buffer for config file paths (avoids alloc+free+dupe per check)
     fn tryConfigFile(
         self: *pantryConfigLoader,
         dir: []const u8,
@@ -182,12 +183,11 @@ pub const pantryConfigLoader = struct {
         ext: []const u8,
         cwd: []const u8,
     ) !?[]const u8 {
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
         const path = if (dir.len == 0)
-            try std.fmt.allocPrint(self.allocator, "{s}/{s}{s}", .{ cwd, name, ext })
+            std.fmt.bufPrint(&path_buf, "{s}/{s}{s}", .{ cwd, name, ext }) catch return null
         else
-            try std.fmt.allocPrint(self.allocator, "{s}/{s}/{s}{s}", .{ cwd, dir, name, ext });
-
-        defer self.allocator.free(path);
+            std.fmt.bufPrint(&path_buf, "{s}/{s}/{s}{s}", .{ cwd, dir, name, ext }) catch return null;
 
         io_helper.accessAbsolute(path, .{}) catch return null;
         return try self.allocator.dupe(u8, path);

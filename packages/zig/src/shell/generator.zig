@@ -28,7 +28,8 @@ pub const ShellCodeGenerator = struct {
 
     /// Generate shell integration code
     pub fn generate(self: *ShellCodeGenerator) ![]const u8 {
-        var result = try std.ArrayList(u8).initCapacity(self.allocator, 4096);
+        // Perf: Shell code is typically 8-12KB — pre-size to avoid 1-2 ArrayList resizes
+        var result = try std.ArrayList(u8).initCapacity(self.allocator, 12288);
         errdefer result.deinit(self.allocator);
 
         // Header

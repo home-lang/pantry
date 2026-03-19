@@ -31,16 +31,11 @@ pub fn installFromCache(
     version: []const u8,
     dest_dir: []const u8,
 ) !bool {
-    const cache_dir = try getCacheDir(allocator);
-    defer allocator.free(cache_dir);
-
-    // Check if package exists in cache
-    const cached_path = try std.fs.path.join(allocator, &[_][]const u8{
-        cache_dir,
-        package_name,
-        version,
-    });
-    defer allocator.free(cached_path);
+    // Perf: Stack buffer for cache path (avoids 3 heap allocs for getCacheDir + join)
+    const home = io_helper.getenv("HOME") orelse "/tmp";
+    var cached_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const cached_path = std.fmt.bufPrint(&cached_path_buf, "{s}/.pantry/cache/packages/{s}/{s}", .{ home, package_name, version }) catch
+        return false;
 
     // Check if directory exists
     io_helper.accessAbsolute(cached_path, .{}) catch {
