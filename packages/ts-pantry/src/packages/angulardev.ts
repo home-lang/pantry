@@ -3,7 +3,7 @@
  *
  * @domain `angular.dev`
  * @programs `ng`
- * @version `21.2.3` (167 versions available)
+ * @version `21.2.3` (168 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install angular.dev`
@@ -92,6 +92,7 @@ export const angulardevPackage = {
     '21.0.2',
     '21.0.1',
     '21.0.0',
+    '20.3.21',
     '20.3.20',
     '20.3.19',
     '20.3.18',
