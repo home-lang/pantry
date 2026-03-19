@@ -1320,6 +1320,16 @@ pub fn installWorkspaceCommandWithOptions(
         };
     }
 
+    // Delegate to Composer for PHP deps if composer.json is present
+    {
+        const composer_delegate = @import("../../../deps/composer_delegate.zig");
+        _ = composer_delegate.installPhpDeps(allocator, workspace_root, options.verbose) catch |err| {
+            if (options.verbose) {
+                style.print("Warning: Composer delegation failed: {}\n", .{err});
+            }
+        };
+    }
+
     // Summary
     const install_end_ts = io_helper.clockGettime();
     const install_end_ms = @as(i64, @intCast(install_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_end_ts.nsec)), 1_000_000);

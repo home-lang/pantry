@@ -627,15 +627,69 @@ fn parseGoMod(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDep
     return deps.toOwnedSlice(allocator);
 }
 
-/// Parse composer.json to infer PHP dependency
+/// Parse composer.json to extract PHP dependencies.
+///
+/// Returns php.net as a system dep (to ensure PHP is installed),
+/// plus a special "__composer_install__" marker dep that the install
+/// flow uses to trigger `composer install` after system deps are ready.
+///
+/// The actual PHP library deps (laravel/framework, etc.) are installed
+/// by Composer itself — pantry orchestrates the process.
 fn parseComposerJson(allocator: std.mem.Allocator, file_path: []const u8) ![]PackageDependency {
-    _ = file_path;
-    // Infer PHP is needed if composer.json exists
-    var deps = try std.ArrayList(PackageDependency).initCapacity(allocator, 1);
+    var deps = try std.ArrayList(PackageDependency).initCapacity(allocator, 4);
+    errdefer {
+        for (deps.items) |*dep| dep.deinit(allocator);
+        deps.deinit(allocator);
+    }
+
+    // Read and parse composer.json
+    const content = io_helper.readFileAlloc(allocator, file_path, 2 * 1024 * 1024) catch {
+        // Fallback: just infer PHP is needed
+        try deps.append(allocator, .{
+            .name = try allocator.dupe(u8, "php.net"),
+            .version = try allocator.dupe(u8, "latest"),
+        });
+        return deps.toOwnedSlice(allocator);
+    };
+    defer allocator.free(content);
+
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+        try deps.append(allocator, .{
+            .name = try allocator.dupe(u8, "php.net"),
+            .version = try allocator.dupe(u8, "latest"),
+        });
+        return deps.toOwnedSlice(allocator);
+    };
+    defer parsed.deinit();
+
+    // Extract PHP version constraint from require.php if present
+    var php_version: []const u8 = "latest";
+    if (parsed.value == .object) {
+        if (parsed.value.object.get("require")) |require_val| {
+            if (require_val == .object) {
+                if (require_val.object.get("php")) |php_constraint| {
+                    if (php_constraint == .string) {
+                        php_version = try allocator.dupe(u8, php_constraint.string);
+                    }
+                }
+            }
+        }
+    }
+
+    // Always ensure PHP is installed
     try deps.append(allocator, .{
         .name = try allocator.dupe(u8, "php.net"),
-        .version = try allocator.dupe(u8, "8.3.0"),
+        .version = php_version,
     });
+
+    // Add marker dep that triggers `composer install` in the post-install phase.
+    // This is not a real package — the install flow recognizes it and delegates
+    // to Composer for the actual PHP library resolution + installation.
+    try deps.append(allocator, .{
+        .name = try allocator.dupe(u8, "__composer_install__"),
+        .version = try allocator.dupe(u8, "latest"),
+    });
+
     return deps.toOwnedSlice(allocator);
 }
 
@@ -863,6 +917,24 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
                     }
                 }
             }
+        }
+    }
+
+    // Check for "composer" section — PHP deps defined in pantry.jsonc/package.json
+    // e.g.: { "composer": { "laravel/framework": "^11.0", "monolog/monolog": "^3.0" } }
+    // Pantry doesn't resolve these itself — it ensures PHP is installed and delegates to Composer.
+    if (parsed.value.object.get("composer")) |composer_val| {
+        if (composer_val == .object and composer_val.object.count() > 0) {
+            // Ensure PHP is installed
+            try deps.append(allocator, .{
+                .name = try allocator.dupe(u8, "php.net"),
+                .version = try allocator.dupe(u8, "latest"),
+            });
+            // Trigger Composer delegation in post-install
+            try deps.append(allocator, .{
+                .name = try allocator.dupe(u8, "__composer_install__"),
+                .version = try allocator.dupe(u8, "latest"),
+            });
         }
     }
 

@@ -37,7 +37,7 @@ function setupTempDir(fixture: string, label: string): string {
   rmSync(base, { recursive: true, force: true })
   mkdirSync(base, { recursive: true })
   const fixtureDir = join(import.meta.dir, 'fixtures', fixture)
-  // Only copy composer.json — both tools will use it
+  // Copy composer.json for both tools (pantry detects it and delegates to Composer)
   const composerJson = join(fixtureDir, 'composer.json')
   if (existsSync(composerJson)) {
     cpSync(composerJson, join(base, 'composer.json'))

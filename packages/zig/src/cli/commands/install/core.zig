@@ -340,6 +340,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             };
 
             if (should_include) {
+                // Skip marker deps — these are handled by post-install delegation
+                if (std.mem.startsWith(u8, dep.name, "__") and std.mem.endsWith(u8, dep.name, "__")) {
+                    continue;
+                }
                 try filtered_deps.append(allocator, dep);
             }
         }
@@ -1001,6 +1005,16 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             zig_zon_sync.syncBuildZigZon(allocator, proj_dir, opts.modules_dir, opts.verbose) catch |err| {
                 if (opts.verbose) {
                     style.print("Warning: Failed to sync build.zig.zon: {}\n", .{err});
+                }
+            };
+        }
+
+        // Delegate to Composer for PHP deps if composer.json is present
+        {
+            const composer_delegate = @import("../../../deps/composer_delegate.zig");
+            _ = composer_delegate.installPhpDeps(allocator, proj_dir, opts.verbose) catch |err| {
+                if (opts.verbose) {
+                    style.print("Warning: Composer delegation failed: {}\n", .{err});
                 }
             };
         }
