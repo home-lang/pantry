@@ -3,7 +3,7 @@
  *
  * @domain `ollama.ai`
  * @programs `ollama`
- * @version `0.18.1` (158 versions available)
+ * @version `0.18.2` (159 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install ollama.ai`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "ollama"
  * console.log(pkg.description) // "Get up and running with Llama 3.3, DeepSeek-R1,..."
  * console.log(pkg.programs)    // ["ollama"]
- * console.log(pkg.versions[0]) // "0.18.1" (latest)
+ * console.log(pkg.versions[0]) // "0.18.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/ollama-ai.md
@@ -78,6 +78,7 @@ export const ollamaaiPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.18.2',
     '0.18.1',
     '0.18.0',
     '0.17.7',

@@ -3,7 +3,7 @@
  *
  * @domain `github.com/nullclaw/nullclaw`
  * @programs `nullclaw`, `nullclaw-init`
- * @version `2026.3.17` (16 versions available)
+ * @version `2026.3.18` (17 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/nullclaw/nullclaw`
@@ -17,7 +17,7 @@
  * const pkg = pantry.githubcomnullclawnullclaw
  * console.log(pkg.name)        // "nullclaw"
  * console.log(pkg.programs)    // ["nullclaw", "nullclaw-init"]
- * console.log(pkg.versions[0]) // "2026.3.17" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.18" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/nullclaw/nullclaw.md
@@ -77,6 +77,7 @@ export const nullclawPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.18',
     '2026.3.17',
     '2026.3.15',
     '2026.3.14',
