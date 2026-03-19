@@ -48,13 +48,9 @@ Composer is the standard PHP dependency manager. Both tools install identical PH
 
 ### Analysis
 
-Pantry wins **every scenario by 53x to 2,330x**.
+**Note on methodology**: These numbers measure the full `pantry install` and `composer install` CLI commands. Pantry's native PHP package downloader is still being integrated — the current numbers reflect pantry's fast-path detection (scanning composer.json, checking vendor/ state) but not full Packagist resolution + download for cold installs. Once the native PHP installer is fully wired into the CLI, cold install times will increase but are expected to remain significantly faster than Composer due to parallel downloads and compiled resolution.
 
-- **Cold installs**: 528-2,330x faster — pantry's compiled Zig resolver completes in ~7ms regardless of dependency count. Composer needs 3-14 seconds (PHP boot + sequential resolution + sequential downloads)
-- **Warm installs**: 159-1,041x faster — pantry's fast-path detects "already installed" in milliseconds. Composer still boots PHP and re-validates
-- **Reinstall (no-op)**: 53-311x faster — pantry's lockfile check + directory scan completes in ~7ms. Composer's PHP-based validation takes 384ms-2s
-
-The key insight: pantry's ~7ms floor is constant regardless of project size (3 deps or 18 deps), while Composer scales linearly. This is the result of 56 source-level optimizations: stack buffers eliminating heap allocations, O(1) lookups replacing O(n) scans, parallel downloads, pre-parsed semver, and connection-pooled HTTP.
+The reinstall/no-op numbers are accurate — pantry's lockfile + vendor check genuinely completes in ~7ms vs Composer's 384ms-2s PHP boot + validation.
 
 Reproduce these results:
 

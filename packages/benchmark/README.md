@@ -248,7 +248,7 @@ Both tools run their actual CLI commands — `pantry install` vs `composer insta
 | Reinstall (8 deps) | 7.95ms | 1.70s | **214x** |
 | Reinstall (18 deps) | 6.65ms | 2.07s | **311x** |
 
-**Pantry wins every scenario by 53x to 2,330x.** 56 source-level optimizations in the Zig CLI reduced pantry's overhead from ~3s to ~7ms (constant regardless of project size).
+**Note**: Pantry's native PHP downloader is still being integrated into the CLI. Current numbers reflect pantry's fast-path scanning (7ms) but not full Packagist download for cold installs. Reinstall/no-op numbers (53-311x) are accurate — pantry's lockfile check genuinely completes in ~7ms vs Composer's 384ms-2s.
 
 ## 🔧 Implementation Impact
 
