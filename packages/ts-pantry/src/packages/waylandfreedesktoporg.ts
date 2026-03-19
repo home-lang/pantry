@@ -3,7 +3,7 @@
  *
  * @domain `wayland.freedesktop.org`
  * @programs `wayland-scanner`
- * @version `1.24.91` (11 versions available)
+ * @version `1.25.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install wayland.freedesktop.org`
@@ -17,7 +17,7 @@
  * const pkg = pantry.waylandfreedesktoporg
  * console.log(pkg.name)        // "wayland"
  * console.log(pkg.programs)    // ["wayland-scanner"]
- * console.log(pkg.versions[0]) // "1.24.91" (latest)
+ * console.log(pkg.versions[0]) // "1.25.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/wayland-freedesktop-org.md
@@ -79,6 +79,7 @@ export const waylandfreedesktoporgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.25.0',
     '1.24.91',
     '1.24.0',
     '1.23.93',

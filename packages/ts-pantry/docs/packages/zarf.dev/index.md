@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 68 versions</summary>
+<summary>Show all 69 versions</summary>
 
+- `0.74.0`
 - `0.73.1`, `0.73.0`
 - `0.72.0`
 - `0.71.1`, `0.71.0`
@@ -72,13 +73,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.73.1`
+**Latest Version**: `0.74.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +zarf.dev@0.73.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +zarf.dev@0.74.0 -- $SHELL -i
 ```
 
 ## Usage Examples

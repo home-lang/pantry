@@ -1,5 +1,5 @@
 /**
- * **PowerShell** - pkgx package
+ * **pwsh** - PowerShell for every system!
  *
  * @domain `microsoft.com/PowerShell`
  * @programs `pwsh`
@@ -7,6 +7,7 @@
  * @versions From newest version to oldest.
  *
  * @install `pantry install microsoft.com/PowerShell`
+ * @homepage https://microsoft.com/PowerShell
  * @dependencies `openssl.org^1.1`, `linux:unicode.org^71` (includes OS-specific dependencies with `os:package` format)
  * @buildDependencies `curl.se` - required only when building from source
  *
@@ -15,7 +16,8 @@
  * import { pantry } from 'ts-pantry'
  *
  * const pkg = pantry.microsoftcompowershell
- * console.log(pkg.name)        // "PowerShell"
+ * console.log(pkg.name)        // "pwsh"
+ * console.log(pkg.description) // "PowerShell for every system!"
  * console.log(pkg.programs)    // ["pwsh"]
  * console.log(pkg.versions[0]) // "7.6.0" (latest)
  * ```
@@ -27,7 +29,7 @@ export const microsoftcompowershellPackage = {
   /**
   * The display name of this package.
   */
-  name: 'PowerShell' as const,
+  name: 'pwsh' as const,
   /**
   * The canonical domain name for this package.
   */
@@ -35,10 +37,10 @@ export const microsoftcompowershellPackage = {
   /**
   * Brief description of what this package does.
   */
-  description: '' as const,
+  description: 'PowerShell for every system!' as const,
   packageYmlUrl: 'https://github.com/pkgxdev/pantry/tree/main/projects/microsoft.com/PowerShell/package.yml' as const,
-  homepageUrl: '' as const,
-  githubUrl: '' as const,
+  homepageUrl: 'https://microsoft.com/PowerShell' as const,
+  githubUrl: 'https://github.com/PowerShell/PowerShell' as const,
   /**
   * Command to install this package using pantry.
   * @example pantry install package-name
