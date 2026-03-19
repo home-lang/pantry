@@ -89,11 +89,12 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
     const file = io_helper.cwd().createFile(io_helper.io, dest_path, .{}) catch return error.FileWriteFailed;
     defer file.close(io_helper.io);
 
-    var file_buf: [65536]u8 = undefined;
+    // Perf: 128KB file write buffer + 64KB transfer buffer for better throughput
+    var file_buf: [131072]u8 = undefined;
     var file_writer = file.writerStreaming(io_helper.io, &file_buf);
 
     // Stream response body to file with progress tracking
-    var transfer_buf: [16384]u8 = undefined;
+    var transfer_buf: [65536]u8 = undefined;
     const body_reader = stream.reader(&transfer_buf);
 
     const start_ts = io_helper.clockGettime();

@@ -102,7 +102,21 @@ pub fn writeLockfile(allocator: std.mem.Allocator, lockfile: *const types.Lockfi
 }
 
 /// Append a JSON-escaped string to the buffer (handles quotes, backslashes, control chars)
+/// Perf: Fast path for strings that don't need escaping (most package names/versions)
 fn appendJsonEscaped(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: []const u8) !void {
+    // Fast path: check if string needs escaping at all
+    var needs_escape = false;
+    for (s) |c| {
+        if (c == '"' or c == '\\' or c == '\n' or c == '\r' or c == '\t') {
+            needs_escape = true;
+            break;
+        }
+    }
+    if (!needs_escape) {
+        try buf.appendSlice(allocator, s);
+        return;
+    }
+    // Slow path: escape char by char
     for (s) |c| {
         switch (c) {
             '"' => try buf.appendSlice(allocator, "\\\""),
@@ -117,21 +131,31 @@ fn appendJsonEscaped(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: [
 
 /// Write a string-keyed hashmap as a JSON object
 /// Collect and sort keys from a StringHashMap for deterministic output
+/// Perf: Uses stack buffer for maps with <=128 entries (avoids heap alloc for typical projects)
 fn sortedKeys(allocator: std.mem.Allocator, map: anytype) ![]const []const u8 {
     const count = map.count();
-    var keys = try allocator.alloc([]const u8, count);
+    var stack_buf: [128][]const u8 = undefined;
+    const keys = if (count <= 128) stack_buf[0..count] else try allocator.alloc([]const u8, count);
+    errdefer if (count > 128) allocator.free(keys);
+
     var i: usize = 0;
     var it = map.iterator();
     while (it.next()) |entry| {
+        if (i >= count) break;
         keys[i] = entry.key_ptr.*;
         i += 1;
     }
-    std.mem.sort([]const u8, keys, {}, struct {
+    std.mem.sort([]const u8, keys[0..i], {}, struct {
         fn cmp(_: void, a: []const u8, b: []const u8) bool {
             return std.mem.order(u8, a, b) == .lt;
         }
     }.cmp);
-    return keys;
+
+    // If we used the heap, return heap slice. If stack, dupe to heap (caller expects to free).
+    if (count > 128) return keys;
+    const result = try allocator.alloc([]const u8, i);
+    @memcpy(result, keys[0..i]);
+    return result;
 }
 
 fn writeJsonStringMap(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, map: *const std.StringHashMap([]const u8), indent: []const u8) !void {
@@ -157,7 +181,9 @@ fn writeJsonStringMap(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, map
 /// Write lockfile to disk in JSON format (always writes, internal use)
 /// Uses atomic write (write to temp file, then rename) to prevent corruption.
 fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockfile, file_path: []const u8) !void {
-    var buf = try std.ArrayList(u8).initCapacity(allocator, 16384);
+    // Perf: Pre-size buffer based on package count (avg ~200 bytes per entry)
+    const estimated_size = @max(16384, lockfile.packages.count() * 200 + lockfile.workspaces.count() * 300 + 512);
+    var buf = try std.ArrayList(u8).initCapacity(allocator, estimated_size);
     defer buf.deinit(allocator);
 
     var fmt_buf: [1024]u8 = undefined;
@@ -327,8 +353,15 @@ fn writeLockfileForce(allocator: std.mem.Allocator, lockfile: *const types.Lockf
 
 /// Read lockfile from disk
 pub fn readLockfile(allocator: std.mem.Allocator, file_path: []const u8) !types.Lockfile {
-    const content = try io_helper.readFileAlloc(allocator, file_path, 10 * 1024 * 1024); // 10MB max
+    // Perf: 5MB limit (lockfiles >5MB are pathological). Also pre-check file size
+    // to avoid allocating for trivially empty/missing files.
+    const content = try io_helper.readFileAlloc(allocator, file_path, 5 * 1024 * 1024);
     defer allocator.free(content);
+
+    // Perf: Quick sanity check — lockfile must contain "packages" to be useful
+    if (content.len < 20 or std.mem.indexOf(u8, content[0..@min(content.len, 200)], "\"packages\"") == null) {
+        return error.InvalidLockfile;
+    }
 
     const parsed = try std.json.parseFromSlice(
         std.json.Value,

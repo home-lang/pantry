@@ -149,16 +149,17 @@ const NpmCache = struct {
         self.registry_map.deinit();
     }
 
-    /// Level 2: Look up a cached resolution. Returns duped strings (caller owns).
+    /// Level 2: Look up a cached resolution. Returns borrowed pointers (valid until cache is cleared).
+    /// Perf: No string duplication on cache hit — callers must not outlive the cache.
     fn getResolution(self: *NpmCache, key: []const u8, allocator: std.mem.Allocator) ?Installer.NpmResolution {
+        _ = allocator;
         self.resolution_mutex.lock();
         defer self.resolution_mutex.unlock();
         const entry = self.resolution_map.get(key) orelse return null;
-        const integrity_dupe = if (entry.integrity) |i| (allocator.dupe(u8, i) catch null) else null;
         return Installer.NpmResolution{
-            .version = allocator.dupe(u8, entry.version) catch return null,
-            .tarball_url = allocator.dupe(u8, entry.tarball_url) catch return null,
-            .integrity = integrity_dupe,
+            .version = entry.version,
+            .tarball_url = entry.tarball_url,
+            .integrity = entry.integrity,
         };
     }
 
@@ -341,7 +342,15 @@ pub const Installer = struct {
         if (deps.len == 0) return;
 
         // Build JSON request body: {"dependencies":{"react":"^16","lodash":"^4",...}}
-        var body_buf: std.ArrayList(u8) = .empty;
+        // Perf: Pre-calculate size to avoid ArrayList resizing
+        var estimated_size: usize = 20; // {"dependencies":{}}
+        for (deps) |dep| {
+            estimated_size += dep.name.len + dep.version.len + 8; // "name":"version",
+        }
+        var body_buf = std.ArrayList(u8).initCapacity(self.allocator, estimated_size) catch {
+            var fallback: std.ArrayList(u8) = .empty;
+            return fallback.deinit(self.allocator);
+        };
         defer body_buf.deinit(self.allocator);
         body_buf.appendSlice(self.allocator, "{\"dependencies\":{") catch return;
 
@@ -383,17 +392,16 @@ pub const Installer = struct {
             const integrity = if (pkg_val.object.get("integrity")) |i| (if (i == .string) i.string else null) else null;
 
             // Cache as L2 resolution entry for all common constraint patterns
-            // This pre-populates the cache so resolveNpmPackage() returns immediately
+            // Perf: Use stack buffer for cache keys (avoids 4 allocPrint per package)
+            var cache_key_buf: [512]u8 = undefined;
             const cache_keys = [_][]const u8{ "latest", "*", "" };
             for (cache_keys) |suffix| {
-                const key = std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ pkg_name, suffix }) catch continue;
-                defer self.allocator.free(key);
+                const key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ pkg_name, suffix }) catch continue;
                 self.npm_cache.putResolution(key, version, tarball, integrity);
             }
             // Also cache the exact version
             {
-                const key = std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ pkg_name, version }) catch continue;
-                defer self.allocator.free(key);
+                const key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ pkg_name, version }) catch continue;
                 self.npm_cache.putResolution(key, version, tarball, integrity);
             }
         }
@@ -443,11 +451,12 @@ pub const Installer = struct {
                         pkg.name[slash + 1 ..]
                     else
                         pkg.name;
-                    const constructed = std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}/-/{s}-{s}.tgz", .{
+                    // Perf: Use stack buffer for URL construction, then dupe only once
+                    var url_buf: [1024]u8 = undefined;
+                    const url_str = std.fmt.bufPrint(&url_buf, "https://registry.npmjs.org/{s}/-/{s}-{s}.tgz", .{
                         pkg.name, base_name, pkg.version,
                     }) catch continue;
-                    // Store for later free
-                    break :blk constructed;
+                    break :blk self.allocator.dupe(u8, url_str) catch continue;
                 };
 
                 to_install.append(self.allocator, .{

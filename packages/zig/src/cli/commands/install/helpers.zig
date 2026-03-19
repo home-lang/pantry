@@ -549,16 +549,19 @@ pub fn canSkipFromLockfile(
 ) bool {
     const clean_name = normalizePackageName(dep_name);
 
-    // Find any lockfile entry with matching name
-    var found = false;
-    var it = lockfile_packages.iterator();
-    while (it.next()) |entry| {
-        if (std.mem.eql(u8, entry.value_ptr.name, clean_name)) {
-            found = true;
-            break;
+    // Perf: Direct HashMap lookup O(1) instead of iterating all entries O(n)
+    if (lockfile_packages.get(clean_name) == null) {
+        // Fallback: check by value.name field (for entries keyed differently)
+        var found = false;
+        var it = lockfile_packages.iterator();
+        while (it.next()) |entry| {
+            if (std.mem.eql(u8, entry.value_ptr.name, clean_name)) {
+                found = true;
+                break;
+            }
         }
+        if (!found) return false;
     }
-    if (!found) return false;
 
     // Check if destination directory actually exists (use stack buffer + access instead of openDir)
     var dest_buf: [std.fs.max_path_bytes]u8 = undefined;

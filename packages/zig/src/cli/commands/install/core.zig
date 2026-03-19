@@ -50,23 +50,22 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     defer if (dep_path) |p| allocator.free(p);
 
     if (!is_workspace) {
-        // Non-workspace: find dep file in CWD only
+        // Perf: Use stack buffer for fast-path dep file check (avoids 3 allocs)
+        var dep_path_buf: [std.fs.max_path_bytes]u8 = undefined;
         for (dep_file_names) |name| {
-            const full = try std.fs.path.join(allocator, &[_][]const u8{ cwd, name });
-            io_helper.accessAbsolute(full, .{}) catch {
-                allocator.free(full);
-                continue;
-            };
-            dep_path = full;
+            const full = std.fmt.bufPrint(&dep_path_buf, "{s}/{s}", .{ cwd, name }) catch continue;
+            io_helper.accessAbsolute(full, .{}) catch continue;
+            dep_path = try allocator.dupe(u8, full);
             break;
         }
     }
 
     // 2. Check lockfile exists and read it (at effective_dir for workspaces)
-    const lockfile_path = try std.fs.path.join(allocator, &[_][]const u8{ effective_dir, "pantry.lock" });
-    defer allocator.free(lockfile_path);
+    // Perf: Use stack buffer for lockfile path (avoids heap alloc)
+    var lockfile_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const lockfile_path_stack = std.fmt.bufPrint(&lockfile_path_buf, "{s}/pantry.lock", .{effective_dir}) catch return null;
 
-    var lockfile = lockfile_reader.readLockfile(allocator, lockfile_path) catch return null;
+    var lockfile = lockfile_reader.readLockfile(allocator, lockfile_path_stack) catch return null;
     defer lockfile.deinit(allocator);
 
     if (lockfile.packages.count() == 0) return null;
@@ -142,28 +141,41 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     if (deps.len == 0) return null;
 
     // 4. Check all deps against lockfile + verify dirs exist (O(1) per dep via name set)
-    var name_set = helpers.buildLockfileNameSet(&lockfile.packages, allocator);
-    defer name_set.deinit();
-    var constraint_map = helpers.buildConstraintMapFromWorkspaces(&lockfile.workspaces, allocator);
-    defer constraint_map.deinit();
-
-    var checked_count: usize = 0;
-    for (deps) |dep| {
-        if (!helpers.canSkipFromLockfileWithNameSet(&name_set, dep.name, dep.version, &constraint_map, cwd, modules_dir)) {
-            return null; // At least one package needs work → fall through to slow path
+    // Perf: For small dep lists, skip HashMap construction and use direct lockfile lookup
+    // (HashMap has allocation + hashing overhead; direct lookup is O(1) per dep via StringHashMap.get)
+    if (deps.len <= 32) {
+        var checked_count: usize = 0;
+        for (deps) |dep| {
+            if (!helpers.canSkipFromLockfile(&lockfile.packages, dep.name, dep.version, cwd, allocator, modules_dir)) {
+                return null;
+            }
+            checked_count += 1;
         }
-        checked_count += 1;
+        if (checked_count == 0) return null;
+    } else {
+        var name_set = helpers.buildLockfileNameSet(&lockfile.packages, allocator);
+        defer name_set.deinit();
+        var constraint_map = helpers.buildConstraintMapFromWorkspaces(&lockfile.workspaces, allocator);
+        defer constraint_map.deinit();
+
+        var checked_count: usize = 0;
+        for (deps) |dep| {
+            if (!helpers.canSkipFromLockfileWithNameSet(&name_set, dep.name, dep.version, &constraint_map, cwd, modules_dir)) {
+                return null;
+            }
+            checked_count += 1;
+        }
+        if (checked_count == 0) return null;
     }
 
-    if (checked_count == 0) return null;
-
     // 4b. Verify integrity hashes for locked packages (if present)
+    // Perf: Use stack buffer for path construction (avoids alloc per package)
     var pkg_it = lockfile.packages.iterator();
+    var integrity_path_buf: [std.fs.max_path_bytes]u8 = undefined;
     while (pkg_it.next()) |entry| {
         const pkg = entry.value_ptr.*;
         if (pkg.integrity) |expected_integrity| {
-            const pkg_path = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_dir, modules_dir, pkg.name }) catch continue;
-            defer allocator.free(pkg_path);
+            const pkg_path = std.fmt.bufPrint(&integrity_path_buf, "{s}/{s}/{s}", .{ effective_dir, modules_dir, pkg.name }) catch continue;
             const valid = helpers.verifyPackageIntegrity(allocator, pkg_path, expected_integrity) catch continue;
             if (!valid) {
                 return null; // Integrity mismatch → fall through to slow path for reinstall
@@ -545,8 +557,14 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // This pre-populates the npm cache so individual resolveNpmPackage() calls
         // return immediately instead of hitting registry.npmjs.org one by one.
         if (deps_to_install.len > 0) {
-            var bulk_deps = try allocator.alloc(install.Installer.BulkDep, deps_to_install.len);
-            defer allocator.free(bulk_deps);
+            // Perf: Use stack buffer for small dep lists (avoids heap alloc for typical projects)
+            var stack_bulk: [64]install.Installer.BulkDep = undefined;
+            const bulk_deps = if (deps_to_install.len <= 64)
+                stack_bulk[0..deps_to_install.len]
+            else
+                try allocator.alloc(install.Installer.BulkDep, deps_to_install.len);
+            defer if (deps_to_install.len > 64) allocator.free(bulk_deps);
+
             for (deps_to_install, 0..) |dep, i| {
                 bulk_deps[i] = .{
                     .name = helpers.normalizePackageName(dep.name),

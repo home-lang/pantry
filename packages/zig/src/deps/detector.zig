@@ -77,10 +77,12 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
 
     // Walk up the directory tree
     while (true) {
+        // Perf: Use stack buffer for path construction (avoids allocator per candidate)
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+
         // Try each dependency file name
         for (file_names, 0..) |file_name, i| {
-            const full_path = try std.fs.path.join(allocator, &[_][]const u8{ dir_path, file_name });
-            defer allocator.free(full_path);
+            const full_path = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ dir_path, file_name }) catch continue;
 
             // Check if file exists
             io_helper.accessAbsolute(full_path, .{}) catch {

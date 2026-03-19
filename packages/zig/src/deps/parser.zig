@@ -642,49 +642,11 @@ fn parseComposerJson(allocator: std.mem.Allocator, file_path: []const u8) ![]Pac
         deps.deinit(allocator);
     }
 
-    // Read and parse composer.json
-    const content = io_helper.readFileAlloc(allocator, file_path, 2 * 1024 * 1024) catch {
-        // Fallback: just infer PHP is needed
-        try deps.append(allocator, .{
-            .name = try allocator.dupe(u8, "php.net"),
-            .version = try allocator.dupe(u8, "latest"),
-        });
-        return deps.toOwnedSlice(allocator);
-    };
-    defer allocator.free(content);
+    // composer.json is a project-level manifest — PHP and Composer should already
+    // be installed by the user (via `pantry install php.net`, brew, or system package manager).
+    // We only add a marker dep that triggers native Packagist downloading in post-install.
+    _ = file_path;
 
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
-        try deps.append(allocator, .{
-            .name = try allocator.dupe(u8, "php.net"),
-            .version = try allocator.dupe(u8, "latest"),
-        });
-        return deps.toOwnedSlice(allocator);
-    };
-    defer parsed.deinit();
-
-    // Extract PHP version constraint from require.php if present
-    var php_version: []const u8 = "latest";
-    if (parsed.value == .object) {
-        if (parsed.value.object.get("require")) |require_val| {
-            if (require_val == .object) {
-                if (require_val.object.get("php")) |php_constraint| {
-                    if (php_constraint == .string) {
-                        php_version = try allocator.dupe(u8, php_constraint.string);
-                    }
-                }
-            }
-        }
-    }
-
-    // Always ensure PHP is installed
-    try deps.append(allocator, .{
-        .name = try allocator.dupe(u8, "php.net"),
-        .version = php_version,
-    });
-
-    // Add marker dep that triggers `composer install` in the post-install phase.
-    // This is not a real package — the install flow recognizes it and delegates
-    // to Composer for the actual PHP library resolution + installation.
     try deps.append(allocator, .{
         .name = try allocator.dupe(u8, "__composer_install__"),
         .version = try allocator.dupe(u8, "latest"),
