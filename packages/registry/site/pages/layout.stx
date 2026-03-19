@@ -11,7 +11,7 @@
   @if (metaDescription)
   <meta name="description" content="{{ metaDescription }}" />
   @else
-  <meta name="description" content="A fast, modern package manager for your system. Install pre-built binaries for open source tools with a single command." />
+  <meta name="description" content="A fast, modern, universal package manager for your system. Install pre-built binaries for open source tools with a single command." />
   @endif
 
   <!-- Canonical URL -->
@@ -30,7 +30,7 @@
   @if (metaDescription)
   <meta property="og:description" content="{{ metaDescription }}" />
   @else
-  <meta property="og:description" content="A fast, modern package manager for your system. Install pre-built binaries for open source tools with a single command." />
+  <meta property="og:description" content="A fast, modern, universal package manager for your system. Install pre-built binaries for open source tools with a single command." />
   @endif
   @if (canonicalUrl)
   <meta property="og:url" content="{{ canonicalUrl }}" />
@@ -330,7 +330,7 @@
     <div class="max-w-6xl mx-auto px-6">
       <div class="flex flex-wrap justify-between items-start gap-8">
         <div>
-          <p class="text-sm" style="color: var(--fg-muted);">a fast, modern package manager for your system</p>
+          <p class="text-sm" style="color: var(--fg-muted);">a fast, modern, universal package manager for your system</p>
           <p class="text-xs mt-2" style="color: var(--fg-subtle);">built by <a href="https://stacksjs.com" class="hvr-accent transition-colors" style="color: var(--accent);">Stacks.js</a></p>
         </div>
         <div class="flex flex-col items-end gap-3">
