@@ -3719,7 +3719,7 @@ export interface Pantry {
 
   microbreworgmd5sha1sum: typeof microbreworgmd5sha1sumPackage
   microcksio: typeof microcksioPackage
-  PowerShell: typeof microsoftcompowershellPackage
+
   microsoftcompowershell: typeof microsoftcompowershellPackage
   azure_cli: typeof microsoftcomazurecliPackage
   microsoftcomazurecli: typeof microsoftcomazurecliPackage
@@ -4942,7 +4942,7 @@ export interface Pantry {
   azcopy: typeof microsoftcomazurestorageazcopyPackage
   'vscode cli': typeof microsoftcomcodecliPackage
   markitdown: typeof microsoftcommarkitdownPackage
-  pwsh: typeof microsoftcompowershellPackage
+  PowerShell: typeof microsoftcompowershellPackage
   jbang: typeof jbangdevPackage
   libcerf: typeof jugitfzjuelichdemlzlibcerfPackage
   syft: typeof anchorecomsyftPackage
@@ -8128,7 +8128,7 @@ export const pantry: Pantry = {
 
   microbreworgmd5sha1sum: microbreworgmd5sha1sumPackage,
   microcksio: microcksioPackage,
-  PowerShell: microsoftcompowershellPackage,
+
   microsoftcompowershell: microsoftcompowershellPackage,
   azure_cli: microsoftcomazurecliPackage,
   microsoftcomazurecli: microsoftcomazurecliPackage,
@@ -9351,7 +9351,7 @@ export const pantry: Pantry = {
   azcopy: microsoftcomazurestorageazcopyPackage,
   'vscode cli': microsoftcomcodecliPackage,
   markitdown: microsoftcommarkitdownPackage,
-  pwsh: microsoftcompowershellPackage,
+  PowerShell: microsoftcompowershellPackage,
   jbang: jbangdevPackage,
   libcerf: jugitfzjuelichdemlzlibcerfPackage,
   syft: anchorecomsyftPackage,

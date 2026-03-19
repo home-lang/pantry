@@ -65,11 +65,11 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
 - `4.2.0`
 - `4.1.2`, `4.1.1`, `4.1.0`
-- `4.0.1`, `4.0.0`
+- `4.0.2`, `4.0.1`, `4.0.0`
 - `3.9.2`, `3.9.1`, `3.9.0`
 - `3.8.1`, `3.8.0`
 - `3.7.2`

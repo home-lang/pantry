@@ -3,7 +3,7 @@
  *
  * @domain `daytona.io`
  * @programs `daytona`
- * @version `0.152.1` (147 versions available)
+ * @version `0.153.0` (148 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install daytona.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "daytona"
  * console.log(pkg.description) // "The Open Source Dev Environment Manager."
  * console.log(pkg.programs)    // ["daytona"]
- * console.log(pkg.versions[0]) // "0.152.1" (latest)
+ * console.log(pkg.versions[0]) // "0.153.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/daytona-io.md
@@ -68,6 +68,7 @@ export const daytonaioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.153.0',
     '0.152.1',
     '0.152.0',
     '0.151.0',

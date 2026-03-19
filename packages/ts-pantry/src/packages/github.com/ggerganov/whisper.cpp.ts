@@ -3,7 +3,7 @@
  *
  * @domain `github.com/ggerganov/whisper.cpp`
  * @programs `whisper.cpp`, `whisper-cli`
- * @version `1.8.3` (22 versions available)
+ * @version `1.8.4` (23 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/ggerganov/whisper.cpp`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "whisper"
  * console.log(pkg.description) // "Port of OpenAI's Whisper model in C/C++"
  * console.log(pkg.programs)    // ["whisper.cpp", "whisper-cli"]
- * console.log(pkg.versions[0]) // "1.8.3" (latest)
+ * console.log(pkg.versions[0]) // "1.8.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/ggerganov/whisper-cpp.md
@@ -80,6 +80,7 @@ export const whispercppPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.8.4',
     '1.8.3',
     '1.8.2',
     '1.8.1',
