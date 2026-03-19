@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 49 versions</summary>
+<summary>Show all 50 versions</summary>
 
+- `1.156.0`
 - `1.155.2`
 - `1.154.0`
 - `1.153.1`
@@ -74,13 +75,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.155.2`
+**Latest Version**: `1.156.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +aws.amazon.com/sam@1.155.2 -- $SHELL -i
+sh <(curl https://pkgx.sh) +aws.amazon.com/sam@1.156.0 -- $SHELL -i
 ```
 
 ## Dependencies

@@ -26,9 +26,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 39 versions</summary>
+<summary>Show all 40 versions</summary>
 
-- `0.13.10`, `0.13.9`, `0.13.8`, `0.13.7`, `0.13.6`, `0.13.5`, `0.13.4`, `0.13.3`, `0.13.2`, `0.13.1`, `0.13.0`
+- `0.13.11`, `0.13.10`, `0.13.9`, `0.13.8`, `0.13.7`, `0.13.6`, `0.13.5`, `0.13.4`, `0.13.3`, `0.13.2`, `0.13.1`, `0.13.0`
 - `0.12.2`, `0.12.1`, `0.12.0`
 - `0.11.4`, `0.11.3`, `0.11.2`, `0.11.1`, `0.11.0`
 - `0.10.1`, `0.10.0`
@@ -42,13 +42,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.13.10`
+**Latest Version**: `0.13.11`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +prql-lang.org@0.13.10 -- $SHELL -i
+sh <(curl https://pkgx.sh) +prql-lang.org@0.13.11 -- $SHELL -i
 ```
 
 ## Usage Examples

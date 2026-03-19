@@ -3,7 +3,7 @@
  *
  * @domain `aws.amazon.com/sam`
  * @programs `sam`
- * @version `1.155.2` (49 versions available)
+ * @version `1.156.0` (50 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install aws.amazon.com/sam`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "sam"
  * console.log(pkg.description) // "CLI tool to build, test, debug, and deploy Serv..."
  * console.log(pkg.programs)    // ["sam"]
- * console.log(pkg.versions[0]) // "1.155.2" (latest)
+ * console.log(pkg.versions[0]) // "1.156.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/aws-amazon-com/sam.md
@@ -75,6 +75,7 @@ export const awsamazoncomsamPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.156.0',
     '1.155.2',
     '1.154.0',
     '1.153.1',

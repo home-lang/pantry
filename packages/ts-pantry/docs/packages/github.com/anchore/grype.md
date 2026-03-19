@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 81 versions</summary>
+<summary>Show all 82 versions</summary>
 
+- `0.110.0`
 - `0.109.1`, `0.109.0`
 - `0.108.0`
 - `0.107.1`, `0.107.0`
@@ -68,13 +69,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.109.1`
+**Latest Version**: `0.110.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/anchore/grype@0.109.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/anchore/grype@0.110.0 -- $SHELL -i
 ```
 
 ## Usage Examples

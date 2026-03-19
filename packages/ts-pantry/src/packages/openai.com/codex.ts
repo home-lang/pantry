@@ -3,7 +3,7 @@
  *
  * @domain `openai.com/codex`
  * @programs `codex`, `codex-exec`, `codex-tui`, `md-events`
- * @version `0.115.0` (70 versions available)
+ * @version `0.116.0` (71 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install openai.com/codex`
@@ -16,7 +16,7 @@
  * const pkg = pantry.openaicomcodex
  * console.log(pkg.name)        // "codex"
  * console.log(pkg.programs)    // ["codex", "codex-exec", ...]
- * console.log(pkg.versions[0]) // "0.115.0" (latest)
+ * console.log(pkg.versions[0]) // "0.116.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/openai-com/codex.md
@@ -70,6 +70,7 @@ export const openaicomcodexPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.116.0',
     '0.115.0',
     '0.114.0',
     '0.113.0',

@@ -3,7 +3,7 @@
  *
  * @domain `tailscale.com`
  * @programs `tailscale`, `tailscaled`
- * @version `1.96.2` (15 versions available)
+ * @version `1.96.3` (16 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install tailscale.com`
@@ -16,7 +16,7 @@
  * const pkg = pantry.tailscalecom
  * console.log(pkg.name)        // "tailscale"
  * console.log(pkg.programs)    // ["tailscale", "tailscaled"]
- * console.log(pkg.versions[0]) // "1.96.2" (latest)
+ * console.log(pkg.versions[0]) // "1.96.3" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/tailscale-com.md
@@ -67,6 +67,7 @@ export const tailscalecomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.96.3',
     '1.96.2',
     '1.94.2',
     '1.94.1',
