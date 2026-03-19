@@ -20,6 +20,7 @@ import {
   type ZigPackageMetadata,
   type ZigPackageStorage,
 } from './zig'
+import type { AnalyticsStorage } from './analytics'
 
 /**
  * Handle Zig package routes
@@ -31,6 +32,7 @@ export async function handleZigRoutes(
   storage: ZigPackageStorage,
   baseUrl: string,
   corsHeaders: Record<string, string>,
+  analytics?: AnalyticsStorage,
 ): Promise<Response | null> {
   // Remove /zig prefix
   const zigPath = path.replace(/^\/zig/, '')
@@ -74,7 +76,7 @@ export async function handleZigRoutes(
 
   // POST /zig/publish
   if (zigPath === '/publish' && req.method === 'POST') {
-    return handleZigPublish(req, storage, baseUrl, corsHeaders)
+    return handleZigPublish(req, storage, baseUrl, corsHeaders, analytics)
   }
 
   // DELETE /zig/packages/{name}
@@ -112,6 +114,14 @@ export async function handleZigRoutes(
           { status: 404, headers: corsHeaders },
         )
       }
+
+      // Track download
+      analytics?.trackDownload({
+        packageName,
+        version,
+        timestamp: new Date().toISOString(),
+        userAgent: req.headers.get('user-agent') || undefined,
+      }).catch(() => {})
 
       return new Response(tarball, {
         headers: {
@@ -191,6 +201,7 @@ async function handleZigPublish(
   storage: ZigPackageStorage,
   baseUrl: string,
   corsHeaders: Record<string, string>,
+  analytics?: AnalyticsStorage,
 ): Promise<Response> {
   const contentType = req.headers.get('content-type') || ''
 
@@ -265,6 +276,14 @@ async function handleZigPublish(
     }
 
     await storage.publish(metadata, tarball)
+
+    // Track publish event
+    analytics?.trackEvent({
+      packageName: name,
+      category: 'install' as any,
+      timestamp: new Date().toISOString(),
+      version,
+    }).catch(() => {})
 
     return Response.json({
       success: true,

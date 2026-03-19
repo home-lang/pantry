@@ -19,6 +19,7 @@ import {
   type PhpPackageMetadata,
   type PhpPackageStorage,
 } from './php'
+import type { AnalyticsStorage } from './analytics'
 
 /**
  * Handle PHP package routes
@@ -30,6 +31,7 @@ export async function handlePhpRoutes(
   storage: PhpPackageStorage,
   baseUrl: string,
   corsHeaders: Record<string, string>,
+  analytics?: AnalyticsStorage,
 ): Promise<Response | null> {
   // Remove /php prefix
   const phpPath = path.replace(/^\/php/, '')
@@ -54,7 +56,7 @@ export async function handlePhpRoutes(
 
   // POST /php/publish
   if (phpPath === '/publish' && req.method === 'POST') {
-    return handlePhpPublish(req, storage, baseUrl, corsHeaders)
+    return handlePhpPublish(req, storage, baseUrl, corsHeaders, analytics)
   }
 
   // DELETE /php/packages/{vendor}/{package}
@@ -92,6 +94,14 @@ export async function handlePhpRoutes(
           { status: 404, headers: corsHeaders },
         )
       }
+
+      // Track download
+      analytics?.trackDownload({
+        packageName,
+        version,
+        timestamp: new Date().toISOString(),
+        userAgent: req.headers.get('user-agent') || undefined,
+      }).catch(() => {})
 
       return new Response(tarball, {
         headers: {
@@ -169,6 +179,7 @@ async function handlePhpPublish(
   storage: PhpPackageStorage,
   baseUrl: string,
   corsHeaders: Record<string, string>,
+  analytics?: AnalyticsStorage,
 ): Promise<Response> {
   const contentType = req.headers.get('content-type') || ''
 
@@ -259,6 +270,14 @@ async function handlePhpPublish(
     }
 
     await storage.publish(metadata, tarball)
+
+    // Track publish event
+    analytics?.trackEvent({
+      packageName: name,
+      category: 'install' as any,
+      timestamp: new Date().toISOString(),
+      version,
+    }).catch(() => {})
 
     return Response.json({
       success: true,

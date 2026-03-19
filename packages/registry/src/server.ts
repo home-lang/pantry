@@ -324,6 +324,13 @@ export function createHandler(
               { status: 404, headers: corsHeaders },
             )
           }
+          // Track commit tarball download
+          analyticsStorage.trackDownload({
+            packageName,
+            version: sha.slice(0, 7),
+            timestamp: new Date().toISOString(),
+            userAgent: req.headers.get('user-agent') || undefined,
+          }).catch(() => {})
           const safeName = packageName.replaceAll('@', '').replaceAll('/', '-')
           return new Response(tarball, {
             headers: {
@@ -361,7 +368,7 @@ export function createHandler(
 
       // Zig package routes
       if (path.startsWith('/zig/')) {
-        const zigResponse = await handleZigRoutes(path, req, url, zigPackageStorage, baseUrl, corsHeaders)
+        const zigResponse = await handleZigRoutes(path, req, url, zigPackageStorage, baseUrl, corsHeaders, analyticsStorage)
         if (zigResponse) {
           return zigResponse
         }
@@ -369,7 +376,7 @@ export function createHandler(
 
       // PHP package routes
       if (path.startsWith('/php/') && phpPackageStorage) {
-        const phpResponse = await handlePhpRoutes(path, req, url, phpPackageStorage, baseUrl, corsHeaders)
+        const phpResponse = await handlePhpRoutes(path, req, url, phpPackageStorage, baseUrl, corsHeaders, analyticsStorage)
         if (phpResponse) {
           return phpResponse
         }
