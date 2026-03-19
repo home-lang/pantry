@@ -3,7 +3,7 @@
  *
  * @domain `vitejs.dev`
  * @programs `vite`
- * @version `8.0.0` (138 versions available)
+ * @version `8.0.1` (139 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install vitejs.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "vite"
  * console.log(pkg.description) // "Next generation frontend tooling. It's fast!"
  * console.log(pkg.programs)    // ["vite"]
- * console.log(pkg.versions[0]) // "8.0.0" (latest)
+ * console.log(pkg.versions[0]) // "8.0.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/vitejs-dev.md
@@ -77,6 +77,7 @@ export const vitejsdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.0.1',
     '8.0.0',
     '7.3.1',
     '7.3.0',
