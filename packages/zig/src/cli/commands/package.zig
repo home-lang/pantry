@@ -700,6 +700,12 @@ fn updateLockfileAfterUninstall(allocator: std.mem.Allocator, lockfile_path: []c
     lockfile_mod.writeLockfile(allocator, &lockfile, lockfile_path) catch |err| {
         style.printWarn("Failed to write lockfile: {}\n", .{err});
     };
+
+    // Sync build.zig.zon after removal
+    {
+        const zig_zon_sync = @import("../../deps/zig_zon_sync.zig");
+        zig_zon_sync.syncBuildZigZon(allocator, cwd, "pantry", false) catch {};
+    }
 }
 
 // ============================================================================

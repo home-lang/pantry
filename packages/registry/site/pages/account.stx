@@ -1,0 +1,249 @@
+<!-- Account / Token Management page -->
+
+<section class="py-12 pb-20">
+  <div class="max-w-3xl mx-auto px-6">
+    <!-- Account Header -->
+    <div class="flex items-center justify-between mb-8 animate-fade-in">
+      <div>
+        <h1 class="text-2xl font-semibold mb-1">Account</h1>
+        <p class="text-sm" style="color: var(--fg-muted);">
+          Signed in as <span class="font-medium" style="color: var(--fg);">{{ user.name }}</span>
+          <span style="color: var(--fg-subtle);">({{ user.email }})</span>
+        </p>
+      </div>
+      <form method="POST" action="/auth/logout" id="logout-form" style="display: inline;">
+        <button
+          type="button"
+          class="text-sm px-3 py-1.5 rounded-md border border-[var(--border)] transition-colors hover:border-[var(--border-hover)]"
+          style="color: var(--fg-muted); background: none; cursor: pointer;"
+          id="logout-btn"
+        >
+          Log out
+        </button>
+      </form>
+    </div>
+
+    <!-- API Tokens Section -->
+    <div class="animate-fade-in-delay">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">API Tokens</h2>
+        <button
+          type="button"
+          class="text-sm px-3 py-1.5 rounded-md font-medium transition-colors"
+          style="background: var(--accent); color: var(--bg); cursor: pointer;"
+          id="create-token-btn"
+        >
+          Create token
+        </button>
+      </div>
+
+      <p class="text-sm mb-6" style="color: var(--fg-muted);">
+        API tokens allow you to publish packages from the command line or CI.
+        Use them with <code class="font-mono text-xs px-1 py-0.5 rounded" style="background: var(--bg-muted);">Authorization: Bearer &lt;token&gt;</code>
+      </p>
+
+      <!-- New Token Alert (shown after creation) -->
+      <div id="new-token-alert" class="mb-6 p-4 rounded-lg border" style="background: oklch(0.2 0.05 155); border-color: oklch(0.4 0.1 155); display: none;">
+        <p class="text-sm font-medium mb-2" style="color: oklch(0.85 0.1 155);">Token created! Copy it now — it won't be shown again.</p>
+        <div class="flex items-center gap-2">
+          <code id="new-token-value" class="font-mono text-xs px-3 py-2 rounded flex-1 overflow-x-auto" style="background: var(--bg); color: var(--fg); border: 1px solid var(--border);"></code>
+          <button class="copy-btn" data-copy="" id="copy-new-token">copy</button>
+        </div>
+      </div>
+
+      <!-- Token List -->
+      @if (tokens && tokens.length > 0)
+      <div class="border border-[var(--border)] rounded-lg overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr style="background: var(--bg-subtle);">
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Name</th>
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">ID</th>
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Permissions</th>
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Created</th>
+              <th class="text-left text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);">Last Used</th>
+              <th class="text-right text-xs font-medium uppercase tracking-wider px-4 py-3" style="color: var(--fg-subtle);"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @each (token in tokens)
+            <tr class="border-t border-[var(--border)]" data-token-id="{{ token.id }}">
+              <td class="px-4 py-3 text-sm font-medium">{{ token.name }}</td>
+              <td class="px-4 py-3 text-xs font-mono" style="color: var(--fg-subtle);">{{ token.id }}</td>
+              <td class="px-4 py-3">
+                @each (perm in token.permissions)
+                <span class="inline-block text-xs px-1.5 py-0.5 rounded mr-1" style="background: var(--bg-muted); color: var(--fg-muted);">{{ perm }}</span>
+                @endeach
+              </td>
+              <td class="px-4 py-3 text-xs" style="color: var(--fg-subtle);">{{ token.createdAt.split('T')[0] }}</td>
+              <td class="px-4 py-3 text-xs" style="color: var(--fg-subtle);">{{ token.lastUsedAt ? token.lastUsedAt.split('T')[0] : 'never' }}</td>
+              <td class="px-4 py-3 text-right">
+                <button
+                  type="button"
+                  class="text-xs px-2 py-1 rounded border border-[var(--border)] transition-colors hover:border-[var(--red)]"
+                  style="color: var(--red); background: none; cursor: pointer;"
+                  data-delete-token="{{ token.id }}"
+                >
+                  revoke
+                </button>
+              </td>
+            </tr>
+            @endeach
+          </tbody>
+        </table>
+      </div>
+      @else
+      <div class="text-center py-12 border border-[var(--border)] rounded-lg" style="background: var(--bg-subtle);">
+        <p class="text-sm" style="color: var(--fg-subtle);">No API tokens yet. Create one to start publishing.</p>
+      </div>
+      @endif
+    </div>
+
+    <!-- Create Token Dialog -->
+    <div id="create-token-dialog" class="shortcuts-dialog" role="dialog" aria-label="Create API Token">
+      <div class="shortcuts-backdrop" id="token-dialog-backdrop"></div>
+      <div class="shortcuts-panel" style="max-width: 32rem;">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold">Create API Token</h2>
+          <button id="close-token-dialog" style="background: none; border: none; cursor: pointer; color: var(--fg-subtle); padding: 0.25rem;" aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <form id="create-token-form" class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1.5">
+            <label for="token-name" class="text-sm font-medium" style="color: var(--fg-muted);">Token name</label>
+            <input
+              type="text"
+              id="token-name"
+              required
+              placeholder="e.g., CI deploy token"
+              class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-3 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+              style="color: var(--fg); font-size: 0.875rem;"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="text-sm font-medium" style="color: var(--fg-muted);">Permissions</label>
+            <div class="flex gap-3">
+              <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--fg-muted);">
+                <input type="checkbox" id="perm-publish" checked class="accent-[var(--accent)]" />
+                publish
+              </label>
+              <label class="flex items-center gap-2 text-sm cursor-pointer" style="color: var(--fg-muted);">
+                <input type="checkbox" id="perm-read" checked class="accent-[var(--accent)]" />
+                read
+              </label>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="token-expiry" class="text-sm font-medium" style="color: var(--fg-muted);">Expiration</label>
+            <select
+              id="token-expiry"
+              class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-3 py-2 outline-none transition-colors focus:border-[var(--accent)]"
+              style="color: var(--fg); font-size: 0.875rem;"
+            >
+              <option value="">No expiration</option>
+              <option value="30">30 days</option>
+              <option value="90">90 days</option>
+              <option value="365">1 year</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            class="mt-2 rounded-lg px-4 py-2.5 font-medium text-sm transition-colors"
+            style="background: var(--accent); color: var(--bg); cursor: pointer;"
+          >
+            Create token
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script client>
+  // Logout
+  (function() {
+    var logoutBtn = document.getElementById('logout-btn')
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function() {
+        fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' })
+          .then(function() { window.location.href = '/login' })
+      })
+    }
+  })()
+
+  // Create Token Dialog
+  ;(function() {
+    var dialog = document.getElementById('create-token-dialog')
+    var openBtn = document.getElementById('create-token-btn')
+    var closeBtn = document.getElementById('close-token-dialog')
+    var backdrop = document.getElementById('token-dialog-backdrop')
+    var form = document.getElementById('create-token-form')
+
+    function openDialog() { dialog.classList.add('open') }
+    function closeDialog() { dialog.classList.remove('open') }
+
+    if (openBtn) openBtn.addEventListener('click', openDialog)
+    if (closeBtn) closeBtn.addEventListener('click', closeDialog)
+    if (backdrop) backdrop.addEventListener('click', closeDialog)
+
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        e.preventDefault()
+        var name = document.getElementById('token-name').value
+        var permissions = []
+        if (document.getElementById('perm-publish').checked) permissions.push('publish')
+        if (document.getElementById('perm-read').checked) permissions.push('read')
+        var expiryVal = document.getElementById('token-expiry').value
+        var body = { name: name, permissions: permissions }
+        if (expiryVal) body.expiresInDays = parseInt(expiryVal, 10)
+
+        fetch('/auth/tokens', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(body),
+        })
+          .then(function(r) { return r.json() })
+          .then(function(data) {
+            if (data.error) { alert(data.error); return }
+            closeDialog()
+            // Show the new token
+            var alert = document.getElementById('new-token-alert')
+            var tokenEl = document.getElementById('new-token-value')
+            var copyBtn = document.getElementById('copy-new-token')
+            tokenEl.textContent = data.token
+            copyBtn.setAttribute('data-copy', data.token)
+            alert.style.display = 'block'
+            // Reload page after a short delay to show the new token in the list
+            setTimeout(function() { window.location.reload() }, 500)
+          })
+          .catch(function(err) { alert('Failed to create token: ' + err.message) })
+      })
+    }
+  })()
+
+  // Delete Token
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-delete-token]')
+    if (!btn) return
+    var tokenId = btn.getAttribute('data-delete-token')
+    if (!confirm('Revoke this token? This cannot be undone.')) return
+
+    fetch('/auth/tokens/' + encodeURIComponent(tokenId), {
+      method: 'DELETE',
+      credentials: 'same-origin',
+    })
+      .then(function(r) { return r.json() })
+      .then(function(data) {
+        if (data.error) { alert(data.error); return }
+        var row = btn.closest('tr')
+        if (row) row.remove()
+      })
+      .catch(function(err) { alert('Failed to revoke token: ' + err.message) })
+  })
+</script>

@@ -1,0 +1,74 @@
+<!-- Signup page -->
+
+<section class="py-12 pb-20">
+  <div class="max-w-md mx-auto px-6">
+    <div class="text-center mb-8 animate-fade-in">
+      <h1 class="text-2xl font-semibold mb-2">Create your account</h1>
+      <p class="text-sm" style="color: var(--fg-muted);">Sign up to publish packages and manage API tokens.</p>
+    </div>
+
+    @if (error)
+    <div class="mb-6 p-3 rounded-lg border animate-fade-in" style="background: oklch(0.25 0.05 25); border-color: oklch(0.4 0.1 25); color: oklch(0.8 0.1 25);">
+      <p class="text-sm">{{ error }}</p>
+    </div>
+    @endif
+
+    <form method="POST" action="/signup" class="flex flex-col gap-4 animate-fade-in-delay">
+      <div class="flex flex-col gap-1.5">
+        <label for="name" class="text-sm font-medium" style="color: var(--fg-muted);">Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          required
+          autocomplete="name"
+          placeholder="Your name"
+          class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-3 py-2.5 outline-none transition-colors focus:border-[var(--accent)]"
+          style="color: var(--fg); font-size: 0.875rem;"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="email" class="text-sm font-medium" style="color: var(--fg-muted);">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          autocomplete="email"
+          placeholder="you@example.com"
+          class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-3 py-2.5 outline-none transition-colors focus:border-[var(--accent)]"
+          style="color: var(--fg); font-size: 0.875rem;"
+        />
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label for="password" class="text-sm font-medium" style="color: var(--fg-muted);">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          autocomplete="new-password"
+          placeholder="at least 8 characters"
+          minlength="8"
+          class="bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg px-3 py-2.5 outline-none transition-colors focus:border-[var(--accent)]"
+          style="color: var(--fg); font-size: 0.875rem;"
+        />
+        <p class="text-xs" style="color: var(--fg-subtle);">Must be at least 8 characters.</p>
+      </div>
+
+      <button
+        type="submit"
+        class="mt-2 rounded-lg px-4 py-2.5 font-medium text-sm transition-colors"
+        style="background: var(--accent); color: var(--bg);"
+      >
+        Create account
+      </button>
+    </form>
+
+    <p class="text-center text-sm mt-6 animate-fade-in-delay-2" style="color: var(--fg-subtle);">
+      Already have an account? <a href="/login" class="hvr-accent transition-colors" style="color: var(--accent);">Log in</a>
+    </p>
+  </div>
+</section>

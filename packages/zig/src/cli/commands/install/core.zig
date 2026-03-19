@@ -995,6 +995,16 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
+        // Sync build.zig.zon with installed zig deps
+        {
+            const zig_zon_sync = @import("../../../deps/zig_zon_sync.zig");
+            zig_zon_sync.syncBuildZigZon(allocator, proj_dir, opts.modules_dir, opts.verbose) catch |err| {
+                if (opts.verbose) {
+                    style.print("Warning: Failed to sync build.zig.zon: {}\n", .{err});
+                }
+            };
+        }
+
         const total_deps = deps.len;
         const end_ts = io_helper.clockGettime();
         const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));

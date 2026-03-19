@@ -1,0 +1,19 @@
+{
+  "e2e-test-pkg": {
+    "name": "e2e-test-pkg",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5785/storage/packages/pantry/e2e-test-pkg/1.0.0/e2e-test-pkg-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-03-19T00:37:57.243Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-03-19T00:37:57.243Z",
+    "updatedAt": "2026-03-19T00:37:57.243Z",
+    "totalDownloads": 0
+  }
+}

@@ -1310,6 +1310,16 @@ pub fn installWorkspaceCommandWithOptions(
         style.printWorkspaceLinked(linked_count);
     }
 
+    // Sync build.zig.zon with installed zig deps
+    {
+        const zig_zon_sync = @import("../../../deps/zig_zon_sync.zig");
+        zig_zon_sync.syncBuildZigZon(allocator, workspace_root, "pantry", options.verbose) catch |err| {
+            if (options.verbose) {
+                style.print("Warning: Failed to sync build.zig.zon: {}\n", .{err});
+            }
+        };
+    }
+
     // Summary
     const install_end_ts = io_helper.clockGettime();
     const install_end_ms = @as(i64, @intCast(install_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_end_ts.nsec)), 1_000_000);
