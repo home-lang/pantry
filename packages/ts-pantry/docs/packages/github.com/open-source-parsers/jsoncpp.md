@@ -25,19 +25,19 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 3 versions</summary>
 
-- `1.9.6`, `1.9.5`
+- `1.9.7`, `1.9.6`, `1.9.5`
 
 </details>
 
-**Latest Version**: `1.9.6`
+**Latest Version**: `1.9.7`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/open-source-parsers/jsoncpp@1.9.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/open-source-parsers/jsoncpp@1.9.7 -- $SHELL -i
 ```
 
 ## Usage Examples

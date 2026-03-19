@@ -2,7 +2,7 @@
  * **jsoncpp** - A C++ library for interacting with JSON.
  *
  * @domain `github.com/open-source-parsers/jsoncpp`
- * @version `1.9.6` (2 versions available)
+ * @version `1.9.7` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/open-source-parsers/jsoncpp`
@@ -15,7 +15,7 @@
  * const pkg = pantry.githubcomopensourceparsersjsoncpp
  * console.log(pkg.name)        // "jsoncpp"
  * console.log(pkg.description) // "A C++ library for interacting with JSON."
- * console.log(pkg.versions[0]) // "1.9.6" (latest)
+ * console.log(pkg.versions[0]) // "1.9.7" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/open-source-parsers/jsoncpp.md
@@ -59,6 +59,7 @@ export const jsoncppPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.9.7',
     '1.9.6',
     '1.9.5',
   ] as const,
