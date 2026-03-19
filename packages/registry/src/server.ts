@@ -1152,8 +1152,14 @@ async function handleCommitPublish(
 // Authentication route handlers
 // ---------------------------------------------------------------------------
 
-/** Extract session token from pantry_session cookie */
+/** Extract session token from cookie OR Authorization header */
 function extractSessionToken(req: Request): string | null {
+  // Check Authorization header first (works through CDN/CloudFront)
+  const authHeader = req.headers.get('authorization') || ''
+  if (authHeader.startsWith('Bearer ') && !authHeader.slice(7).startsWith('ptry_')) {
+    return authHeader.slice(7)
+  }
+  // Fall back to cookie
   const cookie = req.headers.get('cookie') || ''
   const match = cookie.match(/pantry_session=([^;]+)/)
   return match ? match[1] : null
@@ -1172,10 +1178,10 @@ async function handleAuthRoutes(
   if (path === '/auth/signup' && req.method === 'POST') {
     try {
       const body = await req.json() as { email?: string, name?: string, password?: string }
-      const user = await auth.signup(body.email || '', body.name || '', body.password || '')
+      await auth.signup(body.email || '', body.name || '', body.password || '')
       const { sessionToken, user: loggedInUser } = await auth.login(body.email || '', body.password || '')
 
-      return new Response(JSON.stringify({ success: true, user: loggedInUser }), {
+      return new Response(JSON.stringify({ success: true, user: loggedInUser, sessionToken }), {
         status: 201,
         headers: {
           ...corsHeaders,
@@ -1196,7 +1202,7 @@ async function handleAuthRoutes(
       const body = await req.json() as { email?: string, password?: string }
       const { sessionToken, user } = await auth.login(body.email || '', body.password || '')
 
-      return new Response(JSON.stringify({ success: true, user }), {
+      return new Response(JSON.stringify({ success: true, user, sessionToken }), {
         status: 200,
         headers: {
           ...corsHeaders,

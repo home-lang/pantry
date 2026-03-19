@@ -13,7 +13,11 @@
     </div>
     @endif
 
-    <form method="POST" action="/login" class="flex flex-col gap-4 animate-fade-in-delay">
+    <div id="login-error" class="mb-6 p-3 rounded-lg border" style="background: oklch(0.25 0.05 25); border-color: oklch(0.4 0.1 25); color: oklch(0.8 0.1 25); display: none;">
+      <p class="text-sm" id="login-error-msg"></p>
+    </div>
+
+    <form id="login-form" class="flex flex-col gap-4 animate-fade-in-delay">
       <div class="flex flex-col gap-1.5">
         <label for="email" class="text-sm font-medium" style="color: var(--fg-muted);">Email</label>
         <input
@@ -46,11 +50,53 @@
       <button
         type="submit"
         class="mt-2 rounded-lg px-4 py-2.5 font-medium text-sm transition-colors"
-        style="background: var(--accent); color: var(--bg);"
+        style="background: var(--accent); color: var(--bg); cursor: pointer;"
+        id="login-btn"
       >
         Log in
       </button>
     </form>
+
+    <script client>
+      ;(function() {
+        if (localStorage.getItem('pantry_session')) { window.location.href = '/account'; return }
+        var form = document.getElementById('login-form')
+        if (!form) return
+        form.addEventListener('submit', function(e) {
+          e.preventDefault()
+          var btn = document.getElementById('login-btn')
+          btn.textContent = 'Logging in...'
+          btn.disabled = true
+          fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: document.getElementById('email').value,
+              password: document.getElementById('password').value,
+            }),
+          })
+            .then(function(r) { return r.json() })
+            .then(function(data) {
+              if (data.error) {
+                document.getElementById('login-error-msg').textContent = data.error
+                document.getElementById('login-error').style.display = 'block'
+                btn.textContent = 'Log in'
+                btn.disabled = false
+                return
+              }
+              localStorage.setItem('pantry_session', data.sessionToken)
+              localStorage.setItem('pantry_user', JSON.stringify(data.user))
+              window.location.href = '/account'
+            })
+            .catch(function() {
+              document.getElementById('login-error-msg').textContent = 'Network error. Please try again.'
+              document.getElementById('login-error').style.display = 'block'
+              btn.textContent = 'Log in'
+              btn.disabled = false
+            })
+        })
+      })()
+    </script>
 
     <p class="text-center text-sm mt-6 animate-fade-in-delay-2" style="color: var(--fg-subtle);">
       Don't have an account? <a href="/signup" class="hvr-accent transition-colors" style="color: var(--accent);">Sign up</a>

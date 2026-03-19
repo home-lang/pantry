@@ -165,13 +165,30 @@
 </section>
 
 <script client>
+  // Helper: get auth headers using localStorage session token
+  function authHeaders(extra) {
+    var h = extra || {}
+    var s = localStorage.getItem('pantry_session')
+    if (s) h['Authorization'] = 'Bearer ' + s
+    return h
+  }
+
+  // Redirect to login if not authenticated
+  ;(function() {
+    if (!localStorage.getItem('pantry_session')) { window.location.href = '/login'; return }
+  })()
+
   // Logout
-  (function() {
+  ;(function() {
     var logoutBtn = document.getElementById('logout-btn')
     if (logoutBtn) {
       logoutBtn.addEventListener('click', function() {
-        fetch('/auth/logout', { method: 'POST', credentials: 'same-origin' })
-          .then(function() { window.location.href = '/login' })
+        fetch('/auth/logout', { method: 'POST', headers: authHeaders() })
+          .then(function() {
+            localStorage.removeItem('pantry_session')
+            localStorage.removeItem('pantry_user')
+            window.location.href = '/login'
+          })
       })
     }
   })()
@@ -204,8 +221,7 @@
 
         fetch('/auth/tokens', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(body),
         })
           .then(function(r) { return r.json() })
@@ -213,12 +229,12 @@
             if (data.error) { alert(data.error); return }
             closeDialog()
             // Show the new token
-            var alert = document.getElementById('new-token-alert')
+            var alertEl = document.getElementById('new-token-alert')
             var tokenEl = document.getElementById('new-token-value')
             var copyBtn = document.getElementById('copy-new-token')
             tokenEl.textContent = data.token
             copyBtn.setAttribute('data-copy', data.token)
-            alert.style.display = 'block'
+            alertEl.style.display = 'block'
             // Reload page after a short delay to show the new token in the list
             setTimeout(function() { window.location.reload() }, 500)
           })
@@ -236,7 +252,7 @@
 
     fetch('/auth/tokens/' + encodeURIComponent(tokenId), {
       method: 'DELETE',
-      credentials: 'same-origin',
+      headers: authHeaders(),
     })
       .then(function(r) { return r.json() })
       .then(function(data) {
