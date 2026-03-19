@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 28 versions</summary>
+<summary>Show all 29 versions</summary>
 
-- `9.4.0`
+- `9.4.1`, `9.4.0`
 - `9.3.1`, `9.3.0`
 - `9.2.1`, `9.2.0`
 - `9.1.0`
@@ -47,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `9.4.0`
+**Latest Version**: `9.4.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gradle.org@9.4.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gradle.org@9.4.1 -- $SHELL -i
 ```
 
 ## Dependencies

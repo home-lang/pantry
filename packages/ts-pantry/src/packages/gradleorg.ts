@@ -3,7 +3,7 @@
  *
  * @domain `gradle.org`
  * @programs `gradle`
- * @version `9.4.0` (28 versions available)
+ * @version `9.4.1` (29 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gradle.org`
@@ -24,7 +24,7 @@
  * console.log(pkg.name)        // "gradle"
  * console.log(pkg.description) // "Open-source build automation tool based on the ..."
  * console.log(pkg.programs)    // ["gradle"]
- * console.log(pkg.versions[0]) // "9.4.0" (latest)
+ * console.log(pkg.versions[0]) // "9.4.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gradle-org.md
@@ -80,6 +80,7 @@ export const gradlePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.4.1',
     '9.4.0',
     '9.3.1',
     '9.3.0',

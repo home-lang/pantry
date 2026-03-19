@@ -3,7 +3,7 @@
  *
  * @domain `argoproj.github.io/workflows`
  * @programs `argo`
- * @version `4.0.2` (56 versions available)
+ * @version `4.0.3` (58 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install argoproj.github.io/workflows`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "argo-workflows"
  * console.log(pkg.description) // "Get stuff done with container-native workflows ..."
  * console.log(pkg.programs)    // ["argo"]
- * console.log(pkg.versions[0]) // "4.0.2" (latest)
+ * console.log(pkg.versions[0]) // "4.0.3" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/argoproj-github-io/workflows.md
@@ -68,9 +68,11 @@ export const argoprojgithubioworkflowsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.0.3',
     '4.0.2',
     '4.0.1',
     '4.0.0',
+    '3.7.12',
     '3.7.11',
     '3.7.8',
     '3.7.7',
