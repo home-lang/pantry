@@ -2,7 +2,7 @@
  * **linux-headers** - pkgx package
  *
  * @domain `kernel.org/linux-headers`
- * @version `6.19.8` (267 versions available)
+ * @version `6.19.9` (269 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kernel.org/linux-headers`
@@ -13,7 +13,7 @@
  *
  * const pkg = pantry.kernelorglinuxheaders
  * console.log(pkg.name)        // "linux-headers"
- * console.log(pkg.versions[0]) // "6.19.8" (latest)
+ * console.log(pkg.versions[0]) // "6.19.9" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/kernel-org/linux-headers.md
@@ -51,12 +51,14 @@ export const kernelorglinuxheadersPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.19.9',
     '6.19.8',
     '6.19.7',
     '6.19.5',
     '6.19.4',
     '6.19.2',
     '6.19.1',
+    '6.18.19',
     '6.18.18',
     '6.18.17',
     '6.18.15',
