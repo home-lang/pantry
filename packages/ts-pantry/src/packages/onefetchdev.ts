@@ -3,7 +3,7 @@
  *
  * @domain `onefetch.dev`
  * @programs `onefetch`
- * @version `2.26.1` (11 versions available)
+ * @version `2.27.1` (13 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install onefetch.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "onefetch"
  * console.log(pkg.description) // "Command-line Git information tool"
  * console.log(pkg.programs)    // ["onefetch"]
- * console.log(pkg.versions[0]) // "2.26.1" (latest)
+ * console.log(pkg.versions[0]) // "2.27.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/onefetch-dev.md
@@ -75,6 +75,8 @@ export const onefetchdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.27.1',
+    '2.27.0',
     '2.26.1',
     '2.26.0',
     '2.25.0',

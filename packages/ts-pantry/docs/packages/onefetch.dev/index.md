@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 11 versions</summary>
+<summary>Show all 13 versions</summary>
 
+- `2.27.1`, `2.27.0`
 - `2.26.1`, `2.26.0`
 - `2.25.0`
 - `2.24.0`
@@ -39,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.26.1`
+**Latest Version**: `2.27.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +onefetch.dev@2.26.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +onefetch.dev@2.27.1 -- $SHELL -i
 ```
 
 ## Dependencies
