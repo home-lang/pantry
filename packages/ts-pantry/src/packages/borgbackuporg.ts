@@ -3,7 +3,7 @@
  *
  * @domain `borgbackup.org`
  * @programs `borg`, `borgfs`
- * @version `1.4.3` (4 versions available)
+ * @version `1.4.4` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install borgbackup.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "borg"
  * console.log(pkg.description) // "Deduplicating archiver with compression and aut..."
  * console.log(pkg.programs)    // ["borg", "borgfs"]
- * console.log(pkg.versions[0]) // "1.4.3" (latest)
+ * console.log(pkg.versions[0]) // "1.4.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/borgbackup-org.md
@@ -82,6 +82,7 @@ export const borgbackuporgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.4',
     '1.4.3',
     '1.4.2',
     '1.4.1',
