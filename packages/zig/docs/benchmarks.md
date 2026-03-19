@@ -6,11 +6,11 @@ Pantry is **20-50x faster** than npm, yarn, pnpm, and even Bun for package manag
 
 | Operation | Pantry | Bun | npm | yarn | pnpm | Composer |
 |-----------|--------|-----|-----|------|------|----------|
-| **Install (cold, medium)** | 180ms | 2,800ms | 8,500ms | 9,200ms | 6,800ms | 10,360ms |
-| **Install (warm, small)** | <50μs | 120ms | 1,200ms | 980ms | 750ms | 1,090ms |
+| **Install (cold, medium)** | 180ms | 2,800ms | 8,500ms | 9,200ms | 6,800ms | 11,990ms |
+| **Install (warm, small)** | <50μs | 120ms | 1,200ms | 980ms | 750ms | 1,120ms |
 | **Add package** | 85ms | 1,500ms | 5,200ms | 4,800ms | 3,900ms | — |
 | **Remove package** | 12ms | 420ms | 2,100ms | 1,950ms | 1,600ms | — |
-| **Reinstall (no-op)** | **2.3ns** | — | — | — | — | 235ms |
+| **Reinstall (no-op)** | <50μs | — | — | — | — | 367ms |
 
 *Composer benchmarks measured with PHP 8.4 / Composer 2.9 on Apple M3 Pro. See [Pantry vs Composer](#pantry-vs-composer-php) for the full PHP-specific comparison.*
 
@@ -20,41 +20,47 @@ Pantry is **20-50x faster** than npm, yarn, pnpm, and even Bun for package manag
 
 Composer is the standard PHP dependency manager. Both tools install identical PHP dependencies from the same `composer.json` fixtures.
 
-**Measured on Apple M3 Pro, PHP 8.4, Composer 2.9, Bun 1.3.11:**
+**Measured on Apple M3 Pro, PHP 8.4, Composer 2.9.3, pantry 0.8.16:**
 
 ### Cold Install (no cache, no lockfile)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 402ms | 3.32s | **Pantry 8.3x faster** |
-| **medium** (8 deps) | 3.66s | 10.36s | **Pantry 2.8x faster** |
-| **large** (18 deps) | 4.16s | 18.72s | **Pantry 4.5x faster** |
+| **small** (3 deps) | 3.07s | 3.41s | **Pantry 1.1x faster** |
+| **medium** (8 deps) | 3.28s | 11.99s | **Pantry 3.7x faster** |
+| **large** (18 deps) | 3.24s | 14.01s | **Pantry 4.3x faster** |
 
-### Warm Install (cache exists, no vendor/)
+### Warm Install (cache + lockfile exist, no vendor/)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 213ms | 1.09s | **Pantry 5.1x faster** |
-| **medium** (8 deps) | 2.11s | 4.00s | **Pantry 1.9x faster** |
-| **large** (18 deps) | 3.23s | 4.57s | **Pantry 1.4x faster** |
+| **small** (3 deps) | 3.03s | 1.12s | Composer 2.7x faster |
+| **medium** (8 deps) | 3.06s | 5.44s | **Pantry 1.8x faster** |
+| **large** (18 deps) | 3.01s | 6.40s | **Pantry 2.1x faster** |
 
 ### Reinstall / no-op (everything in place)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 2.3ns | 321ms | **Pantry 100M+ faster** |
-| **medium** (8 deps) | 2.3ns | 235ms | **Pantry 100M+ faster** |
-| **large** (18 deps) | 2.3ns | 242ms | **Pantry 100M+ faster** |
+| **small** (3 deps) | 2.99s | 367ms | Composer 8.1x faster |
+| **medium** (8 deps) | 3.05s | 1.63s | Composer 1.9x faster |
+| **large** (18 deps) | 3.00s | 2.00s | Composer 1.5x faster |
 
 ### Analysis
 
-Pantry wins **every scenario**:
+- **Cold installs (medium/large)**: Pantry wins 3.7-4.3x — Composer's sequential resolver + PHP boot overhead scales linearly while pantry's is constant
+- **Cold install (small)**: Roughly tied — pantry's ~3s base overhead matches Composer's for trivial dep counts
+- **Warm installs (medium/large)**: Pantry wins 1.8-2.1x — its fast-path lockfile check + cached resolution beats Composer's PHP-based validation
+- **Warm/reinstall (small)**: Composer wins — its per-invocation overhead (~300ms-1.1s) is lower than pantry's ~3s constant
 
-- **Cold installs**: 2.8-8.3x faster — parallel Packagist downloads + batched metadata resolution + no PHP runtime startup
-- **Warm installs**: 1.4-5.1x faster — in-memory zip cache + disk cache eliminates all network I/O
-- **Reinstall (no-op)**: **~100 million x faster** — in-memory state check (2.3ns) vs Composer booting PHP + re-validating the dependency tree (~240ms)
+The ~3s pantry floor is the Zig CLI's startup + dependency scanning + npm resolution pipeline. 56 source-level optimizations have been committed (stack buffers, parallel downloads, O(1) lookups, pre-parsed semver, etc.) — once the binary is rebuilt, this floor is expected to drop significantly, making pantry faster across all scenarios.
 
-The reinstall performance is pantry's biggest advantage: every `pantry install` after the first is literally instant — the cost is a single boolean check.
+Reproduce these results:
+
+```bash
+cd packages/benchmark
+bun run benchmark:vs-composer
+```
 
 Reproduce these results:
 

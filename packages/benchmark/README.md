@@ -232,19 +232,23 @@ Head-to-head comparison installing identical PHP dependencies from the same `com
 bun run benchmark:vs-composer
 ```
 
-**Results (Apple M3 Pro, PHP 8.4, Composer 2.9, Bun 1.3.11):**
+**Results (Apple M3 Pro, PHP 8.4, Composer 2.9.3, pantry 0.8.16):**
+
+Both tools run their actual CLI commands — `pantry install` vs `composer install`.
 
 | Scenario | Pantry | Composer | Winner |
 |----------|--------|----------|--------|
-| Cold install (3 deps) | 402ms | 3.32s | **Pantry 8.3x** |
-| Cold install (8 deps) | 3.66s | 10.36s | **Pantry 2.8x** |
-| Cold install (18 deps) | 4.16s | 18.72s | **Pantry 4.5x** |
-| Warm install (3 deps) | 213ms | 1.09s | **Pantry 5.1x** |
-| Warm install (8 deps) | 2.11s | 4.00s | **Pantry 1.9x** |
-| Warm install (18 deps) | 3.23s | 4.57s | **Pantry 1.4x** |
-| Reinstall (any size) | **2.3ns** | 235-321ms | **Pantry 100M+x** |
+| Cold install (3 deps) | 3.07s | 3.41s | **Pantry 1.1x** |
+| Cold install (8 deps) | 3.28s | 11.99s | **Pantry 3.7x** |
+| Cold install (18 deps) | 3.24s | 14.01s | **Pantry 4.3x** |
+| Warm install (3 deps) | 3.03s | 1.12s | Composer 2.7x |
+| Warm install (8 deps) | 3.06s | 5.44s | **Pantry 1.8x** |
+| Warm install (18 deps) | 3.01s | 6.40s | **Pantry 2.1x** |
+| Reinstall (3 deps) | 2.99s | 367ms | Composer 8.1x |
+| Reinstall (8 deps) | 3.05s | 1.63s | Composer 1.9x |
+| Reinstall (18 deps) | 3.00s | 2.00s | Composer 1.5x |
 
-**Pantry wins every scenario.** 10 optimizations applied: parallel metadata resolution, in-memory zip cache, `Bun.file().json()` fast parsing, batched directory creation, `Bun.write` for all I/O, in-memory no-op state cache, connection reuse via Bun's fetch.
+**Pantry wins cold installs 1.1-4.3x** (constant-time resolver vs Composer's linear scaling). Warm/reinstall for small projects is slower due to pantry's ~3s CLI overhead. 56 source-level optimizations committed — binary rebuild expected to reduce that floor.
 
 ## 🔧 Implementation Impact
 
