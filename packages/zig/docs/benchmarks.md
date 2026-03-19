@@ -26,33 +26,33 @@ Composer is the standard PHP dependency manager. Both tools install identical PH
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 99ms | 3.33s | **Pantry 34x faster** |
-| **medium** (8 deps) | 1.20s | 11.23s | **Pantry 9.3x faster** |
-| **large** (18 deps) | 1.92s | 13.86s | **Pantry 7.2x faster** |
+| **small** (3 deps) | 101ms | 3.34s | **Pantry 33x faster** |
+| **medium** (8 deps) | 1.24s | 11.20s | **Pantry 9x faster** |
+| **large** (18 deps) | 1.87s | 14.29s | **Pantry 7.6x faster** |
 
 ### Warm Install (cache exists, no vendor/)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 99ms | 1.11s | **Pantry 11x faster** |
-| **medium** (8 deps) | 1.23s | 5.39s | **Pantry 4.4x faster** |
-| **large** (18 deps) | 1.86s | 6.51s | **Pantry 3.5x faster** |
+| **small** (3 deps) | 99ms | 1.13s | **Pantry 11x faster** |
+| **medium** (8 deps) | 1.27s | 5.41s | **Pantry 4.3x faster** |
+| **large** (18 deps) | 1.88s | 6.51s | **Pantry 3.5x faster** |
 
 ### Reinstall / no-op (everything in place)
 
 | Fixture | Pantry | Composer | Result |
 |---------|--------|----------|--------|
-| **small** (3 deps) | 6.7ms | 348ms | **Pantry 52x faster** |
-| **medium** (8 deps) | 7.3ms | 1.69s | **Pantry 232x faster** |
-| **large** (18 deps) | 6.4ms | 2.12s | **Pantry 331x faster** |
+| **small** (3 deps) | 7.6ms | 368ms | **Pantry 49x faster** |
+| **medium** (8 deps) | 7.6ms | 1.69s | **Pantry 222x faster** |
+| **large** (18 deps) | 6.9ms | 2.05s | **Pantry 297x faster** |
 
 ### Analysis
 
-Pantry wins **every scenario by 3.5x to 331x**. All numbers are real — pantry actually downloads packages from Packagist, extracts to `vendor/`, generates `autoload.php`, and creates `composer.lock`.
+Pantry wins **every scenario by 3.5x to 297x**. All numbers are real — pantry actually downloads packages from Packagist, extracts to `vendor/`, generates `autoload.php`, and creates `composer.lock`.
 
-- **Cold installs**: 7-34x faster — pantry downloads directly from Packagist dist URLs with parallel curl (8 threads), no PHP runtime needed. Composer boots PHP, resolves dependencies sequentially, then downloads
+- **Cold installs**: 7.6-33x faster — pantry uses Zig's native `std.http.Client` to download from Packagist dist URLs with parallel threads (8 workers), no PHP runtime needed. Composer boots PHP, resolves dependencies sequentially, then downloads
 - **Warm installs**: 3.5-11x faster — pantry extracts from local `~/.pantry/cache/php/` zip cache. Composer re-validates through PHP even with its own cache
-- **Reinstall (no-op)**: 52-331x faster — pantry checks `vendor/` + `composer.lock` exist in ~7ms and exits. Composer boots PHP + re-validates the full dependency tree (348ms-2.1s)
+- **Reinstall (no-op)**: 49-297x faster — pantry checks `vendor/` + `composer.lock` exist in ~7ms and exits. Composer boots PHP + re-validates the full dependency tree (368ms-2.1s)
 
 Reproduce these results:
 
