@@ -1,6 +1,6 @@
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { RegistryConfig } from './types'
+import type { RegistryConfig, AuthStorage } from './types'
 import { Registry, createLocalRegistry, createRegistryFromEnv } from './registry'
 import { createAnalytics, type AnalyticsStorage, type AnalyticsCategory } from './analytics'
 import { handleZigRoutes, createZigStorage } from './zig-routes'
@@ -18,6 +18,7 @@ import {
   generateMultiLineChart,
   formatCount as chartFormatCount,
 } from './charts'
+import { AuthService, AuthError, createAuthStorage, isUserApiToken } from './auth'
 
 // Build domain→versions lookup from ts-pantry package metadata for version validation
 const _knownVersions = new Map<string, Set<string>>()
@@ -185,6 +186,7 @@ export function createHandler(
   baseUrl: string,
   binaryStorage?: BinaryStorage,
   phpPackageStorage?: PhpPackageStorage,
+  authService?: AuthService,
 ): (req: Request) => Promise<Response> {
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url)
@@ -220,6 +222,19 @@ export function createHandler(
       // Health check
       if (path === '/health') {
         return Response.json({ status: 'ok', timestamp: new Date().toISOString() }, { headers: corsHeaders })
+      }
+
+      // ================================================================
+      // Auth API routes
+      // ================================================================
+      if (path.startsWith('/auth/') && authService) {
+        const authResponse = await handleAuthRoutes(path, req, authService, corsHeaders)
+        if (authResponse) return authResponse
+      }
+
+      // Site auth pages (login, signup, account)
+      if (authService && (path === '/login' || path === '/signup' || path === '/account')) {
+        return handleSiteAuth(path, req, authService, corsHeaders)
       }
 
       // Search — serve HTML for browsers, JSON for API clients / instant search
@@ -407,7 +422,7 @@ export function createHandler(
 
         // POST /packages/{name}/paywall — configure paywall (requires publish token)
         if (rest === 'paywall' && req.method === 'POST') {
-          const authResult = validateToken(req.headers.get('authorization'))
+          const authResult = await validateToken(req.headers.get('authorization'))
           if (!authResult.valid) {
             return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
           }
@@ -431,7 +446,7 @@ export function createHandler(
 
         // DELETE /packages/{name}/paywall — remove paywall (requires publish token)
         if (rest === 'paywall' && req.method === 'DELETE') {
-          const authResult = validateToken(req.headers.get('authorization'))
+          const authResult = await validateToken(req.headers.get('authorization'))
           if (!authResult.valid) {
             return Response.json({ error: authResult.error }, { status: 401, headers: corsHeaders })
           }
@@ -653,13 +668,17 @@ export function createServer(
   zigStorage?: ZigPackageStorage,
   binaryStorage?: BinaryStorage,
   phpStorage?: PhpPackageStorage,
+  authStorage?: AuthStorage,
 ): { start: () => void, stop: () => void } {
   let server: ReturnType<typeof Bun.serve> | null = null
   const analyticsStorage = analytics || createAnalytics()
   const zigPackageStorage = zigStorage || createZigStorage()
   const phpPackageStorage = phpStorage || createPhpStorage()
+  const auth = authStorage || createAuthStorage()
+  const authSvc = new AuthService(auth)
+  _authService = authSvc
   const baseUrl = process.env.BASE_URL || `http://localhost:${port}`
-  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl, binaryStorage, phpPackageStorage)
+  const handler = createHandler(registry, analyticsStorage, zigPackageStorage, baseUrl, binaryStorage, phpPackageStorage, authSvc)
 
   const start = () => {
     server = Bun.serve({
@@ -842,8 +861,11 @@ async function handleAnalyticsEvent(
   }
 }
 
-// Simple token for authentication (replace with proper auth in production)
+// Legacy admin token for backward compatibility with CI workflows
 const REGISTRY_TOKEN = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
+
+/** Reference to the AuthService (set by createServer, used by validateToken) */
+let _authService: AuthService | undefined
 
 /**
  * Extract bearer token from Authorization header (returns null if not present)
@@ -854,23 +876,30 @@ function extractBearerToken(authHeader: string | null): string | null {
 }
 
 /**
- * Validate authorization token
+ * Validate authorization token.
+ * Supports both legacy REGISTRY_TOKEN and user API tokens (ptry_ prefix).
  */
-function validateToken(authHeader: string | null): { valid: boolean, error?: string } {
+async function validateToken(authHeader: string | null): Promise<{ valid: boolean, error?: string, userId?: string }> {
   if (!authHeader) {
     return { valid: false, error: 'Authorization required' }
   }
 
-  // Support "Bearer <token>" format
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7)
     : authHeader
 
+  // Try user API token first if AuthService is available
+  if (_authService && isUserApiToken(token)) {
+    const result = await _authService.validatePublishToken(token, REGISTRY_TOKEN)
+    return result
+  }
+
+  // Fall back to legacy admin token
   if (token !== REGISTRY_TOKEN) {
     return { valid: false, error: 'Invalid token' }
   }
 
-  return { valid: true }
+  return { valid: true, userId: '_admin' }
 }
 
 /**
@@ -883,9 +912,9 @@ async function handlePublish(
 ): Promise<Response> {
   const contentType = req.headers.get('content-type') || ''
 
-  // Validate token
+  // Validate token (supports both legacy admin token and user API tokens)
   const authHeader = req.headers.get('authorization')
-  const authResult = validateToken(authHeader)
+  const authResult = await validateToken(authHeader)
   if (!authResult.valid) {
     return Response.json(
       { error: authResult.error },
@@ -989,9 +1018,9 @@ async function handleCommitPublish(
 ): Promise<Response> {
   const contentType = req.headers.get('content-type') || ''
 
-  // Validate token
+  // Validate token (supports both legacy admin token and user API tokens)
   const authHeader = req.headers.get('authorization')
-  const authResult = validateToken(authHeader)
+  const authResult = await validateToken(authHeader)
   if (!authResult.valid) {
     return Response.json(
       { error: authResult.error },
@@ -1117,6 +1146,279 @@ async function handleCommitPublish(
     { error: 'Unsupported content type' },
     { status: 415, headers: corsHeaders },
   )
+}
+
+// ---------------------------------------------------------------------------
+// Authentication route handlers
+// ---------------------------------------------------------------------------
+
+/** Extract session token from pantry_session cookie */
+function extractSessionToken(req: Request): string | null {
+  const cookie = req.headers.get('cookie') || ''
+  const match = cookie.match(/pantry_session=([^;]+)/)
+  return match ? match[1] : null
+}
+
+/**
+ * Handle auth API routes (/auth/*)
+ */
+async function handleAuthRoutes(
+  path: string,
+  req: Request,
+  auth: AuthService,
+  corsHeaders: Record<string, string>,
+): Promise<Response | null> {
+  // POST /auth/signup — create a new account
+  if (path === '/auth/signup' && req.method === 'POST') {
+    try {
+      const body = await req.json() as { email?: string, name?: string, password?: string }
+      const user = await auth.signup(body.email || '', body.name || '', body.password || '')
+      const { sessionToken, user: loggedInUser } = await auth.login(body.email || '', body.password || '')
+
+      return new Response(JSON.stringify({ success: true, user: loggedInUser }), {
+        status: 201,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+        },
+      })
+    }
+    catch (err: any) {
+      const status = err instanceof AuthError ? err.status : 400
+      return Response.json({ error: err.message }, { status, headers: corsHeaders })
+    }
+  }
+
+  // POST /auth/login — authenticate and create session
+  if (path === '/auth/login' && req.method === 'POST') {
+    try {
+      const body = await req.json() as { email?: string, password?: string }
+      const { sessionToken, user } = await auth.login(body.email || '', body.password || '')
+
+      return new Response(JSON.stringify({ success: true, user }), {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+        },
+      })
+    }
+    catch (err: any) {
+      const status = err instanceof AuthError ? err.status : 401
+      return Response.json({ error: err.message }, { status, headers: corsHeaders })
+    }
+  }
+
+  // POST /auth/logout — destroy session
+  if (path === '/auth/logout' && req.method === 'POST') {
+    const sessionToken = extractSessionToken(req)
+    if (sessionToken) {
+      await auth.logout(sessionToken)
+    }
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+      },
+    })
+  }
+
+  // GET /auth/me — get current user info
+  if (path === '/auth/me' && req.method === 'GET') {
+    const sessionToken = extractSessionToken(req)
+    if (!sessionToken) {
+      return Response.json({ error: 'Not authenticated' }, { status: 401, headers: corsHeaders })
+    }
+    const user = await auth.validateSession(sessionToken)
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'Session expired' }), {
+        status: 401,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        },
+      })
+    }
+    return Response.json({ user }, { headers: corsHeaders })
+  }
+
+  // GET /auth/tokens — list API tokens for the current user
+  if (path === '/auth/tokens' && req.method === 'GET') {
+    const sessionToken = extractSessionToken(req)
+    if (!sessionToken) {
+      return Response.json({ error: 'Not authenticated' }, { status: 401, headers: corsHeaders })
+    }
+    const user = await auth.validateSession(sessionToken)
+    if (!user) {
+      return Response.json({ error: 'Session expired' }, { status: 401, headers: corsHeaders })
+    }
+    const tokens = await auth.listApiTokens(user.email)
+    return Response.json({ tokens }, { headers: corsHeaders })
+  }
+
+  // POST /auth/tokens — create a new API token
+  if (path === '/auth/tokens' && req.method === 'POST') {
+    const sessionToken = extractSessionToken(req)
+    if (!sessionToken) {
+      return Response.json({ error: 'Not authenticated' }, { status: 401, headers: corsHeaders })
+    }
+    const user = await auth.validateSession(sessionToken)
+    if (!user) {
+      return Response.json({ error: 'Session expired' }, { status: 401, headers: corsHeaders })
+    }
+
+    try {
+      const body = await req.json() as { name?: string, permissions?: ('publish' | 'read')[], expiresInDays?: number }
+      const result = await auth.createApiToken(user.email, body.name || '', {
+        permissions: body.permissions,
+        expiresInDays: body.expiresInDays,
+      })
+      return Response.json({ success: true, ...result }, { status: 201, headers: corsHeaders })
+    }
+    catch (err: any) {
+      const status = err instanceof AuthError ? err.status : 400
+      return Response.json({ error: err.message }, { status, headers: corsHeaders })
+    }
+  }
+
+  // DELETE /auth/tokens/{id} — revoke an API token
+  const tokenDeleteMatch = path.match(/^\/auth\/tokens\/(.+)$/)
+  if (tokenDeleteMatch && req.method === 'DELETE') {
+    const sessionToken = extractSessionToken(req)
+    if (!sessionToken) {
+      return Response.json({ error: 'Not authenticated' }, { status: 401, headers: corsHeaders })
+    }
+    const user = await auth.validateSession(sessionToken)
+    if (!user) {
+      return Response.json({ error: 'Session expired' }, { status: 401, headers: corsHeaders })
+    }
+
+    const tokenId = decodeURIComponent(tokenDeleteMatch[1])
+    await auth.deleteApiToken(user.email, tokenId)
+    return Response.json({ success: true }, { headers: corsHeaders })
+  }
+
+  return null
+}
+
+/**
+ * Handle site auth pages (/login, /signup, /account)
+ * These serve HTML pages and handle form submissions.
+ */
+async function handleSiteAuth(
+  path: string,
+  req: Request,
+  auth: AuthService,
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  const htmlHeaders = {
+    ...corsHeaders,
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-cache, no-store',
+  }
+
+  // Login page
+  if (path === '/login') {
+    if (req.method === 'POST') {
+      try {
+        const formData = await req.formData()
+        const email = formData.get('email') as string || ''
+        const password = formData.get('password') as string || ''
+        const { sessionToken } = await auth.login(email, password)
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...htmlHeaders,
+            'Location': '/account',
+            'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+          },
+        })
+      }
+      catch (err: any) {
+        const html = await renderSitePage('login.stx', { error: err.message, title: 'Log In' })
+        return new Response(html, { status: 401, headers: htmlHeaders })
+      }
+    }
+    // Check if already logged in
+    const sessionToken = extractSessionToken(req)
+    if (sessionToken) {
+      const user = await auth.validateSession(sessionToken)
+      if (user) {
+        return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: '/account' } })
+      }
+    }
+    const html = await renderSitePage('login.stx', { title: 'Log In' })
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  // Signup page
+  if (path === '/signup') {
+    if (req.method === 'POST') {
+      try {
+        const formData = await req.formData()
+        const email = formData.get('email') as string || ''
+        const name = formData.get('name') as string || ''
+        const password = formData.get('password') as string || ''
+        await auth.signup(email, name, password)
+        const { sessionToken } = await auth.login(email, password)
+        return new Response(null, {
+          status: 302,
+          headers: {
+            ...htmlHeaders,
+            'Location': '/account',
+            'Set-Cookie': `pantry_session=${sessionToken}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}`,
+          },
+        })
+      }
+      catch (err: any) {
+        const html = await renderSitePage('signup.stx', { error: err.message, title: 'Sign Up' })
+        return new Response(html, { status: err instanceof AuthError ? err.status : 400, headers: htmlHeaders })
+      }
+    }
+    // Check if already logged in
+    const sessionToken = extractSessionToken(req)
+    if (sessionToken) {
+      const user = await auth.validateSession(sessionToken)
+      if (user) {
+        return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: '/account' } })
+      }
+    }
+    const html = await renderSitePage('signup.stx', { title: 'Sign Up' })
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  // Account page (token management)
+  if (path === '/account') {
+    const sessionToken = extractSessionToken(req)
+    if (!sessionToken) {
+      return new Response(null, { status: 302, headers: { ...htmlHeaders, Location: '/login' } })
+    }
+    const user = await auth.validateSession(sessionToken)
+    if (!user) {
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...htmlHeaders,
+          'Location': '/login',
+          'Set-Cookie': 'pantry_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0',
+        },
+      })
+    }
+    const tokens = await auth.listApiTokens(user.email)
+    const html = await renderSitePage('account.stx', {
+      title: 'Account',
+      user,
+      tokens,
+    })
+    return new Response(html, { headers: htmlHeaders })
+  }
+
+  return htmlResponse(await renderSitePage('404.stx', { title: 'Not Found' }), 404)
 }
 
 // ---------------------------------------------------------------------------

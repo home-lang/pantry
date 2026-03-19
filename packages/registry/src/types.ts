@@ -176,6 +176,111 @@ export interface PackageAccessGrant {
   expiresAt?: string
 }
 
+// ===========================================================================
+// Authentication Types
+// ===========================================================================
+
+/**
+ * Registered user account
+ */
+export interface User {
+  /** User's email address (unique identifier) */
+  email: string
+  /** Display name */
+  name: string
+  /** Argon2id password hash (via Bun.password) */
+  passwordHash: string
+  /** ISO 8601 timestamp */
+  createdAt: string
+  /** ISO 8601 timestamp */
+  updatedAt: string
+}
+
+/**
+ * API token for programmatic access (e.g., publishing)
+ */
+export interface ApiToken {
+  /** Token ID (e.g., "ptry_abc123...") — only returned at creation time */
+  id: string
+  /** User-provided label (e.g., "CI deploy token") */
+  name: string
+  /** Owner's email */
+  userId: string
+  /** SHA-256 hash of the full token string — used for lookup */
+  tokenHash: string
+  /** Granted permissions */
+  permissions: ('publish' | 'read')[]
+  /** ISO 8601 timestamp */
+  createdAt: string
+  /** ISO 8601 timestamp of last use (updated on each validated request) */
+  lastUsedAt?: string
+  /** ISO 8601 expiry (undefined = never expires) */
+  expiresAt?: string
+}
+
+/**
+ * Subset of ApiToken returned in listings (never includes raw token or hash)
+ */
+export interface ApiTokenInfo {
+  id: string
+  name: string
+  permissions: ('publish' | 'read')[]
+  createdAt: string
+  lastUsedAt?: string
+  expiresAt?: string
+}
+
+/**
+ * Web session for authenticated site access
+ */
+export interface Session {
+  /** SHA-256 hash of the session token — used as DynamoDB key */
+  tokenHash: string
+  /** Owner's email */
+  userId: string
+  /** ISO 8601 timestamp */
+  createdAt: string
+  /** ISO 8601 expiry */
+  expiresAt: string
+}
+
+/**
+ * Result of validating a Bearer token during publish
+ */
+export interface TokenValidationResult {
+  valid: boolean
+  userId?: string
+  tokenId?: string
+  error?: string
+}
+
+/**
+ * Storage interface for authentication data.
+ * Uses the same DynamoDB table (single-table design) in production.
+ */
+export interface AuthStorage {
+  // User operations
+  getUser(email: string): Promise<User | null>
+  putUser(user: User): Promise<void>
+  getUserByEmail(email: string): Promise<User | null>
+
+  // API token operations
+  putApiToken(token: ApiToken): Promise<void>
+  getApiTokenByHash(tokenHash: string): Promise<ApiToken | null>
+  listApiTokens(userId: string): Promise<ApiToken[]>
+  deleteApiToken(userId: string, tokenId: string): Promise<void>
+  updateTokenLastUsed(tokenHash: string): Promise<void>
+
+  // Session operations
+  putSession(session: Session): Promise<void>
+  getSession(tokenHash: string): Promise<Session | null>
+  deleteSession(tokenHash: string): Promise<void>
+}
+
+// ===========================================================================
+// Storage Interfaces
+// ===========================================================================
+
 /**
  * Storage interface for tarball storage
  */

@@ -92,6 +92,21 @@ export {
   formatPrice,
 } from './paywall'
 
+// Authentication
+export {
+  AuthService,
+  AuthError,
+  InMemoryAuthStorage,
+  DynamoDBAuthStorage,
+  createAuthStorage,
+  generateApiToken,
+  generateSessionToken,
+  hashToken,
+  hashPassword,
+  verifyPassword,
+  isUserApiToken,
+} from './auth'
+
 // Types
 export type {
   PackageMetadata,
@@ -104,4 +119,10 @@ export type {
   RegistryConfig,
   TarballStorage,
   MetadataStorage,
+  User,
+  ApiToken,
+  ApiTokenInfo,
+  Session,
+  TokenValidationResult,
+  AuthStorage,
 } from './types'
