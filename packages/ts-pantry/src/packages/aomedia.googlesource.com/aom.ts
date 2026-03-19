@@ -3,7 +3,7 @@
  *
  * @domain `aomedia.googlesource.com/aom`
  * @programs `aomenc`, `aomdec`
- * @version `3.13.1` (17 versions available)
+ * @version `3.13.2` (18 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install aomedia.googlesource.com/aom`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "aom"
  * console.log(pkg.description) // "Codec library for encoding and decoding AV1 vid..."
  * console.log(pkg.programs)    // ["aomenc", "aomdec"]
- * console.log(pkg.versions[0]) // "3.13.1" (latest)
+ * console.log(pkg.versions[0]) // "3.13.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/aomedia-googlesource-com/aom.md
@@ -69,6 +69,7 @@ export const aomediagooglesourcecomaomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.13.2',
     '3.13.1',
     '3.13.0',
     '3.12.1',
