@@ -1016,30 +1016,33 @@ pub fn parseZigPackageJson(allocator: std.mem.Allocator, file_path: []const u8) 
                 }
 
                 // Build full name with source prefix for tracking
+                // Perf: Use stack buffer for name formatting (avoids allocPrint per dep)
                 const full_name = blk: {
-                    // If source is explicit and has additional metadata, use it
+                    var name_buf: [512]u8 = undefined;
                     if (!std.mem.eql(u8, source, "auto")) {
-                        if (std.mem.eql(u8, source, "github")) {
-                            const github_repo = repo orelse pkg_name;
-                            break :blk try std.fmt.allocPrint(allocator, "github:{s}", .{github_repo});
-                        } else if (std.mem.eql(u8, source, "npm")) {
-                            break :blk try std.fmt.allocPrint(allocator, "npm:{s}", .{pkg_name});
-                        } else if (std.mem.eql(u8, source, "http")) {
-                            const http_url = url orelse pkg_name;
-                            break :blk try std.fmt.allocPrint(allocator, "http:{s}", .{http_url});
-                        } else if (std.mem.eql(u8, source, "git")) {
-                            const git_url = url orelse pkg_name;
-                            break :blk try std.fmt.allocPrint(allocator, "git:{s}", .{git_url});
-                        } else if (std.mem.eql(u8, source, "local")) {
-                            const local_path = url orelse pkg_name;
-                            break :blk try std.fmt.allocPrint(allocator, "local:{s}", .{local_path});
-                        } else if (std.mem.eql(u8, source, "pantry") or std.mem.eql(u8, source, "pkgx")) {
-                            break :blk try allocator.dupe(u8, pkg_name);
-                        }
+                        const prefix_and_value: struct { p: []const u8, v: []const u8 } = if (std.mem.eql(u8, source, "github"))
+                            .{ .p = "github:", .v = repo orelse pkg_name }
+                        else if (std.mem.eql(u8, source, "npm"))
+                            .{ .p = "npm:", .v = pkg_name }
+                        else if (std.mem.eql(u8, source, "http"))
+                            .{ .p = "http:", .v = url orelse pkg_name }
+                        else if (std.mem.eql(u8, source, "git"))
+                            .{ .p = "git:", .v = url orelse pkg_name }
+                        else if (std.mem.eql(u8, source, "local"))
+                            .{ .p = "local:", .v = url orelse pkg_name }
+                        else if (std.mem.eql(u8, source, "pantry") or std.mem.eql(u8, source, "pkgx"))
+                            .{ .p = "", .v = pkg_name }
+                        else
+                            .{ .p = "auto:", .v = pkg_name };
+
+                        const formatted = std.fmt.bufPrint(&name_buf, "{s}{s}", .{ prefix_and_value.p, prefix_and_value.v }) catch
+                            try std.fmt.allocPrint(allocator, "{s}{s}", .{ prefix_and_value.p, prefix_and_value.v });
+                        break :blk try allocator.dupe(u8, formatted);
                     }
 
-                    // Auto-detection: mark with "auto:" prefix for later resolution
-                    break :blk try std.fmt.allocPrint(allocator, "auto:{s}", .{pkg_name});
+                    const formatted = std.fmt.bufPrint(&name_buf, "auto:{s}", .{pkg_name}) catch
+                        try std.fmt.allocPrint(allocator, "auto:{s}", .{pkg_name});
+                    break :blk try allocator.dupe(u8, formatted);
                 };
 
                 // Determine the dependency source

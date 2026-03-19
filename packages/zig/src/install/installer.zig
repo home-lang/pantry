@@ -530,11 +530,8 @@ pub const Installer = struct {
             threads[t] = std.Thread.spawn(.{}, BatchCtx.worker, .{&ctx}) catch null;
         }
 
-        // Wait with progress
-        while (next_idx.load(.monotonic) < to_install.items.len) {
-            io_helper.nanosleep(0, 50 * std.time.ns_per_ms);
-        }
-
+        // Perf: Join threads directly instead of polling with nanosleep
+        // (eliminates 50ms sleep latency between checks)
         for (threads) |*t| {
             if (t.*) |thread| {
                 thread.join();
@@ -1900,8 +1897,12 @@ pub const Installer = struct {
         version_constraint: []const u8,
     ) !NpmResolution {
         // --- Level 2 cache check: exact name@constraint match ---
-        const cache_key = try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version_constraint });
-        defer self.allocator.free(cache_key);
+        // Perf: Stack buffer for cache key (avoids heap alloc on every resolve call)
+        var cache_key_stack: [512]u8 = undefined;
+        const cache_key = std.fmt.bufPrint(&cache_key_stack, "{s}@{s}", .{ name, version_constraint }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version_constraint });
+        const cache_key_is_heap = (name.len + 1 + version_constraint.len > 512);
+        defer if (cache_key_is_heap) self.allocator.free(cache_key);
 
         if (self.npm_cache.getResolution(cache_key, self.allocator)) |cached| {
             return cached;
@@ -1948,8 +1949,12 @@ pub const Installer = struct {
             // Fetch from npm registry using native HTTP (no curl subprocess)
             // Uses custom registry from .npmrc if configured, otherwise default npm registry
             const registry_base = self.custom_registry_url orelse "https://registry.npmjs.org";
-            const npm_url = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ registry_base, name });
-            defer self.allocator.free(npm_url);
+            // Perf: Stack buffer for npm registry URL (avoids heap alloc per package)
+            var npm_url_buf: [1024]u8 = undefined;
+            const npm_url = std.fmt.bufPrint(&npm_url_buf, "{s}/{s}", .{ registry_base, name }) catch
+                try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ registry_base, name });
+            const npm_url_is_heap = (registry_base.len + 1 + name.len > 1024);
+            defer if (npm_url_is_heap) self.allocator.free(npm_url);
 
             // Retry up to 3 times with brief backoff for transient failures
             // Uses shared HTTP client for connection pooling (reuses TCP/TLS connections)
@@ -1958,8 +1963,8 @@ pub const Installer = struct {
             while (attempt < 3) : (attempt += 1) {
                 response_body = io_helper.httpGetWithClient(self.http_client, self.allocator, npm_url) catch {
                     if (attempt < 2) {
-                        // Brief backoff: 100ms, 300ms
-                        io_helper.nanosleep(0, (attempt + 1) * 100 * std.time.ns_per_ms);
+                        // Perf: Shorter initial backoff (50ms, 150ms instead of 100ms, 300ms)
+                        io_helper.nanosleep(0, (attempt + 1) * 50 * std.time.ns_per_ms);
                         continue;
                     }
                     return error.NpmRegistryUnavailable;
@@ -2001,16 +2006,17 @@ pub const Installer = struct {
         const tarball = dist.object.get("tarball") orelse return error.NoTarballUrl;
         if (tarball != .string) return error.NoTarballUrl;
 
-        // Capture integrity hash: prefer sha512 "integrity" field, fallback to "shasum"
-        var integrity: ?[]const u8 = null;
-        if (dist.object.get("integrity")) |i| {
-            if (i == .string) integrity = try self.allocator.dupe(u8, i.string);
-        }
-        if (integrity == null) {
-            if (dist.object.get("shasum")) |s| {
-                if (s == .string) integrity = try self.allocator.dupe(u8, s.string);
+        // Perf: Determine integrity source first, dupe only once (avoids potential double-alloc)
+        const integrity_str: ?[]const u8 = blk: {
+            if (dist.object.get("integrity")) |i| {
+                if (i == .string and i.string.len > 0) break :blk i.string;
             }
-        }
+            if (dist.object.get("shasum")) |s| {
+                if (s == .string and s.string.len > 0) break :blk s.string;
+            }
+            break :blk null;
+        };
+        const integrity: ?[]const u8 = if (integrity_str) |s| try self.allocator.dupe(u8, s) else null;
 
         const result = NpmResolution{
             .version = try self.allocator.dupe(u8, target_version),
@@ -2053,13 +2059,31 @@ pub const Installer = struct {
         if (versions_obj != .object) return error.InvalidNpmResponse;
 
         // Find highest version satisfying the constraint
+        // Perf: Cache parsed best version to avoid re-parsing on every comparison
+        const npm_zig = @import("../registry/npm.zig");
         var best_version: ?[]const u8 = null;
+        var best_parsed: ?npm_zig.SemverConstraint.Version = null;
         var it = versions_obj.object.iterator();
         while (it.next()) |entry| {
             const ver = entry.key_ptr.*;
             if (constraint.satisfies(ver)) {
-                if (best_version == null or compareSemver(ver, best_version.?) > 0) {
+                if (best_version == null) {
                     best_version = ver;
+                    best_parsed = npm_zig.SemverConstraint.parseVersion(ver) catch null;
+                } else {
+                    const cur_parsed = npm_zig.SemverConstraint.parseVersion(ver) catch continue;
+                    if (best_parsed) |bp| {
+                        if (cur_parsed.major > bp.major or
+                            (cur_parsed.major == bp.major and cur_parsed.minor > bp.minor) or
+                            (cur_parsed.major == bp.major and cur_parsed.minor == bp.minor and cur_parsed.patch > bp.patch))
+                        {
+                            best_version = ver;
+                            best_parsed = cur_parsed;
+                        }
+                    } else {
+                        best_version = ver;
+                        best_parsed = cur_parsed;
+                    }
                 }
             }
         }

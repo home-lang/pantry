@@ -583,26 +583,22 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             allocator.free(install_results);
         }
 
-        // Initialize results
-        for (install_results) |*result| {
-            result.* = .{
-                .name = "",
-                .version = "",
-                .success = false,
-                .error_msg = null,
-                .install_time_ms = 0,
-            };
-        }
+        // Perf: Bulk-initialize results with @memset (single operation vs N iterations)
+        @memset(install_results, .{
+            .name = "",
+            .version = "",
+            .success = false,
+            .error_msg = null,
+            .install_time_ms = 0,
+        });
 
         // Install remote packages in parallel using threads
-        // (link: and local deps are skipped by installSinglePackage and handled below)
+        // Perf: Use stack-allocated thread handles (avoids heap alloc for thread array)
         // Cap at 8 threads — each top-level install can spawn sub-threads for transitive deps
         const cpu_count = std.Thread.getCpuCount() catch 4;
         const max_threads = @min(cpu_count, 8);
         const thread_count = @min(deps_to_install.len, max_threads);
-        var threads = try allocator.alloc(?std.Thread, max_threads);
-        defer allocator.free(threads);
-        for (threads) |*t| t.* = null;
+        var threads: [8]?std.Thread = .{ null, null, null, null, null, null, null, null };
         var next_dep = std.atomic.Value(usize).init(0);
 
         const ThreadContext = struct {
@@ -722,7 +718,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Join all threads
-        for (threads) |*t| {
+        for (&threads) |*t| {
             if (t.*) |thread| {
                 thread.join();
                 t.* = null;

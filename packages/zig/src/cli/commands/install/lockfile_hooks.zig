@@ -58,22 +58,13 @@ pub fn executePreInstallHook(
     cwd: []const u8,
     verbose: bool,
 ) !?lifecycle.ScriptResult {
-    // Check if pantry.json or package.json has preinstall script
-    const pantry_json_path = try std.fs.path.join(
-        allocator,
-        &[_][]const u8{ cwd, "pantry.json" },
-    );
-    defer allocator.free(pantry_json_path);
+    // Perf: Stack buffers for config file paths (avoids 2 heap allocs)
+    var pre_path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const pantry_json_path = std.fmt.bufPrint(&pre_path_buf, "{s}/pantry.json", .{cwd}) catch return null;
 
-    // Try pantry.json first, then fall back to package.json
     const config_content = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch |err| blk: {
         if (err == error.FileNotFound) {
-            const package_json_path = try std.fs.path.join(
-                allocator,
-                &[_][]const u8{ cwd, "package.json" },
-            );
-            defer allocator.free(package_json_path);
-
+            const package_json_path = std.fmt.bufPrint(&pre_path_buf, "{s}/package.json", .{cwd}) catch return null;
             break :blk io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch return null;
         }
         return null;
@@ -117,22 +108,14 @@ pub fn executePostInstallHook(
     cwd: []const u8,
     verbose: bool,
 ) !?lifecycle.ScriptResult {
-    // Check if pantry.json or package.json has postinstall script
-    const pantry_json_path = try std.fs.path.join(
-        allocator,
-        &[_][]const u8{ cwd, "pantry.json" },
-    );
-    defer allocator.free(pantry_json_path);
+    // Perf: Stack buffers for config file paths (avoids 2 heap allocs per install)
+    var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const pantry_json_path = std.fmt.bufPrint(&path_buf, "{s}/pantry.json", .{cwd}) catch return null;
 
     // Try pantry.json first, then fall back to package.json
     const config_content_post = io_helper.readFileAlloc(allocator, pantry_json_path, 1024 * 1024) catch |err| blk: {
         if (err == error.FileNotFound) {
-            const package_json_path = try std.fs.path.join(
-                allocator,
-                &[_][]const u8{ cwd, "package.json" },
-            );
-            defer allocator.free(package_json_path);
-
+            const package_json_path = std.fmt.bufPrint(&path_buf, "{s}/package.json", .{cwd}) catch return null;
             break :blk io_helper.readFileAlloc(allocator, package_json_path, 1024 * 1024) catch return null;
         }
         return null;

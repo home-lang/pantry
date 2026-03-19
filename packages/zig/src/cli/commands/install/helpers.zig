@@ -812,8 +812,12 @@ pub fn installSinglePackage(
 
     // Try installing from cache if offline
     if (is_offline) {
-        const dest_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, options.modules_dir, lookup_name });
-        defer allocator.free(dest_dir);
+        // Perf: Stack buffer for dest dir path
+        var dest_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const dest_dir = std.fmt.bufPrint(&dest_buf, "{s}/{s}/{s}", .{ proj_dir, options.modules_dir, lookup_name }) catch
+            try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, options.modules_dir, lookup_name });
+        const dest_is_heap = (proj_dir.len + options.modules_dir.len + lookup_name.len + 2) > std.fs.max_path_bytes;
+        defer if (dest_is_heap) allocator.free(dest_dir);
 
         const cache_success = offline_mod.installFromCache(
             allocator,
@@ -974,9 +978,12 @@ pub fn installSinglePackage(
 pub fn computePackageIntegrity(allocator: std.mem.Allocator, install_path: []const u8) ![]const u8 {
     const Sha256 = std.crypto.hash.sha2.Sha256;
 
-    // Prefer hashing package.json — it's the canonical identity of the package
-    const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ install_path, "package.json" });
-    defer allocator.free(pkg_json_path);
+    // Perf: Stack buffer for package.json path (avoids heap alloc per package)
+    var pkg_json_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const pkg_json_path = std.fmt.bufPrint(&pkg_json_buf, "{s}/package.json", .{install_path}) catch
+        try std.fs.path.join(allocator, &[_][]const u8{ install_path, "package.json" });
+    const pkg_json_is_heap = install_path.len + 13 > std.fs.max_path_bytes;
+    defer if (pkg_json_is_heap) allocator.free(pkg_json_path);
 
     if (io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024)) |content| {
         defer allocator.free(content);
@@ -1027,13 +1034,19 @@ pub fn createBinSymlinksFromInstall(allocator: std.mem.Allocator, proj_dir: []co
 }
 
 fn createBinSymlinks(allocator: std.mem.Allocator, proj_dir: []const u8, package_path: []const u8, verbose: bool, modules_dir: []const u8) !void {
-    const bin_link_dir = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, modules_dir, ".bin" });
-    defer allocator.free(bin_link_dir);
+    // Perf: Stack buffers for bin link dir and package.json path (avoids 2 heap allocs per package)
+    var bin_link_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const bin_link_dir = std.fmt.bufPrint(&bin_link_buf, "{s}/{s}/.bin", .{ proj_dir, modules_dir }) catch
+        try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, modules_dir, ".bin" });
+    const bin_is_heap = proj_dir.len + modules_dir.len + 6 > std.fs.max_path_bytes;
+    defer if (bin_is_heap) allocator.free(bin_link_dir);
     try io_helper.makePath(bin_link_dir);
 
-    // Read package.json bin field (the standard way npm/yarn/bun resolve bins)
-    const pkg_json_path = try std.fs.path.join(allocator, &[_][]const u8{ package_path, "package.json" });
-    defer allocator.free(pkg_json_path);
+    var pkg_json_buf: [std.fs.max_path_bytes]u8 = undefined;
+    const pkg_json_path = std.fmt.bufPrint(&pkg_json_buf, "{s}/package.json", .{package_path}) catch
+        try std.fs.path.join(allocator, &[_][]const u8{ package_path, "package.json" });
+    const pkg_is_heap = package_path.len + 13 > std.fs.max_path_bytes;
+    defer if (pkg_is_heap) allocator.free(pkg_json_path);
 
     const content = io_helper.readFileAlloc(allocator, pkg_json_path, 1024 * 1024) catch {
         // No package.json — fall back to scanning bin/ directory (non-npm packages)
