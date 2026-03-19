@@ -50,6 +50,12 @@ const ALL_MANAGERS: PackageManager[] = [
     lockfiles: ['yarn.lock'],
     cacheClear: 'yarn cache clean',
   },
+  {
+    name: 'composer',
+    install: 'composer install --no-interaction --no-progress',
+    lockfiles: ['composer.lock'],
+    cacheClear: 'composer clear-cache',
+  },
 ]
 
 const FIXTURES = ['small', 'medium', 'large'] as const
@@ -127,6 +133,7 @@ function setupTempDir(fixture: Fixture, pmName: string): string {
 
 function cleanNodeModules(dir: string): void {
   rmSync(join(dir, 'node_modules'), { recursive: true, force: true })
+  rmSync(join(dir, 'vendor'), { recursive: true, force: true })
 }
 
 function cleanLockfiles(dir: string): void {
@@ -237,7 +244,7 @@ for (const fixture of fixtures) {
     // Ensure node_modules exist
     for (const pm of managers) {
       const dir = dirs[fixture][pm.name]
-      if (!existsSync(join(dir, 'node_modules'))) {
+      if (!existsSync(join(dir, 'node_modules')) && !existsSync(join(dir, 'vendor'))) {
         try {
           pmInstall(pm, dir)
         }

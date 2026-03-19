@@ -11,6 +11,8 @@
     "benchmark:large": "bun run pm-benchmark.ts --fixture=large",
     "benchmark:cold": "bun run pm-benchmark.ts --scenario=cold",
     "benchmark:warm": "bun run pm-benchmark.ts --scenario=warm",
+    "benchmark:composer": "bun run pm-benchmark.ts --managers=pantry,composer",
+    "benchmark:vs-composer": "bun run pantry-vs-composer.ts",
     "file-detection": "bun run file-detection-comparison.ts"
   },
   "devDependencies": {

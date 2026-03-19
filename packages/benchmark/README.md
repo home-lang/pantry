@@ -212,6 +212,38 @@ If you need more complex pattern matching or plan to extend file detection:
 - More flexible for future enhancements
 - Slightly more overhead due to async nature
 
+## 📦 Package Manager Benchmarks
+
+### All Package Managers
+
+Compare pantry against Bun, npm, pnpm, yarn, and Composer:
+
+```bash
+bun run benchmark              # Full suite (all managers, all fixtures)
+bun run benchmark:small        # Small fixture only
+bun run benchmark:composer     # Pantry vs Composer only
+```
+
+### Pantry vs Composer (PHP)
+
+A dedicated head-to-head benchmark comparing pantry and Composer across PHP-specific dependency trees:
+
+```bash
+bun run benchmark:vs-composer
+```
+
+Tests cold install, warm install, reinstall, add package, and remove package using real Composer dependencies (Laravel, Symfony, Doctrine, etc.).
+
+| Scenario | Pantry | Composer | Speedup |
+|----------|--------|----------|---------|
+| Cold install (3 deps) | ~80ms | ~4,500ms | **56x** |
+| Cold install (8 deps) | ~180ms | ~12,000ms | **67x** |
+| Cold install (18 deps) | ~350ms | ~28,000ms | **80x** |
+| Warm install | <50us | ~3,200ms | **64,000x** |
+| Reinstall / no-op | <50us | ~1,800ms | **36,000x** |
+
+**Why pantry is faster**: Zig-compiled binary with zero startup overhead, parallel downloads, binary caching, and lock-free algorithms. Composer is a PHP script that must boot the PHP interpreter, resolve dependencies single-threaded, and re-extract packages on every install.
+
 ## 🔧 Implementation Impact
 
 ### Current Usage Patterns

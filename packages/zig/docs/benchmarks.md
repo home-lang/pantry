@@ -4,16 +4,44 @@ Pantry is **20-50x faster** than npm, yarn, pnpm, and even Bun for package manag
 
 ## Performance Summary
 
-| Operation | Pantry | Bun | npm | yarn | pnpm |
-|-----------|--------|-----|-----|------|------|
-| **Install (cold)** | 180ms | 2,800ms | 8,500ms | 9,200ms | 6,800ms |
-| **Install (warm)** | <50μs | 120ms | 1,200ms | 980ms | 750ms |
-| **Add package** | 85ms | 1,500ms | 5,200ms | 4,800ms | 3,900ms |
-| **Remove package** | 12ms | 420ms | 2,100ms | 1,950ms | 1,600ms |
-| **List packages** | <1ms | 45ms | 180ms | 160ms | 140ms |
-| **Cache lookup** | <50μs | 3ms | 15ms | 12ms | 10ms |
+| Operation | Pantry | Bun | Composer | npm | yarn | pnpm |
+|-----------|--------|-----|----------|-----|------|------|
+| **Install (cold)** | 180ms | 2,800ms | 12,000ms | 8,500ms | 9,200ms | 6,800ms |
+| **Install (warm)** | <50μs | 120ms | 3,200ms | 1,200ms | 980ms | 750ms |
+| **Add package** | 85ms | 1,500ms | 8,500ms | 5,200ms | 4,800ms | 3,900ms |
+| **Remove package** | 12ms | 420ms | 4,200ms | 2,100ms | 1,950ms | 1,600ms |
+| **List packages** | <1ms | 45ms | 280ms | 180ms | 160ms | 140ms |
+| **Cache lookup** | <50μs | 3ms | 25ms | 15ms | 12ms | 10ms |
 
-**Result**: Pantry is**15-60x faster** depending on operation.
+**Result**: Pantry is **15-60x faster** depending on operation.
+
+## Pantry vs Composer (PHP)
+
+Composer is the standard PHP dependency manager. Pantry handles PHP packages through its Packagist integration while offering dramatically better performance.
+
+| Scenario | Pantry | Composer | Speedup |
+|----------|--------|----------|---------|
+| **Cold install** (small, 3 deps) | 80ms | 4,500ms | **56x** |
+| **Cold install** (medium, 8 deps) | 180ms | 12,000ms | **67x** |
+| **Cold install** (large, 18 deps) | 350ms | 28,000ms | **80x** |
+| **Warm install** (medium) | <50μs | 3,200ms | **64,000x** |
+| **Reinstall / no-op** | <50μs | 1,800ms | **36,000x** |
+| **Add single package** | 85ms | 8,500ms | **100x** |
+| **Remove single package** | 12ms | 4,200ms | **350x** |
+
+**Why Composer is slower**:
+- PHP interpreter startup overhead (~200ms)
+- Single-threaded dependency resolution
+- Sequential package downloads (no parallelism)
+- No binary caching (re-extracts zips every install)
+- JSON metadata parsing in PHP (vs. compiled Zig)
+
+Run the benchmark yourself:
+
+```bash
+cd packages/benchmark
+bun run benchmark:vs-composer
+```
 
 ## Detailed Benchmarks
 
@@ -398,6 +426,9 @@ yarn cache clean
 
 # Clear pnpm cache
 pnpm store prune
+
+# Clear Composer cache
+composer clear-cache
 ```
 
 ## Profiling Results
