@@ -3,7 +3,7 @@
  *
  * @domain `charm.sh/crush`
  * @programs `crush`
- * @version `0.50.1` (46 versions available)
+ * @version `0.51.0` (47 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install charm.sh/crush`
@@ -16,7 +16,7 @@
  * const pkg = pantry.charmshcrush
  * console.log(pkg.name)        // "crush"
  * console.log(pkg.programs)    // ["crush"]
- * console.log(pkg.versions[0]) // "0.50.1" (latest)
+ * console.log(pkg.versions[0]) // "0.51.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/charm-sh/crush.md
@@ -66,6 +66,7 @@ export const charmshcrushPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.51.0',
     '0.50.1',
     '0.50.0',
     '0.49.0',

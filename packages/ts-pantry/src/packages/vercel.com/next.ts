@@ -3,7 +3,7 @@
  *
  * @domain `vercel.com/next`
  * @programs `next`
- * @version `16.2.0` (4 versions available)
+ * @version `16.2.0` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install vercel.com/next`
@@ -76,6 +76,7 @@ export const vercelcomnextPackage = {
     '16.2.0',
     '16.1.7',
     '16.1.6',
+    '15.5.14',
     '15.5.13',
   ] as const,
   aliases: [] as const,
