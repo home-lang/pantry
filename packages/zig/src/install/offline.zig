@@ -26,7 +26,7 @@ pub fn isOfflineMode() bool {
 
 /// Try to install from cache in offline mode
 pub fn installFromCache(
-    allocator: std.mem.Allocator,
+    _: std.mem.Allocator,
     package_name: []const u8,
     version: []const u8,
     dest_dir: []const u8,

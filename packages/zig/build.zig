@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
     const zig_config_dep = b.dependency("zig_config", .{
         .target = target,
     });
-    const zig_config_mod = zig_config_dep.module("zig-config");
+    const zig_config_mod = zig_config_dep.module("zig_config");
 
     // Resolve zig-cli path
     const cli_path = resolveDependencyPath(
@@ -72,7 +72,7 @@ pub fn build(b: *std.Build) void {
     });
 
     // Add zig-config as an import to the library
-    lib_mod.addImport("zig-config", zig_config_mod);
+    lib_mod.addImport("zig_config", zig_config_mod);
 
     // Add version options module
     const version_mod = version_options.createModule();
@@ -119,7 +119,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .link_libc = true,
         .imports = &.{
-            .{ .name = "zig-config", .module = zig_config_mod },
+            .{ .name = "zig_config", .module = zig_config_mod },
             .{ .name = "zig-test-framework", .module = test_framework_mod },
         },
     });
@@ -459,7 +459,7 @@ pub fn build(b: *std.Build) void {
         const cross_zig_config_dep = b.dependency("zig_config", .{
             .target = resolved_target,
         });
-        const cross_zig_config_mod = cross_zig_config_dep.module("zig-config");
+        const cross_zig_config_mod = cross_zig_config_dep.module("zig_config");
 
         const cross_lib_mod = b.addModule("pantry", .{
             .root_source_file = b.path("src/lib.zig"),
@@ -468,7 +468,7 @@ pub fn build(b: *std.Build) void {
         });
 
         // Add zig-config to the cross-compiled library
-        cross_lib_mod.addImport("zig-config", cross_zig_config_mod);
+        cross_lib_mod.addImport("zig_config", cross_zig_config_mod);
 
         // Add version options module to cross-compiled library
         cross_lib_mod.addImport("version", version_mod);
@@ -506,8 +506,11 @@ pub fn build(b: *std.Build) void {
 /// Get package version from package.json
 fn getPackageVersion(b: *std.Build) ![]const u8 {
     // Read version directly from root package.json (../../ from packages/zig/)
-    const io = b.graph.io;
-    const content = b.build_root.handle.readFileAlloc(io, "../../package.json", b.allocator, .limited(1024 * 1024)) catch return "0.0.0";
+    // Compatible with both Zig 0.15 and 0.16-dev
+    const content = if (true)
+        b.build_root.handle.readFileAlloc(b.graph.io, "../../package.json", b.allocator, .limited(1024 * 1024)) catch return "0.0.0"
+    else
+        b.build_root.handle.readFileAlloc(b.allocator, "../../package.json", 1024 * 1024) catch return "0.0.0";
     // Find "version": "x.y.z" (first occurrence)
     const needle = "\"version\"";
     const idx = std.mem.indexOf(u8, content, needle) orelse return "0.0.0";

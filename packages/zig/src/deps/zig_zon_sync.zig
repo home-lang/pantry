@@ -25,13 +25,13 @@ pub fn syncBuildZigZon(allocator: std.mem.Allocator, project_dir: []const u8, pa
     const pantry_path = try std.fs.path.join(allocator, &.{ project_dir, pantry_dir_name });
     defer allocator.free(pantry_path);
 
-    var zig_deps = std.ArrayList(ZigDep).init(allocator);
+    var zig_deps = std.ArrayList(ZigDep){};
     defer {
         for (zig_deps.items) |dep| {
             allocator.free(dep.name);
             allocator.free(dep.rel_path);
         }
-        zig_deps.deinit();
+        zig_deps.deinit(allocator);
     }
 
     var pantry_dir = io_helper.openDirForIteration(pantry_path) catch |err| {
@@ -58,7 +58,7 @@ pub fn syncBuildZigZon(allocator: std.mem.Allocator, project_dir: []const u8, pa
             const zig_name = try hyphenToUnderscore(allocator, entry.name);
             const rel_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ pantry_dir_name, entry.name });
 
-            try zig_deps.append(.{
+            try zig_deps.append(allocator, .{
                 .name = zig_name,
                 .rel_path = rel_path,
             });
@@ -83,7 +83,7 @@ pub fn syncBuildZigZon(allocator: std.mem.Allocator, project_dir: []const u8, pa
 
     // Write the updated content
     const file = try io_helper.createFile(zon_path, .{});
-    defer file.close();
+    defer file.close(io_helper.io);
     try io_helper.writeAllToFile(file, new_content);
 
     if (verbose) {
@@ -113,25 +113,25 @@ fn hasDependenciesBlock(content: []const u8) bool {
 /// Generate updated build.zig.zon content with synced dependencies.
 /// Preserves everything outside the .dependencies block.
 fn generateUpdatedZon(allocator: std.mem.Allocator, original: []const u8, deps: []const ZigDep) ![]const u8 {
-    var buf = std.ArrayList(u8).init(allocator);
-    errdefer buf.deinit();
+    var buf = std.ArrayList(u8){};
+    errdefer buf.deinit(allocator);
 
     // Build the new dependencies block
-    var deps_block = std.ArrayList(u8).init(allocator);
-    defer deps_block.deinit();
+    var deps_block = std.ArrayList(u8){};
+    defer deps_block.deinit(allocator);
 
     if (deps.len > 0) {
-        try deps_block.appendSlice("    .dependencies = .{\n");
+        try deps_block.appendSlice(allocator, "    .dependencies = .{\n");
         for (deps) |dep| {
-            try deps_block.appendSlice("        .");
-            try deps_block.appendSlice(dep.name);
-            try deps_block.appendSlice(" = .{\n");
-            try deps_block.appendSlice("            .path = \"");
-            try deps_block.appendSlice(dep.rel_path);
-            try deps_block.appendSlice("\",\n");
-            try deps_block.appendSlice("        },\n");
+            try deps_block.appendSlice(allocator, "        .");
+            try deps_block.appendSlice(allocator, dep.name);
+            try deps_block.appendSlice(allocator, " = .{\n");
+            try deps_block.appendSlice(allocator, "            .path = \"");
+            try deps_block.appendSlice(allocator, dep.rel_path);
+            try deps_block.appendSlice(allocator, "\",\n");
+            try deps_block.appendSlice(allocator, "        },\n");
         }
-        try deps_block.appendSlice("    },\n");
+        try deps_block.appendSlice(allocator, "    },\n");
     }
 
     // Find the existing .dependencies block and replace it
@@ -165,9 +165,9 @@ fn generateUpdatedZon(allocator: std.mem.Allocator, original: []const u8, deps: 
         }
 
         // Replace: everything before deps + new deps block + everything after deps
-        try buf.appendSlice(original[0..line_start]);
-        try buf.appendSlice(deps_block.items);
-        try buf.appendSlice(original[dep_end..]);
+        try buf.appendSlice(allocator, original[0..line_start]);
+        try buf.appendSlice(allocator, deps_block.items);
+        try buf.appendSlice(allocator, original[dep_end..]);
     } else {
         // No existing .dependencies block — insert before .paths
         if (std.mem.indexOf(u8, original, ".paths")) |paths_start| {
@@ -176,20 +176,20 @@ fn generateUpdatedZon(allocator: std.mem.Allocator, original: []const u8, deps: 
             while (line_start > 0 and original[line_start - 1] != '\n') {
                 line_start -= 1;
             }
-            try buf.appendSlice(original[0..line_start]);
-            try buf.appendSlice(deps_block.items);
-            try buf.appendSlice(original[line_start..]);
+            try buf.appendSlice(allocator, original[0..line_start]);
+            try buf.appendSlice(allocator, deps_block.items);
+            try buf.appendSlice(allocator, original[line_start..]);
         } else {
             // No .paths either — insert before closing }
             const last_brace = std.mem.lastIndexOf(u8, original, "}") orelse {
-                try buf.appendSlice(original);
-                return try buf.toOwnedSlice();
+                try buf.appendSlice(allocator, original);
+                return try buf.toOwnedSlice(allocator);
             };
-            try buf.appendSlice(original[0..last_brace]);
-            try buf.appendSlice(deps_block.items);
-            try buf.appendSlice(original[last_brace..]);
+            try buf.appendSlice(allocator, original[0..last_brace]);
+            try buf.appendSlice(allocator, deps_block.items);
+            try buf.appendSlice(allocator, original[last_brace..]);
         }
     }
 
-    return try buf.toOwnedSlice();
+    return try buf.toOwnedSlice(allocator);
 }

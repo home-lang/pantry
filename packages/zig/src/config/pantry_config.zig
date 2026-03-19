@@ -198,7 +198,7 @@ test "parse hoisted config" {
 
 test "parse production config" {
     const allocator = std.testing.allocator;
-    var config = try parseTomlContent(allocator,
+    const config = try parseTomlContent(allocator,
         \\[install]
         \\production = true
         \\dev = false

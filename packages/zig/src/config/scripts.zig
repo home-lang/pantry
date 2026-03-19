@@ -1,5 +1,5 @@
 const std = @import("std");
-const zig_config = @import("zig-config");
+const zig_config = @import("zig_config");
 const io_helper = @import("../io_helper.zig");
 
 /// Strip single-line (//) and multi-line (/* */) comments from JSONC content

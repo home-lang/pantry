@@ -2060,7 +2060,6 @@ pub const Installer = struct {
 
         // Find highest version satisfying the constraint
         // Perf: Cache parsed best version to avoid re-parsing on every comparison
-        const npm_zig = @import("../registry/npm.zig");
         var best_version: ?[]const u8 = null;
         var best_parsed: ?npm_zig.SemverConstraint.Version = null;
         var it = versions_obj.object.iterator();

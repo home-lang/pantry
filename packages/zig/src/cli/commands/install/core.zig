@@ -187,7 +187,7 @@ fn tryFastUpToDate(allocator: std.mem.Allocator, cwd: []const u8, start_time: i6
     const end_ts = io_helper.clockGettime();
     const end_time = @as(i64, @intCast(end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
-    style.printUpToDate(checked_count, 0, elapsed_ms);
+    style.printUpToDate(lockfile.packages.count(), 0, elapsed_ms);
     return .{ .exit_code = 0 };
 }
 
@@ -575,7 +575,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Install results storage
-        var install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
+        const install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
         defer {
             for (install_results) |*result| {
                 result.deinit(allocator);

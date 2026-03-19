@@ -1,5 +1,5 @@
 const std = @import("std");
-const zig_config = @import("zig-config");
+const zig_config = @import("zig_config");
 const deps = @import("../deps/parser.zig");
 const types = @import("../packages/types.zig");
 

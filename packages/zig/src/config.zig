@@ -1,5 +1,5 @@
 const std = @import("std");
-const zig_config = @import("zig-config");
+const zig_config = @import("zig_config");
 
 // Re-export zig-config types and functions
 pub const UntypedConfigResult = zig_config.UntypedConfigResult;

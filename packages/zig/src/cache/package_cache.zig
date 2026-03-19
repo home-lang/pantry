@@ -104,13 +104,12 @@ pub const PackageCache = struct {
         const pkg_hash = string.md5Hash(key);
 
         // Convert hash to hex on stack
-        var hex_buf: [32]u8 = undefined;
-        const hex = std.fmt.bufPrint(&hex_buf, "{x}", .{std.fmt.fmtSliceHexLower(&pkg_hash)}) catch &hex_buf;
+        const hex = std.fmt.bytesToHex(pkg_hash, .lower);
 
         return std.fmt.allocPrint(
             self.allocator,
             "{s}/packages/{s}",
-            .{ self.cache_dir, hex },
+            .{ self.cache_dir, &hex },
         );
     }
 

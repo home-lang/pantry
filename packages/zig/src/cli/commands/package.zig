@@ -704,7 +704,9 @@ fn updateLockfileAfterUninstall(allocator: std.mem.Allocator, lockfile_path: []c
     // Sync build.zig.zon after removal
     {
         const zig_zon_sync = @import("../../deps/zig_zon_sync.zig");
-        zig_zon_sync.syncBuildZigZon(allocator, cwd, "pantry", false) catch {};
+        var proj_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const proj_dir = io_helper.realpath(".", &proj_buf) catch ".";
+        zig_zon_sync.syncBuildZigZon(allocator, proj_dir, "pantry", false) catch {};
     }
 }
 

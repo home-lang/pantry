@@ -1,5 +1,5 @@
 const std = @import("std");
-const zig_config = @import("zig-config");
+const zig_config = @import("zig_config");
 
 /// Service configuration from pantry.json
 pub const ServiceConfig = struct {
