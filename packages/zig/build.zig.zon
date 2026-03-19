@@ -33,8 +33,7 @@
     // internet connectivity.
     .dependencies = .{
         .zig_config = .{
-            .url = "https://github.com/zig-utils/zig-config/archive/refs/heads/main.tar.gz",
-            .hash = "zig_config-0.1.0-2XP112waAQBW5Q_68stTtmKWKkQf2QC89tND0UICg8JK",
+            .path = "../../pantry/zig-config",
         },
     },
     .paths = .{
