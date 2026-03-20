@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-20T08:32:52.023Z
+- **Last Updated**: 2026-03-20T10:40:39.105Z
 
 ## Table of Contents
 
@@ -276,7 +276,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[dns.lookup.dog](./packages/dns.lookup.dog/index.md)** () | A command-line DNS client. | dog | 0.1.0 (+0) | `pkgx dog` |
 | **[fishshell.com](./packages/fishshell.com/index.md)** () | User-friendly command-line shell for UNIX-like operating systems | fish, fish_indent, fish_key_reader | 4.5.0 (+24) | `pkgx fish` |
 | **[github.com/aristocratos/btop](./packages/github.com/aristocratos/btop.md)** () | Resource monitor. C++ version and continuation of bashtop and bpytop | btop | 1.4.6 (+9) | `pkgx btop` |
-| **[github.com/dundee/gdu](./packages/github.com/dundee/gdu.md)** () | Fast disk usage analyzer with console interface written in Go | gdu | 5.34.0 (+6) | `pkgx gdu` |
+| **[github.com/dundee/gdu](./packages/github.com/dundee/gdu.md)** () | Fast disk usage analyzer with console interface written in Go | gdu | 5.34.1 (+7) | `pkgx gdu` |
 | **[github.com/junegunn/fzf](./packages/github.com/junegunn/fzf.md)** () | :cherry_blossom: A command-line fuzzy finder | fzf | 0.70.0 (+54) | `pkgx fzf` |
 | **[github.com/mikefarah/yq](./packages/github.com/mikefarah/yq.md)** () | yq is a portable command-line YAML, JSON, XML, CSV, TOML and properties processor | yq | 4.52.4 (+43) | `pkgx yq` |
 | **[github.com/muesli/duf](./packages/github.com/muesli/duf.md)** () | Disk Usage/Free Utility - a better &#39;df&#39; alternative | duf | 0.9.1 (+2) | `pkgx duf` |
