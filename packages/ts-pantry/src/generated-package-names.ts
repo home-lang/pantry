@@ -4050,7 +4050,7 @@ export interface GeneratedPackageVersions {
   'github.com/sctplab/usrsctp': '0.9.5.0'
   'github.com/seccomp/libseccomp': '2.6.0' | '2.5.6' | '2.5.5'
   'github.com/sekrit-twc/zimg': '3.0.6' | '3.0.5' | '3.0.4'
-  'github.com/shaka-project/shaka-packager': '3.6.1' | '3.6.0' | '3.5.0' | '3.4.2' | '3.4.1' | '3.4.0'
+  'github.com/shaka-project/shaka-packager': '3.7.0' | '3.6.1' | '3.6.0' | '3.5.0' | '3.4.2' | '3.4.1' | '3.4.0'
   'github.com/siderolabs/conform': '2022.10.25'
   'github.com/siiptuo/pio': '0.4.0'
   'github.com/sindresorhus/macos-term-size': '1.0.0'
