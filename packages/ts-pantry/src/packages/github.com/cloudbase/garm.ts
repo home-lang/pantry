@@ -3,7 +3,7 @@
  *
  * @domain `github.com/cloudbase/garm`
  * @programs `garm`, `garm-cli`
- * @version `0.1.7` (4 versions available)
+ * @version `0.1.8` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/cloudbase/garm`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "cloudbase/garm"
  * console.log(pkg.description) // "GitHub Actions Runner Manager"
  * console.log(pkg.programs)    // ["garm", "garm-cli"]
- * console.log(pkg.versions[0]) // "0.1.7" (latest)
+ * console.log(pkg.versions[0]) // "0.1.8" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/cloudbase/garm.md
@@ -68,6 +68,7 @@ export const garmPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.1.8',
     '0.1.7',
     '0.1.6',
     '0.1.5',
