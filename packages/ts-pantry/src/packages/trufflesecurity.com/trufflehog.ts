@@ -3,7 +3,7 @@
  *
  * @domain `trufflesecurity.com/trufflehog`
  * @programs `trufflehog`
- * @version `3.93.8` (175 versions available)
+ * @version `3.94.0` (176 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install trufflesecurity.com/trufflehog`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "trufflehog"
  * console.log(pkg.description) // "Find, verify, and analyze leaked credentials"
  * console.log(pkg.programs)    // ["trufflehog"]
- * console.log(pkg.versions[0]) // "3.93.8" (latest)
+ * console.log(pkg.versions[0]) // "3.94.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/trufflesecurity-com/trufflehog.md
@@ -68,6 +68,7 @@ export const trufflesecuritycomtrufflehogPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.94.0',
     '3.93.8',
     '3.93.7',
     '3.93.6',

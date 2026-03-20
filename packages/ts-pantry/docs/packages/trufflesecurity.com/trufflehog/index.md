@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 175 versions</summary>
+<summary>Show all 176 versions</summary>
 
+- `3.94.0`
 - `3.93.8`, `3.93.7`, `3.93.6`, `3.93.5`, `3.93.4`, `3.93.3`, `3.93.2`, `3.93.1`, `3.93.0`
 - `3.92.5`, `3.92.4`, `3.92.3`, `3.92.2`, `3.92.1`, `3.92.0`
 - `3.91.2`, `3.91.1`, `3.91.0`
@@ -62,13 +63,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `3.93.8`
+**Latest Version**: `3.94.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +trufflesecurity.com/trufflehog@3.93.8 -- $SHELL -i
+sh <(curl https://pkgx.sh) +trufflesecurity.com/trufflehog@3.94.0 -- $SHELL -i
 ```
 
 ## Usage Examples
