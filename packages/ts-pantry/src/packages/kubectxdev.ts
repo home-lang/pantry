@@ -3,7 +3,7 @@
  *
  * @domain `kubectx.dev`
  * @programs `kubectx`, `kubens`
- * @version `0.9.5` (2 versions available)
+ * @version `0.10.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kubectx.dev`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "kube"
  * console.log(pkg.description) // "Tool that can switch between kubectl contexts e..."
  * console.log(pkg.programs)    // ["kubectx", "kubens"]
- * console.log(pkg.versions[0]) // "0.9.5" (latest)
+ * console.log(pkg.versions[0]) // "0.10.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/kubectx-dev.md
@@ -76,6 +76,7 @@ export const kubectxdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.0',
     '0.9.5',
     '0.9.4',
   ] as const,

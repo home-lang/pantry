@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-20T20:37:49.792Z
+- **Last Updated**: 2026-03-20T21:05:25.839Z
 
 ## Table of Contents
 
@@ -374,7 +374,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[aws.amazon.com/sam](./packages/aws.amazon.com/sam/index.md)** () | CLI tool to build, test, debug, and deploy Serverless applications using AWS SAM | sam | 1.156.0 (+49) | `pkgx sam` |
-| **[fly.io](./packages/fly.io/index.md)** () | Command line tools for fly.io services | fly, flyctl | 0.4.25 (+512) | `pkgx fly` |
+| **[fly.io](./packages/fly.io/index.md)** () | Command line tools for fly.io services | fly, flyctl | 0.4.26 (+513) | `pkgx fly` |
 | **[heroku.com](./packages/heroku.com/index.md)** () | CLI for Heroku | heroku | 11.0.0 (+43) | `pkgx heroku` |
 | **[localstack.cloud/cli](./packages/localstack.cloud/cli/index.md)** () | The LocalStack CLI packaged using pyinstaller | localstack | 4.14.0 (+35) | `pkgx localstack` |
 | **[planetscale.com](./packages/planetscale.com/index.md)** () | The CLI for PlanetScale Database | pscale | 0.276.0 (+98) | `pkgx pscale` |
