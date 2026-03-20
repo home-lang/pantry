@@ -2,7 +2,7 @@
  * **Bittensor** - Internet-scale Neural Networks
  *
  * @domain `bittensor.com`
- * @version `10.1.0` (78 versions available)
+ * @version `10.2.0` (79 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install bittensor.com`
@@ -17,7 +17,7 @@
  * const pkg = pantry.bittensorcom
  * console.log(pkg.name)        // "Bittensor"
  * console.log(pkg.description) // "Internet-scale Neural Networks"
- * console.log(pkg.versions[0]) // "10.1.0" (latest)
+ * console.log(pkg.versions[0]) // "10.2.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/bittensor-com.md
@@ -69,6 +69,7 @@ export const bittensorcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.2.0',
     '10.1.0',
     '10.0.1',
     '10.0.0',

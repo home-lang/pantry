@@ -25,8 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 78 versions</summary>
+<summary>Show all 79 versions</summary>
 
+- `10.2.0`
 - `10.1.0`
 - `10.0.1`, `10.0.0`
 - `9.12.2`, `9.12.1`, `9.12.0`
@@ -63,13 +64,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `10.1.0`
+**Latest Version**: `10.2.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +bittensor.com@10.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +bittensor.com@10.2.0 -- $SHELL -i
 ```
 
 ## Dependencies

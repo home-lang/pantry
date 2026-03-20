@@ -2,7 +2,7 @@
  * **Vulkan-Headers** - Vulkan header files and API registry
  *
  * @domain `github.com/KhronosGroup/Vulkan-Headers`
- * @version `1.4.346` (95 versions available)
+ * @version `1.4.347` (96 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/KhronosGroup/Vulkan-Headers`
@@ -16,7 +16,7 @@
  * const pkg = pantry.githubcomkhronosgroupvulkanheaders
  * console.log(pkg.name)        // "Vulkan-Headers"
  * console.log(pkg.description) // "Vulkan header files and API registry"
- * console.log(pkg.versions[0]) // "1.4.346" (latest)
+ * console.log(pkg.versions[0]) // "1.4.347" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/KhronosGroup/Vulkan-Headers.md
@@ -60,6 +60,7 @@ export const vulkanheadersPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.4.347',
     '1.4.346',
     '1.4.345',
     '1.4.344',
