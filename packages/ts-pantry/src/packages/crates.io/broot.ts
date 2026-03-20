@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/broot`
  * @programs `broot`
- * @version `1.55.0` (70 versions available)
+ * @version `1.56.0` (71 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/broot`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "broot"
  * console.log(pkg.description) // "A new way to see and navigate directory trees :..."
  * console.log(pkg.programs)    // ["broot"]
- * console.log(pkg.versions[0]) // "1.55.0" (latest)
+ * console.log(pkg.versions[0]) // "1.56.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/broot.md
@@ -68,6 +68,7 @@ export const cratesiobrootPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.56.0',
     '1.55.0',
     '1.54.0',
     '1.53.0',
