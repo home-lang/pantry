@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/mprocs`
  * @programs `mprocs`
- * @version `0.9.0` (10 versions available)
+ * @version `0.9.1` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/mprocs`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "mprocs"
  * console.log(pkg.description) // "Run multiple commands in parallel"
  * console.log(pkg.programs)    // ["mprocs"]
- * console.log(pkg.versions[0]) // "0.9.0" (latest)
+ * console.log(pkg.versions[0]) // "0.9.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/mprocs.md
@@ -70,6 +70,7 @@ export const cratesiomprocsPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.9.1',
     '0.9.0',
     '0.8.3',
     '0.8.2',
