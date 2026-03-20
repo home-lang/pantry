@@ -3,7 +3,7 @@
  *
  * @domain `github.com/cloudbase/garm-provider-openstack`
  * @programs `garm-provider-openstack`
- * @version `0.1.3` (4 versions available)
+ * @version `0.1.4` (5 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/cloudbase/garm-provider-openstack`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "cloudbase/garm-provider-openstack"
  * console.log(pkg.description) // "Garm external provider for OpenStack"
  * console.log(pkg.programs)    // ["garm-provider-openstack"]
- * console.log(pkg.versions[0]) // "0.1.3" (latest)
+ * console.log(pkg.versions[0]) // "0.1.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/cloudbase/garm-provider-openstack.md
@@ -67,6 +67,7 @@ export const garmprovideropenstackPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.1.4',
     '0.1.3',
     '0.1.2',
     '0.1.1',
