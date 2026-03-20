@@ -3,7 +3,7 @@
  *
  * @domain `gitlab.com/gitlab-org/gitlab-runner`
  * @programs `gitlab-runner`
- * @version `18.9.0` (101 versions available)
+ * @version `18.10.0` (102 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gitlab.com/gitlab-org/gitlab-runner`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gitlab-runner"
  * console.log(pkg.description) // "Official GitLab CI runner"
  * console.log(pkg.programs)    // ["gitlab-runner"]
- * console.log(pkg.versions[0]) // "18.9.0" (latest)
+ * console.log(pkg.versions[0]) // "18.10.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gitlab-com/gitlab-org/gitlab-runner.md
@@ -68,6 +68,7 @@ export const gitlabcomgitlaborggitlabrunnerPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '18.10.0',
     '18.9.0',
     '18.8.0',
     '18.7.2',

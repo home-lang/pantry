@@ -3,7 +3,7 @@
  *
  * @domain `budimanjojo.github.io/talhelper`
  * @programs `talhelper`
- * @version `3.1.6` (72 versions available)
+ * @version `3.1.7` (73 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install budimanjojo.github.io/talhelper`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "talhelper"
  * console.log(pkg.description) // "A tool to help creating Talos kubernetes cluster"
  * console.log(pkg.programs)    // ["talhelper"]
- * console.log(pkg.versions[0]) // "3.1.6" (latest)
+ * console.log(pkg.versions[0]) // "3.1.7" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/budimanjojo-github-io/talhelper.md
@@ -68,6 +68,7 @@ export const budimanjojogithubiotalhelperPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.1.7',
     '3.1.6',
     '3.1.5',
     '3.1.4',
