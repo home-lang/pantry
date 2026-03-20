@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/pik`
  * @programs `pik`
- * @version `0.29.0` (18 versions available)
+ * @version `0.30.0` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/pik`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "pik"
  * console.log(pkg.description) // "Process Interactive Kill"
  * console.log(pkg.programs)    // ["pik"]
- * console.log(pkg.versions[0]) // "0.29.0" (latest)
+ * console.log(pkg.versions[0]) // "0.30.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/pik.md
@@ -61,6 +61,7 @@ export const cratesiopikPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.30.0',
     '0.29.0',
     '0.28.1',
     '0.28.0',

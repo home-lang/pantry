@@ -3,7 +3,7 @@
  *
  * @domain `aws.amazon.com/cli`
  * @programs `aws`
- * @version `2.34.14` (1288 versions available)
+ * @version `2.34.14` (1289 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install aws.amazon.com/cli`
@@ -649,6 +649,7 @@ export const awsamazoncomcliPackage = {
     '2.11.7',
     '2.10.4',
     '2.10.3',
+    '1.44.63',
     '1.44.61',
     '1.44.60',
     '1.44.59',

@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 18 versions</summary>
+<summary>Show all 19 versions</summary>
 
+- `0.30.0`
 - `0.29.0`
 - `0.28.1`, `0.28.0`
 - `0.27.0`
@@ -44,13 +45,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.29.0`
+**Latest Version**: `0.30.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/pik@0.29.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/pik@0.30.0 -- $SHELL -i
 ```
 
 ## Usage Examples

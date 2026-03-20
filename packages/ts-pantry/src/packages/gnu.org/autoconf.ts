@@ -3,7 +3,7 @@
  *
  * @domain `gnu.org/autoconf`
  * @programs `autoconf`, `autoheader`, `autom4te`, `autoreconf`, `autoscan`, ... (+2 more)
- * @version `2.72.0` (2 versions available)
+ * @version `2.73.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnu.org/autoconf`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "autoconf"
  * console.log(pkg.description) // "Automatic configure script builder"
  * console.log(pkg.programs)    // ["autoconf", "autoheader", ...]
- * console.log(pkg.versions[0]) // "2.72.0" (latest)
+ * console.log(pkg.versions[0]) // "2.73.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnu-org/autoconf.md
@@ -82,6 +82,7 @@ export const gnuorgautoconfPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.73.0',
     '2.72.0',
     '2.71.0',
   ] as const,

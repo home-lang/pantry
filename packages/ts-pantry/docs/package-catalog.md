@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1401
 - **Categories**: 27
-- **Last Updated**: 2026-03-20T19:28:14.697Z
+- **Last Updated**: 2026-03-20T20:04:05.334Z
 
 ## Table of Contents
 
@@ -203,7 +203,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[github.com/bazelbuild/bazelisk](./packages/github.com/bazelbuild/bazelisk.md)** () | A user-friendly launcher for Bazel. | bazel, bazelisk | 1.28.1 (+12) | `pkgx bazel` |
 | **[github.com/bazelbuild/buildtools](./packages/github.com/bazelbuild/buildtools.md)** () | Format bazel BUILD files with a standard convention | buildifier | 8.5.1 (+11) | `pkgx buildifier` |
 | **[github.com/moby/buildkit](./packages/github.com/moby/buildkit.md)** () | concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit | buildctl | 0.28.0 (+38) | `pkgx buildkit` |
-| **[gnu.org/autoconf](./packages/gnu.org/autoconf/index.md)** () | Automatic configure script builder | autoconf, autoheader, autom4te, ... (+4) | 2.72.0 (+1) | `pkgx autoconf` |
+| **[gnu.org/autoconf](./packages/gnu.org/autoconf/index.md)** () | Automatic configure script builder | autoconf, autoheader, autom4te, ... (+4) | 2.73.0 (+2) | `pkgx autoconf` |
 | **[gnu.org/automake](./packages/gnu.org/automake/index.md)** () | Tool for generating GNU Standards-compliant Makefiles | aclocal, automake | 1.18.1 (+3) | `pkgx automake` |
 | **[gradle.org](./packages/gradle.org/index.md)** () | Open-source build automation tool based on the Groovy and Kotlin DSL | gradle | 9.4.1 (+28) | `pkgx gradle` |
 | **[just.systems](./packages/just.systems/index.md)** () | Handy way to save and run project-specific commands | just | 1.47.1 (+53) | `pkgx just` |
