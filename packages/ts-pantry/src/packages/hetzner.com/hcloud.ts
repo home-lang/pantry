@@ -3,7 +3,7 @@
  *
  * @domain `hetzner.com/hcloud`
  * @programs `hcloud`
- * @version `1.61.0` (33 versions available)
+ * @version `1.62.0` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install hetzner.com/hcloud`
@@ -17,7 +17,7 @@
  * console.log(pkg.name)        // "hcloud"
  * console.log(pkg.description) // "A command-line interface for Hetzner Cloud"
  * console.log(pkg.programs)    // ["hcloud"]
- * console.log(pkg.versions[0]) // "1.61.0" (latest)
+ * console.log(pkg.versions[0]) // "1.62.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/hetzner-com/hcloud.md
@@ -67,6 +67,7 @@ export const hetznercomhcloudPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.62.0',
     '1.61.0',
     '1.60.0',
     '1.59.0',

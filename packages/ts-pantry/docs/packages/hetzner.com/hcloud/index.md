@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 33 versions</summary>
+<summary>Show all 34 versions</summary>
 
+- `1.62.0`
 - `1.61.0`
 - `1.60.0`
 - `1.59.0`
@@ -56,13 +57,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.61.0`
+**Latest Version**: `1.62.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +hetzner.com/hcloud@1.61.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +hetzner.com/hcloud@1.62.0 -- $SHELL -i
 ```
 
 ## Usage Examples
