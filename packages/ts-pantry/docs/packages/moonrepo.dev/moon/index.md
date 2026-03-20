@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 86 versions</summary>
+<summary>Show all 87 versions</summary>
 
-- `2.1.0`
+- `2.1.1`, `2.1.0`
 - `2.0.4`, `2.0.3`, `2.0.1`, `2.0.0`
 - `1.41.8`, `1.41.7`, `1.41.6`, `1.41.5`, `1.41.4`, `1.41.3`, `1.41.2`, `1.41.1`, `1.41.0`
 - `1.40.5`, `1.40.4`, `1.40.3`, `1.40.2`, `1.40.1`, `1.40.0`
@@ -47,13 +47,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.1.0`
+**Latest Version**: `2.1.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +moonrepo.dev/moon@2.1.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +moonrepo.dev/moon@2.1.1 -- $SHELL -i
 ```
 
 ## Usage Examples
