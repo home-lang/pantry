@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 72 versions</summary>
+<summary>Show all 73 versions</summary>
 
+- `2.44.0`
 - `2.43.0`
 - `2.42.0`
 - `2.41.0`
@@ -86,13 +87,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.43.0`
+**Latest Version**: `2.44.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +squawkhq.com@2.43.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +squawkhq.com@2.44.0 -- $SHELL -i
 ```
 
 ## Usage Examples

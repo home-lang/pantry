@@ -3,7 +3,7 @@
  *
  * @domain `squawkhq.com`
  * @programs `squawk`
- * @version `2.43.0` (72 versions available)
+ * @version `2.44.0` (73 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install squawkhq.com`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "squawk"
  * console.log(pkg.description) // "🐘 linter for PostgreSQL, focused on migrations"
  * console.log(pkg.programs)    // ["squawk"]
- * console.log(pkg.versions[0]) // "2.43.0" (latest)
+ * console.log(pkg.versions[0]) // "2.44.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/squawkhq-com.md
@@ -69,6 +69,7 @@ export const squawkhqcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.44.0',
     '2.43.0',
     '2.42.0',
     '2.41.0',

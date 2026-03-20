@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/git-delta`
  * @programs `delta`
- * @version `0.18.2` (11 versions available)
+ * @version `0.19.0` (12 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/git-delta`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "delta"
  * console.log(pkg.description) // "A syntax-highlighting pager for git, diff, grep..."
  * console.log(pkg.programs)    // ["delta"]
- * console.log(pkg.versions[0]) // "0.18.2" (latest)
+ * console.log(pkg.versions[0]) // "0.19.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/git-delta.md
@@ -70,6 +70,7 @@ export const cratesiogitdeltaPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.19.0',
     '0.18.2',
     '0.18.1',
     '0.18.0',
