@@ -3,7 +3,7 @@
  *
  * @domain `f1bonacc1.github.io/process-compose`
  * @programs `process-compose`
- * @version `1.94.0` (24 versions available)
+ * @version `1.100.0` (25 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install f1bonacc1.github.io/process-compose`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "process-compose"
  * console.log(pkg.description) // "Process Compose is a simple and flexible schedu..."
  * console.log(pkg.programs)    // ["process-compose"]
- * console.log(pkg.versions[0]) // "1.94.0" (latest)
+ * console.log(pkg.versions[0]) // "1.100.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/f1bonacc1-github-io/process-compose.md
@@ -68,6 +68,7 @@ export const f1bonacc1githubioprocesscomposePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.100.0',
     '1.94.0',
     '1.90.0',
     '1.87.0',
