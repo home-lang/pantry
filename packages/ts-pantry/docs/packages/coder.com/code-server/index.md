@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 66 versions</summary>
+<summary>Show all 67 versions</summary>
 
+- `4.112.0`
 - `4.111.0`
 - `4.110.1`, `4.110.0`
 - `4.109.5`, `4.109.2`, `4.109.0`
@@ -56,13 +57,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.111.0`
+**Latest Version**: `4.112.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +coder.com/code-server@4.111.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +coder.com/code-server@4.112.0 -- $SHELL -i
 ```
 
 ## Dependencies
