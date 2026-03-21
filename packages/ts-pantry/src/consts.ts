@@ -1,7 +1,7 @@
 /**
- * Constants used throughout the ts-pantry package
+ * Constants used throughout the ts-pkgx package
  * This file is auto-generated from pantry. Do not edit manually.
- * Generated on 2026-03-15T15:46:21.846Z
+ * Generated on 2026-03-21T02:44:17.645Z
  */
 
 /**
@@ -44,7 +44,7 @@ export const PACKAGE_ALIASES: Record<string, string> = {
 } as const
 
 /**
- * List of all known packages (1664 total)
+ * List of all known packages (1665 total)
  */
 export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'abseil.io',
@@ -1074,6 +1074,7 @@ export const ALL_KNOWN_PACKAGES: readonly string[] = [
   'jless.io',
   'jonas.github.io/tig',
   'jpeg.org/jpegxl',
+  'json.nlohmann.me',
   'jsonnet.org',
   'jugit.fz-juelich.de/mlz/libcerf',
   'juju.is',
