@@ -1,0 +1,25 @@
+distributable:
+  url: https://github.com/tw93/Mole/archive/refs/tags/V{{ version }}.tar.gz
+  strip-components: 1
+
+versions:
+  github: tw93/Mole
+  strip: /^V/
+
+platforms:
+  - darwin
+
+dependencies: {}
+
+build:
+  dependencies:
+    curl.se: '*'
+  script:
+    - echo "overridden by package-overrides.ts"
+
+provides:
+  - bin/mole
+  - bin/mo
+
+test:
+  - mole --version

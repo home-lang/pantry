@@ -10085,4 +10085,73 @@ else if (typeof step.run === 'string') {
     },
   },
 
+  // ─── github.com/tw93/mole — macOS deep clean & optimize CLI ──────────
+  'github.com/tw93/mole': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.dependencies = {}
+      recipe.distributable = undefined
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'ARCH=$(uname -m)',
+            'ARCH_SUFFIX="amd64"',
+            'if [ "$ARCH" = "arm64" ]; then',
+            '  ARCH_SUFFIX="arm64"',
+            'fi',
+            '',
+            '# Download source archive for shell scripts and lib/',
+            'curl -fSL -o /tmp/mole-source.tar.gz "https://github.com/tw93/Mole/archive/refs/tags/V{{version}}.tar.gz"',
+            'mkdir -p /tmp/mole-source',
+            'tar -xzf /tmp/mole-source.tar.gz -C /tmp/mole-source --strip-components=1',
+            '',
+            '# Download pre-built Go binaries',
+            'curl -fSL -o /tmp/mole-binaries.tar.gz "https://github.com/tw93/Mole/releases/download/V{{version}}/binaries-darwin-${ARCH_SUFFIX}.tar.gz"',
+            'mkdir -p /tmp/mole-binaries',
+            'tar -xzf /tmp/mole-binaries.tar.gz -C /tmp/mole-binaries',
+            '',
+            '# Install to libexec/mole/ (keeps SCRIPT_DIR-relative structure intact)',
+            'mkdir -p "{{prefix}}/libexec/mole/bin" "{{prefix}}/libexec/mole/lib" "{{prefix}}/bin"',
+            '',
+            '# Copy main scripts',
+            'cp /tmp/mole-source/mole "{{prefix}}/libexec/mole/mole"',
+            'chmod +x "{{prefix}}/libexec/mole/mole"',
+            '',
+            '# Copy subcommand shell scripts',
+            'cp /tmp/mole-source/bin/*.sh "{{prefix}}/libexec/mole/bin/"',
+            'chmod +x "{{prefix}}/libexec/mole/bin/"*.sh',
+            '',
+            '# Copy shell libraries',
+            'cp -r /tmp/mole-source/lib/* "{{prefix}}/libexec/mole/lib/"',
+            '',
+            '# Install Go binaries alongside the shell scripts that invoke them',
+            'cp /tmp/mole-binaries/analyze-darwin-${ARCH_SUFFIX} "{{prefix}}/libexec/mole/bin/analyze-go"',
+            'cp /tmp/mole-binaries/status-darwin-${ARCH_SUFFIX} "{{prefix}}/libexec/mole/bin/status-go"',
+            'chmod +x "{{prefix}}/libexec/mole/bin/analyze-go" "{{prefix}}/libexec/mole/bin/status-go"',
+            '',
+            '# Create bin/mole wrapper that execs the real script',
+            'cat > "{{prefix}}/bin/mole" << \'WRAPPER\'',
+            '#!/bin/bash',
+            'set -euo pipefail',
+            'REAL_DIR="$(cd "$(dirname "$0")/../libexec/mole" && pwd)"',
+            'exec "$REAL_DIR/mole" "$@"',
+            'WRAPPER',
+            'chmod +x "{{prefix}}/bin/mole"',
+            '',
+            '# Create bin/mo alias',
+            'cat > "{{prefix}}/bin/mo" << \'WRAPPER\'',
+            '#!/bin/bash',
+            'set -euo pipefail',
+            'REAL_DIR="$(cd "$(dirname "$0")/../libexec/mole" && pwd)"',
+            'exec "$REAL_DIR/mole" "$@"',
+            'WRAPPER',
+            'chmod +x "{{prefix}}/bin/mo"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
 }
