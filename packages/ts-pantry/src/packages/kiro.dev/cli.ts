@@ -3,7 +3,7 @@
  *
  * @domain `kiro.dev/cli`
  * @programs `kiro-cli`
- * @version `1.28.0` (6 versions available)
+ * @version `1.28.1` (7 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install kiro.dev/cli`
@@ -16,7 +16,7 @@
  * const pkg = pantry.kirodevcli
  * console.log(pkg.name)        // "cli"
  * console.log(pkg.programs)    // ["kiro-cli"]
- * console.log(pkg.versions[0]) // "1.28.0" (latest)
+ * console.log(pkg.versions[0]) // "1.28.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/kiro-dev/cli.md
@@ -66,6 +66,7 @@ export const kirodevcliPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.28.1',
     '1.28.0',
     '1.27.3',
     '1.27.2',
