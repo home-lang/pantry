@@ -3,7 +3,7 @@
  *
  * @domain `gitleaks.io`
  * @programs `gitleaks`
- * @version `8.30.0` (33 versions available)
+ * @version `8.30.1` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gitleaks.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gitleaks"
  * console.log(pkg.description) // "Find secrets with Gitleaks 🔑"
  * console.log(pkg.programs)    // ["gitleaks"]
- * console.log(pkg.versions[0]) // "8.30.0" (latest)
+ * console.log(pkg.versions[0]) // "8.30.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gitleaks-io.md
@@ -68,6 +68,7 @@ export const gitleaksioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.30.1',
     '8.30.0',
     '8.29.1',
     '8.29.0',

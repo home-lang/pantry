@@ -3,7 +3,7 @@
  *
  * @domain `etcd.io`
  * @programs `etcd`, `etcdctl`
- * @version `3.6.8` (29 versions available)
+ * @version `3.6.9` (32 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install etcd.io`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "etcd"
  * console.log(pkg.description) // "Distributed reliable key-value store for the mo..."
  * console.log(pkg.programs)    // ["etcd", "etcdctl"]
- * console.log(pkg.versions[0]) // "3.6.8" (latest)
+ * console.log(pkg.versions[0]) // "3.6.9" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/etcd-io.md
@@ -69,6 +69,7 @@ export const etcdioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '3.6.9',
     '3.6.8',
     '3.6.7',
     '3.6.6',
@@ -78,6 +79,7 @@ export const etcdioPackage = {
     '3.6.2',
     '3.6.1',
     '3.6.0',
+    '3.5.28',
     '3.5.27',
     '3.5.26',
     '3.5.25',
@@ -92,6 +94,7 @@ export const etcdioPackage = {
     '3.5.16',
     '3.5.15',
     '3.5.14',
+    '3.4.42',
     '3.4.41',
     '3.4.40',
     '3.4.39',

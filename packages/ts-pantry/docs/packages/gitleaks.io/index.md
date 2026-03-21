@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 33 versions</summary>
+<summary>Show all 34 versions</summary>
 
-- `8.30.0`
+- `8.30.1`, `8.30.0`
 - `8.29.1`, `8.29.0`
 - `8.28.0`
 - `8.27.2`, `8.27.1`, `8.27.0`
@@ -43,13 +43,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `8.30.0`
+**Latest Version**: `8.30.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +gitleaks.io@8.30.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +gitleaks.io@8.30.1 -- $SHELL -i
 ```
 
 ## Usage Examples

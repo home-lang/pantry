@@ -1029,6 +1029,7 @@ import { jlessioPackage } from './jlessio'
 import { jonasgithubiotigPackage } from './jonas.github.io/tig'
 import { jpegorgjpegxlPackage } from './jpeg.org/jpegxl'
 import { jsonnetorgPackage } from './jsonnetorg'
+import { jsonnlohmannmePackage } from './jsonnlohmannme'
 import { jugitfzjuelichdemlzlibcerfPackage } from './jugit.fz-juelich.de/mlz/libcerf'
 import { jujuisPackage } from './jujuis'
 import { julialangorgjuliaupPackage } from './julialang.org/juliaup'
@@ -3530,6 +3531,7 @@ export interface Pantry {
 
   jpegorgjpegxl: typeof jpegorgjpegxlPackage
   jsonnetorg: typeof jsonnetorgPackage
+  jsonnlohmannme: typeof jsonnlohmannmePackage
 
   jugitfzjuelichdemlz: typeof jugitfzjuelichdemlzlibcerfPackage
   jujuis: typeof jujuisPackage
@@ -7939,6 +7941,7 @@ export const pantry: Pantry = {
 
   jpegorgjpegxl: jpegorgjpegxlPackage,
   jsonnetorg: jsonnetorgPackage,
+  jsonnlohmannme: jsonnlohmannmePackage,
 
   jugitfzjuelichdemlz: jugitfzjuelichdemlzlibcerfPackage,
   jujuis: jujuisPackage,
