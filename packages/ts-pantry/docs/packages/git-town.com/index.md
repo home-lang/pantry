@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 69 versions</summary>
+<summary>Show all 70 versions</summary>
 
+- `22.7.0`
 - `22.6.0`
 - `22.5.0`
 - `22.4.0`
@@ -79,13 +80,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `22.6.0`
+**Latest Version**: `22.7.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +git-town.com@22.6.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +git-town.com@22.7.0 -- $SHELL -i
 ```
 
 ## Usage Examples
