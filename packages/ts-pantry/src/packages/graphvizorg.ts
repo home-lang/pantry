@@ -3,7 +3,7 @@
  *
  * @domain `graphviz.org`
  * @programs `acyclic`, `bcomps`, `ccomps`, `circo`, `cluster`, ... (+30 more)
- * @version `14.1.3` (25 versions available)
+ * @version `14.1.4` (26 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install graphviz.org`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "graphviz"
  * console.log(pkg.description) // "Graph visualization software from AT&T and Bell..."
  * console.log(pkg.programs)    // ["acyclic", "bcomps", ...]
- * console.log(pkg.versions[0]) // "14.1.3" (latest)
+ * console.log(pkg.versions[0]) // "14.1.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/graphviz-org.md
@@ -111,6 +111,7 @@ export const graphvizorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '14.1.4',
     '14.1.3',
     '14.1.2',
     '14.1.1',

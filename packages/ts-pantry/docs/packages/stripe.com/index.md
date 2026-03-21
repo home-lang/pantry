@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 74 versions</summary>
+<summary>Show all 75 versions</summary>
 
-- `1.38.0`
+- `1.38.1`, `1.38.0`
 - `1.37.8`, `1.37.7`, `1.37.6`, `1.37.5`, `1.37.4`, `1.37.3`, `1.37.2`, `1.37.1`, `1.37.0`
 - `1.36.0`
 - `1.35.1`, `1.35.0`
@@ -56,13 +56,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.38.0`
+**Latest Version**: `1.38.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +stripe.com@1.38.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +stripe.com@1.38.1 -- $SHELL -i
 ```
 
 ## Usage Examples
