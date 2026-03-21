@@ -3,7 +3,7 @@
  *
  * @domain `github.com/dundee/gdu`
  * @programs `gdu`
- * @version `5.34.1` (8 versions available)
+ * @version `5.34.2` (9 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/dundee/gdu`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "gdu"
  * console.log(pkg.description) // "Fast disk usage analyzer with console interface..."
  * console.log(pkg.programs)    // ["gdu"]
- * console.log(pkg.versions[0]) // "5.34.1" (latest)
+ * console.log(pkg.versions[0]) // "5.34.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/dundee/gdu.md
@@ -68,6 +68,7 @@ export const gduPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.34.2',
     '5.34.1',
     '5.34.0',
     '5.33.0',

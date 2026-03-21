@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 8 versions</summary>
+<summary>Show all 9 versions</summary>
 
-- `5.34.1`, `5.34.0`
+- `5.34.2`, `5.34.1`, `5.34.0`
 - `5.33.0`
 - `5.32.0`
 - `5.31.0`
@@ -36,13 +36,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `5.34.1`
+**Latest Version**: `5.34.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +github.com/dundee/gdu@5.34.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +github.com/dundee/gdu@5.34.2 -- $SHELL -i
 ```
 
 ## Usage Examples
