@@ -2,7 +2,7 @@
  * **rustls-ffi** - Use Rustls from any language
  *
  * @domain `crates.io/rustls-ffi`
- * @version `0.15.0` (10 versions available)
+ * @version `0.15.1` (11 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/rustls-ffi`
@@ -15,7 +15,7 @@
  * const pkg = pantry.cratesiorustlsffi
  * console.log(pkg.name)        // "rustls-ffi"
  * console.log(pkg.description) // "Use Rustls from any language"
- * console.log(pkg.versions[0]) // "0.15.0" (latest)
+ * console.log(pkg.versions[0]) // "0.15.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/rustls-ffi.md
@@ -59,6 +59,7 @@ export const cratesiorustlsffiPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.15.1',
     '0.15.0',
     '0.14.1',
     '0.14.0',
