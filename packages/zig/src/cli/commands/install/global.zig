@@ -198,7 +198,7 @@ pub fn installPackagesGloballyCommand(allocator: std.mem.Allocator, packages: []
     const global_dir = blk: {
         // Try /usr/local first - test actual write permissions
         io_helper.makePath("/usr/local/packages") catch |err| {
-            if (err == error.AccessDenied or err == error.PermissionDenied) {
+            if (err == error.AccessDenied or err == error.PermissionDenied or err == error.MakePathFailed) {
                 // Fallback to ~/.pantry/global
                 const home = try lib.Paths.home(allocator);
                 defer allocator.free(home);
