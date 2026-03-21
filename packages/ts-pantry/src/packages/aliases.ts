@@ -882,6 +882,7 @@ export const aliases: Record<string, string> = {
   'mockgen': 'go.uber.org/mock/mockgen',
   'modal': 'modal.com',
   'mods': 'charm.sh/mods',
+  'mole': 'github.com/tw93/mole',
   'mongodb': 'mongodb.com',
   'mongosh': 'mongodb.com/shell',
   'moon': 'moonrepo.dev/moon',
