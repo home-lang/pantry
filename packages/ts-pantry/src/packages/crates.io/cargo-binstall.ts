@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/cargo-binstall`
  * @programs `cargo-binstall`
- * @version `1.17.7` (18 versions available)
+ * @version `1.17.8` (19 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/cargo-binstall`
@@ -15,7 +15,7 @@
  * const pkg = pantry.cratesiocargobinstall
  * console.log(pkg.name)        // "cargo-binstall"
  * console.log(pkg.programs)    // ["cargo-binstall"]
- * console.log(pkg.versions[0]) // "1.17.7" (latest)
+ * console.log(pkg.versions[0]) // "1.17.8" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/cargo-binstall.md
@@ -59,6 +59,7 @@ export const cratesiocargobinstallPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.17.8',
     '1.17.7',
     '1.17.6',
     '1.17.5',
