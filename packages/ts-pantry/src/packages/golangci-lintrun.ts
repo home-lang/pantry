@@ -3,7 +3,7 @@
  *
  * @domain `golangci-lint.run`
  * @programs `golangci-lint`
- * @version `2.11.3` (73 versions available)
+ * @version `2.11.4` (74 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install golangci-lint.run`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "golangci-lint"
  * console.log(pkg.description) // "Fast linters runner for Go"
  * console.log(pkg.programs)    // ["golangci-lint"]
- * console.log(pkg.versions[0]) // "2.11.3" (latest)
+ * console.log(pkg.versions[0]) // "2.11.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/golangci-lint-run.md
@@ -68,6 +68,7 @@ export const golangcilintrunPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.11.4',
     '2.11.3',
     '2.11.2',
     '2.11.1',
