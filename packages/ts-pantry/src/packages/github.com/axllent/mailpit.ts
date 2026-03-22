@@ -3,7 +3,7 @@
  *
  * @domain `github.com/axllent/mailpit`
  * @programs `mailpit`
- * @version `1.29.3` (90 versions available)
+ * @version `1.29.4` (91 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/axllent/mailpit`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "mailpit"
  * console.log(pkg.description) // "An email and SMTP testing tool with API for dev..."
  * console.log(pkg.programs)    // ["mailpit"]
- * console.log(pkg.versions[0]) // "1.29.3" (latest)
+ * console.log(pkg.versions[0]) // "1.29.4" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/axllent/mailpit.md
@@ -78,6 +78,7 @@ export const mailpitPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.29.4',
     '1.29.3',
     '1.29.2',
     '1.29.1',
