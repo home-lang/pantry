@@ -604,6 +604,19 @@ export function createHandler(
         return await handleSiteStats(analyticsStorage)
       }
 
+      // Fonts — serve self-hosted font files
+      if (path.startsWith('/fonts/')) {
+        const fontFile = Bun.file(resolve(__dirname, '../../../public', path.slice(1)))
+        if (await fontFile.exists()) {
+          return new Response(fontFile, {
+            headers: {
+              'Content-Type': 'font/woff2',
+              'Cache-Control': 'public, max-age=31536000, immutable',
+            },
+          })
+        }
+      }
+
       // Docs — serve bunpress-built static docs
       if (path === '/docs' || path.startsWith('/docs/')) {
         return await handleDocs(path)

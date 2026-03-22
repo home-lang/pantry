@@ -123,7 +123,7 @@
           <!-- Grid lines -->
           @foreach (multiLineChart.yLabels as yLabel)
           <line x1="45" y1="{{ yLabel.y }}" x2="{{ multiLineChart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
-          <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! yLabel.label !!}</text>
+          <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'Lilex', monospace;">{!! yLabel.label !!}</text>
           @endforeach
 
           <!-- Lines for each package -->
@@ -133,7 +133,7 @@
 
           <!-- X-axis labels -->
           @foreach (multiLineChart.xLabels as xLabel)
-          <text x="{{ xLabel.x }}" y="{{ multiLineChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
+          <text x="{{ xLabel.x }}" y="{{ multiLineChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'Lilex', monospace;">{!! xLabel.label !!}</text>
           @endforeach
         </svg>
 

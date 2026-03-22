@@ -224,7 +224,7 @@
               <svg width="{{ lineChart.width }}" height="{{ lineChart.height }}" viewBox="0 0 {{ lineChart.width }} {{ lineChart.height }}" style="width: 100%; height: auto;">
                 @foreach (lineChart.yLabels as yLabel)
                 <line x1="45" y1="{{ yLabel.y }}" x2="{{ lineChart.width - 10 }}" y2="{{ yLabel.y }}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="4,4" />
-                <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! yLabel.label !!}</text>
+                <text x="40" y="{{ yLabel.y }}" text-anchor="end" dominant-baseline="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'Lilex', monospace;">{!! yLabel.label !!}</text>
                 @endforeach
                 <defs>
                   <linearGradient id="pkgAreaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -240,7 +240,7 @@
                 </circle>
                 @endforeach
                 @foreach (lineChart.xLabels as xLabel)
-                <text x="{{ xLabel.x }}" y="{{ lineChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'JetBrains Mono', monospace;">{!! xLabel.label !!}</text>
+                <text x="{{ xLabel.x }}" y="{{ lineChart.height - 4 }}" text-anchor="middle" fill="var(--fg-subtle)" style="font-size: 10px; font-family: 'Lilex', monospace;">{!! xLabel.label !!}</text>
                 @endforeach
               </svg>
             </div>
