@@ -434,7 +434,8 @@ pub const ShimType = enum {
 pub fn detectShimType(file_path: []const u8) ShimType {
     if (std.mem.endsWith(u8, file_path, ".js") or
         std.mem.endsWith(u8, file_path, ".mjs") or
-        std.mem.endsWith(u8, file_path, ".cjs"))
+        std.mem.endsWith(u8, file_path, ".cjs") or
+        std.mem.endsWith(u8, file_path, ".ts"))
     {
         return .node;
     }
@@ -445,7 +446,7 @@ pub fn detectShimType(file_path: []const u8) ShimType {
 }
 
 /// Create a cross-platform shim for a binary
-/// For JS files: creates shell/cmd scripts that invoke node
+/// For JS/TS files: creates shell/cmd scripts that invoke bun
 /// For native files: creates symlink (Unix) or copy (Windows)
 pub fn createShim(
     allocator: std.mem.Allocator,
@@ -505,7 +506,7 @@ fn createScriptShim(
         .node => try std.fmt.allocPrint(allocator,
             \\#!/bin/sh
             \\basedir=$(dirname "$(echo "$0" | sed -e 's,\\,/,g')")
-            \\exec node "{s}" "$@"
+            \\exec bun "{s}" "$@"
             \\
         , .{target_path}),
         .shell => try std.fmt.allocPrint(allocator,
@@ -549,8 +550,8 @@ fn createScriptShim(
             .node => try std.fmt.allocPrint(allocator,
                 \\@ECHO off
                 \\SETLOCAL
-                \\SET "NODE_EXE=node"
-                \\"%NODE_EXE%" "{s}" %*
+                \\SET "BUN_EXE=bun"
+                \\"%BUN_EXE%" "{s}" %*
                 \\
             , .{target_path}),
             .shell => try std.fmt.allocPrint(allocator,

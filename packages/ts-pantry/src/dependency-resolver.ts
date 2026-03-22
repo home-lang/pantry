@@ -336,6 +336,14 @@ async function getAvailableVersionsFromPackage(packageName: string): Promise<str
       pkg = allPackages.find((p: any) => p.domain === packageName)
     }
 
+    // If domain lookup also fails, try searching by aliases (e.g., bun.com → bun.sh)
+    if (!pkg) {
+      const allPackages = Object.values(packages as any)
+      pkg = allPackages.find((p: any) =>
+        Array.isArray(p.aliases) && p.aliases.includes(packageName),
+      )
+    }
+
     if (pkg && pkg.versions && Array.isArray(pkg.versions)) {
       return pkg.versions
     }

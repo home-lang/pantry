@@ -166,6 +166,15 @@ version: 1.0.0
       const result = await resolveVersionConstraint('unknown.package', '^1.0.0')
       expect(result).toBe('1.0.0')
     })
+
+    test('should resolve package aliases (e.g., bun.com → bun.sh)', async () => {
+      const result = await resolveVersionConstraint('bun.com', '^1.3.1')
+      // bun.com is an alias for bun.sh — should resolve to a real version, not just strip the prefix
+      expect(result).toMatch(/^1\.\d+\.\d+$/)
+      expect(compareVersions(result, '1.3.1')).toBeGreaterThanOrEqual(0)
+      // Should NOT just return the constraint stripped of its prefix (the old bug behavior)
+      expect(result).not.toBe('1.3.1')
+    })
   })
 
   describe('Version Resolution Fixes', () => {
