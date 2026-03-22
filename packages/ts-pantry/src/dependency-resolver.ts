@@ -510,13 +510,22 @@ export function compareVersions(version1: string, version2: string): number {
   return 0
 }
 
+// Cache the imported package index to avoid re-importing on every lookup
+let _cachedPackages: any = null
+async function getPackages(): Promise<any> {
+  if (_cachedPackages) return _cachedPackages
+  const mod = await import('./packages/index.js').catch(() => import('./index.js'))
+  _cachedPackages = mod.packages
+  return _cachedPackages
+}
+
 /**
  * Read package info from generated package data
  */
 async function readPackageInfo(packageName: string): Promise<Partial<PkgxPackage> | null> {
   try {
     // Import the package index to get access to the generated packages
-    const { packages } = await import('./packages/index.js').catch(() => import('./index.js'))
+    const packages = await getPackages()
 
     const exactPkg = (packages as any)[packageName]
 
@@ -592,112 +601,64 @@ export async function resolveTransitiveDependencies(
     // Get package info from generated packages
     const packageInfo = await readPackageInfo(packageName)
 
-    if (packageInfo && packageInfo.dependencies) {
-      for (const dep of packageInfo.dependencies) {
-        // Parse dependency string (e.g., "openssl.org@1.1", "linux:gnu.org/gcc@*")
-        const osMatch = dep.match(/^(linux|darwin|windows):(.+)$/)
-        const isOsSpecific = !!osMatch
-        const depName = osMatch ? osMatch[2] : dep
-        const osType = osMatch ? osMatch[1] : undefined
+    // Helper to parse a dependency string into a Dependency + resolve transitives
+    function parseDep(raw: string): { dep: Dependency, pkgName: string } | null {
+      const osMatch = raw.match(/^(linux|darwin|windows):(.+)$/)
+      const isOsSpecific = !!osMatch
+      const depName = osMatch ? osMatch[2] : raw
+      const osType = osMatch ? osMatch[1] : undefined
 
-        // Skip OS-specific deps if not including them or wrong OS
-        if (isOsSpecific && (!includeOsSpecific || (targetOs && osType !== targetOs))) {
-          continue
-        }
+      if (isOsSpecific && (!includeOsSpecific || (targetOs && osType !== targetOs))) {
+        return null
+      }
 
-        // Parse package name and version constraint
-        let packageName = depName
-        let version = 'latest'
-        let constraint = '*'
+      let pkgName = depName
+      let version = 'latest'
+      let constraint = '*'
 
-        const versionMatch = depName.match(/^([^@^~>=<]+)([@^~>=<].+)?$/)
-        if (versionMatch) {
-          packageName = versionMatch[1]
-          if (versionMatch[2]) {
-            const versionPart = versionMatch[2]
-            if (versionPart.startsWith('@')) {
-              version = versionPart.substring(1)
-              constraint = versionPart
-            }
-            else {
-              constraint = versionPart
-              version = versionPart.replace(/^\D*/, '')
-            }
+      const versionMatch = depName.match(/^([^@^~>=<]+)([@^~>=<].+)?$/)
+      if (versionMatch) {
+        pkgName = versionMatch[1]
+        if (versionMatch[2]) {
+          const versionPart = versionMatch[2]
+          if (versionPart.startsWith('@')) {
+            version = versionPart.substring(1)
+            constraint = versionPart
+          }
+          else {
+            constraint = versionPart
+            version = versionPart.replace(/^\D*/, '')
           }
         }
+      }
 
-        const dependency: Dependency = {
-          name: packageName,
-          version,
-          constraint,
-          isOsSpecific,
-          os: osType,
-        }
-
-        allDependencies.push(dependency)
-
-        // Recursively resolve transitive dependencies
-        const transitiveDeps = await resolveTransitiveDependencies(
-          packageName,
-          options,
-          visited,
-          depth + 1,
-        )
-        allDependencies.push(...transitiveDeps)
+      return {
+        dep: { name: pkgName, version, constraint, isOsSpecific, os: osType },
+        pkgName,
       }
     }
 
-    // Also check companions (runtime dependencies)
-    if (packageInfo && packageInfo.companions) {
-      for (const comp of packageInfo.companions) {
-        const osMatch = comp.match(/^(linux|darwin|windows):(.+)$/)
-        const isOsSpecific = !!osMatch
-        const compName = osMatch ? osMatch[2] : comp
-        const osType = osMatch ? osMatch[1] : undefined
+    // Collect all deps + companions, then resolve transitives in parallel
+    const allRaw = [
+      ...(packageInfo?.dependencies || []),
+      ...(packageInfo?.companions || []),
+    ]
 
-        if (isOsSpecific && (!includeOsSpecific || (targetOs && osType !== targetOs))) {
-          continue
-        }
+    const parsed = allRaw.map(parseDep).filter((d): d is NonNullable<typeof d> => d !== null)
 
-        let packageName = compName
-        let version = 'latest'
-        let constraint = '*'
+    for (const { dep } of parsed) {
+      allDependencies.push(dep)
+    }
 
-        const versionMatch = compName.match(/^([^@^~>=<]+)([@^~>=<].+)?$/)
-        if (versionMatch) {
-          packageName = versionMatch[1]
-          if (versionMatch[2]) {
-            const versionPart = versionMatch[2]
-            if (versionPart.startsWith('@')) {
-              version = versionPart.substring(1)
-              constraint = versionPart
-            }
-            else {
-              constraint = versionPart
-              version = versionPart.replace(/^\D*/, '')
-            }
-          }
-        }
+    // Resolve all transitive deps in parallel
+    const transitiveResults = await Promise.all(
+      parsed.map(({ pkgName }) =>
+        resolveTransitiveDependencies(pkgName, options, visited, depth + 1),
+      ),
+    )
 
-        const companion: Dependency = {
-          name: packageName,
-          version,
-          constraint,
-          isOsSpecific,
-          os: osType,
-        }
-
-        allDependencies.push(companion)
-
-        // Recursively resolve transitive dependencies for companions too
-        const transitiveDeps = await resolveTransitiveDependencies(
-          packageName,
-          options,
-          visited,
-          depth + 1,
-        )
-        allDependencies.push(...transitiveDeps)
-      }
+    for (const transitive of transitiveResults) {
+      allDependencies.push(...transitive)
     }
   }
   catch (error) {
@@ -824,15 +785,19 @@ export async function resolveDependencyFile(
     console.log(`Found ${directDependencies.length} direct dependencies`)
   }
 
-  // Resolve transitive dependencies for each direct dependency
+  // Resolve transitive dependencies for all direct dependencies in parallel
   const allDependencies: Dependency[] = [...directDependencies]
 
-  for (const dep of directDependencies) {
-    if (verbose) {
-      console.log(`Resolving transitive dependencies for: ${dep.name}`)
-    }
+  const transitiveResults = await Promise.all(
+    directDependencies.map(async (dep) => {
+      if (verbose) {
+        console.log(`Resolving transitive dependencies for: ${dep.name}`)
+      }
+      return resolveTransitiveDependencies(dep.name, options)
+    }),
+  )
 
-    const transitive = await resolveTransitiveDependencies(dep.name, options)
+  for (const transitive of transitiveResults) {
     allDependencies.push(...transitive)
   }
 

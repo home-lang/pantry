@@ -3344,28 +3344,25 @@ pub const Installer = struct {
     fn installDependencies(self: *Installer, dependencies: []const []const u8, options: InstallOptions) !void {
         if (dependencies.len == 0) return;
 
-        // Track if any critical dependency failed
-        var has_critical_failure = false;
-        var first_error: ?anyerror = null;
+        const Platform = @import("../core/platform.zig").Platform;
+        const current_platform = Platform.current();
+
+        // 1. Filter applicable dependencies (skip wrong-platform deps)
+        var applicable: std.ArrayList(struct { dep: []const u8, is_optional: bool }) = .empty;
+        defer applicable.deinit(self.allocator);
 
         for (dependencies) |dep_str| {
-            // Check if this is an optional dependency (ends with # comment)
             const is_optional = std.mem.indexOf(u8, dep_str, "#") != null;
 
-            // Skip platform-specific dependencies that don't apply
             if (std.mem.startsWith(u8, dep_str, "linux:") or
                 std.mem.startsWith(u8, dep_str, "darwin:") or
                 std.mem.startsWith(u8, dep_str, "windows:") or
                 std.mem.startsWith(u8, dep_str, "freebsd:"))
             {
-                // Parse platform prefix
                 const colon_pos = std.mem.indexOf(u8, dep_str, ":") orelse continue;
                 const platform = dep_str[0..colon_pos];
                 const actual_dep = dep_str[colon_pos + 1 ..];
 
-                // Check if this platform applies to us
-                const Platform = @import("../core/platform.zig").Platform;
-                const current_platform = Platform.current();
                 const matches = blk: {
                     if (std.mem.eql(u8, platform, "linux") and current_platform == .linux) break :blk true;
                     if (std.mem.eql(u8, platform, "darwin") and current_platform == .darwin) break :blk true;
@@ -3374,32 +3371,85 @@ pub const Installer = struct {
                     break :blk false;
                 };
 
-                if (!matches) continue;
-
-                // Install the actual dependency
-                self.installDependency(actual_dep, options) catch |err| {
-                    if (!style.isCI()) style.print("  ! Failed to install dependency {s}: {}\n", .{ actual_dep, err });
-                    if (!is_optional and !has_critical_failure) {
-                        has_critical_failure = true;
-                        first_error = err;
-                    }
-                };
+                if (matches) {
+                    applicable.append(self.allocator, .{ .dep = actual_dep, .is_optional = is_optional }) catch continue;
+                }
             } else {
-                // Regular dependency
-                self.installDependency(dep_str, options) catch |err| {
-                    if (!style.isCI()) style.print("  ! Failed to install dependency {s}: {}\n", .{ dep_str, err });
-                    if (!is_optional and !has_critical_failure) {
-                        has_critical_failure = true;
-                        first_error = err;
-                    }
-                };
+                applicable.append(self.allocator, .{ .dep = dep_str, .is_optional = is_optional }) catch continue;
             }
         }
 
-        // If any critical dependency failed, propagate the error
-        if (has_critical_failure) {
-            if (first_error) |err| {
-                return err;
+        if (applicable.items.len == 0) return;
+
+        // 2. Install in parallel using thread pool
+        const DepResult = struct { err: ?anyerror, is_optional: bool };
+        const results = self.allocator.alloc(DepResult, applicable.items.len) catch {
+            // Fallback to sequential on alloc failure
+            for (applicable.items) |item| {
+                self.installDependency(item.dep, options) catch |err| {
+                    if (!item.is_optional) return err;
+                };
+            }
+            return;
+        };
+        defer self.allocator.free(results);
+        @memset(results, .{ .err = null, .is_optional = false });
+
+        const DepCtx = struct {
+            items: []const struct { dep: []const u8, is_optional: bool },
+            results: []DepResult,
+            next: *std.atomic.Value(usize),
+            installer: *Installer,
+            options: InstallOptions,
+
+            fn worker(ctx: *@This()) void {
+                while (true) {
+                    const i = ctx.next.fetchAdd(1, .monotonic);
+                    if (i >= ctx.items.len) break;
+
+                    const item = ctx.items[i];
+                    ctx.results[i].is_optional = item.is_optional;
+                    ctx.installer.installDependency(item.dep, ctx.options) catch |err| {
+                        if (!style.isCI()) style.print("  ! Failed to install dependency {s}: {}\n", .{ item.dep, err });
+                        ctx.results[i].err = err;
+                    };
+                }
+            }
+        };
+
+        var next_idx = std.atomic.Value(usize).init(0);
+        var ctx = DepCtx{
+            .items = applicable.items,
+            .results = results,
+            .next = &next_idx,
+            .installer = self,
+            .options = options,
+        };
+
+        const cpu_count = std.Thread.getCpuCount() catch 4;
+        const max_threads = @min(cpu_count, 8);
+        const thread_count = @min(applicable.items.len, max_threads);
+
+        if (thread_count <= 1) {
+            // Single dep: just run inline, no thread overhead
+            DepCtx.worker(&ctx);
+        } else {
+            var threads: [8]?std.Thread = .{ null, null, null, null, null, null, null, null };
+            for (0..thread_count) |t| {
+                threads[t] = std.Thread.spawn(.{}, DepCtx.worker, .{&ctx}) catch null;
+            }
+            for (&threads) |*t| {
+                if (t.*) |thread| {
+                    thread.join();
+                    t.* = null;
+                }
+            }
+        }
+
+        // Check for critical failures
+        for (results) |result| {
+            if (result.err != null and !result.is_optional) {
+                return result.err.?;
             }
         }
     }
