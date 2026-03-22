@@ -410,10 +410,49 @@ pub const Installer = struct {
                 const key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ pkg_name, suffix }) catch continue;
                 self.npm_cache.putResolution(key, version, tarball, integrity);
             }
-            // Also cache the exact version
+            // Also cache the exact resolved version
             {
                 const key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ pkg_name, version }) catch continue;
                 self.npm_cache.putResolution(key, version, tarball, integrity);
+            }
+            // Cache with the ORIGINAL constraint from the input deps (e.g. "^1.2.3", "~2.0.0")
+            // so that hasNpmResolution() and resolveNpmPackage() hit L2 cache instead of
+            // making per-package HTTP requests to npm/pantry registries.
+            for (deps) |dep| {
+                if (std.mem.eql(u8, dep.name, pkg_name)) {
+                    const key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ pkg_name, dep.version }) catch break;
+                    self.npm_cache.putResolution(key, version, tarball, integrity);
+                    break;
+                }
+            }
+
+            // Cache transitive dependency constraints from the response.
+            // Each resolved package may have a "dependencies" object mapping dep names
+            // to their version constraints (e.g. {"loose-envify": "^1.1.0"}).
+            // By looking up those dep names in the resolved tree and caching their
+            // constraint keys, we avoid per-package npm registry queries during
+            // transitive dependency resolution.
+            if (pkg_val.object.get("dependencies")) |deps_val| {
+                if (deps_val == .object) {
+                    var deps_it = deps_val.object.iterator();
+                    while (deps_it.next()) |dep_entry| {
+                        const dep_name = dep_entry.key_ptr.*;
+                        const dep_constraint = dep_entry.value_ptr.*;
+                        if (dep_constraint != .string) continue;
+
+                        // Look up the resolved version for this transitive dep
+                        if (resolved_obj.object.get(dep_name)) |resolved_dep| {
+                            if (resolved_dep != .object) continue;
+                            const dep_ver = if (resolved_dep.object.get("version")) |v| (if (v == .string) v.string else continue) else continue;
+                            const dep_tarball = if (resolved_dep.object.get("tarball")) |t| (if (t == .string) t.string else continue) else continue;
+                            const dep_integrity = if (resolved_dep.object.get("integrity")) |i| (if (i == .string) i.string else null) else null;
+
+                            // Cache as dep_name@constraint (e.g. "loose-envify@^1.1.0")
+                            const dep_key = std.fmt.bufPrint(&cache_key_buf, "{s}@{s}", .{ dep_name, dep_constraint.string }) catch continue;
+                            self.npm_cache.putResolution(dep_key, dep_ver, dep_tarball, dep_integrity);
+                        }
+                    }
+                }
             }
         }
     }

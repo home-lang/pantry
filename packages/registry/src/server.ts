@@ -1453,11 +1453,11 @@ async function handleSiteAuth(
 
 /** Cache of npm registry metadata (package name -> abbreviated metadata) */
 const npmMetadataCache = new Map<string, { data: any, ts: number }>()
-const NPM_METADATA_TTL = 5 * 60 * 1000 // 5 minutes
+const NPM_METADATA_TTL = 30 * 60 * 1000 // 30 minutes — npm packages change infrequently
 
 /** Cache of full resolution results (input hash -> resolved tree) */
 const npmResolutionCache = new Map<string, { data: any, ts: number }>()
-const NPM_RESOLUTION_TTL = 5 * 60 * 1000 // 5 minutes
+const NPM_RESOLUTION_TTL = 15 * 60 * 1000 // 15 minutes
 
 async function fetchNpmMetadata(name: string): Promise<any> {
   const cached = npmMetadataCache.get(name)
@@ -1721,8 +1721,8 @@ async function resolveNpmDeps(
   }
 
   while (queue.length > 0) {
-    // Process in batches of 20
-    const batch = queue.splice(0, 20)
+    // Process in batches of 50 for better throughput
+    const batch = queue.splice(0, 50)
     const toFetch: Array<[string, string]> = []
 
     for (const [name, constraint] of batch) {
