@@ -204,6 +204,7 @@
     html { font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif !important; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
     a { color: inherit; text-decoration: none; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Lilex', monospace !important; }
     code, .font-mono { font-family: 'Lilex', monospace !important; }
 
     /* Hover text color utilities */
