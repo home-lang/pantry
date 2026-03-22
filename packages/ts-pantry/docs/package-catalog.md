@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1402
 - **Categories**: 27
-- **Last Updated**: 2026-03-22T11:57:46.789Z
+- **Last Updated**: 2026-03-22T15:47:35.861Z
 
 ## Table of Contents
 
@@ -264,7 +264,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[crates.io/du-dust](./packages/crates.io/du-dust/index.md)** () | A more intuitive version of du in rust | dust | 1.2.4 (+8) | `pkgx dust` |
 | **[crates.io/exa](./packages/crates.io/exa/index.md)** () | A modern replacement for ‘ls’. | exa | 0.10.1 (+0) | `pkgx exa` |
 | **[crates.io/eza](./packages/crates.io/eza/index.md)** () | Modern, maintained replacement for ls | eza | 0.23.4 (+85) | `pkgx eza` |
-| **[crates.io/git-delta](./packages/crates.io/git-delta/index.md)** () | A syntax-highlighting pager for git, diff, grep, and blame output | delta | 0.19.0 (+11) | `pkgx delta` |
+| **[crates.io/git-delta](./packages/crates.io/git-delta/index.md)** () | A syntax-highlighting pager for git, diff, grep, and blame output | delta | 0.19.1 (+12) | `pkgx delta` |
 | **[crates.io/hyperfine](./packages/crates.io/hyperfine/index.md)** () | A command-line benchmarking tool | hyperfine | 1.20.0 (+7) | `pkgx hyperfine` |
 | **[crates.io/ripgrep](./packages/crates.io/ripgrep/index.md)** (ripgrep) | ripgrep recursively searches directories for a regex pattern while respecting your gitignore | rg | 15.1.0 (+8) | `pkgx ripgrep` |
 | **[crates.io/ripgrep-all](./packages/crates.io/ripgrep-all/index.md)** () | rga: ripgrep, but also search in PDFs, E-Books, Office documents, zip, tar.gz, etc. | rga, rga-fzf, rga-fzf-open, ... (+1) | 0.10.10 (+4) | `pkgx rga` |

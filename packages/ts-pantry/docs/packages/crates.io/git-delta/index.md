@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 12 versions</summary>
+<summary>Show all 13 versions</summary>
 
-- `0.19.0`
+- `0.19.1`, `0.19.0`
 - `0.18.2`, `0.18.1`, `0.18.0`
 - `0.17.0`
 - `0.16.5`, `0.16.4`, `0.16.3`, `0.16.2`, `0.16.1`, `0.16.0`
@@ -35,13 +35,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.19.0`
+**Latest Version**: `0.19.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/git-delta@0.19.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/git-delta@0.19.1 -- $SHELL -i
 ```
 
 ## Dependencies
