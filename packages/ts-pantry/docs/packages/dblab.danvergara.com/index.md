@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 20 versions</summary>
+<summary>Show all 21 versions</summary>
 
+- `0.35.0`
 - `0.34.3`, `0.34.2`, `0.34.1`, `0.34.0`
 - `0.33.0`
 - `0.32.0`
@@ -44,13 +45,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.34.3`
+**Latest Version**: `0.35.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +dblab.danvergara.com@0.34.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +dblab.danvergara.com@0.35.0 -- $SHELL -i
 ```
 
 ## Usage Examples
