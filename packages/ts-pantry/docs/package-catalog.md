@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1432
 - **Categories**: 27
-- **Last Updated**: 2026-03-23T12:11:53.700Z
+- **Last Updated**: 2026-03-23T13:54:55.841Z
 
 ## Table of Contents
 
@@ -90,7 +90,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[dgraph.io](./packages/dgraph.io/index.md)** () | high-performance graph database for real-time use cases | dgraph | 25.3.0 (+15) | `pkgx dgraph` |
-| **[duckdb.org](./packages/duckdb.org/index.md)** () | DuckDB is an analytical in-process SQL database management system | duckdb | 1.5.0 (+26) | `pkgx duckdb` |
+| **[duckdb.org](./packages/duckdb.org/index.md)** () | DuckDB is an analytical in-process SQL database management system | duckdb | 1.5.1 (+27) | `pkgx duckdb` |
 | **[edgedb.com](./packages/edgedb.com/index.md)** () | The EdgeDB CLI | edgedb | 7.10.2 (+43) | `pkgx edgedb` |
 | **[etcd.io](./packages/etcd.io/index.md)** () | Distributed reliable key-value store for the most critical data of a distributed system | etcd, etcdctl | 3.6.9 (+31) | `pkgx etcd` |
 | **[litecli.com](./packages/litecli.com/index.md)** () | CLI for SQLite Databases with auto-completion and syntax highlighting | litecli | 1.17.1 (+17) | `pkgx litecli` |
@@ -113,7 +113,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[laravel.com](./packages/laravel.com/index.md)** () | The Laravel application installer. | laravel | 5.24.9 (+35) | `pkgx laravel` |
 | **[symfony.com](./packages/symfony.com/index.md)** () | The Symfony CLI tool | symfony | 5.16.1 (+57) | `pkgx symfony` |
 | **[tailwindcss.com](./packages/tailwindcss.com/index.md)** () | A utility-first CSS framework for rapid UI development. | tailwindcss | 4.2.2 (+56) | `pkgx tailwindcss` |
-| **[vitejs.dev](./packages/vitejs.dev/index.md)** () | Next generation frontend tooling. It&#39;s fast! | vite | 8.0.1 (+138) | `pkgx vite` |
+| **[vitejs.dev](./packages/vitejs.dev/index.md)** () | Next generation frontend tooling. It&#39;s fast! | vite | 8.0.2 (+139) | `pkgx vite` |
 
 ## DevOps
 

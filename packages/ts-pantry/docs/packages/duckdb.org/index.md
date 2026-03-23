@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 27 versions</summary>
+<summary>Show all 28 versions</summary>
 
-- `1.5.0`
+- `1.5.1`, `1.5.0`
 - `1.4.4`, `1.4.3`, `1.4.2`, `1.4.1`, `1.4.0`
 - `1.3.2`, `1.3.1`, `1.3.0`
 - `1.2.2`, `1.2.1`, `1.2.0`
@@ -40,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `1.5.0`
+**Latest Version**: `1.5.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +duckdb.org@1.5.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +duckdb.org@1.5.1 -- $SHELL -i
 ```
 
 ## Usage Examples

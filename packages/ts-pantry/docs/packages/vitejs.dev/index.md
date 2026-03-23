@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 139 versions</summary>
+<summary>Show all 140 versions</summary>
 
-- `8.0.1`, `8.0.0`
+- `8.0.2`, `8.0.1`, `8.0.0`
 - `7.3.1`, `7.3.0`
 - `7.2.7`, `7.2.6`, `7.2.4`, `7.2.3`, `7.2.2`, `7.2.1`, `7.2.0`
 - `7.1.12`, `7.1.11`, `7.1.10`, `7.1.9`, `7.1.8`, `7.1.7`, `7.1.6`, `7.1.5`, `7.1.4`, `7.1.3`, `7.1.2`, `7.1.1`, `7.1.0`
@@ -49,13 +49,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `8.0.1`
+**Latest Version**: `8.0.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +vitejs.dev@8.0.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +vitejs.dev@8.0.2 -- $SHELL -i
 ```
 
 ## Dependencies
