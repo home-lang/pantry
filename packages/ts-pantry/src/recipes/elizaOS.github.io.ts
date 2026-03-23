@@ -1,0 +1,66 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'elizaOS.github.io',
+  name: 'elizaOS',
+  description: 'Autonomous agents for everyone',
+  homepage: 'https://elizaOS.github.io/eliza/',
+  github: 'https://github.com/elizaOS/eliza',
+  programs: ['eliza'],
+  platforms: ['darwin', 'linux/x86-64'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'elizaOS/eliza',
+  },
+  distributable: {
+    url: 'git+https://github.com/elizaOS/eliza.git',
+  },
+  dependencies: {
+    'python.org': '>=2.7',
+    'nodejs.org': '~23.3',
+    'pnpm.io': '*',
+    'bun.sh': '^1.2',
+  },
+  buildDependencies: {
+    'python.org': '~3.10',
+    'pnpm.io': '=9.15.7',
+    'curl.se': '*',
+    'gnu.org/patch': '*',
+    'gnu.org/sed': '*',
+    'git-scm.org': '*',
+  },
+
+  build: {
+    script: [
+      'curl \'https://github.com/adimverse/eliza/commit/d577fda887820e188b0e017f9869185be9fb3bc7.patch\' | patch -p1',
+      'cd "packages/plugin-pyth-data"',
+      'if test -f package.json; then',
+      '  sed -i \'s/curl /curl -k /\' package.json',
+      'fi',
+      '',
+      'pnpm install',
+      'mkdir -p plugin-specification',
+      'bun install',
+      'cd "$PNPM_HOME/.tools/pnpm"',
+      'ln -s {{deps.pnpm.io.prefix}} {{deps.pnpm.io.version}}',
+      'pnpm run build',
+      'bun run build',
+      'cd "${{prefix}}/libexec"',
+      'for FILE in $FILES; do',
+      'if test -f $SRCROOT/$FILE; then cp $SRCROOT/$FILE .; fi',
+      'done',
+      'for DIR in $DIRS; do',
+      'if test -d $SRCROOT/$DIR; then cp -R $SRCROOT/$DIR .; fi',
+      'done',
+      'cd "${{prefix}}/bin"',
+      'install -Dm755 $PROP eliza',
+      'cd "${{prefix}}/bin"',
+      'install -Dm755 $PROP eliza',
+    ],
+    env: {
+      'FILES': ['package.json', 'pnpm-workspace.yaml', '.npmrc', 'turbo.json', 'tsconfig.json', 'lerna.json', 'renovate.json', '.env.example'],
+      'DIRS': ['node_modules', 'agent', 'client', 'packages', 'scripts', 'characters'],
+    },
+    skip: ['fix-patchelf', 'fix-machos'],
+  },
+}

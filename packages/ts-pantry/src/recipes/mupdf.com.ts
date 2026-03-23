@@ -1,0 +1,66 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'mupdf.com',
+  name: 'mupdf',
+  description: 'Lightweight PDF and XPS viewer',
+  homepage: 'https://mupdf.com/',
+  github: 'https://github.com/ArtifexSoftware/mupdf',
+  programs: ['mupdf-gl', 'muraster', 'mutool'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'ArtifexSoftware/mupdf/tags',
+  },
+  distributable: {
+    url: 'git+https://github.com/ArtifexSoftware/mupdf',
+  },
+  dependencies: {
+    'zlib.net': '^1',
+    'openssl.org': '^1.1',
+    'info-zip.org/unzip': '^6',
+    'github.com/google/brotli': '^1',
+    'freetype.org': '^2',
+    'harfbuzz.org': '^9',
+    'mujs.com': '^1',
+    'openjpeg.org': '^2',
+    'jbig2dec.com': '^0',
+  },
+  buildDependencies: {
+    'git-scm.org': '*',
+  },
+
+  build: {
+    script: [
+      'export SRCROOT="$PWD"',
+      'git submodule update --init --recursive',
+      'cd "thirdparty"',
+      'for x in $(ls); do',
+      'if test "$x" = "extract"; then continue; fi',
+      'if test "$x" = "lcms2"; then continue; fi',
+      'if test "$x" = "gumbo-parser"; then continue; fi',
+      'if test "$x" = "mujs"; then continue; fi',
+      'rm -rf "$x"',
+      'done',
+      'cd "source/fitz"',
+      'sed -i.bak \'s|"\\.\\./thirdparty/mujs/regexp\\.h"|"../../thirdparty/mujs/regexp.h"|\' stext-search.c',
+      'declare -a DARWIN_ARGS',
+      'DARWIN_ARGS=( SYS_FREETYPE_CFLAGS="$(pkg-config --cflags freetype2)" SYS_FREETYPE_LIBS="$(pkg-config --libs freetype2)" SYS_HARFBUZZ_CFLAGS="$(pkg-config --cflags harfbuzz)" SYS_HARFBUZZ_LIBS="$(pkg-config --libs harfbuzz)" )',
+      'make $ARGS "${DARWIN_ARGS[@]}" install',
+      'cd "${{prefix}}/bin"',
+      'ln -sf mutool mudraw',
+      'cd "${{prefix}}"',
+      'install_name_tool -change build/shared-release/libmupdf.dylib @loader_path/../lib/libmupdf.dylib bin/mutool',
+      'install_name_tool -change build/shared-release/libmupdf.dylib @loader_path/../lib/libmupdf.dylib bin/mupdf-gl',
+      'rm lib/libmupdf.dylib',
+      'cp $SRCROOT/build/shared-release/libmupdf.dylib lib/',
+    ],
+    env: {
+      'CC': 'clang',
+      'CXX': 'clang++',
+      'LD': 'clang',
+      'AS': 'llvm-as',
+      'CPATH': '$SRCROOT/thirdparty/gumbo-parser/src:$SRCROOT/thirdparty/mujs:$CPATH',
+      'ARGS': ['prefix={{prefix}}', 'build=release', 'shared=yes', 'verbose=yes', 'USE_SYSTEM_LIBS=yes', 'USE_SYSTEM_MUJS=yes'],
+    },
+  },
+}

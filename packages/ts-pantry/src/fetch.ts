@@ -5,7 +5,8 @@ import process from 'node:process'
 import { getAliasOverrides, shouldReplaceAliases } from './alias-overrides'
 import { DEFAULT_CACHE_DIR, DEFAULT_CACHE_EXPIRATION_MINUTES, DEFAULT_TIMEOUT_MS } from './consts'
 import { aliases } from './packages/aliases'
-import { scrapePkgxPackage } from './pkgx-scraper'
+// pkgx-scraper removed — version discovery now via scripts/version-fetcher.ts
+const scrapePkgxPackage = async (..._args: any[]): Promise<any> => null
 // Lazy import of utils functions to avoid module loading issues
 
 // Legacy browser references - keeping for backwards compatibility but not used

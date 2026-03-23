@@ -222,6 +222,55 @@ catch {
   const desktopPantryDir = join(process.cwd(), 'src', 'desktop-pantry')
   findYamls(desktopPantryDir, '', true)
 
+  // Also discover from native TS recipes (src/recipes/) — these don't need YAML
+  const recipesDir = join(process.cwd(), 'src', 'recipes')
+  const discoveredDomains = new Set(packages.map(p => p.domain))
+  function findRecipes(dir: string, prefix: string = ''): void {
+    if (!existsSync(dir)) return
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        findRecipes(join(dir, entry.name), prefix ? `${prefix}/${entry.name}` : entry.name)
+      }
+      else if (entry.name.endsWith('.ts') && !entry.name.startsWith('index')) {
+        const domain = prefix ? `${prefix}/${entry.name.replace('.ts', '')}` : entry.name.replace('.ts', '')
+        if (discoveredDomains.has(domain)) continue // Already found via YAML
+
+        const pkg = lookupPantryPackage(domain)
+        if (!pkg?.versions?.length) continue
+
+        const override = packageOverrides[domain]
+        const platforms = override?.supportedPlatforms
+        if (targetOsName && platforms) {
+          const isCompatible = platforms.some((p: string) => {
+            const ps = String(p).trim()
+            return ps === targetOsName || ps === `${targetOsName}/${targetArchName}`
+          })
+          if (!isCompatible) continue
+        }
+
+        const isApp = existsSync(join(process.cwd(), 'src', 'desktop-pantry', domain))
+        const depDomains = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
+          .map((d: string) => d.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim())
+          .filter(Boolean)
+
+        packages.push({
+          domain,
+          name: pkg.name || domain,
+          latestVersion: pkg.versions[0],
+          versions: pkg.versions,
+          pantryYamlPath: join(dir, entry.name), // point to recipe file
+          hasDistributable: true, // recipes are self-contained
+          hasBuildScript: true,
+          needsProps: false,
+          hasProps: false,
+          depDomains,
+          isApp,
+        })
+      }
+    }
+  }
+  findRecipes(recipesDir)
+
   // Topological sort: packages with fewer deps come first
   // This ensures dependency packages are built before their dependents
   const domainSet = new Set(packages.map(p => p.domain))

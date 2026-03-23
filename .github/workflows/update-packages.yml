@@ -29,126 +29,14 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Fetch all packages
-        id: fetch-packages
-        run: |
-          echo "Starting package fetch..."
-          cd packages/ts-pantry
-
-          TEMP_JSON_FILE=$(mktemp)
-
-          echo "Running fetch command to update packages..."
-          if timeout 3600 bun bin/cli.ts fetch --all --verbose --concurrency 8 --timeout 15000; then
-            echo "Fetch command completed successfully"
-            FETCH_SUCCESS=true
-          else
-            FETCH_EXIT_CODE=$?
-            echo "Fetch command failed with exit code: $FETCH_EXIT_CODE"
-            FETCH_SUCCESS=false
-          fi
-
-          # Determine what was updated by checking git status
-          cd ${{ github.workspace }}
-          echo "Checking git status to determine updated packages..."
-          CHANGED_FILES=$(git status --porcelain packages/ts-pantry/src/packages/ | grep "^ M " | awk '{print $2}' | head -20)
-
-          if [ -n "$CHANGED_FILES" ]; then
-            echo "Found changed package files:"
-            echo "$CHANGED_FILES"
-
-            UPDATED_PACKAGES_JSON="["
-            FIRST=true
-            TOTAL_UPDATED=0
-            while IFS= read -r filepath; do
-              if [ -n "$filepath" ] && [ -f "$filepath" ]; then
-                CLEAN_NAME=$(grep -m 1 "name: '" "$filepath" | sed "s/.*name: '//" | sed "s/' as const.*//" | tr -d '\n\r')
-
-                if [ -n "$CLEAN_NAME" ]; then
-                  if [ "$FIRST" = true ]; then
-                    FIRST=false
-                  else
-                    UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON,"
-                  fi
-                  ESC_PKG=$(echo "$CLEAN_NAME" | sed 's/"/\\"/g')
-                  UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON\"$ESC_PKG\""
-                  TOTAL_UPDATED=$((TOTAL_UPDATED + 1))
-                fi
-              fi
-            done <<< "$CHANGED_FILES"
-            UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON]"
-          else
-            echo "No package files were changed"
-            UPDATED_PACKAGES_JSON="[]"
-            TOTAL_UPDATED=0
-          fi
-
-          if [ "$FETCH_SUCCESS" = true ]; then
-            printf '{"success":true,"totalUpdated":%d,"totalProcessed":530,"updatedPackages":%s}' \
-              "$TOTAL_UPDATED" "$UPDATED_PACKAGES_JSON" > "$TEMP_JSON_FILE"
-          else
-            printf '{"success":false,"error":"fetch command failed","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
-          fi
-
-          FILE_SIZE=$(wc -c < "$TEMP_JSON_FILE" 2>/dev/null || echo "0")
-          echo "JSON output size: $FILE_SIZE bytes"
-
-          if [ "$FILE_SIZE" -gt 262144 ]; then
-            echo "JSON output too large ($FILE_SIZE bytes), creating summary instead"
-
-            if ! jq empty "$TEMP_JSON_FILE" 2>/dev/null; then
-              echo '{"success":false,"error":"invalid_json_during_truncation","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
-            fi
-
-            SUCCESS=$(jq -r '.success // false' "$TEMP_JSON_FILE" 2>/dev/null || echo "false")
-            TOTAL_UPDATED=$(jq -r '.totalUpdated // 0' "$TEMP_JSON_FILE" 2>/dev/null || echo "0")
-            TOTAL_PROCESSED=$(jq -r '.totalProcessed // 0' "$TEMP_JSON_FILE" 2>/dev/null || echo "0")
-
-            UPDATED_PACKAGES_TEMP=$(mktemp)
-            {
-              jq -r '.updatedPackages[]? // empty' "$TEMP_JSON_FILE" 2>/dev/null || true
-            } 2>/dev/null | head -15 > "$UPDATED_PACKAGES_TEMP" || echo "" > "$UPDATED_PACKAGES_TEMP"
-
-            UPDATED_PACKAGES_JSON="["
-            FIRST=true
-            if [ -f "$UPDATED_PACKAGES_TEMP" ]; then
-              while IFS= read -r pkg; do
-                if [ -n "$pkg" ] && [ "$pkg" != "" ]; then
-                  if [ "$FIRST" = true ]; then
-                    FIRST=false
-                  else
-                    UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON,"
-                  fi
-                  ESC_PKG=$(echo "$pkg" | sed 's/"/\\"/g' | tr -d '\0\n\r')
-                  UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON\"$ESC_PKG\""
-                fi
-              done < "$UPDATED_PACKAGES_TEMP"
-            fi
-            UPDATED_PACKAGES_JSON="$UPDATED_PACKAGES_JSON]"
-            rm -f "$UPDATED_PACKAGES_TEMP"
-
-            printf '{"success":%s,"totalUpdated":%s,"totalProcessed":%s,"updatedPackages":%s,"note":"truncated_for_size"}' \
-              "$SUCCESS" "$TOTAL_UPDATED" "$TOTAL_PROCESSED" "$UPDATED_PACKAGES_JSON" > "$TEMP_JSON_FILE"
-
-            if ! jq empty "$TEMP_JSON_FILE" 2>/dev/null; then
-              echo '{"success":false,"error":"summary_json_invalid","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
-            fi
-          fi
-
-          if ! jq empty "$TEMP_JSON_FILE" 2>/dev/null; then
-            echo '{"success":false,"error":"invalid_json","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$TEMP_JSON_FILE"
-          fi
-
-          JSON_LINE=$(cat "$TEMP_JSON_FILE" | jq -c . 2>/dev/null || cat "$TEMP_JSON_FILE")
-          echo "fetch_result=${JSON_LINE}" >> $GITHUB_OUTPUT
-
-          rm -f "$TEMP_JSON_FILE"
-        timeout-minutes: 65
-
-      - name: Fetch versions from native recipes (GitHub API)
+      - name: Fetch versions from recipes (GitHub API)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: cd packages/ts-pantry && bun scripts/version-fetcher.ts 2>&1 || true
-        timeout-minutes: 10
+        run: |
+          cd packages/ts-pantry
+          echo "Fetching versions from native TS recipes..."
+          bun scripts/version-fetcher.ts 2>&1 || true
+        timeout-minutes: 15
 
       - name: Generate index
         run: cd packages/ts-pantry && bun bin/cli.ts generate-index
@@ -158,157 +46,65 @@ jobs:
         run: cd packages/ts-pantry && bun bin/cli.ts generate-aliases
         timeout-minutes: 5
 
-      - name: Generate documentation
-        run: cd packages/ts-pantry && bun bin/cli.ts generate-docs
-        timeout-minutes: 5
-
-      - name: Generate package types
-        run: cd packages/ts-pantry && bun scripts/generate-package-types.ts
-        timeout-minutes: 5
-
-      - name: Generate commit message
-        id: commit-message
-        run: |
-          FETCH_JSON_FILE=$(mktemp)
-          FETCH_RESULT='${{ steps.fetch-packages.outputs.fetch_result }}'
-
-          if [ -z "$FETCH_RESULT" ] || [ "$FETCH_RESULT" = "" ]; then
-            echo '{"success":false,"error":"no_fetch_result","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$FETCH_JSON_FILE"
-          else
-            echo "$FETCH_RESULT" > "$FETCH_JSON_FILE"
-            if ! jq empty "$FETCH_JSON_FILE" 2>/dev/null; then
-              echo '{"success":false,"error":"invalid_json","totalUpdated":0,"totalProcessed":0,"updatedPackages":[]}' > "$FETCH_JSON_FILE"
-            fi
-          fi
-
-          FETCH_SUCCESS=$(jq -r '.success // false' "$FETCH_JSON_FILE" 2>/dev/null || echo "false")
-
-          if [ "$FETCH_SUCCESS" != "true" ]; then
-            echo "commit_message=chore: fetch failed" >> $GITHUB_OUTPUT
-            echo "total_updated=0" >> $GITHUB_OUTPUT
-            echo "should_commit=false" >> $GITHUB_OUTPUT
-            rm -f "$FETCH_JSON_FILE"
-            exit 0
-          fi
-
-          TOTAL_UPDATED=$(jq -r '.totalUpdated // 0' "$FETCH_JSON_FILE" 2>/dev/null || echo "0")
-
-          UPDATED_PACKAGES=$(jq -r '
-            if .updatedPackages then .updatedPackages[]
-            else empty
-            end' "$FETCH_JSON_FILE" 2>/dev/null | head -15 | tr '\n' ' ' | tr -d '\0' | xargs 2>/dev/null || echo "")
-
-          if [ "$TOTAL_UPDATED" -eq 0 ]; then
-            COMMIT_MSG="chore: update packages (no changes detected)"
-            SHOULD_COMMIT="false"
-          elif [ "$TOTAL_UPDATED" -le 4 ]; then
-            PACKAGE_LIST=$(echo "$UPDATED_PACKAGES" | cut -d' ' -f1-$TOTAL_UPDATED | tr ' ' ',' | sed 's/,/, /g' | sed 's/, $//' | tr -d '\n\r')
-            if [ -n "$PACKAGE_LIST" ] && [ "$PACKAGE_LIST" != "" ] && [ "$PACKAGE_LIST" != " " ]; then
-              COMMIT_MSG="chore: update $PACKAGE_LIST"
-            else
-              COMMIT_MSG="chore: update $TOTAL_UPDATED packages"
-            fi
-            SHOULD_COMMIT="true"
-          else
-            MAX_MSG_LENGTH=72
-            COMMIT_PREFIX="chore: update "
-            PREFIX_LENGTH=${#COMMIT_PREFIX}
-            SUFFIX_RESERVE=19
-            MAX_PACKAGE_CHARS=$((MAX_MSG_LENGTH - PREFIX_LENGTH - SUFFIX_RESERVE))
-
-            PACKAGE_LIST=""
-            PACKAGE_COUNT=0
-            CURRENT_LENGTH=0
-
-            for pkg in $UPDATED_PACKAGES; do
-              if [ -z "$pkg" ] || [ "$pkg" = "" ]; then continue; fi
-              if [ -z "$PACKAGE_LIST" ]; then
-                NEW_LENGTH=${#pkg}
-              else
-                NEW_LENGTH=$((CURRENT_LENGTH + 2 + ${#pkg}))
-              fi
-              if [ $NEW_LENGTH -gt $MAX_PACKAGE_CHARS ]; then break; fi
-              if [ -z "$PACKAGE_LIST" ]; then
-                PACKAGE_LIST="$pkg"
-              else
-                PACKAGE_LIST="$PACKAGE_LIST, $pkg"
-              fi
-              CURRENT_LENGTH=$NEW_LENGTH
-              PACKAGE_COUNT=$((PACKAGE_COUNT + 1))
-            done
-
-            REMAINING=$((TOTAL_UPDATED - PACKAGE_COUNT))
-
-            if [ -n "$PACKAGE_LIST" ] && [ "$REMAINING" -gt 0 ]; then
-              if [ "$REMAINING" -eq 1 ]; then
-                COMMIT_MSG="chore: update $PACKAGE_LIST and 1 other dep"
-              else
-                COMMIT_MSG="chore: update $PACKAGE_LIST and $REMAINING other deps"
-              fi
-            elif [ -n "$PACKAGE_LIST" ]; then
-              COMMIT_MSG="chore: update $PACKAGE_LIST"
-            else
-              COMMIT_MSG="chore: update $TOTAL_UPDATED packages"
-            fi
-            SHOULD_COMMIT="true"
-          fi
-
-          COMMIT_MSG=$(echo "$COMMIT_MSG" | tr -d '\n\r\0' | sed 's/[[:cntrl:]]//g')
-
-          echo "commit_message=$COMMIT_MSG" >> $GITHUB_OUTPUT
-          echo "total_updated=$TOTAL_UPDATED" >> $GITHUB_OUTPUT
-          echo "should_commit=$SHOULD_COMMIT" >> $GITHUB_OUTPUT
-
-          rm -f "$FETCH_JSON_FILE"
-
       - name: Check for changes
         id: git-check
         run: |
-          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts 2>/dev/null || echo "")
-
+          CHANGES=$(git status --porcelain packages/ts-pantry/src/packages/ 2>/dev/null || echo "")
           if [[ -z "$CHANGES" ]]; then
             echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No version changes detected"
           else
             echo "Changes detected:"
             echo "$CHANGES"
             echo "changes=true" >> $GITHUB_OUTPUT
+
+            # Count changed packages
+            TOTAL=$(echo "$CHANGES" | wc -l | tr -d ' ')
+            echo "total_updated=$TOTAL" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate commit message
+        id: commit-message
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          # Extract package names from changed files
+          CHANGED_FILES=$(git status --porcelain packages/ts-pantry/src/packages/ | grep "^ M " | awk '{print $2}')
+          PACKAGES=""
+          while IFS= read -r filepath; do
+            [ -z "$filepath" ] && continue
+            [ -f "$filepath" ] || continue
+            case "$filepath" in */aliases.ts|*/generated-*|*/index.ts) continue ;; esac
+            NAME=$(grep -m 1 "name: '" "$filepath" 2>/dev/null | sed "s/.*name: '//" | sed "s/' as const.*//" | tr -d '\n\r')
+            [ -z "$NAME" ] && continue
+            PACKAGES="${PACKAGES:+$PACKAGES, }$NAME"
+          done <<< "$CHANGED_FILES"
+
+          TOTAL="${{ steps.git-check.outputs.total_updated }}"
+          if [ "$TOTAL" -le 4 ] && [ -n "$PACKAGES" ]; then
+            echo "commit_message=chore: update $PACKAGES" >> $GITHUB_OUTPUT
+          elif [ -n "$PACKAGES" ]; then
+            SHORT=$(echo "$PACKAGES" | cut -d',' -f1-3)
+            REMAINING=$((TOTAL - 3))
+            echo "commit_message=chore: update $SHORT and $REMAINING others" >> $GITHUB_OUTPUT
+          else
+            echo "commit_message=chore: update $TOTAL packages" >> $GITHUB_OUTPUT
           fi
 
       - name: Safeguard
         id: deletion-check
-        if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true'
+        if: steps.git-check.outputs.changes == 'true'
         run: |
-          # Count files that are completely deleted (not just modified/added)
-          DELETED_FILES=$(git diff --diff-filter=D --name-only HEAD -- packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | wc -l | tr -d ' ')
-
-          # Count net line loss (deletions minus additions) to catch bulk content removal
-          # Normal regeneration has roughly balanced additions/deletions, so net should be low
-          read ADDITIONS DELETIONS <<< $(git diff --numstat HEAD -- packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts | awk '{added += $1; deleted += $2} END {print added+0, deleted+0}')
-          NET_DELETIONS=$((DELETIONS - ADDITIONS))
-
-          echo "Files completely deleted: $DELETED_FILES"
-          echo "Lines added: $ADDITIONS, deleted: $DELETIONS, net loss: $NET_DELETIONS"
-
-          # Fail if more than 50 files are completely deleted or net line loss exceeds threshold
-          FILE_DELETION_THRESHOLD=50
-          NET_DELETION_THRESHOLD=20000
-
-          if [ "$DELETED_FILES" -gt "$FILE_DELETION_THRESHOLD" ]; then
-            echo "ERROR: $DELETED_FILES files completely deleted, exceeds threshold of $FILE_DELETION_THRESHOLD"
+          DELETED=$(git diff --diff-filter=D --name-only HEAD -- packages/ts-pantry/src/packages/ | wc -l | tr -d ' ')
+          if [ "$DELETED" -gt 50 ]; then
+            echo "ERROR: $DELETED files deleted, exceeds threshold"
             echo "safe_to_commit=false" >> $GITHUB_OUTPUT
             exit 1
-          elif [ "$NET_DELETIONS" -gt "$NET_DELETION_THRESHOLD" ]; then
-            echo "ERROR: Net line loss of $NET_DELETIONS exceeds threshold of $NET_DELETION_THRESHOLD"
-            echo "safe_to_commit=false" >> $GITHUB_OUTPUT
-            exit 1
-          else
-            echo "Changes are within acceptable limits."
-            echo "safe_to_commit=true" >> $GITHUB_OUTPUT
           fi
+          echo "safe_to_commit=true" >> $GITHUB_OUTPUT
 
       - name: Commit and push changes
         id: commit
-        if: steps.git-check.outputs.changes == 'true' && steps.commit-message.outputs.should_commit == 'true' && steps.deletion-check.outputs.safe_to_commit == 'true'
+        if: steps.git-check.outputs.changes == 'true' && steps.deletion-check.outputs.safe_to_commit == 'true'
         run: |
           if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
             git config --global user.name "chrisbbreuer"
@@ -319,75 +115,36 @@ jobs:
             git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           fi
 
-          git add packages/ts-pantry/src/packages/ packages/ts-pantry/docs/ packages/ts-pantry/src/generated-package-names.ts
-          git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated update via GitHub Actions workflow"
+          git add packages/ts-pantry/src/packages/
+          git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated version update via GitHub API"
           git stash --include-untracked
           git pull --rebase origin main
           git stash pop || true
           git push origin main
 
           echo "committed=true" >> $GITHUB_OUTPUT
-          echo "Successfully committed and pushed changes"
-
-      - name: Sync metadata to registry
-        if: steps.commit.outputs.committed == 'true'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/packages/ 2>/dev/null)
-          if [ -n "$CHANGED" ]; then
-            echo "Syncing metadata for changed packages to DynamoDB..."
-            # Convert repo-relative paths to paths relative to packages/ts-pantry/
-            RELATIVE_CHANGED=$(echo "$CHANGED" | sed 's|^packages/ts-pantry/||')
-            cd packages/ts-pantry
-            bun scripts/sync-metadata-to-registry.ts --changed-files $RELATIVE_CHANGED
-          else
-            echo "No package changes to sync"
-          fi
-        timeout-minutes: 5
 
       - name: Trigger builds for updated packages
         if: steps.commit.outputs.committed == 'true'
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          # Extract domain names from changed package files
           CHANGED=$(git diff --name-only HEAD~1 -- packages/ts-pantry/src/packages/ 2>/dev/null)
-          if [ -z "$CHANGED" ]; then
-            echo "No package changes to build"
-            exit 0
-          fi
+          [ -z "$CHANGED" ] && exit 0
 
-          # Extract domain from each changed .ts file (grep the `domain:` field)
           DOMAINS=""
           while IFS= read -r filepath; do
             [ -z "$filepath" ] && continue
             [ -f "$filepath" ] || continue
-            # Skip non-package files (aliases.ts, generated-package-names.ts, etc.)
-            case "$filepath" in
-              */aliases.ts|*/generated-package-names.ts|*/index.ts) continue ;;
-            esac
-            # Extract domain from the file's `domain:` field
+            case "$filepath" in */aliases.ts|*/generated-*|*/index.ts) continue ;; esac
             DOMAIN=$(grep -m 1 "domain:" "$filepath" 2>/dev/null | sed "s/.*domain: '//" | sed "s/' as const.*//" | tr -d ' \n\r')
             [ -z "$DOMAIN" ] && continue
-            if [ -z "$DOMAINS" ]; then
-              DOMAINS="$DOMAIN"
-            else
-              DOMAINS="$DOMAINS,$DOMAIN"
-            fi
+            DOMAINS="${DOMAINS:+$DOMAINS,}$DOMAIN"
           done <<< "$CHANGED"
 
-          if [ -z "$DOMAINS" ]; then
-            echo "No valid package domains extracted"
-            exit 0
-          fi
-
+          [ -z "$DOMAINS" ] && exit 0
           echo "Triggering build for: $DOMAINS"
-          gh workflow run build.yml \
-            -f packages="$DOMAINS" \
-            -f force=false
-          echo "Build workflow triggered successfully"
+          gh workflow run build.yml -f packages="$DOMAINS" -f force=false
         timeout-minutes: 2
 
       - name: discord-failure-alert
@@ -395,12 +152,6 @@ jobs:
         uses: ./.github/actions/discord-notify
         with:
           title: Update Packages — Failed
-          description: Package fetch workflow failed
+          description: Version update workflow failed
           status: failure
-          fields: |
-            [
-              {"name": "Fetch Success", "value": "${{ steps.commit-message.outputs.should_commit || 'unknown' }}", "inline": true},
-              {"name": "Safe to Commit", "value": "${{ steps.deletion-check.outputs.safe_to_commit || 'not reached' }}", "inline": true},
-              {"name": "Updated", "value": "${{ steps.commit-message.outputs.total_updated || '?' }}", "inline": true}
-            ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}

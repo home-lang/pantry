@@ -1,0 +1,65 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'proj.org',
+  name: 'proj',
+  description: 'PROJ - Cartographic Projections and Coordinate Transformations Library',
+  homepage: 'https://proj.org/',
+  github: 'https://github.com/OSGeo/proj',
+  programs: ['proj'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'OSGeo/PROJ',
+  },
+  distributable: {
+    url: 'https://github.com/OSGeo/PROJ/releases/download/{{version}}/proj-{{version}}.tar.gz',
+    stripComponents: 1,
+  },
+  dependencies: {
+    'simplesystems.org/libtiff': '*',
+    'sqlite.org': '*',
+    'curl.se': '*',
+  },
+  buildDependencies: {
+    'cmake.org': '*',
+    'freedesktop.org/pkg-config': '*',
+    'gnu.org/libtool': '*',
+    'gnu.org/wget': '*',
+    'gnu.org/coreutils': '*',
+    'sqlite.org': '*',
+  },
+
+  build: {
+    script: [
+      'cmake -S . -B build $ARGS $SHARED_LIB_ARGS',
+      'cmake --build build',
+      'cmake --install build',
+      'cmake -S . -B static $ARGS $STATIC_LIB_ARGS',
+      'cmake --build static',
+      'mv static/lib/libproj.a "{{prefix}}/lib/"',
+      'wget https://download.osgeo.org/proj/proj-data-1.13.tar.gz',
+      'expected_checksum=\'f1e5e42ba15426d01d1970be727af77ac9b88c472215497a5a433d0a16dd105b  proj-data-1.13.tar.gz\'',
+      'actual_checksum="$(shasum -a 256 proj-data-1.13.tar.gz)"',
+      'test "$expected_checksum" = "$actual_checksum"',
+      'mkdir proj-data',
+      'tar -xzf proj-data-1.13.tar.gz -C proj-data',
+      'mkdir -p "{{prefix}}/share/proj"',
+      'mv proj-data/* "{{prefix}}/share/proj/"',
+      'cd "{{prefix}}/bin"',
+      'for BIN in *; do',
+      '  patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so $BIN',
+      'done',
+      '',
+      'cd "{{prefix}}/lib"',
+      'for LIB in *.so; do',
+      '  patchelf --replace-needed {{deps.sqlite.org.prefix}}/lib/libsqlite3.so libsqlite3.so $LIB',
+      'done',
+      '',
+    ],
+    env: {
+      'ARGS': ['-DCMAKE_BUILD_TYPE=Release', '-DCMAKE_INSTALL_PREFIX={{prefix}}'],
+      'SHARED_LIB_ARGS': ['-DCMAKE_INSTALL_RPATH={{prefix}}'],
+      'STATIC_LIB_ARGS': ['-DBUILD_SHARED_LIBS=OFF'],
+    },
+  },
+}

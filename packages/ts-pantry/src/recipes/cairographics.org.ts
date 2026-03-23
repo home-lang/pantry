@@ -1,0 +1,61 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'cairographics.org',
+  name: 'cairo-trace',
+  description: 'Vector graphics library with cross-device output support',
+  homepage: 'https://cairographics.org/',
+  programs: ['cairo-trace'],
+  distributable: {
+    url: 'https://cairographics.org/releases/cairo-{{ version }}.tar.xz',
+    stripComponents: 1,
+  },
+  dependencies: {
+    'libpng.org': '1',
+    'pixman.org': '^0.40.0',
+    'freetype.org': '2',
+    'gnome.org/glib': '2',
+    'freedesktop.org/fontconfig': '2',
+    'sourceware.org/bzip2': '1',
+    'x.org/x11': '*',
+    'x.org/xcb': '*',
+    'x.org/exts': '*',
+    'x.org/xrender': '*',
+    'oberhumer.com/lzo': '*',
+  },
+  buildDependencies: {
+    'freedesktop.org/pkg-config': '^0.29',
+    'libexpat.github.io': '=2.4.9',
+    'gnome.org/gobject-introspection': '1',
+    'gnu.org/libtool': '^2',
+    'mesonbuild.com': '^1',
+    'ninja-build.org': '^1',
+  },
+
+  build: {
+    script: [
+      './configure --prefix={{ prefix }} --disable-dependency-tracking',
+      'make --jobs {{ hw.concurrency }}',
+      'make install',
+      '',
+      'meson setup build --prefix={{ prefix }} --buildtype=release $ARGS',
+      'ninja -C build',
+      'ninja -C build install',
+      '',
+      'rm -rf {{prefix}}/share',
+      'cd "${{ prefix }}/lib"',
+      'if [ -d cairo ]; then',
+      '  tmp_dir=cairo',
+      'else',
+      '  tmp_dir=$(ls)',
+      'fi',
+      'mv $tmp_dir/* .',
+      'rmdir $tmp_dir',
+      'ln -s . $tmp_dir',
+      '',
+    ],
+    env: {
+      'ARGS': ['-Dfreetype=enabled', '-Dfontconfig=enabled', '-Dpng=enabled', '-Dglib=enabled', '-Dxcb=enabled', '-Dxlib=enabled', '-Dzlib=enabled', '-Dglib=enabled'],
+    },
+  },
+}

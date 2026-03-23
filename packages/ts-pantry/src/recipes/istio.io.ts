@@ -1,0 +1,35 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'istio.io',
+  name: 'istioctl',
+  description: 'Connect, secure, control, and observe services.',
+  homepage: 'https://istio.io/',
+  github: 'https://github.com/istio/istio',
+  programs: ['istioctl'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'istio/istio',
+  },
+  distributable: {
+    url: 'git+https://github.com/istio/istio.git',
+  },
+  buildDependencies: {
+    'go.dev': '^1.21',
+    'linux/aarch64': '[object Object]',
+  },
+
+  build: {
+    script: [
+      'go build $ARGS -ldflags="$LDFLAGS" ./istioctl/cmd/istioctl',
+      '${{prefix}}/bin/istioctl collateral --man',
+      'mkdir -p {{prefix}}/share/man/man1',
+      'cp ./*.1 {{prefix}}/share/man/man1/',
+    ],
+    env: {
+      'ARGS': ['-trimpath', '-o={{prefix}}/bin/istioctl'],
+      'COMMIT_SHA': '$(git describe --always --abbrev=8 --dirty)',
+      'LDFLAGS': ['-s', '-w', '-X istio.io/istio/pkg/version.buildVersion={{version}}', '-X istio.io/istio/pkg/version.buildGitRevision=${COMMIT_SHA}', '-X istio.io/istio/pkg/version.buildTag={{version.tag}}', '-X istio.io/istio/pkg/version.buildHub=docker.io/istio'],
+    },
+  },
+}

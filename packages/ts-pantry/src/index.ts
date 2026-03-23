@@ -28,8 +28,7 @@ export {
 export * from './pantry-api'
 export * from './package-types'
 export * from './packages'
-export * from './pkgx-fetcher'
-export * from './pkgx-scraper'
+// pkgx-fetcher and pkgx-scraper removed — version discovery now via scripts/version-fetcher.ts
 export * from './types'
 export {
   convertDomainToFileName,

@@ -1,0 +1,25 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'liburcu.org',
+  name: 'liburcu',
+  description: 'liburcu is a LGPLv2.1 userspace RCU (read-copy-update) library. This data synchronization library provides read-side access which scales linearly with the number of cores.',
+  homepage: 'http://liburcu.org',
+  github: 'https://github.com/urcu/userspace-rcu',
+  programs: [],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'urcu/userspace-rcu/tags',
+  },
+  distributable: {
+    url: 'https://lttng.org/files/urcu/userspace-rcu-{{version}}.tar.bz2',
+    stripComponents: 1,
+  },
+
+  build: {
+    script: [
+      './configure --prefix="{{prefix}}"',
+      'make --jobs {{ hw.concurrency }} install',
+    ],
+  },
+}
