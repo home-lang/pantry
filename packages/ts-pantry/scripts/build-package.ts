@@ -1389,6 +1389,12 @@ async function buildPackage(options: BuildOptions): Promise<void> {
 
   const recipe = loaded.recipe as PackageRecipe
 
+  // For native recipes, synthesize yamlContent for version tag resolution
+  // (the version.tag machinery reads YAML strip patterns)
+  const yamlContent = loaded.yamlPath && loaded.source !== 'recipe'
+    ? readFileSync(loaded.yamlPath, 'utf-8')
+    : '' // Native recipes don't need YAML content — version.tag defaults to v{version}
+
   // Helper to safely get build deps from the (possibly union-typed) build field
   const getBuildDeps = (r: PackageRecipe) => {
     const b = r.build
