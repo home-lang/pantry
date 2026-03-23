@@ -144,6 +144,12 @@ jobs:
           rm -f "$TEMP_JSON_FILE"
         timeout-minutes: 65
 
+      - name: Fetch versions from native recipes (GitHub API)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cd packages/ts-pantry && bun scripts/version-fetcher.ts 2>&1 || true
+        timeout-minutes: 10
+
       - name: Generate index
         run: cd packages/ts-pantry && bun bin/cli.ts generate-index
         timeout-minutes: 5
