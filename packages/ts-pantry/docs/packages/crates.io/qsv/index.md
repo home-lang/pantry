@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 24 versions</summary>
+<summary>Show all 25 versions</summary>
 
+- `18.0.0`
 - `17.0.0`
 - `16.1.0`
 - `16.0.0`
@@ -50,13 +51,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `17.0.0`
+**Latest Version**: `18.0.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/qsv@17.0.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/qsv@18.0.0 -- $SHELL -i
 ```
 
 ## Dependencies

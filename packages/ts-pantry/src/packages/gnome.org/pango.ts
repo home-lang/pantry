@@ -3,7 +3,7 @@
  *
  * @domain `gnome.org/pango`
  * @programs `pango-list`, `pango-segmentation`, `pango-view`
- * @version `1.57.0` (15 versions available)
+ * @version `1.57.1` (16 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gnome.org/pango`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "pango"
  * console.log(pkg.description) // "Framework for layout and rendering of i18n text"
  * console.log(pkg.programs)    // ["pango-list", "pango-segmentation", ...]
- * console.log(pkg.versions[0]) // "1.57.0" (latest)
+ * console.log(pkg.versions[0]) // "1.57.1" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gnome-org/pango.md
@@ -84,6 +84,7 @@ export const gnomeorgpangoPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.57.1',
     '1.57.0',
     '1.56.4',
     '1.56.3',
