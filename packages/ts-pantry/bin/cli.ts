@@ -1231,6 +1231,127 @@ cli
     }
   })
 
+// Desktop app management commands
+cli
+  .command('apps', 'List installed desktop applications with version info')
+  .option('-j, --json', 'Output as JSON')
+  .action(async (options: { json?: boolean }) => {
+    try {
+      const { scanInstalledApps } = await import('../src/desktop-apps')
+      const apps = scanInstalledApps()
+
+      if (options.json) {
+        console.log(JSON.stringify({ success: true, apps, total: apps.length }))
+      }
+      else {
+        console.log(`\nInstalled Desktop Apps (${apps.length}):\n`)
+        console.log('Application'.padEnd(40) + 'Version')
+        console.log('-'.repeat(60))
+        for (const app of apps) {
+          console.log(`${app.name.padEnd(40)}${app.version}`)
+        }
+      }
+
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Error listing apps:', error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('apps-outdated', 'Check for outdated desktop applications')
+  .option('-j, --json', 'Output as JSON')
+  .action(async (options: { json?: boolean }) => {
+    try {
+      const { checkAppUpdates } = await import('../src/desktop-apps')
+
+      if (!options.json) {
+        console.log('Checking desktop apps for updates...')
+      }
+
+      const results = checkAppUpdates()
+      const outdated = results.filter(r => r.updateAvailable)
+
+      if (options.json) {
+        console.log(JSON.stringify({
+          success: true,
+          apps: results,
+          outdated: outdated.length,
+          total: results.length,
+          timestamp: new Date().toISOString(),
+        }))
+      }
+      else {
+        if (outdated.length > 0) {
+          console.log(`\nOutdated Apps (${outdated.length}):\n`)
+          console.log(
+            'Application'.padEnd(30)
+            + 'Current'.padEnd(16)
+            + 'Latest'.padEnd(16)
+            + 'Source',
+          )
+          console.log('-'.repeat(75))
+          for (const app of outdated) {
+            console.log(
+              `${app.name.padEnd(30)}`
+              + `${app.currentVersion.padEnd(16)}`
+              + `${(app.latestVersion || '?').padEnd(16)}`
+              + `${app.source}`,
+            )
+          }
+        }
+        else {
+          console.log('\nAll desktop apps are up to date!')
+        }
+
+        const upToDate = results.filter(r => !r.updateAvailable && r.source !== 'system' && r.source !== 'unknown')
+        if (upToDate.length > 0) {
+          console.log(`\n${upToDate.length} app(s) up to date, ${results.filter(r => r.source === 'unknown').length} unchecked`)
+        }
+      }
+
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Error checking app updates:', error)
+      process.exit(1)
+    }
+  })
+
+cli
+  .command('apps-update <name>', 'Update a desktop application via Homebrew')
+  .action(async (name: string) => {
+    try {
+      const { APP_CASK_MAP, getCaskToken, updateApp } = await import('../src/desktop-apps')
+
+      // Resolve app name to cask token
+      const token = APP_CASK_MAP[name] || getCaskToken(name)
+      if (!token) {
+        console.error(`No Homebrew cask found for "${name}"`)
+        process.exit(1)
+      }
+
+      console.log(`Updating ${name} (cask: ${token})...`)
+      const result = await updateApp(token)
+
+      if (result.success) {
+        console.log(`Successfully updated ${name} to ${result.version}`)
+      }
+      else {
+        console.error(`Failed to update ${name}: ${result.error}`)
+        process.exit(1)
+      }
+
+      process.exit(0)
+    }
+    catch (error) {
+      console.error('Error updating app:', error)
+      process.exit(1)
+    }
+  })
+
 // Display help if no command specified
 cli.help()
 cli.version(version)

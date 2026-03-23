@@ -50,3 +50,4 @@ export {
 export * from './version-utils'
 export * from './config-types'
 export * from './testing'
+export * from './desktop-apps'
