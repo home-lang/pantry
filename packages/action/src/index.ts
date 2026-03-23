@@ -313,8 +313,8 @@ async function sendDiscordNotification(webhookUrl: string, ctx: NotificationCont
     else
       core.info('Discord notification sent')
   }
-  catch (err) {
-    core.warning(`Discord notification failed: ${err instanceof Error ? err.message : String(err)}`)
+  catch {
+    core.warning('Discord notification failed')
   }
   core.endGroup()
 }
@@ -358,8 +358,8 @@ async function sendSlackNotification(webhookUrl: string, ctx: NotificationContex
     else
       core.info('Slack notification sent')
   }
-  catch (err) {
-    core.warning(`Slack notification failed: ${err instanceof Error ? err.message : String(err)}`)
+  catch {
+    core.warning('Slack notification failed')
   }
   core.endGroup()
 }
@@ -379,6 +379,12 @@ export async function run(): Promise<void> {
       notificationTitle: core.getInput('notification-title') || '',
       notificationMentions: core.getInput('notification-mentions') || '',
     }
+
+    // Mask webhook URLs so they never appear in logs
+    if (inputs.discordWebhook)
+      core.setSecret(inputs.discordWebhook)
+    if (inputs.slackWebhook)
+      core.setSecret(inputs.slackWebhook)
 
     // Export registry token as env vars for subsequent steps (e.g. pantry publish:commit)
     const token = inputs.token || process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
