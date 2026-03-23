@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 15 versions</summary>
+<summary>Show all 16 versions</summary>
 
+- `6.0.2`
 - `5.9.3`, `5.9.2`
 - `5.8.3`, `5.8.2`
 - `5.7.3`, `5.7.2`
@@ -36,13 +37,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `5.9.3`
+**Latest Version**: `6.0.2`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +typescriptlang.org@5.9.3 -- $SHELL -i
+sh <(curl https://pkgx.sh) +typescriptlang.org@6.0.2 -- $SHELL -i
 ```
 
 ## Dependencies

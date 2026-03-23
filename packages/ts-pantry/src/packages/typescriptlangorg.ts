@@ -3,7 +3,7 @@
  *
  * @domain `typescriptlang.org`
  * @programs `tsc`
- * @version `5.9.3` (15 versions available)
+ * @version `6.0.2` (16 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install typescriptlang.org`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "tsc"
  * console.log(pkg.description) // "TypeScript is a superset of JavaScript that com..."
  * console.log(pkg.programs)    // ["tsc"]
- * console.log(pkg.versions[0]) // "5.9.3" (latest)
+ * console.log(pkg.versions[0]) // "6.0.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/typescriptlang-org.md
@@ -75,6 +75,7 @@ export const typescriptlangorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.0.2',
     '5.9.3',
     '5.9.2',
     '5.8.3',

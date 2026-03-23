@@ -3,7 +3,7 @@
  *
  * @domain `gitlab.com/gitlab-org/cli`
  * @programs `glab`
- * @version `1.89.0` (89 versions available)
+ * @version `1.90.0` (90 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install gitlab.com/gitlab-org/cli`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "glab"
  * console.log(pkg.description) // "Open-source GitLab command-line tool"
  * console.log(pkg.programs)    // ["glab"]
- * console.log(pkg.versions[0]) // "1.89.0" (latest)
+ * console.log(pkg.versions[0]) // "1.90.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/gitlab-com/gitlab-org/cli.md
@@ -68,6 +68,7 @@ export const gitlabcomgitlaborgcliPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.90.0',
     '1.89.0',
     '1.88.0',
     '1.87.0',

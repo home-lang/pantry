@@ -1,14 +1,14 @@
 # Package Catalog
 
-This comprehensive catalog lists all 1451+ packages available in ts-pantry, organized by category.
+This comprehensive catalog lists all 1457+ packages available in ts-pantry, organized by category.
 
 Each package can be accessed using `getPackage(name)` or directly via `pantry.domain`.
 
 ## Quick Stats
 
-- **Total Packages**: 1451
+- **Total Packages**: 1457
 - **Categories**: 27
-- **Last Updated**: 2026-03-23T16:48:15.449Z
+- **Last Updated**: 2026-03-23T17:47:12.796Z
 
 ## Table of Contents
 
