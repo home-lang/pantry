@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1432
 - **Categories**: 27
-- **Last Updated**: 2026-03-23T11:40:57.410Z
+- **Last Updated**: 2026-03-23T12:11:53.700Z
 
 ## Table of Contents
 
@@ -330,7 +330,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[mkcert.dev](./packages/mkcert.dev/index.md)** () | A simple zero-config tool to make locally trusted development certificates with any names you&#39... | mkcert | 1.4.4 (+0) | `pkgx mkcert` |
 | **[openssl.org](./packages/openssl.org/index.md)** (openssl) | TLS/SSL and crypto library with QUIC APIs | openssl, c_rehash | 3.6.1 (+42) | `pkgx openssl` |
 | **[orhun.dev/gpg-tui](./packages/orhun.dev/gpg-tui/index.md)** () | Manage your GnuPG keys with ease! 🔐 | gpg-tui | 0.11.1 (+2) | `pkgx gpg-tui` |
-| **[snyk.io](./packages/snyk.io/index.md)** () | Scans and monitors projects for security vulnerabilities | snyk | 1.1303.1 (+58) | `pkgx snyk` |
+| **[snyk.io](./packages/snyk.io/index.md)** () | Scans and monitors projects for security vulnerabilities | snyk | 1.1303.2 (+59) | `pkgx snyk` |
 | **[vaultproject.io](./packages/vaultproject.io/index.md)** () | A tool for secrets management, encryption as a service, and privileged access management | vault | 1.21.4 (+63) | `pkgx vault` |
 
 ## Multimedia

@@ -3,7 +3,7 @@
  *
  * @domain `snyk.io`
  * @programs `snyk`
- * @version `1.1303.1` (59 versions available)
+ * @version `1.1303.2` (60 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install snyk.io`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "snyk"
  * console.log(pkg.description) // "Scans and monitors projects for security vulner..."
  * console.log(pkg.programs)    // ["snyk"]
- * console.log(pkg.versions[0]) // "1.1303.1" (latest)
+ * console.log(pkg.versions[0]) // "1.1303.2" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/snyk-io.md
@@ -75,6 +75,7 @@ export const snykioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.1303.2',
     '1.1303.1',
     '1.1303.0',
     '1.1302.1',
