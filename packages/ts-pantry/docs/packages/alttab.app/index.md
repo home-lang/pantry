@@ -32,21 +32,34 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `7.10.0`
-- `7.9.0`
-- `7.8.0`
+- `10.9.0`
+- `10.8.0`
+- `10.7.0`
+- `10.6.0`
+- `10.5.0`
+- `10.4.0`
+- `10.3.0`
+- `10.2.0`
+- `10.1.0`
+- `10.0.0`
+- `9.0.0`
+- `8.3.4`, `8.3.3`, `8.3.2`, `8.3.1`, `8.3.0`
+- `8.2.0`
+- `8.1.0`
+- `8.0.0`
+- `7.39.0`
 
 </details>
 
-**Latest Version**: `7.10.0`
+**Latest Version**: `10.9.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +alttab.app@7.10.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +alttab.app@10.9.0 -- $SHELL -i
 ```
 
 ## Usage Examples

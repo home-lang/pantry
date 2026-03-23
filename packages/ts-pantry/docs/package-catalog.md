@@ -8,7 +8,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 - **Total Packages**: 1457
 - **Categories**: 27
-- **Last Updated**: 2026-03-23T19:37:50.280Z
+- **Last Updated**: 2026-03-23T20:12:01.663Z
 
 ## Table of Contents
 
@@ -97,7 +97,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[mongodb.com/shell](./packages/mongodb.com/shell/index.md)** () | MongoDB Shell to connect, configure, query, and work with your MongoDB database | mongosh | 2.8.1 (+43) | `pkgx mongosh` |
 | **[mysql.com](./packages/mysql.com/index.md)** () | MySQL Server, the world&#39;s most popular open source database, and MySQL Cluster, a real-time, ... | mysql_client_test, my_print_defaults, myisam_ftdump, ... (+28) | 9.6.0 (+31) | `pkgx mysql` |
 | **[opensearch.org](./packages/opensearch.org/index.md)** () | 🔎 Open source distributed and RESTful search engine. | opensearch, opensearch-keystore, opensearch-plugin, ... (+1) | 3.5.0 (+16) | `pkgx opensearch` |
-| **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.7.0 (+26) | `pkgx postgrest` |
+| **[postgrest.org](./packages/postgrest.org/index.md)** () | Serves a fully RESTful API from any existing PostgreSQL database | postgrest | 14.7 (+19) | `pkgx postgrest` |
 | **[redis.io](./packages/redis.io/index.md)** () | Redis is an in-memory database that persists on disk. The data model is key-value, but many diffe... | redis-server, redis-cli, redis-benchmark | 8.6.0 (+59) | `pkgx redis` |
 | **[sqlite.org](./packages/sqlite.org/index.md)** (sqlite) | Official Git mirror of the SQLite source tree | sqlite3 | 3.52.0 (+33) | `pkgx sqlite` |
 | **[surrealdb.com](./packages/surrealdb.com/index.md)** () | A scalable, distributed, collaborative, document-graph database, for the realtime web | surreal | 2023.9.1 (+69) | `pkgx surreal` |
@@ -250,7 +250,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.112.0 (+44) | `pkgx vscode cli` |
 | **[nano-editor.org](./packages/nano-editor.org/index.md)** () | Free (GNU) replacement for the Pico text editor | nano | 8.0.0 (+1) | `pkgx nano` |
 | **[neovim.io](./packages/neovim.io/index.md)** () | Ambitious Vim-fork focused on extensibility and agility | nvim | 0.11.6 (+18) | `pkgx nvim` |
-| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.232 (+2895) | `pkgx vi` |
+| **[vim.org](./packages/vim.org/index.md)** (vi) | The official Vim repository | vim, vi | 9.2.235 (+2897) | `pkgx vi` |
 | **[wezfurlong.org/wezterm](./packages/wezfurlong.org/wezterm/index.md)** () | A GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemente... | wezterm | 2024.2.3 (+0) | `pkgx wezterm` |
 
 ## CLI Tools & Utilities
@@ -375,7 +375,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[aws.amazon.com/sam](./packages/aws.amazon.com/sam/index.md)** () | CLI tool to build, test, debug, and deploy Serverless applications using AWS SAM | sam | 1.156.0 (+49) | `pkgx sam` |
-| **[fly.io](./packages/fly.io/index.md)** () | Command line tools for fly.io services | fly, flyctl | 0.4.26 (+513) | `pkgx fly` |
+| **[fly.io](./packages/fly.io/index.md)** () | Command line tools for fly.io services | fly, flyctl | 0.4.27 (+514) | `pkgx fly` |
 | **[heroku.com](./packages/heroku.com/index.md)** () | CLI for Heroku | heroku | 11.0.0 (+43) | `pkgx heroku` |
 | **[localstack.cloud/cli](./packages/localstack.cloud/cli/index.md)** () | The LocalStack CLI packaged using pyinstaller | localstack | 2026.3.0 (+36) | `pkgx localstack` |
 | **[planetscale.com](./packages/planetscale.com/index.md)** () | The CLI for PlanetScale Database | pscale | 0.276.0 (+98) | `pkgx pscale` |
@@ -412,7 +412,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[elementsproject.org](./packages/elementsproject.org/index.md)** () | Open Source implementation of advanced blockchain features extending the Bitcoin protocol | bench_bitcoin, elements-cli, elements-tx, ... (+4) | 23.3.2 (+10) | `pkgx elementsproject` |
 | **[getfoundry.sh](./packages/getfoundry.sh/index.md)** () | Foundry is a blazing fast, portable and modular toolkit for Ethereum application development writ... | forge, anvil, cast, ... (+1) | 2024.4.12 (+22) | `pkgx getfoundry.sh` |
 | **[ghostscript.com](./packages/ghostscript.com/index.md)** () | This is purely for downloads, please check the website for full information | dvipdf, eps2eps, gpcl6, ... (+30) | 10.7.0 (+8) | `pkgx ghostscript` |
-| **[solana.com](./packages/solana.com/index.md)** () | Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces. | solana, solana-keygen, solana-bench-streamer, ... (+7) | 1.18.26 (+82) | `pkgx solana` |
+| **[solana.com](./packages/solana.com/index.md)** () | Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces. | solana, solana-keygen, solana-bench-streamer, ... (+7) | 1.18.26 (+19) | `pkgx solana` |
 
 ## Financial Tools
 

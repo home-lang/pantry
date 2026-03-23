@@ -25,10 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 20 versions</summary>
 
 - `2023.12.8`
 - `2023.8.12`
+- `2.0.5`, `2.0.4`, `2.0.3`, `2.0.2`, `2.0.1`
+- `1.12.0`
+- `1.11.3`, `1.11.2`, `1.11.1`, `1.11.0`
+- `1.10.0`
+- `1.9.0`
+- `1.8.0`
+- `1.7.0`
+- `1.6.0`
+- `1.5.0`
+- `1.4.0`
+- `1.3.2`
 
 </details>
 

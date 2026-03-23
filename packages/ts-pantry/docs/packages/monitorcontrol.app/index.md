@@ -32,20 +32,30 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `4.3.0`
+- `4.3.3`, `4.3.2`, `4.3.0`
 - `4.2.0`
+- `4.1.0`
+- `4.0.2`, `4.0.1`, `4.0.0`, `4.0.0-rc1`
+- `3.1.1`, `3.1.0`
+- `3.0.0`
+- `2.1.0`
+- `2.0.0`
+- `1.7.1`, `1.7.0`
+- `1.6.0`
+- `1.5.2`, `1.5.0`
+- `1.4.0`
 
 </details>
 
-**Latest Version**: `4.3.0`
+**Latest Version**: `4.3.3`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +monitorcontrol.app@4.3.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +monitorcontrol.app@4.3.3 -- $SHELL -i
 ```
 
 ## Usage Examples

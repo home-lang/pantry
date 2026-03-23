@@ -25,12 +25,17 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 4 versions</summary>
+<summary>Show all 20 versions</summary>
 
 - `0.11.0`
 - `0.10.0`
 - `0.9.0`
 - `0.8.0`
+- `0.7.2`, `0.7.1`, `0.7.0`
+- `0.6.0`
+- `0.5.0`
+- `0.4.7`, `0.4.6`, `0.4.5`, `0.4.4`, `0.4.3`, `0.4.2`, `0.4.1`, `0.4.0`
+- `0.3.8`, `0.3.7`, `0.3.6`
 
 </details>
 

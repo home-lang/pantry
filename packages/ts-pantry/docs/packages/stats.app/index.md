@@ -31,19 +31,20 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `2.11.23`, `2.11.22`, `2.11.21`
+- `2.12.5`, `2.12.4`, `2.12.3`, `2.12.2`, `2.12.1`, `2.12.0`
+- `2.11.67`, `2.11.66`, `2.11.65`, `2.11.64`, `2.11.63`, `2.11.62`, `2.11.61`, `2.11.60`, `2.11.59`, `2.11.58`, `2.11.57`, `2.11.56`, `2.11.55`, `2.11.54`
 
 </details>
 
-**Latest Version**: `2.11.23`
+**Latest Version**: `2.12.5`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +stats.app@2.11.23 -- $SHELL -i
+sh <(curl https://pkgx.sh) +stats.app@2.12.5 -- $SHELL -i
 ```
 
 ## Usage Examples

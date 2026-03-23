@@ -32,20 +32,29 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 2 versions</summary>
+<summary>Show all 11 versions</summary>
 
+- `1.10`
 - `1.9`
 - `1.8`
+- `1.7`
+- `1.6`
+- `1.5`
+- `1.4`
+- `1.3`
+- `1.2`
+- `1.1`
+- `1.0`
 
 </details>
 
-**Latest Version**: `1.9`
+**Latest Version**: `1.10`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +hiddenbar.app@1.9 -- $SHELL -i
+sh <(curl https://pkgx.sh) +hiddenbar.app@1.10 -- $SHELL -i
 ```
 
 ## Usage Examples

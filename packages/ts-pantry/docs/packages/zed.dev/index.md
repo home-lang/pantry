@@ -31,21 +31,25 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `0.170.0`
-- `0.169.0`
-- `0.168.0`
+- `0.228.0`
+- `0.227.1`
+- `0.226.5`, `0.226.4`
+- `0.225.13`, `0.225.12`, `0.225.10`, `0.225.9`
+- `0.224.11`, `0.224.10`, `0.224.9`, `0.224.8`, `0.224.7`, `0.224.6`, `0.224.5`, `0.224.4`
+- `0.223.5`, `0.223.4`, `0.223.3`
+- `0.222.4`
 
 </details>
 
-**Latest Version**: `0.170.0`
+**Latest Version**: `0.228.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +zed.dev@0.170.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +zed.dev@0.228.0 -- $SHELL -i
 ```
 
 ## Usage Examples

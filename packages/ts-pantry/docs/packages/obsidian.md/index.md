@@ -31,19 +31,25 @@ This package can also be accessed using these aliases:
 ## Available Versions
 
 <details>
-<summary>Show all 3 versions</summary>
+<summary>Show all 20 versions</summary>
 
-- `1.7.7`, `1.7.6`, `1.7.5`
+- `1.12.7`, `1.12.4`
+- `1.11.7`, `1.11.5`, `1.11.4`
+- `1.10.6`, `1.10.3`
+- `1.9.14`, `1.9.12`, `1.9.10`
+- `1.8.10`, `1.8.9`, `1.8.7`, `1.8.4`, `1.8.3`
+- `1.7.7`, `1.7.6`, `1.7.5`, `1.7.4`
+- `1.6.7`
 
 </details>
 
-**Latest Version**: `1.7.7`
+**Latest Version**: `1.12.7`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +obsidian.md@1.7.7 -- $SHELL -i
+sh <(curl https://pkgx.sh) +obsidian.md@1.12.7 -- $SHELL -i
 ```
 
 ## Usage Examples
