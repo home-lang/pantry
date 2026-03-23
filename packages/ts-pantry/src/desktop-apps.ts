@@ -232,7 +232,7 @@ export const APP_CASK_MAP: Record<string, string> = {
 }
 
 // Known system/Apple apps that have no cask
-export const SYSTEM_APPS = new Set([
+export const SYSTEM_APPS: Set<string> = new Set([
   'Safari',
   'Numbers',
   'Pages',
@@ -285,7 +285,7 @@ export const SYSTEM_APPS = new Set([
 ])
 
 // Known MAS-only apps (available on Mac App Store but not as brew cask)
-export const MAS_APPS = new Set([
+export const MAS_APPS: Set<string> = new Set([
   'Xcode',
   'Numbers',
   'Pages',
@@ -565,6 +565,7 @@ export function checkAppUpdates(apps?: InstalledApp[]): AppUpdateInfo[] {
 /**
  * Update a desktop app via Homebrew cask.
  */
+// eslint-disable-next-line pickier/no-unused-vars
 export async function updateApp(caskToken: string): Promise<{
   success: boolean
   version?: string
@@ -573,7 +574,7 @@ export async function updateApp(caskToken: string): Promise<{
   try {
     // Try upgrade first (for brew-managed casks)
     try {
-      const output = execSync(
+      execSync(
         `brew upgrade --cask ${caskToken} 2>&1`,
         { timeout: 120000, encoding: 'utf-8' },
       )
@@ -593,7 +594,7 @@ export async function updateApp(caskToken: string): Promise<{
 
       // If not installed via brew, try fresh install
       if (errMsg.includes('not installed') || errMsg.includes('No available')) {
-        const output = execSync(
+        execSync(
           `brew install --cask ${caskToken} 2>&1`,
           { timeout: 120000, encoding: 'utf-8' },
         )
