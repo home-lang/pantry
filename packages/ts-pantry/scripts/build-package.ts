@@ -1897,7 +1897,11 @@ else {
   console.log('\n🔨 Executing build script...')
 
   try {
-    execSync(`bash "${scriptPath}"`, {
+    // Use Git Bash on Windows, /bin/bash on Unix
+    const bashShell = process.platform === 'win32'
+      ? 'C:\\Program Files\\Git\\bin\\bash.exe'
+      : '/bin/bash'
+    execSync(`"${bashShell}" "${scriptPath}"`, {
       cwd: buildDir,
       env: {
         ...process.env,
@@ -1910,7 +1914,7 @@ else {
         SRCROOT: buildDir,
       },
       stdio: 'inherit',
-      shell: '/bin/bash',
+      shell: bashShell,
     })
   }
 catch (error: unknown) {
