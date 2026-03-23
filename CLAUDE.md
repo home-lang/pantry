@@ -29,7 +29,7 @@ There are two distinct publish targets:
 - **`pantry publish --npm --access public`** — publishes JS/TS packages to **npm** (npmjs.org). Used by monorepo release workflows for public packages (skips `"private": true`). Requires `NPM_TOKEN` env var.
 - **`pantry publish:commit './packages/*'`** — publishes packages to the **pantry registry** (registry.pantry.dev) under a commit SHA. Used in CI continuous-release for commit-based installs (like pkg-pr-new). Requires AWS credentials for S3 upload.
 
-The pantry S3 registry (`registry.pantry.dev/binaries/`) hosts **system packages** (pre-built binaries like zig, curl, redis, bun) uploaded via the `build-package.yml` / `sync-binaries.yml` workflows. JS/TS packages go to npm, not S3.
+The pantry S3 registry (`registry.pantry.dev/binaries/`) hosts **system packages** (pre-built binaries like zig, curl, redis, bun) and **apps** (GUI applications like VS Code, Discord, Obsidian) uploaded via the `build.yml` / `sync-binaries.yml` workflows. JS/TS packages go to npm, not S3.
 
 ## GitHub Action (`packages/action/`)
 

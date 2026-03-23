@@ -1,4 +1,4 @@
-name: Build Package
+name: Build
 
 on:
   schedule:
@@ -255,7 +255,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/discord-notify
         with:
-          title: "Build Package — ${{ needs.build.result == 'success' && 'Success' || needs.build.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
+          title: "Build — ${{ needs.build.result == 'success' && 'Success' || needs.build.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
           description: "${{ github.event_name == 'schedule' && 'Daily app sync' || format('Packages: {0}', github.event.inputs.packages || 'apps-only') }}"
           status: ${{ needs.build.result == 'success' && 'success' || needs.build.result == 'cancelled' && 'warning' || 'failure' }}
           fields: |

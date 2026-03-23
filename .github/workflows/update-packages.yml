@@ -378,7 +378,7 @@ jobs:
           fi
 
           echo "Triggering build for: $DOMAINS"
-          gh workflow run build-package.yml \
+          gh workflow run build.yml \
             -f packages="$DOMAINS" \
             -f force=false
           echo "Build workflow triggered successfully"
