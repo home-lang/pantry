@@ -53,17 +53,17 @@ export interface PackageOverride {
  */
 // eslint-disable-next-line pickier/no-unused-vars
 function brewCaskDownload(caskToken: string, outputFile: string, fallbackUrl?: string): string {
-  const fallback = fallbackUrl
-    ? `\n  curl -fSL -L --retry 3 -H "User-Agent: $UA" "${fallbackUrl}" -o ${outputFile}`
-    : ''
+  const fallbackCurl = fallbackUrl
+    ? `curl -fSL -L --retry 3 -H "User-Agent: $UA" "${fallbackUrl}" -o ${outputFile}`
+    : `echo "ERROR: no brew cask info and no fallback for ${caskToken}" && exit 1`
   return [
     'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-    `BREW_URL=$(brew info --cask --json=v2 ${caskToken} 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['casks'][0]['url'])" 2>/dev/null || true)`,
+    `BREW_URL=$(brew info --cask --json=v2 ${caskToken} 2>/dev/null | bun -e "const d=JSON.parse(await Bun.stdin.text()); console.log(d.casks[0].url)" 2>/dev/null || true)`,
     `if [ -n "$BREW_URL" ]; then`,
     `  curl -fSL -L --retry 3 -H "User-Agent: $UA" "$BREW_URL" -o ${outputFile}`,
     `else`,
-    `  echo "brew cask info unavailable for ${caskToken}, using fallback URL"`,
-    `  curl -fSL -L --retry 3 -H "User-Agent: $UA" "${fallbackUrl || `https://formulae.brew.sh/api/cask/${caskToken}.json`}" -o ${outputFile}${fallback}`,
+    `  echo "brew cask info unavailable for ${caskToken}, using fallback"`,
+    `  ${fallbackCurl}`,
     `fi`,
   ].join('\n')
 }
@@ -10595,8 +10595,18 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            brewCaskDownload('cursor', '/tmp/cursor.dmg', 'https://download.todesktop.com/230313mzl4w4u92/Cursor%20Mac%20Installer%20arm64.dmg'),
-            dmgExtract('/tmp/cursor.dmg', 'Cursor', 'cursor', '../Cursor.app/Contents/Resources/app/bin/cursor'),
+            '# Cursor downloads as ZIP or DMG depending on brew version — handle both',
+            brewCaskDownload('cursor', '/tmp/cursor-download', 'https://downloads.cursor.com/production/latest/darwin/arm64/Cursor-darwin-arm64.zip'),
+            'cd /tmp',
+            'if file cursor-download | grep -q "Zip archive"; then',
+            '  mv cursor-download cursor.zip && unzip -qo cursor.zip',
+            'elif file cursor-download | grep -q "Apple Disk Image\\|VAX COFF"; then',
+            '  mv cursor-download cursor.dmg && hdiutil attach cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -noverify -quiet && cp -R "/tmp/cursor-mount/Cursor.app" /tmp/ && hdiutil detach /tmp/cursor-mount -quiet || true',
+            'fi',
+            'mkdir -p "{{prefix}}"',
+            'find /tmp -maxdepth 1 -name "Cursor.app" -exec mv {} "{{prefix}}/Cursor.app" \\;',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Cursor.app/Contents/Resources/app/bin/cursor" "{{prefix}}/bin/cursor"',
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -10959,8 +10969,13 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            brewCaskDownload('whatsapp', '/tmp/whatsapp.dmg', 'https://web.whatsapp.com/desktop/mac-native/release/arm64/WhatsApp-arm64.dmg'),
-            dmgExtract('/tmp/whatsapp.dmg', 'WhatsApp', 'whatsapp'),
+            '# WhatsApp downloads as ZIP',
+            brewCaskDownload('whatsapp', '/tmp/whatsapp.zip', 'https://web.whatsapp.com/desktop/mac_native/release/?extension=zip&configuration=Release'),
+            'cd /tmp && unzip -qo whatsapp.zip',
+            'mkdir -p "{{prefix}}"',
+            'find /tmp -maxdepth 1 -name "WhatsApp.app" -exec mv {} "{{prefix}}/WhatsApp.app" \\;',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../WhatsApp.app/Contents/MacOS/WhatsApp" "{{prefix}}/bin/whatsapp"',
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11109,8 +11124,13 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            brewCaskDownload('element', '/tmp/element.dmg', 'https://packages.element.io/desktop/install/macos/Element.dmg'),
-            dmgExtract('/tmp/element.dmg', 'Element', 'element'),
+            '# Element downloads as ZIP (universal mac)',
+            brewCaskDownload('element', '/tmp/element.zip', 'https://packages.element.io/desktop/install/macos/Element.zip'),
+            'cd /tmp && unzip -qo element.zip',
+            'mkdir -p "{{prefix}}"',
+            'find /tmp -maxdepth 1 -name "Element*.app" -exec mv {} "{{prefix}}/Element.app" \\;',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Element.app/Contents/MacOS/Element" "{{prefix}}/bin/element"',
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11250,12 +11270,9 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            brewCaskDownload('meetingbar', '/tmp/meetingbar.zip', 'https://github.com/leits/MeetingBar/releases/latest/download/MeetingBar.zip'),
-            'cd /tmp && unzip -qo meetingbar.zip',
-            'mkdir -p "{{prefix}}"',
-            'find /tmp -maxdepth 1 -name "MeetingBar*.app" -exec mv {} "{{prefix}}/MeetingBar.app" \\;',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../MeetingBar.app/Contents/MacOS/MeetingBar" "{{prefix}}/bin/meetingbar"',
+            '# MeetingBar is a DMG from GitHub releases',
+            brewCaskDownload('meetingbar', '/tmp/meetingbar.dmg', 'https://github.com/leits/MeetingBar/releases/latest/download/MeetingBar.dmg'),
+            dmgExtract('/tmp/meetingbar.dmg', 'MeetingBar', 'meetingbar'),
           ].join('\n'),
         ]
         recipe.build.env = {}
