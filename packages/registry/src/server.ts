@@ -54,6 +54,72 @@ const SITE_DIR = resolve(__dirname, '../site/pages')
 const SITE_LAYOUT = resolve(SITE_DIR, 'layout.stx')
 const SITE_COMPONENTS = resolve(__dirname, '../site/components')
 
+/** Desktop apps available in the registry (macOS .app bundles) */
+const DESKTOP_APPS: Array<{ domain: string, label: string, desc: string, category: string }> = [
+  // Editors & IDEs
+  { domain: 'code.visualstudio.com', label: 'Visual Studio Code', desc: 'Source code editor by Microsoft', category: 'Development' },
+  { domain: 'cursor.com', label: 'Cursor', desc: 'AI-powered code editor', category: 'Development' },
+  { domain: 'zed.dev', label: 'Zed', desc: 'High-performance code editor', category: 'Development' },
+  // Terminals
+  { domain: 'ghostty.org', label: 'Ghostty', desc: 'Fast, native terminal emulator', category: 'Development' },
+  { domain: 'warp.dev', label: 'Warp', desc: 'Modern terminal with AI', category: 'Development' },
+  { domain: 'iterm2.com', label: 'iTerm2', desc: 'Terminal emulator for macOS', category: 'Development' },
+  // Dev Tools
+  { domain: 'docker.com/desktop', label: 'Docker Desktop', desc: 'Container development platform', category: 'Development' },
+  { domain: 'orbstack.dev', label: 'OrbStack', desc: 'Fast Docker & Linux on macOS', category: 'Development' },
+  { domain: 'tableplus.com', label: 'TablePlus', desc: 'Database management GUI', category: 'Development' },
+  { domain: 'dbeaver.io', label: 'DBeaver', desc: 'Universal database tool', category: 'Development' },
+  { domain: 'postman.com', label: 'Postman', desc: 'API development platform', category: 'Development' },
+  { domain: 'bruno.app', label: 'Bruno', desc: 'Open-source API client', category: 'Development' },
+  // Browsers
+  { domain: 'firefox.org', label: 'Firefox', desc: 'Open-source web browser', category: 'Browsers' },
+  { domain: 'brave.com', label: 'Brave', desc: 'Privacy-focused browser', category: 'Browsers' },
+  { domain: 'arc.net', label: 'Arc', desc: 'Browser built for power users', category: 'Browsers' },
+  // Communication
+  { domain: 'discord.com', label: 'Discord', desc: 'Voice, video & text chat', category: 'Communication' },
+  { domain: 'slack.com', label: 'Slack', desc: 'Team messaging platform', category: 'Communication' },
+  { domain: 'signal.org', label: 'Signal', desc: 'Private messaging', category: 'Communication' },
+  { domain: 'telegram.org', label: 'Telegram', desc: 'Cloud-based messaging', category: 'Communication' },
+  { domain: 'whatsapp.com', label: 'WhatsApp', desc: 'Messaging app', category: 'Communication' },
+  { domain: 'element.io', label: 'Element', desc: 'Matrix messaging client', category: 'Communication' },
+  // AI
+  { domain: 'ollama.com', label: 'Ollama', desc: 'Run LLMs locally', category: 'AI' },
+  { domain: 'lmstudio.ai', label: 'LM Studio', desc: 'Desktop LLM app', category: 'AI' },
+  // Productivity
+  { domain: 'obsidian.md', label: 'Obsidian', desc: 'Knowledge base & notes', category: 'Productivity' },
+  { domain: 'notion.so', label: 'Notion', desc: 'All-in-one workspace', category: 'Productivity' },
+  { domain: 'linear.app', label: 'Linear', desc: 'Project management tool', category: 'Productivity' },
+  { domain: 'raycast.com', label: 'Raycast', desc: 'Productivity launcher', category: 'Productivity' },
+  { domain: '1password.com', label: '1Password', desc: 'Password manager', category: 'Security' },
+  { domain: 'bitwarden.com', label: 'Bitwarden', desc: 'Open-source password manager', category: 'Security' },
+  { domain: 'keepassxc.org', label: 'KeePassXC', desc: 'Offline password manager', category: 'Security' },
+  // Media
+  { domain: 'spotify.com', label: 'Spotify', desc: 'Music streaming', category: 'Media' },
+  { domain: 'vlc.app', label: 'VLC', desc: 'Media player', category: 'Media' },
+  { domain: 'iina.io', label: 'IINA', desc: 'Modern media player for macOS', category: 'Media' },
+  { domain: 'handbrake.fr', label: 'HandBrake', desc: 'Video transcoder', category: 'Media' },
+  // Design
+  { domain: 'figma.com', label: 'Figma', desc: 'Collaborative design tool', category: 'Design' },
+  { domain: 'inkscape.org', label: 'Inkscape', desc: 'Vector graphics editor', category: 'Design' },
+  { domain: 'gimp.org', label: 'GIMP', desc: 'Image editor', category: 'Design' },
+  { domain: 'blender.org', label: 'Blender', desc: '3D creation suite', category: 'Design' },
+  // Utilities
+  { domain: 'rectangle.app', label: 'Rectangle', desc: 'Window management', category: 'Utilities' },
+  { domain: 'karabiner-elements.pqrs.org', label: 'Karabiner-Elements', desc: 'Keyboard customizer', category: 'Utilities' },
+  { domain: 'cleanshot.com', label: 'CleanShot X', desc: 'Screenshot tool', category: 'Utilities' },
+  { domain: 'alttab.app', label: 'AltTab', desc: 'Window switcher', category: 'Utilities' },
+  { domain: 'stats.app', label: 'Stats', desc: 'System monitor in menu bar', category: 'Utilities' },
+  { domain: 'maccy.app', label: 'Maccy', desc: 'Clipboard manager', category: 'Utilities' },
+  { domain: 'monitorcontrol.app', label: 'MonitorControl', desc: 'Display brightness control', category: 'Utilities' },
+  { domain: 'hiddenbar.app', label: 'Hidden Bar', desc: 'Hide menu bar items', category: 'Utilities' },
+  { domain: 'meetingbar.app', label: 'MeetingBar', desc: 'Calendar in menu bar', category: 'Utilities' },
+  { domain: 'keka.io', label: 'Keka', desc: 'File archiver', category: 'Utilities' },
+  // Office
+  { domain: 'libreoffice.org', label: 'LibreOffice', desc: 'Office suite', category: 'Office' },
+  // VPN
+  { domain: 'tunnelblick.net', label: 'Tunnelblick', desc: 'OpenVPN client', category: 'VPN & Security' },
+]
+
 /** Featured packages shown on the homepage */
 const FEATURED_PACKAGES = [
   { domain: 'bun.sh', label: 'Bun', desc: 'JavaScript runtime & toolkit' },
@@ -128,6 +194,7 @@ const categorySlugMap: Record<string, AnalyticsCategory> = {
  * GET  /packages/{name}/{version}/tarball - Download tarball
  * GET  /packages/{name}/versions  - List all versions
  * GET  /search?q={query}          - Search packages
+ * GET  /desktop-apps              - List all desktop apps (optional ?category=)
  * POST /publish                   - Publish package (multipart/form-data)
  * GET  /health                    - Health check
  *
@@ -235,6 +302,41 @@ export function createHandler(
       // Site auth pages (login, signup, account)
       if (authService && (path === '/login' || path === '/signup' || path === '/account')) {
         return handleSiteAuth(path, req, authService, corsHeaders)
+      }
+
+      // Desktop apps listing — returns all desktop apps with live version info from S3
+      if (path === '/desktop-apps' && req.method === 'GET') {
+        const category = url.searchParams.get('category') || ''
+        const results = await Promise.allSettled(
+          DESKTOP_APPS
+            .filter(app => !category || app.category.toLowerCase() === category.toLowerCase())
+            .map(async (app) => {
+              try {
+                const meta = await fetchPackageMetadata(app.domain, binaryStorage)
+                return {
+                  ...app,
+                  version: meta?.latestVersion || null,
+                  platforms: meta?.latestVersion
+                    ? Object.keys(meta.versions?.[meta.latestVersion]?.platforms || {})
+                    : [],
+                  installed: false,
+                }
+              }
+              catch {
+                return { ...app, version: null, platforms: [], installed: false }
+              }
+            }),
+        )
+        const apps = results.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean)
+        const categories = [...new Set(DESKTOP_APPS.map(a => a.category))].sort()
+        return Response.json({
+          apps,
+          categories,
+          total: apps.length,
+          totalAvailable: DESKTOP_APPS.length,
+        }, {
+          headers: { ...corsHeaders, 'Cache-Control': 'public, max-age=300' },
+        })
       }
 
       // Search — serve HTML for browsers, JSON for API clients / instant search
