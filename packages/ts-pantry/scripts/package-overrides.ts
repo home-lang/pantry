@@ -10167,4 +10167,707 @@ else if (typeof step.run === 'string') {
     },
   },
 
+  // ── Desktop Apps ────────────────────────────────────────────────────────
+  // Pre-built macOS .app bundles downloaded from official sources.
+  // Pattern: download ZIP/DMG → extract .app → install to {{prefix}}/ → symlink CLI to bin/
+
+  'code.visualstudio.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="darwin-arm64"',
+            'else ARCH="darwin"; fi',
+            'curl -fSL "https://update.code.visualstudio.com/{{version}}/\${ARCH}/stable" -o /tmp/vscode.zip',
+            'mkdir -p "{{prefix}}"',
+            'cd /tmp && unzip -qo vscode.zip',
+            'mv "/tmp/Visual Studio Code.app" "{{prefix}}/Visual Studio Code.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Visual Studio Code.app/Contents/Resources/app/bin/code" "{{prefix}}/bin/code"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'discord.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://dl.discordapp.net/apps/osx/{{version}}/Discord.dmg" -o /tmp/discord.dmg',
+            'hdiutil attach /tmp/discord.dmg -mountpoint /tmp/discord-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/discord-mount/Discord.app" "{{prefix}}/Discord.app"',
+            'hdiutil detach /tmp/discord-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Discord.app/Contents/MacOS/Discord" "{{prefix}}/bin/discord"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'slack.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://downloads.slack-edge.com/desktop-releases/mac/universal/{{version}}/Slack-{{version}}-macOS.dmg" -o /tmp/slack.dmg',
+            'hdiutil attach /tmp/slack.dmg -mountpoint /tmp/slack-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/slack-mount/Slack.app" "{{prefix}}/Slack.app"',
+            'hdiutil detach /tmp/slack-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Slack.app/Contents/MacOS/Slack" "{{prefix}}/bin/slack"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'obsidian.md': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="-arm64"; else ARCH=""; fi',
+            'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}${ARCH}.dmg" -o /tmp/obsidian.dmg',
+            'hdiutil attach /tmp/obsidian.dmg -mountpoint /tmp/obsidian-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/obsidian-mount/Obsidian.app" "{{prefix}}/Obsidian.app"',
+            'hdiutil detach /tmp/obsidian-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Obsidian.app/Contents/MacOS/Obsidian" "{{prefix}}/bin/obsidian"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'notion.so': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="x64"; fi',
+            'curl -fSL "https://desktop-release.notion-static.com/Notion-{{version}}-${ARCH}.dmg" -o /tmp/notion.dmg',
+            'hdiutil attach /tmp/notion.dmg -mountpoint /tmp/notion-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/notion-mount/Notion.app" "{{prefix}}/Notion.app"',
+            'hdiutil detach /tmp/notion-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Notion.app/Contents/MacOS/Notion" "{{prefix}}/bin/notion"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'spotify.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://download.scdn.co/SpotifyARM64.dmg" -o /tmp/spotify.dmg',
+            'hdiutil attach /tmp/spotify.dmg -mountpoint /tmp/spotify-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/spotify-mount/Spotify.app" "{{prefix}}/Spotify.app"',
+            'hdiutil detach /tmp/spotify-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Spotify.app/Contents/MacOS/Spotify" "{{prefix}}/bin/spotify"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'figma.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://desktop.figma.com/mac-arm/Figma-{{version}}.zip" -o /tmp/figma.zip',
+            'cd /tmp && unzip -qo figma.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/Figma.app" "{{prefix}}/Figma.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Figma.app/Contents/MacOS/Figma" "{{prefix}}/bin/figma"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  '1password.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="aarch64"; else ARCH="x86_64"; fi',
+            'curl -fSL "https://downloads.1password.com/mac/1Password-{{version}}-${ARCH}.zip" -o /tmp/1password.zip',
+            'cd /tmp && unzip -qo 1password.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/1Password.app" "{{prefix}}/1Password.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../1Password.app/Contents/MacOS/1Password" "{{prefix}}/bin/1password"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'iterm2.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            '# iTerm2 version format: 3_5_6 for URL (dots → underscores)',
+            'URL_VERSION=$(echo "{{version}}" | tr "." "_")',
+            'curl -fSL "https://iterm2.com/downloads/stable/iTerm2-${URL_VERSION}.zip" -o /tmp/iterm2.zip',
+            'cd /tmp && unzip -qo iterm2.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/iTerm.app" "{{prefix}}/iTerm.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../iTerm.app/Contents/MacOS/iTerm2" "{{prefix}}/bin/iterm2"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'firefox.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://download.mozilla.org/?product=firefox-{{version}}-ssl&os=osx&lang=en-US" -o /tmp/firefox.dmg',
+            'hdiutil attach /tmp/firefox.dmg -mountpoint /tmp/firefox-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/firefox-mount/Firefox.app" "{{prefix}}/Firefox.app"',
+            'hdiutil detach /tmp/firefox-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Firefox.app/Contents/MacOS/firefox" "{{prefix}}/bin/firefox"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'brave.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="x64"; fi',
+            'curl -fSL "https://github.com/nicehash/nicehash-quickminer/releases/download/v{{version}}/Brave-Browser-${ARCH}.dmg" -o /tmp/brave.dmg || \\',
+            'curl -fSL "https://referrals.brave.com/latest/Brave-Browser-${ARCH}.dmg" -o /tmp/brave.dmg',
+            'hdiutil attach /tmp/brave.dmg -mountpoint /tmp/brave-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/brave-mount/Brave Browser.app" "{{prefix}}/Brave Browser.app"',
+            'hdiutil detach /tmp/brave-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Brave Browser.app/Contents/MacOS/Brave Browser" "{{prefix}}/bin/brave"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'arc.net': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://releases.arc.net/release/Arc-{{version}}.dmg" -o /tmp/arc.dmg',
+            'hdiutil attach /tmp/arc.dmg -mountpoint /tmp/arc-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/arc-mount/Arc.app" "{{prefix}}/Arc.app"',
+            'hdiutil detach /tmp/arc-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Arc.app/Contents/MacOS/Arc" "{{prefix}}/bin/arc"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'raycast.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://releases.raycast.com/releases/{{version}}/download?arch=arm64" -o /tmp/raycast.dmg',
+            'hdiutil attach /tmp/raycast.dmg -mountpoint /tmp/raycast-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/raycast-mount/Raycast.app" "{{prefix}}/Raycast.app"',
+            'hdiutil detach /tmp/raycast-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Raycast.app/Contents/MacOS/Raycast" "{{prefix}}/bin/raycast"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'linear.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://desktop.linear.app/mac/dmg/Linear-{{version}}.dmg" -o /tmp/linear.dmg',
+            'hdiutil attach /tmp/linear.dmg -mountpoint /tmp/linear-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/linear-mount/Linear.app" "{{prefix}}/Linear.app"',
+            'hdiutil detach /tmp/linear-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Linear.app/Contents/MacOS/Linear" "{{prefix}}/bin/linear"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'warp.dev': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://releases.warp.dev/stable/v{{version}}/Warp.dmg" -o /tmp/warp.dmg',
+            'hdiutil attach /tmp/warp.dmg -mountpoint /tmp/warp-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/warp-mount/Warp.app" "{{prefix}}/Warp.app"',
+            'hdiutil detach /tmp/warp-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Warp.app/Contents/MacOS/stable" "{{prefix}}/bin/warp"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'ghostty.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://release.files.ghostty.org/{{version}}/Ghostty.dmg" -o /tmp/ghostty.dmg',
+            'hdiutil attach /tmp/ghostty.dmg -mountpoint /tmp/ghostty-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/ghostty-mount/Ghostty.app" "{{prefix}}/Ghostty.app"',
+            'hdiutil detach /tmp/ghostty-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Ghostty.app/Contents/MacOS/ghostty" "{{prefix}}/bin/ghostty"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'cursor.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="x64"; fi',
+            'curl -fSL "https://download.todesktop.com/230313mzl4w4u92/Cursor-{{version}}-${ARCH}.dmg" -o /tmp/cursor.dmg',
+            'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/cursor-mount/Cursor.app" "{{prefix}}/Cursor.app"',
+            'hdiutil detach /tmp/cursor-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Cursor.app/Contents/Resources/app/bin/cursor" "{{prefix}}/bin/cursor"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'zed.dev': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="aarch64"; else ARCH="x86_64"; fi',
+            'curl -fSL "https://zed.dev/api/releases/stable/{{version}}/Zed-${ARCH}.dmg" -o /tmp/zed.dmg',
+            'hdiutil attach /tmp/zed.dmg -mountpoint /tmp/zed-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/zed-mount/Zed.app" "{{prefix}}/Zed.app"',
+            'hdiutil detach /tmp/zed-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Zed.app/Contents/MacOS/cli" "{{prefix}}/bin/zed"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'docker.com/desktop': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="amd64"; fi',
+            'curl -fSL "https://desktop.docker.com/mac/main/${ARCH}/Docker.dmg" -o /tmp/docker.dmg',
+            'hdiutil attach /tmp/docker.dmg -mountpoint /tmp/docker-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/docker-mount/Docker.app" "{{prefix}}/Docker.app"',
+            'hdiutil detach /tmp/docker-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Docker.app/Contents/Resources/bin/docker" "{{prefix}}/bin/docker-desktop"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'tableplus.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://tableplus.com/release/osx/tableplus_latest" -o /tmp/tableplus.dmg',
+            'hdiutil attach /tmp/tableplus.dmg -mountpoint /tmp/tableplus-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/tableplus-mount/TablePlus.app" "{{prefix}}/TablePlus.app"',
+            'hdiutil detach /tmp/tableplus-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../TablePlus.app/Contents/MacOS/TablePlus" "{{prefix}}/bin/tableplus"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'postman.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="osx_arm64"; else ARCH="osx64"; fi',
+            'curl -fSL "https://dl.pstmn.io/download/version/{{version}}/${ARCH}" -o /tmp/postman.zip',
+            'cd /tmp && unzip -qo postman.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/Postman.app" "{{prefix}}/Postman.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Postman.app/Contents/MacOS/Postman" "{{prefix}}/bin/postman"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'vlc.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="intel64"; fi',
+            'curl -fSL "https://get.videolan.org/vlc/{{version}}/macosx/vlc-{{version}}-${ARCH}.dmg" -o /tmp/vlc.dmg',
+            'hdiutil attach /tmp/vlc.dmg -mountpoint /tmp/vlc-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/vlc-mount/VLC.app" "{{prefix}}/VLC.app"',
+            'hdiutil detach /tmp/vlc-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../VLC.app/Contents/MacOS/VLC" "{{prefix}}/bin/vlc"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'handbrake.fr': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://github.com/HandBrake/HandBrake/releases/download/{{version}}/HandBrake-{{version}}.dmg" -o /tmp/handbrake.dmg',
+            'hdiutil attach /tmp/handbrake.dmg -mountpoint /tmp/handbrake-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/handbrake-mount/HandBrake.app" "{{prefix}}/HandBrake.app"',
+            'hdiutil detach /tmp/handbrake-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../HandBrake.app/Contents/MacOS/HandBrake" "{{prefix}}/bin/handbrake"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'rectangle.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://github.com/rxhanson/Rectangle/releases/download/v{{version}}/Rectangle{{version}}.dmg" -o /tmp/rectangle.dmg',
+            'hdiutil attach /tmp/rectangle.dmg -mountpoint /tmp/rectangle-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/rectangle-mount/Rectangle.app" "{{prefix}}/Rectangle.app"',
+            'hdiutil detach /tmp/rectangle-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Rectangle.app/Contents/MacOS/Rectangle" "{{prefix}}/bin/rectangle"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'karabiner-elements.pqrs.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://github.com/pqrs-org/Karabiner-Elements/releases/download/v{{version}}/Karabiner-Elements-{{version}}.dmg" -o /tmp/karabiner.dmg',
+            'hdiutil attach /tmp/karabiner.dmg -mountpoint /tmp/karabiner-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/karabiner-mount/Karabiner-Elements.app" "{{prefix}}/Karabiner-Elements.app" 2>/dev/null || \\',
+            '  find /tmp/karabiner-mount -name "*.app" -maxdepth 1 -exec cp -R {} "{{prefix}}/" \\;',
+            'hdiutil detach /tmp/karabiner-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'find "{{prefix}}" -name karabiner_cli -type f | head -1 | xargs -I{} ln -sf {} "{{prefix}}/bin/karabiner"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'cleanshot.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://updates.getcleanshot.com/v3/CleanShot-X-{{version}}.dmg" -o /tmp/cleanshot.dmg',
+            'hdiutil attach /tmp/cleanshot.dmg -mountpoint /tmp/cleanshot-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/cleanshot-mount/CleanShot X.app" "{{prefix}}/CleanShot X.app"',
+            'hdiutil detach /tmp/cleanshot-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../CleanShot X.app/Contents/MacOS/CleanShot X" "{{prefix}}/bin/cleanshot"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'alttab.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://github.com/lwouis/alt-tab-macos/releases/download/v{{version}}/AltTab-{{version}}.zip" -o /tmp/alttab.zip',
+            'cd /tmp && unzip -qo alttab.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/AltTab.app" "{{prefix}}/AltTab.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../AltTab.app/Contents/MacOS/AltTab" "{{prefix}}/bin/alttab"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'stats.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://github.com/exelban/stats/releases/download/v{{version}}/Stats.dmg" -o /tmp/stats.dmg',
+            'hdiutil attach /tmp/stats.dmg -mountpoint /tmp/stats-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/stats-mount/Stats.app" "{{prefix}}/Stats.app"',
+            'hdiutil detach /tmp/stats-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Stats.app/Contents/MacOS/Stats" "{{prefix}}/bin/stats"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'maccy.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL "https://github.com/p0deje/Maccy/releases/download/{{version}}/Maccy.app.zip" -o /tmp/maccy.zip',
+            'cd /tmp && unzip -qo maccy.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/Maccy.app" "{{prefix}}/Maccy.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Maccy.app/Contents/MacOS/Maccy" "{{prefix}}/bin/maccy"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'orbstack.dev': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="amd64"; fi',
+            'curl -fSL "https://cdn-updates.orbstack.dev/${ARCH}/OrbStack.dmg" -o /tmp/orbstack.dmg',
+            'hdiutil attach /tmp/orbstack.dmg -mountpoint /tmp/orbstack-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/orbstack-mount/OrbStack.app" "{{prefix}}/OrbStack.app"',
+            'hdiutil detach /tmp/orbstack-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../OrbStack.app/Contents/MacOS/OrbStack" "{{prefix}}/bin/orbstack"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
 }

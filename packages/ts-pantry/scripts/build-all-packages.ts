@@ -164,8 +164,8 @@ else if (entry.name === 'package.yml') {
             continue
           }
 
-          if (!hasDistributable && !isVendored) {
-            // No source to download and not a vendored package, skip
+          if (!hasDistributable && !isVendored && !override?.modifyRecipe) {
+            // No source to download, not vendored, and no override to replace build — skip
             continue
           }
 
@@ -211,6 +211,10 @@ catch {
   }
 
   findYamls(pantryDir)
+
+  // Also scan desktop-pantry/ for desktop app YAML stubs (not auto-synced from pkgx)
+  const desktopPantryDir = join(process.cwd(), 'src', 'desktop-pantry')
+  findYamls(desktopPantryDir)
 
   // Topological sort: packages with fewer deps come first
   // This ensures dependency packages are built before their dependents
@@ -1215,6 +1219,15 @@ Options:
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
     'musepack.net', // duplicate symbols on linux, builds fine on darwin
     'github.com/OSGeo/libgeotiff', // proj.org dep only available on darwin
+    // Desktop apps — macOS .app bundles only
+    'code.visualstudio.com', 'discord.com', 'slack.com', 'obsidian.md',
+    'notion.so', 'spotify.com', 'figma.com', '1password.com',
+    'iterm2.com', 'firefox.org', 'brave.com', 'arc.net',
+    'raycast.com', 'linear.app', 'warp.dev', 'ghostty.org',
+    'cursor.com', 'zed.dev', 'docker.com/desktop', 'tableplus.com',
+    'postman.com', 'vlc.app', 'handbrake.fr', 'rectangle.app',
+    'karabiner-elements.pqrs.org', 'cleanshot.com', 'alttab.app',
+    'stats.app', 'maccy.app', 'orbstack.dev',
   ])
 
   // Packages needing specialized toolchains not available in CI
