@@ -68,6 +68,7 @@ export const re2corgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.5',
     '4.4',
     '4.4.0',
     '4.3.1',
@@ -87,7 +88,6 @@ export const re2corgPackage = {
     '3.0.0',
     '2.2',
     '2.1.1',
-    '2.1',
   ] as const,
   aliases: [] as const,
 }
