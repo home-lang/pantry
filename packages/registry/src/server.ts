@@ -2434,7 +2434,25 @@ async function handleSiteHome(binaryStorage?: BinaryStorage, analyticsStorage?: 
   const zigPackageCount = zigStorage ? await zigStorage.count().catch(() => 0) : 0
   const phpPackageCountRaw = await getPackagistCount().catch(() => 350000)
   const phpPackageCount = phpPackageCountRaw >= 1000 ? `${Math.floor(phpPackageCountRaw / 1000)}K` : String(phpPackageCountRaw)
-  const html = await renderSitePage('index.stx', { packages, totalPackages, zigPackageCount, phpPackageCount, topPackages, stats, canonicalUrl: 'https://pantry.dev/' })
+
+  // Fetch desktop app metadata for homepage section
+  const desktopFeatured = DESKTOP_APPS.filter(a =>
+    ['code.visualstudio.com', 'discord.com', 'obsidian.md', 'spotify.com', 'figma.com',
+      'ghostty.org', 'cursor.com', 'slack.com', 'firefox.org', 'docker.com/desktop',
+      'ollama.com', 'raycast.com'].includes(a.domain),
+  )
+  const desktopResults = await Promise.allSettled(
+    desktopFeatured.map(async (app) => {
+      const meta = await fetchPackageMetadata(app.domain, binaryStorage).catch(() => null)
+      return { ...app, version: meta?.latestVersion || null }
+    }),
+  )
+  const desktopApps = desktopResults
+    .map(r => r.status === 'fulfilled' ? r.value : null)
+    .filter(Boolean)
+  const desktopAppCount = DESKTOP_APPS.length
+
+  const html = await renderSitePage('index.stx', { packages, totalPackages, zigPackageCount, phpPackageCount, topPackages, stats, desktopApps, desktopAppCount, canonicalUrl: 'https://pantry.dev/' })
   return htmlResponse(html)
 }
 

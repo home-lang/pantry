@@ -10,7 +10,7 @@
     </p>
 
     <p class="mb-10" style="font-size: 0.875rem; color: var(--fg-subtle);">
-      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> system packages &middot; <span class="font-semibold font-mono" style="color: var(--green);">3M+</span> npm packages &middot; <span class="font-semibold font-mono" style="color: var(--purple);">{{ phpPackageCount }}+</span> php packages &middot; <span class="font-semibold font-mono" style="color: var(--yellow);">{{ zigPackageCount }}</span> zig packages
+      <span class="font-semibold font-mono" style="color: var(--accent);">{{ totalPackages }}+</span> system packages &middot; <span class="font-semibold font-mono" style="color: var(--green);">3M+</span> npm packages &middot; <span class="font-semibold font-mono" style="color: var(--purple);">{{ phpPackageCount }}+</span> php packages &middot; <span class="font-semibold font-mono" style="color: var(--yellow);">{{ zigPackageCount }}</span> zig packages &middot; <span class="font-semibold font-mono" style="color: var(--blue);">{{ desktopAppCount }}</span> desktop apps
     </p>
 
     <!-- Search -->
@@ -222,6 +222,45 @@
             <path d="{!! pkg.sparklinePath !!}" fill="none" stroke="var(--accent)" stroke-width="1" stroke-linecap="round" />
           </svg>
           @endif
+        </div>
+      </a>
+      @endforeach
+    </div>
+  </div>
+</section>
+
+<!-- Desktop Apps -->
+<section class="px-6 pb-16">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-xs uppercase tracking-widest font-medium" style="color: var(--fg-subtle);">Desktop Apps</h2>
+      <a href="/desktop-apps" class="text-xs font-mono" style="color: var(--accent);">View all {{ desktopAppCount }} apps &rarr;</a>
+    </div>
+
+    <div class="grid gap-3" style="grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));">
+      @foreach (desktopApps as app)
+      <a href="/package/{{ app.domain }}" class="block bg-[var(--bg-subtle)] border border-[var(--border)] rounded-lg p-4 px-5 transition-colors hover:border-[var(--border-hover)] hover:bg-[var(--bg-muted)]">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2.5">
+            <img
+              src="https://www.google.com/s2/favicons?domain={{ app.domain }}&sz=32"
+              alt=""
+              width="18"
+              height="18"
+              loading="lazy"
+              class="rounded-sm"
+              style="opacity: 0.85;"
+              onerror="this.style.display='none'"
+            />
+            <span class="font-mono text-sm font-medium">{{ app.label }}</span>
+          </div>
+          @if (app.version)
+          <span class="font-mono" style="font-size: 0.6875rem; color: var(--fg-subtle);">{{ app.version }}</span>
+          @endif
+        </div>
+        <p style="font-size: 0.8125rem; color: var(--fg-muted);">{{ app.desc }}</p>
+        <div class="mt-1.5">
+          <span class="font-mono px-1.5 py-0.5 rounded text-[0.625rem]" style="background: var(--bg-muted); color: var(--blue);">{{ app.category }}</span>
         </div>
       </a>
       @endforeach
