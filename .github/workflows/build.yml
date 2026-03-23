@@ -67,7 +67,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Setup Bun (Windows)
+        if: runner.os == 'Windows'
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
       - name: Setup Pantry
+        if: runner.os != 'Windows'
         uses: ./packages/action
         env:
           GH_TOKEN: ${{ github.token }}
