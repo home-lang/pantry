@@ -16,10 +16,11 @@ on:
         required: false
         type: choice
         options:
-          - both
+          - all
           - darwin-arm64
           - linux-x86-64
-        default: both
+          - windows-x64
+        default: all
       force:
         description: 'Force re-upload even if already in S3'
         required: false
@@ -41,16 +42,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Desktop-only builds (schedule or explicit flag) run on macOS only
-        # Otherwise respect the platform input
+        # Apps-only builds (schedule or flag) run on macOS + Windows (apps have UIs)
+        # "both" = darwin + linux (legacy default for system packages)
+        # "all" = darwin + linux + windows
         platform: ${{
           (github.event_name == 'schedule' || github.event.inputs.apps-only == 'true')
-            && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]')
+            && fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"windows-latest","name":"windows-x64"}]')
           || github.event.inputs.platform == 'darwin-arm64'
             && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]')
           || github.event.inputs.platform == 'linux-x86-64'
             && fromJson('[{"os":"ubuntu-latest","name":"linux-x86-64"}]')
-          || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"}]')
+          || github.event.inputs.platform == 'windows-x64'
+            && fromJson('[{"os":"windows-latest","name":"windows-x64"}]')
+          || github.event.inputs.platform == 'all'
+            && fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"},{"os":"windows-latest","name":"windows-x64"}]')
+          || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"},{"os":"windows-latest","name":"windows-x64"}]')
           }}
     runs-on: ${{ matrix.platform.os }}
     permissions:

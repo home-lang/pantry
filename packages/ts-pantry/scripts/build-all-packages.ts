@@ -95,9 +95,11 @@ interface BuildPlatformInfo {
 }
 
 function detectPlatform(): BuildPlatformInfo {
-  const os = process.platform === 'darwin' ? 'darwin' : 'linux'
+  const os = process.platform === 'darwin' ? 'darwin' : process.platform === 'win32' ? 'windows' : 'linux'
   const arch = process.arch === 'arm64' ? 'arm64' : 'x86-64'
-  return { platform: `${os}-${arch}`, os, arch }
+  // Windows uses x64 naming convention
+  const platformArch = os === 'windows' ? 'x64' : arch
+  return { platform: `${os}-${platformArch}`, os, arch: platformArch }
 }
 
 /**
@@ -111,7 +113,7 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
   const dashIdx = targetPlatform ? targetPlatform.indexOf('-') : -1
   const targetOs = dashIdx > 0 ? targetPlatform!.slice(0, dashIdx) : (targetPlatform || '')
   const targetArch = dashIdx > 0 ? targetPlatform!.slice(dashIdx + 1) : ''
-  const targetOsName = targetOs === 'darwin' ? 'darwin' : targetOs === 'linux' ? 'linux' : ''
+  const targetOsName = targetOs === 'darwin' ? 'darwin' : targetOs === 'linux' ? 'linux' : targetOs === 'windows' ? 'windows' : ''
   const targetArchName = targetArch === 'arm64' ? 'aarch64' : targetArch === 'x86-64' ? 'x86-64' : targetArch === 'x86_64' ? 'x86-64' : ''
 
   // Recursively find all package.yml files
@@ -1224,22 +1226,15 @@ Options:
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
     'musepack.net', // duplicate symbols on linux, builds fine on darwin
     'github.com/OSGeo/libgeotiff', // proj.org dep only available on darwin
-    // Apps — macOS .app bundles (GUI applications)
-    'code.visualstudio.com', 'discord.com', 'slack.com', 'obsidian.md',
-    'notion.so', 'spotify.com', 'figma.com', '1password.com',
-    'iterm2.com', 'firefox.org', 'brave.com', 'arc.net',
-    'raycast.com', 'linear.app', 'warp.dev', 'ghostty.org',
-    'cursor.com', 'zed.dev', 'docker.com/desktop', 'tableplus.com',
-    'postman.com', 'vlc.app', 'handbrake.fr', 'rectangle.app',
-    'karabiner-elements.pqrs.org', 'cleanshot.com', 'alttab.app',
-    'stats.app', 'maccy.app', 'orbstack.dev',
-    'signal.org', 'telegram.org', 'whatsapp.com', 'ollama.com',
-    'lmstudio.ai', 'dbeaver.io', 'iina.io', 'keka.io',
-    'keepassxc.org', 'element.io', 'inkscape.org', 'gimp.org',
-    'blender.org', 'libreoffice.org', 'bruno.app', 'tunnelblick.net',
+    // macOS-only apps (no Windows version)
+    'iterm2.com', 'arc.net', 'raycast.com', 'warp.dev', 'ghostty.org',
+    'tableplus.com', 'rectangle.app', 'karabiner-elements.pqrs.org',
+    'cleanshot.com', 'alttab.app', 'stats.app', 'maccy.app',
+    'orbstack.dev', 'iina.io', 'keka.io', 'tunnelblick.net',
     'meetingbar.app', 'hiddenbar.app', 'monitorcontrol.app',
-    'github.com/desktop', 'imageoptim.com', 'insomnia.rest',
-    'logitech.com/options', 'the-unarchiver.com', 'transmit.panic.com',
+    'imageoptim.com', 'logitech.com/options', 'the-unarchiver.com',
+    'transmit.panic.com', 'linear.app',
+    // Cross-platform apps handled by supportedPlatforms override (darwin + windows)
   ])
 
   // Packages needing specialized toolchains not available in CI

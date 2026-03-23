@@ -85,6 +85,94 @@ function dmgExtract(dmgFile: string, appName: string, binName: string, binPath?:
   ].join('\n')
 }
 
+/**
+ * Generate a platform-aware app download + extract script.
+ * On macOS: uses brew cask API → DMG/ZIP extraction
+ * On Windows: uses direct URL → ZIP/EXE extraction to prefix
+ */
+// eslint-disable-next-line pickier/no-unused-vars
+function appDownload(opts: {
+  caskToken: string
+  appName: string
+  binName: string
+  binPath?: string
+  darwin?: { fallbackUrl: string, format?: 'dmg' | 'zip' }
+  windows?: { url: string, format?: 'zip' | 'exe' | 'msi', exePath?: string }
+}): string {
+  const lines: string[] = [
+    'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+    'case "{{hw.platform}}" in',
+    '  darwin)',
+  ]
+
+  // macOS: brew cask → DMG/ZIP
+  const darwinFallback = opts.darwin?.fallbackUrl || ''
+  const darwinFormat = opts.darwin?.format || 'dmg'
+  lines.push(
+    `    BREW_URL=$(brew info --cask --json=v2 ${opts.caskToken} 2>/dev/null | bun -e "const d=JSON.parse(await Bun.stdin.text()); console.log(d.casks[0].url)" 2>/dev/null || true)`,
+    `    DL_URL="\${BREW_URL:-${darwinFallback}}"`,
+    `    curl -fSL -L --retry 3 -H "User-Agent: $UA" "$DL_URL" -o /tmp/app-download`,
+  )
+  if (darwinFormat === 'dmg') {
+    lines.push(
+      `    hdiutil attach /tmp/app-download -mountpoint /tmp/app-mount -nobrowse -noverify -quiet`,
+      `    mkdir -p "{{prefix}}"`,
+      `    cp -R "/tmp/app-mount/${opts.appName}.app" "{{prefix}}/${opts.appName}.app" 2>/dev/null || find /tmp/app-mount -maxdepth 1 -name "*.app" -exec cp -R {} "{{prefix}}/" \\;`,
+      `    hdiutil detach /tmp/app-mount -quiet || true`,
+    )
+  }
+  else {
+    lines.push(
+      `    cd /tmp && unzip -qo app-download`,
+      `    mkdir -p "{{prefix}}"`,
+      `    find /tmp -maxdepth 1 -name "${opts.appName}*.app" -o -name "${opts.appName}.app" | head -1 | xargs -I{} mv {} "{{prefix}}/${opts.appName}.app"`,
+    )
+  }
+  const macBinPath = opts.binPath || `../${opts.appName}.app/Contents/MacOS/${opts.appName.replace(/ /g, '')}`
+  lines.push(
+    `    mkdir -p "{{prefix}}/bin"`,
+    `    ln -sf "${macBinPath}" "{{prefix}}/bin/${opts.binName}"`,
+    `    ;;`,
+  )
+
+  // Windows
+  if (opts.windows) {
+    const winFormat = opts.windows.format || 'zip'
+    lines.push(
+      `  windows)`,
+      `    curl -fSL -L --retry 3 -H "User-Agent: $UA" "${opts.windows.url}" -o /tmp/app-download`,
+    )
+    if (winFormat === 'zip') {
+      lines.push(
+        `    mkdir -p "{{prefix}}"`,
+        `    cd /tmp && unzip -qo app-download -d "{{prefix}}"`,
+      )
+    }
+    else if (winFormat === 'exe' || winFormat === 'msi') {
+      lines.push(
+        `    mkdir -p "{{prefix}}/bin"`,
+        `    cp /tmp/app-download "{{prefix}}/bin/${opts.binName}.${winFormat}"`,
+      )
+    }
+    if (opts.windows.exePath) {
+      lines.push(
+        `    mkdir -p "{{prefix}}/bin"`,
+        `    ln -sf "${opts.windows.exePath}" "{{prefix}}/bin/${opts.binName}" 2>/dev/null || true`,
+      )
+    }
+    lines.push(`    ;;`)
+  }
+
+  lines.push(
+    `  *)`,
+    `    echo "Unsupported platform: {{hw.platform}}" && exit 1`,
+    `    ;;`,
+    `esac`,
+  )
+
+  return lines.join('\n')
+}
+
 /** macOS glibtool PATH fix — Makefiles expect 'glibtool' from Homebrew's keg-only libtool */
 const GLIBTOOL_FIX: ScriptStep = {
   run: [
@@ -10215,7 +10303,7 @@ else if (typeof step.run === 'string') {
   // Pattern: download ZIP/DMG → extract .app → install to {{prefix}}/ → symlink CLI to bin/
 
   'code.visualstudio.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10239,7 +10327,7 @@ else if (typeof step.run === 'string') {
   },
 
   'discord.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10262,7 +10350,7 @@ else if (typeof step.run === 'string') {
   },
 
   'slack.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10285,7 +10373,7 @@ else if (typeof step.run === 'string') {
   },
 
   'obsidian.md': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10308,7 +10396,7 @@ else if (typeof step.run === 'string') {
   },
 
   'notion.so': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10332,7 +10420,7 @@ else if (typeof step.run === 'string') {
   },
 
   'spotify.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10355,7 +10443,7 @@ else if (typeof step.run === 'string') {
   },
 
   'figma.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10377,7 +10465,7 @@ else if (typeof step.run === 'string') {
   },
 
   '1password.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10424,7 +10512,7 @@ else if (typeof step.run === 'string') {
   },
 
   'firefox.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10447,7 +10535,7 @@ else if (typeof step.run === 'string') {
   },
 
   'brave.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10587,7 +10675,7 @@ else if (typeof step.run === 'string') {
   },
 
   'cursor.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10615,7 +10703,7 @@ else if (typeof step.run === 'string') {
   },
 
   'zed.dev': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10638,7 +10726,7 @@ else if (typeof step.run === 'string') {
   },
 
   'docker.com/desktop': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64', 'windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10685,7 +10773,7 @@ else if (typeof step.run === 'string') {
   },
 
   'postman.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10708,7 +10796,7 @@ else if (typeof step.run === 'string') {
   },
 
   'vlc.app': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10732,7 +10820,7 @@ else if (typeof step.run === 'string') {
   },
 
   'handbrake.fr': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64', 'windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10915,7 +11003,7 @@ else if (typeof step.run === 'string') {
   },
 
   'signal.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10938,7 +11026,7 @@ else if (typeof step.run === 'string') {
   },
 
   'telegram.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10961,7 +11049,7 @@ else if (typeof step.run === 'string') {
   },
 
   'whatsapp.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -10984,7 +11072,7 @@ else if (typeof step.run === 'string') {
   },
 
   'ollama.com': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11006,7 +11094,7 @@ else if (typeof step.run === 'string') {
   },
 
   'lmstudio.ai': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64', 'windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11024,7 +11112,7 @@ else if (typeof step.run === 'string') {
   },
 
   'dbeaver.io': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11093,7 +11181,7 @@ else if (typeof step.run === 'string') {
   },
 
   'keepassxc.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11116,7 +11204,7 @@ else if (typeof step.run === 'string') {
   },
 
   'element.io': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11139,7 +11227,7 @@ else if (typeof step.run === 'string') {
   },
 
   'inkscape.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64', 'windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11157,7 +11245,7 @@ else if (typeof step.run === 'string') {
   },
 
   'gimp.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64', 'windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11180,7 +11268,7 @@ else if (typeof step.run === 'string') {
   },
 
   'blender.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11203,7 +11291,7 @@ else if (typeof step.run === 'string') {
   },
 
   'libreoffice.org': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11221,7 +11309,7 @@ else if (typeof step.run === 'string') {
   },
 
   'bruno.app': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11321,7 +11409,7 @@ else if (typeof step.run === 'string') {
   },
 
   'github.com/desktop': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64', 'windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
@@ -11365,7 +11453,7 @@ else if (typeof step.run === 'string') {
   },
 
   'insomnia.rest': {
-    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64','windows/x64'],
     modifyRecipe: (recipe: NormalizedRecipe) => {
       recipe.distributable = undefined
       recipe.dependencies = {}
