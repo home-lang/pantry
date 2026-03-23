@@ -3,7 +3,7 @@
  *
  * @domain `pypa.github.io/pipx`
  * @programs `pipx`
- * @version `1.10.1` (19 versions available)
+ * @version `1.11.0` (20 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install pypa.github.io/pipx`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "pipx"
  * console.log(pkg.description) // "Execute binaries from Python packages in isolat..."
  * console.log(pkg.programs)    // ["pipx"]
- * console.log(pkg.versions[0]) // "1.10.1" (latest)
+ * console.log(pkg.versions[0]) // "1.11.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/pypa-github-io/pipx.md
@@ -75,6 +75,7 @@ export const pypagithubiopipxPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.11.0',
     '1.10.1',
     '1.10.0',
     '1.9.0',

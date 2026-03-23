@@ -3,7 +3,7 @@
  *
  * @domain `github.com/facebookincubator/fizz`
  * @programs `fizz`
- * @version `2026.3.16.0` (140 versions available)
+ * @version `2026.3.23.0` (141 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/facebookincubator/fizz`
@@ -18,7 +18,7 @@
  * console.log(pkg.name)        // "fizz"
  * console.log(pkg.description) // "C++14 implementation of the TLS-1.3 standard"
  * console.log(pkg.programs)    // ["fizz"]
- * console.log(pkg.versions[0]) // "2026.3.16.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.23.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/facebookincubator/fizz.md
@@ -91,6 +91,7 @@ export const fizzPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.23.0',
     '2026.3.16.0',
     '2026.3.9.0',
     '2026.3.2.0',
