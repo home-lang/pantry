@@ -1233,6 +1233,8 @@ Options:
     'keepassxc.org', 'element.io', 'inkscape.org', 'gimp.org',
     'blender.org', 'libreoffice.org', 'bruno.app', 'tunnelblick.net',
     'meetingbar.app', 'hiddenbar.app', 'monitorcontrol.app',
+    'github.com/desktop', 'imageoptim.com', 'insomnia.rest',
+    'logitech.com/options', 'the-unarchiver.com', 'transmit.panic.com',
   ])
 
   // Packages needing specialized toolchains not available in CI

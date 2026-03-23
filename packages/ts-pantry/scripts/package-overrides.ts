@@ -10552,7 +10552,9 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L --retry 3 -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg || curl -fSL -L --retry 3 "https://download.todesktop.com/230313mzl4w4u92/Cursor%20Mac%20Installer%20arm64.dmg" -o /tmp/cursor.dmg',
+            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+            'curl -fSL -L --retry 3 -H "User-Agent: $UA" -H "Accept: */*" "https://download.todesktop.com/230313mzl4w4u92/Cursor%20Mac%20Installer%20arm64.dmg" -o /tmp/cursor.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg',
             'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/cursor-mount/Cursor.app" "{{prefix}}/Cursor.app"',
@@ -10921,8 +10923,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://web.whatsapp.com/desktop/mac/files/WhatsApp.dmg" -o /tmp/whatsapp.dmg',
-            'hdiutil attach /tmp/whatsapp.dmg -mountpoint /tmp/whatsapp-mount -nobrowse -quiet',
+            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://web.whatsapp.com/desktop/mac-native/release/arm64/WhatsApp-arm64.dmg" -o /tmp/whatsapp.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://web.whatsapp.com/desktop/mac-native/release/x64/WhatsApp.dmg" -o /tmp/whatsapp.dmg',
+            'hdiutil attach /tmp/whatsapp.dmg -mountpoint /tmp/whatsapp-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/whatsapp-mount/WhatsApp.app" "{{prefix}}/WhatsApp.app"',
             'hdiutil detach /tmp/whatsapp-mount -quiet || true',
@@ -10966,8 +10970,11 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://releases.lmstudio.ai/mac/arm64/LM-Studio-{{version}}-arm64.dmg" -o /tmp/lmstudio.dmg',
-            'hdiutil attach /tmp/lmstudio.dmg -mountpoint /tmp/lmstudio-mount -nobrowse -quiet',
+            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://releases.lmstudio.ai/mac/arm64/{{version}}/LM-Studio-{{version}}-arm64.dmg" -o /tmp/lmstudio.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://releases.lmstudio.ai/mac/arm64/LM-Studio-{{version}}-arm64.dmg" -o /tmp/lmstudio.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://releases.lmstudio.ai/latest/mac/arm64" -o /tmp/lmstudio.dmg',
+            'hdiutil attach /tmp/lmstudio.dmg -mountpoint /tmp/lmstudio-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/lmstudio-mount/LM Studio.app" "{{prefix}}/LM Studio.app"',
             'hdiutil detach /tmp/lmstudio-mount -quiet || true',
@@ -11081,8 +11088,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://packages.element.io/desktop/install/macos/Element-{{version}}.dmg" -o /tmp/element.dmg',
-            'hdiutil attach /tmp/element.dmg -mountpoint /tmp/element-mount -nobrowse -quiet',
+            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://packages.element.io/desktop/install/macos/Element-{{version}}.dmg" -o /tmp/element.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://github.com/element-hq/element-desktop/releases/download/v{{version}}/Element-v{{version}}.dmg" -o /tmp/element.dmg',
+            'hdiutil attach /tmp/element.dmg -mountpoint /tmp/element-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/element-mount/Element.app" "{{prefix}}/Element.app"',
             'hdiutil detach /tmp/element-mount -quiet || true',
@@ -11104,8 +11113,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://inkscape.org/gallery/item/47531/Inkscape-{{version}}_arm64.dmg" -o /tmp/inkscape.dmg',
-            'hdiutil attach /tmp/inkscape.dmg -mountpoint /tmp/inkscape-mount -nobrowse -quiet',
+            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://media.inkscape.org/dl/resources/file/Inkscape-{{version}}_arm64.dmg" -o /tmp/inkscape.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://inkscape.org/gallery/item/47531/Inkscape-{{version}}_arm64.dmg" -o /tmp/inkscape.dmg',
+            'hdiutil attach /tmp/inkscape.dmg -mountpoint /tmp/inkscape-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/inkscape-mount/Inkscape.app" "{{prefix}}/Inkscape.app"',
             'hdiutil detach /tmp/inkscape-mount -quiet || true',
@@ -11173,8 +11184,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://download.documentfoundation.org/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg" -o /tmp/libreoffice.dmg',
-            'hdiutil attach /tmp/libreoffice.dmg -mountpoint /tmp/libreoffice-mount -nobrowse -quiet',
+            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://download.documentfoundation.org/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg" -o /tmp/libreoffice.dmg || \\',
+            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://ftp.osuosl.org/pub/tdf/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg" -o /tmp/libreoffice.dmg',
+            'hdiutil attach /tmp/libreoffice.dmg -mountpoint /tmp/libreoffice-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/libreoffice-mount/LibreOffice.app" "{{prefix}}/LibreOffice.app"',
             'hdiutil detach /tmp/libreoffice-mount -quiet || true',
@@ -11219,8 +11232,9 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://github.com/Tunnelblick/Tunnelblick/releases/download/v{{version}}/Tunnelblick_{{version}}_build_5972.dmg" -o /tmp/tunnelblick.dmg',
-            'hdiutil attach /tmp/tunnelblick.dmg -mountpoint /tmp/tunnelblick-mount -nobrowse -quiet',
+            'curl -fSL -L --retry 3 "https://github.com/Tunnelblick/Tunnelblick/releases/download/v{{version}}/Tunnelblick_{{version}}.dmg" -o /tmp/tunnelblick.dmg || \\',
+            '  curl -fSL -L --retry 3 "https://github.com/Tunnelblick/Tunnelblick/releases/latest/download/Tunnelblick.dmg" -o /tmp/tunnelblick.dmg',
+            'hdiutil attach /tmp/tunnelblick.dmg -mountpoint /tmp/tunnelblick-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/tunnelblick-mount/Tunnelblick.app" "{{prefix}}/Tunnelblick.app"',
             'hdiutil detach /tmp/tunnelblick-mount -quiet || true',
@@ -11242,7 +11256,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://github.com/leits/MeetingBar/releases/download/v{{version}}/MeetingBar.zip" -o /tmp/meetingbar.zip',
+            'curl -fSL -L --retry 3 "https://github.com/leits/MeetingBar/releases/download/v{{version}}/MeetingBar.zip" -o /tmp/meetingbar.zip || \\',
+            '  curl -fSL -L --retry 3 "https://github.com/leits/MeetingBar/releases/latest/download/MeetingBar.zip" -o /tmp/meetingbar.zip',
             'cd /tmp && unzip -qo meetingbar.zip',
             'mkdir -p "{{prefix}}"',
             'mv "/tmp/MeetingBar.app" "{{prefix}}/MeetingBar.app"',
@@ -11264,7 +11279,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://github.com/dwarvesf/hidden/releases/download/v{{version}}/Hidden.Bar.{{version}}.zip" -o /tmp/hiddenbar.zip',
+            'curl -fSL -L "https://github.com/dwarvesf/hidden/releases/download/v{{version}}/Hidden.Bar.{{version}}.zip" -o /tmp/hiddenbar.zip || curl -fSL -L "https://github.com/dwarvesf/hidden/releases/latest/download/Hidden.Bar.zip" -o /tmp/hiddenbar.zip',
             'cd /tmp && unzip -qo hiddenbar.zip',
             'mkdir -p "{{prefix}}"',
             'mv "/tmp/Hidden Bar.app" "{{prefix}}/Hidden Bar.app"',
@@ -11286,13 +11301,150 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://github.com/MonitorControl/MonitorControl/releases/download/v{{version}}/MonitorControl.{{version}}.dmg" -o /tmp/monitorcontrol.dmg',
-            'hdiutil attach /tmp/monitorcontrol.dmg -mountpoint /tmp/monitorcontrol-mount -nobrowse -quiet',
+            'curl -fSL -L --retry 3 "https://github.com/MonitorControl/MonitorControl/releases/download/v{{version}}/MonitorControl.{{version}}.dmg" -o /tmp/monitorcontrol.dmg || \\',
+            '  curl -fSL -L --retry 3 "https://github.com/MonitorControl/MonitorControl/releases/latest/download/MonitorControl.dmg" -o /tmp/monitorcontrol.dmg',
+            'hdiutil attach /tmp/monitorcontrol.dmg -mountpoint /tmp/monitorcontrol-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/monitorcontrol-mount/MonitorControl.app" "{{prefix}}/MonitorControl.app"',
             'hdiutil detach /tmp/monitorcontrol-mount -quiet || true',
             'mkdir -p "{{prefix}}/bin"',
             'ln -sf "../MonitorControl.app/Contents/MacOS/MonitorControl" "{{prefix}}/bin/monitorcontrol"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'github.com/desktop': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://central.github.com/deployments/desktop/desktop/latest/darwin-arm64" -o /tmp/ghdesktop.zip',
+            'cd /tmp && unzip -qo ghdesktop.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/GitHub Desktop.app" "{{prefix}}/GitHub Desktop.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../GitHub Desktop.app/Contents/MacOS/GitHub Desktop" "{{prefix}}/bin/github-desktop"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'imageoptim.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://imageoptim.com/ImageOptim.tbz2" -o /tmp/imageoptim.tbz2',
+            'cd /tmp && tar xjf imageoptim.tbz2',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/ImageOptim.app" "{{prefix}}/ImageOptim.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../ImageOptim.app/Contents/MacOS/ImageOptim" "{{prefix}}/bin/imageoptim"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'insomnia.rest': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/Kong/insomnia/releases/download/core%40{{version}}/Insomnia.Core-{{version}}.dmg" -o /tmp/insomnia.dmg',
+            'hdiutil attach /tmp/insomnia.dmg -mountpoint /tmp/insomnia-mount -nobrowse -noverify -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/insomnia-mount/Insomnia.app" "{{prefix}}/Insomnia.app"',
+            'hdiutil detach /tmp/insomnia-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Insomnia.app/Contents/MacOS/Insomnia" "{{prefix}}/bin/insomnia"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'logitech.com/options': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://download01.logi.com/web/ftp/pub/techsupport/optionsplus/logioptionsplus_installer.zip" -o /tmp/logi.zip',
+            'cd /tmp && unzip -qo logi.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/logioptionsplus_installer.app" "{{prefix}}/Logi Options+.app" 2>/dev/null || find /tmp -name "*.app" -maxdepth 2 -exec mv {} "{{prefix}}/" \\;',
+            'mkdir -p "{{prefix}}/bin"',
+            'echo \'#!/bin/bash\' > "{{prefix}}/bin/logi-options"',
+            'echo \'open "$(dirname "$0")/../Logi Options+.app" 2>/dev/null || open "$(dirname "$0")"/../*.app\' >> "{{prefix}}/bin/logi-options"',
+            'chmod +x "{{prefix}}/bin/logi-options"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'the-unarchiver.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://cdn.theunarchiver.com/downloads/TheUnarchiver.zip" -o /tmp/unarchiver.zip',
+            'cd /tmp && unzip -qo unarchiver.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/The Unarchiver.app" "{{prefix}}/The Unarchiver.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../The Unarchiver.app/Contents/MacOS/unar" "{{prefix}}/bin/unar"',
+            'ln -sf "../The Unarchiver.app/Contents/MacOS/lsar" "{{prefix}}/bin/lsar"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'transmit.panic.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://download.panic.com/transmit/Transmit%205.zip" -o /tmp/transmit.zip',
+            'cd /tmp && unzip -qo transmit.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/Transmit.app" "{{prefix}}/Transmit.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Transmit.app/Contents/MacOS/Transmit" "{{prefix}}/bin/transmit"',
           ].join('\n'),
         ]
         recipe.build.env = {}

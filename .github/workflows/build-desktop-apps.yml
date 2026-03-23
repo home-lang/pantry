@@ -2,8 +2,8 @@ name: Build Desktop Apps
 
 on:
   schedule:
-    # Sync desktop apps weekly on Mondays at 6am UTC
-    - cron: '0 6 * * 1'
+    # Sync desktop apps daily at 6am UTC
+    - cron: '0 6 * * *'
 
   workflow_dispatch:
     inputs:
@@ -30,7 +30,14 @@ env:
     cursor.com,zed.dev,docker.com/desktop,tableplus.com,
     postman.com,vlc.app,handbrake.fr,rectangle.app,
     karabiner-elements.pqrs.org,cleanshot.com,alttab.app,
-    stats.app,maccy.app,orbstack.dev
+    stats.app,maccy.app,orbstack.dev,
+    signal.org,telegram.org,whatsapp.com,ollama.com,
+    lmstudio.ai,dbeaver.io,iina.io,keka.io,
+    keepassxc.org,element.io,inkscape.org,gimp.org,
+    blender.org,libreoffice.org,bruno.app,tunnelblick.net,
+    meetingbar.app,hiddenbar.app,monitorcontrol.app,
+    github.com/desktop,imageoptim.com,insomnia.rest,
+    logitech.com/options,the-unarchiver.com,transmit.panic.com
 
 jobs:
   build:

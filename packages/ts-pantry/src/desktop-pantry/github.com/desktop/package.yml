@@ -1,0 +1,12 @@
+distributable:
+  url: https://placeholder.example.com/{{version}}.tar.gz
+  strip-components: 1
+
+platforms:
+  - darwin
+
+provides:
+  - bin/github-desktop
+
+build:
+  script: 'true'

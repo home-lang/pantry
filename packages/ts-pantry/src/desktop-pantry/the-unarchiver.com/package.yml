@@ -1,0 +1,13 @@
+distributable:
+  url: https://placeholder.example.com/{{version}}.tar.gz
+  strip-components: 1
+
+platforms:
+  - darwin
+
+provides:
+  - bin/unar
+  - bin/lsar
+
+build:
+  script: 'true'
