@@ -36,7 +36,8 @@ import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
 import { packageOverrides } from './package-overrides.ts'
 
 // Import package metadata
-const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
+import { fileURLToPath } from 'node:url'
+const packagesPath = fileURLToPath(new URL('../src/packages/index.ts', import.meta.url))
 // eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
