@@ -10250,8 +10250,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'if test "{{hw.arch}}" = "aarch64"; then ARCH="-arm64"; else ARCH=""; fi',
-            'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}${ARCH}.dmg" -o /tmp/obsidian.dmg',
+            'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}-universal.dmg" -o /tmp/obsidian.dmg',
             'hdiutil attach /tmp/obsidian.dmg -mountpoint /tmp/obsidian-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/obsidian-mount/Obsidian.app" "{{prefix}}/Obsidian.app"',
@@ -10438,7 +10437,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://releases.arc.net/release/Arc-{{version}}.dmg" -o /tmp/arc.dmg',
+            'curl -fSL "https://releases.arc.net/release/Arc-latest.dmg" -o /tmp/arc.dmg',
             'hdiutil attach /tmp/arc.dmg -mountpoint /tmp/arc-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/arc-mount/Arc.app" "{{prefix}}/Arc.app"',
@@ -10484,7 +10483,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://desktop.linear.app/mac/dmg/Linear-{{version}}.dmg" -o /tmp/linear.dmg',
+            'curl -fSL "https://desktop.linear.app/mac/dmg/Linear-universal.dmg" -o /tmp/linear.dmg',
             'hdiutil attach /tmp/linear.dmg -mountpoint /tmp/linear-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/linear-mount/Linear.app" "{{prefix}}/Linear.app"',
@@ -10507,7 +10506,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://releases.warp.dev/stable/v{{version}}/Warp.dmg" -o /tmp/warp.dmg',
+            'curl -fSL "https://app.warp.dev/download?package=dmg" -L -o /tmp/warp.dmg',
             'hdiutil attach /tmp/warp.dmg -mountpoint /tmp/warp-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/warp-mount/Warp.app" "{{prefix}}/Warp.app"',
@@ -10553,8 +10552,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="x64"; fi',
-            'curl -fSL "https://download.todesktop.com/230313mzl4w4u92/Cursor-{{version}}-${ARCH}.dmg" -o /tmp/cursor.dmg',
+            'curl -fSL "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg',
             'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/cursor-mount/Cursor.app" "{{prefix}}/Cursor.app"',
@@ -10577,8 +10575,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'if test "{{hw.arch}}" = "aarch64"; then ARCH="aarch64"; else ARCH="x86_64"; fi',
-            'curl -fSL "https://zed.dev/api/releases/stable/{{version}}/Zed-${ARCH}.dmg" -o /tmp/zed.dmg',
+            'curl -fSL "https://zed.dev/api/releases/stable/latest/Zed-aarch64.dmg" -o /tmp/zed.dmg',
             'hdiutil attach /tmp/zed.dmg -mountpoint /tmp/zed-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/zed-mount/Zed.app" "{{prefix}}/Zed.app"',
@@ -10649,7 +10646,7 @@ else if (typeof step.run === 'string') {
         recipe.build.script = [
           [
             'if test "{{hw.arch}}" = "aarch64"; then ARCH="osx_arm64"; else ARCH="osx64"; fi',
-            'curl -fSL "https://dl.pstmn.io/download/version/{{version}}/${ARCH}" -o /tmp/postman.zip',
+            'curl -fSL "https://dl.pstmn.io/download/latest/${ARCH}" -o /tmp/postman.zip',
             'cd /tmp && unzip -qo postman.zip',
             'mkdir -p "{{prefix}}"',
             'mv "/tmp/Postman.app" "{{prefix}}/Postman.app"',
@@ -10855,8 +10852,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'if test "{{hw.arch}}" = "aarch64"; then ARCH="arm64"; else ARCH="amd64"; fi',
-            'curl -fSL "https://cdn-updates.orbstack.dev/${ARCH}/OrbStack.dmg" -o /tmp/orbstack.dmg',
+            'curl -fSL "https://cdn-updates.orbstack.dev/arm64/OrbStack.dmg" -o /tmp/orbstack.dmg',
             'hdiutil attach /tmp/orbstack.dmg -mountpoint /tmp/orbstack-mount -nobrowse -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/orbstack-mount/OrbStack.app" "{{prefix}}/OrbStack.app"',
