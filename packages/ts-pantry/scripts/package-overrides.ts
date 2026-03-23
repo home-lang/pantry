@@ -42,6 +42,49 @@ export interface PackageOverride {
 
 // ── Shared script patterns ─────────────────────────────────────────────
 
+/**
+ * Generate a brew-cask-assisted download script for a desktop app.
+ * Uses `brew info --cask --json=v2` to get the real download URL (always correct),
+ * then curls it with a browser User-Agent. Falls back to a hardcoded URL.
+ *
+ * @param caskToken - Homebrew cask token (e.g. 'discord', 'visual-studio-code')
+ * @param outputFile - Where to save the download (e.g. '/tmp/app.dmg')
+ * @param fallbackUrl - Fallback URL if brew isn't available
+ */
+// eslint-disable-next-line pickier/no-unused-vars
+function brewCaskDownload(caskToken: string, outputFile: string, fallbackUrl?: string): string {
+  const fallback = fallbackUrl
+    ? `\n  curl -fSL -L --retry 3 -H "User-Agent: $UA" "${fallbackUrl}" -o ${outputFile}`
+    : ''
+  return [
+    'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
+    `BREW_URL=$(brew info --cask --json=v2 ${caskToken} 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin)['casks'][0]['url'])" 2>/dev/null || true)`,
+    `if [ -n "$BREW_URL" ]; then`,
+    `  curl -fSL -L --retry 3 -H "User-Agent: $UA" "$BREW_URL" -o ${outputFile}`,
+    `else`,
+    `  echo "brew cask info unavailable for ${caskToken}, using fallback URL"`,
+    `  curl -fSL -L --retry 3 -H "User-Agent: $UA" "${fallbackUrl || `https://formulae.brew.sh/api/cask/${caskToken}.json`}" -o ${outputFile}${fallback}`,
+    `fi`,
+  ].join('\n')
+}
+
+/**
+ * Generate a DMG extraction script: mount → copy .app → unmount → symlink CLI
+ */
+function dmgExtract(dmgFile: string, appName: string, binName: string, binPath?: string): string {
+  const mount = `/tmp/${binName}-mount`
+  const actualBinPath = binPath || `../${appName}.app/Contents/MacOS/${appName.replace(/ /g, '')}`
+  return [
+    `hdiutil attach ${dmgFile} -mountpoint ${mount} -nobrowse -noverify -quiet`,
+    `mkdir -p "{{prefix}}"`,
+    `cp -R "${mount}/${appName}.app" "{{prefix}}/${appName}.app" 2>/dev/null || \\`,
+    `  find ${mount} -maxdepth 1 -name "*.app" -exec cp -R {} "{{prefix}}/" \\;`,
+    `hdiutil detach ${mount} -quiet || true`,
+    `mkdir -p "{{prefix}}/bin"`,
+    `ln -sf "${actualBinPath}" "{{prefix}}/bin/${binName}"`,
+  ].join('\n')
+}
+
 /** macOS glibtool PATH fix — Makefiles expect 'glibtool' from Homebrew's keg-only libtool */
 const GLIBTOOL_FIX: ScriptStep = {
   run: [
@@ -10552,15 +10595,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-            'curl -fSL -L --retry 3 -H "User-Agent: $UA" -H "Accept: */*" "https://download.todesktop.com/230313mzl4w4u92/Cursor%20Mac%20Installer%20arm64.dmg" -o /tmp/cursor.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg',
-            'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/cursor-mount/Cursor.app" "{{prefix}}/Cursor.app"',
-            'hdiutil detach /tmp/cursor-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../Cursor.app/Contents/Resources/app/bin/cursor" "{{prefix}}/bin/cursor"',
+            brewCaskDownload('cursor', '/tmp/cursor.dmg', 'https://download.todesktop.com/230313mzl4w4u92/Cursor%20Mac%20Installer%20arm64.dmg'),
+            dmgExtract('/tmp/cursor.dmg', 'Cursor', 'cursor', '../Cursor.app/Contents/Resources/app/bin/cursor'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -10923,15 +10959,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://web.whatsapp.com/desktop/mac-native/release/arm64/WhatsApp-arm64.dmg" -o /tmp/whatsapp.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://web.whatsapp.com/desktop/mac-native/release/x64/WhatsApp.dmg" -o /tmp/whatsapp.dmg',
-            'hdiutil attach /tmp/whatsapp.dmg -mountpoint /tmp/whatsapp-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/whatsapp-mount/WhatsApp.app" "{{prefix}}/WhatsApp.app"',
-            'hdiutil detach /tmp/whatsapp-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../WhatsApp.app/Contents/MacOS/WhatsApp" "{{prefix}}/bin/whatsapp"',
+            brewCaskDownload('whatsapp', '/tmp/whatsapp.dmg', 'https://web.whatsapp.com/desktop/mac-native/release/arm64/WhatsApp-arm64.dmg'),
+            dmgExtract('/tmp/whatsapp.dmg', 'WhatsApp', 'whatsapp'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -10970,16 +10999,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://releases.lmstudio.ai/mac/arm64/{{version}}/LM-Studio-{{version}}-arm64.dmg" -o /tmp/lmstudio.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://releases.lmstudio.ai/mac/arm64/LM-Studio-{{version}}-arm64.dmg" -o /tmp/lmstudio.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://releases.lmstudio.ai/latest/mac/arm64" -o /tmp/lmstudio.dmg',
-            'hdiutil attach /tmp/lmstudio.dmg -mountpoint /tmp/lmstudio-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/lmstudio-mount/LM Studio.app" "{{prefix}}/LM Studio.app"',
-            'hdiutil detach /tmp/lmstudio-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../LM Studio.app/Contents/MacOS/LM Studio" "{{prefix}}/bin/lm-studio"',
+            brewCaskDownload('lm-studio', '/tmp/lmstudio.dmg', 'https://releases.lmstudio.ai/latest/mac/arm64'),
+            dmgExtract('/tmp/lmstudio.dmg', 'LM Studio', 'lm-studio', '../LM Studio.app/Contents/MacOS/LM Studio'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11088,15 +11109,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://packages.element.io/desktop/install/macos/Element-{{version}}.dmg" -o /tmp/element.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://github.com/element-hq/element-desktop/releases/download/v{{version}}/Element-v{{version}}.dmg" -o /tmp/element.dmg',
-            'hdiutil attach /tmp/element.dmg -mountpoint /tmp/element-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/element-mount/Element.app" "{{prefix}}/Element.app"',
-            'hdiutil detach /tmp/element-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../Element.app/Contents/MacOS/Element" "{{prefix}}/bin/element"',
+            brewCaskDownload('element', '/tmp/element.dmg', 'https://packages.element.io/desktop/install/macos/Element.dmg'),
+            dmgExtract('/tmp/element.dmg', 'Element', 'element'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11113,15 +11127,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://media.inkscape.org/dl/resources/file/Inkscape-{{version}}_arm64.dmg" -o /tmp/inkscape.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://inkscape.org/gallery/item/47531/Inkscape-{{version}}_arm64.dmg" -o /tmp/inkscape.dmg',
-            'hdiutil attach /tmp/inkscape.dmg -mountpoint /tmp/inkscape-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/inkscape-mount/Inkscape.app" "{{prefix}}/Inkscape.app"',
-            'hdiutil detach /tmp/inkscape-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../Inkscape.app/Contents/MacOS/inkscape" "{{prefix}}/bin/inkscape"',
+            brewCaskDownload('inkscape', '/tmp/inkscape.dmg', 'https://media.inkscape.org/dl/resources/file/Inkscape-{{version}}_arm64.dmg'),
+            dmgExtract('/tmp/inkscape.dmg', 'Inkscape', 'inkscape', '../Inkscape.app/Contents/MacOS/inkscape'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11184,15 +11191,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15"',
-            'curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://download.documentfoundation.org/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg" -o /tmp/libreoffice.dmg || \\',
-            '  curl -fSL -L --retry 3 -H "User-Agent: $UA" "https://ftp.osuosl.org/pub/tdf/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg" -o /tmp/libreoffice.dmg',
-            'hdiutil attach /tmp/libreoffice.dmg -mountpoint /tmp/libreoffice-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/libreoffice-mount/LibreOffice.app" "{{prefix}}/LibreOffice.app"',
-            'hdiutil detach /tmp/libreoffice-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../LibreOffice.app/Contents/MacOS/soffice" "{{prefix}}/bin/libreoffice"',
+            brewCaskDownload('libreoffice', '/tmp/libreoffice.dmg', 'https://download.documentfoundation.org/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg'),
+            dmgExtract('/tmp/libreoffice.dmg', 'LibreOffice', 'libreoffice', '../LibreOffice.app/Contents/MacOS/soffice'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11232,14 +11232,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L --retry 3 "https://github.com/Tunnelblick/Tunnelblick/releases/download/v{{version}}/Tunnelblick_{{version}}.dmg" -o /tmp/tunnelblick.dmg || \\',
-            '  curl -fSL -L --retry 3 "https://github.com/Tunnelblick/Tunnelblick/releases/latest/download/Tunnelblick.dmg" -o /tmp/tunnelblick.dmg',
-            'hdiutil attach /tmp/tunnelblick.dmg -mountpoint /tmp/tunnelblick-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/tunnelblick-mount/Tunnelblick.app" "{{prefix}}/Tunnelblick.app"',
-            'hdiutil detach /tmp/tunnelblick-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../Tunnelblick.app/Contents/MacOS/Tunnelblick" "{{prefix}}/bin/tunnelblick"',
+            brewCaskDownload('tunnelblick', '/tmp/tunnelblick.dmg', 'https://github.com/Tunnelblick/Tunnelblick/releases/latest/download/Tunnelblick.dmg'),
+            dmgExtract('/tmp/tunnelblick.dmg', 'Tunnelblick', 'tunnelblick'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11256,11 +11250,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L --retry 3 "https://github.com/leits/MeetingBar/releases/download/v{{version}}/MeetingBar.zip" -o /tmp/meetingbar.zip || \\',
-            '  curl -fSL -L --retry 3 "https://github.com/leits/MeetingBar/releases/latest/download/MeetingBar.zip" -o /tmp/meetingbar.zip',
+            brewCaskDownload('meetingbar', '/tmp/meetingbar.zip', 'https://github.com/leits/MeetingBar/releases/latest/download/MeetingBar.zip'),
             'cd /tmp && unzip -qo meetingbar.zip',
             'mkdir -p "{{prefix}}"',
-            'mv "/tmp/MeetingBar.app" "{{prefix}}/MeetingBar.app"',
+            'find /tmp -maxdepth 1 -name "MeetingBar*.app" -exec mv {} "{{prefix}}/MeetingBar.app" \\;',
             'mkdir -p "{{prefix}}/bin"',
             'ln -sf "../MeetingBar.app/Contents/MacOS/MeetingBar" "{{prefix}}/bin/meetingbar"',
           ].join('\n'),
@@ -11279,10 +11272,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://github.com/dwarvesf/hidden/releases/download/v{{version}}/Hidden.Bar.{{version}}.zip" -o /tmp/hiddenbar.zip || curl -fSL -L "https://github.com/dwarvesf/hidden/releases/latest/download/Hidden.Bar.zip" -o /tmp/hiddenbar.zip',
+            brewCaskDownload('hiddenbar', '/tmp/hiddenbar.zip', 'https://github.com/dwarvesf/hidden/releases/latest/download/Hidden.Bar.zip'),
             'cd /tmp && unzip -qo hiddenbar.zip',
             'mkdir -p "{{prefix}}"',
-            'mv "/tmp/Hidden Bar.app" "{{prefix}}/Hidden Bar.app"',
+            'find /tmp -maxdepth 1 -name "Hidden*Bar*.app" -exec mv {} "{{prefix}}/Hidden Bar.app" \\;',
             'mkdir -p "{{prefix}}/bin"',
             'ln -sf "../Hidden Bar.app/Contents/MacOS/Hidden Bar" "{{prefix}}/bin/hiddenbar"',
           ].join('\n'),
@@ -11301,14 +11294,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L --retry 3 "https://github.com/MonitorControl/MonitorControl/releases/download/v{{version}}/MonitorControl.{{version}}.dmg" -o /tmp/monitorcontrol.dmg || \\',
-            '  curl -fSL -L --retry 3 "https://github.com/MonitorControl/MonitorControl/releases/latest/download/MonitorControl.dmg" -o /tmp/monitorcontrol.dmg',
-            'hdiutil attach /tmp/monitorcontrol.dmg -mountpoint /tmp/monitorcontrol-mount -nobrowse -noverify -quiet',
-            'mkdir -p "{{prefix}}"',
-            'cp -R "/tmp/monitorcontrol-mount/MonitorControl.app" "{{prefix}}/MonitorControl.app"',
-            'hdiutil detach /tmp/monitorcontrol-mount -quiet || true',
-            'mkdir -p "{{prefix}}/bin"',
-            'ln -sf "../MonitorControl.app/Contents/MacOS/MonitorControl" "{{prefix}}/bin/monitorcontrol"',
+            brewCaskDownload('monitorcontrol', '/tmp/monitorcontrol.dmg', 'https://github.com/MonitorControl/MonitorControl/releases/latest/download/MonitorControl.dmg'),
+            dmgExtract('/tmp/monitorcontrol.dmg', 'MonitorControl', 'monitorcontrol'),
           ].join('\n'),
         ]
         recipe.build.env = {}
@@ -11439,10 +11426,10 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://download.panic.com/transmit/Transmit%205.zip" -o /tmp/transmit.zip',
+            brewCaskDownload('transmit', '/tmp/transmit.zip', 'https://download.panic.com/transmit/Transmit%205.zip'),
             'cd /tmp && unzip -qo transmit.zip',
             'mkdir -p "{{prefix}}"',
-            'mv "/tmp/Transmit.app" "{{prefix}}/Transmit.app"',
+            'find /tmp -maxdepth 1 -name "Transmit*.app" -exec mv {} "{{prefix}}/Transmit.app" \\;',
             'mkdir -p "{{prefix}}/bin"',
             'ln -sf "../Transmit.app/Contents/MacOS/Transmit" "{{prefix}}/bin/transmit"',
           ].join('\n'),
