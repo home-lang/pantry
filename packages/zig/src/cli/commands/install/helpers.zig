@@ -146,6 +146,7 @@ pub fn resolvePackageAlias(name: []const u8) []const u8 {
         .{ "goreleaser", "goreleaser.com" },
         .{ "act", "github.com/nektos/act" },
         .{ "dive", "github.com/wagoodman/dive" },
+        .{ "craft", "github.com/stacksjs/craft" },
     };
     inline for (aliases) |entry| {
         if (std.mem.eql(u8, name, entry[0])) return entry[1];

@@ -236,6 +236,7 @@ export const aliases: Record<string, string> = {
   'cpptoml': 'github.com/skystrife/cpptoml',
   'cppunit': 'freedesktop.org/cppunit',
   'cpz': 'crates.io/cpz',
+  'craft': 'github.com/stacksjs/craft',
   'craftql': 'crates.io/craftql',
   'create-dmg': 'github.com/create-dmg/create-dmg',
   'create2crunch': 'github.com/0age/create2crunch',

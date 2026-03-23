@@ -1825,6 +1825,17 @@ pub const packages = [_]PackageInfo{
         .versions = &[_][]const u8{ "3.1.1", "3.1.0", "3.0.1", "3.0.0", "2.2.0", "2.1.0" },
     },
     .{
+        .name = "craft",
+        .domain = "github.com/stacksjs/craft",
+        .description = "Build desktop apps with web languages, powered by Zig",
+        .homepage_url = "https://github.com/stacksjs/craft",
+        .programs = &[_][]const u8{ "craft" },
+        .dependencies = &[_][]const u8{  },
+        .build_dependencies = &[_][]const u8{ "ziglang.org" },
+        .aliases = &[_][]const u8{ "craft" },
+        .versions = &[_][]const u8{ "0.0.5", "0.0.4", "0.0.3", "0.0.2", "0.0.1" },
+    },
+    .{
         .name = "craftql",
         .domain = "crates.io/craftql",
         .description = "A CLI tool to visualize GraphQL schemas and to output a graph data structure as a graphviz .dot format",

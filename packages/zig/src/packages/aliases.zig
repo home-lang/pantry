@@ -290,6 +290,7 @@ pub const aliases = [_]Alias{
     .{ .alias = "cppunit", .domain = "freedesktop.org/cppunit" },
     .{ .alias = "cpz", .domain = "crates.io/cpz" },
     .{ .alias = "cr", .domain = "cr.yp.to/daemontools" },
+    .{ .alias = "craft", .domain = "github.com/stacksjs/craft" },
     .{ .alias = "craftql", .domain = "crates.io/craftql" },
     .{ .alias = "crates", .domain = "crates.io/git-absorb" },
     .{ .alias = "crazymax", .domain = "crazymax.dev/diun" },
