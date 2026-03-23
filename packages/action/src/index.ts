@@ -183,6 +183,187 @@ function findLockfile(): string | null {
   return null
 }
 
+/** Detect package name and version from the project for notification context */
+function detectPackageInfo(cwd: string): { name: string, version: string } {
+  // Try package.json first (npm packages)
+  const pkgJsonPath = path.join(cwd, 'package.json')
+  if (fs.existsSync(pkgJsonPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf-8'))
+      if (pkg.name && pkg.version)
+        return { name: pkg.name, version: pkg.version }
+    }
+    catch { /* ignore */ }
+  }
+
+  // Try build.zig.zon (zig packages)
+  const zonPath = path.join(cwd, 'build.zig.zon')
+  if (fs.existsSync(zonPath)) {
+    try {
+      const content = fs.readFileSync(zonPath, 'utf-8')
+      const nameMatch = content.match(/\.name\s*=\s*(?:\.@"([^"]+)"|\.(\w+)|"([^"]+)")/)
+      const versionMatch = content.match(/\.version\s*=\s*"([^"]+)"/)
+      if (nameMatch && versionMatch)
+        return { name: nameMatch[1] || nameMatch[2] || nameMatch[3], version: versionMatch[1] }
+    }
+    catch { /* ignore */ }
+  }
+
+  return { name: 'unknown', version: 'unknown' }
+}
+
+/** Send release notifications to all configured webhooks */
+async function sendNotifications(inputs: ActionInputs): Promise<void> {
+  const hasWebhook = inputs.discordWebhook || inputs.slackWebhook
+  if (!hasWebhook) return
+
+  const cwd = process.cwd()
+  const pkg = detectPackageInfo(cwd)
+  const repo = process.env.GITHUB_REPOSITORY || ''
+  const sha = (process.env.GITHUB_SHA || '').slice(0, 7)
+  const ref = process.env.GITHUB_REF_NAME || ''
+  const actor = process.env.GITHUB_ACTOR || ''
+  const runUrl = `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${repo}/actions/runs/${process.env.GITHUB_RUN_ID || ''}`
+  const repoUrl = `${process.env.GITHUB_SERVER_URL || 'https://github.com'}/${repo}`
+  const title = inputs.notificationTitle || `${pkg.name}@${pkg.version} — Published`
+
+  if (inputs.discordWebhook) {
+    await sendDiscordNotification(inputs.discordWebhook, {
+      title,
+      pkg,
+      repo,
+      sha,
+      ref,
+      actor,
+      runUrl,
+      repoUrl,
+      mentions: inputs.notificationMentions,
+      publishType: inputs.publish,
+    })
+  }
+
+  if (inputs.slackWebhook) {
+    await sendSlackNotification(inputs.slackWebhook, {
+      title,
+      pkg,
+      repo,
+      sha,
+      ref,
+      actor,
+      runUrl,
+      repoUrl,
+      mentions: inputs.notificationMentions,
+      publishType: inputs.publish,
+    })
+  }
+}
+
+interface NotificationContext {
+  title: string
+  pkg: { name: string, version: string }
+  repo: string
+  sha: string
+  ref: string
+  actor: string
+  runUrl: string
+  repoUrl: string
+  mentions: string
+  publishType: string
+}
+
+async function sendDiscordNotification(webhookUrl: string, ctx: NotificationContext): Promise<void> {
+  core.startGroup('Discord notification')
+  try {
+    const npmUrl = ctx.publishType === 'npm' ? `https://www.npmjs.com/package/${ctx.pkg.name}` : ''
+    const fields = [
+      { name: 'Package', value: `\`${ctx.pkg.name}@${ctx.pkg.version}\``, inline: true },
+      { name: 'Type', value: ctx.publishType, inline: true },
+      { name: 'Actor', value: ctx.actor, inline: true },
+    ]
+
+    if (ctx.ref)
+      fields.push({ name: 'Tag', value: `\`${ctx.ref}\``, inline: true })
+    if (ctx.sha)
+      fields.push({ name: 'Commit', value: `[\`${ctx.sha}\`](${ctx.repoUrl}/commit/${process.env.GITHUB_SHA || ctx.sha})`, inline: true })
+    if (npmUrl)
+      fields.push({ name: 'npm', value: `[View on npm](${npmUrl})`, inline: true })
+
+    fields.push({ name: 'Workflow', value: `[View run](${ctx.runUrl})`, inline: false })
+
+    const payload: Record<string, unknown> = {
+      embeds: [{
+        title: ctx.title,
+        color: 3066993, // green
+        fields,
+        timestamp: new Date().toISOString(),
+      }],
+    }
+
+    if (ctx.mentions)
+      payload.content = ctx.mentions
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok)
+      core.warning(`Discord notification failed: HTTP ${response.status}`)
+    else
+      core.info('Discord notification sent')
+  }
+  catch (err) {
+    core.warning(`Discord notification failed: ${err instanceof Error ? err.message : String(err)}`)
+  }
+  core.endGroup()
+}
+
+async function sendSlackNotification(webhookUrl: string, ctx: NotificationContext): Promise<void> {
+  core.startGroup('Slack notification')
+  try {
+    const npmUrl = ctx.publishType === 'npm' ? `https://www.npmjs.com/package/${ctx.pkg.name}` : ''
+    const lines = [
+      `*${ctx.title}*`,
+      `*Package:* \`${ctx.pkg.name}@${ctx.pkg.version}\``,
+      `*Type:* ${ctx.publishType}`,
+      `*Actor:* ${ctx.actor}`,
+    ]
+
+    if (ctx.ref)
+      lines.push(`*Tag:* \`${ctx.ref}\``)
+    if (ctx.sha)
+      lines.push(`*Commit:* <${ctx.repoUrl}/commit/${process.env.GITHUB_SHA || ctx.sha}|\`${ctx.sha}\`>`)
+    if (npmUrl)
+      lines.push(`*npm:* <${npmUrl}|View on npm>`)
+
+    lines.push(`<${ctx.runUrl}|View workflow run>`)
+
+    if (ctx.mentions)
+      lines.push(ctx.mentions)
+
+    const payload = {
+      text: lines.join('\n'),
+      unfurl_links: false,
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok)
+      core.warning(`Slack notification failed: HTTP ${response.status}`)
+    else
+      core.info('Slack notification sent')
+  }
+  catch (err) {
+    core.warning(`Slack notification failed: ${err instanceof Error ? err.message : String(err)}`)
+  }
+  core.endGroup()
+}
+
 export async function run(): Promise<void> {
   try {
     const inputs: ActionInputs = {
@@ -193,6 +374,10 @@ export async function run(): Promise<void> {
       publish: core.getInput('publish') || '',
       registryUrl: core.getInput('registry-url') || 'https://registry.pantry.dev',
       token: core.getInput('token') || '',
+      discordWebhook: core.getInput('discord-webhook') || '',
+      slackWebhook: core.getInput('slack-webhook') || '',
+      notificationTitle: core.getInput('notification-title') || '',
+      notificationMentions: core.getInput('notification-mentions') || '',
     }
 
     // Export registry token as env vars for subsequent steps (e.g. pantry publish:commit)
@@ -230,6 +415,7 @@ export async function run(): Promise<void> {
     if (inputs.setupOnly && !inputs.packages) {
       if (inputs.publish) {
         await publishPackage(inputs.publish, inputs.registryUrl, cwd)
+        await sendNotifications(inputs)
       }
       core.info('Setup complete')
       return
@@ -327,6 +513,7 @@ export async function run(): Promise<void> {
     // ── Publish ──
     if (inputs.publish) {
       await publishPackage(inputs.publish, inputs.registryUrl, cwd)
+      await sendNotifications(inputs)
     }
 
     core.info('Setup complete')

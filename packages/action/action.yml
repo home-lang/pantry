@@ -35,6 +35,22 @@ inputs:
     description: Pantry registry token for publishing (e.g. from secrets.PANTRY_TOKEN). Exported as PANTRY_TOKEN and PANTRY_REGISTRY_TOKEN for subsequent steps.
     required: false
     default: ''
+  discord-webhook:
+    description: Discord webhook URL for release notifications. Sends a rich embed after successful publish.
+    required: false
+    default: ''
+  slack-webhook:
+    description: Slack webhook URL for release notifications. Sends a rich message after successful publish.
+    required: false
+    default: ''
+  notification-title:
+    description: Custom title for release notifications. Defaults to "New Release Published".
+    required: false
+    default: ''
+  notification-mentions:
+    description: 'Discord role/user mentions or Slack user IDs to ping (e.g. "<@&ROLE_ID>" for Discord, "<@U12345>" for Slack)'
+    required: false
+    default: ''
 
 outputs:
   pantry-path:

@@ -6,6 +6,10 @@ export interface ActionInputs {
   publish: string
   registryUrl: string
   token: string
+  discordWebhook: string
+  slackWebhook: string
+  notificationTitle: string
+  notificationMentions: string
 }
 
 export interface Platform {
