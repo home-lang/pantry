@@ -3,7 +3,7 @@
  *
  * @domain `crates.io/kubie`
  * @programs `kubie`
- * @version `0.26.1` (2 versions available)
+ * @version `0.27.0` (3 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install crates.io/kubie`
@@ -15,7 +15,7 @@
  * const pkg = pantry.cratesiokubie
  * console.log(pkg.name)        // "kubie"
  * console.log(pkg.programs)    // ["kubie"]
- * console.log(pkg.versions[0]) // "0.26.1" (latest)
+ * console.log(pkg.versions[0]) // "0.27.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/crates-io/kubie.md
@@ -59,6 +59,7 @@ export const cratesiokubiePackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.27.0',
     '0.26.1',
     '0.26.0',
   ] as const,
