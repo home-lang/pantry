@@ -2,7 +2,7 @@
  * **filelock** - A platform-independent file lock for Python.
  *
  * @domain `github.com/tox-dev/filelock`
- * @version `3.25.2` (33 versions available)
+ * @version `3.25.2` (34 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/tox-dev/filelock`
@@ -73,6 +73,7 @@ export const filelockPackage = {
     '3.21.2',
     '3.21.1',
     '3.21.0',
+    '3.20.4',
     '3.20.3',
     '3.20.2',
     '3.20.1',

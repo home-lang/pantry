@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 16 versions</summary>
+<summary>Show all 17 versions</summary>
 
-- `7.15.0`
+- `7.15.1`, `7.15.0`
 - `7.14.3`, `7.14.2`, `7.14.1`, `7.14.0`
 - `7.13.0`
 - `7.12.0`
@@ -40,13 +40,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `7.15.0`
+**Latest Version**: `7.15.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +oauth2-proxy.github.io@7.15.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +oauth2-proxy.github.io@7.15.1 -- $SHELL -i
 ```
 
 ## Usage Examples

@@ -25,9 +25,9 @@ No programs specified.
 ## Available Versions
 
 <details>
-<summary>Show all 145 versions</summary>
+<summary>Show all 146 versions</summary>
 
-- `2026.3.16.0`, `2026.3.9.0`, `2026.3.2.0`
+- `2026.3.23.0`, `2026.3.16.0`, `2026.3.9.0`, `2026.3.2.0`
 - `2026.2.23.0`, `2026.2.16.0`, `2026.2.9.0`, `2026.2.2.0`
 - `2026.1.26.0`, `2026.1.19.0`, `2026.1.12.0`, `2026.1.5.0`
 - `2025.12.29.0`, `2025.12.22.0`, `2025.12.15.0`
@@ -66,13 +66,13 @@ No programs specified.
 
 </details>
 
-**Latest Version**: `2026.3.16.0`
+**Latest Version**: `2026.3.23.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +facebook.com/folly@2026.3.16.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +facebook.com/folly@2026.3.23.0 -- $SHELL -i
 ```
 
 ## Dependencies
