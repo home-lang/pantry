@@ -76,6 +76,7 @@ export const kubectxdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.1',
     '0.10.1-rc.1',
     '0.10.0',
     '0.9.5',
@@ -95,7 +96,6 @@ export const kubectxdevPackage = {
     '0.5.0',
     '0.4.1',
     '0.4.0',
-    '0.3.1',
   ] as const,
   aliases: [] as const,
 }
