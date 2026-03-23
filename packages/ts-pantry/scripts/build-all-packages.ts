@@ -22,6 +22,7 @@
  *   --count-only             Just print total buildable package count and exit
  *   --list                   List all buildable packages
  *   --dry-run                Show what would be built
+ *   --apps-only           Only build apps (GUI applications from desktop-pantry/)
  *   -h, --help               Show help
  */
 
@@ -57,6 +58,7 @@ interface BuildablePackage {
   needsProps: boolean
   hasProps: boolean
   depDomains: string[] // Domains this package depends on (for ordering)
+  isApp: boolean // true if sourced from desktop-pantry/
 }
 
 function domainToKey(domain: string): string {
@@ -113,13 +115,13 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
   const targetArchName = targetArch === 'arm64' ? 'aarch64' : targetArch === 'x86-64' ? 'x86-64' : targetArch === 'x86_64' ? 'x86-64' : ''
 
   // Recursively find all package.yml files
-  function findYamls(dir: string, prefix: string = ''): void {
+  function findYamls(dir: string, prefix: string = '', desktopApp: boolean = false): void {
     if (!existsSync(dir)) return
     const entries = readdirSync(dir, { withFileTypes: true })
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        findYamls(join(dir, entry.name), prefix ? `${prefix}/${entry.name}` : entry.name)
+        findYamls(join(dir, entry.name), prefix ? `${prefix}/${entry.name}` : entry.name, desktopApp)
       }
 else if (entry.name === 'package.yml') {
         const domain = prefix
@@ -201,6 +203,7 @@ else if (entry.name === 'package.yml') {
             needsProps,
             hasProps: hasPropsDir,
             depDomains,
+            isApp: desktopApp,
           })
         }
 catch {
@@ -214,7 +217,7 @@ catch {
 
   // Also scan desktop-pantry/ for desktop app YAML stubs (not auto-synced from pkgx)
   const desktopPantryDir = join(process.cwd(), 'src', 'desktop-pantry')
-  findYamls(desktopPantryDir)
+  findYamls(desktopPantryDir, '', true)
 
   // Topological sort: packages with fewer deps come first
   // This ensures dependency packages are built before their dependents
@@ -1091,6 +1094,7 @@ async function main() {
       'count-only': { type: 'boolean', default: false },
       list: { type: 'boolean', short: 'l', default: false },
       'dry-run': { type: 'boolean', default: false },
+      'apps-only': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h' },
     },
     strict: true,
@@ -1119,6 +1123,7 @@ Options:
   --count-only             Print total buildable count and exit
   -l, --list               List all buildable packages
   --dry-run                Show what would be built
+  --apps-only           Only build apps (GUI applications from desktop-pantry/)
   -h, --help               Show help
 `)
     process.exit(0)
@@ -1219,7 +1224,7 @@ Options:
     'gnu.org/texinfo', // cc_wrapper + gnulib glob expansion on linux, builds fine on darwin
     'musepack.net', // duplicate symbols on linux, builds fine on darwin
     'github.com/OSGeo/libgeotiff', // proj.org dep only available on darwin
-    // Desktop apps — macOS .app bundles only
+    // Apps — macOS .app bundles (GUI applications)
     'code.visualstudio.com', 'discord.com', 'slack.com', 'obsidian.md',
     'notion.so', 'spotify.com', 'figma.com', '1password.com',
     'iterm2.com', 'firefox.org', 'brave.com', 'arc.net',
@@ -1701,7 +1706,8 @@ Options:
   if (values.list) {
     console.log('\nBuildable packages:')
     for (const pkg of allPackages) {
-      console.log(`  ${pkg.domain} (${pkg.name}) v${pkg.latestVersion} ${pkg.hasBuildScript ? '[has build script]' : '[no build script]'}`)
+      const tags = [pkg.isApp ? '[app]' : '', pkg.hasBuildScript ? '[has build script]' : '[no build script]'].filter(Boolean).join(' ')
+      console.log(`  ${pkg.domain} (${pkg.name}) v${pkg.latestVersion} ${tags}`)
     }
     console.log(`\nTotal: ${allPackages.length}`)
     process.exit(0)
@@ -1720,6 +1726,12 @@ Options:
   const force = values.force || false
   const multiVersion = values['multi-version'] || false
   const maxVersions = parseInt(values['max-versions'] || '5', 10)
+
+  // Filter to apps only if requested
+  if (values['apps-only']) {
+    allPackages = allPackages.filter(p => p.isApp)
+    console.log(`Filtered to ${allPackages.length} apps`)
+  }
 
   // Filter by specific packages if provided
   if (values.package) {

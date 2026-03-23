@@ -1,11 +1,15 @@
 name: Build Package
 
 on:
+  schedule:
+    # Build apps daily at 6am UTC
+    - cron: '0 6 * * *'
+
   workflow_dispatch:
     inputs:
       packages:
-        description: 'Package domains to build, space or comma separated (e.g., "redis.io curl.se")'
-        required: true
+        description: 'Package domains to build (e.g., "redis.io curl.se"), or leave empty for apps-only'
+        required: false
         type: string
       platform:
         description: 'Platform to build on'
@@ -21,6 +25,11 @@ on:
         required: false
         type: boolean
         default: true
+      apps-only:
+        description: 'Only build apps / GUI applications (ignores packages input)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   AWS_REGION: us-east-1
@@ -32,7 +41,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: ${{ github.event.inputs.platform == 'darwin-arm64' && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]') || github.event.inputs.platform == 'linux-x86-64' && fromJson('[{"os":"ubuntu-latest","name":"linux-x86-64"}]') || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"}]') }}
+        # Desktop-only builds (schedule or explicit flag) run on macOS only
+        # Otherwise respect the platform input
+        platform: ${{
+          (github.event_name == 'schedule' || github.event.inputs.apps-only == 'true')
+            && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]')
+          || github.event.inputs.platform == 'darwin-arm64'
+            && fromJson('[{"os":"macos-15","name":"darwin-arm64"}]')
+          || github.event.inputs.platform == 'linux-x86-64'
+            && fromJson('[{"os":"ubuntu-latest","name":"linux-x86-64"}]')
+          || fromJson('[{"os":"macos-15","name":"darwin-arm64"},{"os":"ubuntu-latest","name":"linux-x86-64"}]')
+          }}
     runs-on: ${{ matrix.platform.os }}
     permissions:
       contents: read
@@ -50,8 +69,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      # Heavy toolchain setup — skipped for apps-only builds (they just need curl/hdiutil/brew)
       - name: Install build tools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -119,7 +139,7 @@ jobs:
             doxygen xsltproc docbook-xsl xmlto
 
       - name: Setup Xcode (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         run: |
           XCODE_PATH=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
           if [ -n "$XCODE_PATH" ]; then
@@ -132,7 +152,7 @@ jobs:
           xcodebuild -version
 
       - name: Cache Homebrew packages
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -146,7 +166,7 @@ jobs:
             brew-build-tools-${{ runner.os }}-
 
       - name: Install build tools (macOS)
-        if: runner.os == 'macOS'
+        if: runner.os == 'macOS' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
           HOMEBREW_NO_INSTALL_CLEANUP: 1
@@ -160,13 +180,10 @@ jobs:
             libsecret libfido2 double-conversion glog gflags \
             libsodium lzo snappy brotli \
             doxygen docbook-xsl sdl2 sdl2_ttf sdl2_mixer sdl2_gfx || true
-          # Link installed-but-unlinked tools so they're in PATH
           brew link --force libtool autoconf automake meson gnu-sed scons 2>/dev/null || true
-          # Keep Homebrew cmake (4.x) — pip cmake 3.x crashes with Abort trap: 6 on ARM64.
-          # Any packages needing cmake <4 should use S3 cmake.org dep or package-overrides.
 
       - name: Fix Python setuptools (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         run: |
           sudo rm -rf /usr/lib/python3/dist-packages/setuptools* \
                       /usr/lib/python3/dist-packages/wheel* \
@@ -175,6 +192,7 @@ jobs:
           sudo pip3 install --break-system-packages setuptools wheel 2>/dev/null || true
 
       - name: Setup Rust toolchain
+        if: github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source "$HOME/.cargo/env"
@@ -185,6 +203,7 @@ jobs:
           python3 -m pip install --break-system-packages setuptools meson 2>/dev/null || pip3 install --break-system-packages setuptools meson 2>/dev/null || true
 
       - name: Verify toolchains
+        if: github.event_name != 'schedule' && github.event.inputs.apps-only != 'true'
         run: |
           echo "=== Toolchain versions ==="
           cargo --version 2>/dev/null || echo "cargo: not found"
@@ -193,13 +212,6 @@ jobs:
           python3 --version 2>/dev/null || echo "python3: not found"
           node --version 2>/dev/null || echo "node: not found"
           java -version 2>/dev/null || echo "java: not found"
-          echo "HOME=$HOME"
-          echo "CARGO_HOME=${CARGO_HOME:-not set}"
-          echo "GOPATH=${GOPATH:-not set}"
-          echo "JAVA_HOME=${JAVA_HOME:-not set}"
-          which cargo 2>/dev/null || echo "cargo not in PATH"
-          which go 2>/dev/null || echo "go not in PATH"
-          which java 2>/dev/null || echo "java not in PATH"
 
       - name: Build packages
         env:
@@ -216,10 +228,19 @@ jobs:
             ARGS="$ARGS --force"
           fi
 
-          # Pass all packages as comma-separated to -p (input may use spaces)
-          PACKAGES="${{ github.event.inputs.packages }}"
-          PACKAGES="${PACKAGES// /,}"
-          ARGS="$ARGS -p $PACKAGES"
+          # Desktop-only mode: scheduled runs or explicit flag
+          IS_DESKTOP="${{ github.event.inputs.apps-only || '' }}"
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "$IS_DESKTOP" = "true" ]; then
+            ARGS="$ARGS --apps-only"
+            echo "Building apps only"
+          else
+            # Pass specific packages if provided
+            PACKAGES="${{ github.event.inputs.packages }}"
+            if [ -n "$PACKAGES" ]; then
+              PACKAGES="${PACKAGES// /,}"
+              ARGS="$ARGS -p $PACKAGES"
+            fi
+          fi
 
           echo "Running: bun scripts/build-all-packages.ts $ARGS"
           bun scripts/build-all-packages.ts $ARGS
@@ -235,12 +256,12 @@ jobs:
       - uses: ./.github/actions/discord-notify
         with:
           title: "Build Package — ${{ needs.build.result == 'success' && 'Success' || needs.build.result == 'cancelled' && 'Cancelled' || 'Failed' }}"
-          description: "Packages: ${{ github.event.inputs.packages }}"
+          description: "${{ github.event_name == 'schedule' && 'Daily app sync' || format('Packages: {0}', github.event.inputs.packages || 'apps-only') }}"
           status: ${{ needs.build.result == 'success' && 'success' || needs.build.result == 'cancelled' && 'warning' || 'failure' }}
           fields: |
             [
-              {"name": "Platform", "value": "${{ github.event.inputs.platform || 'both' }}", "inline": true},
-              {"name": "Force", "value": "${{ github.event.inputs.force || 'true' }}", "inline": true},
+              {"name": "Platform", "value": "${{ github.event.inputs.platform || 'darwin-arm64' }}", "inline": true},
+              {"name": "Mode", "value": "${{ (github.event_name == 'schedule' || github.event.inputs.apps-only == 'true') && 'Apps' || 'System Packages' }}", "inline": true},
               {"name": "Actor", "value": "${{ github.actor }}", "inline": true}
             ]
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
