@@ -1424,6 +1424,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   // different rustc versions. System cargo/rustc from rustup is always preferred.
   removedDeps.add('rust-lang.org/cargo')
 
+  const pantryPath = loaded.yamlPath || `native recipe for ${pkgName}`
   console.log(`\nBuild recipe: ${pantryPath}`)
 
   // Extract build dependencies from YAML recipe and merge with TypeScript metadata deps
@@ -1512,17 +1513,19 @@ catch { /* skip deps whose YAML can't be read */ }
   mkdirSync(prefix, { recursive: true })
 
   // Copy props to build dir: sibling files of package.yml become buildDir/props/
-  // This mirrors pkgx's brewkit behavior where the package directory is rsynced into props/
-  const packageDir = dirname(pantryPath)
-  const destProps = join(buildDir, 'props')
-  const siblings = readdirSync(packageDir).filter(f => f !== 'package.yml')
-  if (siblings.length > 0) {
-    mkdirSync(destProps, { recursive: true })
-    for (const entry of siblings) {
-      const srcPath = join(packageDir, entry)
-      execSync(`cp -a "${srcPath}" "${destProps}/"`, { stdio: 'pipe' })
+  // For native recipes, use the loaded.propsDir if available
+  const packageDir = loaded.propsDir || (loaded.yamlPath ? dirname(loaded.yamlPath) : null)
+  if (packageDir && existsSync(packageDir)) {
+    const destProps = join(buildDir, 'props')
+    const siblings = readdirSync(packageDir).filter(f => f !== 'package.yml' && !f.endsWith('.ts'))
+    if (siblings.length > 0) {
+      mkdirSync(destProps, { recursive: true })
+      for (const entry of siblings) {
+        const srcPath = join(packageDir, entry)
+        execSync(`cp -a "${srcPath}" "${destProps}/"`, { stdio: 'pipe' })
+      }
+      console.log(`📋 Copied ${siblings.length} props files to build dir: ${siblings.join(', ')}`)
     }
-    console.log(`📋 Copied ${siblings.length} props files to build dir: ${siblings.join(', ')}`)
   }
 
   // Determine version.tag from the versions.strip pattern in YAML
