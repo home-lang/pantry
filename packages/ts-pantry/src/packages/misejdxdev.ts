@@ -3,7 +3,7 @@
  *
  * @domain `mise.jdx.dev`
  * @programs `rtx`, `mise`
- * @version `2026.3.12` (460 versions available)
+ * @version `2026.3.12` (461 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install mise.jdx.dev`
@@ -78,6 +78,7 @@ export const misejdxdevPackage = {
   */
   versions: [
     '2026.3.12',
+    '2026.3.11',
     '2026.3.10',
     '2026.3.9',
     '2026.3.8',
