@@ -25,9 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 218 versions</summary>
+<summary>Show all 219 versions</summary>
 
-- `2.63.0`
+- `2.63.1`, `2.63.0`
 - `2.62.2`, `2.62.1`
 - `2.61.1`, `2.61.0`
 - `2.60.0`
@@ -95,13 +95,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.63.0`
+**Latest Version**: `2.63.1`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +werf.io@2.63.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +werf.io@2.63.1 -- $SHELL -i
 ```
 
 ## Usage Examples

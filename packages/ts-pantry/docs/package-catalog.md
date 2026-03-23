@@ -1,14 +1,14 @@
 # Package Catalog
 
-This comprehensive catalog lists all 1432+ packages available in ts-pantry, organized by category.
+This comprehensive catalog lists all 1451+ packages available in ts-pantry, organized by category.
 
 Each package can be accessed using `getPackage(name)` or directly via `pantry.domain`.
 
 ## Quick Stats
 
-- **Total Packages**: 1432
+- **Total Packages**: 1451
 - **Categories**: 27
-- **Last Updated**: 2026-03-23T15:54:56.270Z
+- **Last Updated**: 2026-03-23T16:48:15.449Z
 
 ## Table of Contents
 
@@ -377,7 +377,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 | **[aws.amazon.com/sam](./packages/aws.amazon.com/sam/index.md)** () | CLI tool to build, test, debug, and deploy Serverless applications using AWS SAM | sam | 1.156.0 (+49) | `pkgx sam` |
 | **[fly.io](./packages/fly.io/index.md)** () | Command line tools for fly.io services | fly, flyctl | 0.4.26 (+513) | `pkgx fly` |
 | **[heroku.com](./packages/heroku.com/index.md)** () | CLI for Heroku | heroku | 11.0.0 (+43) | `pkgx heroku` |
-| **[localstack.cloud/cli](./packages/localstack.cloud/cli/index.md)** () | The LocalStack CLI packaged using pyinstaller | localstack | 4.14.0 (+35) | `pkgx localstack` |
+| **[localstack.cloud/cli](./packages/localstack.cloud/cli/index.md)** () | The LocalStack CLI packaged using pyinstaller | localstack | 2026.3.0 (+36) | `pkgx localstack` |
 | **[planetscale.com](./packages/planetscale.com/index.md)** () | The CLI for PlanetScale Database | pscale | 0.276.0 (+98) | `pkgx pscale` |
 | **[railway.app](./packages/railway.app/index.md)** () | Develop and deploy code with zero configuration | railway | 4.33.0 (+104) | `pkgx railway` |
 | **[render.com](./packages/render.com/index.md)** () | Command-line interface for Render | render | 0.1.11 (+5) | `pkgx render` |

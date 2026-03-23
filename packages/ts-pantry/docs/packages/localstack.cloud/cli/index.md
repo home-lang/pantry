@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 36 versions</summary>
+<summary>Show all 37 versions</summary>
 
+- `2026.3.0`
 - `4.14.0`
 - `4.13.1`, `4.13.0`
 - `4.12.0`
@@ -54,13 +55,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `4.14.0`
+**Latest Version**: `2026.3.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +localstack.cloud/cli@4.14.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +localstack.cloud/cli@2026.3.0 -- $SHELL -i
 ```
 
 ## Dependencies

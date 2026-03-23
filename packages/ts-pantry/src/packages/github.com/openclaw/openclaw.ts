@@ -3,7 +3,7 @@
  *
  * @domain `github.com/openclaw/openclaw`
  * @programs `openclaw`, `openclaw-init`
- * @version `2026.3.13` (9 versions available)
+ * @version `2026.3.22` (10 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install github.com/openclaw/openclaw`
@@ -17,7 +17,7 @@
  * const pkg = pantry.githubcomopenclawopenclaw
  * console.log(pkg.name)        // "openclaw"
  * console.log(pkg.programs)    // ["openclaw", "openclaw-init"]
- * console.log(pkg.versions[0]) // "2026.3.13" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.22" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/github-com/openclaw/openclaw.md
@@ -80,6 +80,7 @@ export const openclawPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.22',
     '2026.3.13',
     '2026.3.12',
     '2026.3.11',

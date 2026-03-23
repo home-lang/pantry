@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 70 versions</summary>
+<summary>Show all 71 versions</summary>
 
+- `2.32.0`
 - `2.31.0`
 - `2.30.6`, `2.30.5`, `2.30.4`, `2.30.3`, `2.30.1`, `2.30.0`
 - `2.29.0`
@@ -60,13 +61,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `2.31.0`
+**Latest Version**: `2.32.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +tart.run@2.31.0 -- $SHELL -i
+sh <(curl https://pkgx.sh) +tart.run@2.32.0 -- $SHELL -i
 ```
 
 ## Usage Examples

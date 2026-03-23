@@ -3,7 +3,7 @@
  *
  * @domain `bashly.dannyb.co`
  * @programs `bashly`
- * @version `1.3.6` (21 versions available)
+ * @version `1.3.8` (23 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install bashly.dannyb.co`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "bashly"
  * console.log(pkg.description) // "Bash command line framework and CLI generator"
  * console.log(pkg.programs)    // ["bashly"]
- * console.log(pkg.versions[0]) // "1.3.6" (latest)
+ * console.log(pkg.versions[0]) // "1.3.8" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/bashly-dannyb-co.md
@@ -76,6 +76,8 @@ export const bashlydannybcoPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.3.8',
+    '1.3.7',
     '1.3.6',
     '1.3.5',
     '1.3.4',

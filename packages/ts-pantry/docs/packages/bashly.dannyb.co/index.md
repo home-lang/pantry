@@ -25,21 +25,21 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 21 versions</summary>
+<summary>Show all 23 versions</summary>
 
-- `1.3.6`, `1.3.5`, `1.3.4`, `1.3.3`, `1.3.2`, `1.3.1`
+- `1.3.8`, `1.3.7`, `1.3.6`, `1.3.5`, `1.3.4`, `1.3.3`, `1.3.2`, `1.3.1`
 - `1.2.13`, `1.2.12`, `1.2.11`, `1.2.10`, `1.2.9`, `1.2.8`, `1.2.7`, `1.2.6`, `1.2.5`, `1.2.4`, `1.2.3`, `1.2.2`, `1.2.1`, `1.2.0`
 - `1.1.10`
 
 </details>
 
-**Latest Version**: `1.3.6`
+**Latest Version**: `1.3.8`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +bashly.dannyb.co@1.3.6 -- $SHELL -i
+sh <(curl https://pkgx.sh) +bashly.dannyb.co@1.3.8 -- $SHELL -i
 ```
 
 ## Dependencies

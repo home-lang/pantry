@@ -3,7 +3,7 @@
  *
  * @domain `facebook.com/watchman`
  * @programs `watchman`, `watchman-diag`, `watchman-make`, `watchman-wait`, `watchman-replicate-subscription`, ... (+1 more)
- * @version `2026.3.16.0` (79 versions available)
+ * @version `2026.3.23.0` (80 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install facebook.com/watchman`
@@ -19,7 +19,7 @@
  * console.log(pkg.name)        // "watchman"
  * console.log(pkg.description) // "Watches files and records, or triggers actions,..."
  * console.log(pkg.programs)    // ["watchman", "watchman-diag", ...]
- * console.log(pkg.versions[0]) // "2026.3.16.0" (latest)
+ * console.log(pkg.versions[0]) // "2026.3.23.0" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/facebook-com/watchman.md
@@ -99,6 +99,7 @@ export const facebookcomwatchmanPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2026.3.23.0',
     '2026.3.16.0',
     '2026.3.9.0',
     '2026.3.2.0',
