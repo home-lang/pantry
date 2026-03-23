@@ -60,9 +60,26 @@ export const pugixmlorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.15',
     '1.15.0',
+    '1.14',
     '1.14.0',
+    '1.13',
     '1.13.0',
+    '1.12.1',
+    '1.12',
+    '1.11.4',
+    '1.11',
+    '1.10',
+    '1.9',
+    '1.8.1',
+    '1.8',
+    '1.7',
+    '1.6',
+    '1.5',
+    '1.4',
+    '1.2',
+    '1.0',
   ] as const,
   aliases: [] as const,
 }

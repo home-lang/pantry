@@ -70,6 +70,8 @@ export const scryerplPackage = {
   versions: [
     '0.10.0',
     '0.9.4',
+    '0.9.3',
+    '0.9.2',
   ] as const,
   aliases: [] as const,
 }

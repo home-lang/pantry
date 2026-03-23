@@ -83,6 +83,10 @@ export const tailscalecomPackage = {
     '1.90.2',
     '1.90.1',
     '1.88.3',
+    '1.88.1',
+    '1.86.2',
+    '1.86.0',
+    '1.84.2',
   ] as const,
   aliases: [] as const,
 }

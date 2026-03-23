@@ -77,6 +77,10 @@ export const jlessioPackage = {
   */
   versions: [
     '0.9.0',
+    '0.8.0',
+    '0.7.2',
+    '0.7.1',
+    '0.7.0',
   ] as const,
   aliases: [] as const,
 }

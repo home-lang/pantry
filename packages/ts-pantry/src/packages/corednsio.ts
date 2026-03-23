@@ -83,7 +83,11 @@ export const corednsioPackage = {
     '1.11.3',
     '1.11.2',
     '1.11.1',
+    '1.11.0',
     '1.10.1',
+    '1.10.0',
+    '1.9.4',
+    '1.9.3',
   ] as const,
   aliases: [] as const,
 }

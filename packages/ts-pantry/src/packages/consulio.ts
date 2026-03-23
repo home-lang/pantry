@@ -88,7 +88,6 @@ export const consulioPackage = {
     '1.20.1',
     '1.20.0',
     '1.19.2',
-    '1.19.1',
   ] as const,
   aliases: [] as const,
 }

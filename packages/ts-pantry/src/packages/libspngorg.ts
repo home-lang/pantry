@@ -68,6 +68,15 @@ export const libspngorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.7.4',
+    '0.7.3',
+    '0.7.2',
+    '0.7.1',
+    '0.7.0',
+    '0.6.3',
+    '0.6.2',
+    '0.6.1',
+    '0.6.0',
     '0.5.0',
   ] as const,
   aliases: [] as const,

@@ -88,8 +88,6 @@ export const scalewaycomPackage = {
     '2.36.0',
     '2.35.0',
     '2.34.0',
-    '2.33.0',
-    '2.32.1',
   ] as const,
   aliases: [] as const,
 }

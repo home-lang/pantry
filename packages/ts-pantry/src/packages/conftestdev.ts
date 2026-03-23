@@ -88,11 +88,6 @@ export const conftestdevPackage = {
     '0.52.0',
     '0.51.0',
     '0.50.0',
-    '0.49.1',
-    '0.49.0',
-    '0.48.0',
-    '0.47.0',
-    '0.46.0',
   ] as const,
   aliases: [] as const,
 }

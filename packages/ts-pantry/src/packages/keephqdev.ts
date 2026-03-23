@@ -68,7 +68,26 @@ export const keephqdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
-    '0.0.0',
+    '0.51.0',
+    '0.50.0',
+    '0.49.1',
+    '0.49.0',
+    '0.48.1',
+    '0.48.0',
+    '0.47.11',
+    '0.47.10',
+    '0.47.9',
+    '0.47.8',
+    '0.47.7',
+    '0.47.6',
+    '0.47.5',
+    '0.47.4',
+    '0.47.3',
+    '0.47.2',
+    '0.47.1',
+    '0.47.0',
+    '0.46.5',
+    '0.46.4',
   ] as const,
   aliases: [] as const,
 }

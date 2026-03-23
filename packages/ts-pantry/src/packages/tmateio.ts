@@ -81,6 +81,10 @@ export const tmateioPackage = {
   */
   versions: [
     '2.4.0',
+    '2.3.1',
+    '2.3.0',
+    '2.2.1',
+    '2.2.0',
   ] as const,
   aliases: [] as const,
 }

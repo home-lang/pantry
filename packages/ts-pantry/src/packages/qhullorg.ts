@@ -74,6 +74,7 @@ export const qhullorgPackage = {
   */
   versions: [
     '8.0.2',
+    '8.1-alpha1',
   ] as const,
   aliases: [] as const,
 }

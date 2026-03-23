@@ -89,8 +89,6 @@ export const riotermcomPackage = {
     '0.2.20',
     '0.2.19',
     '0.2.18',
-    '0.2.17',
-    '0.2.16',
   ] as const,
   aliases: [] as const,
 }

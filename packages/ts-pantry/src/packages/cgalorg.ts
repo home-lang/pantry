@@ -84,14 +84,26 @@ export const cgalorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '6.1.1',
+    '6.1',
     '6.1.0',
     '6.0.3',
     '6.0.2',
     '6.0.1',
+    '6.0',
     '6.0.0',
+    '5.6.3',
     '5.6.2',
     '5.6.1',
+    '5.6',
     '5.6.0',
+    '5.5.5',
+    '5.5.4',
+    '5.5.3',
+    '5.5.2',
+    '5.5.1',
+    '5.5',
+    '5.4.5',
   ] as const,
   aliases: [] as const,
 }

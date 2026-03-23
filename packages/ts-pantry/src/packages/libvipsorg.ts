@@ -119,6 +119,12 @@ export const libvipsorgPackage = {
     '8.15.1',
     '8.15.0',
     '8.14.5',
+    '8.14.4',
+    '8.14.3',
+    '8.14.2',
+    '8.14.1',
+    '8.13.3',
+    '8.13.2',
   ] as const,
   aliases: [] as const,
 }

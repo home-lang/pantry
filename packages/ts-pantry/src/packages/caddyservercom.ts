@@ -83,6 +83,12 @@ export const caddyservercomPackage = {
     '2.7.6',
     '2.7.5',
     '2.7.4',
+    '2.7.3',
+    '2.7.2',
+    '2.7.1',
+    '2.7.0',
+    '2.6.4',
+    '2.6.3',
   ] as const,
   aliases: [] as const,
 }

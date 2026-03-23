@@ -77,6 +77,9 @@ export const fmtdevPackage = {
     '10.1.0',
     '10.0.0',
     '9.1.0',
+    '9.0.0',
+    '8.1.1',
+    '8.1.0',
   ] as const,
   aliases: [] as const,
 }

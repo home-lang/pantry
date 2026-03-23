@@ -74,6 +74,7 @@ export const unixodbcorgPackage = {
   */
   versions: [
     '2.3.14',
+    '2.3.13',
     '2.3.12',
     '2.3.11',
   ] as const,

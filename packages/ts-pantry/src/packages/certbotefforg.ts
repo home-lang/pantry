@@ -88,13 +88,6 @@ export const certbotefforgPackage = {
     '2.11.0',
     '2.10.0',
     '2.9.0',
-    '2.8.0',
-    '2.7.4',
-    '2.7.3',
-    '2.7.2',
-    '2.7.1',
-    '2.7.0',
-    '2.6.0',
   ] as const,
   aliases: [] as const,
 }

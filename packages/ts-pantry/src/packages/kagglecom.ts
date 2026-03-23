@@ -80,7 +80,10 @@ export const kagglecomPackage = {
     '1.7.4.2',
     '1.6.3',
     '1.6.1',
+    '1.6.0a3',
     '1.5.16',
+    '1.5.15',
+    '1.5.14',
   ] as const,
   aliases: [] as const,
 }

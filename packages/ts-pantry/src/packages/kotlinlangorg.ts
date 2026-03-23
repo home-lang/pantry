@@ -97,9 +97,6 @@ export const kotlinPackage = {
     '1.9.23',
     '1.9.22',
     '1.9.21',
-    '1.9.20',
-    '1.9.10',
-    '1.9.0',
   ] as const,
   /**
   * Alternative names for this package.

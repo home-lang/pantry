@@ -71,6 +71,7 @@ export const dgraphioPackage = {
     '25.3.0',
     '25.2.0',
     '25.1.0',
+    '25.1.0-preview1',
     '25.0.0',
     '24.1.4',
     '24.1.3',
@@ -84,6 +85,9 @@ export const dgraphioPackage = {
     '24.0.0',
     '23.1.1',
     '23.1.0',
+    '23.0.1',
+    '23.0.0',
+    '22.0.2',
   ] as const,
   aliases: [] as const,
 }

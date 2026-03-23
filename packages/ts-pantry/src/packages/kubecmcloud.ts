@@ -84,6 +84,10 @@ export const kubecmcloudPackage = {
     '0.29.1',
     '0.29.0',
     '0.28.0',
+    '0.27.1',
+    '0.27.0',
+    '0.26.0',
+    '0.25.0',
   ] as const,
   aliases: [] as const,
 }

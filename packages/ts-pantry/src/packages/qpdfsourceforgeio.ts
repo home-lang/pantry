@@ -98,6 +98,13 @@ export const qpdfsourceforgeioPackage = {
     '11.8.0',
     '11.7.0',
     '11.6.4',
+    '11.6.3',
+    '11.6.2',
+    '11.6.1',
+    '11.5.0',
+    '11.4.0',
+    '11.3.0',
+    '11.2.0',
   ] as const,
   aliases: [] as const,
 }

@@ -78,6 +78,9 @@ export const numbatdevPackage = {
     '1.10.0',
     '1.9.0',
     '1.8.0',
+    '1.7.0',
+    '1.6.3',
+    '1.6.2',
   ] as const,
   aliases: [] as const,
 }

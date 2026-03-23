@@ -171,12 +171,6 @@ export const gdalorgPackage = {
     '3.9.0',
     '3.8.5',
     '3.8.4',
-    '3.8.3',
-    '3.8.2',
-    '3.8.1',
-    '3.8.0',
-    '3.7.3',
-    '3.7.2',
   ] as const,
   aliases: [] as const,
 }

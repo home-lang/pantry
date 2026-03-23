@@ -93,12 +93,26 @@ export const po4aorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.74',
     '0.74.0',
+    '0.73',
     '0.73.0',
+    '0.72',
     '0.72.0',
+    '0.71',
     '0.71.0',
+    '0.70',
     '0.70.0',
+    '0.69',
     '0.69.0',
+    '0.68',
+    '0.67',
+    '0.66',
+    '0.65',
+    '0.64',
+    '0.63',
+    '0.62',
+    '0.61',
   ] as const,
   aliases: [] as const,
 }

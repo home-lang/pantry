@@ -91,6 +91,10 @@ export const typescriptlangorgPackage = {
     '5.4.4',
     '5.4.3',
     '5.4.2',
+    '5.3.3',
+    '5.3.2',
+    '5.2.2',
+    '5.1.6',
   ] as const,
   aliases: [] as const,
 }
