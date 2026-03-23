@@ -104,7 +104,8 @@ catch { /* not installed via brew */ }
   return '/usr'
 }
 // Import package metadata
-const packagesPath = new URL('../src/packages/index.ts', import.meta.url).pathname
+import { fileURLToPath } from 'node:url'
+const packagesPath = fileURLToPath(new URL('../src/packages/index.ts', import.meta.url))
 // eslint-disable-next-line ts/no-top-level-await
 const { pantry } = await import(packagesPath)
 
