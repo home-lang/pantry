@@ -25,8 +25,9 @@ This package provides the following executable programs:
 ## Available Versions
 
 <details>
-<summary>Show all 20 versions</summary>
+<summary>Show all 21 versions</summary>
 
+- `0.44.0`
 - `0.43.1`, `0.43.0`
 - `0.42.2`, `0.42.1`, `0.42.0`
 - `0.41.2`, `0.41.1`, `0.41.0`
@@ -38,13 +39,13 @@ This package provides the following executable programs:
 
 </details>
 
-**Latest Version**: `0.43.1`
+**Latest Version**: `0.44.0`
 
 ### Install Specific Version
 
 ```bash
 # Install specific version
-sh <(curl https://pkgx.sh) +crates.io/zellij@0.43.1 -- $SHELL -i
+sh <(curl https://pkgx.sh) +crates.io/zellij@0.44.0 -- $SHELL -i
 ```
 
 ## Dependencies

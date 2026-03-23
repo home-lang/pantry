@@ -1,6 +1,6 @@
 # Editors & IDEs
 
-8 packages in this category
+9 packages in this category
 
 Packages related to editors & ides.
 
@@ -13,6 +13,16 @@ A cross-platform, OpenGL terminal emulator.
 **Programs**: alacritty
 
 **Install**: `pantry install alacritty.org`
+
+---
+
+### [code.visualstudio.com](../packages/code.visualstudio.com/index.md) (Visual Studio Code, vscode, code)
+
+A lightweight but powerful source code editor.
+
+**Programs**: code
+
+**Install**: `pantry install code.visualstudio.com`
 
 ---
 

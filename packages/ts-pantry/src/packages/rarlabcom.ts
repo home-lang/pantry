@@ -3,7 +3,7 @@
  *
  * @domain `rarlab.com`
  * @programs `unrar`
- * @version `7.2.4` (27 versions available)
+ * @version `7.2.5` (28 versions available)
  * @versions From newest version to oldest.
  *
  * @install `pantry install rarlab.com`
@@ -16,7 +16,7 @@
  * const pkg = pantry.rarlabcom
  * console.log(pkg.name)        // "unrar"
  * console.log(pkg.programs)    // ["unrar"]
- * console.log(pkg.versions[0]) // "7.2.4" (latest)
+ * console.log(pkg.versions[0]) // "7.2.5" (latest)
  * ```
  *
  * @see https://ts-pantry.netlify.app/packages/rarlab-com.md
@@ -66,6 +66,7 @@ export const rarlabcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.2.5',
     '7.2.4',
     '7.2.3',
     '7.2.2',

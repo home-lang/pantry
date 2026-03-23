@@ -1,14 +1,14 @@
 # Package Catalog
 
-This comprehensive catalog lists all 1402+ packages available in ts-pantry, organized by category.
+This comprehensive catalog lists all 1432+ packages available in ts-pantry, organized by category.
 
 Each package can be accessed using `getPackage(name)` or directly via `pantry.domain`.
 
 ## Quick Stats
 
-- **Total Packages**: 1402
+- **Total Packages**: 1432
 - **Categories**: 27
-- **Last Updated**: 2026-03-23T07:00:53.716Z
+- **Last Updated**: 2026-03-23T08:46:01.923Z
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 - [Monitoring & Observability](#monitoring-observability) (4 packages)
 - [Build Tools & Automation](#build-tools-automation) (16 packages)
 - [Package Managers](#package-managers) (16 packages)
-- [Editors & IDEs](#editors-ides) (8 packages)
+- [Editors & IDEs](#editors-ides) (9 packages)
 - [CLI Tools & Utilities](#cli-tools-utilities) (36 packages)
 - [Networking](#networking) (10 packages)
 - [Security & Cryptography](#security-cryptography) (13 packages)
@@ -239,11 +239,12 @@ Each package can be accessed using `getPackage(name)` or directly via `pantry.do
 
 ## Editors & IDEs
 
-8 packages in this category
+9 packages in this category
 
 | Package | Description | Programs | Versions | Install |
 |---------|-------------|----------|----------|----------|
 | **[alacritty.org](./packages/alacritty.org/index.md)** () | A cross-platform, OpenGL terminal emulator. | alacritty | 0.16.1 (+5) | `pkgx alacritty` |
+| **[code.visualstudio.com](./packages/code.visualstudio.com/index.md)** (vscode, code) | A lightweight but powerful source code editor. | code | 1.96.4 (+2) | `pkgx code` |
 | **[gnu.org/emacs](./packages/gnu.org/emacs/index.md)** () | GNU Emacs text editor | emacs | 30.2.0 (+6) | `pkgx emacs` |
 | **[micro-editor.github.io](./packages/micro-editor.github.io/index.md)** () | A modern and intuitive terminal-based text editor | micro | 2.0.15 (+4) | `pkgx micro` |
 | **[microsoft.com/code-cli](./packages/microsoft.com/code-cli/index.md)** () | Command-line interface built-in Visual Studio Code | code | 1.112.0 (+44) | `pkgx vscode cli` |
