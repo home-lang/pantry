@@ -10250,8 +10250,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}-universal.dmg" -o /tmp/obsidian.dmg',
-            'hdiutil attach /tmp/obsidian.dmg -mountpoint /tmp/obsidian-mount -nobrowse -quiet',
+            'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}-universal.dmg" -o /tmp/obsidian.dmg || curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}.dmg" -o /tmp/obsidian.dmg',
+            'hdiutil attach /tmp/obsidian.dmg -mountpoint /tmp/obsidian-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/obsidian-mount/Obsidian.app" "{{prefix}}/Obsidian.app"',
             'hdiutil detach /tmp/obsidian-mount -quiet || true',
@@ -10483,8 +10483,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://desktop.linear.app/mac/dmg/Linear-universal.dmg" -o /tmp/linear.dmg',
-            'hdiutil attach /tmp/linear.dmg -mountpoint /tmp/linear-mount -nobrowse -quiet',
+            'curl -fSL -L "https://desktop.linear.app/mac/dmg/Linear-universal.dmg" -o /tmp/linear.dmg || curl -fSL -L "https://desktop.linear.app/mac/dmg" -o /tmp/linear.dmg',
+            'hdiutil attach /tmp/linear.dmg -mountpoint /tmp/linear-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/linear-mount/Linear.app" "{{prefix}}/Linear.app"',
             'hdiutil detach /tmp/linear-mount -quiet || true',
@@ -10552,8 +10552,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg',
-            'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -quiet',
+            'curl -fSL -A "Mozilla/5.0" "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg',
+            'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/cursor-mount/Cursor.app" "{{prefix}}/Cursor.app"',
             'hdiutil detach /tmp/cursor-mount -quiet || true',
@@ -10646,7 +10646,7 @@ else if (typeof step.run === 'string') {
         recipe.build.script = [
           [
             'if test "{{hw.arch}}" = "aarch64"; then ARCH="osx_arm64"; else ARCH="osx64"; fi',
-            'curl -fSL "https://dl.pstmn.io/download/latest/${ARCH}" -o /tmp/postman.zip',
+            'curl -fSL -L "https://dl.pstmn.io/download/latest/${ARCH}" -o /tmp/postman.zip',
             'cd /tmp && unzip -qo postman.zip',
             'mkdir -p "{{prefix}}"',
             'mv "/tmp/Postman.app" "{{prefix}}/Postman.app"',
@@ -10852,8 +10852,8 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL "https://cdn-updates.orbstack.dev/arm64/OrbStack.dmg" -o /tmp/orbstack.dmg',
-            'hdiutil attach /tmp/orbstack.dmg -mountpoint /tmp/orbstack-mount -nobrowse -quiet',
+            'curl -fSL -L "https://cdn-updates.orbstack.dev/arm64/OrbStack.dmg" -o /tmp/orbstack.dmg',
+            'hdiutil attach /tmp/orbstack.dmg -mountpoint /tmp/orbstack-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/orbstack-mount/OrbStack.app" "{{prefix}}/OrbStack.app"',
             'hdiutil detach /tmp/orbstack-mount -quiet || true',
