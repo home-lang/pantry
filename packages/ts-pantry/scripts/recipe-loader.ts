@@ -13,7 +13,9 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { RecipeDefinition, LoadedRecipe } from './recipe-types'
 import type { NormalizedRecipe } from './buildkit'
-import { packageOverrides } from './package-overrides'
+
+// package-overrides.ts removed — overrides migrated to src/recipes/*.ts
+const packageOverrides: Record<string, any> = {}
 
 const scriptsDir = fileURLToPath(new URL('.', import.meta.url))
 const tsPackagesDir = join(scriptsDir, '..', 'src')

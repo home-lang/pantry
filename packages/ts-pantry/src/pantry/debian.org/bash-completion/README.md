@@ -1,2 +1,0 @@
-Add the following line to your ~/.bash_profile:
-`[[ -r "~/.tea/debian.org/bash-completion/v*/etc/profile.d/bash_completion.sh" ]] && . "~/.tea/debian.org/bash-completion/v*/etc/profile.d/bash_completion.sh"``

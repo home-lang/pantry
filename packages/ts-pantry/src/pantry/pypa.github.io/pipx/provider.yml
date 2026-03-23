@@ -1,8 +1,0 @@
-cmds:
-  - pygmentize
-# - youtube-dl  # we pacakge this ourselves
-  - openai
-  - thefuck
-args:
-  pygmentize: [pipx, run, --spec, pygments]
-  ...: [pipx, run]

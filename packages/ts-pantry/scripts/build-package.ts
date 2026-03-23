@@ -10,7 +10,8 @@ import { join, dirname } from 'node:path'
 import { parseArgs } from 'node:util'
 import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecipe, type RecipeScriptStep, type RecipeTest } from './buildkit.ts'
 import { fixUp } from './fix-up.ts'
-import { packageOverrides, type ScriptStep } from './package-overrides.ts'
+// package-overrides.ts removed — all build logic now in src/recipes/*.ts
+type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
 
 /**
  * Find the system prefix for a dependency by detecting where its binary lives.

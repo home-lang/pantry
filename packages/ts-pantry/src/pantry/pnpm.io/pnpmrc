@@ -1,2 +1,0 @@
-prefix = ${HOME}/.local
-update_notifier = false

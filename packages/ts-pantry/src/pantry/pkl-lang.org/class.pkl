@@ -1,7 +1,0 @@
-class Language { 
-  name: String
-}
-
-bestForConfig: Language = new { 
-  name = "Pkl"
-}

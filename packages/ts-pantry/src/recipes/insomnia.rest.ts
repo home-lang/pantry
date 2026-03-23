@@ -16,13 +16,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL -L "https://github.com/Kong/insomnia/releases/download/core%40{{version}}/Insomnia.Core-{{version}}.dmg" -o /tmp/insomnia.dmg',
-    'hdiutil attach /tmp/insomnia.dmg -mountpoint /tmp/insomnia-mount -nobrowse -noverify -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/insomnia-mount/Insomnia.app" "{{prefix}}/Insomnia.app"',
-    'hdiutil detach /tmp/insomnia-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Insomnia.app/Contents/MacOS/Insomnia" "{{prefix}}/bin/insomnia"',
+      'curl -fSL -L "https://github.com/Kong/insomnia/releases/download/core%40{{version}}/Insomnia.Core-{{version}}.dmg" -o /tmp/insomnia.dmg',
+      'hdiutil attach /tmp/insomnia.dmg -mountpoint /tmp/insomnia-mount -nobrowse -noverify -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/insomnia-mount/Insomnia.app" "{{prefix}}/Insomnia.app"',
+      'hdiutil detach /tmp/insomnia-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Insomnia.app/Contents/MacOS/Insomnia" "{{prefix}}/bin/insomnia"',
     ],
   },
 }

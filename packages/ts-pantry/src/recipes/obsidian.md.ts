@@ -16,13 +16,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}-universal.dmg" -o /tmp/obsidian.dmg || curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}.dmg" -o /tmp/obsidian.dmg',
-    'hdiutil attach /tmp/obsidian.dmg -mountpoint /tmp/obsidian-mount -nobrowse -noverify -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/obsidian-mount/Obsidian.app" "{{prefix}}/Obsidian.app"',
-    'hdiutil detach /tmp/obsidian-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Obsidian.app/Contents/MacOS/Obsidian" "{{prefix}}/bin/obsidian"',
+      'curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}-universal.dmg" -o /tmp/obsidian.dmg || curl -fSL "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{version}}/Obsidian-{{version}}.dmg" -o /tmp/obsidian.dmg',
+      'hdiutil attach /tmp/obsidian.dmg -mountpoint /tmp/obsidian-mount -nobrowse -noverify -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/obsidian-mount/Obsidian.app" "{{prefix}}/Obsidian.app"',
+      'hdiutil detach /tmp/obsidian-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Obsidian.app/Contents/MacOS/Obsidian" "{{prefix}}/bin/obsidian"',
     ],
   },
 }

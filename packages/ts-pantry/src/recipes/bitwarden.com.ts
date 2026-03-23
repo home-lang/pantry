@@ -6,28 +6,15 @@ export const recipe: RecipeDefinition = {
   description: 'Secure and free password manager for all of your devices',
   homepage: 'https://bitwarden.com/',
   programs: ['bw'],
+  platforms: ['darwin'],
   distributable: {
-    url: 'https://registry.npmjs.org/@bitwarden/cli/-/cli-{{version}}.tgz',
+    url: 'https://placeholder.example.com/{{version}}.tar.gz',
     stripComponents: 1,
-  },
-  dependencies: {
-    'nodejs.org': '^20',
-  },
-  buildDependencies: {
-    'npmjs.com': '*',
   },
 
   build: {
     script: [
-      'npm i husky',
-      'npm i semver',
-      'git init',
-      'npm i $ARGS .',
-      'cd "${{prefix}}/bin"',
-      'ln -s ../libexec/bin/bw bw',
+      'true',
     ],
-    env: {
-      'ARGS': ['-ddd', '--global', '--build-from-source', '--prefix={{prefix}}/libexec', '--install-links', '--unsafe-perm'],
-    },
   },
 }

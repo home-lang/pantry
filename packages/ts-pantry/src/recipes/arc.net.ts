@@ -10,13 +10,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL "https://releases.arc.net/release/Arc-latest.dmg" -o /tmp/arc.dmg',
-    'hdiutil attach /tmp/arc.dmg -mountpoint /tmp/arc-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/arc-mount/Arc.app" "{{prefix}}/Arc.app"',
-    'hdiutil detach /tmp/arc-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Arc.app/Contents/MacOS/Arc" "{{prefix}}/bin/arc"',
+      'curl -fSL "https://releases.arc.net/release/Arc-latest.dmg" -o /tmp/arc.dmg',
+      'hdiutil attach /tmp/arc.dmg -mountpoint /tmp/arc-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/arc-mount/Arc.app" "{{prefix}}/Arc.app"',
+      'hdiutil detach /tmp/arc-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Arc.app/Contents/MacOS/Arc" "{{prefix}}/bin/arc"',
     ],
   },
 }

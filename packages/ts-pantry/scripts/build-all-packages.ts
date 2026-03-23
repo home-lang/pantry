@@ -33,7 +33,8 @@ import { parseArgs } from 'node:util'
 import { createHash } from 'node:crypto'
 import { S3Client } from '@stacksjs/ts-cloud'
 import { uploadToS3 as uploadToS3Impl } from './upload-to-s3.ts'
-import { packageOverrides } from './package-overrides.ts'
+// package-overrides.ts removed — all build logic now in src/recipes/*.ts
+const packageOverrides: Record<string, any> = {}
 
 // Import package metadata
 import { fileURLToPath } from 'node:url'
@@ -248,7 +249,9 @@ catch {
           if (!isCompatible) continue
         }
 
-        const isApp = existsSync(join(process.cwd(), 'src', 'desktop-pantry', domain))
+        // Apps are packages with only darwin/windows platforms (no linux)
+        const appPlatforms = override?.supportedPlatforms || []
+        const isApp = appPlatforms.length > 0 && !appPlatforms.some((p: string) => p.includes('linux'))
         const depDomains = [...(pkg.dependencies || []), ...(pkg.buildDependencies || [])]
           .map((d: string) => d.replace(/@.*$/, '').replace(/\^.*$/, '').replace(/>=.*$/, '').replace(/:.*$/, '').trim())
           .filter(Boolean)

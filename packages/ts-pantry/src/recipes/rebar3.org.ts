@@ -10,14 +10,16 @@ export const recipe: RecipeDefinition = {
   versionSource: {
     type: 'github-releases',
     repo: 'erlang/rebar3',
-    tagPattern: /^v(.+)$/,
+  },
+  dependencies: {
+    'erlang.org': '*',
   },
 
   build: {
     script: [
-    'mkdir -p "{{prefix}}/bin"',
-    'curl -fSL -o "{{prefix}}/bin/rebar3" "https://github.com/erlang/rebar3/releases/download/{{version}}/rebar3"',
-    'chmod +x "{{prefix}}/bin/rebar3"',
+      'mkdir -p "{{prefix}}/bin"',
+      'curl -fSL -o "{{prefix}}/bin/rebar3" "https://github.com/erlang/rebar3/releases/download/{{version}}/rebar3"',
+      'chmod +x "{{prefix}}/bin/rebar3"',
     ],
   },
 }

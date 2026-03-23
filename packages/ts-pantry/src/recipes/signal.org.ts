@@ -10,13 +10,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL -L "https://updates.signal.org/desktop/signal-desktop-mac-universal-{{version}}.dmg" -o /tmp/signal.dmg',
-    'hdiutil attach /tmp/signal.dmg -mountpoint /tmp/signal-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/signal-mount/Signal.app" "{{prefix}}/Signal.app"',
-    'hdiutil detach /tmp/signal-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Signal.app/Contents/MacOS/Signal" "{{prefix}}/bin/signal"',
+      'curl -fSL -L "https://updates.signal.org/desktop/signal-desktop-mac-universal-{{version}}.dmg" -o /tmp/signal.dmg',
+      'hdiutil attach /tmp/signal.dmg -mountpoint /tmp/signal-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/signal-mount/Signal.app" "{{prefix}}/Signal.app"',
+      'hdiutil detach /tmp/signal-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Signal.app/Contents/MacOS/Signal" "{{prefix}}/bin/signal"',
     ],
   },
 }

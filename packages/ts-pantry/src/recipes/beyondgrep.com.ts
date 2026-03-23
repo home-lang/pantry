@@ -9,15 +9,17 @@ export const recipe: RecipeDefinition = {
   programs: ['ack'],
   versionSource: {
     type: 'github-releases',
-    repo: 'beyondgrep/ack3',
-    tagPattern: /^v(.+)$/,
+    repo: 'beyondgrep/ack3/tags',
+  },
+  dependencies: {
+    'perl.org': '*',
   },
 
   build: {
     script: [
-    'mkdir -p "{{prefix}}/bin"',
-    'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o "{{prefix}}/bin/ack" "https://beyondgrep.com/ack-v{{version}}"',
-    'chmod +x "{{prefix}}/bin/ack"',
+      'mkdir -p "{{prefix}}/bin"',
+      'env -i PATH="/usr/bin:/bin:/usr/sbin:/sbin" HOME="$HOME" curl -fSL -o "{{prefix}}/bin/ack" "https://beyondgrep.com/ack-v{{version}}"',
+      'chmod +x "{{prefix}}/bin/ack"',
     ],
   },
 }

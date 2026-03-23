@@ -16,14 +16,14 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL "https://github.com/pqrs-org/Karabiner-Elements/releases/download/v{{version}}/Karabiner-Elements-{{version}}.dmg" -o /tmp/karabiner.dmg',
-    'hdiutil attach /tmp/karabiner.dmg -mountpoint /tmp/karabiner-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/karabiner-mount/Karabiner-Elements.app" "{{prefix}}/Karabiner-Elements.app" 2>/dev/null || \\',
-    '  find /tmp/karabiner-mount -name "*.app" -maxdepth 1 -exec cp -R {} "{{prefix}}/" \\;',
-    'hdiutil detach /tmp/karabiner-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'find "{{prefix}}" -name karabiner_cli -type f | head -1 | xargs -I{} ln -sf {} "{{prefix}}/bin/karabiner"',
+      'curl -fSL "https://github.com/pqrs-org/Karabiner-Elements/releases/download/v{{version}}/Karabiner-Elements-{{version}}.dmg" -o /tmp/karabiner.dmg',
+      'hdiutil attach /tmp/karabiner.dmg -mountpoint /tmp/karabiner-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/karabiner-mount/Karabiner-Elements.app" "{{prefix}}/Karabiner-Elements.app" 2>/dev/null || \\',
+      '  find /tmp/karabiner-mount -name "*.app" -maxdepth 1 -exec cp -R {} "{{prefix}}/" \\;',
+      'hdiutil detach /tmp/karabiner-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'find "{{prefix}}" -name karabiner_cli -type f | head -1 | xargs -I{} ln -sf {} "{{prefix}}/bin/karabiner"',
     ],
   },
 }

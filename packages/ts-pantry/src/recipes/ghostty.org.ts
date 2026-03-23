@@ -16,13 +16,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL "https://release.files.ghostty.org/{{version}}/Ghostty.dmg" -o /tmp/ghostty.dmg',
-    'hdiutil attach /tmp/ghostty.dmg -mountpoint /tmp/ghostty-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/ghostty-mount/Ghostty.app" "{{prefix}}/Ghostty.app"',
-    'hdiutil detach /tmp/ghostty-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Ghostty.app/Contents/MacOS/ghostty" "{{prefix}}/bin/ghostty"',
+      'curl -fSL "https://release.files.ghostty.org/{{version}}/Ghostty.dmg" -o /tmp/ghostty.dmg',
+      'hdiutil attach /tmp/ghostty.dmg -mountpoint /tmp/ghostty-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/ghostty-mount/Ghostty.app" "{{prefix}}/Ghostty.app"',
+      'hdiutil detach /tmp/ghostty-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Ghostty.app/Contents/MacOS/ghostty" "{{prefix}}/bin/ghostty"',
     ],
   },
 }

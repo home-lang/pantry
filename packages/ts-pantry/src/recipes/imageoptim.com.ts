@@ -10,12 +10,12 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL -L "https://imageoptim.com/ImageOptim.tbz2" -o /tmp/imageoptim.tbz2',
-    'cd /tmp && tar xjf imageoptim.tbz2',
-    'mkdir -p "{{prefix}}"',
-    'mv "/tmp/ImageOptim.app" "{{prefix}}/ImageOptim.app"',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../ImageOptim.app/Contents/MacOS/ImageOptim" "{{prefix}}/bin/imageoptim"',
+      'curl -fSL -L "https://imageoptim.com/ImageOptim.tbz2" -o /tmp/imageoptim.tbz2',
+      'cd /tmp && tar xjf imageoptim.tbz2',
+      'mkdir -p "{{prefix}}"',
+      'mv "/tmp/ImageOptim.app" "{{prefix}}/ImageOptim.app"',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../ImageOptim.app/Contents/MacOS/ImageOptim" "{{prefix}}/bin/imageoptim"',
     ],
   },
 }

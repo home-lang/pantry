@@ -10,14 +10,14 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    '# iTerm2 version format: 3_5_6 for URL (dots → underscores)',
-    'URL_VERSION=$(echo "{{version}}" | tr "." "_")',
-    'curl -fSL "https://iterm2.com/downloads/stable/iTerm2-${URL_VERSION}.zip" -o /tmp/iterm2.zip',
-    'cd /tmp && unzip -qo iterm2.zip',
-    'mkdir -p "{{prefix}}"',
-    'mv "/tmp/iTerm.app" "{{prefix}}/iTerm.app"',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../iTerm.app/Contents/MacOS/iTerm2" "{{prefix}}/bin/iterm2"',
+      '# iTerm2 version format: 3_5_6 for URL (dots → underscores)',
+      'URL_VERSION=$(echo "{{version}}" | tr "." "_")',
+      'curl -fSL "https://iterm2.com/downloads/stable/iTerm2-${URL_VERSION}.zip" -o /tmp/iterm2.zip',
+      'cd /tmp && unzip -qo iterm2.zip',
+      'mkdir -p "{{prefix}}"',
+      'mv "/tmp/iTerm.app" "{{prefix}}/iTerm.app"',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../iTerm.app/Contents/MacOS/iTerm2" "{{prefix}}/bin/iterm2"',
     ],
   },
 }

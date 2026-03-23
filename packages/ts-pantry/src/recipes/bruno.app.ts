@@ -10,13 +10,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL -L "https://github.com/usebruno/bruno/releases/download/v{{version}}/bruno_{{version}}_arm64_mac.dmg" -o /tmp/bruno.dmg',
-    'hdiutil attach /tmp/bruno.dmg -mountpoint /tmp/bruno-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/bruno-mount/Bruno.app" "{{prefix}}/Bruno.app"',
-    'hdiutil detach /tmp/bruno-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Bruno.app/Contents/MacOS/Bruno" "{{prefix}}/bin/bruno"',
+      'curl -fSL -L "https://github.com/usebruno/bruno/releases/download/v{{version}}/bruno_{{version}}_arm64_mac.dmg" -o /tmp/bruno.dmg',
+      'hdiutil attach /tmp/bruno.dmg -mountpoint /tmp/bruno-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/bruno-mount/Bruno.app" "{{prefix}}/Bruno.app"',
+      'hdiutil detach /tmp/bruno-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Bruno.app/Contents/MacOS/Bruno" "{{prefix}}/bin/bruno"',
     ],
   },
 }

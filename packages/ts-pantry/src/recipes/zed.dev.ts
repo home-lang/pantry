@@ -16,13 +16,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL "https://zed.dev/api/releases/stable/latest/Zed-aarch64.dmg" -o /tmp/zed.dmg',
-    'hdiutil attach /tmp/zed.dmg -mountpoint /tmp/zed-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/zed-mount/Zed.app" "{{prefix}}/Zed.app"',
-    'hdiutil detach /tmp/zed-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Zed.app/Contents/MacOS/cli" "{{prefix}}/bin/zed"',
+      'curl -fSL "https://zed.dev/api/releases/stable/latest/Zed-aarch64.dmg" -o /tmp/zed.dmg',
+      'hdiutil attach /tmp/zed.dmg -mountpoint /tmp/zed-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/zed-mount/Zed.app" "{{prefix}}/Zed.app"',
+      'hdiutil detach /tmp/zed-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Zed.app/Contents/MacOS/cli" "{{prefix}}/bin/zed"',
     ],
   },
 }

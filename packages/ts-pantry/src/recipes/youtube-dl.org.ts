@@ -1,0 +1,24 @@
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'youtube-dl.org',
+  name: 'youtube-dl',
+  description: 'Command-line program to download videos from YouTube.com and other video sites',
+  homepage: 'https://ytdl-org.github.io/youtube-dl/',
+  github: 'https://github.com/ytdl-org/youtube-dl',
+  programs: ['', '', '', '', '', '', '', ''],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'ytdl-org/youtube-dl',
+    tagPattern: /^v(.+)$/,
+  },
+  distributable: {
+    url: 'https://github.com/ytdl-org/youtube-dl/archive/86e3cf5e58.tar.gz',
+    stripComponents: 1,
+  },
+
+  build: {
+    script: [
+      'echo "Build not yet configured for youtube-dl.org"',    ],
+  },
+}

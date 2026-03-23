@@ -1,2 +1,0 @@
-(display (gauche-version))
-(newline)

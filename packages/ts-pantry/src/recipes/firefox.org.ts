@@ -10,13 +10,13 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL "https://download.mozilla.org/?product=firefox-{{version}}-ssl&os=osx&lang=en-US" -o /tmp/firefox.dmg',
-    'hdiutil attach /tmp/firefox.dmg -mountpoint /tmp/firefox-mount -nobrowse -quiet',
-    'mkdir -p "{{prefix}}"',
-    'cp -R "/tmp/firefox-mount/Firefox.app" "{{prefix}}/Firefox.app"',
-    'hdiutil detach /tmp/firefox-mount -quiet || true',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Firefox.app/Contents/MacOS/firefox" "{{prefix}}/bin/firefox"',
+      'curl -fSL "https://download.mozilla.org/?product=firefox-{{version}}-ssl&os=osx&lang=en-US" -o /tmp/firefox.dmg',
+      'hdiutil attach /tmp/firefox.dmg -mountpoint /tmp/firefox-mount -nobrowse -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/firefox-mount/Firefox.app" "{{prefix}}/Firefox.app"',
+      'hdiutil detach /tmp/firefox-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Firefox.app/Contents/MacOS/firefox" "{{prefix}}/bin/firefox"',
     ],
   },
 }

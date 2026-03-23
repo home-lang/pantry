@@ -10,12 +10,12 @@ export const recipe: RecipeDefinition = {
 
   build: {
     script: [
-    'curl -fSL -L "https://github.com/ollama/ollama/releases/download/v{{version}}/Ollama-darwin.zip" -o /tmp/ollama.zip',
-    'cd /tmp && unzip -qo ollama.zip',
-    'mkdir -p "{{prefix}}"',
-    'mv "/tmp/Ollama.app" "{{prefix}}/Ollama.app"',
-    'mkdir -p "{{prefix}}/bin"',
-    'ln -sf "../Ollama.app/Contents/MacOS/Ollama" "{{prefix}}/bin/ollama"',
+      'curl -fSL -L "https://github.com/ollama/ollama/releases/download/v{{version}}/Ollama-darwin.zip" -o /tmp/ollama.zip',
+      'cd /tmp && unzip -qo ollama.zip',
+      'mkdir -p "{{prefix}}"',
+      'mv "/tmp/Ollama.app" "{{prefix}}/Ollama.app"',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../Ollama.app/Contents/MacOS/Ollama" "{{prefix}}/bin/ollama"',
     ],
   },
 }
