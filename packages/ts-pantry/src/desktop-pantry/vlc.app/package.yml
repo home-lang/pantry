@@ -4,6 +4,7 @@ distributable:
 
 platforms:
   - darwin
+  - windows
 
 provides:
   - bin/vlc

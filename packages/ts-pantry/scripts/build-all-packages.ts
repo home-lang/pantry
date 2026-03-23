@@ -115,7 +115,7 @@ function discoverPackages(targetPlatform?: string): BuildablePackage[] {
   const targetOs = dashIdx > 0 ? targetPlatform!.slice(0, dashIdx) : (targetPlatform || '')
   const targetArch = dashIdx > 0 ? targetPlatform!.slice(dashIdx + 1) : ''
   const targetOsName = targetOs === 'darwin' ? 'darwin' : targetOs === 'linux' ? 'linux' : targetOs === 'windows' ? 'windows' : ''
-  const targetArchName = targetArch === 'arm64' ? 'aarch64' : targetArch === 'x86-64' ? 'x86-64' : targetArch === 'x86_64' ? 'x86-64' : ''
+  const targetArchName = targetArch === 'arm64' ? 'aarch64' : targetArch === 'x86-64' ? 'x86-64' : targetArch === 'x86_64' ? 'x86-64' : targetArch === 'x64' ? 'x64' : ''
 
   // Recursively find all package.yml files
   function findYamls(dir: string, prefix: string = '', desktopApp: boolean = false): void {
