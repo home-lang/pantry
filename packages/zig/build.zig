@@ -348,6 +348,22 @@ pub fn build(b: *std.Build) void {
     });
     const run_workspace_tests = b.addRunArtifact(workspace_tests);
 
+    // Auto-link tests (discovery, batch resolution, config, edge cases)
+    const auto_link_test_mod = b.createModule(.{
+        .root_source_file = b.path("test/auto_link_test.zig"),
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+        .imports = &.{
+            .{ .name = "lib", .module = lib_mod },
+            .{ .name = "zig-test-framework", .module = test_framework_mod },
+        },
+    });
+    const auto_link_tests = b.addTest(.{
+        .root_module = auto_link_test_mod,
+    });
+    const run_auto_link_tests = b.addRunArtifact(auto_link_tests);
+
     // Shell integration benchmark
     const shell_bench_mod = b.createModule(.{
         .root_source_file = b.path("bench/shell_bench.zig"),
@@ -381,6 +397,10 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&run_publish_commit_tests.step);
     test_step.dependOn(&run_pm_commands_tests.step);
     test_step.dependOn(&run_workspace_tests.step);
+    test_step.dependOn(&run_auto_link_tests.step);
+
+    const auto_link_step = b.step("test:auto-link", "Run auto-link tests");
+    auto_link_step.dependOn(&run_auto_link_tests.step);
 
     const services_step = b.step("test:services", "Run services tests");
     services_step.dependOn(&run_services_tests.step);
@@ -411,6 +431,7 @@ pub fn build(b: *std.Build) void {
     test_all_step.dependOn(&run_resolution_tests.step);
     test_all_step.dependOn(&run_publish_commit_tests.step);
     test_all_step.dependOn(&run_pm_commands_tests.step);
+    test_all_step.dependOn(&run_auto_link_tests.step);
 
     // Coverage report
     const coverage_cmd = b.addSystemCommand(&[_][]const u8{

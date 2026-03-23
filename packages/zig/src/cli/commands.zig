@@ -295,6 +295,11 @@ pub const treeCommand = tree_commands.treeCommand;
 pub const linkCommand = link_commands.linkCommand;
 pub const unlinkCommand = link_commands.unlinkCommand;
 pub const resolveLinkPath = link_commands.resolveLinkPath;
+pub const autoDiscoverAndLinkBatch = link_commands.autoDiscoverAndLinkBatch;
+pub const AutoLinkResults = link_commands.AutoLinkResults;
+pub const unscopedName = link_commands.unscopedName;
+pub const isSkippableDir = link_commands.isSkippableDir;
+pub const readPackageName = link_commands.readPackageName;
 
 // ============================================================================
 // Re-export PM Commands

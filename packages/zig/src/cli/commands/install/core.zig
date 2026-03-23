@@ -217,6 +217,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             opts.no_save = true;
         } else if (std.mem.eql(u8, arg, "--dry-run")) {
             opts.dry_run = true;
+        } else if (std.mem.eql(u8, arg, "--no-auto-link")) {
+            opts.auto_link = false;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
             try package_args.append(allocator, arg);
         }
@@ -773,10 +775,45 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(pantry_dir);
         try io_helper.makePath(pantry_dir);
 
+        // Batch auto-discovery: collect all unresolved link: deps, scan directory tree once
+        const link_cmds = @import("../link.zig");
+        var auto_link_results: ?link_cmds.AutoLinkResults = null;
+        defer if (auto_link_results) |*r| r.deinit();
+
+        if (opts.auto_link) {
+            // Collect unresolved link: dep names
+            var unresolved = std.ArrayList([]const u8).empty;
+            defer unresolved.deinit(allocator);
+
+            for (deps) |dep| {
+                if (!helpers.isLinkDependency(dep.version)) continue;
+                const link_name = dep.version[5..]; // Skip "link:"
+                // Check if already registered as a global link
+                if (try link_cmds.resolveLinkPath(allocator, link_name)) |existing| {
+                    allocator.free(existing);
+                    continue;
+                }
+                try unresolved.append(allocator, link_name);
+            }
+
+            if (unresolved.items.len > 0) {
+                auto_link_results = try link_cmds.autoDiscoverAndLinkBatch(allocator, unresolved.items, opts.link_search_paths);
+
+                // Print auto-linked messages for discovered packages
+                for (unresolved.items) |link_name| {
+                    if (auto_link_results.?.get(link_name)) |discovered_path| {
+                        style.printAutoLinked(link_name, discovered_path);
+                    }
+                }
+            }
+        }
+
         for (deps) |dep| {
             if (!helpers.isLocalDependency(dep)) continue;
 
             // Resolve local path (handles link:, ~/, absolute, and relative paths)
+            // Note: auto-discovered deps are now registered as global links,
+            // so resolveLinkVersion will find them via the symlink.
             const local_path = if (helpers.isLinkDependency(dep.version)) blk: {
                 const resolved = try helpers.resolveLinkVersion(allocator, dep.version);
                 break :blk resolved orelse {

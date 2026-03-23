@@ -96,6 +96,8 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .filter = filter,
         .linker = pantry_config.install.linker,
         .modules_dir = pantry_config.install.modules_dir,
+        .auto_link = pantry_config.install.auto_link,
+        .link_search_paths = pantry_config.install.link_search_paths,
     };
     const result = try lib.commands.installCommandWithOptions(allocator, packages.items, install_options);
     defer result.deinit(allocator);
@@ -123,6 +125,8 @@ fn ciAction(ctx: *cli.BaseCommand.ParseContext) !void {
         .verbose = ctx.hasOption("verbose"),
         .linker = pantry_config.install.linker,
         .modules_dir = pantry_config.install.modules_dir,
+        .auto_link = pantry_config.install.auto_link,
+        .link_search_paths = pantry_config.install.link_search_paths,
     };
     const result = try lib.commands.installCommandWithOptions(allocator, &[_][]const u8{}, install_options);
     defer result.deinit(allocator);

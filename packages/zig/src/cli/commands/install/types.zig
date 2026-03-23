@@ -37,6 +37,8 @@ pub const InstallOptions = struct {
     filter: ?[]const u8 = null, // Filter pattern for workspace packages
     linker: LinkerMode = .isolated, // Linker strategy (default: isolated, opt-in: hoisted)
     modules_dir: []const u8 = "pantry", // Install directory name (default: pantry, or node_modules for Node.js compat)
+    auto_link: bool = true, // Auto-discover and link unresolved link: deps from common project dirs
+    link_search_paths: ?[]const u8 = null, // Comma-separated search dirs for auto-link (null = use defaults)
 };
 
 /// Result of a single package installation task

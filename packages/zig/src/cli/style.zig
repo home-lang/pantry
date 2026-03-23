@@ -107,6 +107,15 @@ pub fn printLinked(name: []const u8, version: []const u8) void {
     });
 }
 
+/// Print an auto-linked package: + bold(name) dim((auto-linked from path))
+pub fn printAutoLinked(name: []const u8, path: []const u8) void {
+    print("{s}{s}{s} {s}{s}{s} {s}(auto-linked from {s}){s}\n", .{
+        green, plus, reset,
+        bold,  name, reset,
+        dim,   path, reset,
+    });
+}
+
 /// Print a failed package: - bold(name)@dim(version) dim((reason))
 pub fn printFailed(name: []const u8, version: []const u8, reason: ?[]const u8) void {
     print("{s}{s}{s} {s}{s}{s}{s}@{s}", .{

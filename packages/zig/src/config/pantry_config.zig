@@ -48,6 +48,12 @@ pub const PantryConfig = struct {
         frozen_lockfile: bool = false,
         /// Custom modules directory name (default: "pantry", set to "node_modules" for Node.js compat)
         modules_dir: []const u8 = "pantry",
+        /// Auto-discover and link unresolved `link:` dependencies by searching common project directories (default: true)
+        auto_link: bool = true,
+        /// Comma-separated directories to search when auto-linking.
+        /// Default: ~/Code, ~/Projects, ~/Developer, ~/dev, ~/src, ~/workspace, ~/repos
+        /// Each directory is searched recursively up to 3 levels deep for matching package names.
+        link_search_paths: ?[]const u8 = null,
     };
 };
 
@@ -161,6 +167,14 @@ pub fn parseTomlContent(allocator: std.mem.Allocator, content: []const u8) !Pant
 
     if (table.getString("install.modulesDir")) |dir| {
         config.install.modules_dir = try allocator.dupe(u8, dir);
+    }
+
+    if (table.getBool("install.autoLink")) |auto_link| {
+        config.install.auto_link = auto_link;
+    }
+
+    if (table.getString("install.linkSearchPaths")) |paths| {
+        config.install.link_search_paths = try allocator.dupe(u8, paths);
     }
 
     return config;
