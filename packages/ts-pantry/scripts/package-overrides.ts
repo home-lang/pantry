@@ -10552,7 +10552,7 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -A "Mozilla/5.0" "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg',
+            'curl -fSL -L --retry 3 -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://downloader.cursor.sh/arm64/dmg/latest" -o /tmp/cursor.dmg || curl -fSL -L --retry 3 "https://download.todesktop.com/230313mzl4w4u92/Cursor%20Mac%20Installer%20arm64.dmg" -o /tmp/cursor.dmg',
             'hdiutil attach /tmp/cursor.dmg -mountpoint /tmp/cursor-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/cursor-mount/Cursor.app" "{{prefix}}/Cursor.app"',
@@ -10852,13 +10852,447 @@ else if (typeof step.run === 'string') {
         recipe.build.dependencies = {}
         recipe.build.script = [
           [
-            'curl -fSL -L "https://cdn-updates.orbstack.dev/arm64/OrbStack.dmg" -o /tmp/orbstack.dmg',
+            'curl -fSL -L --retry 3 -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://cdn-updates.orbstack.dev/arm64/OrbStack.dmg" -o /tmp/orbstack.dmg || curl -fSL -L --retry 3 -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://orbstack.dev/download/stable/latest/arm64" -o /tmp/orbstack.dmg',
             'hdiutil attach /tmp/orbstack.dmg -mountpoint /tmp/orbstack-mount -nobrowse -noverify -quiet',
             'mkdir -p "{{prefix}}"',
             'cp -R "/tmp/orbstack-mount/OrbStack.app" "{{prefix}}/OrbStack.app"',
             'hdiutil detach /tmp/orbstack-mount -quiet || true',
             'mkdir -p "{{prefix}}/bin"',
             'ln -sf "../OrbStack.app/Contents/MacOS/OrbStack" "{{prefix}}/bin/orbstack"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'signal.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://updates.signal.org/desktop/signal-desktop-mac-universal-{{version}}.dmg" -o /tmp/signal.dmg',
+            'hdiutil attach /tmp/signal.dmg -mountpoint /tmp/signal-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/signal-mount/Signal.app" "{{prefix}}/Signal.app"',
+            'hdiutil detach /tmp/signal-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Signal.app/Contents/MacOS/Signal" "{{prefix}}/bin/signal"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'telegram.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://osx.telegram.org/updates/Telegram.dmg" -o /tmp/telegram.dmg',
+            'hdiutil attach /tmp/telegram.dmg -mountpoint /tmp/telegram-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/telegram-mount/Telegram.app" "{{prefix}}/Telegram.app"',
+            'hdiutil detach /tmp/telegram-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Telegram.app/Contents/MacOS/Telegram" "{{prefix}}/bin/telegram"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'whatsapp.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://web.whatsapp.com/desktop/mac/files/WhatsApp.dmg" -o /tmp/whatsapp.dmg',
+            'hdiutil attach /tmp/whatsapp.dmg -mountpoint /tmp/whatsapp-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/whatsapp-mount/WhatsApp.app" "{{prefix}}/WhatsApp.app"',
+            'hdiutil detach /tmp/whatsapp-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../WhatsApp.app/Contents/MacOS/WhatsApp" "{{prefix}}/bin/whatsapp"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'ollama.com': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/ollama/ollama/releases/download/v{{version}}/Ollama-darwin.zip" -o /tmp/ollama.zip',
+            'cd /tmp && unzip -qo ollama.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/Ollama.app" "{{prefix}}/Ollama.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Ollama.app/Contents/MacOS/Ollama" "{{prefix}}/bin/ollama"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'lmstudio.ai': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://releases.lmstudio.ai/mac/arm64/LM-Studio-{{version}}-arm64.dmg" -o /tmp/lmstudio.dmg',
+            'hdiutil attach /tmp/lmstudio.dmg -mountpoint /tmp/lmstudio-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/lmstudio-mount/LM Studio.app" "{{prefix}}/LM Studio.app"',
+            'hdiutil detach /tmp/lmstudio-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../LM Studio.app/Contents/MacOS/LM Studio" "{{prefix}}/bin/lm-studio"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'dbeaver.io': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://dbeaver.io/files/{{version}}/dbeaver-ce-{{version}}-macos-aarch64.dmg" -o /tmp/dbeaver.dmg',
+            'hdiutil attach /tmp/dbeaver.dmg -mountpoint /tmp/dbeaver-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/dbeaver-mount/DBeaver.app" "{{prefix}}/DBeaver.app"',
+            'hdiutil detach /tmp/dbeaver-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../DBeaver.app/Contents/MacOS/dbeaver" "{{prefix}}/bin/dbeaver"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'iina.io': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/iina/iina/releases/download/v{{version}}/IINA.v{{version}}.dmg" -o /tmp/iina.dmg',
+            'hdiutil attach /tmp/iina.dmg -mountpoint /tmp/iina-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/iina-mount/IINA.app" "{{prefix}}/IINA.app"',
+            'hdiutil detach /tmp/iina-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../IINA.app/Contents/MacOS/IINA" "{{prefix}}/bin/iina"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'keka.io': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/aonez/Keka/releases/download/v{{version}}/Keka-{{version}}.dmg" -o /tmp/keka.dmg',
+            'hdiutil attach /tmp/keka.dmg -mountpoint /tmp/keka-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/keka-mount/Keka.app" "{{prefix}}/Keka.app"',
+            'hdiutil detach /tmp/keka-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Keka.app/Contents/MacOS/Keka" "{{prefix}}/bin/keka"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'keepassxc.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/keepassxreboot/keepassxc/releases/download/{{version}}/KeePassXC-{{version}}-arm64.dmg" -o /tmp/keepassxc.dmg',
+            'hdiutil attach /tmp/keepassxc.dmg -mountpoint /tmp/keepassxc-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/keepassxc-mount/KeePassXC.app" "{{prefix}}/KeePassXC.app"',
+            'hdiutil detach /tmp/keepassxc-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../KeePassXC.app/Contents/MacOS/KeePassXC" "{{prefix}}/bin/keepassxc"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'element.io': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://packages.element.io/desktop/install/macos/Element-{{version}}.dmg" -o /tmp/element.dmg',
+            'hdiutil attach /tmp/element.dmg -mountpoint /tmp/element-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/element-mount/Element.app" "{{prefix}}/Element.app"',
+            'hdiutil detach /tmp/element-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Element.app/Contents/MacOS/Element" "{{prefix}}/bin/element"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'inkscape.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" "https://inkscape.org/gallery/item/47531/Inkscape-{{version}}_arm64.dmg" -o /tmp/inkscape.dmg',
+            'hdiutil attach /tmp/inkscape.dmg -mountpoint /tmp/inkscape-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/inkscape-mount/Inkscape.app" "{{prefix}}/Inkscape.app"',
+            'hdiutil detach /tmp/inkscape-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Inkscape.app/Contents/MacOS/inkscape" "{{prefix}}/bin/inkscape"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'gimp.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://download.gimp.org/gimp/v2.10/osx/gimp-{{version}}-arm64.dmg" -o /tmp/gimp.dmg',
+            'hdiutil attach /tmp/gimp.dmg -mountpoint /tmp/gimp-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/gimp-mount/GIMP-{{version.marketing}}.app" "{{prefix}}/GIMP.app" || cp -R /tmp/gimp-mount/GIMP*.app "{{prefix}}/GIMP.app"',
+            'hdiutil detach /tmp/gimp-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../GIMP.app/Contents/MacOS/gimp" "{{prefix}}/bin/gimp"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'blender.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://download.blender.org/release/Blender{{version.marketing}}/blender-{{version}}-macos-arm64.dmg" -o /tmp/blender.dmg',
+            'hdiutil attach /tmp/blender.dmg -mountpoint /tmp/blender-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/blender-mount/Blender.app" "{{prefix}}/Blender.app"',
+            'hdiutil detach /tmp/blender-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Blender.app/Contents/MacOS/Blender" "{{prefix}}/bin/blender"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'libreoffice.org': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://download.documentfoundation.org/libreoffice/stable/{{version}}/mac/aarch64/LibreOffice_{{version}}_MacOS_aarch64.dmg" -o /tmp/libreoffice.dmg',
+            'hdiutil attach /tmp/libreoffice.dmg -mountpoint /tmp/libreoffice-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/libreoffice-mount/LibreOffice.app" "{{prefix}}/LibreOffice.app"',
+            'hdiutil detach /tmp/libreoffice-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../LibreOffice.app/Contents/MacOS/soffice" "{{prefix}}/bin/libreoffice"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'bruno.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/usebruno/bruno/releases/download/v{{version}}/bruno_{{version}}_arm64_mac.dmg" -o /tmp/bruno.dmg',
+            'hdiutil attach /tmp/bruno.dmg -mountpoint /tmp/bruno-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/bruno-mount/Bruno.app" "{{prefix}}/Bruno.app"',
+            'hdiutil detach /tmp/bruno-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Bruno.app/Contents/MacOS/Bruno" "{{prefix}}/bin/bruno"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'tunnelblick.net': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/Tunnelblick/Tunnelblick/releases/download/v{{version}}/Tunnelblick_{{version}}_build_5972.dmg" -o /tmp/tunnelblick.dmg',
+            'hdiutil attach /tmp/tunnelblick.dmg -mountpoint /tmp/tunnelblick-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/tunnelblick-mount/Tunnelblick.app" "{{prefix}}/Tunnelblick.app"',
+            'hdiutil detach /tmp/tunnelblick-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Tunnelblick.app/Contents/MacOS/Tunnelblick" "{{prefix}}/bin/tunnelblick"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'meetingbar.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/leits/MeetingBar/releases/download/v{{version}}/MeetingBar.zip" -o /tmp/meetingbar.zip',
+            'cd /tmp && unzip -qo meetingbar.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/MeetingBar.app" "{{prefix}}/MeetingBar.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../MeetingBar.app/Contents/MacOS/MeetingBar" "{{prefix}}/bin/meetingbar"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'hiddenbar.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/dwarvesf/hidden/releases/download/v{{version}}/Hidden.Bar.{{version}}.zip" -o /tmp/hiddenbar.zip',
+            'cd /tmp && unzip -qo hiddenbar.zip',
+            'mkdir -p "{{prefix}}"',
+            'mv "/tmp/Hidden Bar.app" "{{prefix}}/Hidden Bar.app"',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../Hidden Bar.app/Contents/MacOS/Hidden Bar" "{{prefix}}/bin/hiddenbar"',
+          ].join('\n'),
+        ]
+        recipe.build.env = {}
+      }
+    },
+  },
+
+  'monitorcontrol.app': {
+    supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
+    modifyRecipe: (recipe: NormalizedRecipe) => {
+      recipe.distributable = undefined
+      recipe.dependencies = {}
+      if (recipe.build) {
+        recipe.build.dependencies = {}
+        recipe.build.script = [
+          [
+            'curl -fSL -L "https://github.com/MonitorControl/MonitorControl/releases/download/v{{version}}/MonitorControl.{{version}}.dmg" -o /tmp/monitorcontrol.dmg',
+            'hdiutil attach /tmp/monitorcontrol.dmg -mountpoint /tmp/monitorcontrol-mount -nobrowse -quiet',
+            'mkdir -p "{{prefix}}"',
+            'cp -R "/tmp/monitorcontrol-mount/MonitorControl.app" "{{prefix}}/MonitorControl.app"',
+            'hdiutil detach /tmp/monitorcontrol-mount -quiet || true',
+            'mkdir -p "{{prefix}}/bin"',
+            'ln -sf "../MonitorControl.app/Contents/MacOS/MonitorControl" "{{prefix}}/bin/monitorcontrol"',
           ].join('\n'),
         ]
         recipe.build.env = {}

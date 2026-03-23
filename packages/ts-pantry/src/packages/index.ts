@@ -807,6 +807,7 @@ import { sparsecatPackage } from './github.com/svenwiltink/sparsecat'
 import { swagPackage } from './github.com/swaggo/swag'
 import { yaziPackage } from './github.com/sxyazi/yazi'
 import { awsssocliPackage } from './github.com/synfinatic/aws-sso-cli'
+import { blenderorgPackage } from './blenderorg'
 import { tflintPackage } from './github.com/terraform-linters/tflint'
 import { terrariumtfPackage } from './github.com/terrarium-tf'
 import { tfenvPackage } from './github.com/tfutils/tfenv'
@@ -820,6 +821,8 @@ import { cemeteryescapePackage } from './github.com/tom-on-the-internet/cemetery
 import { gronPackage } from './github.com/tomnomnom/gron'
 import { filelockPackage } from './github.com/tox-dev/filelock'
 import { blueutilPackage } from './github.com/toy/blueutil'
+import { dbeaverioPackage } from './dbeaverio'
+import { brunoappPackage } from './brunoapp'
 import { molePackage } from './github.com/tw93/mole'
 import { swiftcreatexcframeworkPackage } from './github.com/unsignedapps/swift-create-xcframework'
 import { mscpPackage } from './github.com/upa/mscp'
@@ -846,6 +849,8 @@ import { zshautosuggestionsPackage } from './github.com/zsh-users/zsh-autosugges
 import { zshcompletionsPackage } from './github.com/zsh-users/zsh-completions'
 import { zshsyntaxhighlightingPackage } from './github.com/zsh-users/zsh-syntax-highlighting'
 import { egetPackage } from './github.com/zyedidia/eget'
+import { gimporgPackage } from './gimporg'
+import { elementioPackage } from './elementio'
 import { gitlabcomaomediacodecsvtav1Package } from './gitlab.com/AOMediaCodec/SVT-AV1'
 import { gitlabcomoldmanprogrammerunixtreePackage } from './gitlab.com/OldManProgrammer/unix-tree'
 import { gitlabcomgitlaborgcliPackage } from './gitlab.com/gitlab-org/cli'
@@ -998,6 +1003,7 @@ import { helixeditorcomPackage } from './helix-editorcom'
 import { helmPackage } from './helmsh'
 import { herokucomPackage } from './herokucom'
 import { hetznercomhcloudPackage } from './hetzner.com/hcloud'
+import { hiddenbarappPackage } from './hiddenbarapp'
 import { hjsongithubioPackage } from './hjsongithubio'
 import { htmltidyorgPackage } from './html-tidyorg'
 import { htopdevPackage } from './htopdev'
@@ -1010,6 +1016,7 @@ import { hunspellgithubioPackage } from './hunspellgithubio'
 import { hurldevPackage } from './hurldev'
 import { ibrcstubsdelibsmiPackage } from './ibr.cs.tu-bs.de/libsmi'
 import { idleberggithubiokrampusPackage } from './idleberg.github.io/krampus'
+import { iinaioPackage } from './iinaio'
 import { ijgorgPackage } from './ijgorg'
 import { imageflowioimageflow_toolPackage } from './imageflow.io/imageflow_tool'
 import { imagemagickorgPackage } from './imagemagickorg'
@@ -1017,6 +1024,7 @@ import { indexsupplycomshovelPackage } from './indexsupply.com/shovel'
 import { unzipPackage } from './info-zip.org/unzip'
 import { zipPackage } from './info-zip.org/zip'
 import { infracostioPackage } from './infracostio'
+import { inkscapeorgPackage } from './inkscapeorg'
 import { intelcomlibvaPackage } from './intel.com/libva'
 import { invisibleislandnetdialogPackage } from './invisible-island.net/dialog'
 import { invisibleislandnetlynxPackage } from './invisible-island.net/lynx'
@@ -1281,6 +1289,13 @@ import { openexrcomimathPackage } from './openexr.com/imath'
 import { openexrcomPackage } from './openexrcom'
 import { openinterpretercomPackage } from './openinterpretercom'
 import { javaPackage } from './openjdkorg'
+import { ollamacomPackage } from './ollamacom'
+import { monitorcontrolappPackage } from './monitorcontrolapp'
+import { meetingbarappPackage } from './meetingbarapp'
+import { lmstudioaiPackage } from './lmstudioai'
+import { libreofficeorgPackage } from './libreofficeorg'
+import { kekaioPackage } from './kekaio'
+import { keepassxcorgPackage } from './keepassxcorg'
 import { openjpegorgPackage } from './openjpegorg'
 import { openldaporgliblmdbPackage } from './openldap.org/liblmdb'
 import { openldaporgPackage } from './openldaporg'
@@ -1469,6 +1484,7 @@ import { sfnetoptipngPackage } from './sf.net/optipng'
 import { sfcgalorgPackage } from './sfcgalorg'
 import { sftpgocomPackage } from './sftpgocom'
 import { shellchecknetPackage } from './shellchecknet'
+import { signalorgPackage } from './signalorg'
 import { sigstoredevcosignPackage } from './sigstore.dev/cosign'
 import { sigstoredevgitsignPackage } from './sigstore.dev/gitsign'
 import { simplesystemsorglibtiffPackage } from './simplesystems.org/libtiff'
@@ -1545,6 +1561,7 @@ import { tcpdumporgPackage } from './tcpdumporg'
 import { tcshorgPackage } from './tcshorg'
 import { teaxyzPackage } from './teaxyz'
 import { tectonictypesettinggithubioPackage } from './tectonic-typesettinggithubio'
+import { telegramorgPackage } from './telegramorg'
 import { templguidePackage } from './templguide'
 import { temporalioPackage } from './temporalio'
 import { termsharkioPackage } from './termsharkio'
@@ -1573,6 +1590,7 @@ import { trufflesecuritycomtrufflehogPackage } from './trufflesecurity.com/truff
 import { tsl0922githubiottydPackage } from './tsl0922.github.io/ttyd'
 import { tuistioxcbeautifyPackage } from './tuist.io/xcbeautify'
 import { tukaaniorgxzPackage } from './tukaani.org/xz'
+import { tunnelblicknetPackage } from './tunnelblicknet'
 import { tursotechPackage } from './tursotech'
 import { tuxpaintorgPackage } from './tuxpaintorg'
 import { typescriptlangorgPackage } from './typescriptlangorg'
@@ -1621,6 +1639,7 @@ import { waylandfreedesktoporgPackage } from './waylandfreedesktoporg'
 import { webmprojectorglibvpxPackage } from './webmproject.org/libvpx'
 import { werfioPackage } from './werfio'
 import { wezfurlongorgweztermPackage } from './wezfurlong.org/wezterm'
+import { whatsappcomPackage } from './whatsappcom'
 import { wilfredmeukdifftasticPackage } from './wilfred.me.uk/difftastic'
 import { wimlibnetPackage } from './wimlibnet'
 import { wiresharkorgPackage } from './wiresharkorg'
@@ -6194,6 +6213,8 @@ export interface Pantry {
   Vanna: typeof vannaaiPackage
   railway: typeof railwayappPackage
   'git-review': typeof opendevorggitreviewPackage
+  brunoapp: typeof brunoappPackage
+  blenderorg: typeof blenderorgPackage
   openstack: typeof opendevorgopenstackpythonopenstackclientPackage
   himalaya: typeof pimalayaorghimalayaPackage
   vips: typeof libvipsorgPackage
@@ -6201,8 +6222,64 @@ export interface Pantry {
   next: typeof vercelcomnextPackage
   pkg: typeof vercelcompkgPackage
   curl: typeof curlPackage
+  ollamacom: typeof ollamacomPackage
+  monitorcontrolapp: typeof monitorcontrolappPackage
+  meetingbarapp: typeof meetingbarappPackage
+  lmstudioai: typeof lmstudioaiPackage
+  libreofficeorg: typeof libreofficeorgPackage
+  kekaio: typeof kekaioPackage
+  keepassxcorg: typeof keepassxcorgPackage
+  inkscapeorg: typeof inkscapeorgPackage
+  iinaio: typeof iinaioPackage
+  hiddenbarapp: typeof hiddenbarappPackage
+  gimporg: typeof gimporgPackage
+  elementio: typeof elementioPackage
+  dbeaverio: typeof dbeaverioPackage
   rg: typeof ripgrepPackage
+  whatsappcom: typeof whatsappcomPackage
+  tunnelblicknet: typeof tunnelblicknetPackage
+  telegramorg: typeof telegramorgPackage
+  signalorg: typeof signalorgPackage
 }
+  Blender: typeof blenderorgPackage
+  blender: typeof blenderorgPackage
+  Bruno: typeof brunoappPackage
+  bruno: typeof brunoappPackage
+  DBeaver: typeof dbeaverioPackage
+  dbeaver: typeof dbeaverioPackage
+  Element: typeof elementioPackage
+  element: typeof elementioPackage
+  GIMP: typeof gimporgPackage
+  gimp: typeof gimporgPackage
+  'hidden-bar': typeof hiddenbarappPackage
+  hiddenbar: typeof hiddenbarappPackage
+  IINA: typeof iinaioPackage
+  iina: typeof iinaioPackage
+  Inkscape: typeof inkscapeorgPackage
+  inkscape: typeof inkscapeorgPackage
+  KeePassXC: typeof keepassxcorgPackage
+  keepassxc: typeof keepassxcorgPackage
+  Keka: typeof kekaioPackage
+  keka: typeof kekaioPackage
+  LibreOffice: typeof libreofficeorgPackage
+  libreoffice: typeof libreofficeorgPackage
+  soffice: typeof libreofficeorgPackage
+  'lm-studio': typeof lmstudioaiPackage
+  lmstudio: typeof lmstudioaiPackage
+  MeetingBar: typeof meetingbarappPackage
+  meetingbar: typeof meetingbarappPackage
+  MonitorControl: typeof monitorcontrolappPackage
+  monitorcontrol: typeof monitorcontrolappPackage
+  'monitor-control': typeof monitorcontrolappPackage
+  Ollama: typeof ollamacomPackage
+  Signal: typeof signalorgPackage
+  signal: typeof signalorgPackage
+  Telegram: typeof telegramorgPackage
+  telegram: typeof telegramorgPackage
+  Tunnelblick: typeof tunnelblicknetPackage
+  tunnelblick: typeof tunnelblicknetPackage
+  WhatsApp: typeof whatsappcomPackage
+  whatsapp: typeof whatsappcomPackage
 
 export type Packages = Pantry
 
@@ -10702,6 +10779,8 @@ export const pantry: Pantry = {
   Vanna: vannaaiPackage,
   railway: railwayappPackage,
   'git-review': opendevorggitreviewPackage,
+  brunoapp: brunoappPackage,
+  blenderorg: blenderorgPackage,
   openstack: opendevorgopenstackpythonopenstackclientPackage,
   himalaya: pimalayaorghimalayaPackage,
   vips: libvipsorgPackage,
@@ -10709,8 +10788,64 @@ export const pantry: Pantry = {
   next: vercelcomnextPackage,
   pkg: vercelcompkgPackage,
   curl: curlPackage,
+  ollamacom: ollamacomPackage,
+  monitorcontrolapp: monitorcontrolappPackage,
+  meetingbarapp: meetingbarappPackage,
+  lmstudioai: lmstudioaiPackage,
+  libreofficeorg: libreofficeorgPackage,
+  kekaio: kekaioPackage,
+  keepassxcorg: keepassxcorgPackage,
+  inkscapeorg: inkscapeorgPackage,
+  iinaio: iinaioPackage,
+  hiddenbarapp: hiddenbarappPackage,
+  gimporg: gimporgPackage,
+  elementio: elementioPackage,
+  dbeaverio: dbeaverioPackage,
   rg: ripgrepPackage,
+  whatsappcom: whatsappcomPackage,
+  tunnelblicknet: tunnelblicknetPackage,
+  telegramorg: telegramorgPackage,
+  signalorg: signalorgPackage,
 }
+  Blender: blenderorgPackage,
+  blender: blenderorgPackage,
+  Bruno: brunoappPackage,
+  bruno: brunoappPackage,
+  DBeaver: dbeaverioPackage,
+  dbeaver: dbeaverioPackage,
+  Element: elementioPackage,
+  element: elementioPackage,
+  GIMP: gimporgPackage,
+  gimp: gimporgPackage,
+  'hidden-bar': hiddenbarappPackage,
+  hiddenbar: hiddenbarappPackage,
+  IINA: iinaioPackage,
+  iina: iinaioPackage,
+  Inkscape: inkscapeorgPackage,
+  inkscape: inkscapeorgPackage,
+  KeePassXC: keepassxcorgPackage,
+  keepassxc: keepassxcorgPackage,
+  Keka: kekaioPackage,
+  keka: kekaioPackage,
+  LibreOffice: libreofficeorgPackage,
+  libreoffice: libreofficeorgPackage,
+  soffice: libreofficeorgPackage,
+  'lm-studio': lmstudioaiPackage,
+  lmstudio: lmstudioaiPackage,
+  MeetingBar: meetingbarappPackage,
+  meetingbar: meetingbarappPackage,
+  MonitorControl: monitorcontrolappPackage,
+  monitorcontrol: monitorcontrolappPackage,
+  'monitor-control': monitorcontrolappPackage,
+  Ollama: ollamacomPackage,
+  Signal: signalorgPackage,
+  signal: signalorgPackage,
+  Telegram: telegramorgPackage,
+  telegram: telegramorgPackage,
+  Tunnelblick: tunnelblicknetPackage,
+  tunnelblick: tunnelblicknetPackage,
+  WhatsApp: whatsappcomPackage,
+  whatsapp: whatsappcomPackage,
 
 export const packages: Packages = pantry
 

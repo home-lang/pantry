@@ -1228,6 +1228,11 @@ Options:
     'postman.com', 'vlc.app', 'handbrake.fr', 'rectangle.app',
     'karabiner-elements.pqrs.org', 'cleanshot.com', 'alttab.app',
     'stats.app', 'maccy.app', 'orbstack.dev',
+    'signal.org', 'telegram.org', 'whatsapp.com', 'ollama.com',
+    'lmstudio.ai', 'dbeaver.io', 'iina.io', 'keka.io',
+    'keepassxc.org', 'element.io', 'inkscape.org', 'gimp.org',
+    'blender.org', 'libreoffice.org', 'bruno.app', 'tunnelblick.net',
+    'meetingbar.app', 'hiddenbar.app', 'monitorcontrol.app',
   ])
 
   // Packages needing specialized toolchains not available in CI
