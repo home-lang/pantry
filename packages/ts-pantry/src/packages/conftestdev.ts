@@ -68,6 +68,7 @@ export const conftestdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.67.1',
     '0.67.0',
     '0.66.0',
     '0.65.0',
@@ -87,7 +88,6 @@ export const conftestdevPackage = {
     '0.53.0',
     '0.52.0',
     '0.51.0',
-    '0.50.0',
   ] as const,
   aliases: [] as const,
 }
