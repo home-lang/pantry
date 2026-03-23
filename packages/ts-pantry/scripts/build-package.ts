@@ -1382,9 +1382,13 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   }
 
   // Find and parse package.yml FIRST (before dep download) so we can extract YAML build deps
-  const pantryPath = join(process.cwd(), 'src', 'pantry', pkgName, 'package.yml')
+  let pantryPath = join(process.cwd(), 'src', 'pantry', pkgName, 'package.yml')
   if (!existsSync(pantryPath)) {
-    throw new Error(`Build recipe not found at ${pantryPath}`)
+    // Fall back to desktop-pantry/ for desktop app packages
+    pantryPath = join(process.cwd(), 'src', 'desktop-pantry', pkgName, 'package.yml')
+    if (!existsSync(pantryPath)) {
+      throw new Error(`Build recipe not found at ${join(process.cwd(), 'src', 'pantry', pkgName, 'package.yml')} or ${pantryPath}`)
+    }
   }
 
   const yamlContent = readFileSync(pantryPath, 'utf-8')
