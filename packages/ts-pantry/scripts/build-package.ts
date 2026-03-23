@@ -1382,18 +1382,12 @@ async function buildPackage(options: BuildOptions): Promise<void> {
     pkg.buildDependencies.forEach((d: string) => console.log(`  - ${d}`))
   }
 
-  // Find and parse package.yml FIRST (before dep download) so we can extract YAML build deps
-  let pantryPath = join(process.cwd(), 'src', 'pantry', pkgName, 'package.yml')
-  if (!existsSync(pantryPath)) {
-    // Fall back to desktop-pantry/ for desktop app packages
-    pantryPath = join(process.cwd(), 'src', 'desktop-pantry', pkgName, 'package.yml')
-    if (!existsSync(pantryPath)) {
-      throw new Error(`Build recipe not found at ${join(process.cwd(), 'src', 'pantry', pkgName, 'package.yml')} or ${pantryPath}`)
-    }
-  }
+  // Load recipe: tries src/recipes/*.ts first, then YAML + overrides
+  const { loadRecipe } = await import('./recipe-loader')
+  const loaded = await loadRecipe(pkgName, platform)
+  console.log(`Build recipe: ${loaded.yamlPath || 'native TS recipe'} (source: ${loaded.source})`)
 
-  const yamlContent = readFileSync(pantryPath, 'utf-8')
-  const recipe = parseYaml(yamlContent) as PackageRecipe
+  const recipe = loaded.recipe as PackageRecipe
 
   // Helper to safely get build deps from the (possibly union-typed) build field
   const getBuildDeps = (r: PackageRecipe) => {
@@ -1405,10 +1399,7 @@ async function buildPackage(options: BuildOptions): Promise<void> {
   const preOverrideRuntimeDeps = new Set(extractYamlDeps(recipe.dependencies, platform).map(d => parseDep(d)))
   const preOverrideBuildDeps = new Set(extractYamlDeps(getBuildDeps(recipe), platform).map(d => parseDep(d)))
 
-  // Apply buildkit-level recipe overrides that survive pantry YAML regeneration.
-  // These fix platform-specific issues in upstream recipes without modifying the YAML files.
-  applyRecipeOverrides(recipe, pkgName, platform)
-  // After applyRecipeOverrides, build is normalized to RecipeBuildConfig | undefined
+  // After loadRecipe, build is already normalized (overrides applied if YAML source)
   const normalizedRecipe = recipe as NormalizedRecipe
 
   // Compute deps removed by modifyRecipe overrides
