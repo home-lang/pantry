@@ -12,6 +12,7 @@ import { generateBuildScript, getSkips, type PackageRecipe, type NormalizedRecip
 import { fixUp } from './fix-up.ts'
 // package-overrides.ts removed — all build logic now in src/recipes/*.ts
 type ScriptStep = string | { run: string, 'working-directory'?: string, if?: string }
+const packageOverrides: Record<string, any> = {} // stub — overrides migrated to recipes
 
 /**
  * Find the system prefix for a dependency by detecting where its binary lives.
