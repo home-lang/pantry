@@ -77,6 +77,7 @@ export const pipenvpypaioPackage = {
   */
   versions: [
     '3000.0.0',
+    '2026.2.2',
     '2026.2.1',
     '2026.2.0',
     '2026.1.0',
