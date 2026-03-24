@@ -78,6 +78,7 @@ export const spacetimedbcomPackage = {
   versions: [
     '2023.12.8',
     '2023.8.12',
+    '2.1.0',
     '2.0.5',
     '2.0.4',
     '2.0.3',
@@ -95,7 +96,6 @@ export const spacetimedbcomPackage = {
     '1.6.0',
     '1.5.0',
     '1.4.0',
-    '1.3.2',
   ] as const,
   aliases: [] as const,
 }

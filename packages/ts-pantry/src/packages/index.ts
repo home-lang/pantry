@@ -157,6 +157,7 @@ import { convcogithubioPackage } from './convcogithubio'
 import { corednsioPackage } from './corednsio'
 import { cpanminusPackage } from './cpanminus'
 import { cryptodaemontoolsPackage } from './cr.yp.to/daemontools'
+import { craftPackage } from './craft-native.org'
 import { cratesioaichatPackage } from './crates.io/aichat'
 import { cratesioalbion_terminal_rpgPackage } from './crates.io/albion_terminal_rpg'
 import { cratesioargcPackage } from './crates.io/argc'
@@ -1960,6 +1961,8 @@ export interface Pantry {
   cpanminus: typeof cpanminusPackage
 
   cryptodaemontools: typeof cryptodaemontoolsPackage
+  craft_native_org: typeof craftPackage
+  craftnativeorg: typeof craftPackage
 
   cratesioaichat: typeof cratesioaichatPackage
   albion_terminal_rpg: typeof cratesioalbion_terminal_rpgPackage
@@ -5294,6 +5297,7 @@ export interface Pantry {
   sqlc: typeof sqlcdevPackage
   'The Silver Searcher': typeof geoffgreerfmagPackage
   wxwidgets: typeof wxwidgetsorgPackage
+  craft: typeof craftPackage
   pwgen: typeof pwgensourceforgeioPackage
   'Scryer Prolog': typeof scryerplPackage
   wasmer: typeof wasmerioPackage
@@ -6548,6 +6552,8 @@ export const pantry: Pantry = {
   cpanminus: cpanminusPackage,
 
   cryptodaemontools: cryptodaemontoolsPackage,
+  craft_native_org: craftPackage,
+  craftnativeorg: craftPackage,
 
   cratesioaichat: cratesioaichatPackage,
   albion_terminal_rpg: cratesioalbion_terminal_rpgPackage,
@@ -9882,6 +9888,7 @@ export const pantry: Pantry = {
   sqlc: sqlcdevPackage,
   'The Silver Searcher': geoffgreerfmagPackage,
   wxwidgets: wxwidgetsorgPackage,
+  craft: craftPackage,
   pwgen: pwgensourceforgeioPackage,
   'Scryer Prolog': scryerplPackage,
   wasmer: wasmerioPackage,
