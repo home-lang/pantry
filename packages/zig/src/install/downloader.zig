@@ -543,8 +543,13 @@ pub fn lookupPantryPublished(
     version_constraint: []const u8,
 ) ?S3PackageResult {
     const semver = @import("../packages/semver.zig");
+    const pkg_registry = @import("../packages/generated.zig");
 
-    // Sanitize domain for S3 key (replace @ and / with -)
+    // Resolve domain → package name (e.g. craft-native.org → craft)
+    const pkg_info = pkg_registry.getPackageByDomain(domain);
+    const pkg_name = if (pkg_info) |info| info.name else domain;
+
+    // Also try the domain slug as fallback
     var sanitized_buf: [256]u8 = undefined;
     var slug_len: usize = 0;
     for (domain) |c| {
@@ -553,12 +558,13 @@ pub fn lookupPantryPublished(
         slug_len += 1;
     }
     const clean_name = if (slug_len > 0 and sanitized_buf[0] == '-') sanitized_buf[1..slug_len] else sanitized_buf[0..slug_len];
+    _ = clean_name; // May be used for fallback later
 
-    // Build metadata URL for packages/pantry/ prefix
+    // Query registry API using package name (npm-style publish uses name, not domain)
     const metadata_url = std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.amazonaws.com/packages/pantry/{s}/metadata.json",
-        .{clean_name},
+        "https://registry.pantry.dev/packages/{s}",
+        .{pkg_name},
     ) catch return null;
     defer allocator.free(metadata_url);
 
@@ -588,11 +594,11 @@ pub fn lookupPantryPublished(
         if (!semver.satisfiesConstraint(version_str, constraint)) return null;
     }
 
-    // Build tarball URL: packages/pantry/{clean_name}/{version}/{clean_name}-{version}.tgz
+    // Use the canonical tarball endpoint (always works via registry proxy)
     const tarball_url = std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.amazonaws.com/packages/pantry/{s}/{s}/{s}-{s}.tgz",
-        .{ clean_name, version_str, clean_name, version_str },
+        "https://registry.pantry.dev/packages/{s}/{s}/tarball",
+        .{ pkg_name, version_str },
     ) catch return null;
 
     const version_dupe = allocator.dupe(u8, version_str) catch {
