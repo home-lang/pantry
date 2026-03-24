@@ -88,6 +88,11 @@ export const odigosioPackage = {
     '1.17.1',
     '1.17.0',
     '1.16.11',
+    '1.16.10',
+    '1.16.9',
+    '1.16.8',
+    '1.16.7',
+    '1.16.6',
   ] as const,
   aliases: [] as const,
 }

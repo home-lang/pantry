@@ -42,6 +42,8 @@ export const zeddevPackage = {
     '0.223.4',
     '0.223.3',
     '0.222.4',
+    '0.222.3',
+    '0.222.2',
   ] as const,
   aliases: ['zed'] as const,
 }

@@ -88,6 +88,7 @@ export const libgeosorgPackage = {
     '3.10.6',
     '3.9.6',
     '3.9.5',
+    '3.8.4',
   ] as const,
   aliases: [] as const,
 }

@@ -80,6 +80,13 @@ export const attrsorgPackage = {
     '20.2.0',
     '20.1.0',
     '19.3.0',
+    '19.2.0',
+    '19.1.0',
+    '18.2.0',
+    '18.1.0',
+    '17.4.0',
+    '17.3.0.post2',
+    '17.3.0.post1',
   ] as const,
   aliases: [] as const,
 }

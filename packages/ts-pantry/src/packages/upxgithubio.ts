@@ -96,6 +96,7 @@ export const upxgithubioPackage = {
     '3.93',
     '3.92',
     '3.91',
+    '3.00',
   ] as const,
   aliases: [] as const,
 }

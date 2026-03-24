@@ -90,6 +90,8 @@ export const zotregistrydevPackage = {
     '2.0.3',
     '2.0.2',
     '2.0.1',
+    '2.0.0',
+    '1.4.3',
   ] as const,
   aliases: [] as const,
 }

@@ -80,6 +80,8 @@ export const pugixmlorgPackage = {
     '1.4',
     '1.2',
     '1.0',
+    '0.9',
+    '0.5',
   ] as const,
   aliases: [] as const,
 }

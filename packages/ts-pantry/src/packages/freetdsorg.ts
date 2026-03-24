@@ -110,6 +110,9 @@ export const freetdsorgPackage = {
     '1.4.24',
     '1.4.23',
     '1.4.22',
+    '1.4.12',
+    '1.4.11',
+    '1.4.10',
   ] as const,
   aliases: [] as const,
 }
