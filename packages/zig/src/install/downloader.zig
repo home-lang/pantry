@@ -399,7 +399,7 @@ pub fn lookupS3Registry(
     var metadata_url_buf: [256]u8 = undefined;
     const metadata_url = std.fmt.bufPrint(
         &metadata_url_buf,
-        "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json",
+        "https://registry.pantry.dev/binaries/{s}/metadata.json",
         .{domain},
     ) catch return null;
 
@@ -516,10 +516,10 @@ pub fn lookupS3Registry(
     const tarball_path_val = platform_info.object.get("tarball") orelse return null;
     const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
 
-    // Build direct S3 URL (bypasses registry proxy which buffers entire file and causes 504 timeouts)
+    // Use registry proxy for tarball download
     const tarball_url = std.fmt.allocPrint(
         allocator,
-        "https://pantry-registry.s3.amazonaws.com/{s}",
+        "https://registry.pantry.dev/{s}",
         .{tarball_path},
     ) catch return null;
 
