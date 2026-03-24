@@ -144,7 +144,8 @@ jobs:
 
           [ -z "$DOMAINS" ] && exit 0
           echo "Triggering build for: $DOMAINS"
-          gh workflow run build.yml -f packages="$DOMAINS" -f force=false
+          # Use unix (darwin+linux) — system packages have Unix build scripts
+          gh workflow run build.yml -f packages="$DOMAINS" -f force=false -f platform=unix
         timeout-minutes: 2
 
       - name: discord-failure-alert
