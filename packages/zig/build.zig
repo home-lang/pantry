@@ -31,9 +31,7 @@ pub fn build(b: *std.Build) void {
     version_options.addOption([]const u8, "commit_hash", commit_hash);
 
     // zig-config from build.zig.zon dependency (GitHub: zig-utils/zig-config)
-    const zig_config_dep = b.dependency("zig_config", .{
-        .target = target,
-    });
+    const zig_config_dep = b.dependency("zig_config", .{});
     const zig_config_mod = zig_config_dep.module("zig_config");
 
     // Resolve zig-cli path
@@ -476,11 +474,8 @@ pub fn build(b: *std.Build) void {
     for (targets) |t| {
         const resolved_target = b.resolveTargetQuery(t);
 
-        // Use zig-config from build.zig.zon dependency for cross target
-        const cross_zig_config_dep = b.dependency("zig_config", .{
-            .target = resolved_target,
-        });
-        const cross_zig_config_mod = cross_zig_config_dep.module("zig_config");
+        // Use zig-config from build.zig.zon dependency (target-agnostic module)
+        const cross_zig_config_mod = zig_config_mod;
 
         const cross_lib_mod = b.addModule("pantry", .{
             .root_source_file = b.path("src/lib.zig"),

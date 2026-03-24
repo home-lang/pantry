@@ -173,9 +173,9 @@ pub fn upgradeCommand(allocator: std.mem.Allocator, _: []const []const u8, optio
     io_helper.deleteFile(tmp_zip) catch {};
 
     style.print("\n  {s}Upgraded!{s} {s} → {s}{s}{s}\n", .{
-        style.green, style.reset,
-        current_version,
-        style.green, latest_version, style.reset,
+        style.green,     style.reset,
+        current_version, style.green,
+        latest_version,  style.reset,
     });
 
     return .{ .exit_code = 0 };
