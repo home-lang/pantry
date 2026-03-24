@@ -1,6 +1,6 @@
 # pipenv
 
->  Python Development Workflow for Humans.
+> Python Development Workflow for Humans.
 
 ## Package Information
 

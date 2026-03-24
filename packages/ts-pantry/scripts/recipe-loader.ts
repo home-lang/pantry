@@ -79,7 +79,7 @@ export async function loadRecipe(
     }
     if (override.prependScript && normalized.build?.script) {
       const existing = Array.isArray(normalized.build.script) ? normalized.build.script : [normalized.build.script]
-      normalized.build.script = [...override.prependScript.map(s => typeof s === 'string' ? s : s.run), ...existing]
+      normalized.build.script = [...override.prependScript.map((s: any) => typeof s === 'string' ? s : s.run), ...existing]
     }
   }
 
