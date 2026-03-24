@@ -1,3 +1,40 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.18...v0.9.0)
+
+### 🚀 Features
+
+- add `pantry upgrade` and `pantry upgrade --canary` commands ([53179e0](https://github.com/home-lang/pantry/commit/53179e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- add self-update and desktop apps to README and docs ([19e3ba1](https://github.com/home-lang/pantry/commit/19e3ba1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.0 ([e0412e0](https://github.com/home-lang/pantry/commit/e0412e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update oh-my-posh ([fde1367](https://github.com/home-lang/pantry/commit/fde1367)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.8.18...HEAD)
+
+### 🚀 Features
+
+- add `pantry upgrade` and `pantry upgrade --canary` commands ([53179e0](https://github.com/home-lang/pantry/commit/53179e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 📚 Documentation
+
+- add self-update and desktop apps to README and docs ([19e3ba1](https://github.com/home-lang/pantry/commit/19e3ba1)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update oh-my-posh ([fde1367](https://github.com/home-lang/pantry/commit/fde1367)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.17...v0.8.18)
 
 ### 🚀 Features
