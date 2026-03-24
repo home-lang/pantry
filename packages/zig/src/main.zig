@@ -2173,6 +2173,8 @@ fn printHelp() void {
     // Other
     style.print("    " ++ bold_cyan ++ "Other:" ++ style.reset ++ "\n", .{});
     style.print("      " ++ style.cyan ++ "whoami" ++ style.reset ++ "              Show current user\n", .{});
+    style.print("      " ++ style.cyan ++ "upgrade" ++ style.reset ++ "             Upgrade pantry to the latest version\n", .{});
+    style.print("      " ++ style.cyan ++ "upgrade --canary" ++ style.reset ++ "    Upgrade to the latest canary release\n", .{});
     style.print("      " ++ style.cyan ++ "help" ++ style.reset ++ "                Show this help message\n", .{});
     style.print("      " ++ style.cyan ++ "version" ++ style.reset ++ "             Show version information\n\n", .{});
 
@@ -2369,6 +2371,26 @@ fn helpAction(_: *cli.BaseCommand.ParseContext) !void {
 /// Version command action
 fn versionAction(_: *cli.BaseCommand.ParseContext) !void {
     printVersion();
+}
+
+fn upgradeAction(ctx: *cli.BaseCommand.ParseContext) !void {
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
+    const allocator = debug_allocator.allocator();
+
+    const upgrade_mod = @import("cli/commands/upgrade.zig");
+    const result = try upgrade_mod.upgradeCommand(allocator, &.{}, .{
+        .canary = ctx.hasOption("canary"),
+        .dry_run = ctx.hasOption("dry-run"),
+        .verbose = ctx.hasOption("verbose"),
+    });
+
+    if (result.exit_code != 0) {
+        if (result.message) |msg| {
+            style.printError("{s}", .{msg});
+        }
+        std.process.exit(result.exit_code);
+    }
 }
 
 pub fn main() !void {
@@ -3567,6 +3589,20 @@ pub fn main() !void {
     var version_cmd = try cli.BaseCommand.init(allocator, "version", "Show version information");
     _ = version_cmd.setAction(versionAction);
     _ = try root.addCommand(version_cmd);
+
+    // ========================================================================
+    // Upgrade Command (self-update)
+    // ========================================================================
+    var upgrade_cmd = try cli.BaseCommand.init(allocator, "upgrade", "Upgrade pantry to the latest version");
+    const upgrade_canary_opt = cli.Option.init("canary", "canary", "Upgrade to latest canary (pre-release)", .bool);
+    _ = try upgrade_cmd.addOption(upgrade_canary_opt);
+    const upgrade_dry_opt = cli.Option.init("dry-run", "dry-run", "Show what would be upgraded without upgrading", .bool);
+    _ = try upgrade_cmd.addOption(upgrade_dry_opt);
+    const upgrade_verbose_opt = cli.Option.init("verbose", "verbose", "Show detailed output", .bool)
+        .withShort('v');
+    _ = try upgrade_cmd.addOption(upgrade_verbose_opt);
+    _ = upgrade_cmd.setAction(upgradeAction);
+    _ = try root.addCommand(upgrade_cmd);
 
     // ========================================================================
     // PM Command (Package Manager Utilities)
