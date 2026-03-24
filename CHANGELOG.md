@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.0...v0.9.1)
+
+### 🐛 Bug Fixes
+
+- zig_config cross-compilation + format upgrade.zig ([30839c2](https://github.com/home-lang/pantry/commit/30839c2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.1 ([8863f6a](https://github.com/home-lang/pantry/commit/8863f6a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.0...HEAD)
+
+### 🐛 Bug Fixes
+
+- zig_config cross-compilation + format upgrade.zig ([30839c2](https://github.com/home-lang/pantry/commit/30839c2)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.8.18...v0.9.0)
 
 ### 🚀 Features
