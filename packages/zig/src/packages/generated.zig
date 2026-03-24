@@ -1826,9 +1826,9 @@ pub const packages = [_]PackageInfo{
     },
     .{
         .name = "craft",
-        .domain = "github.com/stacksjs/craft",
+        .domain = "craft-native.org",
         .description = "Build desktop apps with web languages, powered by Zig",
-        .homepage_url = "https://github.com/stacksjs/craft",
+        .homepage_url = "https://craft-native.org",
         .programs = &[_][]const u8{ "craft" },
         .dependencies = &[_][]const u8{  },
         .build_dependencies = &[_][]const u8{ "ziglang.org" },
