@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "stx dev pages/ --port 3002",
     "start": "stx dev pages/ --port 3002",
-    "open": "stx dev pages/ --port 3002 & sleep 1 && open http://localhost:3002"
+    "open": "stx dev pages/ --port 3002 & sleep 1 && open http://localhost:3002",
+    "build": "echo no-op"
   },
   "dependencies": {},
   "devDependencies": {

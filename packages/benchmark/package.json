@@ -13,7 +13,8 @@
     "benchmark:warm": "bun run pm-benchmark.ts --scenario=warm",
     "benchmark:composer": "bun run pm-benchmark.ts --managers=pantry,composer",
     "benchmark:vs-composer": "bun run pantry-vs-composer.ts",
-    "file-detection": "bun run file-detection-comparison.ts"
+    "file-detection": "bun run file-detection-comparison.ts",
+    "build": "echo no-op"
   },
   "devDependencies": {
     "mitata": "^1.0.34"
