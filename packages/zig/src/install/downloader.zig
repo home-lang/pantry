@@ -534,6 +534,78 @@ pub fn lookupS3Registry(
     };
 }
 
+/// Try to find a package tarball published via `pantry publish` (packages/pantry/ prefix).
+/// This is the S3 path used by the standard `pantry publish` command.
+/// Returns null if not found or on any error.
+pub fn lookupPantryPublished(
+    allocator: std.mem.Allocator,
+    domain: []const u8,
+    version_constraint: []const u8,
+) ?S3PackageResult {
+    const semver = @import("../packages/semver.zig");
+
+    // Sanitize domain for S3 key (replace @ and / with -)
+    var sanitized_buf: [256]u8 = undefined;
+    var slug_len: usize = 0;
+    for (domain) |c| {
+        if (slug_len >= sanitized_buf.len) break;
+        sanitized_buf[slug_len] = if (c == '/' or c == '@') '-' else c;
+        slug_len += 1;
+    }
+    const clean_name = if (slug_len > 0 and sanitized_buf[0] == '-') sanitized_buf[1..slug_len] else sanitized_buf[0..slug_len];
+
+    // Build metadata URL for packages/pantry/ prefix
+    const metadata_url = std.fmt.allocPrint(
+        allocator,
+        "https://pantry-registry.s3.amazonaws.com/packages/pantry/{s}/metadata.json",
+        .{clean_name},
+    ) catch return null;
+    defer allocator.free(metadata_url);
+
+    // Fetch metadata
+    const metadata_response = io_helper.httpGet(allocator, metadata_url) catch return null;
+    defer allocator.free(metadata_response);
+
+    if (metadata_response.len == 0) return null;
+
+    // Parse metadata (this is the raw package.json content)
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, metadata_response, .{}) catch return null;
+    defer parsed.deinit();
+
+    const root = parsed.value;
+    if (root != .object) return null;
+
+    // Extract version from metadata
+    const version_str = if (root.object.get("version")) |v| (if (v == .string) v.string else return null) else return null;
+
+    // Check if the published version satisfies the constraint
+    const is_any = std.mem.eql(u8, version_constraint, "latest") or
+        std.mem.eql(u8, version_constraint, "*") or
+        version_constraint.len == 0;
+
+    if (!is_any) {
+        const constraint = semver.parseConstraint(version_constraint) catch return null;
+        if (!semver.satisfiesConstraint(version_str, constraint)) return null;
+    }
+
+    // Build tarball URL: packages/pantry/{clean_name}/{version}/{clean_name}-{version}.tgz
+    const tarball_url = std.fmt.allocPrint(
+        allocator,
+        "https://pantry-registry.s3.amazonaws.com/packages/pantry/{s}/{s}/{s}-{s}.tgz",
+        .{ clean_name, version_str, clean_name, version_str },
+    ) catch return null;
+
+    const version_dupe = allocator.dupe(u8, version_str) catch {
+        allocator.free(tarball_url);
+        return null;
+    };
+
+    return S3PackageResult{
+        .tarball_url = tarball_url,
+        .version = version_dupe,
+    };
+}
+
 /// Verify file checksum (SHA256)
 pub fn verifyChecksum(
     allocator: std.mem.Allocator,

@@ -696,6 +696,15 @@ pub const Installer = struct {
                 .version = s3_result.version,
             };
             from_s3 = true;
+        } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| {
+            // Fallback: check packages published via `pantry publish` (packages/pantry/ prefix)
+            s3_version_alloc = pub_result.version;
+            s3_tarball_url = pub_result.tarball_url;
+            resolved_spec = PackageSpec{
+                .name = spec.name,
+                .version = pub_result.version,
+            };
+            from_s3 = true;
         } else {
             if (pkg_info) |_| {
                 // Fall back to generated.zig version list
@@ -2494,11 +2503,15 @@ pub const Installer = struct {
         var used_url: []const u8 = undefined;
 
         // Use transferred URL if available, otherwise do a fresh S3 lookup
+        // Checks: binaries/ (publish:binary) → packages/pantry/ (publish) → fallback URL
         const s3_url: ?[]const u8 = if (transferred_url) |url|
             url
         else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
+        } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
+            self.allocator.free(pub_result.version);
+            break :blk pub_result.tarball_url;
         } else blk: {
             // Fallback: construct URL directly from known pattern when S3 lookup fails
             // (e.g., when curl subprocess can't run or registry is temporarily unreachable)
@@ -2979,11 +2992,15 @@ pub const Installer = struct {
         var used_url: []const u8 = undefined;
 
         // Use transferred URL if available, otherwise do a fresh S3 lookup
+        // Checks: binaries/ (publish:binary) → packages/pantry/ (publish) → fallback URL
         const s3_url: ?[]const u8 = if (transferred_url) |url|
             url
         else if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| blk: {
             self.allocator.free(s3_result.version);
             break :blk s3_result.tarball_url;
+        } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| blk: {
+            self.allocator.free(pub_result.version);
+            break :blk pub_result.tarball_url;
         } else blk: {
             // Fallback: construct URL directly from known pattern when S3 lookup fails
             const platform = comptime plat: {
