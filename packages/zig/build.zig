@@ -30,9 +30,11 @@ pub fn build(b: *std.Build) void {
     version_options.addOption([]const u8, "version", version);
     version_options.addOption([]const u8, "commit_hash", commit_hash);
 
-    // zig-config from build.zig.zon dependency (GitHub: zig-utils/zig-config)
-    const zig_config_dep = b.dependency("zig_config", .{});
-    const zig_config_mod = zig_config_dep.module("zig_config");
+    // zig-config: import source directly to avoid cross-compilation issues
+    // with the dependency's build.zig (which has .link_libc = true)
+    const zig_config_mod = b.createModule(.{
+        .root_source_file = b.path("../../pantry/zig-config/src/zig-config.zig"),
+    });
 
     // Resolve zig-cli path
     const cli_path = resolveDependencyPath(
