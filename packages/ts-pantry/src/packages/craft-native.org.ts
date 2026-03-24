@@ -68,6 +68,11 @@ export const craftPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.0.13',
+    '0.0.12',
+    '0.0.11',
+    '0.0.10',
+    '0.0.8',
     '0.0.5',
     '0.0.4',
     '0.0.3',
