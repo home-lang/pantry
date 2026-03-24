@@ -62,6 +62,7 @@ export const jsonnetorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.22.0',
     '0.21.0',
     '0.20.0',
     '0.19.1',
