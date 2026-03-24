@@ -1978,17 +1978,16 @@ else {
     const failRate = attempted > 0 ? (failed.length / attempted * 100).toFixed(0) : 0
     console.log(`\nFailure rate: ${failRate}% (${failed.length}/${attempted} attempted)`)
 
-    // For single-package targeted builds, exit non-zero so CI reports the failure.
-    // For multi-package targeted builds (auto-triggered by update-packages), only
-    // exit non-zero if ALL packages failed — partial success is expected.
-    // For batch builds, exit 0 — individual failures are expected.
+    // For targeted builds: exit non-zero only if ALL attempted packages failed
+    // and nothing was skipped (already in S3). Skipped = success (already built).
     if (isTargetedBuild) {
-      if (uploaded.length === 0) {
+      const totalSuccess = uploaded.length + skipped.length
+      if (totalSuccess === 0 && failed.length > 0) {
         console.log(`\nAll targeted builds failed — exiting with error`)
         process.exit(1)
       }
-      else {
-        console.log(`\n${uploaded.length}/${attempted} packages built successfully — partial success, exiting cleanly`)
+      else if (failed.length > 0) {
+        console.log(`\n${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed — partial success`)
       }
     }
 
