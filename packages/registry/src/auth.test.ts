@@ -542,7 +542,7 @@ describe('e2e: auth routes', () => {
     })
 
     it('publishes with user API token', async () => {
-      const metadata = { name: 'test-pkg', version: '1.0.0', publishedAt: new Date().toISOString() }
+      const metadata = { name: `test-pkg-${Date.now()}`, version: '1.0.0', publishedAt: new Date().toISOString() }
       const tarball = new Uint8Array([0x1f, 0x8b, 0x08, 0x00])
 
       const formData = new FormData()
@@ -560,7 +560,7 @@ describe('e2e: auth routes', () => {
     })
 
     it('rejects publish with invalid token', async () => {
-      const metadata = { name: 'test-pkg', version: '1.0.0', publishedAt: new Date().toISOString() }
+      const metadata = { name: `test-pkg-${Date.now()}`, version: '1.0.0', publishedAt: new Date().toISOString() }
       const tarball = new Uint8Array([0x1f, 0x8b, 0x08, 0x00])
 
       const formData = new FormData()
@@ -577,7 +577,7 @@ describe('e2e: auth routes', () => {
 
     it('legacy REGISTRY_TOKEN still works for publish', async () => {
       const LEGACY = process.env.PANTRY_REGISTRY_TOKEN || process.env.PANTRY_TOKEN || 'ABCD1234'
-      const metadata = { name: 'legacy-pkg', version: '1.0.0', publishedAt: new Date().toISOString() }
+      const metadata = { name: `legacy-pkg-${Date.now()}`, version: '1.0.0', publishedAt: new Date().toISOString() }
       const tarball = new Uint8Array([0x1f, 0x8b, 0x08, 0x00])
 
       const formData = new FormData()
@@ -728,7 +728,8 @@ describe('e2e: auth routes', () => {
       const { token } = await tokenRes.json() as any
 
       // Step 3: Publish a package
-      const metadata = { name: 'e2e-test-pkg', version: '1.0.0', description: 'E2E test package', publishedAt: new Date().toISOString() }
+      const e2ePkgName = `e2e-test-pkg-${Date.now()}`
+      const metadata = { name: e2ePkgName, version: '1.0.0', description: 'E2E test package', publishedAt: new Date().toISOString() }
       const tarball = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0xDE, 0xAD])
       const formData = new FormData()
       formData.set('metadata', JSON.stringify(metadata))
@@ -742,10 +743,10 @@ describe('e2e: auth routes', () => {
       expect(publishRes.status).toBe(201)
 
       // Step 4: Verify package exists
-      const pkgRes = await fetch(`${baseUrl}/packages/e2e-test-pkg`)
+      const pkgRes = await fetch(`${baseUrl}/packages/${e2ePkgName}`)
       expect(pkgRes.status).toBe(200)
       const pkg = await pkgRes.json() as any
-      expect(pkg.name).toBe('e2e-test-pkg')
+      expect(pkg.name).toBe(e2ePkgName)
 
       // Step 5: List tokens shows lastUsedAt updated
       await new Promise(r => setTimeout(r, 100))
