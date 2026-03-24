@@ -69,6 +69,7 @@ export const pnpmioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '10.33.0',
     '10.32.1',
     '10.32.0',
     '10.31.0',
