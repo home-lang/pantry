@@ -55,7 +55,7 @@ async function fetchGitHubReleases(repo: string, tagPattern?: RegExp, stable = t
     }
 
     // Only accept versions that look like semver (digits + dots, optional pre-release suffix)
-    if (version && /^\d+(\.\d+)*([._-][\w.]+)?$/.test(version)) {
+    if (version && /^\d[\d.]*\d$/.test(version) || /^\d[\d.]*\d[._-]\w+$/.test(version)) {
       versions.push(version)
     }
   }
@@ -84,7 +84,7 @@ async function fetchGitHubTags(repo: string, tagPattern?: RegExp): Promise<strin
     else {
       version = version.replace(/^v/, '')
     }
-    if (version && /^\d+(\.\d+)*([._-][\w.]+)?$/.test(version)) versions.push(version)
+    if (version && /^\d[\d.]*\d$/.test(version) || /^\d[\d.]*\d[._-]\w+$/.test(version)) versions.push(version)
   }
 
   return versions
