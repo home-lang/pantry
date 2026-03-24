@@ -152,7 +152,11 @@ function updatePackageVersions(domain: string, newVersions: string[]): boolean {
     .map(v => v.trim().replace(/'/g, ''))
     .filter(Boolean)
 
-  // Merge: add new versions, keep order (newest first)
+  // Merge: add new versions to existing, never remove existing versions
+  const existingSet = new Set(currentVersions)
+  const added = newVersions.filter(v => !existingSet.has(v))
+  if (added.length === 0) return false // No new versions
+
   const allVersions = [...new Set([...newVersions, ...currentVersions])]
   // Sort semantically (newest first)
   allVersions.sort((a, b) => {
@@ -165,8 +169,7 @@ function updatePackageVersions(domain: string, newVersions: string[]): boolean {
     return 0
   })
 
-  // Limit to 20 versions
-  const finalVersions = allVersions.slice(0, 20)
+  const finalVersions = allVersions
 
   // Check if anything changed
   if (JSON.stringify(finalVersions) === JSON.stringify(currentVersions)) {
