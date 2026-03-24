@@ -1,3 +1,32 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.1...v0.9.2)
+
+### 🐛 Bug Fixes
+
+- import zig-config source directly instead of via dependency ([fa3c5fd](https://github.com/home-lang/pantry/commit/fa3c5fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.2 ([183006a](https://github.com/home-lang/pantry/commit/183006a)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update opencode.ai ([03b2c07](https://github.com/home-lang/pantry/commit/03b2c07)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.1...HEAD)
+
+### 🐛 Bug Fixes
+
+- import zig-config source directly instead of via dependency ([fa3c5fd](https://github.com/home-lang/pantry/commit/fa3c5fd)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- update opencode.ai ([03b2c07](https://github.com/home-lang/pantry/commit/03b2c07)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.0...v0.9.1)
 
 ### 🐛 Bug Fixes
