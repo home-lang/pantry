@@ -294,7 +294,7 @@ pub fn executeScript(
     const current_path = io_helper.getenv("PATH") orelse "/usr/local/bin:/usr/bin:/bin";
 
     // Build colon-separated list of {modules_dir}/.bin paths from CWD upward
-    var nm_path_buf = std.ArrayList(u8){};
+    var nm_path_buf = std.ArrayList(u8).empty;
     defer nm_path_buf.deinit(allocator);
 
     {

@@ -28,7 +28,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
 
     style.print("Running pantry diagnostics...\n\n", .{});
 
-    var checks = std.ArrayList(CheckResult){};
+    var checks = std.ArrayList(CheckResult).empty;
     defer {
         for (checks.items) |*check| {
             check.deinit(allocator);

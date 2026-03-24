@@ -337,7 +337,7 @@ fn loadWorkspaceConfigFromPackageJson(
         return error.NoWorkspacePatternsFound;
 
     // Parse patterns from workspaces field (array or object with "packages" key)
-    var patterns_list = std.ArrayList([]const u8){};
+    var patterns_list = std.ArrayList([]const u8).empty;
     errdefer {
         for (patterns_list.items) |p| allocator.free(p);
         patterns_list.deinit(allocator);

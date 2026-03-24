@@ -86,7 +86,7 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
     };
 
     // Build command with args
-    var command_list = std.ArrayList(u8){};
+    var command_list = std.ArrayList(u8).empty;
     defer command_list.deinit(ctx.allocator);
 
     try command_list.appendSlice(ctx.allocator, script_command);

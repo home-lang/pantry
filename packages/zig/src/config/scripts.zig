@@ -4,7 +4,7 @@ const io_helper = @import("../io_helper.zig");
 
 /// Strip single-line (//) and multi-line (/* */) comments from JSONC content
 fn stripJsonComments(allocator: std.mem.Allocator, content: []const u8) ![]const u8 {
-    var result = std.ArrayList(u8){};
+    var result = std.ArrayList(u8).empty;
     try result.ensureTotalCapacity(allocator, content.len);
     errdefer result.deinit(allocator);
 

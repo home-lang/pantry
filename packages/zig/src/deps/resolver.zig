@@ -50,7 +50,7 @@ pub fn topologicalSort(
     // Initialize in-degree and adjacency list
     for (packages) |pkg| {
         try in_degree.put(pkg.name, 0);
-        const list = std.ArrayList([]const u8){};
+        const list = std.ArrayList([]const u8).empty;
         try adj_list.put(pkg.name, list);
     }
 
@@ -70,7 +70,7 @@ pub fn topologicalSort(
     }
 
     // Find all nodes with in-degree 0 (no dependencies)
-    var queue = std.ArrayList([]const u8){};
+    var queue = std.ArrayList([]const u8).empty;
     defer queue.deinit(allocator);
 
     var it = in_degree.iterator();
@@ -81,7 +81,7 @@ pub fn topologicalSort(
     }
 
     // Process queue
-    var result = std.ArrayList([]const u8){};
+    var result = std.ArrayList([]const u8).empty;
     errdefer {
         for (result.items) |name| {
             allocator.free(name);

@@ -146,9 +146,9 @@ pub const PeerDependencyManager = struct {
 
     /// Validate all peer dependencies
     pub fn validate(self: *PeerDependencyManager) !ValidationResult {
-        var missing: std.ArrayList(ValidationResult.MissingPeer) = .{};
-        var incompatible: std.ArrayList(ValidationResult.IncompatiblePeer) = .{};
-        var warnings: std.ArrayList(ValidationResult.Warning) = .{};
+        var missing: std.ArrayList(ValidationResult.MissingPeer) = .empty;
+        var incompatible: std.ArrayList(ValidationResult.IncompatiblePeer) = .empty;
+        var warnings: std.ArrayList(ValidationResult.Warning) = .empty;
 
         for (self.peers.items) |peer| {
             const installed_version = self.installed.get(peer.name);

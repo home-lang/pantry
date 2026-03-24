@@ -47,7 +47,7 @@ pub const EnvScanner = struct {
         };
         defer dir.close();
 
-        var envs = std.ArrayList(EnvironmentInfo){};
+        var envs = std.ArrayList(EnvironmentInfo).empty;
         errdefer {
             for (envs.items) |*env| {
                 env.deinit(self.allocator);

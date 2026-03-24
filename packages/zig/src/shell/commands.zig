@@ -411,7 +411,7 @@ pub const ShellCommands = struct {
         } else false;
 
         // Build PATH (highest precedence first)
-        var path_components: std.ArrayList([]const u8) = .{};
+        var path_components: std.ArrayList([]const u8) = .empty;
         defer path_components.deinit(self.allocator);
 
         // 0. Global binaries (highest priority - always available)
@@ -487,7 +487,7 @@ pub const ShellCommands = struct {
         }
 
         // Find runtime and system dependencies and build paths
-        var runtime_paths: std.ArrayList([]const u8) = .{};
+        var runtime_paths: std.ArrayList([]const u8) = .empty;
         defer {
             for (runtime_paths.items) |path| self.allocator.free(path);
             runtime_paths.deinit(self.allocator);
@@ -719,7 +719,7 @@ pub const ShellCommands = struct {
         var current_entry_name: ?[]const u8 = null;
         var current_entry_port: ?u16 = null;
 
-        var auto_start_entries: std.ArrayList(AutoStartEntry) = .{};
+        var auto_start_entries: std.ArrayList(AutoStartEntry) = .empty;
         defer {
             for (auto_start_entries.items) |*entry| entry.deinit(self.allocator);
             auto_start_entries.deinit(self.allocator);
@@ -1125,7 +1125,7 @@ pub const ShellCommands = struct {
                     }
                 } else if (std.mem.startsWith(u8, trimmed, "dependsOn:")) {
                     // Parse dependsOn list - collect items from following lines
-                    var deps_list: std.ArrayList([]const u8) = .{};
+                    var deps_list: std.ArrayList([]const u8) = .empty;
                     while (line_iter.next()) |dep_line| {
                         const dep_trimmed = std.mem.trim(u8, dep_line, " \t\r");
                         const dep_indent = countLeadingSpaces(dep_line);
@@ -1299,7 +1299,7 @@ pub const ShellCommands = struct {
         defer self.allocator.free(content);
 
         // Collect service names from autoStart section
-        var service_names: std.ArrayList([]const u8) = .{};
+        var service_names: std.ArrayList([]const u8) = .empty;
         defer service_names.deinit(self.allocator);
 
         var in_services = false;
@@ -2155,7 +2155,7 @@ pub const ShellCommands = struct {
 
                                     if (cmd_obj.get("args")) |args_val| {
                                         if (args_val == .array and args_val.array.items.len > 0) {
-                                            var parts: std.ArrayList(u8) = .{};
+                                            var parts: std.ArrayList(u8) = .empty;
                                             defer parts.deinit(self.allocator);
                                             parts.appendSlice(self.allocator, command_str) catch continue;
                                             for (args_val.array.items) |arg| {
@@ -2232,7 +2232,7 @@ pub const ShellCommands = struct {
 
             if (cmd_obj.get("args")) |args_val| {
                 if (args_val == .array and args_val.array.items.len > 0) {
-                    var parts: std.ArrayList(u8) = .{};
+                    var parts: std.ArrayList(u8) = .empty;
                     defer parts.deinit(self.allocator);
                     parts.appendSlice(self.allocator, command_str) catch continue;
                     for (args_val.array.items) |arg| {

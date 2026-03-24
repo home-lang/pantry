@@ -1210,8 +1210,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     var failed_count: usize = 0;
 
     // Track successful installs for lockfile
-    const InstalledPkg = struct { name: []const u8, version: []const u8, source: lib.packages.PackageSource };
-    var installed_packages = std.ArrayList(InstalledPkg){};
+    var installed_packages = std.ArrayList(struct { name: []const u8, version: []const u8, source: lib.packages.PackageSource }).empty;
     defer {
         for (installed_packages.items) |pkg| {
             allocator.free(pkg.name);
@@ -1415,7 +1414,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Add new packages to the lockfile (replace existing versions of same package)
         for (installed_packages.items) |pkg| {
             // First, remove any existing entries for this package (different versions)
-            var keys_to_remove = std.ArrayList([]const u8){};
+            var keys_to_remove = std.ArrayList([]const u8).empty;
             defer keys_to_remove.deinit(allocator);
 
             var iter = lockfile.packages.iterator();

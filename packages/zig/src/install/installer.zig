@@ -3404,7 +3404,8 @@ pub const Installer = struct {
         const current_platform = Platform.current();
 
         // 1. Filter applicable dependencies (skip wrong-platform deps)
-        var applicable: std.ArrayList(struct { dep: []const u8, is_optional: bool }) = .empty;
+        const DepEntry = struct { dep: []const u8, is_optional: bool };
+        var applicable: std.ArrayList(DepEntry) = .empty;
         defer applicable.deinit(self.allocator);
 
         for (dependencies) |dep_str| {
@@ -3452,7 +3453,7 @@ pub const Installer = struct {
         @memset(results, .{ .err = null, .is_optional = false });
 
         const DepCtx = struct {
-            items: []const struct { dep: []const u8, is_optional: bool },
+            items: []const DepEntry,
             results: []DepResult,
             next: *std.atomic.Value(usize),
             installer: *Installer,

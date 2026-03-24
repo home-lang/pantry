@@ -23,8 +23,8 @@ pub const InstallCheckpoint = struct {
     pub fn init(allocator: std.mem.Allocator) InstallCheckpoint {
         return .{
             .installed_packages = std.StringHashMap(void).init(allocator),
-            .created_files = std.ArrayList([]const u8){},
-            .created_dirs = std.ArrayList([]const u8){},
+            .created_files = std.ArrayList([]const u8).empty,
+            .created_dirs = std.ArrayList([]const u8).empty,
             .backup_dir = null,
             .checkpoint_path = null,
             .allocator = allocator,

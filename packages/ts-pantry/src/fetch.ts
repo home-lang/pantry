@@ -587,6 +587,58 @@ export function savePackageAsTypeScript(outputDir: string, domainName: string, p
 }
 
 /**
+ * Removes generated .ts files from the output directory that were not part of the
+ * current fetch run. Prevents stale generated files from accumulating.
+ */
+export function cleanStaleOutputFiles(outputDir: string, savedPackages: string[]): string[] {
+  if (!fs.existsSync(outputDir)) return []
+
+  // Build set of expected file paths from saved packages
+  const expectedFiles = new Set<string>()
+  for (const domain of savedPackages) {
+    if (domain.includes('/')) {
+      const parts = domain.split('/')
+      const baseDomain = parts[0]
+      const subParts = parts.slice(1)
+      const filename = sanitizeFilename(subParts[subParts.length - 1])
+      expectedFiles.add(path.resolve(outputDir, baseDomain, ...subParts.slice(0, -1), `${filename}.ts`))
+    }
+    else {
+      const filename = domain.replace(/\./g, '')
+      expectedFiles.add(path.resolve(outputDir, `${filename}.ts`))
+    }
+  }
+
+  // Also preserve known non-generated files
+  const preservedFiles = new Set(['index.ts', 'aliases.ts', 'types.ts'])
+
+  const removed: string[] = []
+
+  function walkDir(dir: string) {
+    if (!fs.existsSync(dir)) return
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name)
+      if (entry.isDirectory()) {
+        walkDir(fullPath)
+        // Remove empty directories left behind
+        if (fs.existsSync(fullPath) && fs.readdirSync(fullPath).length === 0) {
+          fs.rmdirSync(fullPath)
+        }
+      }
+      else if (entry.name.endsWith('.ts') && !preservedFiles.has(entry.name)) {
+        if (!expectedFiles.has(path.resolve(fullPath))) {
+          fs.unlinkSync(fullPath)
+          removed.push(fullPath)
+        }
+      }
+    }
+  }
+
+  walkDir(outputDir)
+  return removed
+}
+
+/**
  * Checks if a cached package exists and is still valid
  * @param packageName Name of the package to check
  * @param options Cache options

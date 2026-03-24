@@ -71,7 +71,7 @@ pub const FilterConfigs = struct {
         self: *FilterConfigs,
         name: []const u8,
     ) ![][]const u8 {
-        var all_patterns = std.ArrayList([]const u8){};
+        var all_patterns = std.ArrayList([]const u8).empty;
         errdefer all_patterns.deinit(self.allocator);
 
         var visited = std.StringHashMap(void).init(self.allocator);

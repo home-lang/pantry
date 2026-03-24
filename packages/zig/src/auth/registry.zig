@@ -951,7 +951,7 @@ pub const RegistryClient = struct {
 
     fn serializeTrustedPublisher(self: *RegistryClient, publisher: *const oidc.TrustedPublisher) ![]u8 {
         // Build allowed_refs array
-        var refs_json = std.ArrayList(u8){};
+        var refs_json = std.ArrayList(u8).empty;
         defer refs_json.deinit(self.allocator);
 
         if (publisher.allowed_refs) |refs| {
@@ -1014,7 +1014,7 @@ pub const RegistryClient = struct {
         defer parsed.deinit();
 
         const publishers_array = parsed.value.array;
-        var publishers = std.ArrayList(oidc.TrustedPublisher){};
+        var publishers = std.ArrayList(oidc.TrustedPublisher).empty;
 
         for (publishers_array.items) |item| {
             const obj = item.object;

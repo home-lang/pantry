@@ -131,7 +131,7 @@ pub const LockFile = struct {
 
     /// Write lock file to disk
     pub fn write(self: *LockFile, path: []const u8) !void {
-        var output: std.ArrayList(u8) = .{};
+        var output: std.ArrayList(u8) = .empty;
         defer output.deinit(self.allocator);
 
         try output.appendSlice(self.allocator, "{\n");
@@ -319,8 +319,8 @@ pub const LockFile = struct {
         self: *LockFile,
         installed: std.StringHashMap([]const u8),
     ) !ValidationResult {
-        var missing: std.ArrayList([]const u8) = .{};
-        var version_mismatch: std.ArrayList(ValidationResult.VersionMismatch) = .{};
+        var missing: std.ArrayList([]const u8) = .empty;
+        var version_mismatch: std.ArrayList(ValidationResult.VersionMismatch) = .empty;
 
         var it = self.packages.iterator();
         while (it.next()) |entry| {

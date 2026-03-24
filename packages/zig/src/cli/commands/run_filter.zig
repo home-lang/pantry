@@ -109,7 +109,7 @@ pub fn runScriptWithFilter(
             break :blk try filter_module.Filter.initWithPatterns(allocator, patterns_copy);
         }
 
-        var patterns_list = std.ArrayList([]const u8){};
+        var patterns_list = std.ArrayList([]const u8).empty;
         defer patterns_list.deinit(allocator);
 
         var iter = std.mem.splitScalar(u8, filter_str, ',');
@@ -125,7 +125,7 @@ pub fn runScriptWithFilter(
     defer filter.deinit();
 
     // Collect workspace members that match the filter
-    var matching_members = std.ArrayList(lib.packages.types.WorkspaceMember){};
+    var matching_members = std.ArrayList(lib.packages.types.WorkspaceMember).empty;
     defer matching_members.deinit(allocator);
 
     for (workspace_config.members) |member| {
@@ -151,7 +151,7 @@ pub fn runScriptWithFilter(
 
         // Replace matching_members with only changed ones
         matching_members.deinit(allocator);
-        matching_members = std.ArrayList(lib.packages.types.WorkspaceMember){};
+        matching_members = std.ArrayList(lib.packages.types.WorkspaceMember).empty;
 
         for (changed_result.changed_members) |changed_member| {
             try matching_members.append(allocator, changed_member);
@@ -326,7 +326,7 @@ pub fn runScriptWithFilter(
             style.print("{s}→{s} {s}\n", .{ style.blue, style.reset, member.name });
 
             // Build command with args
-            var command_list = std.ArrayList(u8){};
+            var command_list = std.ArrayList(u8).empty;
             defer command_list.deinit(allocator);
 
             try command_list.appendSlice(allocator, script_command);
@@ -619,7 +619,7 @@ fn executeScriptsInMembers(
 
             style.print("{s}→{s} {s}\n", .{ style.blue, style.reset, member.name });
 
-            var command_list = std.ArrayList(u8){};
+            var command_list = std.ArrayList(u8).empty;
             defer command_list.deinit(allocator);
 
             try command_list.appendSlice(allocator, script_command);

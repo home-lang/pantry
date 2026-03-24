@@ -1335,7 +1335,7 @@ fn updateJsonDependency(
     }
 
     // Collect all keys in their original order by scanning the source
-    var key_order = std.ArrayList([]const u8){};
+    var key_order = std.ArrayList([]const u8).empty;
     defer {
         for (key_order.items) |k| allocator.free(k);
         key_order.deinit(allocator);

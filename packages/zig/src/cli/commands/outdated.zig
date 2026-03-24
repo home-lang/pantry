@@ -178,7 +178,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     });
 
     // Check each dependency for updates
-    var outdated = std.ArrayList(OutdatedPackage){};
+    var outdated = std.ArrayList(OutdatedPackage).empty;
     defer {
         for (outdated.items) |*pkg| {
             pkg.deinit(allocator);

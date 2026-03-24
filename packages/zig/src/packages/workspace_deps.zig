@@ -34,7 +34,7 @@ fn extractWorkspaceDependencies(
     member: types.WorkspaceMember,
     all_members: []const types.WorkspaceMember,
 ) ![][]const u8 {
-    var deps = std.ArrayList([]const u8){};
+    var deps = std.ArrayList([]const u8).empty;
     errdefer {
         for (deps.items) |dep| {
             allocator.free(dep);
@@ -104,7 +104,7 @@ pub fn orderWorkspaceMembers(
     }
 
     // Build dependency list for resolver
-    var resolver_deps = std.ArrayList(resolver.Dependency){};
+    var resolver_deps = std.ArrayList(resolver.Dependency).empty;
     defer {
         for (resolver_deps.items) |*dep| {
             allocator.free(dep.name);
@@ -211,7 +211,7 @@ fn buildParallelGroups(
     }
 
     for (groups) |*group| {
-        group.* = std.ArrayList(types.WorkspaceMember){};
+        group.* = std.ArrayList(types.WorkspaceMember).empty;
     }
 
     // Assign members to groups

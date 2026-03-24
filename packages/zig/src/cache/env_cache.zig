@@ -224,7 +224,7 @@ pub const EnvCache = struct {
         self.lock.lock();
         defer self.lock.unlock();
 
-        var to_remove = std.ArrayList([16]u8){};
+        var to_remove = std.ArrayList([16]u8).empty;
         defer to_remove.deinit(self.allocator);
 
         var it = self.cache.iterator();
@@ -263,7 +263,7 @@ pub const EnvCache = struct {
         defer self.allocator.free(temp_file);
 
         // Build content in memory first
-        var content = std.ArrayList(u8){};
+        var content = std.ArrayList(u8).empty;
         defer content.deinit(self.allocator);
 
         // Write magic header and version

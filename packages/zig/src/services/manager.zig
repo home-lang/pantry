@@ -370,7 +370,7 @@ pub const ServiceManager = struct {
             }
 
             // Environment variables
-            var env_buf = std.ArrayList(u8){};
+            var env_buf = std.ArrayList(u8).empty;
             defer env_buf.deinit(self.allocator);
             var it = service.env_vars.iterator();
             var first = true;

@@ -85,7 +85,7 @@ pub fn runScriptCommandWithOptions(
         }
 
         // Format list of scripts
-        var list = std.ArrayList(u8){};
+        var list = std.ArrayList(u8).empty;
         defer list.deinit(allocator);
         for (names) |name| {
             try list.appendSlice(allocator, "  ");
@@ -102,7 +102,7 @@ pub fn runScriptCommandWithOptions(
     };
 
     // Build display command
-    var command_list = std.ArrayList(u8){};
+    var command_list = std.ArrayList(u8).empty;
     defer command_list.deinit(allocator);
 
     try command_list.appendSlice(allocator, script_command);
@@ -217,7 +217,7 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
     }
 
     // Build output listing all scripts
-    var output_list = std.ArrayList(u8){};
+    var output_list = std.ArrayList(u8).empty;
     defer output_list.deinit(allocator);
 
     try output_list.appendSlice(allocator, style.bold);

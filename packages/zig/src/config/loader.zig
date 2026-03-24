@@ -243,7 +243,7 @@ pub fn loadpantryConfig(
 test "pantryConfigLoader initialization" {
     const allocator = std.testing.allocator;
 
-    var loader = try pantryConfigLoader.init(allocator);
+    const loader = try pantryConfigLoader.init(allocator);
     try std.testing.expect(loader.allocator.ptr == allocator.ptr);
 }
 

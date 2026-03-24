@@ -189,7 +189,7 @@ pub fn auditCommand(
     }
 
     // Query NPM registry for vulnerabilities
-    var vulnerabilities = std.ArrayList(Vulnerability){};
+    var vulnerabilities = std.ArrayList(Vulnerability).empty;
     defer {
         for (vulnerabilities.items) |*vuln| {
             vuln.deinit(allocator);
@@ -200,7 +200,7 @@ pub fn auditCommand(
     try queryVulnerabilities(allocator, deps_map, &vulnerabilities);
 
     // Filter vulnerabilities based on options
-    var filtered_vulns = std.ArrayList(Vulnerability){};
+    var filtered_vulns = std.ArrayList(Vulnerability).empty;
     defer filtered_vulns.deinit(allocator);
 
     for (vulnerabilities.items) |vuln| {
@@ -323,7 +323,7 @@ fn runSecurityScanner(
     const term = result.term;
 
     // Parse scanner results
-    var issues = std.ArrayList(ScannerIssue){};
+    var issues = std.ArrayList(ScannerIssue).empty;
     defer {
         for (issues.items) |*issue| {
             issue.deinit(allocator);
@@ -351,7 +351,7 @@ fn runSecurityScanner(
     }
 
     // Filter issues by severity
-    var filtered_issues = std.ArrayList(ScannerIssue){};
+    var filtered_issues = std.ArrayList(ScannerIssue).empty;
     defer filtered_issues.deinit(allocator);
 
     for (issues.items) |issue| {
@@ -498,7 +498,7 @@ fn generateScannerReport(
         };
     }
 
-    var output = std.ArrayList(u8){};
+    var output = std.ArrayList(u8).empty;
     defer output.deinit(allocator);
 
     try output.appendSlice(allocator, "\nSecurity scanner '");
@@ -757,7 +757,7 @@ fn generateTextReport(
         };
     }
 
-    var output = std.ArrayList(u8){};
+    var output = std.ArrayList(u8).empty;
     defer output.deinit(allocator);
 
     // Print each vulnerability
@@ -779,7 +779,7 @@ fn generateTextReport(
     const summary = generateSummary(vulnerabilities);
     try output.appendSlice(allocator, "\n");
 
-    var summary_parts = std.ArrayList([]const u8){};
+    var summary_parts = std.ArrayList([]const u8).empty;
     defer {
         for (summary_parts.items) |part| {
             allocator.free(part);
@@ -827,7 +827,7 @@ fn generateJsonReport(
     allocator: std.mem.Allocator,
     vulnerabilities: []const Vulnerability,
 ) !CommandResult {
-    var output = std.ArrayList(u8){};
+    var output = std.ArrayList(u8).empty;
     defer output.deinit(allocator);
 
     try output.appendSlice(allocator, "{\"vulnerabilities\":[");

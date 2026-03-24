@@ -45,7 +45,7 @@ const PackageNode = struct {
             .name = try allocator.dupe(u8, name),
             .version = try allocator.dupe(u8, version),
             .dep_type = dep_type,
-            .dependencies = std.ArrayList(*PackageNode){},
+            .dependencies = std.ArrayList(*PackageNode).empty,
             .allocator = allocator,
         };
         return node;
@@ -268,7 +268,7 @@ fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: Tre
 }
 
 fn printTreeJson(allocator: std.mem.Allocator, root: *PackageNode) !void {
-    var output = std.ArrayList(u8){};
+    var output = std.ArrayList(u8).empty;
     defer output.deinit(allocator);
 
     try output.appendSlice(allocator, "{\n");

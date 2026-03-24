@@ -396,7 +396,7 @@ pub fn installWorkspaceCommandWithOptions(
     const filter_module = @import("../../../packages/filter.zig");
     var filter = if (options.filter) |filter_str| blk: {
         // Parse filter string - could be comma-separated patterns
-        var patterns_list = std.ArrayList([]const u8){};
+        var patterns_list = std.ArrayList([]const u8).empty;
         defer patterns_list.deinit(allocator);
 
         var iter = std.mem.splitScalar(u8, filter_str, ',');

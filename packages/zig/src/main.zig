@@ -13,7 +13,7 @@ fn installAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get variadic package arguments
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     var i: usize = 0;
@@ -142,7 +142,7 @@ fn addAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get variadic package arguments
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     var i: usize = 0;
@@ -396,7 +396,7 @@ fn saveDependenciesToConfig(
     }
 
     // Write back to file with pretty formatting
-    var buf = std.ArrayList(u8){};
+    var buf = std.ArrayList(u8).empty;
     defer buf.deinit(allocator);
 
     // Create an AppendWriter that wraps ArrayList
@@ -414,7 +414,7 @@ fn removeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get variadic package arguments
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     var i: usize = 0;
@@ -450,7 +450,7 @@ fn uninstallAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get variadic package arguments
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     var i: usize = 0;
@@ -952,7 +952,7 @@ fn publishCommitAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const compact = ctx.hasOption("compact");
 
     // Collect positional args as glob patterns
-    var paths = std.ArrayList([]const u8){};
+    var paths = std.ArrayList([]const u8).empty;
     defer paths.deinit(allocator);
 
     var i: usize = 0;
@@ -984,7 +984,7 @@ fn whyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get package name argument
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     var i: usize = 0;
@@ -1025,7 +1025,7 @@ fn auditAction(ctx: *cli.BaseCommand.ParseContext) !void {
     }
 
     // Parse ignore CVEs
-    var ignore_cves = std.ArrayList([]const u8){};
+    var ignore_cves = std.ArrayList([]const u8).empty;
     defer ignore_cves.deinit(allocator);
 
     var i: usize = 0;
@@ -1540,7 +1540,7 @@ fn execAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Collect all arguments: first is service name, rest is the command
-    var args_list = std.ArrayList([]const u8){};
+    var args_list = std.ArrayList([]const u8).empty;
     defer args_list.deinit(allocator);
 
     var i: usize = 0;
@@ -1585,7 +1585,7 @@ fn snapshotAction(ctx: *cli.BaseCommand.ParseContext) !void {
 fn restoreAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
-    var args_list = std.ArrayList([]const u8){};
+    var args_list = std.ArrayList([]const u8).empty;
     defer args_list.deinit(allocator);
 
     var i: usize = 0;
@@ -1656,7 +1656,7 @@ fn shimAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get variadic package arguments
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     var i: usize = 0;
@@ -1701,7 +1701,7 @@ fn shimRemoveAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const allocator = ctx.allocator;
 
     // Get variadic name arguments
-    var names = std.ArrayList([]const u8){};
+    var names = std.ArrayList([]const u8).empty;
     defer names.deinit(allocator);
 
     var i: usize = 0;
@@ -1730,7 +1730,7 @@ fn verifyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const keyring_path = ctx.getOption("keyring");
     const verbose = ctx.hasOption("verbose");
 
-    var args = std.ArrayList([]const u8){};
+    var args = std.ArrayList([]const u8).empty;
     defer args.deinit(allocator);
 
     try args.append(allocator, package_path);
@@ -1771,7 +1771,7 @@ fn signAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const output = ctx.getOption("output");
     const verbose = ctx.hasOption("verbose");
 
-    var args = std.ArrayList([]const u8){};
+    var args = std.ArrayList([]const u8).empty;
     defer args.deinit(allocator);
 
     try args.append(allocator, package_path);
@@ -1803,7 +1803,7 @@ fn generateKeyAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const output = ctx.getOption("output");
     const verbose = ctx.hasOption("verbose");
 
-    var args = std.ArrayList([]const u8){};
+    var args = std.ArrayList([]const u8).empty;
     defer args.deinit(allocator);
 
     if (output) |path| {
@@ -1907,7 +1907,7 @@ fn dedupeAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const dry_run = ctx.hasOption("dry-run");
 
-    var args = std.ArrayList([]const u8){};
+    var args = std.ArrayList([]const u8).empty;
     defer args.deinit(allocator);
 
     if (dry_run) {
@@ -1980,7 +1980,7 @@ fn treeAction(ctx: *cli.BaseCommand.ParseContext) !void {
     const json = ctx.hasOption("json");
     const depth = ctx.getOption("depth");
 
-    var args = std.ArrayList([]const u8){};
+    var args = std.ArrayList([]const u8).empty;
     defer args.deinit(allocator);
 
     if (no_versions) {
@@ -2372,9 +2372,9 @@ fn versionAction(_: *cli.BaseCommand.ParseContext) !void {
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
+    const allocator = debug_allocator.allocator();
 
     // Create root command
     var root = try cli.BaseCommand.init(allocator, "pantry", "Modern dependency manager");

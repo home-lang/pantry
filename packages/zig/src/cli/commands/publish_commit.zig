@@ -62,7 +62,7 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
     style.print("Registry: {s}\n\n", .{options.registry});
 
     // Resolve package directories from glob patterns
-    var package_dirs = std.ArrayList(PackageInfo){};
+    var package_dirs = std.ArrayList(PackageInfo).empty;
     defer {
         for (package_dirs.items) |*pkg| {
             pkg.deinit(allocator);
@@ -186,7 +186,7 @@ pub fn publishCommitCommand(allocator: std.mem.Allocator, args: []const []const 
     var failed: usize = 0;
 
     // Collect results for summary output
-    var result_urls = std.ArrayList(PublishResult){};
+    var result_urls = std.ArrayList(PublishResult).empty;
     defer {
         for (result_urls.items) |*r| {
             r.deinit(allocator);

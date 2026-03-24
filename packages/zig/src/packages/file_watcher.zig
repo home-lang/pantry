@@ -171,7 +171,7 @@ pub const FileWatcher = struct {
 
     /// Detect changes since last scan
     pub fn detectChanges(self: *FileWatcher) ![]FileChangeEvent {
-        var changes = std.ArrayList(FileChangeEvent){};
+        var changes = std.ArrayList(FileChangeEvent).empty;
         errdefer {
             for (changes.items) |change| {
                 self.allocator.free(change.file_path);

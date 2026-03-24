@@ -142,7 +142,7 @@ pub const FulcioClient = struct {
         defer self.allocator.free(url);
 
         // Escape newlines in the PEM key for JSON embedding
-        var escaped_pem = std.ArrayList(u8){};
+        var escaped_pem = std.ArrayList(u8).empty;
         defer escaped_pem.deinit(self.allocator);
         for (public_key_pem) |c| {
             if (c == '\n') {
@@ -241,7 +241,7 @@ pub const FulcioClient = struct {
 
 /// Unescape literal \n and \r sequences to actual newlines
 fn unescapeNewlines(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
-    var result = std.ArrayList(u8){};
+    var result = std.ArrayList(u8).empty;
     errdefer result.deinit(allocator);
 
     var i: usize = 0;
@@ -585,7 +585,7 @@ fn parseRekorResponse(allocator: std.mem.Allocator, response_body: []const u8) !
                         try allocator.dupe(u8, "");
 
                     // Parse hashes array
-                    var hashes_list = std.ArrayList([]const u8){};
+                    var hashes_list = std.ArrayList([]const u8).empty;
                     errdefer {
                         for (hashes_list.items) |h| allocator.free(h);
                         hashes_list.deinit(allocator);
@@ -710,7 +710,7 @@ pub fn createSLSAProvenanceFromToken(
 /// Format: "DSSEv1 " + len(type) + " " + type + " " + len(body) + " " + body
 fn createDSSEPAE(allocator: std.mem.Allocator, payload_type: []const u8, payload: []const u8) ![]const u8 {
     // PAE format: "DSSEv1 {len_type} {type} {len_body} {body}"
-    var pae = std.ArrayList(u8){};
+    var pae = std.ArrayList(u8).empty;
     errdefer pae.deinit(allocator);
 
     // "DSSEv1 "
@@ -814,7 +814,7 @@ pub fn createSigstoreBundle(
     };
 
     // Build the bundle JSON dynamically since inclusionProof has variable-length arrays
-    var json = std.ArrayList(u8){};
+    var json = std.ArrayList(u8).empty;
     errdefer json.deinit(allocator);
 
     // Open root object
@@ -976,7 +976,7 @@ fn pemToBase64Der(allocator: std.mem.Allocator, pem: []const u8) ![]const u8 {
 
     // The content between markers is base64 (may have newlines)
     // First, clean it to remove whitespace
-    var clean = std.ArrayList(u8){};
+    var clean = std.ArrayList(u8).empty;
     defer clean.deinit(allocator);
 
     for (pem[begin_idx .. begin_idx + end_idx]) |c| {
@@ -1277,7 +1277,7 @@ fn extractSubClaim(allocator: std.mem.Allocator, jwt: []const u8) ![]const u8 {
 /// Escape a string for embedding in a JSON string value
 /// Handles: \ -> \\, " -> \", control characters, etc.
 fn escapeJsonString(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
-    var result = std.ArrayList(u8){};
+    var result = std.ArrayList(u8).empty;
     errdefer result.deinit(allocator);
 
     for (input) |c| {

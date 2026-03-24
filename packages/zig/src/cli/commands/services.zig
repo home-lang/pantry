@@ -57,7 +57,7 @@ fn parseUserGroup(allocator: std.mem.Allocator, content: []const u8, group_name:
     var in_services = false;
     var in_groups = false;
     var in_target_group = false;
-    var members: std.ArrayList([]const u8) = .{};
+    var members: std.ArrayList([]const u8) = .empty;
 
     var line_iter = std.mem.splitScalar(u8, content, '\n');
     while (line_iter.next()) |line| {
@@ -1209,7 +1209,7 @@ pub fn execCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     defer if (home) |h| allocator.free(h);
 
     // Build the user command from remaining args
-    var user_cmd_parts: std.ArrayList(u8) = .{};
+    var user_cmd_parts: std.ArrayList(u8) = .empty;
     defer user_cmd_parts.deinit(allocator);
 
     for (args[1..], 0..) |arg, i| {
@@ -1218,7 +1218,7 @@ pub fn execCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     }
 
     // Build export string for environment variables
-    var env_exports: std.ArrayList(u8) = .{};
+    var env_exports: std.ArrayList(u8) = .empty;
     defer env_exports.deinit(allocator);
 
     // PORT
@@ -1251,7 +1251,7 @@ pub fn execCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     }
 
     // Build combined command
-    var combined: std.ArrayList(u8) = .{};
+    var combined: std.ArrayList(u8) = .empty;
     defer combined.deinit(allocator);
 
     try combined.appendSlice(allocator, env_exports.items);

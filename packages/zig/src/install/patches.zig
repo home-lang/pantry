@@ -56,7 +56,7 @@ pub fn readPatchedDependencies(
     const patched_deps = parsed.value.object.get("patchedDependencies") orelse return &[_]PatchEntry{};
     if (patched_deps != .object) return &[_]PatchEntry{};
 
-    var entries = std.ArrayList(PatchEntry){};
+    var entries = std.ArrayList(PatchEntry).empty;
     errdefer {
         for (entries.items) |*e| e.deinit(allocator);
         entries.deinit(allocator);

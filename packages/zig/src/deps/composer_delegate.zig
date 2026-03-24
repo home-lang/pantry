@@ -25,7 +25,7 @@ pub fn installPhpDeps(allocator: std.mem.Allocator, project_dir: []const u8, ver
     if (parsed.value != .object) return false;
 
     // Collect package names from require section
-    var packages = std.ArrayList([]const u8){};
+    var packages = std.ArrayList([]const u8).empty;
     defer packages.deinit(allocator);
 
     if (parsed.value.object.get("require")) |require_val| {

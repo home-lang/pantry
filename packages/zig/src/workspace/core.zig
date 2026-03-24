@@ -314,7 +314,7 @@ pub const DependencyGraph = struct {
 
     /// Get topological sort of packages (for build order)
     pub fn topologicalSort(self: *DependencyGraph) ![][]const u8 {
-        var result: std.ArrayList([]const u8) = .{};
+        var result: std.ArrayList([]const u8) = .empty;
         errdefer {
             for (result.items) |item| {
                 self.allocator.free(item);

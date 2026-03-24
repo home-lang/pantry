@@ -344,7 +344,7 @@ fn updateVersionInConfig(allocator: std.mem.Allocator, new_version: []const u8) 
         const value_end = j + 1; // include closing quote
 
         // Build new content
-        var result = std.ArrayList(u8){};
+        var result = std.ArrayList(u8).empty;
         defer result.deinit(allocator);
 
         try result.appendSlice(allocator, content[0..value_start]);
@@ -473,7 +473,7 @@ fn pkgSet(allocator: std.mem.Allocator, assignments: []const []const u8) !Comman
 
         // Write back - use simple line-by-line replacement for safety
         // We'll write the modified JSON directly
-        var buf = std.ArrayList(u8){};
+        var buf = std.ArrayList(u8).empty;
         defer buf.deinit(allocator);
 
         try writeJson(&buf, allocator, parsed.value, 0);
@@ -503,7 +503,7 @@ fn pkgDelete(allocator: std.mem.Allocator, fields: []const []const u8) !CommandR
             _ = parsed.value.object.fetchSwapRemove(field);
         }
 
-        var buf = std.ArrayList(u8){};
+        var buf = std.ArrayList(u8).empty;
         defer buf.deinit(allocator);
 
         try writeJson(&buf, allocator, parsed.value, 0);

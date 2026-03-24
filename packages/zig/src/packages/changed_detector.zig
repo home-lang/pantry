@@ -36,7 +36,7 @@ fn getChangedFiles(
     workspace_root: []const u8,
     options: ChangedOptions,
 ) ![][]const u8 {
-    var changed_files = std.ArrayList([]const u8){};
+    var changed_files = std.ArrayList([]const u8).empty;
     errdefer {
         for (changed_files.items) |file| {
             allocator.free(file);
@@ -172,7 +172,7 @@ pub fn detectChangedMembers(
     }
 
     // Track which members have changes
-    var changed = std.ArrayList(types.WorkspaceMember){};
+    var changed = std.ArrayList(types.WorkspaceMember).empty;
     errdefer changed.deinit(allocator);
 
     for (members) |member| {

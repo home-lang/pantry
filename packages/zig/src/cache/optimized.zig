@@ -215,7 +215,7 @@ pub const OptimizedCache = struct {
         const final_data = switch (self.config.compression) {
             .none => data,
             .gzip => blk: {
-                var compressed = std.ArrayList(u8){};
+                var compressed = std.ArrayList(u8).empty;
                 defer compressed.deinit(self.allocator);
 
                 var compressor = try std.compress.gzip.compressor(
@@ -228,7 +228,7 @@ pub const OptimizedCache = struct {
                 break :blk try compressed.toOwnedSlice(self.allocator);
             },
             .zstd => blk: {
-                var compressed = std.ArrayList(u8){};
+                var compressed = std.ArrayList(u8).empty;
                 defer compressed.deinit(self.allocator);
 
                 var compressor = try std.compress.zstd.compressor(
@@ -275,7 +275,7 @@ pub const OptimizedCache = struct {
         return switch (self.config.compression) {
             .none => data,
             .gzip => blk: {
-                var decompressed = std.ArrayList(u8){};
+                var decompressed = std.ArrayList(u8).empty;
                 defer decompressed.deinit(self.allocator);
 
                 var stream = std.io.fixedBufferStream(data);
@@ -292,7 +292,7 @@ pub const OptimizedCache = struct {
                 break :blk try decompressed.toOwnedSlice(self.allocator);
             },
             .zstd => blk: {
-                var decompressed = std.ArrayList(u8){};
+                var decompressed = std.ArrayList(u8).empty;
                 defer decompressed.deinit(self.allocator);
 
                 var stream = std.io.fixedBufferStream(data);
@@ -396,7 +396,7 @@ pub const OptimizedCache = struct {
         defer self.base.lock.unlock();
 
         const now = @as(i64, @intCast(io_helper.clockGettime().sec));
-        var to_remove = std.ArrayList([]const u8){};
+        var to_remove = std.ArrayList([]const u8).empty;
         defer to_remove.deinit(self.allocator);
 
         var it = self.base.metadata.iterator();

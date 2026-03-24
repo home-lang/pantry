@@ -275,7 +275,7 @@ pub fn detectMonorepoPackages(allocator: std.mem.Allocator, project_root: []cons
         return null; // No packages/ directory
     };
 
-    var packages = std.ArrayList(MonorepoPackage){};
+    var packages = std.ArrayList(MonorepoPackage).empty;
     errdefer {
         for (packages.items) |*pkg| {
             pkg.deinit(allocator);

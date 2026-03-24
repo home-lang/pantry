@@ -25,7 +25,7 @@ pub fn syncBuildZigZon(allocator: std.mem.Allocator, project_dir: []const u8, pa
     const pantry_path = try std.fs.path.join(allocator, &.{ project_dir, pantry_dir_name });
     defer allocator.free(pantry_path);
 
-    var zig_deps = std.ArrayList(ZigDep){};
+    var zig_deps = std.ArrayList(ZigDep).empty;
     defer {
         for (zig_deps.items) |dep| {
             allocator.free(dep.name);
@@ -113,11 +113,11 @@ fn hasDependenciesBlock(content: []const u8) bool {
 /// Generate updated build.zig.zon content with synced dependencies.
 /// Preserves everything outside the .dependencies block.
 fn generateUpdatedZon(allocator: std.mem.Allocator, original: []const u8, deps: []const ZigDep) ![]const u8 {
-    var buf = std.ArrayList(u8){};
+    var buf = std.ArrayList(u8).empty;
     errdefer buf.deinit(allocator);
 
     // Build the new dependencies block
-    var deps_block = std.ArrayList(u8){};
+    var deps_block = std.ArrayList(u8).empty;
     defer deps_block.deinit(allocator);
 
     if (deps.len > 0) {

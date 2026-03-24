@@ -2,6 +2,7 @@ export * from './cli-utils'
 export * from './consts'
 export * from './dependency-resolver'
 export {
+  cleanStaleOutputFiles,
   cleanupBrowserResources,
   fetchAndSaveAllPackages,
   fetchAndSavePackage,

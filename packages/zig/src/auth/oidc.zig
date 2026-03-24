@@ -1082,7 +1082,7 @@ fn parseJWKS(allocator: std.mem.Allocator, json_str: []const u8) !JWKS {
         return error.InvalidJWKS;
     }
 
-    var keys = std.ArrayList(JWK){};
+    var keys = std.ArrayList(JWK).empty;
     errdefer {
         for (keys.items) |*key| {
             key.deinit(allocator);

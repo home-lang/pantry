@@ -408,7 +408,7 @@ fn updateConfigFile(
 pub fn collectAllDeps(allocator: std.mem.Allocator, cwd: []const u8) ![]parser.PackageDependency {
     const detector = @import("../../deps/detector.zig");
 
-    var all_deps = std.ArrayList(parser.PackageDependency){};
+    var all_deps = std.ArrayList(parser.PackageDependency).empty;
     defer all_deps.deinit(allocator);
 
     var seen = std.StringHashMap(void).init(allocator);
@@ -597,7 +597,7 @@ fn updateJsonContent(
     package_name: []const u8,
     new_version: []const u8,
 ) ![]u8 {
-    var result = std.ArrayList(u8){};
+    var result = std.ArrayList(u8).empty;
     defer result.deinit(allocator);
 
     const pattern = try std.fmt.allocPrint(allocator, "\"{s}\"", .{package_name});

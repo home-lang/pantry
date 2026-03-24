@@ -506,7 +506,7 @@ fn removeFromConfigFile(allocator: std.mem.Allocator, cwd: []const u8, packages:
 
     // Rebuild JSON with packages removed
     // We need to manually reconstruct to preserve formatting as much as possible
-    var output = std.ArrayList(u8){};
+    var output = std.ArrayList(u8).empty;
     defer output.deinit(allocator);
 
     try serializeJsonWithRemovals(allocator, &output, parsed.value, packages_to_remove);
@@ -670,7 +670,7 @@ fn updateLockfileAfterUninstall(allocator: std.mem.Allocator, lockfile_path: []c
     // Remove uninstalled packages from the lockfile
     for (removed_packages) |pkg_name| {
         // Lockfile keys are in format "name@version", so we need to find matching keys
-        var keys_to_remove = std.ArrayList([]const u8){};
+        var keys_to_remove = std.ArrayList([]const u8).empty;
         defer keys_to_remove.deinit(allocator);
 
         var iter = lockfile.packages.iterator();
@@ -1990,7 +1990,7 @@ fn sortPackagesByDependencyOrder(
     // dependents[i] stores indices of packages that depend on packages[i]
     const dependents = allocator.alloc(std.ArrayList(usize), n) catch return;
     defer allocator.free(dependents);
-    for (0..n) |i| dependents[i] = std.ArrayList(usize){};
+    for (0..n) |i| dependents[i] = std.ArrayList(usize).empty;
     defer for (0..n) |i| dependents[i].deinit(allocator);
 
     for (packages, 0..) |pkg, i| {
@@ -2023,7 +2023,7 @@ fn sortPackagesByDependencyOrder(
     defer allocator.free(sorted);
     var sorted_count: usize = 0;
 
-    var queue = std.ArrayList(usize){};
+    var queue = std.ArrayList(usize).empty;
     defer queue.deinit(allocator);
     for (0..n) |i| {
         if (in_degree[i] == 0) queue.append(allocator, i) catch continue;
@@ -2168,7 +2168,7 @@ fn resolveWorkspaceProtocol(allocator: std.mem.Allocator, content: []const u8, p
     if (resolutions.count() == 0) return content;
 
     // Do string replacements in the original content
-    var result = std.ArrayList(u8){};
+    var result = std.ArrayList(u8).empty;
     defer result.deinit(allocator);
 
     var i: usize = 0;
@@ -2643,7 +2643,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
     }
 
     // Find matching packages
-    var matches = std.ArrayList([]const u8){};
+    var matches = std.ArrayList([]const u8).empty;
     defer matches.deinit(allocator);
 
     var it = deps_map.iterator();
@@ -2851,7 +2851,7 @@ pub fn savePantryCredential(allocator: std.mem.Allocator, key: []const u8, value
     defer allocator.free(existing_content);
 
     // Build new content
-    var new_content: std.ArrayList(u8) = .{};
+    var new_content: std.ArrayList(u8) = .empty;
     defer new_content.deinit(allocator);
 
     var found = false;
@@ -2920,7 +2920,7 @@ fn saveToProjectEnv(allocator: std.mem.Allocator, key: []const u8, value: []cons
     }
 
     // Append key to .env
-    var new_content: std.ArrayList(u8) = .{};
+    var new_content: std.ArrayList(u8) = .empty;
     defer new_content.deinit(allocator);
 
     // Copy existing content

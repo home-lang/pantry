@@ -7,6 +7,7 @@ import { CLI } from '@stacksjs/clapp'
 import { version } from '../package.json'
 import { findDependencyFiles, resolveDependencyFile } from '../src/dependency-resolver'
 import {
+  cleanStaleOutputFiles,
   cleanupBrowserResources,
   DEFAULT_CACHE_DIR,
   DEFAULT_CACHE_EXPIRATION_MINUTES,
@@ -568,6 +569,14 @@ cli
         const indexPath = await generateIndex()
         if (!outputJson) {
           console.log(`Successfully generated ${indexPath}`)
+        }
+      }
+
+      // Clean up stale generated files that are no longer in the package list
+      if (fetchAll && savedPackages.length > 0) {
+        const removed = cleanStaleOutputFiles(outputDirPath, savedPackages)
+        if (removed.length > 0 && !outputJson) {
+          console.log(`Cleaned up ${removed.length} stale generated file(s)`)
         }
       }
 

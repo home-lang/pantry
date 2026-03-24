@@ -79,7 +79,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     try scanNodeModules(allocator, nm_path, &package_map);
 
     // Build duplicate list (packages with more than one unique version)
-    var duplicates = std.ArrayList(DuplicatePackage){};
+    var duplicates = std.ArrayList(DuplicatePackage).empty;
     defer {
         for (duplicates.items) |*dup| {
             dup.deinit(allocator);
@@ -291,7 +291,7 @@ fn recordPackage(
         allocator.free(key);
         try list.append(allocator, instance);
     } else {
-        var list = std.ArrayList(PackageInstance){};
+        var list = std.ArrayList(PackageInstance).empty;
         try list.append(allocator, instance);
         try package_map.put(key, list);
     }
