@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'robotframework.org',
   name: 'robot',
   description: 'Generic automation framework for acceptance testing and RPA',

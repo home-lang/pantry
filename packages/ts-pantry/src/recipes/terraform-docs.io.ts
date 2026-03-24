@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'terraform-docs.io',
   name: 'terraform-docs',
   description: 'Generate documentation from Terraform modules in various output formats',
   homepage: 'https://terraform-docs.io',
   github: 'https://github.com/terraform-docs/terraform-docs',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['terraform-docs'],
   versionSource: {
     type: 'github-releases',
     repo: 'terraform-docs/terraform-docs',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tlr.dev',
   name: 'teller',
   description: 'Cloud native secrets management for developers - never leave your command line for secrets.',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'qemu.org',
   name: 'qemu',
   description: 'Generic machine emulator and virtualizer',

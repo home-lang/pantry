@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'checkov.io',
   name: 'checkov',
   description: 'Prevent cloud misconfigurations and find vulnerabilities during build-time in infrastructure as code, container images and open source packages with Checkov by Bridgecrew.',

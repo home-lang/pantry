@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'hurl.dev',
   name: 'hurl',
   description: 'Run and Test HTTP Requests with plain text and curl',

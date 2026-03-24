@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'micro-editor.github.io',
   name: 'micro',
   description: 'A modern and intuitive terminal-based text editor',
   homepage: 'https://micro-editor.github.io',
   github: 'https://github.com/zyedidia/micro',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['micro'],
   versionSource: {
     type: 'github-releases',
     repo: 'zyedidia/micro',

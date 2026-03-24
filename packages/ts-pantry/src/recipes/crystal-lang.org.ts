@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'crystal-lang.org',
   name: 'crystal',
   description: 'Fast and statically typed, compiled language with Ruby-like syntax',
   homepage: 'https://crystal-lang.org/',
   github: 'https://github.com/crystal-lang/crystal',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['crystal'],
   versionSource: {
     type: 'github-releases',
     repo: 'crystal-lang/crystal',

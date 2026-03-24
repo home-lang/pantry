@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rhash.sourceforge.net',
   name: 'rhash.sourceforge',
   description: 'Utility for computing and verifying hash sums of files',

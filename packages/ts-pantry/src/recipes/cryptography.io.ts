@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'cryptography.io',
   name: 'cryptography',
   description: 'cryptography is a package designed to expose cryptographic primitives and recipes to Python developers.',

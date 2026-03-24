@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'helix-editor.com',
   name: 'hx',
   description: 'A post-modern modal text editor.',
   homepage: 'https://helix-editor.com',
   github: 'https://github.com/helix-editor/helix',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['hx'],
   versionSource: {
     type: 'github-releases',
     repo: 'helix-editor/helix',

@@ -1,10 +1,10 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ceres-solver.org',
   name: 'ceres-solver',
   description: '',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['ceres-solver'],
   distributable: {
     url: 'http://ceres-solver.org/ceres-solver-{{version}}.tar.gz',
     stripComponents: 1,

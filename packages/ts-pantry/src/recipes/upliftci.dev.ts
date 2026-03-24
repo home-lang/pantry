@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'upliftci.dev',
   name: 'uplift',
   description: 'Semantic versioning the easy way. Powered by Conventional Commits. Built for use with CI.',

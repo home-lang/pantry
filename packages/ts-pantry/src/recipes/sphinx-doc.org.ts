@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'sphinx-doc.org',
   name: 'sphinx',
   description: 'Tool to create intelligent and beautiful documentation',
   homepage: 'https://www.sphinx-doc.org/',
   github: 'https://github.com/sphinx-doc/sphinx',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['sphinx-apidoc', 'sphinx-autogen', 'sphinx-build', 'sphinx-quickstart'],
   versionSource: {
     type: 'github-releases',
     repo: 'sphinx-doc/sphinx',

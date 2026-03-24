@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'elfutils.org',
   name: 'elfutils',
   programs: ['eu-addr2line', 'eu-ar', 'eu-elfclassify', 'eu-elfcmp', 'eu-elfcompress', 'eu-elflint', 'eu-findtextrel', 'eu-nm', 'eu-objdump', 'eu-ranlib', 'eu-readelf', 'eu-size', 'eu-stack', 'eu-strings', 'eu-strip', 'eu-unstrip'],

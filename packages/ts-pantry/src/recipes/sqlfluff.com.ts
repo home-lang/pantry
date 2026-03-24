@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'sqlfluff.com',
   name: 'sqlfluff',
   description: 'A modular SQL linter and auto-formatter with support for multiple dialects and templated code.',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rubocop.org',
   name: 'rubocop',
   description: 'A Ruby static code analyzer and formatter, based on the community Ruby style guide.',

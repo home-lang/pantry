@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'openapi-generator.tech',
   name: 'openapi-generator',
   description: 'OpenAPI Generator allows generation of API client libraries (SDK generation), server stubs, documentation and configuration automatically given an OpenAPI Spec (v2, v3)',
   homepage: 'https://openapi-generator.tech/',
   github: 'https://github.com/OpenAPITools/openapi-generator',
-  programs: ['', '', '', '', '', ''],
+  programs: ['openapi-generator'],
   versionSource: {
     type: 'github-releases',
     repo: 'OpenAPITools/openapi-generator',

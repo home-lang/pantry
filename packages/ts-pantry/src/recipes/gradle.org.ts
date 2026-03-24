@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'gradle.org',
   name: 'gradle',
   description: 'Open-source build automation tool based on the Groovy and Kotlin DSL',

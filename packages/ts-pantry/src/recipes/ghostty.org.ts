@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ghostty.org',
   name: 'Ghostty',
   description: 'A fast, feature-rich, and cross-platform terminal emulator.',

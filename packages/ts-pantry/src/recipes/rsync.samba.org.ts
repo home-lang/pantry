@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rsync.samba.org',
   name: 'rsync',
   description: 'An open source utility that provides fast incremental file transfer. It also has useful features for backup and restore operations among many other use cases.',

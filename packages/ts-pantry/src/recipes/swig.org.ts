@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'swig.org',
   name: 'swig',
   description: 'SWIG is a software development tool that connects programs written in C and C++ with a variety of high-level programming languages.',

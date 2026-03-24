@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'nghttp2.org',
   name: 'nghttp2',
   description: 'nghttp2 - HTTP/2 C Library and tools',

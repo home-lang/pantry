@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'solana.com',
   name: 'solana',
   description: 'Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces.',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'packer.io',
   name: 'packer',
   description: 'Packer is a tool for creating identical machine images for multiple platforms from a single source configuration.',

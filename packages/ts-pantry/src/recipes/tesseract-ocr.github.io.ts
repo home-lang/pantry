@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tesseract-ocr.github.io',
   name: 'tesseract',
   description: 'Tesseract Open Source OCR Engine (main repository)',
   homepage: 'https://github.com/tesseract-ocr/',
   github: 'https://github.com/tesseract-ocr/tesseract',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['tesseract'],
   versionSource: {
     type: 'github-releases',
     repo: 'tesseract-ocr/tesseract',

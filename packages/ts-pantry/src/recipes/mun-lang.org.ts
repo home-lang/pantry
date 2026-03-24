@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'mun-lang.org',
   name: 'mun',
   description: 'Source code for the Mun language and runtime.',
   homepage: 'https://mun-lang.org',
   github: 'https://github.com/mun-lang/mun',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['mun'],
   versionSource: {
     type: 'github-releases',
     repo: 'mun-lang/mun',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'pdm.fming.dev',
   name: 'pdm',
   description: 'A modern Python package and dependency manager supporting the latest PEP standards',

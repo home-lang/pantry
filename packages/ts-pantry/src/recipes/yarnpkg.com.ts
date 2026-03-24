@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'yarnpkg.com',
   name: 'yarn',
   description: '📦🐈 Active development trunk for Yarn ⚒',

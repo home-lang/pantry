@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'lftp.yar.ru',
   name: 'lftp',
   description: 'sophisticated command line file transfer program (ftp, http, sftp, fish, torrent)',

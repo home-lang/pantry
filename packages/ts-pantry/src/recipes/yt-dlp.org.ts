@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'yt-dlp.org',
   name: 'yt-dlp',
   description: 'A feature-rich command-line audio/video downloader',
   homepage: 'https://discord.gg/H5MNcFW63r',
   github: 'https://github.com/yt-dlp/yt-dlp',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['yt-dlp'],
   versionSource: {
     type: 'github-releases',
     repo: 'yt-dlp/yt-dlp',

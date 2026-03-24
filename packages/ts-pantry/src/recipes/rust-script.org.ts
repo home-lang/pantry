@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rust-script.org',
   name: 'rust-script',
   description: 'Run Rust files and expressions as scripts without any setup or compilation step.',
   homepage: 'https://rust-script.org',
   github: 'https://github.com/fornwall/rust-script',
-  programs: [],
+  programs: ['rust-script'],
   versionSource: {
     type: 'github-releases',
     repo: 'fornwall/rust-script',

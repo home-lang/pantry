@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'eksctl.io',
   name: 'eksctl',
   description: 'Simple command-line tool for creating clusters on Amazon EKS',

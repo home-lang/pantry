@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'monitorcontrol.app',
   name: 'MonitorControl',
   description: 'A tool to control external monitor brightness and volume on macOS.',

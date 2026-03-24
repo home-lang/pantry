@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'glfw.org',
   name: 'glfw',
   description: 'A multi-platform library for OpenGL, OpenGL ES, Vulkan, window and input',

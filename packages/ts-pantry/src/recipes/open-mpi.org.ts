@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'open-mpi.org',
   name: 'open-mpi',
   description: 'Open MPI main development repository',
   homepage: 'https://www.open-mpi.org',
   github: 'https://github.com/open-mpi/ompi',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['mpic++', 'mpiCC', 'mpicc', 'mpicxx', 'mpiexec', 'mpif77', 'mpif90', 'mpifort', 'mpirun', 'ompi_info', 'opal_wrapper'],
   versionSource: {
     type: 'github-releases',
     repo: 'open-mpi/ompi',

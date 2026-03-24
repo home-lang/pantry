@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tart.run',
   name: 'tart',
   description: 'macOS and Linux VMs on Apple Silicon to use in CI and other automations',

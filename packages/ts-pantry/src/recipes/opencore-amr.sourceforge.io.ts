@@ -1,10 +1,10 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'opencore-amr.sourceforge.io',
   name: 'opencore-amr.sourceforge',
   description: '',
-  programs: ['', ''],
+  programs: ['opencore-amr'],
   distributable: {
     url: 'https://downloads.sourceforge.net/project/opencore-amr/opencore-amr/opencore-amr-{{version}}.tar.gz',
     stripComponents: 1,

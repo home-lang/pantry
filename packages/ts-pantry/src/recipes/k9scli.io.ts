@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'k9scli.io',
   name: 'k9s',
   description: '🐶 Kubernetes CLI To Manage Your Clusters In Style!',

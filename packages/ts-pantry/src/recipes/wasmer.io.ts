@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'wasmer.io',
   name: 'wasmer',
   description: '🚀 Fast, secure, lightweight containers based on WebAssembly',

@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'nim-lang.org',
   name: 'nim-lang',
   description: 'Nim is a statically typed compiled systems programming language. It combines successful concepts from mature languages like Python, Ada and Modula. Its design focuses on efficiency, expressiveness, and elegance (in that order of priority).',
   homepage: 'https://nim-lang.org',
   github: 'https://github.com/nim-lang/Nim',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['nim', 'nim_dbg', 'testament', 'nimsuggest', 'nimgrep', 'nim-gdb', 'atlas', 'nimpretty', 'nimble'],
   versionSource: {
     type: 'github-releases',
     repo: 'nim-lang/Nim',

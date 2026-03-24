@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'bcrypt.sourceforge.net',
   name: 'bcrypt',
   description: 'Cross platform file encryption utility using blowfish',

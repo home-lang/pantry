@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../../scripts/recipe-types'
+import type { Recipe } from '../../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'github.com/desktop',
   name: 'GitHub Desktop',
   description: 'A desktop application for contributing to projects on GitHub.',

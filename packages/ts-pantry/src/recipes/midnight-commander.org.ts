@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'midnight-commander.org',
   name: 'Midnight Commander',
   description: 'Terminal-based visual file manager',
   homepage: 'https://www.midnight-commander.org/',
   github: 'https://github.com/MidnightCommander/mc',
-  programs: [],
+  programs: ['mc', 'mcdiff', 'mcedit', 'mcview'],
   versionSource: {
     type: 'github-releases',
     repo: 'MidnightCommander/mc',

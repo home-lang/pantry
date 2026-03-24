@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'git-quick-stats.sh',
   name: 'git-quick-stats',
   description: '▁▅▆▃▅ Git quick statistics is a simple and efficient way to access various statistics in git repository.',
   homepage: 'https://git-quick-stats.sh/',
   github: 'https://github.com/arzzen/git-quick-stats',
-  programs: ['', '', '', '', '', '', '', ''],
+  programs: ['git-quick-stats'],
   versionSource: {
     type: 'github-releases',
     repo: 'arzzen/git-quick-stats',

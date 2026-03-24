@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'opus-codec.org',
   name: 'opus-codec',
   description: 'Modern audio compression for the internet.',
   homepage: 'https://opus-codec.org/',
   github: 'https://github.com/xiph/opus',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['opus-codec'],
   versionSource: {
     type: 'github-releases',
     repo: 'xiph/opus',

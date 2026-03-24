@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tcpdump.org',
   name: 'pcap-config',
   description: 'the LIBpcap interface to various kernel packet capture mechanism',

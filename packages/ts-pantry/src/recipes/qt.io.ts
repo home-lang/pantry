@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'qt.io',
   name: 'qt',
   programs: ['balsam', 'canbusutil', 'lconvert', 'lprodump', 'lrelease', 'lrelease-pro', 'lupdate', 'lupdate-pro', 'meshdebug', 'moc', 'qcollectiongenerator', 'qdbus', 'qdbuscpp2xml', 'qdbusxml2cpp', 'qdistancefieldgenerator', 'qhelpgenerator', 'qlalr', 'qmake', 'qmlcachegen', 'qmleasing', 'qmlformat', 'qmlimportscanner', 'qmllint', 'qmlmin', 'qmlplugindump', 'qmlpreview', 'qmlprofiler', 'qmlscene', 'qmltestrunner', 'qmltime', 'qmltyperegistrar', 'qscxmlc', 'qtattributionsscanner', 'qtdiag', 'qtpaths', 'qtplugininfo', 'qvkgen', 'rcc', 'repc', 'tracegen', 'uic', 'xmlpatterns', 'xmlpatternsvalidator'],

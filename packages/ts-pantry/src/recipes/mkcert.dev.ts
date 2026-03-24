@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'mkcert.dev',
   name: 'mkcert',
   description: 'A simple zero-config tool to make locally trusted development certificates with any names you\\',

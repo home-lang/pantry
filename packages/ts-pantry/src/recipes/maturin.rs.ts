@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'maturin.rs',
   name: 'maturin',
   description: 'Build and publish crates with pyo3, cffi and uniffi bindings as well as rust binaries as python packages',

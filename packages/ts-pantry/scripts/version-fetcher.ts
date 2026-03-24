@@ -12,7 +12,7 @@
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { VersionSource, RecipeDefinition } from './recipe-types'
+import type { VersionSource, Recipe } from './recipe-types'
 
 const recipesDir = join(import.meta.dir, '..', 'src', 'recipes')
 const packagesDir = join(import.meta.dir, '..', 'src', 'packages')
@@ -106,8 +106,8 @@ async function fetchVersions(source: VersionSource): Promise<string[]> {
 
 // ── Recipe Loading ────────────────────────────────────────────────────
 
-async function loadAllRecipes(): Promise<RecipeDefinition[]> {
-  const recipes: RecipeDefinition[] = []
+async function loadAllRecipes(): Promise<Recipe[]> {
+  const recipes: Recipe[] = []
 
   if (!existsSync(recipesDir)) return recipes
 
@@ -218,7 +218,7 @@ async function main() {
   for (const file of recipeFiles) {
     try {
       const mod = await import(file)
-      const recipe: RecipeDefinition = mod.recipe || mod.default
+      const recipe: Recipe = mod.recipe || mod.default
       if (!recipe?.domain || !recipe?.versionSource) continue
 
       if (targetDomain && recipe.domain !== targetDomain) continue

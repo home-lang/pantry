@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'flutter.dev',
   name: 'flutter',
   description: 'Flutter makes it easy and fast to build beautiful apps for mobile and beyond',

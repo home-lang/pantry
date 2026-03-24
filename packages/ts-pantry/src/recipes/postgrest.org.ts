@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'postgrest.org',
   name: 'postgrest',
   description: 'Serves a fully RESTful API from any existing PostgreSQL database',

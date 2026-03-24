@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'glm.g-truc.net',
   name: 'glm.g-truc',
   description: 'OpenGL Mathematics (GLM)',

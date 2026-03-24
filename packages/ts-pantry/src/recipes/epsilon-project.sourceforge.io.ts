@@ -1,11 +1,11 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'epsilon-project.sourceforge.io',
   name: 'epsilon',
   description: 'Powerful wavelet image compressor',
   homepage: 'https://sourceforge.net/projects/epsilon-project/',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['epsilon'],
   distributable: {
     url: 'https://downloads.sourceforge.net/project/epsilon-project/epsilon/{{version}}/epsilon-{{version}}.tar.gz',
     stripComponents: 1,

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ipfscluster.io',
   name: 'ipfscluster',
   programs: ['ipfs-cluster-follow', 'ipfs-cluster-ctl', 'ipfs-cluster-service'],

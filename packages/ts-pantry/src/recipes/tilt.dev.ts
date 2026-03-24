@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tilt.dev',
   name: 'tilt',
   description: 'Define your dev environment as code. For microservice apps on Kubernetes.',

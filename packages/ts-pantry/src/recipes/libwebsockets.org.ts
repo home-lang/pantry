@@ -1,7 +1,7 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
 // eslint-disable-next-line no-super-linear-backtracking
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'libwebsockets.org',
   name: 'libwebsockets',
   description: 'canonical libwebsockets.org networking library',

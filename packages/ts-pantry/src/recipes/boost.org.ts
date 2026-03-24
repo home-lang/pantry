@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'boost.org',
   name: 'boost',
   description: 'Super-project for modularized Boost',
   homepage: 'https://github.com/boostorg/wiki/wiki/Getting-Started%3A-Overview',
   github: 'https://github.com/boostorg/boost',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['boost'],
   versionSource: {
     type: 'github-releases',
     repo: 'boostorg/boost',

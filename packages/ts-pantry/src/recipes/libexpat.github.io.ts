@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'libexpat.github.io',
   name: 'xmlwf',
   description: ':herb: Fast streaming XML parser written in C99 with >90% test coverage; moved from SourceForge to GitHub',

@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'leo-lang.org',
   name: 'leo',
   description: '🦁 The Leo Programming Language. A Programming Language for Formally Verified, Zero-Knowledge Applications',
   homepage: 'https://leo-lang.org/',
   github: 'https://github.com/AleoHQ/leo',
-  programs: ['', '', '', '', '', '', '', ''],
+  programs: ['leo'],
   versionSource: {
     type: 'github-releases',
     repo: 'AleoHQ/leo',

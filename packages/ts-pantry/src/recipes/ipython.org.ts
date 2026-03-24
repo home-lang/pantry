@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ipython.org',
   name: 'ipython',
   description: 'Official repository for IPython itself. Other repos in the IPython organization contain things like the website, documentation builds, etc.',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'wavpack.com',
   name: 'wavpack',
   description: 'WavPack encode/decode library, command-line programs, and several plugins',

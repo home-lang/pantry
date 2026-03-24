@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'bun.sh',
   name: 'bun',
   description: 'Incredibly fast JavaScript runtime, bundler, test runner, and package manager – all in one',

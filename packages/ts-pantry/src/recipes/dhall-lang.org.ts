@@ -1,11 +1,11 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'dhall-lang.org',
   name: 'dhall',
   description: 'Interpreter for the Dhall language',
   homepage: 'https://dhall-lang.org/',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['dhall'],
   distributable: {
     url: 'https://hackage.haskell.org/package/dhall-{{version}}/dhall-{{version}}.tar.gz',
     stripComponents: 1,

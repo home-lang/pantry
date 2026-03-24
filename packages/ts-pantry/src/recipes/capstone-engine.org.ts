@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'capstone-engine.org',
   name: 'cstool',
   description: 'Capstone disassembly/disassembler framework for ARM, ARM64 (ARMv8), Alpha, BPF, Ethereum VM, HPPA, LoongArch, M68K, M680X, Mips, MOS65XX, PPC, RISC-V(rv32G/rv64G), SH, Sparc, SystemZ, TMS320C64X, TriCore, Webassembly, XCore and X86.',
   homepage: 'https://www.capstone-engine.org/',
   github: 'https://github.com/capstone-engine/capstone',
-  programs: [],
+  programs: ['cstool'],
   versionSource: {
     type: 'github-releases',
     repo: 'capstone-engine/capstone',

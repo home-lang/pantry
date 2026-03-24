@@ -22,7 +22,7 @@
  *   --count-only             Just print total buildable package count and exit
  *   --list                   List all buildable packages
  *   --dry-run                Show what would be built
- *   --apps-only           Only build apps (GUI applications from desktop-pantry/)
+ *   --apps-only           Only build apps (GUI applications)
  *   -h, --help               Show help
  */
 
@@ -60,7 +60,7 @@ interface BuildablePackage {
   needsProps: boolean
   hasProps: boolean
   depDomains: string[] // Domains this package depends on (for ordering)
-  isApp: boolean // true if sourced from desktop-pantry/
+  isApp: boolean // true for GUI applications (non-CLI)
 }
 
 function domainToKey(domain: string): string {
@@ -1178,7 +1178,7 @@ Options:
   --count-only             Print total buildable count and exit
   -l, --list               List all buildable packages
   --dry-run                Show what would be built
-  --apps-only           Only build apps (GUI applications from desktop-pantry/)
+  --apps-only           Only build apps (GUI applications)
   -h, --help               Show help
 `)
     process.exit(0)

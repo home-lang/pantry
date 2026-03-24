@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'jless.io',
   name: 'jless',
   description: 'jless is a command-line JSON viewer designed for reading, exploring, and searching through JSON data.',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'openslide.org',
   name: 'openslide',
   description: 'C library to read whole-slide images (a.k.a. virtual slides)',

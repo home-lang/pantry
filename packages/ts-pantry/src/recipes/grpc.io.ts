@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'grpc.io',
   name: 'grpc',
   description: 'The C based gRPC (C++, Python, Ruby, Objective-C, PHP, C#)',

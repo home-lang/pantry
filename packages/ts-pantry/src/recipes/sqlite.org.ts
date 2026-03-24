@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'sqlite.org',
   name: 'sqlite3',
   description: 'Official Git mirror of the SQLite source tree',
   homepage: 'https://sqlite.org/index.html',
   github: 'https://github.com/sqlite/sqlite',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['sqlite3'],
   versionSource: {
     type: 'github-releases',
     repo: 'sqlite/sqlite',

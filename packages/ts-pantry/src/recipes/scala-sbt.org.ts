@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'scala-sbt.org',
   name: 'sbt',
   description: 'sbt, the interactive build tool',
   homepage: 'https://www.scala-sbt.org/',
   github: 'https://github.com/sbt/sbt',
-  programs: [],
+  programs: ['sbt'],
   versionSource: {
     type: 'github-releases',
     repo: 'sbt/sbt',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'getfoundry.sh',
   name: 'getfoundry.sh',
   description: 'Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.',

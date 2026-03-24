@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'prql-lang.org',
   name: 'prql',
   description: 'PRQL is a modern language for transforming data — a simple, powerful, pipelined SQL replacement',
   homepage: 'https://prql-lang.org',
   github: 'https://github.com/PRQL/prql',
-  programs: ['', '', '', '', '', '', '', ''],
+  programs: ['prql-compiler', 'prqlc'],
   versionSource: {
     type: 'github-releases',
     repo: 'PRQL/prql',

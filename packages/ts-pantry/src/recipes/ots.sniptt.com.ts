@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ots.sniptt.com',
   name: 'ots',
   description: '🔐 Share end-to-end encrypted secrets with others via a one-time URL',

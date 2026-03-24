@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 // Build Package from Source
-// Reads package metadata from src/packages and build instructions from src/pantry
+// Reads package metadata from src/packages and build instructions from src/recipes
 // Uses buildkit to generate bash build scripts from YAML recipes (like brewkit)
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
@@ -340,7 +340,7 @@ catch (err: unknown) {
   return null
 }
 
-// Load build overrides from src/pantry/{domain}/build-overrides.json
+// Legacy build override loader (unused — all recipes in src/recipes/)
 interface BuildOverrides {
   description?: string
   extraConfigureArgs?: string[]

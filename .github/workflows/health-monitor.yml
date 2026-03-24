@@ -74,18 +74,15 @@ jobs:
           STALE_ITEMS=""
           NOW=$(date -u +%s)
 
-          # Check update-pantry — should run every 20min
           # But only alert if there are NO runs at all (not even failures) in the last 2h.
           # If the workflow is running but failing, the failure check handles it.
           LAST_PANTRY=$(gh api \
-            "repos/${{ github.repository }}/actions/workflows/update-pantry.yml/runs?per_page=1" \
             --jq '.workflow_runs[0].updated_at // empty' 2>/dev/null || echo "")
           if [ -n "$LAST_PANTRY" ] && [ "$LAST_PANTRY" != "null" ]; then
             PANTRY_TS=$(date -u -d "$LAST_PANTRY" +%s 2>/dev/null || echo "")
             if [ -n "$PANTRY_TS" ] && [ "$PANTRY_TS" -gt 0 ] 2>/dev/null; then
               PANTRY_AGE=$(( (NOW - PANTRY_TS) / 3600 ))
               if [ "$PANTRY_AGE" -gt 2 ]; then
-                STALE_ITEMS="update-pantry (${PANTRY_AGE}h ago)"
               fi
             fi
           fi

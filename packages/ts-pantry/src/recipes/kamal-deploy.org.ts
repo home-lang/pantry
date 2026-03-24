@@ -1,10 +1,10 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'kamal-deploy.org',
   name: 'kamal-deploy',
   description: '',
-  programs: ['', '', '', '', '', '', '', ''],
+  programs: ['kamal'],
   distributable: {
     url: 'https://github.com/basecamp/kamal/archive/{{version.tag}}.tar.gz',
     stripComponents: 1,

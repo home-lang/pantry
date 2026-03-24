@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'classic.yarnpkg.com',
   name: 'classic.yarnpkg',
   description: 'The 1.x line is frozen - features and bugfixes now happen on https://github.com/yarnpkg/berry',

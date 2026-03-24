@@ -1,11 +1,11 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tcl-lang.org',
   name: 'tcl-lang',
   description: 'Tool Command Language',
   homepage: 'https://www.tcl-lang.org',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['tclsh', 'wish', 'critcl'],
   distributable: {
     url: 'https://downloads.sourceforge.net/project/tcl/Tcl/{{version}}/tcl{{version}}-src.tar.gz',
     stripComponents: 1,

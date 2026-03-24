@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'kind.sigs.k8s.io',
   name: 'kind',
   description: 'Kubernetes IN Docker - local clusters for testing Kubernetes',

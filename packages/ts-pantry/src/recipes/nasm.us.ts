@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'nasm.us',
   name: 'nasm.us',
   description: 'A cross-platform x86 assembler with an Intel-like syntax',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'littlecms.com',
   name: 'littlecms',
   description: 'A free, open source, CMM engine. It provides fast transforms between ICC profiles.',

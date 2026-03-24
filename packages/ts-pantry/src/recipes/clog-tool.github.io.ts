@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'clog-tool.github.io',
   name: 'clog',
   description: 'Colorized pattern-matching log tail utility',
   homepage: 'https://gothenburgbitfactory.org/clog/docs/',
   github: 'https://github.com/GothenburgBitFactory/clog',
-  programs: ['', '', '', ''],
+  programs: ['clog'],
   versionSource: {
     type: 'github-releases',
     repo: 'GothenburgBitFactory/clog',

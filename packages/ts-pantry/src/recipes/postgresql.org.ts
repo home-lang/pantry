@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'postgresql.org',
   name: 'postgresql',
   description: 'Mirror of the official PostgreSQL GIT repository. Note that this is just a *mirror* - we don\\',

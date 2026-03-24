@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'dart.dev',
   name: 'dart',
   description: 'The Dart SDK, including the VM, JS and Wasm compilers, analysis, core libraries, and more.',

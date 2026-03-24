@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'opendap.org',
   name: 'opendap',
   description: 'A new version of libdap that contains both DAP2 and DAP4 support',

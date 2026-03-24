@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'jenkins-x.io',
   name: 'Jenkins X',
   description: 'Jenkins X provides automated CI+CD for Kubernetes with Preview Environments on Pull Requests using Cloud Native pipelines from Tekton',
   homepage: 'https://jenkins-x.io/',
   github: 'https://github.com/jenkins-x/jx',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['jx'],
   versionSource: {
     type: 'github-releases',
     repo: 'jenkins-x/jx',

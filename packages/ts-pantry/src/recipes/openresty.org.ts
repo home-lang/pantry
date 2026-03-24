@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'openresty.org',
   name: 'openresty',
   description: 'High Performance Web Platform Based on Nginx and LuaJIT',

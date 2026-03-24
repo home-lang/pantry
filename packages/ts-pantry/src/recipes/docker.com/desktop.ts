@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../../scripts/recipe-types'
+import type { Recipe } from '../../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'docker.com/desktop',
   name: 'Docker Desktop',
   description: 'A desktop application for building and sharing containerized applications.',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'getmonero.org',
   name: 'getmonero',
   programs: ['monero-wallet-rpc', 'monero-wallet-cli', 'monero-gen-trusted-multisig', 'monero-gen-ssl-cert', 'monerod', 'monero-blockchain-import', 'monero-blockchain-export', 'monero-blockchain-mark-spent-outputs', 'monero-blockchain-usage', 'monero-blockchain-ancestry', 'monero-blockchain-depth', 'monero-blockchain-stats', 'monero-blockchain-prune-known-spent-data', 'monero-blockchain-prune'],

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ohmyposh.dev',
   name: 'oh-my-posh',
   description: 'The most customisable and low-latency cross platform/shell prompt renderer',

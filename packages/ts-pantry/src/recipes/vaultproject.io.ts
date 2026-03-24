@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'vaultproject.io',
   name: 'vault',
   description: 'A tool for secrets management, encryption as a service, and privileged access management',

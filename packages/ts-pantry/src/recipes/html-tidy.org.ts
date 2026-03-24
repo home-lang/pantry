@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'html-tidy.org',
   name: 'tidy',
   description: 'The granddaddy of HTML tools, with support for modern standards',
   homepage: 'https://www.html-tidy.org/',
   github: 'https://github.com/htacg/tidy-html5',
-  programs: ['', '', '', '', '', ''],
+  programs: ['tidy'],
   versionSource: {
     type: 'github-releases',
     repo: 'htacg/tidy-html5',

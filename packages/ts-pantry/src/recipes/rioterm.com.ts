@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rioterm.com',
   name: 'rio',
   description: 'A hardware-accelerated GPU terminal emulator focusing to run in desktops and browsers.',

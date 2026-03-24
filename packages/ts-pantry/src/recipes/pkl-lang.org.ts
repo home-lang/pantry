@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'pkl-lang.org',
   name: 'pkl-lang',
   description: 'A configuration as code language with rich validation and tooling.',
   homepage: 'https://pkl-lang.org',
   github: 'https://github.com/apple/pkl',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['jpkl', 'pkl'],
   versionSource: {
     type: 'github-releases',
     repo: 'apple/pkl',

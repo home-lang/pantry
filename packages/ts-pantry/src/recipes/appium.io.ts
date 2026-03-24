@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'appium.io',
   name: 'appium',
   description: 'Cross-platform automation framework for all kinds of apps, built on top of the W3C WebDriver protocol',

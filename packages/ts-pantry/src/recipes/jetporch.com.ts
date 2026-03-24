@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'jetporch.com',
   name: 'jetp',
   description: 'Read-only mirror: see https://www.jetporch.com/community/sourcehut',

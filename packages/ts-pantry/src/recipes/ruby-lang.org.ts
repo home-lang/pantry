@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ruby-lang.org',
   name: 'ruby-lang',
   description: 'Powerful, clean, object-oriented scripting language',
   homepage: 'https://www.ruby-lang.org/',
   github: 'https://github.com/ruby/ruby',
-  programs: [],
+  programs: ['erb', 'irb', 'rake', 'rdoc', 'ri', 'ruby'],
   versionSource: {
     type: 'github-releases',
     repo: 'ruby/ruby',

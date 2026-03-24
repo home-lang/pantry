@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'zeromq.org',
   name: 'zeromq',
   description: 'ZeroMQ core engine in C++, implements ZMTP/3.1',

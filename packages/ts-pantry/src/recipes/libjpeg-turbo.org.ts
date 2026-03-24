@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'libjpeg-turbo.org',
   name: 'libjpeg-turbo',
   description: 'Main libjpeg-turbo repository',
   homepage: 'https://libjpeg-turbo.org',
   github: 'https://github.com/libjpeg-turbo/libjpeg-turbo',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['cjpeg', 'djpeg', 'jpegtran', 'rdjpgcom', 'tjbench', 'wrjpgcom'],
   versionSource: {
     type: 'github-releases',
     repo: 'libjpeg-turbo/libjpeg-turbo',

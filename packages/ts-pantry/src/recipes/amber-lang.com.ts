@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'amber-lang.com',
   name: 'amber',
   description: 'Crystal web framework. Bare metal performance, productivity and happiness',
   homepage: 'https://amberframework.org/',
   github: 'https://github.com/Ph0enixKM/Amber',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['amber'],
   versionSource: {
     type: 'github-releases',
     repo: 'Ph0enixKM/Amber',

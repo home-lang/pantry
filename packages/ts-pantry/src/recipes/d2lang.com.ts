@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'd2lang.com',
   name: 'd2',
   description: 'D2 is a modern diagram scripting language that turns text to diagrams.',

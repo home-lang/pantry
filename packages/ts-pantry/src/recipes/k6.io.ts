@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'k6.io',
   name: 'k6',
   description: 'A modern load testing tool, using Go and JavaScript - https://k6.io',

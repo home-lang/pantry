@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'sing-box.app',
   name: 'sing-box',
   description: 'The universal proxy platform',
   homepage: 'https://sing-box.sagernet.org',
   github: 'https://github.com/SagerNet/sing-box',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['sing-box'],
   versionSource: {
     type: 'github-releases',
     repo: 'SagerNet/sing-box',

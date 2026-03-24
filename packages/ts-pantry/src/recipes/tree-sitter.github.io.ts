@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tree-sitter.github.io',
   name: 'tree-sitter',
   description: 'Parser generator tool and incremental parsing library',
   homepage: 'https://tree-sitter.github.io/',
   github: 'https://github.com/tree-sitter/tree-sitter',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['tree-sitter'],
   versionSource: {
     type: 'github-releases',
     repo: 'tree-sitter/tree-sitter',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'infracost.io',
   name: 'infracost',
   description: 'Cloud cost estimates for Terraform in pull requests💰📉 Shift FinOps Left!',

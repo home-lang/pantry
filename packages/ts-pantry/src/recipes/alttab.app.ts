@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'alttab.app',
   name: 'AltTab',
   description: 'A window switcher for macOS that brings the power of alt-tab from Windows.',

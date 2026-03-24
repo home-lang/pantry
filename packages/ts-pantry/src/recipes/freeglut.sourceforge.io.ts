@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'freeglut.sourceforge.io',
   name: 'freeglut.sourceforge',
   description: 'Free implementation of the OpenGL Utility Toolkit (GLUT)',

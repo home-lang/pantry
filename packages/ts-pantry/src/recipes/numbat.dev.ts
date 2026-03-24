@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'numbat.dev',
   name: 'numbat',
   description: 'A statically typed programming language for scientific computations with first class support for physical dimensions and units',

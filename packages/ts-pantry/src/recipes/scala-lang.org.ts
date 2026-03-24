@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'scala-lang.org',
   name: 'scala-lang',
   description: 'The Scala 3 compiler, also known as Dotty.',
   homepage: 'https://dotty.epfl.ch',
   github: 'https://github.com/scala/scala3',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['scalac', 'scala', 'scala-cli', 'sbtn', 'amm'],
   versionSource: {
     type: 'github-releases',
     repo: 'scala/scala3',

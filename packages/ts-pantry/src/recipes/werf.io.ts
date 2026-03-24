@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'werf.io',
   name: 'werf',
   description: 'A solution for implementing efficient and consistent software delivery to Kubernetes facilitating best practices.',

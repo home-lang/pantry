@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'orbstack.dev',
   name: 'OrbStack',
   description: 'A fast, lightweight Docker and Linux on macOS.',

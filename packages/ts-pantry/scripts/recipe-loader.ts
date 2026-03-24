@@ -2,7 +2,7 @@
  * Recipe Loader — Dual-path loader for package build recipes
  *
  * Tries to load a native TypeScript recipe from src/recipes/ first.
- * Falls back to YAML recipe from src/pantry/ (or desktop-pantry/) + package-overrides.ts.
+ * Loads native TS recipes from src/recipes/. YAML fallback is legacy (dirs deleted).
  *
  * This enables incremental migration: packages can be moved from YAML+overrides
  * to native TS recipes one at a time without breaking anything.
@@ -11,7 +11,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { RecipeDefinition, LoadedRecipe } from './recipe-types'
+import type { Recipe, LoadedRecipe } from './recipe-types'
 import type { NormalizedRecipe } from './buildkit'
 
 // package-overrides.ts removed — overrides migrated to src/recipes/*.ts
@@ -36,7 +36,7 @@ export async function loadRecipe(
   if (recipePath) {
     try {
       const mod = await import(recipePath)
-      const def: RecipeDefinition = mod.recipe || mod.default
+      const def: Recipe = mod.recipe || mod.default
       if (def) {
         return {
           recipe: recipeDefToNormalized(def),
@@ -130,8 +130,8 @@ function normalizeRecipe(recipe: Record<string, any>): Record<string, any> {
   return normalized
 }
 
-/** Convert a native RecipeDefinition to buildkit-compatible format */
-function recipeDefToNormalized(def: RecipeDefinition): Record<string, any> {
+/** Convert a native Recipe to buildkit-compatible format */
+function recipeDefToNormalized(def: Recipe): Record<string, any> {
   return {
     distributable: def.distributable
       ? { url: def.distributable.url, 'strip-components': def.distributable.stripComponents }

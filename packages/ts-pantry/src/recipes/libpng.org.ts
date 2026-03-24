@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'libpng.org',
   name: 'libpng',
   description: 'LIBPNG: Portable Network Graphics support, official libpng repository',
   homepage: 'http://www.libpng.org/pub/png/libpng.html',
   github: 'https://github.com/glennrp/libpng',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['libpng-config', 'libpng16-config', 'png-fix-itxt', 'pngfix'],
   versionSource: {
     type: 'github-releases',
     repo: 'glennrp/libpng',

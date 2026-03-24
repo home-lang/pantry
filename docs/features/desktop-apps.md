@@ -155,53 +155,44 @@ GET https://registry.pantry.dev/binaries/obsidian.md/metadata.json
 
 Desktop apps flow through the exact same pipeline as system packages:
 
-1. **Package definition** (`packages/ts-pantry/src/packages/*.ts`) defines name, versions, aliases
-2. **YAML stub** (`packages/ts-pantry/src/desktop-pantry/*/package.yml`) provides build metadata
-3. **Override** (`packages/ts-pantry/scripts/package-overrides.ts`) downloads the pre-built .app bundle from the official source
-4. **Build** runs on macOS CI, downloads the DMG/ZIP, extracts the .app, creates a tar.gz
-5. **Upload** pushes the tarball + SHA256 + metadata.json to S3
-6. **Install** via `pantry install` downloads from S3 and extracts locally
+1. **Recipe** (`packages/ts-pantry/src/recipes/{domain}.ts`) defines build instructions
+2. **Package definition** (`packages/ts-pantry/src/packages/*.ts`) defines name, versions, aliases
+3. **Build** runs on macOS CI, downloads the DMG/ZIP, extracts the .app, creates a tar.gz
+4. **Upload** pushes the tarball + SHA256 + metadata.json to S3
+5. **Install** via `pantry install` downloads from S3 and extracts locally
 
 ## Adding a New Desktop App
 
-1. Create `packages/ts-pantry/src/desktop-pantry/{domain}/package.yml`:
-```yaml
-distributable:
-  url: https://placeholder.example.com/{{version}}.tar.gz
-  strip-components: 1
-platforms:
-  - darwin
-provides:
-  - bin/app-name
-build:
-  script: 'true'
+1. Create `packages/ts-pantry/src/recipes/{domain}.ts`:
+```typescript
+import type { RecipeDefinition } from '../../scripts/recipe-types'
+
+export const recipe: RecipeDefinition = {
+  domain: 'domain.com',
+  name: 'App Name',
+  description: 'Brief description',
+  homepage: 'https://domain.com',
+  programs: ['app-name'],
+  platforms: ['darwin/aarch64', 'darwin/x86-64'],
+  versionSource: {
+    type: 'github-releases',
+    repo: 'org/repo',
+  },
+  build: {
+    script: [
+      'curl -fSL -L "https://example.com/app.dmg" -o /tmp/app.dmg',
+      'hdiutil attach /tmp/app.dmg -mountpoint /tmp/app-mount -nobrowse -noverify -quiet',
+      'mkdir -p "{{prefix}}"',
+      'cp -R "/tmp/app-mount/App.app" "{{prefix}}/App.app"',
+      'hdiutil detach /tmp/app-mount -quiet || true',
+      'mkdir -p "{{prefix}}/bin"',
+      'ln -sf "../App.app/Contents/MacOS/app" "{{prefix}}/bin/app"',
+    ],
+  },
+}
 ```
 
 2. Create `packages/ts-pantry/src/packages/{domainkey}.ts` with the package definition
-
-3. Add a `modifyRecipe` override in `packages/ts-pantry/scripts/package-overrides.ts`:
-```typescript
-'domain.com': {
-  supportedPlatforms: ['darwin/aarch64', 'darwin/x86-64'],
-  modifyRecipe: (recipe: NormalizedRecipe) => {
-    recipe.distributable = undefined
-    recipe.dependencies = {}
-    if (recipe.build) {
-      recipe.build.dependencies = {}
-      recipe.build.script = [
-        [
-          'curl -fSL -L "https://example.com/app.dmg" -o /tmp/app.dmg',
-          'hdiutil attach /tmp/app.dmg -mountpoint /tmp/app-mount -nobrowse -noverify -quiet',
-          'mkdir -p "{{prefix}}"',
-          'cp -R "/tmp/app-mount/App.app" "{{prefix}}/App.app"',
-          'hdiutil detach /tmp/app-mount -quiet || true',
-          'mkdir -p "{{prefix}}/bin"',
-          'ln -sf "../App.app/Contents/MacOS/app" "{{prefix}}/bin/app"',
-        ].join('\n'),
-      ]
-      recipe.build.env = {}
-    }
-  },
 },
 ```
 

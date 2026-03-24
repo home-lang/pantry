@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'gdal.org',
   name: 'gdal',
   description: 'GDAL is an open source MIT licensed translator library for raster and vector geospatial data formats.',

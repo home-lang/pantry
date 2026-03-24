@@ -1,11 +1,11 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'linux-pam.org',
   name: 'linux-pam',
   description: 'Linux PAM (Pluggable Authentication Modules for Linux) project',
   github: 'https://github.com/linux-pam/linux-pam',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['faillock', 'mkhomedir_helper', 'pam_namespace_helper', 'pam_timestamp_check', 'unix_chkpwd'],
   versionSource: {
     type: 'github-releases',
     repo: 'linux-pam/linux-pam',

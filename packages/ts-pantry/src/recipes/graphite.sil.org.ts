@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'graphite.sil.org',
   name: 'gr2fonttest',
   description: 'Graphite is a "smart font" system developed specifically to handle the complexities of lesser-known languages of the world.',

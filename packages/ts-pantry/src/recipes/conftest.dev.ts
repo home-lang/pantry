@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'conftest.dev',
   name: 'conftest',
   description: 'Write tests against structured configuration data using the Open Policy Agent Rego query language',

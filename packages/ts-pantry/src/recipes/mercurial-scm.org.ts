@@ -1,11 +1,11 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'mercurial-scm.org',
   name: 'mercurial-scm',
   description: 'Scalable distributed version control system',
   homepage: 'https://mercurial-scm.org/',
-  programs: [],
+  programs: ['hg', 'chg'],
   distributable: {
     url: 'https://www.mercurial-scm.org/release/mercurial-{{version.raw}}.tar.gz',
     stripComponents: 1,

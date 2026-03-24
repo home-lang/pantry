@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'apktool.org',
   name: 'apktool',
   description: 'Tool for reverse engineering 3rd party, closed, binary Android apps',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'nginx.org',
   name: 'nginx',
   description: 'HTTP(S) server and reverse proxy, and IMAP/POP3 proxy server',

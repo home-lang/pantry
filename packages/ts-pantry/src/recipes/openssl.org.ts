@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'openssl.org',
   name: 'OpenSSL',
   description: 'TLS/SSL and crypto library with QUIC APIs',
   homepage: 'https://quictls.github.io/openssl',
   github: 'https://github.com/quictls/openssl',
-  programs: ['', '', '', '', '', '', '', ''],
+  programs: ['openssl', 'c_rehash'],
   versionSource: {
     type: 'github-releases',
     repo: 'quictls/openssl',

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'caddyserver.com',
   name: 'caddy',
   description: 'Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS',

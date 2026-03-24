@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'cloudnative-pg.io',
   name: 'kubectl-cnpg',
   description: 'CloudNativePG is a comprehensive platform designed to seamlessly manage PostgreSQL databases within Kubernetes environments, covering the entire operational lifecycle from initial deployment to ongoing maintenance',
   homepage: 'https://cloudnative-pg.io/',
   github: 'https://github.com/cloudnative-pg/cloudnative-pg',
-  programs: [],
+  programs: ['kubectl-cnpg'],
   versionSource: {
     type: 'github-releases',
     repo: 'cloudnative-pg/cloudnative-pg',

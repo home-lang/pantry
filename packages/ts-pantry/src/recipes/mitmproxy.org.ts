@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'mitmproxy.org',
   name: 'mitmproxy',
   description: 'An interactive TLS-capable intercepting HTTP proxy for penetration testers and software developers.',

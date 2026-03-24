@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'dotenv-linter.github.io',
   name: 'dotenv-linter',
   description: '⚡️Lightning-fast linter for .env files. Written in Rust 🦀',
   homepage: 'https://dotenv-linter.github.io',
   github: 'https://github.com/dotenv-linter/dotenv-linter',
-  programs: ['', '', '', '', '', ''],
+  programs: ['dotenv-linter'],
   versionSource: {
     type: 'github-releases',
     repo: 'dotenv-linter/dotenv-linter',

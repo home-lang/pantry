@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'fltk.org',
   name: 'fltk',
   description: 'FLTK - Fast Light Tool Kit - https://github.com/fltk/fltk - cross platform GUI development',
   homepage: 'https://www.fltk.org/',
   github: 'https://github.com/fltk/fltk',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['fluid', 'fltk-config'],
   versionSource: {
     type: 'github-releases',
     repo: 'fltk/fltk',

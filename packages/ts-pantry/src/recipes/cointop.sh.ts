@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'cointop.sh',
   name: 'cointop',
   description: 'A fast and lightweight interactive terminal based UI application for tracking cryptocurrencies 🚀',

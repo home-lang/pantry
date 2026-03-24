@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'fastlane.tools',
   name: 'fastlane',
   description: '🚀 The easiest way to automate building and releasing your iOS and Android apps',

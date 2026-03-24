@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'whatsapp.com',
   name: 'WhatsApp',
   description: 'A messaging app for simple, reliable, and private communication.',

@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'git-lfs.com',
   name: 'git-lfs',
   description: 'Git extension for versioning large files',
   homepage: 'https://git-lfs.github.com/',
   github: 'https://github.com/git-lfs/git-lfs',
-  programs: ['', '', '', '', '', ''],
+  programs: ['git-lfs'],
   versionSource: {
     type: 'github-releases',
     repo: 'git-lfs/git-lfs',

@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'git-town.com',
   name: 'git-town',
   description: 'High-level command-line interface for Git',
   homepage: 'https://www.git-town.com/',
   github: 'https://github.com/git-town/git-town',
-  programs: [],
+  programs: ['git-town'],
   versionSource: {
     type: 'github-releases',
     repo: 'git-town/git-town',

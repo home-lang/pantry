@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'etcd.io',
   name: 'etcd',
   description: 'Distributed reliable key-value store for the most critical data of a distributed system',

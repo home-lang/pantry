@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'lunarvim.org',
   name: 'lunarvim',
   description: '🌙 LunarVim is an IDE layer for Neovim. Completely free and community driven.',

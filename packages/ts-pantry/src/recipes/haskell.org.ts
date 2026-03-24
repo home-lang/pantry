@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'haskell.org',
   name: 'haskell',
   description: 'Mirror of the Glasgow Haskell Compiler. Please submit issues and patches to GHC\\',

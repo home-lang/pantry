@@ -1,10 +1,10 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'c-ares.org',
   name: 'c-ares',
   description: '',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['c-ares'],
   distributable: {
     url: 'https://c-ares.org/download/c-ares-{{version}}.tar.gz',
     stripComponents: 1,

@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'zarf.dev',
   name: 'zarf',
   description: 'DevSecOps for Air Gap & Limited-Connection Systems. https://zarf.dev/',

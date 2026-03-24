@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'tectonic-typesetting.github.io',
   name: 'tectonic',
   description: 'A modernized, complete, self-contained TeX/LaTeX engine, powered by XeTeX and TeXLive.',
   homepage: 'https://tectonic-typesetting.github.io/',
   github: 'https://github.com/tectonic-typesetting/tectonic',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['tectonic'],
   versionSource: {
     type: 'github-releases',
     repo: 'tectonic-typesetting/tectonic',

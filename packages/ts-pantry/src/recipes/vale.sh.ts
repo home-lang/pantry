@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'vale.sh',
   name: 'vale',
   description: ':pencil: A markup-aware linter for prose built with speed and extensibility in mind.',

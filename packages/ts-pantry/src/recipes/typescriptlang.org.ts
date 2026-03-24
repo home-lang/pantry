@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'typescriptlang.org',
   name: 'tsc',
   description: 'TypeScript is a superset of JavaScript that compiles to clean JavaScript output.',

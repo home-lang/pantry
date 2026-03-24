@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'xpra.org',
   name: 'xpra',
   description: 'Persistent remote applications for X11; screen sharing for X11, MacOS and MSWindows.',

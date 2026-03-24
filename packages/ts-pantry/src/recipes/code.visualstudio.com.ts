@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'code.visualstudio.com',
   name: 'Visual Studio Code',
   description: 'A lightweight but powerful source code editor.',

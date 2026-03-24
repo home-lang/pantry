@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'streamlink.github.io',
   name: 'streamlink',
   description: 'Streamlink is a CLI utility which pipes video streams from various services into a video player',

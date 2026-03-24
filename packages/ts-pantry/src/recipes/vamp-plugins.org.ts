@@ -1,11 +1,11 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'vamp-plugins.org',
   name: 'vamp',
   description: 'Audio processing plugin system sdk',
   homepage: 'https://www.vamp-plugins.org/',
-  programs: [],
+  programs: ['vamp-simple-host', 'vamp-rdf-template-generator'],
   distributable: {
     url: 'https://vamp-plugins.org/develop.html',
   },

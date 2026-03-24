@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'python-poetry.org',
   name: 'poetry',
   description: 'Python packaging and dependency management made easy',
   homepage: 'https://python-poetry.org/',
   github: 'https://github.com/python-poetry/poetry',
-  programs: ['', '', '', '', '', '', '', ''],
+  programs: ['poetry'],
   versionSource: {
     type: 'github-releases',
     repo: 'python-poetry/poetry',

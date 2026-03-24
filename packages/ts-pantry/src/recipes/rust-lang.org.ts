@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rust-lang.org',
   name: 'rust',
   description: 'Empowering everyone to build reliable and efficient software.',
   homepage: 'https://www.rust-lang.org/',
   github: 'https://github.com/rust-lang/rust',
-  programs: [],
+  programs: ['cargo-clippy', 'cargo-fmt', 'clippy-driver', 'rust-analyzer', 'rust-gdb', 'rust-gdbgui', 'rust-lldb', 'rustc', 'rustdoc', 'rustfmt'],
   versionSource: {
     type: 'github-releases',
     repo: 'rust-lang/rust',

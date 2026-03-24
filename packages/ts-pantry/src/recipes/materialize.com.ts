@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'materialize.com',
   name: 'mz',
   description: 'Real-time Data Integration and Transformation: use SQL to transform, deliver, and act on fast-changing data.',

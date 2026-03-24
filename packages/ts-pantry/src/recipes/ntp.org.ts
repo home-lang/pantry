@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ntp.org',
   name: 'ntp',
   programs: ['ntpq', 'sntp', 'ntp-keygen', 'ntp-wait', 'ntpd', 'ntpdate', 'ntpdc', 'ntptime', 'ntptrace', 'update-leap'],

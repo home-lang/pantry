@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'openpolicyagent.org',
   name: 'opa',
   description: 'Open Policy Agent (OPA) is an open source, general-purpose policy engine.',

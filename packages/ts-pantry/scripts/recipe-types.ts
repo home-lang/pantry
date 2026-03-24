@@ -66,7 +66,7 @@ export interface RecipeDistributable {
 }
 
 /** Full recipe definition — replaces YAML + overrides */
-export interface RecipeDefinition {
+export interface Recipe {
   domain: string
   name: string
   description?: string
@@ -138,3 +138,6 @@ export interface LoadedRecipe {
   /** Path to props directory (if any) */
   propsDir?: string
 }
+
+/** @deprecated Use Recipe instead */
+export type RecipeDefinition = Recipe

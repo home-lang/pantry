@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ziglang.org',
   name: 'zig',
   description: 'General-purpose programming language and toolchain for maintaining robust, optimal, and reusable software.',

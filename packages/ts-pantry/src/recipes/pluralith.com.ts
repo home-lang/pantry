@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'pluralith.com',
   name: 'pluralith',
   description: 'A tool for Terraform state visualisation and automated generation of infrastructure documentation',

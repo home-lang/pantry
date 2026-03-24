@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'deepwisdom.ai',
   name: 'MetaGPT',
   description: '🌟 The Multi-Agent Framework: First AI Software Company, Towards Natural Language Programming',

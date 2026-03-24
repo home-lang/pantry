@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'pytest.org',
   name: 'pytest',
   description: 'The pytest framework makes it easy to write small tests, yet scales to support complex functional testing',

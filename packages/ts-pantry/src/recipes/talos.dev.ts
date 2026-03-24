@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'talos.dev',
   name: 'talosctl',
   description: 'CLI for out-of-band management of Kubernetes nodes created by Talos',

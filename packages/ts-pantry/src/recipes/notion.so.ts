@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'notion.so',
   name: 'Notion',
   description: 'An all-in-one workspace for notes, tasks, wikis, and databases.',

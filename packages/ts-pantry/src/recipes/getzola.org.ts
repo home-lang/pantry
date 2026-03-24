@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'getzola.org',
   name: 'zola',
   description: 'A fast static site generator in a single binary with everything built-in. https://www.getzola.org',

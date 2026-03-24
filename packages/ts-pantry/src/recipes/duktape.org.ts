@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'duktape.org',
   name: 'duk',
   description: 'Duktape - embeddable Javascript engine with a focus on portability and compact footprint',

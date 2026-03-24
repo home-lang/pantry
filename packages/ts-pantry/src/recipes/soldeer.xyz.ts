@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'soldeer.xyz',
   name: 'soldeer',
   description: 'Solidity Package Manager written in rust and integrated into Foundry (forge soldeer ...)',

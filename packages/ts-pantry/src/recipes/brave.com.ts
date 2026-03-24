@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'brave.com',
   name: 'Brave Browser',
   description: 'A privacy-focused web browser that blocks ads and trackers.',

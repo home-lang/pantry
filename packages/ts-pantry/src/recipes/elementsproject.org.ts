@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'elementsproject.org',
   name: 'elementsproject',
   description: 'Open Source implementation of advanced blockchain features extending the Bitcoin protocol',

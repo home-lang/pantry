@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'portaudio.com',
   name: 'PortAudio',
   description: 'PortAudio is a cross-platform, open-source C language library for real-time audio input and output.',

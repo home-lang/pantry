@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'ninja-build.org',
   name: 'ninja',
   description: 'Small build system for use with gyp or CMake',
   homepage: 'https://ninja-build.org/',
   github: 'https://github.com/ninja-build/ninja',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['ninja'],
   versionSource: {
     type: 'github-releases',
     repo: 'ninja-build/ninja',

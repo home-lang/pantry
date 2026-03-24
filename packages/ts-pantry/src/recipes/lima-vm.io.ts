@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'lima-vm.io',
   name: 'lima-vm',
   description: 'Linux virtual machines, with a focus on running containers',
   homepage: 'https://lima-vm.io/',
   github: 'https://github.com/lima-vm/lima',
-  programs: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+  programs: ['apptainer.lima', 'docker.lima', 'kubectl.lima', 'lima', 'limactl', 'nerdctl.lima', 'podman.lima'],
   versionSource: {
     type: 'github-releases',
     repo: 'lima-vm/lima',

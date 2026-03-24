@@ -1,12 +1,12 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'mypy-lang.org',
   name: 'mypy-lang',
   description: 'Experimental optional static type checker for Python',
   homepage: 'https://www.mypy-lang.org/',
   github: 'https://github.com/python/mypy',
-  programs: ['', '', '', '', '', '', '', '', '', ''],
+  programs: ['mypy', 'mypyc', 'dmypy'],
   versionSource: {
     type: 'github-releases',
     repo: 'python/mypy',

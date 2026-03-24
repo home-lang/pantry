@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'rebar3.org',
   name: 'rebar3',
   description: 'Erlang build tool that makes it easy to compile and test Erlang applications and releases.',

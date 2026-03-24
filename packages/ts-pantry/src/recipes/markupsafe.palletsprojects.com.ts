@@ -1,6 +1,6 @@
-import type { RecipeDefinition } from '../../scripts/recipe-types'
+import type { Recipe } from '../../scripts/recipe-types'
 
-export const recipe: RecipeDefinition = {
+export const recipe: Recipe = {
   domain: 'markupsafe.palletsprojects.com',
   name: 'markupsafe.palletsprojects',
   description: 'Safely add untrusted strings to HTML/XML markup.',
