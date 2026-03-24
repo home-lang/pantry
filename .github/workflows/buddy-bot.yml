@@ -409,7 +409,8 @@ jobs:
           echo "Dry Run: $DRY_RUN"
           echo ""
 
-          set -e  # Exit on any error
+          # Dashboard update is best-effort — don't fail the workflow on API errors
+          set +e
 
           # Build the command
           COMMAND="bunx buddy-bot dashboard"
@@ -443,8 +444,9 @@ jobs:
             echo "🚀 Executing dashboard update:"
             echo "$COMMAND"
             echo ""
-            eval "$COMMAND"
+            eval "$COMMAND" || echo "Dashboard update failed (non-fatal)"
           fi
+          exit 0
 
         env:
           GITHUB_TOKEN: ${{ secrets.BUDDY_BOT_TOKEN || secrets.GITHUB_TOKEN }}

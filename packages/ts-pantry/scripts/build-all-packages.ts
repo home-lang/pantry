@@ -1978,17 +1978,18 @@ else {
     const failRate = attempted > 0 ? (failed.length / attempted * 100).toFixed(0) : 0
     console.log(`\nFailure rate: ${failRate}% (${failed.length}/${attempted} attempted)`)
 
-    // For targeted builds: exit non-zero only if ALL attempted packages failed
-    // and nothing was skipped (already in S3). Skipped = success (already built).
-    if (isTargetedBuild) {
+    // For forced targeted builds (manual dispatch): exit non-zero if all fail.
+    // For non-forced builds (auto-triggered by version updates): always exit 0
+    // since individual package failures are expected (broken recipes, bad URLs, etc.)
+    if (isTargetedBuild && force) {
       const totalSuccess = uploaded.length + skipped.length
       if (totalSuccess === 0 && failed.length > 0) {
         console.log(`\nAll targeted builds failed — exiting with error`)
         process.exit(1)
       }
-      else if (failed.length > 0) {
-        console.log(`\n${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed — partial success`)
-      }
+    }
+    if (failed.length > 0) {
+      console.log(`\n${uploaded.length} uploaded, ${skipped.length} skipped, ${failed.length} failed`)
     }
 
     console.log(`Note: Individual build failures are expected for packages with complex`)
