@@ -28,7 +28,7 @@ pantry is a comprehensive dependency management solution that bridges the gap be
 - Version-specific tool installation
 - Seamless switching between project contexts
 
-At its core, pantry leverages pkgx's powerful package ecosystem, the Pantry, while adding intelligent management, environment isolation, and developer-friendly workflows.
+At its core, pantry hosts its own package registry with 1700+ system packages, 50+ desktop apps, and pre-built binaries — all served from CDN. No external dependency managers required.
 
 Learn more in the docs: [Why pantry](https://pantry.dev/why), [Quick Start](https://pantry.dev/quickstart).
 
@@ -67,11 +67,18 @@ pantry transforms how you manage dependencies across your entire development wor
 - 🔗 **Instant Install URLs** — Get shareable install URLs for every published commit
 - 🤖 **CI/CD Ready** — Drop-in replacement for `pkg-pr-new` in GitHub Actions
 
+### Desktop Apps
+
+- 🖥️ **50+ Desktop Apps** — Install VS Code, Discord, Obsidian, Spotify, and more via `pantry install`
+- 📦 **Same Pipeline** — Apps go through the same registry as system packages (S3 + metadata)
+- 🔄 **Daily Updates** — Desktop apps checked and rebuilt daily via GitHub Actions
+- 🌐 **Browse All** — `curl https://registry.pantry.dev/desktop-apps | jq`
+
 ### Developer Experience
 
-- ⚡ **Fast Operations** — Leverage pkgx for efficient package management
+- ⚡ **Fast Operations** — Native Zig CLI with pre-built binaries from CDN
 - 🗑️ **Clean Removal** — Remove packages or completely uninstall with proper cleanup
-- 🔄 **Auto-Updates** — Configure automatic updates for your dependency management tools
+- ⬆️ **Self-Update** — `pantry upgrade` to get the latest version, `--canary` for pre-releases
 - 🎛️ **Flexible Configuration** — Customize behavior through config files or command-line options
 
 ## Why pantry
@@ -362,6 +369,32 @@ npm install https://registry.pantry.dev/commits/abc1234/@scope/my-package/tarbal
 
 # After (pantry)
 - run: pantry publish:commit './packages/*'
+```
+
+### Desktop Apps
+
+```bash
+# Install desktop apps (same as system packages)
+pantry install discord
+pantry install obsidian
+pantry install code.visualstudio.com
+
+# Browse available apps
+curl https://registry.pantry.dev/desktop-apps | jq
+curl https://registry.pantry.dev/desktop-apps?category=Development | jq
+```
+
+### Self-Update
+
+```bash
+# Upgrade pantry to the latest stable release
+pantry upgrade
+
+# Upgrade to the latest canary (pre-release) build
+pantry upgrade --canary
+
+# Check what would be upgraded without making changes
+pantry upgrade --dry-run
 ```
 
 ### Advanced Operations
