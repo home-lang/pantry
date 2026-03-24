@@ -84,12 +84,12 @@ pub const InstallCheckpoint = struct {
         return self.installed_packages.contains(name);
     }
 
-    /// Set the checkpoint file path for persistence
+    /// Set the checkpoint file path for persistence (inside pantry dir, not project root)
     pub fn setCheckpointPath(self: *InstallCheckpoint, project_dir: []const u8) !void {
         if (self.checkpoint_path) |old| self.allocator.free(old);
         self.checkpoint_path = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/.pantry-checkpoint.json",
+            "{s}/pantry/.install-checkpoint",
             .{project_dir},
         );
     }
@@ -129,7 +129,7 @@ pub const InstallCheckpoint = struct {
 
     /// Load a checkpoint from disk (for resume)
     pub fn loadFromDisk(allocator: std.mem.Allocator, project_dir: []const u8) !?InstallCheckpoint {
-        const path = try std.fmt.allocPrint(allocator, "{s}/.pantry-checkpoint.json", .{project_dir});
+        const path = try std.fmt.allocPrint(allocator, "{s}/pantry/.install-checkpoint", .{project_dir});
         defer allocator.free(path);
 
         const content = io_helper.readFileAlloc(allocator, path, 1024 * 1024) catch return null;

@@ -1126,10 +1126,8 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
 
-        // Clean up checkpoint file on successful completion (no resume needed)
-        if (failed_count == 0) {
-            checkpoint.cleanup();
-        }
+        // Clean up checkpoint file on completion (resume rarely useful, avoids polluting project)
+        checkpoint.cleanup();
 
         // Update env cache so shell:lookup finds this env on next cd (no binary re-scan needed)
         {
