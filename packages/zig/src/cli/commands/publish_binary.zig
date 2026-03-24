@@ -15,7 +15,7 @@ pub const PublishBinaryOptions = struct {
 /// Publish a native binary to the pantry S3 binary registry.
 ///
 /// Usage from CI:
-///   pantry publish:binary --domain github.com/stacksjs/craft --version 0.0.4 --binary ./release/craft-darwin-arm64
+///   pantry publish:binary --domain craft-native.org --version 0.0.4 --binary ./release/craft-darwin-arm64
 ///
 /// This uploads to: s3://pantry-registry/binaries/{domain}/{version}/{platform}/{domain-slug}-{version}.tar.gz
 /// and updates:     s3://pantry-registry/binaries/{domain}/metadata.json

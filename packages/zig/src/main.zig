@@ -3481,7 +3481,7 @@ pub fn main() !void {
     // ========================================================================
     var publish_binary_cmd = try cli.BaseCommand.init(allocator, "publish:binary", "Publish a native binary to the pantry S3 registry");
 
-    const pb_domain_opt = cli.Option.init("domain", "domain", "Package domain (e.g., github.com/stacksjs/craft)", .string);
+    const pb_domain_opt = cli.Option.init("domain", "domain", "Package domain (e.g., craft-native.org)", .string);
     _ = try publish_binary_cmd.addOption(pb_domain_opt);
 
     const pb_version_opt = cli.Option.init("version", "version", "Package version", .string);
