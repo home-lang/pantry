@@ -1873,7 +1873,20 @@ else {
             }
           }
         }
-catch { /* ignore fetch errors */ }
+        catch { /* ignore fetch errors */ }
+
+        // Include pinned dev versions from ZIG_EXTRA_VERSIONS env var.
+        // Downstream projects (e.g. Craft) can request specific dev builds
+        // that are no longer the latest master but still have binaries on ziglang.org.
+        // Format: space-separated version strings, e.g. "0.16.0-dev.2962+08416b44f"
+        const extraVersions = process.env.ZIG_EXTRA_VERSIONS?.split(/\s+/).filter(Boolean) ?? []
+        for (const ev of extraVersions) {
+          const sanitized = ev.replace(/\+/g, '_')
+          if (!versions.includes(sanitized)) {
+            versions.unshift(sanitized)
+            console.log(`   Including pinned dev version: ${ev} (as ${sanitized})`)
+          }
+        }
       }
 
       console.log(`\n📦 ${pkg.domain}: building ${versions.length} versions [${versions.join(', ')}]`)
