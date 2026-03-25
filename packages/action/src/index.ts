@@ -516,24 +516,40 @@ export async function run(): Promise<void> {
         core.exportVariable('BUN_INSTALL', pantryDir)
       }
       else {
-        // Bun not installed via pantry (S3 download may have failed)
-        // Fall back to direct bun install
-        core.info('Bun not found in pantry — installing via direct download')
-        const bunInstallDir = path.join(pantryDir, 'bun')
-        await exec.exec('bash', ['-c', `curl -fsSL https://bun.sh/install | BUN_INSTALL="${bunInstallDir}" bash`])
-        const directBunPath = path.join(bunInstallDir, 'bin', 'bun')
-        if (fs.existsSync(directBunPath)) {
-          // Symlink into pantry bin
-          try { fs.symlinkSync(directBunPath, bunPath) }
-          catch { /* already exists */ }
-          try {
-            if (!fs.existsSync(bunxPath))
-              fs.symlinkSync(directBunPath, bunxPath)
+        // Bun not installed via pantry — download from pantry registry
+        core.info('Bun not found — downloading from pantry registry')
+        const platform = process.platform === 'darwin' ? 'darwin-arm64' : 'linux-x86-64'
+        const metaRes = await fetch('https://registry.pantry.dev/binaries/bun.sh/metadata.json')
+        const meta = await metaRes.json() as any
+        const version = meta?.latestVersion
+        const tarballPath = meta?.versions?.[version]?.platforms?.[platform]?.tarball
+        if (version && tarballPath) {
+          const bunDir = path.join(pantryDir, 'bun.sh', `v${version}`)
+          await exec.exec('bash', ['-c', [
+            `mkdir -p "${bunDir}"`,
+            `curl -fsSL "https://registry.pantry.dev/${tarballPath}" | tar xz -C "${bunDir}"`,
+          ].join(' && ')])
+          const directBunPath = path.join(bunDir, 'bin', 'bun')
+          if (fs.existsSync(directBunPath)) {
+            try { fs.symlinkSync(directBunPath, bunPath) } catch { /* exists */ }
+            try { if (!fs.existsSync(bunxPath)) fs.symlinkSync(directBunPath, bunxPath) } catch { /* exists */ }
+            core.exportVariable('BUN_INSTALL', bunDir)
+            core.addPath(path.join(bunDir, 'bin'))
+            core.info(`Bun ${version} installed from pantry registry`)
           }
-          catch { /* already exists */ }
-          core.exportVariable('BUN_INSTALL', bunInstallDir)
-          core.addPath(path.join(bunInstallDir, 'bin'))
-          core.info('Bun installed via direct download')
+        }
+        else {
+          // Last resort: bun.sh/install
+          core.info('Registry metadata unavailable — falling back to bun.sh/install')
+          const bunInstallDir = path.join(pantryDir, 'bun')
+          await exec.exec('bash', ['-c', `curl -fsSL https://bun.sh/install | BUN_INSTALL="${bunInstallDir}" bash`])
+          const directBunPath = path.join(bunInstallDir, 'bin', 'bun')
+          if (fs.existsSync(directBunPath)) {
+            try { fs.symlinkSync(directBunPath, bunPath) } catch { /* exists */ }
+            try { if (!fs.existsSync(bunxPath)) fs.symlinkSync(directBunPath, bunxPath) } catch { /* exists */ }
+            core.exportVariable('BUN_INSTALL', bunInstallDir)
+            core.addPath(path.join(bunInstallDir, 'bin'))
+          }
         }
       }
     }
@@ -541,12 +557,33 @@ export async function run(): Promise<void> {
       core.warning(`Bun setup warning: ${e}`)
     }
 
-    // ── Verify critical deps ──
-    // Log warnings for deps that pantry couldn't install (S3 issues etc.)
-    // Callers should add fallback setup steps (e.g. mlugg/setup-zig) if needed
-    for (const [dep, bin] of [['bun.sh', 'bun'], ['ziglang.org', 'zig']] as const) {
-      if (!fs.existsSync(path.join(pantryBinDir, bin))) {
-        core.warning(`${bin} not available after pantry install — add a fallback setup step if your workflow needs it`)
+    // ── Ensure zig is available ──
+    // If pantry install couldn't fetch zig (v0.9.2 S3 bug), download from
+    // our own registry at registry.pantry.dev (which always works)
+    if (!fs.existsSync(path.join(pantryBinDir, 'zig'))) {
+      try {
+        core.info('Zig not found — downloading from pantry registry')
+        const platform = process.platform === 'darwin' ? 'darwin-arm64' : 'linux-x86-64'
+        const metaRes = await fetch('https://registry.pantry.dev/binaries/ziglang.org/metadata.json')
+        const meta = await metaRes.json() as any
+        const version = meta?.latestVersion
+        const tarballPath = meta?.versions?.[version]?.platforms?.[platform]?.tarball
+        if (version && tarballPath) {
+          const zigDir = path.join(pantryDir, 'ziglang.org', `v${version}`)
+          await exec.exec('bash', ['-c', [
+            `mkdir -p "${zigDir}"`,
+            `curl -fsSL "https://registry.pantry.dev/${tarballPath}" | tar xz -C "${zigDir}"`,
+          ].join(' && ')])
+          const zigBin = path.join(zigDir, 'bin', 'zig')
+          if (fs.existsSync(zigBin)) {
+            core.addPath(path.join(zigDir, 'bin'))
+            try { fs.symlinkSync(zigBin, path.join(pantryBinDir, 'zig')) } catch { /* exists */ }
+            core.info(`Zig ${version} installed from pantry registry`)
+          }
+        }
+      }
+      catch (e) {
+        core.warning(`Zig install from registry failed: ${e}`)
       }
     }
 
