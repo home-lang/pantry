@@ -161,10 +161,11 @@ function extractSystemDeps(): string[] {
       const content = stripJsoncComments(fs.readFileSync(f, 'utf-8'))
       const parsed = JSON.parse(content)
       const deps = parsed.dependencies || {}
-      // eslint-disable-next-line no-unused-vars
-      return Object.keys(deps).filter(n =>
-        n.includes('.') || ['bun', 'zig', 'node', 'python', 'ruby', 'go', 'rust', 'deno'].includes(n),
-      )
+      return Object.entries(deps)
+        .filter(([n]) =>
+          n.includes('.') || ['bun', 'zig', 'node', 'python', 'ruby', 'go', 'rust', 'deno'].includes(n),
+        )
+        .map(([name, version]) => version ? `${name}@${version}` : name)
     }
     catch { continue }
   }
