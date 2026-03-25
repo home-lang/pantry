@@ -1230,8 +1230,17 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         const pkg_registry = @import("../../../packages/generated.zig");
         const pkg_info = pkg_registry.getPackageByName(name);
 
+        // For zig packages, always route to direct ziglang.org download
+        const is_zig_pkg = std.mem.eql(u8, name, "zig") or
+            std.mem.eql(u8, name, "ziglang") or
+            std.mem.eql(u8, name, "ziglang.org");
+
         // Determine the package spec - use npm fallback if not in pantry registry
-        const spec = if (pkg_info != null) lib.packages.PackageSpec{
+        const spec = if (is_zig_pkg) lib.packages.PackageSpec{
+            .name = "zig",
+            .version = version,
+            .source = .ziglang,
+        } else if (pkg_info != null) lib.packages.PackageSpec{
             .name = name,
             .version = version,
         } else npm_fallback: {
