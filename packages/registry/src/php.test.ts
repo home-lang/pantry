@@ -403,6 +403,9 @@ describe('PHP routes (HTTP)', () => {
       body: form,
     })
 
+    // Allow index to update
+    await new Promise(r => setTimeout(r, 50))
+
     const res = await fetch(`${baseUrl}/php/search?q=laravel`)
     const body = await res.json() as any
     expect(body.results).toHaveLength(1)
