@@ -68,6 +68,7 @@ export const diggerdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.6.144',
     '0.6.143',
     '0.6.142',
     '0.6.141',
