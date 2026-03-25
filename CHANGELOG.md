@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.3...v0.9.4)
+
+### 🐛 Bug Fixes
+
+- handle non-semver release tags in pantry action download ([77b135a](https://github.com/home-lang/pantry/commit/77b135a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.4 ([f829a8c](https://github.com/home-lang/pantry/commit/f829a8c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.3...HEAD)
+
+### 🐛 Bug Fixes
+
+- handle non-semver release tags in pantry action download ([77b135a](https://github.com/home-lang/pantry/commit/77b135a)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.2...v0.9.3)
 
 ### 🐛 Bug Fixes
