@@ -93,5 +93,5 @@ outputs:
     description: URL of the created GitHub release (when release is enabled)
 
 runs:
-  using: node22
+  using: node20
   main: dist/index.js
