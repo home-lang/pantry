@@ -76,21 +76,11 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
-    // Prefer curl for downloads — it has proper timeouts (--connect-timeout, --max-time)
-    // and handles slow/buffering servers reliably. The native Zig HTTP client can hang
-    // indefinitely on servers that buffer responses (like registry proxies for large files).
-    downloadFileWithCurl(allocator, url, dest_path, quiet) catch {
-        // curl not available — fall back to native HTTP client
-    };
-
-    // Check if curl succeeded (file exists and is non-empty)
-    if (io_helper.accessAbsolute(dest_path, .{})) |_| {
-        return; // curl download succeeded
-    } else |_| {}
-
-    // Fallback: native HTTP client (no timeout — may hang on slow servers)
+    // Native HTTP download using Zig's std.http.Client with native TLS.
+    // Falls back to curl if native client fails to connect.
     var stream = io_helper.httpStreamGet(allocator, url) catch {
-        return error.DownloadFailed;
+        // Fallback to curl if native client can't establish connection
+        return downloadFileWithCurl(allocator, url, dest_path, quiet);
     };
     defer stream.deinit();
 
@@ -527,7 +517,7 @@ pub fn lookupS3Registry(
     const tarball_path_val = platform_info.object.get("tarball") orelse return null;
     const tarball_path = if (tarball_path_val == .string) tarball_path_val.string else return null;
 
-    // Use registry proxy for tarball download
+    // Download via registry (302 redirects to S3 for streaming)
     const tarball_url = std.fmt.allocPrint(
         allocator,
         "https://registry.pantry.dev/{s}",

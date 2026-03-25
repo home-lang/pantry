@@ -1406,6 +1406,7 @@ pub fn httpStreamGet(allocator: std.mem.Allocator, url: []const u8) !*HttpStream
 
     stream.req = stream.client.request(.GET, uri, .{
         .redirect_behavior = @enumFromInt(10),
+        .keep_alive = false,
         .headers = .{
             // Don't request compression for file downloads — we want raw bytes
             .accept_encoding = .{ .override = "identity" },

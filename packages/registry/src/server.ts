@@ -2099,11 +2099,8 @@ async function handleBinaryProxy(
   })()
 
   try {
-    const buffer = await binaryStore.getObject(s3Key)
-
-    // Track tarball downloads fire-and-forget
+    // Track tarball downloads fire-and-forget (before redirect)
     if (isTarball) {
-      // Extract domain from path: binaries/{domain}/{version}/{platform}/{filename}.tar.gz
       const parts = s3Key.split('/')
       if (parts.length >= 4) {
         const domain = parts[1]
@@ -2113,15 +2110,31 @@ async function handleBinaryProxy(
           version,
           timestamp: new Date().toISOString(),
           userAgent: req.headers.get('user-agent') || undefined,
-        }).catch(() => {}) // fire-and-forget
+        }).catch(() => {})
         analytics.trackEvent({
           packageName: domain,
           category: 'install',
           timestamp: new Date().toISOString(),
           version,
-        }).catch(() => {}) // fire-and-forget
+        }).catch(() => {})
       }
+
+      // Redirect to S3 for large binary downloads (streams properly, no buffering)
+      const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
+      const s3Region = process.env.AWS_REGION || 'us-east-1'
+      const s3Url = `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/${s3Key}`
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          Location: s3Url,
+          'Cache-Control': cacheControl,
+        },
+      })
     }
+
+    // For metadata and checksums (small files), proxy directly
+    const buffer = await binaryStore.getObject(s3Key)
 
     return new Response(new Uint8Array(buffer), {
       headers: {
