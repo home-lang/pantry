@@ -511,9 +511,30 @@ export async function run(): Promise<void> {
           fs.symlinkSync(bunPath, bunxPath)
         core.exportVariable('BUN_INSTALL', pantryDir)
       }
+      else {
+        // Bun not installed via pantry (S3 download may have failed)
+        // Fall back to direct bun install
+        core.info('Bun not found in pantry — installing via direct download')
+        const bunInstallDir = path.join(pantryDir, 'bun')
+        await exec.exec('bash', ['-c', `curl -fsSL https://bun.sh/install | BUN_INSTALL="${bunInstallDir}" bash`])
+        const directBunPath = path.join(bunInstallDir, 'bin', 'bun')
+        if (fs.existsSync(directBunPath)) {
+          // Symlink into pantry bin
+          try { fs.symlinkSync(directBunPath, bunPath) }
+          catch { /* already exists */ }
+          try {
+            if (!fs.existsSync(bunxPath))
+              fs.symlinkSync(directBunPath, bunxPath)
+          }
+          catch { /* already exists */ }
+          core.exportVariable('BUN_INSTALL', bunInstallDir)
+          core.addPath(path.join(bunInstallDir, 'bin'))
+          core.info('Bun installed via direct download')
+        }
+      }
     }
-    catch {
-      // bun not in deps
+    catch (e) {
+      core.warning(`Bun setup warning: ${e}`)
     }
 
     // ── Publish ──
