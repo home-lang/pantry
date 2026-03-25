@@ -97,5 +97,56 @@
     "createdAt": "2026-03-24T00:56:25.754Z",
     "updatedAt": "2026-03-24T00:56:25.754Z",
     "totalDownloads": 0
+  },
+  "e2e-test-pkg-1774412664091": {
+    "name": "e2e-test-pkg-1774412664091",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5718/storage/packages/pantry/e2e-test-pkg-1774412664091/1.0.0/e2e-test-pkg-1774412664091-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-03-25T04:24:24.092Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-03-25T04:24:24.092Z",
+    "updatedAt": "2026-03-25T04:24:24.092Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1774412688055": {
+    "name": "e2e-test-pkg-1774412688055",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5421/storage/packages/pantry/e2e-test-pkg-1774412688055/1.0.0/e2e-test-pkg-1774412688055-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-03-25T04:24:48.057Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-03-25T04:24:48.057Z",
+    "updatedAt": "2026-03-25T04:24:48.057Z",
+    "totalDownloads": 0
+  },
+  "e2e-test-pkg-1774412855604": {
+    "name": "e2e-test-pkg-1774412855604",
+    "description": "E2E test package",
+    "versions": {
+      "1.0.0": {
+        "version": "1.0.0",
+        "tarballUrl": "http://localhost:5131/storage/packages/pantry/e2e-test-pkg-1774412855604/1.0.0/e2e-test-pkg-1774412855604-1.0.0.tgz",
+        "checksum": "sha256:9ebc3a9ccd1dc23c8e7032a13ccc20c574267d381c7592f76bcf1bc337999543",
+        "publishedAt": "2026-03-25T04:27:35.605Z",
+        "size": 0
+      }
+    },
+    "latestVersion": "1.0.0",
+    "createdAt": "2026-03-25T04:27:35.605Z",
+    "updatedAt": "2026-03-25T04:27:35.605Z",
+    "totalDownloads": 0
   }
 }

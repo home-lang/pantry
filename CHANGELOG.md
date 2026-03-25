@@ -1,3 +1,34 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.4...v0.9.7)
+
+### 🐛 Bug Fixes
+
+- add delay in PHP search test for index propagation ([6d547ee](https://github.com/home-lang/pantry/commit/6d547ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update e2e tests for tarball 302 redirect behavior ([fc9eab5](https://github.com/home-lang/pantry/commit/fc9eab5)) _(by Chris <chrisbreuer93@gmail.com>)_
+- stream tarball downloads via S3 redirect (no more proxy buffering) ([2b47932](https://github.com/home-lang/pantry/commit/2b47932)) _(by Chris <chrisbreuer93@gmail.com>)_
+- prefer curl over native HTTP for downloads (prevents hangs) ([a63f876](https://github.com/home-lang/pantry/commit/a63f876)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove all workarounds from action — pantry install just works ([029a6a2](https://github.com/home-lang/pantry/commit/029a6a2)) _(by Chris <chrisbreuer93@gmail.com>)_
+- install bun and zig from pantry registry when pantry install fails ([b689344](https://github.com/home-lang/pantry/commit/b689344)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.7 ([90be745](https://github.com/home-lang/pantry/commit/90be745)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update harlequin.sh, rubygems ([8fa8314](https://github.com/home-lang/pantry/commit/8fa8314)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.6...HEAD)
+
+### 🐛 Bug Fixes
+
+- add delay in PHP search test for index propagation ([6d547ee](https://github.com/home-lang/pantry/commit/6d547ee)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update e2e tests for tarball 302 redirect behavior ([fc9eab5](https://github.com/home-lang/pantry/commit/fc9eab5)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.3...v0.9.4)
 
 ### 🐛 Bug Fixes
