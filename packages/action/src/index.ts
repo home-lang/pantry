@@ -111,6 +111,46 @@ function hashFile(filePath: string): string {
   }
 }
 
+/** Strip JSONC comments while preserving strings containing // */
+function stripJsoncComments(text: string): string {
+  let result = ''
+  let inString = false
+  let escape = false
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (escape) {
+      result += ch
+      escape = false
+      continue
+    }
+    if (inString) {
+      result += ch
+      if (ch === '\\') escape = true
+      else if (ch === '"') inString = false
+      continue
+    }
+    if (ch === '"') {
+      inString = true
+      result += ch
+      continue
+    }
+    // Line comment
+    if (ch === '/' && text[i + 1] === '/') {
+      const nl = text.indexOf('\n', i)
+      i = nl === -1 ? text.length : nl - 1
+      continue
+    }
+    // Block comment
+    if (ch === '/' && text[i + 1] === '*') {
+      const end = text.indexOf('*/', i + 2)
+      i = end === -1 ? text.length : end + 1
+      continue
+    }
+    result += ch
+  }
+  return result
+}
+
 /** Extract system dependency names from the project's deps file.
  *  Supports: pantry.jsonc, pantry.json, deps.yaml, deps.yml, pantry.yaml, pantry.yml */
 function extractSystemDeps(): string[] {
@@ -118,9 +158,7 @@ function extractSystemDeps(): string[] {
   for (const f of ['pantry.jsonc', 'pantry.json']) {
     if (!fs.existsSync(f)) continue
     try {
-      let content = fs.readFileSync(f, 'utf-8')
-      // Strip JSONC comments
-      content = content.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
+      const content = stripJsoncComments(fs.readFileSync(f, 'utf-8'))
       const parsed = JSON.parse(content)
       const deps = parsed.dependencies || {}
       // eslint-disable-next-line no-unused-vars
@@ -139,7 +177,8 @@ function extractSystemDeps(): string[] {
       const deps: string[] = []
       let inDeps = false
       for (const line of content.split('\n')) {
-        if (/^dependencies:\s*$/.test(line.trim())) {
+        // Match top-level `dependencies:` key (not indented)
+        if (/^dependencies:\s*$/.test(line)) {
           inDeps = true
           continue
         }
@@ -179,7 +218,10 @@ function findLockfile(): string | null {
   if (fs.existsSync('pantry.lock'))
     return 'pantry.lock'
   // Fall back to deps file if no lockfile yet
-  const candidates = ['pantry.jsonc', 'pantry.json', 'deps.yaml', 'deps.yml', 'package.json']
+  const candidates = [
+    'pantry.jsonc', 'pantry.json', 'pantry.yaml', 'pantry.yml',
+    'deps.yaml', 'deps.yml', 'package.json',
+  ]
   for (const f of candidates) {
     if (fs.existsSync(f))
       return f
@@ -392,11 +434,13 @@ export async function run(): Promise<void> {
       releaseToken: core.getInput('release-token') || process.env.GITHUB_TOKEN || '',
     }
 
-    // Mask webhook URLs so they never appear in logs
+    // Mask secrets so they never appear in logs
     if (inputs.discordWebhook)
       core.setSecret(inputs.discordWebhook)
     if (inputs.slackWebhook)
       core.setSecret(inputs.slackWebhook)
+    if (inputs.releaseToken)
+      core.setSecret(inputs.releaseToken)
 
     // Export registry token as env vars for subsequent steps (e.g. pantry publish:commit)
     const token = inputs.token || process.env.PANTRY_TOKEN || process.env.PANTRY_REGISTRY_TOKEN || ''
@@ -431,6 +475,11 @@ export async function run(): Promise<void> {
 
     // If setup-only with no packages, skip to publish/release (if any)
     if (inputs.setupOnly && !inputs.packages) {
+      // Still configure PATH so pantry-installed bins are available
+      if (fs.existsSync(pantryBinDir))
+        core.addPath(pantryBinDir)
+      core.addPath(path.join(homeDir, '.pantry', 'bin'))
+
       if (inputs.publish) {
         await publishPackage(inputs.publish, inputs.registryUrl, cwd)
         await sendNotifications(inputs)
@@ -446,20 +495,25 @@ export async function run(): Promise<void> {
     const depsFileForKey = findDepsFile()
     const resolvedVer = ver.trim().split(' ').pop()?.split('(')[0]?.trim() || resolvedVersion
     const lockHash = lockfile ? hashFile(lockfile) : 'no-lock'
-    const depsHash = depsFileForKey ? hashFile(depsFileForKey) : ''
+    // Avoid hashing the same file twice when lockfile == depsFile
+    const depsHash = (depsFileForKey && depsFileForKey !== lockfile) ? hashFile(depsFileForKey) : ''
     const cacheKey = `pantry-v2-${resolvedVer}-${platform.os}-${platform.arch}-${lockHash}-${depsHash}-${inputs.packages || 'all'}`
+    // Restore keys: try same OS/arch with any lock hash
+    const restoreKeys = [
+      `pantry-v2-${resolvedVer}-${platform.os}-${platform.arch}-`,
+    ]
     let cacheHit = false
 
     // Try restoring from cache
     try {
-      const hit = await cache.restoreCache([pantryDir], cacheKey)
+      const hit = await cache.restoreCache([pantryDir], cacheKey, restoreKeys)
       if (hit) {
         // Verify cache is valid — .bin dir should exist with actual binaries
         const binDirExists = fs.existsSync(pantryBinDir)
         const hasEntries = binDirExists && fs.readdirSync(pantryBinDir).length > 0
         if (hasEntries) {
           cacheHit = true
-          core.info(`Cache hit: ${cacheKey}`)
+          core.info(`Cache hit: ${hit}`)
         }
         else {
           core.info('Cache restored but incomplete — reinstalling')
@@ -513,20 +567,22 @@ export async function run(): Promise<void> {
         const systemDeps = extractSystemDeps()
         if (systemDeps.length > 0) {
           core.info(`Installing system deps: ${systemDeps.join(', ')}`)
-          // Install each dep individually with a 2-minute timeout
+          // Install each dep individually with a timeout
           // (large packages like zig can take time to download)
           for (const dep of systemDeps) {
-            const timeout = new Promise<void>((_, reject) =>
-              setTimeout(() => reject(new Error(`Timeout installing ${dep}`)), 120_000),
-            )
-            await Promise.race([
-              exec.exec('pantry', ['install', '--no-save', dep], {
+            const ac = new AbortController()
+            const timer = setTimeout(() => ac.abort(), 120_000)
+            try {
+              await exec.exec('pantry', ['install', '--no-save', dep], {
                 env: installEnv as { [key: string]: string },
-              }),
-              timeout,
-            ]).catch((e) => {
-              core.warning(`${dep}: ${e.message || 'install failed'}`)
-            })
+              })
+            }
+            catch (e) {
+              core.warning(`${dep}: ${e instanceof Error ? e.message : 'install failed'}`)
+            }
+            finally {
+              clearTimeout(timer)
+            }
           }
         }
         core.endGroup()
@@ -653,16 +709,18 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   const url = `${registryUrl}/zig/publish`
   core.info(`Publishing to ${url}`)
 
-  // Write manifest to temp file to avoid shell escaping issues with multiline content
+  // Write manifest and auth to temp files to avoid leaking secrets in process args
   const manifestPath = path.join(os.tmpdir(), `${name}-manifest.zon`)
+  const headerFile = path.join(os.tmpdir(), `${name}-auth-header`)
   fs.writeFileSync(manifestPath, zonContent)
+  fs.writeFileSync(headerFile, `Authorization: Bearer ${token}`, { mode: 0o600 })
 
   let output = ''
   let stderr = ''
   const exitCode = await exec.exec('curl', [
     '-s', '-w', '\\n%{http_code}',
     '-X', 'POST', url,
-    '-H', `Authorization: Bearer ${token}`,
+    '-H', `@${headerFile}`,
     '-F', `tarball=@${tarballPath};filename=${tarballName}`,
     '-F', `manifest=<${manifestPath}`,
   ], {
@@ -676,6 +734,7 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
   // Clean up
   fs.unlinkSync(tarballPath)
   fs.unlinkSync(manifestPath)
+  try { fs.unlinkSync(headerFile) } catch { /* already cleaned */ }
 
   if (exitCode !== 0) {
     throw new Error(`curl failed (exit ${exitCode}): ${stderr || output}`)
@@ -724,6 +783,8 @@ function extractChangelogForVersion(changelogPath: string, tag: string): string 
 
     const content = fs.readFileSync(changelogPath, 'utf-8')
     const version = tag.startsWith('v') ? tag.substring(1) : tag
+    // Escape dots for regex and require word boundary to avoid partial matches (1.2 matching 1.2.3)
+    const versionRe = new RegExp(`\\b${version.replace(/\./g, '\\.')}\\b`)
 
     const lines = content.split('\n')
     let capturing = false
@@ -732,15 +793,17 @@ function extractChangelogForVersion(changelogPath: string, tag: string): string 
     for (const line of lines) {
       const lower = line.toLowerCase()
 
-      // Start capturing at the [compare changes] link containing our version
-      if (lower.includes('[compare changes]') && line.includes(version)) {
+      // Match [compare changes] links or ## headings containing our exact version
+      const isVersionHeader = (lower.includes('[compare changes]') || /^#{1,3}\s/.test(line)) && versionRe.test(line)
+
+      if (!capturing && isVersionHeader) {
         capturing = true
         result.push(line)
         continue
       }
 
-      // Stop at the next [compare changes] link
-      if (capturing && lower.includes('[compare changes]'))
+      // Stop at the next version section
+      if (capturing && (lower.includes('[compare changes]') || /^#{1,3}\s+v?\d+\.\d+/.test(line)))
         break
 
       if (capturing)
@@ -780,16 +843,25 @@ async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
     const globber = await glob.create(pattern)
     files.push(...await globber.glob())
   }
+  core.info(`Matched ${files.length} file(s) from ${filePatterns.length} pattern(s)`)
 
   // Get or create release
   let releaseId: number
+  let releaseUrl = ''
+  const body = extractChangelogForVersion(inputs.releaseChangelog, tag) || inputs.releaseNotes
   try {
     const { data: existing } = await octokit.rest.repos.getReleaseByTag({ owner, repo, tag })
     releaseId = existing.id
+    releaseUrl = existing.html_url
     core.info(`Found existing release: ${tag} (${releaseId})`)
+
+    // Update body with changelog if the existing release has no body
+    if (body && !existing.body) {
+      await octokit.rest.repos.updateRelease({ owner, repo, release_id: releaseId, body })
+      core.info('Updated release body with changelog')
+    }
   }
   catch {
-    const body = extractChangelogForVersion(inputs.releaseChangelog, tag) || inputs.releaseNotes
     const { data: created } = await octokit.rest.repos.createRelease({
       owner,
       repo,
@@ -800,6 +872,7 @@ async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
       prerelease: inputs.releasePrerelease,
     })
     releaseId = created.id
+    releaseUrl = created.html_url
     core.info(`Created release: ${tag} (${releaseId})`)
   }
 
@@ -820,12 +893,36 @@ async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
           'content-length': size,
         },
       })
-      core.info(`Uploaded: ${name}`)
+      core.info(`Uploaded: ${name} (${(size / 1024).toFixed(1)} KB)`)
     }
     catch (err) {
-      core.warning(`Failed to upload ${name}: ${err instanceof Error ? err.message : String(err)}`)
+      const msg = err instanceof Error ? err.message : String(err)
+      // Asset already exists (409/422) — delete and retry once
+      if (msg.includes('already_exists') || msg.includes('already exists')) {
+        try {
+          const { data: assets } = await octokit.rest.repos.listReleaseAssets({ owner, repo, release_id: releaseId })
+          const existing = assets.find(a => a.name === name)
+          if (existing) {
+            await octokit.rest.repos.deleteReleaseAsset({ owner, repo, asset_id: existing.id })
+            const data = fs.readFileSync(file)
+            const size = fs.statSync(file).size
+            await octokit.rest.repos.uploadReleaseAsset({
+              owner, repo, release_id: releaseId, name,
+              data: data as unknown as string,
+              headers: { 'content-type': 'application/octet-stream', 'content-length': size },
+            })
+            core.info(`Replaced: ${name} (${(size / 1024).toFixed(1)} KB)`)
+            continue
+          }
+        }
+        catch { /* retry failed, fall through to warning */ }
+      }
+      core.warning(`Failed to upload ${name}: ${msg}`)
     }
   }
+
+  if (releaseUrl)
+    core.setOutput('release-url', releaseUrl)
 
   core.info(`Release complete: ${files.length} file(s) attached`)
   core.endGroup()

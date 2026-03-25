@@ -89,7 +89,9 @@ outputs:
     description: Path to the installed pantry binary
   version:
     description: The version of pantry that was installed
+  release-url:
+    description: URL of the created GitHub release (when release is enabled)
 
 runs:
-  using: node20
+  using: node22
   main: dist/index.js
