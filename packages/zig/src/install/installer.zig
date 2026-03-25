@@ -2331,6 +2331,11 @@ pub const Installer = struct {
         try io_helper.makePath(install_dir);
         try self.copyDirectoryStructure(zig_source_dir.?, install_dir);
 
+        // Ensure zig binary is executable (tar extraction via copy may lose +x)
+        const zig_bin_path = try std.fmt.allocPrint(self.allocator, "{s}/zig", .{install_dir});
+        defer self.allocator.free(zig_bin_path);
+        _ = io_helper.childRun(self.allocator, &[_][]const u8{ "chmod", "+x", zig_bin_path }) catch {};
+
         // Create project symlinks if installing to project
         if (options.project_root) |project_root| {
             // Create pantry/.bin directory
