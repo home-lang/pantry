@@ -501,11 +501,21 @@ export async function run(): Promise<void> {
         const systemDeps = extractSystemDeps()
         if (systemDeps.length > 0) {
           core.info(`Installing system deps: ${systemDeps.join(', ')}`)
-          await exec.exec('pantry', ['install', '--no-save', ...systemDeps], {
-            env: installEnv as { [key: string]: string },
-          }).catch(() => {
-            core.warning('Some system deps failed to install')
-          })
+          // Install each dep individually with a 2-minute timeout
+          // (large packages like zig can take time to download)
+          for (const dep of systemDeps) {
+            const timeout = new Promise<void>((_, reject) =>
+              setTimeout(() => reject(new Error(`Timeout installing ${dep}`)), 120_000),
+            )
+            await Promise.race([
+              exec.exec('pantry', ['install', '--no-save', dep], {
+                env: installEnv as { [key: string]: string },
+              }),
+              timeout,
+            ]).catch((e) => {
+              core.warning(`${dep}: ${e.message || 'install failed'}`)
+            })
+          }
         }
         core.endGroup()
       }
