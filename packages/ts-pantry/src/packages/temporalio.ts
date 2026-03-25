@@ -68,6 +68,7 @@ export const temporalioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.6.2',
     '1.6.1',
     '1.6.0',
     '1.5.1',
