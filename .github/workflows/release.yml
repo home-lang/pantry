@@ -19,6 +19,12 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        if: ${{ !hashFiles('pantry/ziglang.org/*/bin/zig') }}
+        with:
+          version: 0.16.0-dev.2736+3b515fbed
+
       - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all
 
