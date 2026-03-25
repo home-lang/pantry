@@ -599,6 +599,28 @@ export async function run(): Promise<void> {
       }
     }
 
+    // ── Ensure installed binaries are executable ──
+    // Some extracted archives (e.g. zig from ziglang.org) may lose +x during copy
+    if (platform.os !== 'windows') {
+      try {
+        const binEntries = fs.readdirSync(pantryBinDir)
+        for (const entry of binEntries) {
+          const binPath = path.join(pantryBinDir, entry)
+          try {
+            fs.chmodSync(binPath, 0o755)
+          }
+          catch { /* not a file or already executable */ }
+          // Also chmod the symlink target if it's a symlink
+          try {
+            const realPath = fs.realpathSync(binPath)
+            fs.chmodSync(realPath, 0o755)
+          }
+          catch { /* not a symlink */ }
+        }
+      }
+      catch { /* .bin dir may not exist yet */ }
+    }
+
     // ── Configure PATH ──
     core.addPath(pantryBinDir)
     core.addPath(path.join(homeDir, '.pantry', 'bin'))
