@@ -1,3 +1,37 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.2...v0.9.3)
+
+### 🐛 Bug Fixes
+
+- add zig fallback to pantry release workflow ([cd9f9cc](https://github.com/home-lang/pantry/commit/cd9f9cc)) _(by Chris <chrisbreuer93@gmail.com>)_
+- remove zig hack from action, keep bun fallback only ([dba5c34](https://github.com/home-lang/pantry/commit/dba5c34)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add zig fallback to pantry action when S3 download fails ([92c6931](https://github.com/home-lang/pantry/commit/92c6931)) _(by Chris <chrisbreuer93@gmail.com>)_
+- skip Zig format check and tests when zig not available ([95d9e89](https://github.com/home-lang/pantry/commit/95d9e89)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle pantry install crash gracefully in action ([d6e7b8b](https://github.com/home-lang/pantry/commit/d6e7b8b)) _(by Chris <chrisbreuer93@gmail.com>)_
+- fallback to direct bun install when S3 download fails ([09f52de](https://github.com/home-lang/pantry/commit/09f52de)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.3 ([0af74ac](https://github.com/home-lang/pantry/commit/0af74ac)) _(by Chris <chrisbreuer93@gmail.com>)_
+- update opencode.ai ([ccf9cd8](https://github.com/home-lang/pantry/commit/ccf9cd8)) _(by [github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>](https://github.com/github-actions[bot]))_
+
+### ⏪ Reverts
+
+- remove mlugg/setup-zig hack from release workflow ([4a5a4c6](https://github.com/home-lang/pantry/commit/4a5a4c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/main...HEAD)
+
+### ⏪ Reverts
+
+- remove mlugg/setup-zig hack from release workflow ([4a5a4c6](https://github.com/home-lang/pantry/commit/4a5a4c6)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.1...v0.9.2)
 
 ### 🐛 Bug Fixes
