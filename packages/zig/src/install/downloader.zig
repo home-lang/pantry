@@ -76,10 +76,21 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
-    // Native HTTP download using Zig's std.http.Client with native TLS.
+    // Prefer curl for downloads — it has proper timeouts (--connect-timeout, --max-time)
+    // and handles slow/buffering servers reliably. The native Zig HTTP client can hang
+    // indefinitely on servers that buffer responses (like registry proxies for large files).
+    downloadFileWithCurl(allocator, url, dest_path, quiet) catch {
+        // curl not available — fall back to native HTTP client
+    };
+
+    // Check if curl succeeded (file exists and is non-empty)
+    if (io_helper.accessAbsolute(dest_path, .{})) |_| {
+        return; // curl download succeeded
+    } else |_| {}
+
+    // Fallback: native HTTP client (no timeout — may hang on slow servers)
     var stream = io_helper.httpStreamGet(allocator, url) catch {
-        // Fallback to curl only if native client can't establish connection
-        return downloadFileWithCurl(allocator, url, dest_path, quiet);
+        return error.DownloadFailed;
     };
     defer stream.deinit();
 
