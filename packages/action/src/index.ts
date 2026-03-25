@@ -83,7 +83,9 @@ async function downloadAndInstall(version: string, platform: Platform): Promise<
       return cached
   }
 
-  const url = version === 'latest'
+  // Use /releases/latest/download for non-semver versions (like 'main', 'latest')
+  const isSemver = /^\d+\.\d+/.test(version)
+  const url = !isSemver
     ? `https://github.com/${REPO}/releases/latest/download/${platform.assetName}`
     : `https://github.com/${REPO}/releases/download/v${version}/${platform.assetName}`
 
