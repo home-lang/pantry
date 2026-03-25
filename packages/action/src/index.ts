@@ -539,31 +539,13 @@ export async function run(): Promise<void> {
       core.warning(`Bun setup warning: ${e}`)
     }
 
-    // ── Ensure zig works ──
-    const zigPath = path.join(pantryBinDir, 'zig')
-    try {
-      if (!fs.existsSync(zigPath)) {
-        // Zig not installed via pantry — install via mlugg/setup-zig pattern
-        core.info('Zig not found in pantry — installing via direct download')
-        const platform = process.platform === 'darwin' ? 'macos' : 'linux'
-        const arch = process.arch === 'arm64' ? 'aarch64' : 'x86_64'
-        const zigVersion = '0.14.1'
-        const zigUrl = `https://ziglang.org/download/${zigVersion}/zig-${platform}-${arch}-${zigVersion}.tar.xz`
-        const zigInstallDir = path.join(pantryDir, 'zig-install')
-
-        await exec.exec('bash', ['-c', [
-          `mkdir -p "${zigInstallDir}"`,
-          `curl -fsSL "${zigUrl}" | tar xJ --strip-components=1 -C "${zigInstallDir}"`,
-        ].join(' && ')])
-
-        if (fs.existsSync(path.join(zigInstallDir, 'zig'))) {
-          core.addPath(zigInstallDir)
-          core.info(`Zig ${zigVersion} installed via direct download`)
-        }
+    // ── Verify critical deps ──
+    // Log warnings for deps that pantry couldn't install (S3 issues etc.)
+    // Callers should add fallback setup steps (e.g. mlugg/setup-zig) if needed
+    for (const [dep, bin] of [['bun.sh', 'bun'], ['ziglang.org', 'zig']] as const) {
+      if (!fs.existsSync(path.join(pantryBinDir, bin))) {
+        core.warning(`${bin} not available after pantry install — add a fallback setup step if your workflow needs it`)
       }
-    }
-    catch (e) {
-      core.warning(`Zig setup warning: ${e}`)
     }
 
     // ── Publish ──
