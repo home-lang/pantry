@@ -470,6 +470,8 @@ export async function run(): Promise<void> {
         core.startGroup('Installing dependencies')
         await exec.exec('pantry', ['install', '--no-save'], {
           env: installEnv as { [key: string]: string },
+        }).catch(() => {
+          core.warning('pantry install failed — will try fallback for critical deps (bun)')
         })
 
         // Install system deps from deps file if it exists.
