@@ -70,6 +70,7 @@ export const kubebuilderioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.13.1',
     '4.13.0',
     '4.12.0',
     '4.11.1',
