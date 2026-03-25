@@ -458,6 +458,24 @@ export async function run(): Promise<void> {
       // cache miss or unavailable
     }
 
+    // Even on cache hit, verify critical system deps exist and install if missing
+    if (cacheHit) {
+      const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
+      const systemDeps = extractSystemDeps()
+      const missingDeps = systemDeps.filter(dep => {
+        const binName = dep === 'bun.sh' ? 'bun' : dep === 'ziglang.org' ? 'zig' : dep.split('.')[0]
+        return !fs.existsSync(path.join(pantryBinDir, binName))
+      })
+      if (missingDeps.length > 0) {
+        core.info(`Cache hit but missing: ${missingDeps.join(', ')} — installing`)
+        await exec.exec('pantry', ['install', '--no-save', ...missingDeps], {
+          env: installEnv as { [key: string]: string },
+        }).catch(() => {
+          core.warning(`Failed to install missing deps: ${missingDeps.join(', ')}`)
+        })
+      }
+    }
+
     if (!cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
 
