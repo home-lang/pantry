@@ -7,6 +7,8 @@ import * as crypto from 'node:crypto'
 import * as cache from '@actions/cache'
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
+import * as github from '@actions/github'
+import * as glob from '@actions/glob'
 import * as tc from '@actions/tool-cache'
 
 export * from './types'
@@ -380,6 +382,14 @@ export async function run(): Promise<void> {
       slackWebhook: core.getInput('slack-webhook') || '',
       notificationTitle: core.getInput('notification-title') || '',
       notificationMentions: core.getInput('notification-mentions') || '',
+      release: core.getInput('release') === 'true',
+      releaseFiles: core.getInput('release-files') || '',
+      releaseTag: core.getInput('release-tag') || process.env.GITHUB_REF_NAME || '',
+      releaseDraft: core.getInput('release-draft') === 'true',
+      releasePrerelease: core.getInput('release-prerelease') === 'true',
+      releaseNotes: core.getInput('release-notes') || '',
+      releaseChangelog: core.getInput('release-changelog') || 'CHANGELOG.md',
+      releaseToken: core.getInput('release-token') || process.env.GITHUB_TOKEN || '',
     }
 
     // Mask webhook URLs so they never appear in logs
@@ -419,12 +429,14 @@ export async function run(): Promise<void> {
     core.info(`pantry ${ver.trim() || resolvedVersion}`)
     core.endGroup()
 
-    // If setup-only with no packages, skip to publish (if any)
+    // If setup-only with no packages, skip to publish/release (if any)
     if (inputs.setupOnly && !inputs.packages) {
       if (inputs.publish) {
         await publishPackage(inputs.publish, inputs.registryUrl, cwd)
         await sendNotifications(inputs)
       }
+      if (inputs.release)
+        await createGitHubRelease(inputs)
       core.info('Setup complete')
       return
     }
@@ -550,6 +562,11 @@ export async function run(): Promise<void> {
     if (inputs.publish) {
       await publishPackage(inputs.publish, inputs.registryUrl, cwd)
       await sendNotifications(inputs)
+    }
+
+    // ── GitHub Release ──
+    if (inputs.release) {
+      await createGitHubRelease(inputs)
     }
 
     core.info('Setup complete')
@@ -694,6 +711,123 @@ async function publishZigPackage(registryUrl: string, token: string, cwd: string
     throw e
   }
 
+  core.endGroup()
+}
+
+/** Extract changelog content for a specific version from CHANGELOG.md */
+function extractChangelogForVersion(changelogPath: string, tag: string): string {
+  try {
+    if (!fs.existsSync(changelogPath)) {
+      core.warning(`Changelog not found: ${changelogPath}`)
+      return ''
+    }
+
+    const content = fs.readFileSync(changelogPath, 'utf-8')
+    const version = tag.startsWith('v') ? tag.substring(1) : tag
+
+    const lines = content.split('\n')
+    let capturing = false
+    const result: string[] = []
+
+    for (const line of lines) {
+      const lower = line.toLowerCase()
+
+      // Start capturing at the [compare changes] link containing our version
+      if (lower.includes('[compare changes]') && line.includes(version)) {
+        capturing = true
+        result.push(line)
+        continue
+      }
+
+      // Stop at the next [compare changes] link
+      if (capturing && lower.includes('[compare changes]'))
+        break
+
+      if (capturing)
+        result.push(line)
+    }
+
+    const extracted = result.join('\n').trim()
+    if (extracted)
+      core.info(`Extracted ${result.length} lines from changelog for ${tag}`)
+    else
+      core.warning(`No changelog content found for ${tag}`)
+
+    return extracted
+  }
+  catch (error) {
+    core.warning(`Changelog extraction failed: ${error instanceof Error ? error.message : String(error)}`)
+    return ''
+  }
+}
+
+/** Create a GitHub release with optional file attachments and changelog */
+async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
+  core.startGroup('GitHub release')
+
+  const token = inputs.releaseToken
+  if (!token)
+    throw new Error('GitHub token is required for creating releases (set release-token or GITHUB_TOKEN)')
+
+  const octokit = github.getOctokit(token)
+  const { owner, repo } = github.context.repo
+  const tag = inputs.releaseTag
+
+  // Resolve file patterns
+  const filePatterns = inputs.releaseFiles.split('\n').map(p => p.trim()).filter(Boolean)
+  const files: string[] = []
+  for (const pattern of filePatterns) {
+    const globber = await glob.create(pattern)
+    files.push(...await globber.glob())
+  }
+
+  // Get or create release
+  let releaseId: number
+  try {
+    const { data: existing } = await octokit.rest.repos.getReleaseByTag({ owner, repo, tag })
+    releaseId = existing.id
+    core.info(`Found existing release: ${tag} (${releaseId})`)
+  }
+  catch {
+    const body = extractChangelogForVersion(inputs.releaseChangelog, tag) || inputs.releaseNotes
+    const { data: created } = await octokit.rest.repos.createRelease({
+      owner,
+      repo,
+      tag_name: tag,
+      name: tag,
+      body,
+      draft: inputs.releaseDraft,
+      prerelease: inputs.releasePrerelease,
+    })
+    releaseId = created.id
+    core.info(`Created release: ${tag} (${releaseId})`)
+  }
+
+  // Upload assets
+  for (const file of files) {
+    const name = path.basename(file)
+    try {
+      const data = fs.readFileSync(file)
+      const size = fs.statSync(file).size
+      await octokit.rest.repos.uploadReleaseAsset({
+        owner,
+        repo,
+        release_id: releaseId,
+        name,
+        data: data as unknown as string,
+        headers: {
+          'content-type': 'application/octet-stream',
+          'content-length': size,
+        },
+      })
+      core.info(`Uploaded: ${name}`)
+    }
+    catch (err) {
+      core.warning(`Failed to upload ${name}: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+
+  core.info(`Release complete: ${files.length} file(s) attached`)
   core.endGroup()
 }
 

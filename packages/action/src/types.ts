@@ -10,6 +10,14 @@ export interface ActionInputs {
   slackWebhook: string
   notificationTitle: string
   notificationMentions: string
+  release: boolean
+  releaseFiles: string
+  releaseTag: string
+  releaseDraft: boolean
+  releasePrerelease: boolean
+  releaseNotes: string
+  releaseChangelog: string
+  releaseToken: string
 }
 
 export interface Platform {

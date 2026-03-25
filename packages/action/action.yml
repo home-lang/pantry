@@ -51,6 +51,38 @@ inputs:
     description: 'Discord role/user mentions or Slack user IDs to ping (e.g. "<@&ROLE_ID>" for Discord, "<@U12345>" for Slack)'
     required: false
     default: ''
+  release:
+    description: Create a GitHub release. Attaches files and extracts changelog.
+    required: false
+    default: 'false'
+  release-files:
+    description: 'Newline-separated glob patterns of files to attach to the release (e.g. "dist/*.zip\ndist/checksums.sha256")'
+    required: false
+    default: ''
+  release-tag:
+    description: Tag name for the release. Defaults to github.ref_name.
+    required: false
+    default: ''
+  release-draft:
+    description: Create a draft release
+    required: false
+    default: 'false'
+  release-prerelease:
+    description: Mark release as prerelease
+    required: false
+    default: 'false'
+  release-notes:
+    description: Custom release notes (used if changelog extraction finds nothing)
+    required: false
+    default: ''
+  release-changelog:
+    description: Path to CHANGELOG.md to extract release notes from
+    required: false
+    default: CHANGELOG.md
+  release-token:
+    description: GitHub token for creating releases. Defaults to GITHUB_TOKEN.
+    required: false
+    default: ''
 
 outputs:
   pantry-path:
