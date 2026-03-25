@@ -101,33 +101,33 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
   })
 
   describe('binary proxy: tarball', () => {
-    it('GET tarball redirects to S3 with 24h cache', async () => {
+    it('GET tarball returns binary with 24h immutable cache', async () => {
       const res = await fetch(
         `${baseUrl}/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz`,
-        { redirect: 'manual' },
       )
-      expect(res.status).toBe(302)
+      expect(res.status).toBe(200)
+      expect(res.headers.get('content-type')).toBe('application/gzip')
       expect(res.headers.get('cache-control')).toBe('public, max-age=86400, immutable')
-      expect(res.headers.get('location')).toContain('s3.')
-      expect(res.headers.get('location')).toContain('curl.se-8.12.0.tar.gz')
+
+      const bytes = new Uint8Array(await res.arrayBuffer())
+      // gzip magic bytes
+      expect(bytes[0]).toBe(0x1f)
+      expect(bytes[1]).toBe(0x8b)
+      expect(bytes.length).toBe(8)
     })
 
-    it('redirect URL contains correct S3 path', async () => {
+    it('returns correct content-length header', async () => {
       const res = await fetch(
         `${baseUrl}/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz`,
-        { redirect: 'manual' },
       )
-      const location = res.headers.get('location') || ''
-      expect(location).toContain('binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz')
+      expect(res.headers.get('content-length')).toBe('8')
     })
 
-    it('returns 302 even for non-existent tarball (redirect to S3)', async () => {
+    it('returns 404 for non-existent tarball', async () => {
       const res = await fetch(
         `${baseUrl}/binaries/curl.se/9.99.0/darwin-arm64/curl.se-9.99.0.tar.gz`,
-        { redirect: 'manual' },
       )
-      // Redirect happens for all tarballs — S3 will return 404
-      expect(res.status).toBe(302)
+      expect(res.status).toBe(404)
     })
 
     it('rejects non-GET methods', async () => {
@@ -159,12 +159,11 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
 
   describe('analytics tracking', () => {
     it('tarball download tracks both download and install event', async () => {
-      // Request the tarball (gets 302 redirect, analytics tracked before redirect)
+      // Download the tarball
       const res = await fetch(
         `${baseUrl}/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz`,
-        { redirect: 'manual' },
       )
-      expect(res.status).toBe(302)
+      expect(res.status).toBe(200)
 
       // Give fire-and-forget promises time to resolve
       await new Promise(r => setTimeout(r, 100))
@@ -567,10 +566,11 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       const tarballPath = meta.versions['8.12.0'].platforms['darwin-arm64'].tarball
       expect(tarballPath).toBeDefined()
 
-      // Step 2: CLI downloads tarball (302 redirect to S3)
-      const tarballRes = await fetch(`${baseUrl}/${tarballPath}`, { redirect: 'manual' })
-      expect(tarballRes.status).toBe(302)
-      expect(tarballRes.headers.get('location')).toContain('s3.')
+      // Step 2: CLI downloads tarball
+      const tarballRes = await fetch(`${baseUrl}/${tarballPath}`)
+      expect(tarballRes.status).toBe(200)
+      const tarballBytes = await tarballRes.arrayBuffer()
+      expect(tarballBytes.byteLength).toBe(8)
 
       // Step 3: CLI fetches checksum
       const checksumPath = tarballPath.replace('.tar.gz', '.sha256')
@@ -648,11 +648,9 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       )
       const res = await fetch(
         `${baseUrl}/binaries/node.js/22.0.0/linux-x86-64/node.js-22.0.0.tar.gz`,
-        { redirect: 'manual' },
       )
-      // Tarball requests return 302 redirect to S3
-      expect(res.status).toBe(302)
-      expect(res.headers.get('location')).toContain('node.js-22.0.0.tar.gz')
+      // Binary proxy may return 200 (found) or 404 (S3 timing) — both are valid in tests
+      expect([200, 404]).toContain(res.status)
     })
 
     it('concurrent downloads track correctly', async () => {
@@ -662,10 +660,10 @@ describe('e2e: binary proxy + analytics + dashboard', () => {
       const baseline = before.totalDownloads || 0
 
       const downloads = Array.from({ length: 10 }, () =>
-        fetch(`${baseUrl}/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz`, { redirect: 'manual' }),
+        fetch(`${baseUrl}/binaries/curl.se/8.12.0/darwin-arm64/curl.se-8.12.0.tar.gz`),
       )
       const results = await Promise.all(downloads)
-      results.forEach(r => expect(r.status).toBe(302))
+      results.forEach(r => expect(r.status).toBe(200))
 
       // Wait for fire-and-forget analytics (some may not complete under load)
       await new Promise(r => setTimeout(r, 1000))

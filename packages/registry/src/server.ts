@@ -2119,21 +2119,41 @@ async function handleBinaryProxy(
         }).catch(() => {})
       }
 
-      // Redirect to S3 for large binary downloads (streams properly, no buffering)
+      // Stream tarball: use injected storage for tests, S3 direct for production
+      if (storage) {
+        // Test/injected storage — serve from buffer
+        try {
+          const buffer = await storage.getObject(s3Key)
+          return new Response(new Uint8Array(buffer), {
+            headers: { ...corsHeaders, 'Content-Type': contentType, 'Cache-Control': cacheControl, 'Content-Length': String(buffer.byteLength) },
+          })
+        }
+        catch {
+          return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
+        }
+      }
+
+      // Production: stream from S3 (pipe response body, no buffering)
       const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
       const s3Region = process.env.AWS_REGION || 'us-east-1'
       const s3Url = `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/${s3Key}`
-      return new Response(null, {
-        status: 302,
+      const s3Response = await fetch(s3Url)
+      if (!s3Response.ok || !s3Response.body) {
+        return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
+      }
+
+      return new Response(s3Response.body, {
+        status: 200,
         headers: {
           ...corsHeaders,
-          Location: s3Url,
+          'Content-Type': contentType,
           'Cache-Control': cacheControl,
+          ...(s3Response.headers.get('content-length') ? { 'Content-Length': s3Response.headers.get('content-length')! } : {}),
         },
       })
     }
 
-    // For metadata and checksums (small files), proxy directly
+    // For metadata and checksums (small files), proxy from storage
     const buffer = await binaryStore.getObject(s3Key)
 
     return new Response(new Uint8Array(buffer), {

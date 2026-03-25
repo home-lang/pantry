@@ -76,10 +76,8 @@ fn downloadFileWithOptions(allocator: std.mem.Allocator, url: []const u8, dest_p
         return error.InvalidUrl;
     }
 
-    // Native HTTP download using Zig's std.http.Client with native TLS.
-    // Falls back to curl if native client fails to connect.
+    // Native Zig HTTP download with TLS. Falls back to curl on connection failure.
     var stream = io_helper.httpStreamGet(allocator, url) catch {
-        // Fallback to curl if native client can't establish connection
         return downloadFileWithCurl(allocator, url, dest_path, quiet);
     };
     defer stream.deinit();
