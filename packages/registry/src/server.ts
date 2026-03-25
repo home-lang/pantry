@@ -2133,22 +2133,24 @@ async function handleBinaryProxy(
         }
       }
 
-      // Production: stream from S3 (pipe response body, no buffering)
+      // Production: fetch from S3 and serve with explicit Content-Length
+      // (Zig's HTTP client needs Content-Length; chunked transfer hangs)
       const s3Bucket = process.env.S3_BUCKET || 'pantry-registry'
       const s3Region = process.env.AWS_REGION || 'us-east-1'
       const s3Url = `https://${s3Bucket}.s3.${s3Region}.amazonaws.com/${s3Key}`
       const s3Response = await fetch(s3Url)
-      if (!s3Response.ok || !s3Response.body) {
+      if (!s3Response.ok) {
         return Response.json({ error: 'Not found' }, { status: 404, headers: corsHeaders })
       }
 
-      return new Response(s3Response.body, {
+      const buffer = await s3Response.arrayBuffer()
+      return new Response(buffer, {
         status: 200,
         headers: {
           ...corsHeaders,
           'Content-Type': contentType,
           'Cache-Control': cacheControl,
-          ...(s3Response.headers.get('content-length') ? { 'Content-Length': s3Response.headers.get('content-length')! } : {}),
+          'Content-Length': String(buffer.byteLength),
         },
       })
     }
