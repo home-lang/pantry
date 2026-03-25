@@ -736,6 +736,13 @@ pub fn installSinglePackage(
             .source = .github,
             .repo = try allocator.dupe(u8, repo_str),
         };
+    } else if (is_zig_package) blk: {
+        // Zig packages: always use direct ziglang.org download (handles stable + dev versions)
+        break :blk lib.packages.PackageSpec{
+            .name = "zig",
+            .version = dep.version,
+            .source = .ziglang,
+        };
     } else blk: {
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {

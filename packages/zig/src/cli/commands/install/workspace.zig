@@ -218,10 +218,20 @@ fn installSingleWorkspaceDep(
             .source = .github,
             .repo = repo_owned,
         };
-    } else lib.packages.PackageSpec{
-        .name = clean_name,
-        .version = dep.version,
-        .source = pkg_source,
+    } else blk: {
+        // For zig packages, always use direct ziglang.org download
+        const is_zig_ws = std.mem.eql(u8, clean_name, "zig") or
+            std.mem.eql(u8, clean_name, "ziglang") or
+            std.mem.eql(u8, clean_name, "ziglang.org");
+        break :blk if (is_zig_ws) lib.packages.PackageSpec{
+            .name = "zig",
+            .version = dep.version,
+            .source = .ziglang,
+        } else lib.packages.PackageSpec{
+            .name = clean_name,
+            .version = dep.version,
+            .source = pkg_source,
+        };
     };
     defer if (repo_owned) |r| allocator.free(r);
 
