@@ -404,31 +404,45 @@ export function createHandler(
       }
 
       // Short URL for commit packages (pkg-pr-new style)
-      // GET /pickier@abc1234 -> serve tarball
-      // GET /@craft-native/craft@abc1234 -> serve tarball
+      // GET /pickier@abc1234 -> serve tarball (exact match)
+      // GET /@craft-native/craft@abc1234 -> serve tarball (scoped)
+      // GET /craft@abc1234 -> serve tarball (alias: matches *-craft/ or craft/)
       const shortCommitMatch = path.match(/^\/(@[^/]+\/[^@]+|[^@/][^@]*)@([a-f0-9]{7,40})$/)
       if (shortCommitMatch && req.method === 'GET') {
         const pkgName = decodeURIComponent(shortCommitMatch[1])
         const sha = shortCommitMatch[2]
+        const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-')
 
-        // For full SHA (40 chars), use the normal download path
-        // For short SHA (7+ chars), resolve via the existing /commits endpoint
+        // Strategy: list S3 objects under commits/{sha} prefix and find a matching package.
+        // This handles full SHA, short SHA, exact names, and aliases (e.g., "craft" -> "craft-native-craft").
         let tarball: ArrayBuffer | null = null
-        if (sha.length === 40) {
-          tarball = await registry.downloadCommitTarball(sha, pkgName)
-        }
-        else {
-          // Short SHA: list S3 objects with prefix to find full SHA, then download
-          try {
-            const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-')
-            const keys = await registry.tarball.list(`commits/${sha}`)
+        try {
+          // For full SHA, try exact download first (fast path)
+          if (sha.length === 40) {
+            tarball = await registry.downloadCommitTarball(sha, pkgName)
+          }
+
+          // If no exact match, search S3 by prefix
+          if (!tarball) {
+            const prefix = sha.length === 40 ? `commits/${sha}/` : `commits/${sha}`
+            const keys = await registry.tarball.list(prefix)
+
+            // Try exact safe name match first, then alias (bare name as suffix)
             const matchKey = keys.find((k: string) => k.includes(`/${safeName}/`))
+              || keys.find((k: string) => {
+                // Alias: "craft" matches "craft-native-craft/" (ends with -craft/)
+                // or "craft/" (exact dir match)
+                const parts = k.split('/')
+                const dir = parts[2] // commits/{sha}/{dir}/{file}.tgz
+                return dir === safeName || dir?.endsWith(`-${safeName}`)
+              })
+
             if (matchKey) {
               tarball = await registry.tarball.download(matchKey)
             }
           }
-          catch { /* fall through to 404 */ }
         }
+        catch { /* fall through to 404 */ }
 
         if (tarball) {
           analyticsStorage.trackDownload({
@@ -437,7 +451,6 @@ export function createHandler(
             timestamp: new Date().toISOString(),
             userAgent: req.headers.get('user-agent') || undefined,
           }).catch(() => {})
-          const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-')
           return new Response(tarball, {
             headers: {
               ...corsHeaders,
