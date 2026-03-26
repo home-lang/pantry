@@ -5,6 +5,15 @@
   "description": "Pantry package registry backend - S3 storage with DynamoDB metadata",
   "author": "Stacks.js",
   "license": "MIT",
+  "homepage": "https://github.com/home-lang/pantry/tree/main/packages/registry#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/home-lang/pantry.git",
+    "directory": "packages/registry"
+  },
+  "bugs": {
+    "url": "https://github.com/home-lang/pantry/issues"
+  },
   "exports": {
     ".": {
       "import": "./dist/index.js",
