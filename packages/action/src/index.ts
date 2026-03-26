@@ -886,6 +886,62 @@ function extractChangelogForVersion(changelogPath: string, tag: string): string 
 }
 
 /** Create a GitHub release with optional file attachments and changelog */
+/**
+ * Auto-discover and package built binaries into platform-named zip archives.
+ * Looks in standard Zig build output dirs (zig-out/bin/, zig-out/cross/)
+ * and creates dist/*.zip files ready for GitHub release upload.
+ *
+ * Returns glob patterns for the packaged files.
+ */
+async function packageBuildArtifacts(cwd: string): Promise<string[]> {
+  const distDir = path.join(cwd, 'dist')
+  fs.mkdirSync(distDir, { recursive: true })
+
+  const zigOut = path.join(cwd, 'packages', 'zig', 'zig-out')
+  if (!fs.existsSync(zigOut)) return []
+
+  const packaged: string[] = []
+  const { name } = detectPackageInfo(cwd)
+  const baseName = name.replace(/\.org$|\.com$|\.dev$|\.io$/, '').replace(/[^a-z0-9]/g, '')
+
+  // Package native binary
+  const nativeBin = path.join(zigOut, 'bin')
+  if (fs.existsSync(nativeBin)) {
+    const platform = detectPlatform()
+    const archStr = platform.arch === 'arm64' ? 'arm64' : 'x64'
+    const zipName = `${baseName}-${platform.os}-${archStr}.zip`
+    const zipPath = path.join(distDir, zipName)
+
+    const entries = fs.readdirSync(nativeBin).filter(f => !f.startsWith('.'))
+    if (entries.length > 0) {
+      await exec.exec('zip', ['-j', zipPath, ...entries.map(e => path.join(nativeBin, e))])
+      packaged.push(zipPath)
+      core.info(`Packaged: ${zipName}`)
+    }
+  }
+
+  // Package cross-compiled binaries
+  const crossDir = path.join(zigOut, 'cross')
+  if (fs.existsSync(crossDir)) {
+    for (const target of fs.readdirSync(crossDir)) {
+      const targetDir = path.join(crossDir, target)
+      if (!fs.statSync(targetDir).isDirectory()) continue
+
+      const zipName = `${baseName}-${target}.zip`
+      const zipPath = path.join(distDir, zipName)
+
+      const entries = fs.readdirSync(targetDir).filter(f => !f.startsWith('.'))
+      if (entries.length > 0) {
+        await exec.exec('zip', ['-j', zipPath, ...entries.map(e => path.join(targetDir, e))])
+        packaged.push(zipPath)
+        core.info(`Packaged: ${zipName}`)
+      }
+    }
+  }
+
+  return packaged
+}
+
 async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
   core.startGroup('GitHub release')
 
@@ -897,8 +953,14 @@ async function createGitHubRelease(inputs: ActionInputs): Promise<void> {
   const { owner, repo } = github.context.repo
   const tag = inputs.releaseTag
 
-  // Resolve file patterns
-  const filePatterns = inputs.releaseFiles.split('\n').map(p => p.trim()).filter(Boolean)
+  // Resolve file patterns — auto-discover if no explicit files given
+  let filePatterns = inputs.releaseFiles.split('\n').map(p => p.trim()).filter(Boolean)
+  if (filePatterns.length === 0 || (filePatterns.length === 1 && filePatterns[0] === 'auto')) {
+    // Auto-package build artifacts
+    core.info('Auto-packaging build artifacts...')
+    const packaged = await packageBuildArtifacts(process.cwd())
+    filePatterns = packaged.length > 0 ? ['dist/*.zip'] : []
+  }
   const files: string[] = []
   for (const pattern of filePatterns) {
     const globber = await glob.create(pattern)
