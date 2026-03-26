@@ -300,19 +300,22 @@ pub fn buildZiglangUrl(
         .aarch64 => "aarch64",
     };
 
+    // Windows uses .zip, all other platforms use .tar.xz
+    const ext = if (platform == .windows) "zip" else "tar.xz";
+
     // Dev versions use /builds/ endpoint, stable use /download/{version}/
-    // Note: ziglang.org uses format zig-{arch}-{platform}-{version}.tar.xz
+    // Note: ziglang.org uses format zig-{arch}-{platform}-{version}.{ext}
     if (isZigDevVersion(version)) {
         return std.fmt.allocPrint(
             allocator,
-            "https://ziglang.org/builds/zig-{s}-{s}-{s}.tar.xz",
-            .{ arch_str, platform_str, version },
+            "https://ziglang.org/builds/zig-{s}-{s}-{s}.{s}",
+            .{ arch_str, platform_str, version, ext },
         );
     } else {
         return std.fmt.allocPrint(
             allocator,
-            "https://ziglang.org/download/{s}/zig-{s}-{s}-{s}.tar.xz",
-            .{ version, arch_str, platform_str, version },
+            "https://ziglang.org/download/{s}/zig-{s}-{s}-{s}.{s}",
+            .{ version, arch_str, platform_str, version, ext },
         );
     }
 }

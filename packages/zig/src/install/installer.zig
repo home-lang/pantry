@@ -2261,11 +2261,13 @@ pub const Installer = struct {
 
         try io_helper.makePath(temp_dir);
 
-        // Download the archive
+        // Download the archive (Windows uses .zip, others use .tar.xz)
+        const is_windows = comptime @import("builtin").os.tag == .windows;
+        const archive_ext = if (is_windows) "zip" else "tar.xz";
         const archive_path = try std.fmt.allocPrint(
             self.allocator,
-            "{s}/zig.tar.xz",
-            .{temp_dir},
+            "{s}/zig.{s}",
+            .{ temp_dir, archive_ext },
         );
         defer self.allocator.free(archive_path);
 
@@ -2305,7 +2307,7 @@ pub const Installer = struct {
         defer self.allocator.free(extract_dir);
 
         try io_helper.makePath(extract_dir);
-        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, "tar.xz", options.quiet);
+        try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, archive_ext, options.quiet);
 
         // Find the actual Zig directory (it's usually named zig-{platform}-{arch}-{version})
         // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
@@ -2331,12 +2333,14 @@ pub const Installer = struct {
         try io_helper.makePath(install_dir);
         try self.copyDirectoryStructure(zig_source_dir.?, install_dir);
 
-        // Ensure zig binary is executable (tar extraction via copy may lose +x)
-        const zig_bin_path = try std.fmt.allocPrint(self.allocator, "{s}/zig", .{install_dir});
-        defer self.allocator.free(zig_bin_path);
-        _ = io_helper.childRun(self.allocator, &[_][]const u8{ "chmod", "+x", zig_bin_path }) catch {};
+        // Ensure zig binary is executable (not needed on Windows)
+        if (comptime !is_windows) {
+            const zig_bin_path = try std.fmt.allocPrint(self.allocator, "{s}/zig", .{install_dir});
+            defer self.allocator.free(zig_bin_path);
+            _ = io_helper.childRun(self.allocator, &[_][]const u8{ "chmod", "+x", zig_bin_path }) catch {};
+        }
 
-        // Create project symlinks if installing to project
+        // Create project symlinks/copies if installing to project
         if (options.project_root) |project_root| {
             // Create pantry/.bin directory
             const bin_dir = try std.fmt.allocPrint(
@@ -2347,26 +2351,35 @@ pub const Installer = struct {
             defer self.allocator.free(bin_dir);
             try io_helper.makePath(bin_dir);
 
-            // Create symlink for zig binary
+            // Binary name: zig.exe on Windows, zig elsewhere
+            const bin_name = if (is_windows) "zig.exe" else "zig";
+
             const zig_binary = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/zig",
-                .{install_dir},
+                "{s}/{s}",
+                .{ install_dir, bin_name },
             );
             defer self.allocator.free(zig_binary);
 
             const zig_link = try std.fmt.allocPrint(
                 self.allocator,
-                "{s}/zig",
-                .{bin_dir},
+                "{s}/{s}",
+                .{ bin_dir, bin_name },
             );
             defer self.allocator.free(zig_link);
 
-            // Remove existing symlink if it exists
+            // Remove existing symlink/file if it exists
             io_helper.deleteFile(zig_link) catch {};
-            io_helper.symLink(zig_binary, zig_link) catch |err| {
-                if (!style.isCI()) style.print("Warning: Failed to create zig symlink: {}\n", .{err});
-            };
+            if (is_windows) {
+                // Windows: copy instead of symlink (symlinks need admin on Windows)
+                io_helper.copyFile(zig_binary, zig_link) catch |err| {
+                    if (!style.isCI()) style.print("Warning: Failed to copy zig binary: {}\n", .{err});
+                };
+            } else {
+                io_helper.symLink(zig_binary, zig_link) catch |err| {
+                    if (!style.isCI()) style.print("Warning: Failed to create zig symlink: {}\n", .{err});
+                };
+            }
         }
 
         const end_ts_ = io_helper.clockGettime();

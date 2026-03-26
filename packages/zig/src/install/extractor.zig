@@ -31,6 +31,11 @@ pub fn extractArchiveQuiet(
     // Ensure destination directory exists
     try io_helper.makePath(dest_dir);
 
+    // For .zip archives, use platform-specific unzip
+    if (std.mem.eql(u8, format, "zip")) {
+        return extractZipArchive(allocator, archive_path, dest_dir);
+    }
+
     // Use system tar as primary extraction method — it handles all entry types
     // (symlinks, hard links, large archives) reliably. Fall back to Zig native
     // tar only when system tar is unavailable.
@@ -240,4 +245,23 @@ pub fn extractArchiveWithVerification(
 
     // Step 3: Extract the archive
     try extractArchiveQuiet(allocator, archive_path, dest_dir, format, !verbose);
+}
+
+/// Extract a .zip archive using platform-appropriate tools.
+/// Windows: PowerShell Expand-Archive. macOS/Linux: unzip command.
+fn extractZipArchive(allocator: std.mem.Allocator, archive_path: []const u8, dest_dir: []const u8) !void {
+    const builtin = @import("builtin");
+    if (comptime builtin.os.tag == .windows) {
+        // PowerShell: Expand-Archive -Path <zip> -DestinationPath <dir> -Force
+        const ps_cmd = try std.fmt.allocPrint(
+            allocator,
+            "Expand-Archive -Path '{s}' -DestinationPath '{s}' -Force",
+            .{ archive_path, dest_dir },
+        );
+        defer allocator.free(ps_cmd);
+        _ = try io_helper.childRun(allocator, &[_][]const u8{ "powershell", "-NoProfile", "-Command", ps_cmd });
+    } else {
+        // Unix: unzip -o -q <zip> -d <dir>
+        _ = try io_helper.childRun(allocator, &[_][]const u8{ "unzip", "-o", "-q", archive_path, "-d", dest_dir });
+    }
 }
