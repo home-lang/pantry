@@ -1,3 +1,41 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.17...v0.9.18)
+
+### 🐛 Bug Fixes
+
+- proper perl-based zig dep compat patch in release ([234bf91](https://github.com/home-lang/pantry/commit/234bf91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch zig-cli ArrayList compat for 0.16-dev in release workflow ([9be6f02](https://github.com/home-lang/pantry/commit/9be6f02)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use zig 0.16-dev in fallback (matches build.zig API) ([d962614](https://github.com/home-lang/pantry/commit/d962614)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use runtime check for zig availability, not hashFiles ([7aa1349](https://github.com/home-lang/pantry/commit/7aa1349)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.18 ([29fc763](https://github.com/home-lang/pantry/commit/29fc763)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.9.17 ([101d29c](https://github.com/home-lang/pantry/commit/101d29c)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.15...HEAD)
+
+### 🐛 Bug Fixes
+
+- proper perl-based zig dep compat patch in release ([234bf91](https://github.com/home-lang/pantry/commit/234bf91)) _(by Chris <chrisbreuer93@gmail.com>)_
+- patch zig-cli ArrayList compat for 0.16-dev in release workflow ([9be6f02](https://github.com/home-lang/pantry/commit/9be6f02)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use zig 0.16-dev in fallback (matches build.zig API) ([d962614](https://github.com/home-lang/pantry/commit/d962614)) _(by Chris <chrisbreuer93@gmail.com>)_
+- use runtime check for zig availability, not hashFiles ([7aa1349](https://github.com/home-lang/pantry/commit/7aa1349)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add zig fallback + use pantry action for releases ([a88d37d](https://github.com/home-lang/pantry/commit/a88d37d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.17 ([101d29c](https://github.com/home-lang/pantry/commit/101d29c)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.9.16 ([65a8127](https://github.com/home-lang/pantry/commit/65a8127)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.16...v0.9.17)
 
 ### 🐛 Bug Fixes
