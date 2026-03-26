@@ -1,3 +1,13 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.12...v0.9.13)
+
+### 🧹 Chores
+
+- release v0.9.13 ([78e4f5d](https://github.com/home-lang/pantry/commit/78e4f5d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.4...v0.9.7)
 
 ### 🐛 Bug Fixes
