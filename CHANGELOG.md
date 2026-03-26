@@ -1,3 +1,33 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.16...v0.9.17)
+
+### 🐛 Bug Fixes
+
+- add zig fallback + use pantry action for releases ([a88d37d](https://github.com/home-lang/pantry/commit/a88d37d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.17 ([ace3deb](https://github.com/home-lang/pantry/commit/ace3deb)) _(by Chris <chrisbreuer93@gmail.com>)_
+- release v0.9.16 ([65a8127](https://github.com/home-lang/pantry/commit/65a8127)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.15...HEAD)
+
+### 🐛 Bug Fixes
+
+- add zig fallback + use pantry action for releases ([a88d37d](https://github.com/home-lang/pantry/commit/a88d37d)) _(by Chris <chrisbreuer93@gmail.com>)_
+- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.16 ([65a8127](https://github.com/home-lang/pantry/commit/65a8127)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.15...v0.9.16)
 
 ### 🐛 Bug Fixes
