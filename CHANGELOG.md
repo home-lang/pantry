@@ -1,3 +1,48 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.18...v0.9.19)
+
+### 🚀 Features
+
+- auto-package build artifacts for GitHub releases ([4abbe91](https://github.com/home-lang/pantry/commit/4abbe91)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- resolve detectPlatform export conflict in ts-pantry ([0c1fd27](https://github.com/home-lang/pantry/commit/0c1fd27)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve install flow and fix update-packages workflow ([118e2e0](https://github.com/home-lang/pantry/commit/118e2e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle empty version in installSystemPackage, fix bunx symlink ([640e862](https://github.com/home-lang/pantry/commit/640e862)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: resolve * and semver ranges in system dep versions ([8db6253](https://github.com/home-lang/pantry/commit/8db6253)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.19 ([9be52fe](https://github.com/home-lang/pantry/commit/9be52fe)) _(by Chris <chrisbreuer93@gmail.com>)_
+- add den in pantry registry ([41c1cb5](https://github.com/home-lang/pantry/commit/41c1cb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.18...HEAD)
+
+### 🚀 Features
+
+- auto-package build artifacts for GitHub releases ([4abbe91](https://github.com/home-lang/pantry/commit/4abbe91)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🐛 Bug Fixes
+
+- resolve detectPlatform export conflict in ts-pantry ([0c1fd27](https://github.com/home-lang/pantry/commit/0c1fd27)) _(by Chris <chrisbreuer93@gmail.com>)_
+- improve install flow and fix update-packages workflow ([118e2e0](https://github.com/home-lang/pantry/commit/118e2e0)) _(by Chris <chrisbreuer93@gmail.com>)_
+- handle empty version in installSystemPackage, fix bunx symlink ([640e862](https://github.com/home-lang/pantry/commit/640e862)) _(by Chris <chrisbreuer93@gmail.com>)_
+- **action**: resolve * and semver ranges in system dep versions ([8db6253](https://github.com/home-lang/pantry/commit/8db6253)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- add den in pantry registry ([41c1cb5](https://github.com/home-lang/pantry/commit/41c1cb5)) _(by glennmichael123 <gtorregosa@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+- _glennmichael123 <gtorregosa@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.17...v0.9.18)
 
 ### 🐛 Bug Fixes
