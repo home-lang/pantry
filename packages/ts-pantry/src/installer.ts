@@ -58,7 +58,7 @@ interface PackageResolver {
 
 // ── Platform Detection ──
 
-export function detectPlatform(): Platform {
+function detectPlatform(): Platform {
   const osName = os.platform()
   const arch = os.arch()
 
