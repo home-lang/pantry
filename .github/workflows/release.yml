@@ -19,6 +19,12 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
+      - name: Setup Zig (fallback)
+        if: "!hashFiles('pantry/.bin/zig')"
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.15.2
+
       - name: Build for All Platforms
         run: cd packages/zig && zig build compile-all
 
@@ -54,9 +60,11 @@ jobs:
           ls -la dist/
 
       - name: Create GitHub Release
-        uses: stacksjs/action-releaser@v1.2.9
+        uses: ./packages/action
         with:
-          files: |
+          install: 'false'
+          release: 'true'
+          release-files: |
             dist/pantry-linux-x64.zip
             dist/pantry-linux-arm64.zip
             dist/pantry-darwin-x64.zip
@@ -64,8 +72,8 @@ jobs:
             dist/pantry-windows-x64.zip
             dist/pantry-freebsd-x64.zip
             dist/pantry-freebsd-arm64.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          release-changelog: CHANGELOG.md
+          release-token: ${{ secrets.GITHUB_TOKEN }}
 
   npm:
     name: npm
