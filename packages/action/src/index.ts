@@ -152,66 +152,25 @@ function stripJsoncComments(text: string): string {
 }
 
 /**
- * Install zig directly from ziglang.org without using pantry CLI.
- * Used on Windows where the cross-compiled pantry binary has limited I/O support.
+ * Install a system package using the pantry TS installer SDK.
+ * Works cross-platform (macOS, Linux, Windows) using Node.js APIs.
+ * Supports: ziglang.org, bun.sh, nodejs.org
  */
-async function installZigDirect(version: string, pantryDir: string, platform: Platform): Promise<void> {
-  const archMap: Record<string, string> = { arm64: 'aarch64', x64: 'x86_64' }
-  const osMap: Record<string, string> = { darwin: 'macos', linux: 'linux', windows: 'windows' }
-  const ext = platform.os === 'windows' ? 'zip' : 'tar.xz'
-  const arch = archMap[platform.arch] || 'x86_64'
-  const osName = osMap[platform.os] || 'linux'
+async function installSystemPackage(spec: string, pantryDir: string): Promise<void> {
+  // Import from the pantry TS installer SDK
+  const installer = await import('../../ts-pantry/src/installer')
 
-  const isDev = version.includes('-dev')
-  const url = isDev
-    ? `https://ziglang.org/builds/zig-${arch}-${osName}-${version}.${ext}`
-    : `https://ziglang.org/download/${version}/zig-${arch}-${osName}-${version}.${ext}`
+  const { installPackage, isSupported, resolveLatestVersion } = installer
 
-  core.info(`Downloading zig ${version} from ${url}`)
-
-  const installDir = path.join(pantryDir, 'zig', version)
-  const binDir = path.join(pantryDir, '.bin')
-
-  // Download
-  const archivePath = await tc.downloadTool(url)
-
-  // Extract
-  let extractedDir: string
-  if (ext === 'zip') {
-    extractedDir = await tc.extractZip(archivePath)
-  }
-  else {
-    extractedDir = await tc.extractTar(archivePath, undefined, ['xJ'])
+  const [domain, rawVersion] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
+  if (!isSupported(domain)) {
+    core.warning(`${domain}: not supported by TS installer SDK, trying pantry CLI`)
+    return
   }
 
-  // Find the zig directory inside the extracted archive
-  const entries = fs.readdirSync(extractedDir)
-  const zigDir = entries.find(e => e.startsWith('zig-')) || entries[0]
-  const zigSrcDir = path.join(extractedDir, zigDir)
-
-  // Move to install directory
-  fs.mkdirSync(installDir, { recursive: true })
-  fs.cpSync(zigSrcDir, installDir, { recursive: true })
-
-  // Create .bin directory and copy/symlink zig binary
-  fs.mkdirSync(binDir, { recursive: true })
-  const zigBin = platform.os === 'windows' ? 'zig.exe' : 'zig'
-  const src = path.join(installDir, zigBin)
-  const dst = path.join(binDir, zigBin)
-  try { fs.unlinkSync(dst) } catch { /* doesn't exist */ }
-  try {
-    fs.copyFileSync(src, dst)
-  }
-  catch {
-    // Fallback: just add the install dir to PATH directly
-  }
-
-  if (platform.os !== 'windows') {
-    try { fs.chmodSync(src, 0o755) } catch { /* */ }
-    try { fs.chmodSync(dst, 0o755) } catch { /* */ }
-  }
-
-  core.info(`Zig ${version} installed to ${installDir}`)
+  const version = rawVersion === 'latest' ? await resolveLatestVersion(domain) : rawVersion
+  core.info(`Installing ${domain}@${version} via pantry SDK`)
+  await installPackage(domain, version, { installDir: pantryDir, quiet: true })
 }
 
 /** Extract system dependency names from the project's deps file.
@@ -601,19 +560,11 @@ export async function run(): Promise<void> {
       if (missingDeps.length > 0) {
         core.info(`Cache hit but missing: ${missingDeps.join(', ')} — installing`)
         for (const dep of missingDeps) {
-          // On Windows, use installZigDirect for zig (pantry CLI uses POSIX I/O)
-          if (dep.includes('ziglang.org') && platform.os === 'windows') {
-            const ver = dep.includes('@') ? dep.split('@')[1] : 'latest'
-            await installZigDirect(ver, pantryDir, platform).catch(() => {
-              core.warning(`Failed to install ${dep} via direct download`)
-            })
+          try {
+            await installSystemPackage(dep, pantryDir)
           }
-          else {
-            await exec.exec('pantry', ['install', '--no-save', dep], {
-              env: installEnv as { [key: string]: string },
-            }).catch(() => {
-              core.warning(`Failed to install ${dep}`)
-            })
+          catch {
+            core.warning(`Failed to install ${dep}`)
           }
         }
       }
@@ -622,66 +573,33 @@ export async function run(): Promise<void> {
     if (!cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
 
-      if (inputs.packages) {
-        core.startGroup(`Installing: ${inputs.packages}`)
+      // Collect all system packages to install (from explicit input + deps files)
+      const systemDeps = inputs.packages
+        ? inputs.packages.split(/\s+/).filter(Boolean)
+        : extractSystemDeps()
 
-        // Parse packages and handle zig specially on Windows
-        // (cross-compiled pantry CLI has limited Windows I/O support)
-        const pkgs = inputs.packages.split(/\s+/).filter(Boolean)
-        const zigPkg = pkgs.find(p => p.startsWith('ziglang.org@'))
-        const otherPkgs = pkgs.filter(p => !p.startsWith('ziglang.org@'))
-
-        if (zigPkg && platform.os === 'windows') {
-          const zigVersion = zigPkg.split('@')[1]
-          await installZigDirect(zigVersion, pantryDir, platform)
-        }
-        else if (zigPkg && platform.os !== 'windows') {
-          // On macOS/Linux, pantry CLI handles zig natively
-          await exec.exec('pantry', ['install', '--no-save', zigPkg], {
-            env: installEnv as { [key: string]: string },
-          }).catch((e: unknown) => core.warning(`zig install: ${e instanceof Error ? e.message : 'failed'}`))
-        }
-
-        if (otherPkgs.length > 0) {
-          await exec.exec('pantry', ['install', '--no-save', ...otherPkgs], {
-            env: installEnv as { [key: string]: string },
-          })
+      if (systemDeps.length > 0) {
+        core.startGroup(`Installing system packages: ${systemDeps.join(', ')}`)
+        // Use the pantry TS installer SDK — works cross-platform via Node.js APIs
+        for (const dep of systemDeps) {
+          try {
+            await installSystemPackage(dep, pantryDir)
+          }
+          catch (e) {
+            core.warning(`${dep}: ${e instanceof Error ? e.message : 'install failed'}`)
+          }
         }
         core.endGroup()
       }
-      else {
-        core.startGroup('Installing dependencies')
+
+      if (!inputs.packages) {
+        // Also run workspace install for JS deps (package.json)
+        core.startGroup('Installing workspace dependencies')
         await exec.exec('pantry', ['install', '--no-save'], {
           env: installEnv as { [key: string]: string },
         }).catch(() => {
-          core.warning('pantry install failed — will try fallback for critical deps (bun)')
+          core.warning('pantry workspace install failed')
         })
-
-        // Install system deps from deps file if it exists.
-        // The workspace installer reads package.json for JS deps but
-        // ignores dedicated deps files (deps.yaml, pantry.jsonc, etc.)
-        // that declare system packages like bun.sh, ziglang.org.
-        const systemDeps = extractSystemDeps()
-        if (systemDeps.length > 0) {
-          core.info(`Installing system deps: ${systemDeps.join(', ')}`)
-          // Install each dep individually with a timeout
-          // (large packages like zig can take time to download)
-          for (const dep of systemDeps) {
-            const ac = new AbortController()
-            const timer = setTimeout(() => ac.abort(), 120_000)
-            try {
-              await exec.exec('pantry', ['install', '--no-save', dep], {
-                env: installEnv as { [key: string]: string },
-              })
-            }
-            catch (e) {
-              core.warning(`${dep}: ${e instanceof Error ? e.message : 'install failed'}`)
-            }
-            finally {
-              clearTimeout(timer)
-            }
-          }
-        }
         core.endGroup()
       }
 
