@@ -496,6 +496,25 @@ exec node "$(dirname "$0")/yarn.js" "$@"
     },
   },
 
+  'den.sh': {
+    domain: 'den.sh',
+    name: 'den',
+    getLatestVersion: () => githubLatestVersion('home-lang/den'),
+    download: async (version, platform, destDir) => {
+      const { os, arch } = detectPlatform()
+      // GitHub Release assets are raw binaries named krusty-{platform}-{arch}
+      const denArch = arch === 'arm64' ? 'arm64' : 'x64'
+      const denPlatform = os === 'darwin' ? 'darwin' : 'linux'
+
+      const url = `https://github.com/home-lang/den/releases/download/v${version}/krusty-${denPlatform}-${denArch}`
+
+      console.log(`   Downloading from ${url}`)
+      mkdirSync(join(destDir, 'bin'), { recursive: true })
+      execSync(`curl -fSL -o "${destDir}/bin/den" "${url}"`, { stdio: 'inherit' })
+      chmodSync(join(destDir, 'bin', 'den'), 0o755)
+    },
+  },
+
   'memcached.org': {
     domain: 'memcached.org',
     name: 'memcached',
