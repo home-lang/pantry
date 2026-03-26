@@ -600,11 +600,22 @@ export async function run(): Promise<void> {
       })
       if (missingDeps.length > 0) {
         core.info(`Cache hit but missing: ${missingDeps.join(', ')} — installing`)
-        await exec.exec('pantry', ['install', '--no-save', ...missingDeps], {
-          env: installEnv as { [key: string]: string },
-        }).catch(() => {
-          core.warning(`Failed to install missing deps: ${missingDeps.join(', ')}`)
-        })
+        for (const dep of missingDeps) {
+          // On Windows, use installZigDirect for zig (pantry CLI uses POSIX I/O)
+          if (dep.includes('ziglang.org') && platform.os === 'windows') {
+            const ver = dep.includes('@') ? dep.split('@')[1] : 'latest'
+            await installZigDirect(ver, pantryDir, platform).catch(() => {
+              core.warning(`Failed to install ${dep} via direct download`)
+            })
+          }
+          else {
+            await exec.exec('pantry', ['install', '--no-save', dep], {
+              env: installEnv as { [key: string]: string },
+            }).catch(() => {
+              core.warning(`Failed to install ${dep}`)
+            })
+          }
+        }
       }
     }
 
