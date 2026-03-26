@@ -424,7 +424,7 @@ export function createHandler(
 
           // If no exact match, search S3 by prefix
           if (!tarball) {
-            const prefix = sha.length === 40 ? `commits/${sha}/` : `commits/${sha}`
+            const prefix = `commits/${sha}`
             const keys = await registry.tarball.list(prefix)
 
             // Try exact safe name match first, then alias (bare name as suffix)
