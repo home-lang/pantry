@@ -151,6 +151,69 @@ function stripJsoncComments(text: string): string {
   return result
 }
 
+/**
+ * Install zig directly from ziglang.org without using pantry CLI.
+ * Used on Windows where the cross-compiled pantry binary has limited I/O support.
+ */
+async function installZigDirect(version: string, pantryDir: string, platform: Platform): Promise<void> {
+  const archMap: Record<string, string> = { arm64: 'aarch64', x64: 'x86_64' }
+  const osMap: Record<string, string> = { darwin: 'macos', linux: 'linux', windows: 'windows' }
+  const ext = platform.os === 'windows' ? 'zip' : 'tar.xz'
+  const arch = archMap[platform.arch] || 'x86_64'
+  const osName = osMap[platform.os] || 'linux'
+
+  const isDev = version.includes('-dev')
+  const url = isDev
+    ? `https://ziglang.org/builds/zig-${arch}-${osName}-${version}.${ext}`
+    : `https://ziglang.org/download/${version}/zig-${arch}-${osName}-${version}.${ext}`
+
+  core.info(`Downloading zig ${version} from ${url}`)
+
+  const installDir = path.join(pantryDir, 'zig', version)
+  const binDir = path.join(pantryDir, '.bin')
+
+  // Download
+  const archivePath = await tc.downloadTool(url)
+
+  // Extract
+  let extractedDir: string
+  if (ext === 'zip') {
+    extractedDir = await tc.extractZip(archivePath)
+  }
+  else {
+    extractedDir = await tc.extractTar(archivePath, undefined, ['xJ'])
+  }
+
+  // Find the zig directory inside the extracted archive
+  const entries = fs.readdirSync(extractedDir)
+  const zigDir = entries.find(e => e.startsWith('zig-')) || entries[0]
+  const zigSrcDir = path.join(extractedDir, zigDir)
+
+  // Move to install directory
+  fs.mkdirSync(installDir, { recursive: true })
+  fs.cpSync(zigSrcDir, installDir, { recursive: true })
+
+  // Create .bin directory and copy/symlink zig binary
+  fs.mkdirSync(binDir, { recursive: true })
+  const zigBin = platform.os === 'windows' ? 'zig.exe' : 'zig'
+  const src = path.join(installDir, zigBin)
+  const dst = path.join(binDir, zigBin)
+  try { fs.unlinkSync(dst) } catch { /* doesn't exist */ }
+  try {
+    fs.copyFileSync(src, dst)
+  }
+  catch {
+    // Fallback: just add the install dir to PATH directly
+  }
+
+  if (platform.os !== 'windows') {
+    try { fs.chmodSync(src, 0o755) } catch { /* */ }
+    try { fs.chmodSync(dst, 0o755) } catch { /* */ }
+  }
+
+  core.info(`Zig ${version} installed to ${installDir}`)
+}
+
 /** Extract system dependency names from the project's deps file.
  *  Supports: pantry.jsonc, pantry.json, deps.yaml, deps.yml, pantry.yaml, pantry.yml */
 function extractSystemDeps(): string[] {
@@ -550,9 +613,29 @@ export async function run(): Promise<void> {
 
       if (inputs.packages) {
         core.startGroup(`Installing: ${inputs.packages}`)
-        await exec.exec('pantry', ['install', '--no-save', ...inputs.packages.split(/\s+/).filter(Boolean)], {
-          env: installEnv as { [key: string]: string },
-        })
+
+        // Parse packages and handle zig specially on Windows
+        // (cross-compiled pantry CLI has limited Windows I/O support)
+        const pkgs = inputs.packages.split(/\s+/).filter(Boolean)
+        const zigPkg = pkgs.find(p => p.startsWith('ziglang.org@'))
+        const otherPkgs = pkgs.filter(p => !p.startsWith('ziglang.org@'))
+
+        if (zigPkg && platform.os === 'windows') {
+          const zigVersion = zigPkg.split('@')[1]
+          await installZigDirect(zigVersion, pantryDir, platform)
+        }
+        else if (zigPkg && platform.os !== 'windows') {
+          // On macOS/Linux, pantry CLI handles zig natively
+          await exec.exec('pantry', ['install', '--no-save', zigPkg], {
+            env: installEnv as { [key: string]: string },
+          }).catch((e: unknown) => core.warning(`zig install: ${e instanceof Error ? e.message : 'failed'}`))
+        }
+
+        if (otherPkgs.length > 0) {
+          await exec.exec('pantry', ['install', '--no-save', ...otherPkgs], {
+            env: installEnv as { [key: string]: string },
+          })
+        }
         core.endGroup()
       }
       else {
