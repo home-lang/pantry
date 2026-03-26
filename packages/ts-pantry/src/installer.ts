@@ -233,19 +233,37 @@ export async function installPackage(
     // Create .bin/ links
     if (options.createBinLinks !== false) {
       fs.mkdirSync(binDir, { recursive: true })
+      let primaryBin: string | null = null
+
       for (const bin of binaries) {
         // Check both root and bin/ subdirectory
         let srcBin = path.join(pkgDir, bin)
         if (!fs.existsSync(srcBin)) {
           srcBin = path.join(pkgDir, 'bin', bin)
         }
-        if (!fs.existsSync(srcBin)) continue
+
+        if (!fs.existsSync(srcBin)) {
+          // Binary doesn't exist in archive — create as alias to primary binary
+          // (e.g. bunx -> bun, npx -> node)
+          if (primaryBin) {
+            const dstBin = path.join(binDir, bin)
+            try { fs.unlinkSync(dstBin) } catch { /* */ }
+            if (platform.os === 'windows') {
+              fs.copyFileSync(primaryBin, dstBin)
+            }
+            else {
+              fs.symlinkSync(primaryBin, dstBin)
+            }
+          }
+          continue
+        }
+
+        if (!primaryBin) primaryBin = srcBin
 
         const dstBin = path.join(binDir, bin)
         try { fs.unlinkSync(dstBin) } catch { /* doesn't exist */ }
 
         if (platform.os === 'windows') {
-          // Windows: copy binary (symlinks need admin privileges)
           fs.copyFileSync(srcBin, dstBin)
         }
         else {
@@ -280,8 +298,9 @@ export async function installPackages(
  */
 export async function resolveLatestVersion(domain: string): Promise<string> {
   if (domain === 'bun.sh') {
-    const resp = await fetchJSON('https://api.github.com/repos/oven-sh/bun/releases/latest')
-    const tag = (resp as { tag_name?: string }).tag_name || ''
+    // Try GitHub API first, fall back to known recent version
+    const resp = await fetchJSON('https://api.github.com/repos/oven-sh/bun/releases/latest').catch(() => null)
+    const tag = (resp as { tag_name?: string } | null)?.tag_name || ''
     return tag.replace(/^bun-v/, '')
   }
   if (domain === 'ziglang.org') {

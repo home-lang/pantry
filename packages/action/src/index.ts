@@ -162,14 +162,14 @@ async function installSystemPackage(spec: string, pantryDir: string): Promise<vo
 
   const { installPackage, isSupported, resolveLatestVersion } = installer
 
-  const [domain, rawVersion] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
+  const [domain, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
   if (!isSupported(domain)) {
     core.warning(`${domain}: not supported by TS installer SDK, trying pantry CLI`)
     return
   }
 
-  // Resolve wildcards, "latest", and semver ranges to concrete versions
-  const needsResolve = rawVersion === 'latest' || rawVersion === '*' || /^[\^~>=<]/.test(rawVersion)
+  // Resolve wildcards, "latest", empty, and semver ranges to concrete versions
+  const needsResolve = !rawVersion || rawVersion === 'latest' || rawVersion === '*' || /^[\^~>=<]/.test(rawVersion)
   const version = needsResolve ? await resolveLatestVersion(domain) : rawVersion
   core.info(`Installing ${domain}@${version} via pantry SDK`)
   await installPackage(domain, version, { installDir: pantryDir, quiet: true })
