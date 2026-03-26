@@ -529,9 +529,11 @@ export async function run(): Promise<void> {
     if (cacheHit) {
       const installEnv = { ...process.env, CI: 'true', NO_COLOR: '1' }
       const systemDeps = extractSystemDeps()
+      const isWin = platform.os === 'windows'
       const missingDeps = systemDeps.filter(dep => {
-        const binName = dep === 'bun.sh' ? 'bun' : dep === 'ziglang.org' ? 'zig' : dep.split('.')[0]
-        return !fs.existsSync(path.join(pantryBinDir, binName))
+        const baseName = dep === 'bun.sh' ? 'bun' : dep === 'ziglang.org' ? 'zig' : dep.split('.')[0]
+        const binName = isWin ? `${baseName}.exe` : baseName
+        return !fs.existsSync(path.join(pantryBinDir, binName)) && !fs.existsSync(path.join(pantryBinDir, baseName))
       })
       if (missingDeps.length > 0) {
         core.info(`Cache hit but missing: ${missingDeps.join(', ')} — installing`)
@@ -624,6 +626,28 @@ export async function run(): Promise<void> {
     // ── Configure PATH ──
     core.addPath(pantryBinDir)
     core.addPath(path.join(homeDir, '.pantry', 'bin'))
+
+    // Also add any zig install directories to PATH (zig is installed into
+    // pantry/zig/<version>/ or ~/.pantry/global/packages/ziglang.org/v<version>/)
+    const zigDirs = [
+      path.join(pantryDir, 'zig'),
+      path.join(homeDir, '.pantry', 'global', 'packages', 'ziglang.org'),
+    ]
+    for (const zigParent of zigDirs) {
+      try {
+        if (fs.existsSync(zigParent)) {
+          for (const entry of fs.readdirSync(zigParent)) {
+            const zigBinDir = path.join(zigParent, entry)
+            const zigExe = path.join(zigBinDir, platform.os === 'windows' ? 'zig.exe' : 'zig')
+            if (fs.existsSync(zigExe)) {
+              core.addPath(zigBinDir)
+              core.info(`Added zig to PATH: ${zigBinDir}`)
+            }
+          }
+        }
+      }
+      catch { /* zig not installed */ }
+    }
 
     // ── Ensure bun symlinks ──
     const bunPath = path.join(pantryBinDir, 'bun')
