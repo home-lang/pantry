@@ -20,6 +20,11 @@ export class Registry {
   private tarballStorage: TarballStorage
   private metadataStorage: MetadataStorage
 
+  /** Public accessor for tarball storage (used by short URL handler for S3 prefix search) */
+  get tarball(): TarballStorage { return this.tarballStorage }
+  /** Public accessor for metadata storage */
+  get metadata(): MetadataStorage { return this.metadataStorage }
+
   constructor(config: RegistryConfig) {
     this.config = config
 

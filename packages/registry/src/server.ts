@@ -410,7 +410,26 @@ export function createHandler(
       if (shortCommitMatch && req.method === 'GET') {
         const pkgName = decodeURIComponent(shortCommitMatch[1])
         const sha = shortCommitMatch[2]
-        const tarball = await registry.downloadCommitTarball(sha, pkgName)
+
+        // For full SHA (40 chars), use the normal download path
+        // For short SHA (7+ chars), resolve via the existing /commits endpoint
+        let tarball: ArrayBuffer | null = null
+        if (sha.length === 40) {
+          tarball = await registry.downloadCommitTarball(sha, pkgName)
+        }
+        else {
+          // Short SHA: list S3 objects with prefix to find full SHA, then download
+          try {
+            const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-')
+            const keys = await registry.tarball.list(`commits/${sha}`)
+            const matchKey = keys.find((k: string) => k.includes(`/${safeName}/`))
+            if (matchKey) {
+              tarball = await registry.tarball.download(matchKey)
+            }
+          }
+          catch { /* fall through to 404 */ }
+        }
+
         if (tarball) {
           analyticsStorage.trackDownload({
             packageName: pkgName,
