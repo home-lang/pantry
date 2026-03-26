@@ -4589,1726 +4589,1726 @@ export interface Pantry {
   zotregistrydev: typeof zotregistrydevPackage
   zrokio: typeof zrokioPackage
   zshsourceforgeio: typeof zshsourceforgeioPackage
-  traefik: typeof traefikioPackage
-  versitygw: typeof versitycomversitygwPackage
-  cask: typeof caskreadthedocsioPackage
-  scons: typeof sconsorgPackage
-  fswatch: typeof emcrisostomogithubiofswatchPackage
-  libsolv: typeof opensuseorglibsolvPackage
-  cog: typeof cocogittoioPackage
-  librepo: typeof rpmorglibrepoPackage
-  popt: typeof rpmorgpoptPackage
-  rpm: typeof rpmorgrpmPackage
-  'rpm-sequoia': typeof rpmorgrpmsequoiaPackage
-  dnf5: typeof rpmorgdnf5Package
-  libdnf5: typeof rpmorglibdnf5Package
-  'kube-linter': typeof kubelinterioPackage
-  localstack: typeof localstackcloudcliPackage
-  awslocal: typeof localstackcloudawsclilocalPackage
-  'neon-config': typeof notrojgithubioneonPackage
-  dart: typeof dartdevPackage
-  bind9: typeof iscorgbind9Package
-  langchain: typeof langchaincomPackage
-  werf: typeof werfioPackage
-  invoke: typeof pyinvokeorgPackage
-  libproxy: typeof libproxygithubiolibproxyPackage
-  amp: typeof amprsPackage
-  'oauth2-proxy': typeof oauth2proxygithubioPackage
-  cilium: typeof ciliumiociliumPackage
-  hubble: typeof ciliumiohubblePackage
-  aux4: typeof aux4ioPackage
-  bore: typeof borepubPackage
-  argbash: typeof argbashdevPackage
-  gtk3: typeof gtkorggtk3Package
-  gtk4: typeof gtkorggtk4Package
-  llvm: typeof llvmorgPackage
-  gauche: typeof practicalschemenetgauchePackage
-  bun: typeof bunPackage
-  'bun.com': typeof bunPackage
-  vite: typeof vitejsdevPackage
-  'nim-lang': typeof nimlangorgPackage
-  'libjpeg-turbo': typeof libjpegturboorgPackage
-  gdown: typeof wkentarogithubiogdownPackage
-  apktool: typeof apktoolorgPackage
-  vde: typeof virtualsquareorgvdePackage
-  hunspell: typeof hunspellgithubioPackage
-  haskell: typeof haskellorgPackage
-  dog: typeof dnslookupdogPackage
-  pinniped: typeof pinnipeddevPackage
-  dexios: typeof brxken128githubiodexiosPackage
-  libsoup: typeof libsouporgPackage
-  libcython: typeof cythonorglibcythonPackage
-  plakar: typeof plakarioPackage
-  valkey: typeof valkeyioPackage
-  bcrypt: typeof bcryptsourceforgenetPackage
-  koyeb: typeof koyebcomPackage
-  assimp: typeof assimporgPackage
-  TablePlus: typeof tablepluscomPackage
-  tableplus: typeof tablepluscomPackage
-  pinentry: typeof gnupgorgpinentryPackage
-  libgcrypt: typeof gnupgorglibgcryptPackage
-  libksba: typeof gnupgorglibksbaPackage
-  npth: typeof gnupgorgnpthPackage
-  gpgme: typeof gnupgorggpgmePackage
-  'libgpg-error': typeof gnupgorglibgpgerrorPackage
-  'v2.5': typeof gnupgorgv25Package
-  'libassuan-config': typeof gnupgorglibassuanPackage
-  gif: typeof giflibsourceforgeioPackage
-  ksops: typeof viaductaiksopsPackage
-  clisp: typeof clisporgPackage
-  'dotenv-linter': typeof dotenvlintergithubioPackage
-  k9s: typeof k9scliioPackage
-  lz4: typeof lz4orgPackage
-  Warp: typeof warpdevPackage
-  warp: typeof warpdevPackage
-  mesa3d: typeof mesa3dorgPackage
-  fftw: typeof fftworgPackage
-  copa: typeof projectcopaceticgithubioPackage
-  duckscript: typeof sagiegurarigithubioduckscriptPackage
-  tilt: typeof tiltdevPackage
-  symfony: typeof symfonycomPackage
-  unbound: typeof unboundnetPackage
-  'sing-box': typeof singboxappPackage
-  'elixir-lang': typeof elixirlangorgPackage
-  surreal: typeof surrealdbcomPackage
-  httpie: typeof httpieioPackage
-  'youtube-dl': typeof youtubedlorgPackage
-  llm: typeof llmdatasetteioPackage
-  ord: typeof ordinalscomPackage
-  strace: typeof straceioPackage
-  'logi-options-plus': typeof logitechcomoptionsPackage
-  'logi-options': typeof logitechcomoptionsPackage
-  pluralith: typeof pluralithcomPackage
-  'fna-xna.github': typeof fnaxnagithubioPackage
-  mise: typeof misejdxdevPackage
-  tldr: typeof tldrshPackage
-  'golangci-lint': typeof golangcilintrunPackage
-  'terraform-docs': typeof terraformdocsioPackage
-  driftctl: typeof snykiodriftctlPackage
-  bashly: typeof bashlydannybcoPackage
-  genact: typeof svenstarogithubiogenactPackage
-  htslib: typeof htsliborgPackage
-  geni: typeof priverdevgeniPackage
-  'rust-script': typeof rustscriptorgPackage
-  'wayland-protocols': typeof waylandfreedesktoporgprotocolsPackage
-  ginkgo: typeof onsigithubioginkgoPackage
-  'browser-use': typeof browserusecomPackage
-  leptonica: typeof leptonicaorgPackage
-  'markupsafe.palletsprojects': typeof markupsafepalletsprojectscomPackage
-  soldeer: typeof soldeerxyzPackage
-  k3d: typeof k3dioPackage
-  snappy: typeof googlegithubiosnappyPackage
-  teller: typeof tlrdevPackage
-  Firefox: typeof firefoxorgPackage
-  firefox: typeof firefoxorgPackage
-  bitcoin: typeof bitcoinorgPackage
-  elementsproject: typeof elementsprojectorgPackage
-  consul: typeof consulioPackage
-  jpegxl: typeof jpegorgjpegxlPackage
-  borg: typeof borgbackuporgPackage
-  pluggy: typeof pytestorgpluggyPackage
-  'pandoc-crossref': typeof pandocorgcrossrefPackage
-  starship: typeof starshiprsPackage
-  libb2: typeof blake2netlibb2Package
-  rio: typeof riotermcomPackage
-  srt: typeof srtallianceorgPackage
-  'ceres-solver': typeof ceressolverorgPackage
-  vcluster: typeof vclustercomPackage
-  msgpack: typeof msgpackorgPackage
-  po4a: typeof po4aorgPackage
-  ncdu: typeof devyorhelnlncduPackage
-  gl2ps: typeof geuzorggl2psPackage
-  eksctl: typeof eksctlioPackage
-  zarf: typeof zarfdevPackage
-  alembic: typeof alembicsqlalchemyorgPackage
-  hatch: typeof hatchpypaioPackage
-  Arkade: typeof arkadedevPackage
-  pixi: typeof prefixdevPackage
-  typst: typeof typstappPackage
-  'openapi-generator': typeof openapigeneratortechPackage
-  wumpus: typeof catborgwumpusPackage
-  coredns: typeof corednsioPackage
-  'open-mpi': typeof openmpiorgPackage
-  rustup: typeof rustlangorgrustupPackage
-  bindgen: typeof rustlangorgrustbindgenPackage
-  cargo: typeof rustlangorgcargoPackage
-  'Protocol Buffers': typeof protobufdevPackage
-  cue: typeof cuelangorgPackage
-  php: typeof phpPackage
-  go: typeof goPackage
-  gnupg: typeof gpgPackage
-  gpg: typeof gpgPackage
-  epstool: typeof ghostgumcomauepstoolPackage
-  ipfscluster: typeof ipfsclusterioPackage
-  'eigen.tuxfamily': typeof eigentuxfamilyorgPackage
-  cnquery: typeof cnqueryioPackage
-  'Brave Browser': typeof bravecomPackage
-  brave: typeof bravecomPackage
-  pcre2: typeof pcreorgv2Package
-  prettyping: typeof denilsonsanombrprettypingPackage
-  yasm: typeof yasmtortallnetPackage
-  optipng: typeof sfnetoptipngPackage
-  'glm.g-truc': typeof glmgtrucnetPackage
-  chomp: typeof chompbuildcomPackage
-  buf: typeof bufbuildPackage
-  'freeglut.sourceforge': typeof freeglutsourceforgeioPackage
-  mdbook: typeof rustlanggithubiomdbookPackage
-  onefetch: typeof onefetchdevPackage
-  alacritty: typeof alacrittyorgPackage
-  etcd: typeof etcdioPackage
-  ansible: typeof ansiblecomPackage
-  'gpg-tui': typeof orhundevgpgtuiPackage
-  'clang-format': typeof llvmorgclangformatPackage
-  luarocks: typeof luarocksorgPackage
-  avro: typeof apacheorgavroPackage
-  arrow: typeof apacheorgarrowPackage
-  jmeter: typeof apacheorgjmeterPackage
-  zookeeper: typeof apacheorgzookeeperPackage
-  thrift: typeof apacheorgthriftPackage
-  httpd: typeof apacheorghttpdPackage
-  serf: typeof apacheorgserfPackage
-  svn: typeof apacheorgsubversionPackage
-  apr: typeof apacheorgaprPackage
-  jupyter: typeof jupyterorgPackage
-  'GitHub Desktop': typeof githubcomdesktopPackage
-  'github-desktop': typeof githubcomdesktopPackage
-  'gh-desktop': typeof githubcomdesktopPackage
+  Linear: typeof linearappPackage
+  linear: typeof linearappPackage
+  libuv: typeof libuvorgPackage
+  juliaup: typeof julialangorgjuliaupPackage
+  jenv: typeof jenvbePackage
+  tectonic: typeof tectonictypesettinggithubioPackage
   orc: typeof gstreamerfreedesktoporgorcPackage
-  cephadm: typeof cephcomcephadmPackage
-  lapack: typeof netliborglapackPackage
-  jless: typeof jlessioPackage
-  dhall: typeof dhalllangorgPackage
-  mockgen: typeof gouberorgmockmockgenPackage
-  xml: typeof pagureioxmltoPackage
-  libaio: typeof pagureiolibaioPackage
-  mongosh: typeof mongodbcomshellPackage
-  libelf: typeof fossiesorglibelfPackage
-  zrok: typeof zrokioPackage
+  gc: typeof hboehminfogcPackage
+  LocalAI: typeof localaiioPackage
+  copa: typeof projectcopaceticgithubioPackage
+  uriparse: typeof uriparsergithubioPackage
+  yasm: typeof yasmtortallnetPackage
+  'jenkins-lts': typeof jenkinsioPackage
+  pkgx: typeof pkgxshPackage
+  linkerd: typeof linkerdiolinkerd2Package
+  aom: typeof aomediagooglesourcecomaomPackage
+  corepack: typeof nodejsorgcorepackPackage
+  ssl3: typeof curlsessl3Package
+  trurl: typeof curlsetrurlPackage
+  'ca-certs': typeof curlsecacertsPackage
+  xdmcp: typeof xorgxdmcpPackage
+  xkbfile: typeof xorgxkbfilePackage
+  xcursor: typeof xorgxcursorPackage
+  xaw: typeof xorgxawPackage
+  xft: typeof xorgxftPackage
+  exts: typeof xorgextsPackage
+  libxres: typeof xorglibxresPackage
+  libSM: typeof xorglibsmPackage
+  applewm: typeof xorgapplewmPackage
+  xinerama: typeof xorgxineramaPackage
+  xauth: typeof xorgxauthPackage
+  xcomposite: typeof xorgxcompositePackage
+  xmu: typeof xorgxmuPackage
+  xtrans: typeof xorgxtransPackage
+  ice: typeof xorgicePackage
+  xshmfence: typeof xorgxshmfencePackage
+  xrender: typeof xorgxrenderPackage
+  x11: typeof xorgx11Package
+  xcb: typeof xorgxcbPackage
+  xau: typeof xorgxauPackage
+  pciaccess: typeof xorgpciaccessPackage
+  'util-macros': typeof xorgutilmacrosPackage
+  libxfont2: typeof xorglibxfont2Package
+  'libpthread-stubs': typeof xorglibpthreadstubsPackage
+  xpm: typeof xorgxpmPackage
+  protocol: typeof xorgprotocolPackage
+  xtst: typeof xorgxtstPackage
+  xinput: typeof xorgxinputPackage
+  xscrnsaver: typeof xorgxscrnsaverPackage
+  cvt: typeof xorglibcvtPackage
+  libfontenc: typeof xorglibfontencPackage
+  'xcb-util': typeof xorgxcbutilPackage
+  xdamage: typeof xorgxdamagePackage
+  xrandr: typeof xorgxrandrPackage
+  xfixes: typeof xorgxfixesPackage
+  xxf86vm: typeof xorgxxf86vmPackage
+  cask: typeof caskreadthedocsioPackage
+  'browser-use': typeof browserusecomPackage
   kluctl: typeof kluctlioPackage
-  jbig2dec: typeof jbig2deccomPackage
-  jsonnet: typeof jsonnetorgPackage
-  gofumpt: typeof mvdanccgofumptPackage
-  shfmt: typeof mvdanccshPackage
-  ack: typeof beyondgrepcomPackage
-  editline: typeof thrysoeedkeditlinePackage
-  rubberband: typeof breakfastquaycomrubberbandPackage
-  Ghostty: typeof ghosttyorgPackage
-  ghostty: typeof ghosttyorgPackage
-  flit: typeof flitpypaioPackage
-  encore: typeof encoredevPackage
-  '1Password': typeof _1passwordcomPackage
-  '1password': typeof _1passwordcomPackage
-  onepassword: typeof _1passwordcomPackage
-  trip: typeof trippyclirsPackage
-  mkdocs: typeof mkdocsorgPackage
-  mkcert: typeof mkcertdevPackage
-  'sfcgal-config': typeof sfcgalorgPackage
-  'taglib-config': typeof tagliborgPackage
-  gradle: typeof gradlePackage
-  'libusb-compat': typeof libusbinfocompatPackage
-  'rucio-client': typeof ruciocernchrucioclientPackage
-  'protoc-gen-connect-go': typeof connectrpcorgprotocgenconnectgoPackage
-  task: typeof taskfiledevPackage
-  postgresql: typeof postgresPackage
-  postgres: typeof postgresPackage
-  groonga: typeof groongaorgPackage
-  'poppler-data': typeof popplerfreedesktoporgpopplerdataPackage
-  soliditylang: typeof soliditylangorgPackage
-  augeas: typeof augeasnetPackage
-  zig: typeof ziglangorgPackage
-  radicle: typeof radicleorgPackage
-  libsdl: typeof libsdlorgPackage
-  DBeaver: typeof dbeaverioPackage
-  dbeaver: typeof dbeaverioPackage
-  'terraform-cdk': typeof terraformiocdkPackage
-  dav1d: typeof codevideolanorgvideolandav1dPackage
-  rist: typeof codevideolanorgristlibristPackage
-  aribb24: typeof codevideolanorgaribb24Package
-  lftp: typeof lftpyarruPackage
-  'protoc-gen-go-grpc': typeof grpciogrpcgoPackage
-  Inkscape: typeof inkscapeorgPackage
-  inkscape: typeof inkscapeorgPackage
-  idevicedate: typeof libimobiledeviceorgPackage
-  hasura: typeof hasuraioPackage
-  gifsicle: typeof lcdforggifsiclePackage
-  'pre-commit': typeof precommitcomPackage
-  SDL_mixer: typeof libsdlorgsdl_mixerPackage
-  SDL_image: typeof libsdlorgsdl_imagePackage
-  SDL_ttf: typeof libsdlorgsdl_ttfPackage
-  coder: typeof codercomPackage
-  'man-db': typeof mandbgitlabiomandbPackage
-  elizaOS: typeof elizaosgithubioPackage
-  cURL: typeof curlPackage
-  ipython: typeof ipythonorgPackage
-  mpg123: typeof mpg123dePackage
-  sympy: typeof sympyorgPackage
-  'cairo-trace': typeof cairographicsorgPackage
-  'cmdline-tools': typeof androidcomcmdlinetoolsPackage
-  tailwindcss: typeof tailwindcsscomPackage
-  pake: typeof npmjscompakecliPackage
-  dblab: typeof dblabdanvergaracomPackage
-  'Auto-GPT': typeof agptcoPackage
-  tox: typeof toxwikiPackage
-  Discord: typeof discordcomPackage
-  discord: typeof discordcomPackage
-  cmocka: typeof cmockaorgPackage
-  pycairo: typeof cairographicsorgpycairoPackage
-  xmlwf: typeof libexpatgithubioPackage
-  upx: typeof upxgithubioPackage
-  'c-ares': typeof caresorgPackage
-  'tree-sitter': typeof treesittergithubioPackage
-  packaging: typeof pypaiopackagingPackage
-  setuptools: typeof pypaiosetuptoolsPackage
-  distlib: typeof pypaiodistlibPackage
-  'trove-classifiers': typeof pypaiotroveclassifiersPackage
-  sops: typeof getsopsioPackage
-  dagger: typeof daggerioPackage
-  sassc: typeof sasslangcomsasscPackage
-  libsass: typeof sasslangcomlibsassPackage
-  caddy: typeof caddyservercomPackage
-  'tea/cli': typeof teaxyzPackage
-  graphviz: typeof graphvizorgPackage
-  snaplet: typeof snapletdevcliPackage
-  erlang: typeof erlangorgPackage
-  htop: typeof htopdevPackage
-  theora: typeof theoraorgPackage
-  'scie-pants': typeof pantsbuildorgsciepantsPackage
-  gource: typeof gourceioPackage
-  'libexif.github': typeof libexifgithubioPackage
-  'Hidden Bar': typeof hiddenbarappPackage
-  hiddenbar: typeof hiddenbarappPackage
-  'hidden-bar': typeof hiddenbarappPackage
-  'opencore-amr.sourceforge': typeof opencoreamrsourceforgeioPackage
-  pls: typeof dhruvkbdevplsPackage
-  docbook: typeof docbookorgPackage
-  kotlinlang: typeof kotlinPackage
-  kotlin: typeof kotlinPackage
-  steampipe: typeof steampipeioPackage
-  talhelper: typeof budimanjojogithubiotalhelperPackage
-  'Docker Desktop': typeof dockercomdesktopPackage
-  'docker-desktop': typeof dockercomdesktopPackage
   forc: typeof fuellabsgithubioswayPackage
-  meson: typeof mesonbuildcomPackage
-  smi: typeof ibrcstubsdelibsmiPackage
-  Element: typeof elementioPackage
-  element: typeof elementioPackage
   logdy: typeof logdydevPackage
-  templ: typeof templguidePackage
-  nvim: typeof neovimioPackage
-  'gts.sourceforge': typeof gtssourceforgenetPackage
-  mc: typeof miniomcPackage
-  ruff: typeof astralshruffPackage
-  pytest: typeof pytestorgPackage
-  ipfs: typeof ipfstechPackage
-  'gen-ir': typeof veracodecomgenirPackage
-  mvn: typeof mavenPackage
-  maven: typeof mavenPackage
-  changie: typeof changiedevPackage
-  tart: typeof tartrunPackage
-  opensearch: typeof opensearchorgPackage
-  agg: typeof asciinemaorgaggPackage
-  gist: typeof rubygemsorggistPackage
-  casdoor: typeof casdoororgPackage
-  ninja: typeof ninjabuildorgPackage
-  juju: typeof jujuisPackage
-  tesseract: typeof tesseractocrgithubioPackage
-  fly: typeof flyioPackage
-  json: typeof lloydgithubioyajlPackage
-  'musl.libc': typeof musllibcorgPackage
-  'opencl-headers': typeof khronosorgopenclheadersPackage
-  glslang: typeof khronosorgglslangPackage
-  spirv: typeof khronosorgspirvtoolsPackage
-  'spirv-cross': typeof khronosorgspirvcrossPackage
-  prettier: typeof prettierioPackage
-  exiftool: typeof exiftoolorgPackage
-  psycopg3: typeof psycopgorgpsycopg3Package
-  psycopg2: typeof psycopgorgpsycopg2Package
-  spacetime: typeof spacetimedbcomPackage
-  'open-interpreter': typeof openinterpretercomPackage
-  'iso-codes': typeof debianorgisocodesPackage
-  'bash-completion': typeof debianorgbashcompletionPackage
-  getmonero: typeof getmoneroorgPackage
-  dos2unix: typeof waterlanhomexs4allnldos2unixPackage
-  zip: typeof zipPackage
-  'libgd.github': typeof libgdgithubioPackage
+  Transmit: typeof transmitpaniccomPackage
+  transmit: typeof transmitpaniccomPackage
+  watchexec: typeof watchexecgithubioPackage
+  qrencode: typeof fukuchiorgqrencodePackage
+  traefik: typeof traefikioPackage
+  'vid.stab': typeof publichronopikdevidstabPackage
+  'otp-27': typeof elixirlangorgotp27Package
+  apktool: typeof apktoolorgPackage
+  chomp: typeof chompbuildcomPackage
   'Karabiner-Elements': typeof karabinerelementspqrsorgPackage
   karabiner: typeof karabinerelementspqrsorgPackage
   'karabiner-elements': typeof karabinerelementspqrsorgPackage
-  ladspa: typeof ladspaorgPackage
-  nuclei: typeof projectdiscoveryionucleiPackage
-  wunderctl: typeof wundergraphcomPackage
-  'device-mapper': typeof sourcewareorgdmPackage
-  bzip2: typeof sourcewareorgbzip2Package
-  libffi: typeof sourcewareorglibffiPackage
-  just: typeof justsystemsPackage
-  IINA: typeof iinaioPackage
-  iina: typeof iinaioPackage
-  cryptography: typeof cryptographyioPackage
-  liburcu: typeof liburcuorgPackage
-  dgraph: typeof dgraphioPackage
-  'ca-certs': typeof curlsecacertsPackage
-  trurl: typeof curlsetrurlPackage
-  ssl3: typeof curlsessl3Package
-  pandoc: typeof pandocorgPackage
-  ffmpeg: typeof ffmpegorgPackage
-  qhull: typeof qhullorgPackage
-  squawk: typeof squawkhqcomPackage
-  grpc: typeof grpcioPackage
-  laravel: typeof laravelcomPackage
-  vale: typeof valeshPackage
-  yuicompressor: typeof yuigithubioyuicompressorPackage
-  HandBrake: typeof handbrakefrPackage
-  handbrake: typeof handbrakefrPackage
-  linkerd: typeof linkerdiolinkerd2Package
-  atk: typeof gnomeorgatkPackage
-  'rsvg-convert': typeof gnomeorglibrsvgPackage
-  'gtk-mac-integration-gtk3': typeof gnomeorggtkmacintegrationgtk3Package
-  PyGObject: typeof gnomeorgpygobjectPackage
-  xslt: typeof gnomeorglibxsltPackage
-  'gi-docgen': typeof gnomeorggidocgenPackage
-  vala: typeof gnomeorgvalaPackage
-  'adwaita-icon-theme': typeof gnomeorgadwaitaiconthemePackage
-  'glib-networking': typeof gnomeorgglibnetworkingPackage
-  pango: typeof gnomeorgpangoPackage
-  gsf: typeof gnomeorglibgsfPackage
-  'json-glib': typeof gnomeorgjsonglibPackage
-  glib: typeof gnomeorgglibPackage
-  'g-ir': typeof gnomeorggobjectintrospectionPackage
-  'gdk-pixbuf': typeof gnomeorggdkpixbufPackage
-  libsecret: typeof gnomeorglibsecretPackage
-  'gsettings-desktop-schemas': typeof gnomeorggsettingsdesktopschemasPackage
-  virtualenv: typeof virtualenvpypaioPackage
-  hexedit: typeof rigauxorghexeditPackage
-  'mercurial-scm': typeof mercurialscmorgPackage
-  libarchive: typeof libarchiveorgPackage
-  'cscope.sourceforge': typeof cscopesourceforgeioPackage
-  libva: typeof intelcomlibvaPackage
-  pack: typeof buildpacksioPackage
-  tidy: typeof htmltidyorgPackage
-  'liblqr.wikidot': typeof liblqrwikidotcomPackage
-  amber: typeof amberlangcomPackage
-  'cyrus-sasl': typeof cyrusimaporgcyrussaslPackage
-  patchelf: typeof nixosorgpatchelfPackage
-  smartmontools: typeof smartmontoolsorgPackage
-  minisign: typeof jedisct1githubiominisignPackage
-  Figma: typeof figmacomPackage
-  figma: typeof figmacomPackage
-  terragrunt: typeof terragruntgruntworkioPackage
-  duckdb: typeof duckdborgPackage
-  memcached: typeof memcachedorgPackage
-  cpanm: typeof cpanminusPackage
-  sniffnet: typeof sniffnetnetPackage
-  opendap: typeof opendaporgPackage
-  gdal: typeof gdalorgPackage
-  jenv: typeof jenvbePackage
-  shout: typeof xiphorglibshoutPackage
-  vorbis: typeof xiphorgvorbisPackage
-  flac: typeof xiphorgflacPackage
-  ogg: typeof xiphorgoggPackage
-  cmake: typeof cmakePackage
-  rbw: typeof gittoztnetrbwPackage
-  tinyxml2: typeof leethomasongithubiotinyxml2Package
-  SeaweedFS: typeof seaweedfscomPackage
-  sqlfluff: typeof sqlfluffcomPackage
-  nmap: typeof nmaporgPackage
-  autossh: typeof hardingmotdcaautosshPackage
-  jumppad: typeof jumppaddevPackage
-  aspell: typeof aspellnetPackage
-  dprint: typeof dprintdevPackage
-  'pcap-config': typeof tcpdumporgPackage
-  pocketbase: typeof pocketbaseioPackage
-  gitql: typeof amrdevelopergithubiogqlPackage
-  circleci: typeof circlecicomPackage
-  rename: typeof plasmasturmorgrenamePackage
-  unixodbc: typeof unixodbcorgPackage
-  'code-server': typeof codercomcodeserverPackage
-  mupdf: typeof mupdfcomPackage
-  cruft: typeof cruftgithubioPackage
-  flipt: typeof fliptioPackage
-  potrace: typeof sourceforgenetpotracePackage
-  XMLStarlet: typeof sourceforgenetxmlstarPackage
-  'aac-enc': typeof sourceforgenetopencoreamrPackage
-  libmng: typeof sourceforgenetlibmngPackage
-  faac: typeof sourceforgenetfaacPackage
-  libtirpc: typeof sourceforgenetlibtirpcPackage
-  faad: typeof sourceforgenetfaad2Package
-  'net-tools': typeof sourceforgenetnettoolsPackage
-  e2fsprogs: typeof sourceforgenete2fsprogsPackage
-  mpv: typeof mpvioPackage
-  libomp: typeof openmpllvmorgPackage
-  libwpe: typeof wpewebkitorglibwpePackage
-  'wpebackend-fdo': typeof wpewebkitorgwpebackendfdoPackage
-  'operator-sdk': typeof operatorframeworkiooperatorsdkPackage
-  zathura: typeof pwmtorgzathuraPackage
-  girara: typeof pwmtorggiraraPackage
-  wimlib: typeof wimlibnetPackage
-  mosh: typeof moshorgPackage
-  gc: typeof hboehminfogcPackage
+  caddy: typeof caddyservercomPackage
+  tsc: typeof typescriptlangorgPackage
+  'open-interpreter': typeof openinterpretercomPackage
+  tools: typeof golangorgtoolsPackage
+  pinniped: typeof pinnipeddevPackage
+  exr: typeof openexrcomPackage
+  'cedar-agent': typeof permitiocedaragentPackage
+  aribb24: typeof codevideolanorgaribb24Package
+  rist: typeof codevideolanorgristlibristPackage
+  dav1d: typeof codevideolanorgvideolandav1dPackage
+  'The Silver Searcher': typeof geoffgreerfmagPackage
+  taplo: typeof taplotamasfedevPackage
+  'Protocol Buffers': typeof protobufdevPackage
+  pwgen: typeof pwgensourceforgeioPackage
+  wails: typeof wailsioPackage
+  radicle: typeof radicleorgPackage
   scdoc: typeof srhtscdocPackage
-  libpng: typeof libpngorgPackage
-  'netpbm.sourceforge': typeof netpbmsourceforgenetPackage
-  liblmdb: typeof openldaporgliblmdbPackage
-  LocalAI: typeof localaiioPackage
-  'ruby-lang': typeof rubyPackage
-  ruby: typeof rubyPackage
-  wavpack: typeof wavpackcomPackage
-  digger: typeof diggerdevPackage
-  'kafka.apache': typeof kafkaapacheorgPackage
-  vim: typeof vimPackage
-  vi: typeof vimPackage
-  libpipeline: typeof libpipelinegitlabiolibpipelinePackage
-  'Jenkins X': typeof jenkinsxioPackage
-  ollama: typeof ollamaaiPackage
-  julia: typeof julialangorgPackage
-  xkbcli: typeof xkbcommonorgPackage
-  abseil: typeof abseilioPackage
-  terratag: typeof terratagioPackage
-  quickwit: typeof quickwitioPackage
-  sketchybar: typeof felixkratzgithubiosketchybarPackage
-  krampus: typeof idleberggithubiokrampusPackage
-  sbt: typeof scalasbtorgPackage
-  jags: typeof mcmcjagssourceforgeioPackage
-  'mako-render': typeof makotemplatesorgPackage
-  depot: typeof depotdevPackage
-  vmaf: typeof netflixcomvmafPackage
-  OrbStack: typeof orbstackdevPackage
-  orbstack: typeof orbstackdevPackage
-  'git-town': typeof gittowncomPackage
-  duk: typeof duktapeorgPackage
-  leo: typeof leolangorgPackage
-  imageflow_tool: typeof imageflowioimageflow_toolPackage
-  meilisearch: typeof meilisearchcomPackage
-  LibTomMath: typeof libtomnetmathPackage
-  shellcheck: typeof shellchecknetPackage
-  unicode: typeof unicodeorgPackage
-  argcomplete: typeof kislyukgithubioargcompletePackage
-  gnutls: typeof gnutlsorgPackage
-  'arduino-cli': typeof arduinogithubioarduinocliPackage
-  rsync: typeof rsyncsambaorgPackage
-  sftpgo: typeof sftpgocomPackage
-  odigos: typeof odigosioPackage
-  genqlient: typeof khanacademyorggenqlientPackage
-  freexl: typeof gaiagisitfossilfreexlPackage
-  libspatialite: typeof gaiagisitlibspatialitePackage
-  hcloud: typeof hetznercomhcloudPackage
-  qrencode: typeof fukuchiorgqrencodePackage
-  Stats: typeof statsappPackage
-  stats: typeof statsappPackage
-  python: typeof pythonPackage
-  py: typeof pythonPackage
-  flutter: typeof flutterdevPackage
-  elfutils: typeof elfutilsorgPackage
-  'LM Studio': typeof lmstudioaiPackage
-  'lm-studio': typeof lmstudioaiPackage
-  lmstudio: typeof lmstudioaiPackage
-  acorn: typeof acornioacorncliPackage
-  dxc: typeof microsoftcomdxcPackage
-  pyright: typeof microsoftcompyrightPackage
-  azcopy: typeof microsoftcomazurestorageazcopyPackage
-  'vscode cli': typeof microsoftcomcodecliPackage
-  markitdown: typeof microsoftcommarkitdownPackage
-  pwsh: typeof microsoftcompowershellPackage
-  jbang: typeof jbangdevPackage
-  libcerf: typeof jugitfzjuelichdemlzlibcerfPackage
-  syft: typeof anchorecomsyftPackage
-  libtermkey: typeof leonerdorguklibtermkeyPackage
-  libvterm: typeof leonerdorguklibvtermPackage
-  minizip: typeof zlibnetminizipPackage
-  tailcall: typeof tailcallrunPackage
-  lzo: typeof oberhumercomlzoPackage
-  ucl: typeof oberhumercomuclPackage
-  Zed: typeof zeddevPackage
-  zed: typeof zeddevPackage
-  ldns: typeof nlnetlabsnlldnsPackage
-  caesiumclt: typeof saerasoftcomcaesiumPackage
-  Obsidian: typeof obsidianmdPackage
-  obsidian: typeof obsidianmdPackage
-  md5sha1sum: typeof microbreworgmd5sha1sumPackage
-  libevent: typeof libeventorgPackage
-  kubebuilder: typeof kubebuilderioPackage
-  librttopo: typeof gitosgeoorggitearttopolibrttopoPackage
-  puzzles: typeof chiarkgreenendorgukpuzzlesPackage
-  halibut: typeof chiarkgreenendorgukhalibutPackage
-  putty: typeof chiarkgreenendorgukputtyPackage
-  'docbook-xsl': typeof docbookorgxslPackage
-  Blender: typeof blenderorgPackage
-  blender: typeof blenderorgPackage
-  swig: typeof swigorgPackage
-  stripe: typeof stripecomPackage
-  mongodb: typeof mongodbcomPackage
-  openslide: typeof openslideorgPackage
-  systemd: typeof systemdioPackage
-  'macfuse.github': typeof macfusegithubioPackage
-  xcodeproj: typeof cocoapodsorgxcodeprojPackage
+  llm: typeof llmdatasetteioPackage
+  'nim-lang': typeof nimlangorgPackage
   'classic.yarnpkg': typeof classicYarnPackage
   yarn: typeof classicYarnPackage
-  appium: typeof appiumioPackage
-  daytona: typeof daytonaioPackage
-  'gimme-aws-creds': typeof nikecomgimmeawscredsPackage
-  ImageOptim: typeof imageoptimcomPackage
-  imageoptim: typeof imageoptimcomPackage
-  libvpx: typeof webmprojectorglibvpxPackage
-  'geos-config': typeof libgeosorgPackage
-  libpsl: typeof rockdabootgithubiolibpslPackage
-  gti: typeof rwosorggtiPackage
-  zsh: typeof zshsourceforgeioPackage
-  s4cmd: typeof bloomreachcoms4cmdPackage
-  'jenkins-lts': typeof jenkinsioPackage
-  mergestat: typeof mergestatcommergestatlitePackage
-  helm: typeof helmPackage
-  's-lang': typeof jedsoftorgslangPackage
-  MariaDB: typeof mariadbcomserverPackage
-  'pkl-lang': typeof pkllangorgPackage
-  skaffold: typeof skaffolddevPackage
-  watchexec: typeof watchexecgithubioPackage
-  'git-crypt': typeof agwanamegitcryptPackage
-  'python-jinja': typeof palletsprojectscomjinjaPackage
-  'python-click': typeof palletsprojectscomclickPackage
-  Keka: typeof kekaioPackage
-  keka: typeof kekaioPackage
-  'yt-dlp': typeof ytdlporgPackage
+  'elixir-lang': typeof elixirlangorgPackage
+  ruff: typeof astralshruffPackage
   pygmentize: typeof pygmentsorgPackage
-  fido2: typeof developersyubicocomlibfido2Package
-  'yubikey-manager': typeof developersyubicocomyubikeymanagerPackage
-  Cursor: typeof cursorcomPackage
-  cursor: typeof cursorcomPackage
-  xplr: typeof xplrdevPackage
-  rome: typeof rometoolsPackage
-  numbat: typeof numbatdevPackage
-  s3cmd: typeof s3cmdPackage
-  opj: typeof openjpegorgPackage
-  talosctl: typeof talosdevPackage
-  pod: typeof cocoapodsorgPackage
-  docutils: typeof docutilsorgPackage
-  'pyqt-bundle': typeof riverbankcomputingcompyqtbuilderPackage
-  sip: typeof riverbankcomputingcomsipPackage
+  jbig2dec: typeof jbig2deccomPackage
+  erlang: typeof erlangorgPackage
+  'python-click': typeof palletsprojectscomclickPackage
+  'python-jinja': typeof palletsprojectscomjinjaPackage
+  poetry: typeof pythonpoetryorgPackage
+  libvterm: typeof leonerdorguklibvtermPackage
+  libtermkey: typeof leonerdorguklibtermkeyPackage
+  prettyping: typeof denilsonsanombrprettypingPackage
+  reshape: typeof fabianlindforssereshapePackage
+  rename: typeof plasmasturmorgrenamePackage
+  freetds: typeof freetdsorgPackage
+  mergiraf: typeof mergiraforgPackage
+  'git-quick-stats': typeof gitquickstatsshPackage
+  'oh-my-posh': typeof ohmyposhdevPackage
+  Inkscape: typeof inkscapeorgPackage
+  inkscape: typeof inkscapeorgPackage
+  tilt: typeof tiltdevPackage
+  'Jenkins X': typeof jenkinsxioPackage
+  duckdb: typeof duckdborgPackage
+  'protoc-gen-go': typeof googlecomprotobufgoPackage
+  glog: typeof googlecomglogPackage
+  firebase: typeof googlecomfirebasetoolsPackage
+  fullycapable: typeof googlecomfullycapablePackage
+  woff2: typeof googlecomwoff2Package
+  webp: typeof googlecomwebpPackage
+  googletest: typeof googlecomgoogletestPackage
+  highway: typeof googlecomhighwayPackage
+  spm: typeof googlecomsentencepiecePackage
+  gcloud: typeof googlecomgcloudPackage
+  Vanna: typeof vannaaiPackage
+  s4cmd: typeof bloomreachcoms4cmdPackage
+  driftctl: typeof snykiodriftctlPackage
+  vcluster: typeof vclustercomPackage
+  rbw: typeof gittoztnetrbwPackage
   networkx: typeof networkxorgPackage
-  glow: typeof charmshglowPackage
-  pop: typeof charmshpopPackage
-  vhs: typeof charmshvhsPackage
-  freeze: typeof charmshfreezePackage
-  mods: typeof charmshmodsPackage
-  gum: typeof charmshgumPackage
-  melt: typeof charmshmeltPackage
-  skate: typeof charmshskatePackage
-  crush: typeof charmshcrushPackage
-  acl: typeof savannahnongnuorgaclPackage
-  attr: typeof savannahnongnuorgattrPackage
-  qpdf: typeof qpdfsourceforgeioPackage
-  tinygo: typeof tinygoorgPackage
+  flyway: typeof flywaydborgPackage
+  depot: typeof depotdevPackage
+  nomad: typeof nomadprojectioPackage
+  'suite-sparse': typeof peopleengrtamuedudavissuitesparsePackage
+  gqlgen: typeof gqlgencomPackage
+  'freeglut.sourceforge': typeof freeglutsourceforgeioPackage
+  memcached: typeof memcachedorgPackage
+  dos2unix: typeof waterlanhomexs4allnldos2unixPackage
+  'gflags.github': typeof gflagsgithubioPackage
+  'wayland-protocols': typeof waylandfreedesktoporgprotocolsPackage
+  imageflow_tool: typeof imageflowioimageflow_toolPackage
+  cryptography: typeof cryptographyioPackage
+  litecli: typeof liteclicomPackage
+  libksba: typeof gnupgorglibksbaPackage
+  npth: typeof gnupgorgnpthPackage
+  'libgpg-error': typeof gnupgorglibgpgerrorPackage
+  'libassuan-config': typeof gnupgorglibassuanPackage
+  pinentry: typeof gnupgorgpinentryPackage
+  'v2.5': typeof gnupgorgv25Package
+  libgcrypt: typeof gnupgorglibgcryptPackage
+  gpgme: typeof gnupgorggpgmePackage
+  jnv: typeof cratesiojnvPackage
+  'kaspa-miner': typeof cratesiokaspaminerPackage
+  sleek: typeof cratesiosleekPackage
+  sanitize: typeof cratesiosanitizePackage
+  killport: typeof cratesiokillportPackage
+  diskonaut: typeof cratesiodiskonautPackage
+  pueue: typeof cratesiopueuePackage
+  trash: typeof cratesiotrashyPackage
+  click: typeof cratesioclickPackage
+  'get-blessed': typeof cratesiogetblessedPackage
+  comrak: typeof cratesiocomrakPackage
+  dust: typeof cratesiodudustPackage
+  eza: typeof cratesioezaPackage
+  hyperfine: typeof cratesiohyperfinePackage
+  dua: typeof cratesioduaPackage
+  fblog: typeof cratesiofblogPackage
+  ripgrep: typeof ripgrepPackage
+  spider: typeof cratesiospider_cliPackage
+  gitu: typeof cratesiogituPackage
+  joshuto: typeof cratesiojoshutoPackage
+  flamegraph: typeof cratesioflamegraphPackage
+  qsv: typeof cratesioqsvPackage
+  kubie: typeof cratesiokubiePackage
+  'md-tui': typeof cratesiomdtuiPackage
+  gitweb: typeof cratesiogitwebPackage
+  pik: typeof cratesiopikPackage
+  'cargo-binstall': typeof cratesiocargobinstallPackage
+  samply: typeof cratesiosamplyPackage
+  fsrx: typeof cratesiofsrxPackage
+  jwt: typeof cratesiojwtcliPackage
+  typos: typeof cratesiotyposPackage
+  'git-grab': typeof cratesiogitgrabPackage
+  'git-absorb': typeof cratesiogitabsorbPackage
+  huniq: typeof cratesiohuniqPackage
+  vivid: typeof cratesiovividPackage
+  csview: typeof cratesiocsviewPackage
+  'rustls-ffi': typeof cratesiorustlsffiPackage
+  'rust-kanban': typeof cratesiorustkanbanPackage
+  ducker: typeof cratesioduckerPackage
+  spotify_player: typeof cratesiospotify_playerPackage
+  zoxide: typeof cratesiozoxidePackage
+  'tea-gpg-wallet': typeof cratesioteagpgwalletPackage
+  fnm: typeof cratesiofnmPackage
+  gitopolis: typeof cratesiogitopolisPackage
+  hac: typeof cratesiohacclientPackage
+  'rpg-cli': typeof cratesiorpgcliPackage
+  pastel: typeof cratesiopastelPackage
+  'git-tidy': typeof cratesiogittidyPackage
+  btm: typeof cratesiobottomPackage
+  ddh: typeof cratesioddhPackage
+  bpb: typeof cratesiobpbPackage
+  pqrs: typeof cratesiopqrsPackage
+  'cargo-tarpaulin': typeof cratesiocargotarpaulinPackage
+  aichat: typeof cratesioaichatPackage
+  termusic: typeof cratesiotermusicPackage
+  dym: typeof cratesiodidyoumeanPackage
+  gitui: typeof cratesiogituiPackage
+  names: typeof cratesionamesPackage
+  pgen: typeof cratesiopgenPackage
+  licensor: typeof cratesiolicensorPackage
+  'imessage-exporter': typeof cratesioimessageexporterPackage
+  pier: typeof cratesiopierPackage
+  topgrade: typeof cratesiotopgradePackage
+  omekasy: typeof cratesioomekasyPackage
+  cpz: typeof cratesiocpzPackage
+  'sqlx-cli': typeof cratesiosqlxcliPackage
+  mdcat: typeof cratesiomdcatPackage
+  bat: typeof cratesiobatPackage
+  silicon: typeof cratesiosiliconPackage
+  fselect: typeof cratesiofselectPackage
+  semverator: typeof cratesiosemveratorPackage
+  argc: typeof cratesioargcPackage
+  craftql: typeof cratesiocraftqlPackage
+  'git-trim': typeof cratesiogittrimPackage
+  mask: typeof cratesiomaskPackage
+  tokei: typeof cratesiotokeiPackage
+  bartib: typeof cratesiobartibPackage
+  'git-branchless': typeof cratesiogitbranchlessPackage
+  tiny: typeof cratesiotinyPackage
+  exa: typeof cratesioexaPackage
+  diskus: typeof cratesiodiskusPackage
+  lighthouse: typeof cratesiolighthousePackage
+  rage: typeof cratesioragePackage
+  srgn: typeof cratesiosrgnPackage
+  zellij: typeof cratesiozellijPackage
+  'tidy-viewer': typeof cratesiotidyviewerPackage
+  drill: typeof cratesiodrillPackage
+  portfolio_rs: typeof cratesioportfolio_rsPackage
+  broot: typeof cratesiobrootPackage
+  'wasm-pack': typeof cratesiowasmpackPackage
+  rucola: typeof cratesiorucolanotesPackage
+  cavif: typeof cratesiocavifPackage
+  wordl: typeof cratesiowordlPackage
+  bake: typeof cratesiobakersPackage
+  rmz: typeof cratesiormzPackage
+  sccache: typeof cratesiosccachePackage
+  docuum: typeof cratesiodocuumPackage
+  pushenv: typeof cratesiopushenvPackage
+  toast: typeof cratesiotoastPackage
+  'rtx-cli': typeof cratesiortxcliPackage
+  'git-gone': typeof cratesiogitgonePackage
+  albionrpg: typeof cratesioalbion_terminal_rpgPackage
+  sig: typeof cratesiosigrsPackage
+  versio: typeof cratesioversioPackage
+  delta: typeof cratesiogitdeltaPackage
+  wthrr: typeof cratesiowthrrPackage
+  rga: typeof cratesioripgrepallPackage
+  stego: typeof cratesiostegoPackage
+  eureka: typeof cratesioeurekaPackage
+  mprocs: typeof cratesiomprocsPackage
+  checkexec: typeof cratesiocheckexecPackage
+  krampus: typeof idleberggithubiokrampusPackage
+  bitcoin: typeof bitcoinorgPackage
+  micro: typeof microeditorgithubioPackage
+  'process-compose': typeof f1bonacc1githubioprocesscomposePackage
+  'dotenv-linter': typeof dotenvlintergithubioPackage
+  'Visual Studio Code': typeof codevisualstudiocomPackage
+  vscode: typeof codevisualstudiocomPackage
+  code: typeof codevisualstudiocomPackage
+  socat: typeof destunreachorgsocatPackage
+  localstack: typeof localstackcloudcliPackage
+  awslocal: typeof localstackcloudawsclilocalPackage
+  bytebase: typeof bytebasecomPackage
+  'c-ares': typeof caresorgPackage
+  Arc: typeof arcnetPackage
+  arc: typeof arcnetPackage
+  cups: typeof openprintinggithubiocupsPackage
+  node: typeof nodePackage
+  bcrypt: typeof bcryptsourceforgenetPackage
+  'libisl.sourceforge': typeof libislsourceforgeioPackage
+  zotregistry: typeof zotregistrydevPackage
+  libaec: typeof dkrzdelibaecPackage
+  genqlient: typeof khanacademyorggenqlientPackage
+  mvn: typeof mavenPackage
+  maven: typeof mavenPackage
+  whisper: typeof openaicomwhisperPackage
+  openai: typeof openaicomopenaipythonPackage
+  codex: typeof openaicomcodexPackage
+  'terraform-docs': typeof terraformdocsioPackage
+  gtk4: typeof gtkorggtk4Package
+  gtk3: typeof gtkorggtk3Package
+  Warp: typeof warpdevPackage
+  warp: typeof warpdevPackage
+  pixlet: typeof tidbytcomPackage
+  difft: typeof wilfredmeukdifftasticPackage
+  jags: typeof mcmcjagssourceforgeioPackage
+  terraform: typeof terraformPackage
+  packer: typeof packerioPackage
+  gnupg: typeof gpgPackage
+  gpg: typeof gpgPackage
+  asciidoctor: typeof asciidoctororgPackage
+  'gts.sourceforge': typeof gtssourceforgenetPackage
+  'netpbm.sourceforge': typeof netpbmsourceforgenetPackage
+  'rhash.sourceforge': typeof rhashsourceforgenetPackage
+  elementsproject: typeof elementsprojectorgPackage
+  'aws/cli': typeof awsamazoncomcliPackage
+  aws: typeof awsamazoncomcliPackage
+  'aws/cdk': typeof cdkPackage
+  cdk: typeof cdkPackage
+  sam: typeof awsamazoncomsamPackage
+  'session-manager-plugin': typeof awsamazoncomsessionmanagerpluginPackage
+  cmake: typeof cmakePackage
+  theora: typeof theoraorgPackage
   synth: typeof getsynthcomPackage
-  apptainer: typeof apptainerorgPackage
-  clog: typeof clogtoolgithubioPackage
+  rust: typeof rustlangorgPackage
+  'clang-format': typeof llvmorgclangformatPackage
+  libsoup: typeof libsouporgPackage
+  zathura: typeof pwmtorgzathuraPackage
+  girara: typeof pwmtorggiraraPackage
+  casdoor: typeof casdoororgPackage
   LibreOffice: typeof libreofficeorgPackage
   libreoffice: typeof libreofficeorgPackage
   soffice: typeof libreofficeorgPackage
-  unrar: typeof rarlabcomPackage
-  'kubectl-krew': typeof krewsigsk8sioPackage
-  'microcks-cli': typeof microcksioPackage
-  mergiraf: typeof mergiraforgPackage
-  netcdf: typeof unidataucaredunetcdfPackage
-  conftest: typeof conftestdevPackage
-  zotregistry: typeof zotregistrydevPackage
-  MetaGPT: typeof deepwisdomaiPackage
-  keep: typeof keephqdevPackage
-  HDF5: typeof hdfgrouporghdf5Package
-  databricks: typeof databrickscomPackage
-  tfsec: typeof aquasecuritygithubiotfsecPackage
-  trivy: typeof aquasecuritygithubiotrivyPackage
+  iroh: typeof irohcomputerPackage
+  sqlc: typeof sqlcdevPackage
+  'php-cs-fixer': typeof symfonycomcsPackage
+  pls: typeof dhruvkbdevplsPackage
+  'rust-script': typeof rustscriptorgPackage
+  htslib: typeof htsliborgPackage
+  gdal: typeof gdalorgPackage
+  openblas: typeof openblasnetPackage
+  gl2ps: typeof geuzorggl2psPackage
+  'rucio-client': typeof ruciocernchrucioclientPackage
+  f2py: typeof numpyorgPackage
+  Insomnia: typeof insomniarestPackage
+  insomnia: typeof insomniarestPackage
+  'cairo-trace': typeof cairographicsorgPackage
+  unbound: typeof unboundnetPackage
+  OrbStack: typeof orbstackdevPackage
+  orbstack: typeof orbstackdevPackage
+  libssh2: typeof libssh2orgPackage
+  nss: typeof mozillaorgnssPackage
+  'nspr-config': typeof mozillaorgnsprPackage
+  cbindgen: typeof mozillaorgcbindgenPackage
+  mozjpeg: typeof mozillaorgmozjpegPackage
   gr2fonttest: typeof graphitesilorgPackage
-  eas: typeof expodeveascliPackage
-  prql: typeof prqllangorgPackage
-  snyk: typeof snykioPackage
-  cstool: typeof capstoneengineorgPackage
-  'glew.sourceforge': typeof glewsourceforgeioPackage
-  temporal: typeof temporalioPackage
+  ansible: typeof ansiblecomPackage
+  alembic: typeof alembicsqlalchemyorgPackage
+  'pre-commit': typeof precommitcomPackage
+  doxygen: typeof doxygennlPackage
+  'musl.libc': typeof musllibcorgPackage
+  geni: typeof priverdevgeniPackage
+  'argo-workflows': typeof argoprojgithubioworkflowsPackage
+  'argo-cd': typeof argoprojgithubiocdPackage
+  'protoc-gen-go-grpc': typeof grpciogrpcgoPackage
+  'cyrus-sasl': typeof cyrusimaporgcyrussaslPackage
+  hubble: typeof ciliumiohubblePackage
+  cilium: typeof ciliumiociliumPackage
+  pluggy: typeof pytestorgpluggyPackage
+  'mypy-lang': typeof mypylangorgPackage
+  Rectangle: typeof rectangleappPackage
+  rectangle: typeof rectangleappPackage
+  amp: typeof amprsPackage
+  libwebsockets: typeof libwebsocketsorgPackage
+  rubygems: typeof rubygemsorgPackage
+  'git-lfs': typeof gitlfscomPackage
+  vamp: typeof vamppluginsorgPackage
+  aria2c: typeof aria2githubioPackage
+  chromedriver: typeof chromedriverchromiumorgPackage
+  changie: typeof changiedevPackage
   KeePassXC: typeof keepassxcorgPackage
   keepassxc: typeof keepassxcorgPackage
-  lychee: typeof lycheeclirsPackage
-  raccoin: typeof raccoinorgPackage
-  'pcsc-lite': typeof pcscliteapdufrPackage
-  lua: typeof luaorgPackage
-  Telegram: typeof telegramorgPackage
-  telegram: typeof telegramorgPackage
-  sam: typeof awsamazoncomsamPackage
-  'session-manager-plugin': typeof awsamazoncomsessionmanagerpluginPackage
-  'aws/cdk': typeof cdkPackage
-  cdk: typeof cdkPackage
-  'aws/cli': typeof awsamazoncomcliPackage
-  aws: typeof awsamazoncomcliPackage
-  daemontools: typeof cryptodaemontoolsPackage
-  envconsul: typeof hashicorpcomenvconsulPackage
-  'consul-template': typeof hashicorpcomconsultemplatePackage
-  aria2c: typeof aria2githubioPackage
-  MonitorControl: typeof monitorcontrolappPackage
-  monitorcontrol: typeof monitorcontrolappPackage
-  'monitor-control': typeof monitorcontrolappPackage
-  biome: typeof biomejsdevPackage
-  gqlgen: typeof gqlgencomPackage
-  libsodium: typeof libsodiumorgPackage
-  imagemagick: typeof imagemagickorgPackage
-  doxygen: typeof doxygennlPackage
-  speexdec: typeof speexorgPackage
-  syncthing: typeof syncthingnetPackage
-  sphinx: typeof sphinxdocorgPackage
-  lunarvim: typeof lunarvimorgPackage
-  fastlane: typeof fastlanetoolsPackage
-  fluentci: typeof fluentciioPackage
-  'sonar-scanner': typeof sonarqubeorgsonarscannerPackage
-  pixman: typeof pixmanorgPackage
-  mysql: typeof mysqlPackage
-  openjdk: typeof javaPackage
-  java: typeof javaPackage
-  jdk: typeof javaPackage
-  libssh2: typeof libssh2orgPackage
-  checkov: typeof checkovioPackage
-  Tunnelblick: typeof tunnelblicknetPackage
-  tunnelblick: typeof tunnelblicknetPackage
-  libsrtp: typeof ciscocomlibsrtpPackage
-  hurl: typeof hurldevPackage
+  pluralith: typeof pluralithcomPackage
+  mailpit: typeof mailpitaxllentorgPackage
+  pycairo: typeof cairographicsorgpycairoPackage
+  postgresql: typeof postgresPackage
+  postgres: typeof postgresPackage
+  granted: typeof granteddevPackage
+  Bittensor: typeof bittensorcomPackage
+  proj: typeof projorgPackage
+  fly: typeof flyioPackage
+  jetp: typeof jetporchcomPackage
+  pyyaml: typeof pyyamlorgPackage
+  coredns: typeof corednsioPackage
+  libelf: typeof fossiesorglibelfPackage
+  libmatio: typeof matiosourceforgeioPackage
+  libarchive: typeof libarchiveorgPackage
+  json: typeof lloydgithubioyajlPackage
+  scons: typeof sconsorgPackage
+  scw: typeof scalewaycomPackage
+  'yt-dlp': typeof ytdlporgPackage
+  'kubectl-cnpg': typeof cloudnativepgioPackage
+  bore: typeof borepubPackage
+  libsass: typeof sasslangcomlibsassPackage
+  sassc: typeof sasslangcomsasscPackage
+  tox: typeof toxwikiPackage
   ctop: typeof ctopshPackage
-  'poppler-qt5': typeof freedesktoporgpopplerqt5Package
-  'xcb-util': typeof freedesktoporgxcbutilPackage
-  vdpau: typeof freedesktoporgvdpauPackage
-  'xdg-user-dir': typeof freedesktoporgxdguserdirsPackage
-  'xcb-util-keysyms': typeof freedesktoporgxcbutilkeysymsPackage
-  'xcb-util-renderutil': typeof freedesktoporgxcbutilrenderutilPackage
-  'update-mime-database': typeof freedesktoporgsharedmimeinfoPackage
-  'desktop-file-utils': typeof freedesktoporgdesktopfileutilsPackage
-  'pkg-config': typeof freedesktoporgpkgconfigPackage
-  'p11-kit': typeof freedesktoporgp11kitPackage
-  'at-spi2-atk': typeof freedesktoporgatspi2atkPackage
-  'xcb-util-wm': typeof freedesktoporgxcbutilwmPackage
-  XKeyboardConfig: typeof freedesktoporgxkeyboardconfigPackage
-  dbus: typeof freedesktoporgdbusPackage
-  'icon-theme': typeof freedesktoporgiconthemePackage
-  appstreamcli: typeof freedesktoporgappstreamPackage
-  intltool: typeof freedesktoporgintltoolPackage
-  libbsd: typeof freedesktoporglibbsdPackage
-  'xcb-util-image': typeof freedesktoporgxcbutilimagePackage
-  'mesa-glu': typeof freedesktoporgmesagluPackage
-  polkit: typeof freedesktoporgpolkitPackage
-  cppunit: typeof freedesktoporgcppunitPackage
-  uchardet: typeof freedesktoporguchardetPackage
-  slirp: typeof freedesktoporgslirpPackage
-  fontconfig: typeof freedesktoporgfontconfigPackage
-  Slack: typeof slackcomPackage
-  slack: typeof slackcomPackage
-  sqlc: typeof sqlcdevPackage
-  'The Silver Searcher': typeof geoffgreerfmagPackage
-  wxwidgets: typeof wxwidgetsorgPackage
-  craft: typeof craftPackage
-  pwgen: typeof pwgensourceforgeioPackage
-  'Scryer Prolog': typeof scryerplPackage
-  wasmer: typeof wasmerioPackage
-  Maccy: typeof maccyappPackage
-  maccy: typeof maccyappPackage
-  dssim: typeof kornelskidssimPackage
-  luajit: typeof luajitorgPackage
-  pugixml: typeof pugixmlorgPackage
-  VLC: typeof vlcappPackage
-  vlc: typeof vlcappPackage
-  'The Unarchiver': typeof theunarchivercomPackage
-  'the-unarchiver': typeof theunarchivercomPackage
-  unar: typeof theunarchivercomPackage
-  rebar3: typeof rebar3orgPackage
-  wails: typeof wailsioPackage
-  vamp: typeof vamppluginsorgPackage
-  zeromq: typeof zeromqorgPackage
-  pkgx: typeof pkgxshPackage
-  aom: typeof aomediagooglesourcecomaomPackage
-  libaec: typeof dkrzdelibaecPackage
-  'python-pillow': typeof pythonpilloworgPackage
-  edgedb: typeof edgedbcomPackage
-  age: typeof filippoioagePackage
-  'yubikey-agent': typeof filippoioyubikeyagentPackage
-  podman: typeof podmanioPackage
-  boost: typeof boostorgPackage
-  sqruff: typeof quarydevsqruffPackage
-  pulumi: typeof pulumiioPackage
-  hwloc: typeof openmpiorghwlocPackage
-  daff: typeof paulfitzgithubiodaffPackage
-  nano: typeof nanoeditororgPackage
-  'php-cs-fixer': typeof symfonycomcsPackage
-  'suite-sparse': typeof peopleengrtamuedudavissuitesparsePackage
-  cfitsio: typeof heasarcgsfcnasagovcfitsioPackage
-  sshx: typeof sshxioPackage
-  nghttp2: typeof nghttp2orgPackage
-  atlas: typeof atlasgoioPackage
-  iroh: typeof irohcomputerPackage
-  loki: typeof grafanacomlokiPackage
-  'gflags.github': typeof gflagsgithubioPackage
-  libbluray: typeof videolanorglibblurayPackage
-  x264: typeof videolanorgx264Package
-  libplacebo: typeof videolanorglibplaceboPackage
-  x265: typeof videolanorgx265Package
-  'sdkman-init.sh': typeof sdkmanioPackage
-  tailscale: typeof tailscalecomPackage
-  kubecm: typeof kubecmcloudPackage
-  openvpn: typeof openvpnnetPackage
-  ctags: typeof ctagsioPackage
-  aserver: typeof alsaprojectorgalsalibPackage
-  tmate: typeof tmateioPackage
-  harfbuzz: typeof harfbuzzorgPackage
-  yadm: typeof yadmioPackage
+  aux4: typeof aux4ioPackage
+  sphinx: typeof sphinxdocorgPackage
+  werf: typeof werfioPackage
+  'git-cliff': typeof gitclifforgPackage
+  earthly: typeof earthlydevearthlyPackage
+  'ast-grep.github': typeof astgrepgithubioPackage
+  leo: typeof leolangorgPackage
+  pixman: typeof pixmanorgPackage
+  rye: typeof ryeastralshPackage
+  abseil: typeof abseilioPackage
+  'Brave Browser': typeof bravecomPackage
+  brave: typeof bravecomPackage
+  'libexif.github': typeof libexifgithubioPackage
   'gitlab-runner': typeof gitlabcomgitlaborggitlabrunnerPackage
   glab: typeof gitlabcomgitlaborgcliPackage
   watch: typeof gitlabcomprocpsngwatchPackage
   procps: typeof gitlabcomprocpsngprocpsPackage
+  SvtAv1EncApp: typeof gitlabcomaomediacodecsvtav1Package
   tree: typeof gitlabcomoldmanprogrammerunixtreePackage
   eclint: typeof gitlabcomgreuteclintPackage
-  SvtAv1EncApp: typeof gitlabcomaomediacodecsvtav1Package
-  render: typeof rendercomPackage
-  oci: typeof oraclecomocicliPackage
-  'berkeley-db': typeof oraclecomberkeleydbPackage
-  'kamal-deploy': typeof kamaldeployorgPackage
-  opa: typeof openpolicyagentorgPackage
-  diun: typeof crazymaxdevdiunPackage
-  mpmath: typeof mpmathorgPackage
-  'git-cliff': typeof gitclifforgPackage
-  freetds: typeof freetdsorgPackage
-  plantuml: typeof plantumlcomPackage
-  zlib: typeof zlibnetPackage
-  'libcxx.llvm': typeof libcxxllvmorgPackage
-  tig: typeof jonasgithubiotigPackage
-  tofu: typeof opentofuorgPackage
-  chromedriver: typeof chromedriverchromiumorgPackage
-  Postman: typeof postmancomPackage
-  postman: typeof postmancomPackage
-  check_if_email_exists: typeof reacheremailcheckifemailexistscliPackage
-  libmatio: typeof matiosourceforgeioPackage
-  libuv: typeof libuvorgPackage
-  lame: typeof lamesourceforgeioPackage
-  sqlite3: typeof sqlitePackage
-  sqlite: typeof sqlitePackage
-  modal: typeof modalcomPackage
-  istioctl: typeof istioioPackage
-  difft: typeof wilfredmeukdifftasticPackage
-  'CleanShot X': typeof cleanshotcomPackage
-  cleanshot: typeof cleanshotcomPackage
-  '1Password CLI': typeof developer1passwordcom1passwordcliPackage
-  'oh-my-posh': typeof ohmyposhdevPackage
-  reshape: typeof fabianlindforssereshapePackage
-  wireshark: typeof wiresharkorgPackage
-  rust: typeof rustlangorgPackage
-  ijg: typeof ijgorgPackage
-  re2c: typeof re2corgPackage
-  nixpacks: typeof nixpackscomPackage
-  rubocop: typeof rubocoporgPackage
-  convco: typeof convcogithubioPackage
-  wayland: typeof waylandfreedesktoporgPackage
-  devpod: typeof devpodshcliPackage
-  deno: typeof denoPackage
-  graphene: typeof ebassigithubiographenePackage
-  xpra: typeof xpraorgPackage
-  Bruno: typeof brunoappPackage
-  bruno: typeof brunoappPackage
-  'openpmix.github': typeof openpmixgithubioPackage
-  taplo: typeof taplotamasfedevPackage
-  swift: typeof swiftorgPackage
-  f2py: typeof numpyorgPackage
-  vault: typeof vaultprojectioPackage
-  mitmproxy: typeof mitmproxyorgPackage
-  goose: typeof presslygithubiogoosePackage
-  jemalloc: typeof jemallocnetPackage
-  brewkit: typeof pkgxshbrewkitPackage
-  mash: typeof pkgxshmashPackage
-  pkgm: typeof pkgxshpkgmPackage
-  cargox: typeof pkgxshcargoxPackage
-  mpdecimal: typeof bytereeforgmpdecimalPackage
-  lavinmq: typeof lavinmqcomPackage
-  pnp: typeof pnpmioPackage
-  'git-quick-stats': typeof gitquickstatsshPackage
-  ldap: typeof openldaporgPackage
-  hugo: typeof gohugoioPackage
-  xcbeautify: typeof tuistioxcbeautifyPackage
-  pcre: typeof pcreorgPackage
-  tuxpaint: typeof tuxpaintorgPackage
-  macvim: typeof macvimorgPackage
-  'tcl-lang': typeof tcllangorgPackage
-  'libisl.sourceforge': typeof libislsourceforgeioPackage
-  goreleaser: typeof goreleasercomPackage
-  robot: typeof robotframeworkorgPackage
-  dnsmasq: typeof thekelleysorgukdnsmasqPackage
-  'otp-27': typeof elixirlangorgotp27Package
-  OpenSSL: typeof opensslPackage
-  openssl: typeof opensslPackage
-  'libimobiledevice-glue': typeof libimobiledeviceorglibimobiledevicegluePackage
-  plistutil: typeof libimobiledeviceorglibplistPackage
-  libtatsu: typeof libimobiledeviceorglibtatsuPackage
-  libusbmuxd: typeof libimobiledeviceorglibusbmuxdPackage
-  'process-compose': typeof f1bonacc1githubioprocesscomposePackage
-  libimagequant: typeof pngquantorglibPackage
-  'jfrog-cli': typeof jfrogcomjfrogcliPackage
-  itstool: typeof itstoolorgPackage
-  cedar: typeof cedarpolicycomcliPackage
-  ghostscript: typeof ghostscriptcomPackage
-  'argo-cd': typeof argoprojgithubiocdPackage
-  'argo-workflows': typeof argoprojgithubioworkflowsPackage
-  'ruby-build': typeof rbenvorgrubybuildPackage
   PortAudio: typeof portaudiocomPackage
+  zarf: typeof zarfdevPackage
+  openvpn: typeof openvpnnetPackage
+  nano: typeof nanoeditororgPackage
+  aserver: typeof alsaprojectorgalsalibPackage
+  'pandoc-crossref': typeof pandocorgcrossrefPackage
+  virtualenv: typeof virtualenvpypaioPackage
+  gdown: typeof wkentarogithubiogdownPackage
+  spin: typeof fermyoncomspinPackage
+  'docbook-xsl': typeof docbookorgxslPackage
+  libdrm: typeof drifreedesktoporgPackage
+  kube: typeof kubectxdevPackage
+  ipfscluster: typeof ipfsclusterioPackage
+  syft: typeof anchorecomsyftPackage
+  zeromq: typeof zeromqorgPackage
   kerberos: typeof kerberosorgPackage
-  openssh: typeof opensshcomPackage
-  cups: typeof openprintinggithubiocupsPackage
-  qemu: typeof qemuorgPackage
-  freetype: typeof freetypeorgPackage
-  'ansible-lint': typeof ansiblecomansiblelintPackage
-  Rectangle: typeof rectangleappPackage
-  rectangle: typeof rectangleappPackage
-  Transmit: typeof transmitpaniccomPackage
-  transmit: typeof transmitpaniccomPackage
-  gql: typeof graphqleditorcomgqlPackage
-  mailpit: typeof mailpitaxllentorgPackage
-  bacon: typeof dystroyorgbaconPackage
-  Arc: typeof arcnetPackage
-  arc: typeof arcnetPackage
-  kubeshark: typeof kubesharkcoPackage
-  cicada: typeof hugowangcicadaPackage
-  fury: typeof furycoPackage
-  ots: typeof otssnipttcomPackage
-  libyaml: typeof pyyamlorglibyamlPackage
-  pocket: typeof poktnetworkPackage
-  carapace: typeof carapaceshPackage
-  fish: typeof fishshellcomPackage
-  'vid.stab': typeof publichronopikdevidstabPackage
-  pdm: typeof pdmfmingdevPackage
-  kaggle: typeof kagglecomPackage
-  Raycast: typeof raycastcomPackage
-  raycast: typeof raycastcomPackage
-  ktlint: typeof ktlintgithubioPackage
-  'scala-lang': typeof scalaPackage
-  scala: typeof scalaPackage
-  libspng: typeof libspngorgPackage
-  capnproto: typeof capnprotoorgPackage
-  'poppler.freedesktop': typeof popplerfreedesktoporgPackage
-  projen: typeof projenioPackage
-  openresty: typeof openrestyorgPackage
-  uplift: typeof upliftcidevPackage
-  supabase: typeof supabasecomcliPackage
-  kpt: typeof kptdevPackage
-  'sentry-cli': typeof sentryioPackage
-  'cedar-agent': typeof permitiocedaragentPackage
-  'soxr.sourceforge': typeof soxrsourceforgenetPackage
-  nginx: typeof nginxorgPackage
-  lzip: typeof nongnuorglzipPackage
-  fltk: typeof fltkorgPackage
-  gh: typeof cligithubcomPackage
-  'mypy-lang': typeof mypylangorgPackage
-  'Midnight Commander': typeof midnightcommanderorgPackage
-  pipx: typeof pypagithubiopipxPackage
-  Spotify: typeof spotifycomPackage
-  spotify: typeof spotifycomPackage
-  Bittensor: typeof bittensorcomPackage
-  mockery: typeof vektragithubiomockeryPackage
-  oras: typeof oraslandPackage
-  babashka: typeof babashkaorgPackage
-  terraform: typeof terraformPackage
-  'swagger-codegen': typeof swaggerioswaggercodegenPackage
-  velero: typeof veleroioPackage
-  nss: typeof mozillaorgnssPackage
-  mozjpeg: typeof mozillaorgmozjpegPackage
-  cbindgen: typeof mozillaorgcbindgenPackage
-  'nspr-config': typeof mozillaorgnsprPackage
-  versio: typeof cratesioversioPackage
-  mdcat: typeof cratesiomdcatPackage
-  silicon: typeof cratesiosiliconPackage
-  typos: typeof cratesiotyposPackage
-  btm: typeof cratesiobottomPackage
-  gitopolis: typeof cratesiogitopolisPackage
-  ddh: typeof cratesioddhPackage
-  zoxide: typeof cratesiozoxidePackage
-  albionrpg: typeof cratesioalbion_terminal_rpgPackage
-  'git-trim': typeof cratesiogittrimPackage
-  docuum: typeof cratesiodocuumPackage
-  aichat: typeof cratesioaichatPackage
-  sccache: typeof cratesiosccachePackage
-  gitweb: typeof cratesiogitwebPackage
-  topgrade: typeof cratesiotopgradePackage
-  licensor: typeof cratesiolicensorPackage
-  ripgrep: typeof ripgrepPackage
-  stego: typeof cratesiostegoPackage
-  pgen: typeof cratesiopgenPackage
-  killport: typeof cratesiokillportPackage
-  termusic: typeof cratesiotermusicPackage
-  zellij: typeof cratesiozellijPackage
-  omekasy: typeof cratesioomekasyPackage
-  rga: typeof cratesioripgrepallPackage
-  bat: typeof cratesiobatPackage
-  wordl: typeof cratesiowordlPackage
-  rage: typeof cratesioragePackage
-  toast: typeof cratesiotoastPackage
-  'git-tidy': typeof cratesiogittidyPackage
-  hac: typeof cratesiohacclientPackage
-  kubie: typeof cratesiokubiePackage
-  rmz: typeof cratesiormzPackage
-  wthrr: typeof cratesiowthrrPackage
-  fselect: typeof cratesiofselectPackage
-  gitu: typeof cratesiogituPackage
-  argc: typeof cratesioargcPackage
-  'kaspa-miner': typeof cratesiokaspaminerPackage
-  'git-gone': typeof cratesiogitgonePackage
-  semverator: typeof cratesiosemveratorPackage
-  trash: typeof cratesiotrashyPackage
-  'md-tui': typeof cratesiomdtuiPackage
-  pastel: typeof cratesiopastelPackage
-  sig: typeof cratesiosigrsPackage
-  sanitize: typeof cratesiosanitizePackage
-  diskonaut: typeof cratesiodiskonautPackage
-  sleek: typeof cratesiosleekPackage
-  cavif: typeof cratesiocavifPackage
-  diskus: typeof cratesiodiskusPackage
-  flamegraph: typeof cratesioflamegraphPackage
-  click: typeof cratesioclickPackage
-  pik: typeof cratesiopikPackage
-  broot: typeof cratesiobrootPackage
-  exa: typeof cratesioexaPackage
-  joshuto: typeof cratesiojoshutoPackage
-  fblog: typeof cratesiofblogPackage
-  srgn: typeof cratesiosrgnPackage
-  ducker: typeof cratesioduckerPackage
-  jnv: typeof cratesiojnvPackage
-  'rustls-ffi': typeof cratesiorustlsffiPackage
-  mprocs: typeof cratesiomprocsPackage
-  'cargo-binstall': typeof cratesiocargobinstallPackage
-  tiny: typeof cratesiotinyPackage
-  bartib: typeof cratesiobartibPackage
-  dym: typeof cratesiodidyoumeanPackage
-  hyperfine: typeof cratesiohyperfinePackage
-  'rtx-cli': typeof cratesiortxcliPackage
-  pueue: typeof cratesiopueuePackage
-  delta: typeof cratesiogitdeltaPackage
-  dua: typeof cratesioduaPackage
-  names: typeof cratesionamesPackage
-  rucola: typeof cratesiorucolanotesPackage
-  comrak: typeof cratesiocomrakPackage
-  bpb: typeof cratesiobpbPackage
-  spotify_player: typeof cratesiospotify_playerPackage
-  craftql: typeof cratesiocraftqlPackage
-  cpz: typeof cratesiocpzPackage
-  portfolio_rs: typeof cratesioportfolio_rsPackage
-  bake: typeof cratesiobakersPackage
-  pqrs: typeof cratesiopqrsPackage
-  'git-grab': typeof cratesiogitgrabPackage
-  spider: typeof cratesiospider_cliPackage
-  fnm: typeof cratesiofnmPackage
-  tokei: typeof cratesiotokeiPackage
-  drill: typeof cratesiodrillPackage
-  eureka: typeof cratesioeurekaPackage
-  'wasm-pack': typeof cratesiowasmpackPackage
-  'git-branchless': typeof cratesiogitbranchlessPackage
-  vivid: typeof cratesiovividPackage
-  'imessage-exporter': typeof cratesioimessageexporterPackage
-  'tea-gpg-wallet': typeof cratesioteagpgwalletPackage
-  eza: typeof cratesioezaPackage
-  csview: typeof cratesiocsviewPackage
-  'get-blessed': typeof cratesiogetblessedPackage
-  huniq: typeof cratesiohuniqPackage
-  lighthouse: typeof cratesiolighthousePackage
-  jwt: typeof cratesiojwtcliPackage
-  'git-absorb': typeof cratesiogitabsorbPackage
-  fsrx: typeof cratesiofsrxPackage
-  'cargo-tarpaulin': typeof cratesiocargotarpaulinPackage
-  'tidy-viewer': typeof cratesiotidyviewerPackage
-  'rpg-cli': typeof cratesiorpgcliPackage
-  qsv: typeof cratesioqsvPackage
-  pier: typeof cratesiopierPackage
-  samply: typeof cratesiosamplyPackage
-  dust: typeof cratesiodudustPackage
-  checkexec: typeof cratesiocheckexecPackage
-  mask: typeof cratesiomaskPackage
-  gitui: typeof cratesiogituiPackage
-  pushenv: typeof cratesiopushenvPackage
-  'sqlx-cli': typeof cratesiosqlxcliPackage
-  'rust-kanban': typeof cratesiorustkanbanPackage
-  granted: typeof granteddevPackage
-  npmjs: typeof npmPackage
-  npm: typeof npmPackage
-  jetp: typeof jetporchcomPackage
+  mosh: typeof moshorgPackage
+  mdbook: typeof rustlanggithubiomdbookPackage
+  'git-crypt': typeof agwanamegitcryptPackage
+  rapidjson: typeof rapidjsonorgPackage
+  quickwit: typeof quickwitioPackage
+  templ: typeof templguidePackage
+  opa: typeof openpolicyagentorgPackage
+  edencommon: typeof facebookcomedencommonPackage
+  fb303: typeof facebookcomfb303Package
+  wangle: typeof facebookcomwanglePackage
   thrift1: typeof facebookcomfbthriftPackage
+  zstd: typeof facebookcomzstdPackage
   mvfst: typeof facebookcommvfstPackage
   folly: typeof facebookcomfollyPackage
   watchman: typeof facebookcomwatchmanPackage
-  wangle: typeof facebookcomwanglePackage
-  fb303: typeof facebookcomfb303Package
-  edencommon: typeof facebookcomedencommonPackage
-  zstd: typeof facebookcomzstdPackage
-  Insomnia: typeof insomniarestPackage
-  insomnia: typeof insomniarestPackage
-  pipenv: typeof pipenvpypaioPackage
-  AltTab: typeof alttabappPackage
-  alttab: typeof alttabappPackage
-  'alt-tab': typeof alttabappPackage
-  socat: typeof destunreachorgsocatPackage
-  glfw: typeof glfworgPackage
-  cgal: typeof cgalorgPackage
-  dozzle: typeof dozzledevPackage
-  moon: typeof moonrepodevmoonPackage
-  spin: typeof fermyoncomspinPackage
-  pixlet: typeof tidbytcomPackage
-  mujs: typeof mujscomPackage
-  uriparse: typeof uriparsergithubioPackage
-  maturin: typeof maturinrsPackage
-  wait4x: typeof wait4xdevPackage
-  'lima-vm': typeof limavmioPackage
-  openblas: typeof openblasnetPackage
+  talisman: typeof thoughtworksgithubiotalismanPackage
+  hatch: typeof hatchpypaioPackage
+  IINA: typeof iinaioPackage
+  iina: typeof iinaioPackage
+  doctl: typeof digitaloceancomdoctlPackage
+  conda: typeof condaorgPackage
+  'open-mpi': typeof openmpiorgPackage
+  SDL_image: typeof libsdlorgsdl_imagePackage
+  SDL_mixer: typeof libsdlorgsdl_mixerPackage
+  SDL_ttf: typeof libsdlorgsdl_ttfPackage
+  yadm: typeof yadmioPackage
+  supabase: typeof supabasecomcliPackage
+  Postman: typeof postmancomPackage
+  postman: typeof postmancomPackage
+  'sing-box': typeof singboxappPackage
+  surreal: typeof surrealdbcomPackage
+  wumpus: typeof catborgwumpusPackage
+  Discord: typeof discordcomPackage
+  discord: typeof discordcomPackage
+  spacetime: typeof spacetimedbcomPackage
+  hwloc: typeof openmpiorghwlocPackage
+  'glew.sourceforge': typeof glewsourceforgeioPackage
+  trip: typeof trippyclirsPackage
+  'cscope.sourceforge': typeof cscopesourceforgeioPackage
+  k9s: typeof k9scliioPackage
+  'gpg-tui': typeof orhundevgpgtuiPackage
+  postgrest: typeof postgrestorgPackage
+  cfitsio: typeof heasarcgsfcnasagovcfitsioPackage
+  'mako-render': typeof makotemplatesorgPackage
+  'sonar-scanner': typeof sonarqubeorgsonarscannerPackage
+  sops: typeof getsopsioPackage
+  vmaf: typeof netflixcomvmafPackage
+  mkcert: typeof mkcertdevPackage
+  fend: typeof printfngithubiofendPackage
+  's-lang': typeof jedsoftorgslangPackage
+  wezterm: typeof wezfurlongorgweztermPackage
+  rubberband: typeof breakfastquaycomrubberbandPackage
+  versitygw: typeof versitycomversitygwPackage
+  fastlane: typeof fastlanetoolsPackage
+  'plocate.sesse': typeof plocatesessenetPackage
+  squawk: typeof squawkhqcomPackage
+  Notion: typeof notionsoPackage
+  notion: typeof notionsoPackage
+  xcodeproj: typeof cocoapodsorgxcodeprojPackage
+  haskell: typeof haskellorgPackage
+  uplift: typeof upliftcidevPackage
+  ccache: typeof ccachedevPackage
+  'jfrog-cli': typeof jfrogcomjfrogcliPackage
   Ollama: typeof ollamacomPackage
-  rye: typeof ryeastralshPackage
-  'docker-compose': typeof dockercomcomposePackage
-  'docker-machine': typeof dockercommachinePackage
-  'docker/cli': typeof dockerPackage
-  docker: typeof dockerPackage
-  buildx: typeof dockercombuildxPackage
-  cosign: typeof sigstoredevcosignPackage
-  gitsign: typeof sigstoredevgitsignPackage
-  tectonic: typeof tectonictypesettinggithubioPackage
-  corepack: typeof nodejsorgcorepackPackage
-  certbot: typeof certbotefforgPackage
-  MeetingBar: typeof meetingbarappPackage
-  meetingbar: typeof meetingbarappPackage
-  unzip: typeof unzipPackage
-  'opus-codec': typeof opuscodecorgPackage
-  termshark: typeof termsharkioPackage
-  kustomize: typeof kubernetesiokustomizePackage
-  kubectl: typeof kubectlPackage
-  minikube: typeof kubernetesiominikubePackage
-  exr: typeof openexrcomPackage
-  GIMP: typeof gimporgPackage
-  gimp: typeof gimporgPackage
+  ollama: typeof ollamacomPackage
+  pocket: typeof poktnetworkPackage
+  unixodbc: typeof unixodbcorgPackage
+  kargo: typeof akuityiokargoPackage
+  mupdf: typeof mupdfcomPackage
+  goreleaser: typeof goreleasercomPackage
+  fluentci: typeof fluentciioPackage
+  cog: typeof cocogittoioPackage
+  replibyte: typeof replibytecomPackage
+  redis: typeof redisPackage
+  vim: typeof vimPackage
+  vi: typeof vimPackage
+  'macfuse.github': typeof macfusegithubioPackage
+  snyk: typeof snykioPackage
+  pod: typeof cocoapodsorgPackage
+  telnet: typeof applecomremote_cmdsPackage
+  container: typeof applecomcontainerPackage
+  opj: typeof openjpegorgPackage
+  zip: typeof zipPackage
   'mecab-ipadic': typeof taku910githubiomecabipadicPackage
   mecab: typeof taku910githubiomecabPackage
-  'plocate.sesse': typeof plocatesessenetPackage
+  fftw: typeof fftworgPackage
+  pandoc: typeof pandocorgPackage
   jansson: typeof digiporgjanssonPackage
-  libdrm: typeof drifreedesktoporgPackage
-  tsc: typeof typescriptlangorgPackage
-  crystal: typeof crystallangorgPackage
+  imagemagick: typeof imagemagickorgPackage
+  unicode: typeof unicodeorgPackage
+  gradle: typeof gradlePackage
+  sftpgo: typeof sftpgocomPackage
+  etcd: typeof etcdioPackage
+  mongosh: typeof mongodbcomshellPackage
+  gomplate: typeof gomplatecaPackage
+  next: typeof vercelcomnextPackage
+  pkg: typeof vercelcompkgPackage
+  flit: typeof flitpypaioPackage
+  terratag: typeof terratagioPackage
+  tinyxml2: typeof leethomasongithubiotinyxml2Package
+  duk: typeof duktapeorgPackage
+  boost: typeof boostorgPackage
+  duckscript: typeof sagiegurarigithubioduckscriptPackage
+  php: typeof phpPackage
   streamlink: typeof streamlinkgithubioPackage
-  nomad: typeof nomadprojectioPackage
-  'linux-headers': typeof kernelorglinuxheadersPackage
-  libcap: typeof kernelorglibcapPackage
-  litecli: typeof liteclicomPackage
-  Linear: typeof linearappPackage
-  linear: typeof linearappPackage
-  redis: typeof redisPackage
-  doctl: typeof digitaloceancomdoctlPackage
-  flyway: typeof flywaydborgPackage
-  Signal: typeof signalorgPackage
-  signal: typeof signalorgPackage
-  pscale: typeof planetscalecomPackage
-  tcl: typeof tcltktclPackage
-  attrs: typeof attrsorgPackage
-  ntp: typeof ntporgPackage
-  openbao: typeof openbaoorgopenbaoPackage
-  talisman: typeof thoughtworksgithubiotalismanPackage
-  pyyaml: typeof pyyamlorgPackage
+  httpie: typeof httpieioPackage
+  cicada: typeof hugowangcicadaPackage
+  mysql: typeof mysqlPackage
+  'cmdline-tools': typeof androidcomcmdlinetoolsPackage
+  lavinmq: typeof lavinmqcomPackage
+  cosign: typeof sigstoredevcosignPackage
+  gitsign: typeof sigstoredevgitsignPackage
+  mujs: typeof mujscomPackage
+  govulncheck: typeof godevgovulncheckPackage
+  testscript: typeof godevtestscriptPackage
+  unrar: typeof rarlabcomPackage
+  HDF5: typeof hdfgrouporghdf5Package
+  kubeshark: typeof kubesharkcoPackage
+  HandBrake: typeof handbrakefrPackage
+  handbrake: typeof handbrakefrPackage
+  Arkade: typeof arkadedevPackage
+  render: typeof rendercomPackage
+  ots: typeof otssnipttcomPackage
+  crystal: typeof crystallangorgPackage
+  hjson: typeof hjsongithubioPackage
+  'GitHub Desktop': typeof githubcomdesktopPackage
+  'github-desktop': typeof githubcomdesktopPackage
+  'gh-desktop': typeof githubcomdesktopPackage
+  pip: typeof pippypaioPackage
+  cabal: typeof haskellorgcabalPackage
+  openslide: typeof openslideorgPackage
+  tart: typeof tartrunPackage
+  grpc: typeof grpcioPackage
+  exiftool: typeof exiftoolorgPackage
   iTerm2: typeof iterm2comPackage
   iterm: typeof iterm2comPackage
   iterm2: typeof iterm2comPackage
-  spicedb: typeof authzedcomspicedbPackage
-  testscript: typeof godevtestscriptPackage
-  govulncheck: typeof godevgovulncheckPackage
-  pod2man: typeof eyrieorgeaglepodlatorsPackage
-  cointop: typeof cointopshPackage
-  solana: typeof solanacomPackage
-  libwebsockets: typeof libwebsocketsorgPackage
-  poetry: typeof pythonpoetryorgPackage
-  kargo: typeof akuityiokargoPackage
-  juliaup: typeof julialangorgjuliaupPackage
-  phpMyAdmin: typeof phpmyadminnetPackage
+  docutils: typeof docutilsorgPackage
+  mergestat: typeof mergestatcommergestatlitePackage
+  cmocka: typeof cmockaorgPackage
+  vips: typeof libvipsorgPackage
+  GIMP: typeof gimporgPackage
+  gimp: typeof gimporgPackage
+  'glm.g-truc': typeof glmgtrucnetPackage
+  Keka: typeof kekaioPackage
+  keka: typeof kekaioPackage
+  'geos-config': typeof libgeosorgPackage
+  hcloud: typeof hetznercomhcloudPackage
+  gh: typeof cligithubcomPackage
+  libpsl: typeof rockdabootgithubiolibpslPackage
+  expect: typeof tcllangorgexpectPackage
+  libwpe: typeof wpewebkitorglibwpePackage
+  'wpebackend-fdo': typeof wpewebkitorgwpebackendfdoPackage
   fmt: typeof fmtdevPackage
-  xvid: typeof xvidcomPackage
+  apptainer: typeof apptainerorgPackage
+  ktlint: typeof ktlintgithubioPackage
+  'opus-codec': typeof opuscodecorgPackage
+  speexdec: typeof speexorgPackage
+  lzo: typeof oberhumercomlzoPackage
+  ucl: typeof oberhumercomuclPackage
+  systemd: typeof systemdioPackage
+  aspell: typeof aspellnetPackage
+  wimlib: typeof wimlibnetPackage
+  rpm: typeof rpmorgrpmPackage
+  libdnf5: typeof rpmorglibdnf5Package
+  librepo: typeof rpmorglibrepoPackage
+  popt: typeof rpmorgpoptPackage
+  dnf5: typeof rpmorgdnf5Package
+  'rpm-sequoia': typeof rpmorgrpmsequoiaPackage
+  juju: typeof jujuisPackage
+  smi: typeof ibrcstubsdelibsmiPackage
+  'taglib-config': typeof tagliborgPackage
+  'gimme-aws-creds': typeof nikecomgimmeawscredsPackage
+  libpipeline: typeof libpipelinegitlabiolibpipelinePackage
+  vite: typeof vitejsdevPackage
+  unzip: typeof unzipPackage
+  readline: typeof gnuorgreadlinePackage
+  fribidi: typeof gnuorgfribidiPackage
+  make: typeof gnuorgmakePackage
+  grub: typeof gnuorggrubPackage
+  plotutils: typeof gnuorgplotutilsPackage
+  idn: typeof gnuorglibidnPackage
+  which: typeof gnuorgwhichPackage
+  libsigsegv: typeof gnuorglibsigsegvPackage
+  autoconf: typeof gnuorgautoconfPackage
+  gmp: typeof gnuorggmpPackage
+  grep: typeof gnuorggrepPackage
+  'autoconf-archive': typeof gnuorgautoconfarchivePackage
+  mpc: typeof gnuorgmpcPackage
+  tar: typeof gnuorgtarPackage
+  gcc: typeof gnuorggccPackage
+  bison: typeof gnuorgbisonPackage
+  help2man: typeof gnuorghelp2manPackage
+  wget: typeof gnuorgwgetPackage
+  gawk: typeof gnuorggawkPackage
+  libunistring: typeof gnuorglibunistringPackage
+  binutils: typeof gnuorgbinutilsPackage
+  parallel: typeof gnuorgparallelPackage
+  patch: typeof gnuorgpatchPackage
+  libtool: typeof gnuorglibtoolPackage
+  nettle: typeof gnuorgnettlePackage
+  asn1: typeof gnuorglibtasn1Package
+  texinfo: typeof gnuorgtexinfoPackage
+  diffutils: typeof gnuorgdiffutilsPackage
+  gperf: typeof gnuorggperfPackage
+  idn2: typeof gnuorglibidn2Package
+  xorriso: typeof gnuorgxorrisoPackage
+  'source-highlight': typeof gnuorgsourcehighlightPackage
+  iconv: typeof gnuorglibiconvPackage
+  gettext: typeof gnuorggettextPackage
+  libmicrohttpd: typeof gnuorglibmicrohttpdPackage
+  gdbm: typeof gnuorggdbmPackage
+  findutils: typeof gnuorgfindutilsPackage
+  libstdcxx: typeof gnuorggcclibstdcxxPackage
+  libgomp: typeof gnuorggcclibgompPackage
+  emacs: typeof gnuorgemacsPackage
+  groff: typeof gnuorggroffPackage
+  bash: typeof gnuorgbashPackage
+  guil: typeof gnuorgguilePackage
+  sed: typeof gnuorgsedPackage
+  stow: typeof gnuorgstowPackage
+  inetutils: typeof gnuorginetutilsPackage
+  mpfr: typeof gnuorgmpfrPackage
+  automake: typeof gnuorgautomakePackage
+  coreutils: typeof gnuorgcoreutilsPackage
+  fury: typeof furycoPackage
+  'huggingface/cli': typeof huggingfacecoPackage
+  trufflehog: typeof trufflesecuritycomtrufflehogPackage
+  LibTomMath: typeof libtomnetmathPackage
+  ord: typeof ordinalscomPackage
+  bind9: typeof iscorgbind9Package
+  'eigen.tuxfamily': typeof eigentuxfamilyorgPackage
+  zrok: typeof zrokioPackage
+  Spotify: typeof spotifycomPackage
+  spotify: typeof spotifycomPackage
+  'libcxx.llvm': typeof libcxxllvmorgPackage
+  'liblqr.wikidot': typeof liblqrwikidotcomPackage
+  upx: typeof upxgithubioPackage
+  mpv: typeof mpvioPackage
+  croc: typeof schollzcomcrocPackage
+  lzip: typeof nongnuorglzipPackage
+  caesiumclt: typeof saerasoftcomcaesiumPackage
+  vhs: typeof charmshvhsPackage
+  mods: typeof charmshmodsPackage
+  glow: typeof charmshglowPackage
+  gum: typeof charmshgumPackage
+  crush: typeof charmshcrushPackage
+  skate: typeof charmshskatePackage
+  melt: typeof charmshmeltPackage
+  freeze: typeof charmshfreezePackage
+  pop: typeof charmshpopPackage
+  liburcu: typeof liburcuorgPackage
+  carapace: typeof carapaceshPackage
+  libomp: typeof openmpllvmorgPackage
+  openstack: typeof opendevorgopenstackpythonopenstackclientPackage
+  'git-review': typeof opendevorggitreviewPackage
+  mise: typeof misejdxdevPackage
+  argcomplete: typeof kislyukgithubioargcompletePackage
+  dgraph: typeof dgraphioPackage
+  resticprofile: typeof creativeprojectsgithubioresticprofilePackage
+  mercure: typeof mercurerocksPackage
+  dnsmasq: typeof thekelleysorgukdnsmasqPackage
+  'soxr.sourceforge': typeof soxrsourceforgenetPackage
+  'openpmix.github': typeof openpmixgithubioPackage
+  gleam: typeof gleamrunPackage
+  doctave: typeof doctavecomPackage
+  tinygo: typeof tinygoorgPackage
+  istioctl: typeof istioioPackage
+  libproxy: typeof libproxygithubiolibproxyPackage
+  ttyd: typeof tsl0922githubiottydPackage
+  plantuml: typeof plantumlcomPackage
+  jq: typeof stedolangithubiojqPackage
+  hugo: typeof gohugoioPackage
+  groonga: typeof groongaorgPackage
+  ncdu: typeof devyorhelnlncduPackage
+  'poppler-data': typeof popplerfreedesktoporgpopplerdataPackage
+  optipng: typeof sfnetoptipngPackage
+  ldap: typeof openldaporgPackage
+  xcbeautify: typeof tuistioxcbeautifyPackage
+  'groovy-lang': typeof groovylangorgPackage
+  agg: typeof asciinemaorgaggPackage
+  snappy: typeof googlegithubiosnappyPackage
+  md5sha1sum: typeof microbreworgmd5sha1sumPackage
+  pugixml: typeof pugixmlorgPackage
+  qpdf: typeof qpdfsourceforgeioPackage
+  qemu: typeof qemuorgPackage
+  kubebuilder: typeof kubebuilderioPackage
+  starship: typeof starshiprsPackage
+  ladspa: typeof ladspaorgPackage
+  convco: typeof convcogithubioPackage
+  symfony: typeof symfonycomPackage
+  zlib: typeof zlibnetPackage
+  s3cmd: typeof s3cmdPackage
+  Figma: typeof figmacomPackage
+  figma: typeof figmacomPackage
+  'sentry-cli': typeof sentryioPackage
+  pipenv: typeof pipenvpypaioPackage
+  psycopg3: typeof psycopgorgpsycopg3Package
+  psycopg2: typeof psycopgorgpsycopg2Package
+  sniffnet: typeof sniffnetnetPackage
+  xpra: typeof xpraorgPackage
+  freetype: typeof freetypeorgPackage
+  pcre: typeof pcreorgPackage
+  tig: typeof jonasgithubiotigPackage
+  rebar3: typeof rebar3orgPackage
+  podman: typeof podmanioPackage
+  'neon-config': typeof notrojgithubioneonPackage
+  digger: typeof diggerdevPackage
+  ImageOptim: typeof imageoptimcomPackage
+  imageoptim: typeof imageoptimcomPackage
+  yuicompressor: typeof yuigithubioyuicompressorPackage
+  kubecm: typeof kubecmcloudPackage
+  lame: typeof lamesourceforgeioPackage
+  amber: typeof amberlangcomPackage
+  projen: typeof projenioPackage
+  rustup: typeof rustlangorgrustupPackage
+  bindgen: typeof rustlangorgrustbindgenPackage
+  cargo: typeof rustlangorgcargoPackage
+  hasura: typeof hasuraioPackage
+  SeaweedFS: typeof seaweedfscomPackage
+  volta: typeof voltashPackage
+  capnproto: typeof capnprotoorgPackage
+  'ruby-build': typeof rbenvorgrubybuildPackage
+  prql: typeof prqllangorgPackage
+  Element: typeof elementioPackage
+  element: typeof elementioPackage
+  cue: typeof cuelangorgPackage
+  'scie-pants': typeof pantsbuildorgsciepantsPackage
+  pytest: typeof pytestorgPackage
+  perl: typeof perlorgPackage
+  cedar: typeof cedarpolicycomcliPackage
+  'arduino-cli': typeof arduinogithubioarduinocliPackage
+  wxwidgets: typeof wxwidgetsorgPackage
+  stripe: typeof stripecomPackage
+  lychee: typeof lycheeclirsPackage
+  soldeer: typeof soldeerxyzPackage
+  xplr: typeof xplrdevPackage
+  cpanm: typeof cpanminusPackage
+  mockery: typeof vektragithubiomockeryPackage
+  libimagequant: typeof pngquantorglibPackage
+  spicedb: typeof authzedcomspicedbPackage
+  sympy: typeof sympyorgPackage
+  idevicedate: typeof libimobiledeviceorgPackage
+  gist: typeof rubygemsorggistPackage
+  opensearch: typeof opensearchorgPackage
+  Slack: typeof slackcomPackage
+  slack: typeof slackcomPackage
+  TablePlus: typeof tablepluscomPackage
+  tableplus: typeof tablepluscomPackage
+  ipython: typeof ipythonorgPackage
+  mesa3d: typeof mesa3dorgPackage
+  libraw: typeof libraworgPackage
+  fltk: typeof fltkorgPackage
+  'bash-completion': typeof debianorgbashcompletionPackage
+  'iso-codes': typeof debianorgisocodesPackage
+  openbao: typeof openbaoorgopenbaoPackage
+  bun: typeof bunPackage
+  'bun.com': typeof bunPackage
+  buf: typeof bufbuildPackage
+  leptonica: typeof leptonicaorgPackage
+  lz4: typeof lz4orgPackage
+  circleci: typeof circlecicomPackage
+  pnp: typeof pnpmioPackage
+  kotlinlang: typeof kotlinPackage
+  kotlin: typeof kotlinPackage
+  assimp: typeof assimporgPackage
+  distlib: typeof pypaiodistlibPackage
+  setuptools: typeof pypaiosetuptoolsPackage
+  'trove-classifiers': typeof pypaiotroveclassifiersPackage
+  packaging: typeof pypaiopackagingPackage
+  dart: typeof dartdevPackage
+  flux: typeof fluxcdioflux2Package
+  ksops: typeof viaductaiksopsPackage
+  koyeb: typeof koyebcomPackage
+  cfssl: typeof cfsslorgPackage
+  himalaya: typeof pimalayaorghimalayaPackage
+  mockgen: typeof gouberorgmockmockgenPackage
+  nuclei: typeof projectdiscoveryionucleiPackage
+  dprint: typeof dprintdevPackage
+  robot: typeof robotframeworkorgPackage
+  macvim: typeof macvimorgPackage
+  sqruff: typeof quarydevsqruffPackage
+  Stats: typeof statsappPackage
+  stats: typeof statsappPackage
+  gnutls: typeof gnutlsorgPackage
+  pake: typeof npmjscompakecliPackage
+  acorn: typeof acornioacorncliPackage
+  luajit: typeof luajitorgPackage
+  liblinear: typeof csientuedutwcjlinliblinearPackage
+  railway: typeof railwayappPackage
+  eas: typeof expodeveascliPackage
+  turso: typeof tursotechPackage
+  samtools: typeof htsliborgsamtoolsPackage
+  jumppad: typeof jumppaddevPackage
+  'docker/cli': typeof dockerPackage
+  docker: typeof dockerPackage
+  'docker-compose': typeof dockercomcomposePackage
+  'docker-machine': typeof dockercommachinePackage
+  buildx: typeof dockercombuildxPackage
+  nghttp2: typeof nghttp2orgPackage
+  biome: typeof biomejsdevPackage
+  flipt: typeof fliptioPackage
+  vspipe: typeof vapoursynthcomPackage
+  pack: typeof buildpacksioPackage
+  'youtube-dl': typeof youtubedlorgPackage
+  composer: typeof getcomposerorgPackage
+  rio: typeof riotermcomPackage
+  rover: typeof apollographqlcomroverPackage
+  epsilon: typeof epsilonprojectsourceforgeioPackage
+  talosctl: typeof talosdevPackage
+  'linux-headers': typeof kernelorglinuxheadersPackage
+  libcap: typeof kernelorglibcapPackage
+  imath: typeof openexrcomimathPackage
+  eol: typeof endoflifedatePackage
+  rubocop: typeof rubocoporgPackage
+  'kubectl-krew': typeof krewsigsk8sioPackage
+  putty: typeof chiarkgreenendorgukputtyPackage
+  halibut: typeof chiarkgreenendorgukhalibutPackage
+  puzzles: typeof chiarkgreenendorgukpuzzlesPackage
+  talhelper: typeof budimanjojogithubiotalhelperPackage
+  maturin: typeof maturinrsPackage
+  raccoin: typeof raccoinorgPackage
+  elfutils: typeof elfutilsorgPackage
+  'Docker Desktop': typeof dockercomdesktopPackage
+  'docker-desktop': typeof dockercomdesktopPackage
+  msgpack: typeof msgpackorgPackage
+  plakar: typeof plakarioPackage
+  mongodb: typeof mongodbcomPackage
+  vale: typeof valeshPackage
+  'scala-lang': typeof scalaPackage
+  scala: typeof scalaPackage
+  gauche: typeof practicalschemenetgauchePackage
+  ntp: typeof ntporgPackage
+  glfw: typeof glfworgPackage
+  librttopo: typeof gitosgeoorggitearttopolibrttopoPackage
+  dblab: typeof dblabdanvergaracomPackage
+  teller: typeof tlrdevPackage
+  meson: typeof mesonbuildcomPackage
+  steampipe: typeof steampipeioPackage
+  pulumi: typeof pulumiioPackage
+  tidy: typeof htmltidyorgPackage
+  Signal: typeof signalorgPackage
+  signal: typeof signalorgPackage
+  invoke: typeof pyinvokeorgPackage
+  heroku: typeof herokucomPackage
+  tmate: typeof tmateioPackage
+  lftp: typeof lftpyarruPackage
+  cython: typeof cythonorgPackage
+  libcerf: typeof jugitfzjuelichdemlzlibcerfPackage
+  openssh: typeof opensshcomPackage
+  ffmpeg: typeof ffmpegorgPackage
+  jsonnet: typeof jsonnetorgPackage
+  daytona: typeof daytonaioPackage
+  gnuplot: typeof gnuplotinfoPackage
+  kaggle: typeof kagglecomPackage
+  libvpx: typeof webmprojectorglibvpxPackage
+  syncthing: typeof syncthingnetPackage
+  po4a: typeof po4aorgPackage
+  borg: typeof borgbackuporgPackage
+  julia: typeof julialangorgPackage
+  rome: typeof rometoolsPackage
+  tcsh: typeof tcshorgPackage
+  ijg: typeof ijgorgPackage
+  'git-town': typeof gittowncomPackage
+  liblmdb: typeof openldaporgliblmdbPackage
+  'yubikey-manager': typeof developersyubicocomyubikeymanagerPackage
+  fido2: typeof developersyubicocomlibfido2Package
+  'pcsc-lite': typeof pcscliteapdufrPackage
+  libspng: typeof libspngorgPackage
+  hexedit: typeof rigauxorghexeditPackage
+  'frei0r.dyne': typeof frei0rdyneorgPackage
+  clisp: typeof clisporgPackage
+  Tunnelblick: typeof tunnelblicknetPackage
+  tunnelblick: typeof tunnelblicknetPackage
+  'tree-sitter': typeof treesittergithubioPackage
+  itstool: typeof itstoolorgPackage
+  dotnet: typeof dotnetmicrosoftcomPackage
+  'openapi-generator': typeof openapigeneratortechPackage
+  'python-certifi': typeof certifiiopythoncertifiPackage
+  mkdocs: typeof mkdocsorgPackage
+  patchelf: typeof nixosorgpatchelfPackage
+  ldns: typeof nlnetlabsnlldnsPackage
+  appium: typeof appiumioPackage
+  dssim: typeof kornelskidssimPackage
+  luarocks: typeof luarocksorgPackage
+  typst: typeof typstappPackage
+  'kube-linter': typeof kubelinterioPackage
+  ack: typeof beyondgrepcomPackage
+  libsrtp: typeof ciscocomlibsrtpPackage
+  smartmontools: typeof smartmontoolsorgPackage
+  deno: typeof denoPackage
+  llvm: typeof llvmorgPackage
+  hunspell: typeof hunspellgithubioPackage
+  ginkgo: typeof onsigithubioginkgoPackage
+  graphene: typeof ebassigithubiographenePackage
+  dozzle: typeof dozzledevPackage
+  'Midnight Commander': typeof midnightcommanderorgPackage
+  'code-server': typeof codercomcodeserverPackage
+  rabbitmq: typeof rabbitmqcomPackage
+  jpegxl: typeof jpegorgjpegxlPackage
+  argbash: typeof argbashdevPackage
+  'sdkman-init.sh': typeof sdkmanioPackage
+  libevent: typeof libeventorgPackage
+  'man-db': typeof mandbgitlabiomandbPackage
+  libtatsu: typeof libimobiledeviceorglibtatsuPackage
+  plistutil: typeof libimobiledeviceorglibplistPackage
+  libusbmuxd: typeof libimobiledeviceorglibusbmuxdPackage
+  'libimobiledevice-glue': typeof libimobiledeviceorglibimobiledevicegluePackage
+  k3d: typeof k3dioPackage
+  craft: typeof craftPackage
+  gphoto2: typeof gphotoorglibgphoto2Package
+  jemalloc: typeof jemallocnetPackage
+  jless: typeof jlessioPackage
+  gitql: typeof amrdevelopergithubiogqlPackage
+  atlas: typeof atlasgoioPackage
+  autossh: typeof hardingmotdcaautosshPackage
+  snaplet: typeof snapletdevcliPackage
+  editline: typeof thrysoeedkeditlinePackage
+  MonitorControl: typeof monitorcontrolappPackage
+  monitorcontrol: typeof monitorcontrolappPackage
+  'monitor-control': typeof monitorcontrolappPackage
+  nixpacks: typeof nixpackscomPackage
+  'operator-sdk': typeof operatorframeworkiooperatorsdkPackage
+  xmlwf: typeof libexpatgithubioPackage
+  meilisearch: typeof meilisearchcomPackage
+  sqlfluff: typeof sqlfluffcomPackage
+  libpng: typeof libpngorgPackage
+  rsync: typeof rsyncsambaorgPackage
+  npmjs: typeof npmPackage
+  npm: typeof npmPackage
+  'device-mapper': typeof sourcewareorgdmPackage
+  libffi: typeof sourcewareorglibffiPackage
+  bzip2: typeof sourcewareorgbzip2Package
+  attrs: typeof attrsorgPackage
+  checkov: typeof checkovioPackage
+  daemontools: typeof cryptodaemontoolsPackage
+  daff: typeof paulfitzgithubiodaffPackage
+  devpod: typeof devpodshcliPackage
+  sketchybar: typeof felixkratzgithubiosketchybarPackage
+  check_if_email_exists: typeof reacheremailcheckifemailexistscliPackage
+  srt: typeof srtallianceorgPackage
+  vde: typeof virtualsquareorgvdePackage
+  libtirpc: typeof sourceforgenetlibtirpcPackage
+  faac: typeof sourceforgenetfaacPackage
+  potrace: typeof sourceforgenetpotracePackage
+  'net-tools': typeof sourceforgenetnettoolsPackage
+  faad: typeof sourceforgenetfaad2Package
+  'aac-enc': typeof sourceforgenetopencoreamrPackage
+  libmng: typeof sourceforgenetlibmngPackage
+  e2fsprogs: typeof sourceforgenete2fsprogsPackage
+  XMLStarlet: typeof sourceforgenetxmlstarPackage
+  'opencore-amr.sourceforge': typeof opencoreamrsourceforgeioPackage
+  gql: typeof graphqleditorcomgqlPackage
+  cnquery: typeof cnqueryioPackage
+  netcdf: typeof unidataucaredunetcdfPackage
+  goose: typeof presslygithubiogoosePackage
+  atlantis: typeof runatlantisioPackage
+  'xerces-c': typeof xercesapacheorgxercescPackage
+  ghostscript: typeof ghostscriptcomPackage
+  'The Unarchiver': typeof theunarchivercomPackage
+  'the-unarchiver': typeof theunarchivercomPackage
+  unar: typeof theunarchivercomPackage
+  'kamal-deploy': typeof kamaldeployorgPackage
+  dexios: typeof brxken128githubiodexiosPackage
+  swift: typeof swiftorgPackage
+  genact: typeof svenstarogithubiogenactPackage
+  'ceres-solver': typeof ceressolverorgPackage
+  'xray-core': typeof xtlsgithubioPackage
+  bacon: typeof dystroyorgbaconPackage
+  libaio: typeof pagureiolibaioPackage
+  xml: typeof pagureioxmltoPackage
+  Telegram: typeof telegramorgPackage
+  telegram: typeof telegramorgPackage
+  dog: typeof dnslookupdogPackage
+  gifsicle: typeof lcdforggifsiclePackage
+  libyaml: typeof pyyamlorglibyamlPackage
+  phpMyAdmin: typeof phpmyadminnetPackage
+  prettier: typeof prettierioPackage
+  'consul-template': typeof hashicorpcomconsultemplatePackage
+  envconsul: typeof hashicorpcomenvconsulPackage
+  Bruno: typeof brunoappPackage
+  bruno: typeof brunoappPackage
+  fswatch: typeof emcrisostomogithubiofswatchPackage
+  'xcb-util-wm': typeof freedesktoporgxcbutilwmPackage
+  intltool: typeof freedesktoporgintltoolPackage
+  polkit: typeof freedesktoporgpolkitPackage
+  'xdg-user-dir': typeof freedesktoporgxdguserdirsPackage
+  libbsd: typeof freedesktoporglibbsdPackage
+  'xcb-util-renderutil': typeof freedesktoporgxcbutilrenderutilPackage
+  slirp: typeof freedesktoporgslirpPackage
+  'mesa-glu': typeof freedesktoporgmesagluPackage
+  fontconfig: typeof freedesktoporgfontconfigPackage
+  XKeyboardConfig: typeof freedesktoporgxkeyboardconfigPackage
+  'poppler-qt5': typeof freedesktoporgpopplerqt5Package
+  cppunit: typeof freedesktoporgcppunitPackage
+  vdpau: typeof freedesktoporgvdpauPackage
+  'p11-kit': typeof freedesktoporgp11kitPackage
+  'icon-theme': typeof freedesktoporgiconthemePackage
+  dbus: typeof freedesktoporgdbusPackage
+  appstreamcli: typeof freedesktoporgappstreamPackage
+  'at-spi2-atk': typeof freedesktoporgatspi2atkPackage
+  'xcb-util-image': typeof freedesktoporgxcbutilimagePackage
+  'xcb-util-keysyms': typeof freedesktoporgxcbutilkeysymsPackage
+  'pkg-config': typeof freedesktoporgpkgconfigPackage
+  'desktop-file-utils': typeof freedesktoporgdesktopfileutilsPackage
+  uchardet: typeof freedesktoporguchardetPackage
+  'update-mime-database': typeof freedesktoporgsharedmimeinfoPackage
+  velero: typeof veleroioPackage
+  gif: typeof giflibsourceforgeioPackage
+  'fna-xna.github': typeof fnaxnagithubioPackage
+  libva: typeof intelcomlibvaPackage
+  sip: typeof riverbankcomputingcomsipPackage
+  'pyqt-bundle': typeof riverbankcomputingcompyqtbuilderPackage
+  mitmproxy: typeof mitmproxyorgPackage
+  'ruby-lang': typeof rubyPackage
+  ruby: typeof rubyPackage
+  'libusb-compat': typeof libusbinfocompatPackage
+  zig: typeof ziglangorgPackage
+  'berkeley-db': typeof oraclecomberkeleydbPackage
+  oci: typeof oraclecomocicliPackage
+  zsh: typeof zshsourceforgeioPackage
+  fish: typeof fishshellcomPackage
+  'CleanShot X': typeof cleanshotcomPackage
+  cleanshot: typeof cleanshotcomPackage
+  libpq: typeof postgresqlorglibpqPackage
+  mc: typeof miniomcPackage
+  wayland: typeof waylandfreedesktoporgPackage
+  'Auto-GPT': typeof agptcoPackage
+  gsf: typeof gnomeorglibgsfPackage
+  'adwaita-icon-theme': typeof gnomeorgadwaitaiconthemePackage
+  'json-glib': typeof gnomeorgjsonglibPackage
+  'gdk-pixbuf': typeof gnomeorggdkpixbufPackage
+  atk: typeof gnomeorgatkPackage
+  pango: typeof gnomeorgpangoPackage
+  'rsvg-convert': typeof gnomeorglibrsvgPackage
+  libsecret: typeof gnomeorglibsecretPackage
+  'g-ir': typeof gnomeorggobjectintrospectionPackage
+  vala: typeof gnomeorgvalaPackage
+  'gtk-mac-integration-gtk3': typeof gnomeorggtkmacintegrationgtk3Package
+  'glib-networking': typeof gnomeorgglibnetworkingPackage
+  'gi-docgen': typeof gnomeorggidocgenPackage
+  xslt: typeof gnomeorglibxsltPackage
+  'gsettings-desktop-schemas': typeof gnomeorggsettingsdesktopschemasPackage
+  glib: typeof gnomeorgglibPackage
+  PyGObject: typeof gnomeorgpygobjectPackage
+  'tea/cli': typeof teaxyzPackage
+  cloudflared: typeof cloudflarecomcloudflaredPackage
+  encore: typeof encoredevPackage
+  openresty: typeof openrestyorgPackage
+  shovel: typeof indexsupplycomshovelPackage
+  asciinema: typeof asciinemaorgPackage
+  'linux-pam': typeof linuxpamorgPackage
+  direnv: typeof direnvnetPackage
+  VLC: typeof vlcappPackage
+  vlc: typeof vlcappPackage
+  ronn: typeof rtomaykogithubioronnPackage
+  clog: typeof clogtoolgithubioPackage
+  flutter: typeof flutterdevPackage
+  'poppler.freedesktop': typeof popplerfreedesktoporgPackage
+  diun: typeof crazymaxdevdiunPackage
+  gti: typeof rwosorggtiPackage
+  databricks: typeof databrickscomPackage
+  libssh: typeof libsshorgPackage
+  '1Password': typeof _1passwordcomPackage
+  '1password': typeof _1passwordcomPackage
+  onepassword: typeof _1passwordcomPackage
+  cstool: typeof capstoneengineorgPackage
+  'lima-vm': typeof limavmioPackage
+  x264: typeof videolanorgx264Package
+  libplacebo: typeof videolanorglibplaceboPackage
+  libbluray: typeof videolanorglibblurayPackage
+  x265: typeof videolanorgx265Package
+  skaffold: typeof skaffolddevPackage
+  edgedb: typeof edgedbcomPackage
+  'oauth2-proxy': typeof oauth2proxygithubioPackage
+  ipfs: typeof ipfstechPackage
+  laravel: typeof laravelcomPackage
+  temporal: typeof temporalioPackage
+  zola: typeof getzolaorgPackage
+  minisign: typeof jedisct1githubiominisignPackage
+  gpp: typeof logologicalorggppPackage
+  git2: typeof libgit2orgPackage
+  graphviz: typeof graphvizorgPackage
+  wasmer: typeof wasmerioPackage
+  Zed: typeof zeddevPackage
+  zed: typeof zeddevPackage
+  moon: typeof moonrepodevmoonPackage
+  sshx: typeof sshxioPackage
+  cephadm: typeof cephcomcephadmPackage
+  'mercurial-scm': typeof mercurialscmorgPackage
+  AltTab: typeof alttabappPackage
+  alttab: typeof alttabappPackage
+  'alt-tab': typeof alttabappPackage
+  loki: typeof grafanacomlokiPackage
+  jbang: typeof jbangdevPackage
+  tesseract: typeof tesseractocrgithubioPackage
+  terragrunt: typeof terragruntgruntworkioPackage
+  'gen-ir': typeof veracodecomgenirPackage
+  MetaGPT: typeof deepwisdomaiPackage
+  Raycast: typeof raycastcomPackage
+  raycast: typeof raycastcomPackage
+  rtmpdump: typeof rtmpdumpmplayerhqhuPackage
+  MeetingBar: typeof meetingbarappPackage
+  meetingbar: typeof meetingbarappPackage
+  'opencl-headers': typeof khronosorgopenclheadersPackage
+  'spirv-cross': typeof khronosorgspirvcrossPackage
+  spirv: typeof khronosorgspirvtoolsPackage
+  glslang: typeof khronosorgglslangPackage
+  libsolv: typeof opensuseorglibsolvPackage
+  'python-pillow': typeof pythonpilloworgPackage
+  OpenSSL: typeof opensslPackage
+  openssl: typeof opensslPackage
+  lapack: typeof netliborglapackPackage
+  typing_extensions: typeof pythonorgtyping_extensionsPackage
+  tiff: typeof simplesystemsorglibtiffPackage
+  mpmath: typeof mpmathorgPackage
+  shellcheck: typeof shellchecknetPackage
+  onefetch: typeof onefetchdevPackage
+  applesimutils: typeof wixcomapplesimutilsPackage
+  Maccy: typeof maccyappPackage
+  maccy: typeof maccyappPackage
+  MariaDB: typeof mariadbcomserverPackage
+  avro: typeof apacheorgavroPackage
+  httpd: typeof apacheorghttpdPackage
+  zookeeper: typeof apacheorgzookeeperPackage
+  apr: typeof apacheorgaprPackage
+  arrow: typeof apacheorgarrowPackage
+  jmeter: typeof apacheorgjmeterPackage
+  thrift: typeof apacheorgthriftPackage
+  svn: typeof apacheorgsubversionPackage
+  serf: typeof apacheorgserfPackage
+  cgal: typeof cgalorgPackage
+  wireshark: typeof wiresharkorgPackage
+  minizip: typeof zlibnetminizipPackage
+  consul: typeof consulioPackage
+  lua: typeof luaorgPackage
+  babashka: typeof babashkaorgPackage
+  'Hidden Bar': typeof hiddenbarappPackage
+  hiddenbar: typeof hiddenbarappPackage
+  'hidden-bar': typeof hiddenbarappPackage
+  strace: typeof straceioPackage
+  hurl: typeof hurldevPackage
+  chezmoi: typeof chezmoiioPackage
+  coder: typeof codercomPackage
+  'libcap-ng': typeof peopleredhatcomsgrubblibcapngPackage
+  pscale: typeof planetscalecomPackage
+  gource: typeof gourceioPackage
+  Blender: typeof blenderorgPackage
+  blender: typeof blenderorgPackage
+  slides: typeof maaslalanicomslidesPackage
+  'swagger-codegen': typeof swaggerioswaggercodegenPackage
+  keep: typeof keephqdevPackage
+  just: typeof justsystemsPackage
+  vault: typeof vaultprojectioPackage
+  Obsidian: typeof obsidianmdPackage
+  obsidian: typeof obsidianmdPackage
+  lunarvim: typeof lunarvimorgPackage
+  langchain: typeof langchaincomPackage
+  oras: typeof oraslandPackage
   libcuefile: typeof musepacknetlibcuefilePackage
   libreplaygain: typeof musepacknetlibreplaygainPackage
-  littlecms: typeof littlecmscomPackage
-  file: typeof darwinsyscomfilePackage
-  kube: typeof kubectxdevPackage
-  'git-lfs': typeof gitlfscomPackage
-  pluto: typeof fairwindscomplutoPackage
-  gleam: typeof gleamrunPackage
-  vspipe: typeof vapoursynthcomPackage
-  rtmpdump: typeof rtmpdumpmplayerhqhuPackage
-  node: typeof nodePackage
-  mun: typeof munlangorgPackage
-  infracost: typeof infracostioPackage
-  direnv: typeof direnvnetPackage
-  ccache: typeof ccachedevPackage
-  duti: typeof dutiPackage
-  'git-credential-manager': typeof gitcredentialmanagerPackage
-  stern: typeof sternPackage
-  cJSON: typeof cjsonPackage
-  ethaddrgen: typeof ethaddrgenPackage
-  sqlboiler: typeof sqlboilerPackage
-  scrcpy: typeof scrcpyPackage
-  'stress-ng': typeof stressngPackage
-  safe_hashes: typeof safetxhashesutilPackage
-  rbenv: typeof rbenvPackage
-  'node-build': typeof nodebuildPackage
-  sup: typeof supPackage
-  vals: typeof valsPackage
-  helmfile: typeof helmfilePackage
-  Eget: typeof egetPackage
-  utf8cpp: typeof utfcppPackage
-  'regex-tui': typeof regextuiPackage
-  'create-dmg': typeof createdmgPackage
-  lsd: typeof lsdPackage
-  utf8proc: typeof utf8procPackage
-  vfkit: typeof vfkitPackage
-  swiftgen: typeof swiftgenPackage
-  speexdsp: typeof speexdspPackage
-  rav1e: typeof rav1ePackage
-  pyparsing: typeof pyparsingPackage
-  toml11: typeof toml11Package
-  tmux: typeof tmuxPackage
-  neofetch: typeof neofetchPackage
-  migrate: typeof migratePackage
-  blueutil: typeof blueutilPackage
-  csvlens: typeof csvlensPackage
-  bruce: typeof brucePackage
-  glauth: typeof glauthPackage
-  blowfish: typeof blowfishPackage
-  'better-commits': typeof bettercommitsPackage
-  hiredis: typeof hiredisPackage
-  overmind: typeof overmindPackage
-  adr: typeof adrtoolsPackage
-  'cfn-lint': typeof cfnlintPackage
-  starpls: typeof starplsPackage
-  'python-pathspec': typeof pythonpathspecPackage
-  zippy: typeof zippyPackage
-  opencanaryd: typeof opencanaryPackage
-  kcat: typeof kcatPackage
-  'cloudbase/garm-provider-openstack': typeof garmprovideropenstackPackage
-  'cloudbase/garm': typeof garmPackage
-  'git-sizer': typeof gitsizerPackage
-  'spec-kit': typeof speckitPackage
-  'gnome-extensions-cli': typeof gnomeextensionscliPackage
-  'go-passbolt-cli': typeof gopassboltcliPackage
-  tdnf: typeof tdnfPackage
-  lerc: typeof lercPackage
-  gron: typeof gronPackage
-  'cargo-c': typeof cargocPackage
-  spacer: typeof spacerPackage
-  fzf: typeof fzfPackage
-  argon2: typeof phcwinnerargon2Package
-  'squashfs-tools-ng': typeof squashfstoolsngPackage
-  'go-sponge': typeof gospongePackage
-  'go-redfish-api-idrac': typeof goredfishapiidracPackage
-  mackup: typeof mackupPackage
-  sensors: typeof lmsensorsPackage
-  kaspa: typeof rustykaspaPackage
-  kaspad: typeof kaspadPackage
-  needs: typeof needsPackage
-  tfupdate: typeof tfupdatePackage
-  rexi: typeof rexiPackage
-  gpt4all: typeof gpt4allPackage
-  filelock: typeof filelockPackage
-  par2: typeof par2cmdlinePackage
-  psutil: typeof psutilPackage
-  pike: typeof pikePackage
-  lux: typeof luxPackage
-  libyang: typeof libyangPackage
-  gollum: typeof gollumPackage
-  'diff-so-fancy': typeof diffsofancyPackage
-  libnsl: typeof libnslPackage
-  cgif: typeof cgifPackage
-  xeol: typeof xeolPackage
-  six: typeof sixPackage
-  checkmake: typeof checkmakePackage
-  Scriptisto: typeof scriptistoPackage
-  hadolint: typeof hadolintPackage
-  platformdirs: typeof platformdirsPackage
-  luv: typeof luvPackage
-  'term-size': typeof macostermsizePackage
-  openplayground: typeof openplaygroundPackage
-  ladder: typeof ladderPackage
-  'btrfs-progs': typeof btrfsprogsPackage
-  cloc: typeof clocPackage
-  swiftenv: typeof swiftenvPackage
-  ticker: typeof tickerPackage
-  gdu: typeof gduPackage
-  GKlib: typeof gklibPackage
-  mail: typeof mailPackage
-  gopass: typeof gopassPackage
-  'kube-capacity': typeof kubecapacityPackage
-  gomarkdoc: typeof gomarkdocPackage
-  xxh: typeof xxhashPackage
-  mscp: typeof mscpPackage
-  triangle: typeof trianglePackage
-  'git-chglog': typeof gitchglogPackage
-  marionette: typeof marionettePackage
-  spdlog: typeof spdlogPackage
-  'aws-sso': typeof awsssocliPackage
-  'alpaca.cpp': typeof alpacacppPackage
-  'oapi-codegen': typeof oapicodegenPackage
-  carthage: typeof carthagePackage
-  TTS: typeof ttsPackage
-  blink: typeof blinkPackage
-  swag: typeof swagPackage
-  unxip: typeof unxipPackage
-  'license-plist': typeof licenseplistPackage
-  tbb: typeof onetbbPackage
-  urllib3: typeof urllib3Package
-  jsonlint: typeof jsonlintPackage
-  libsixel: typeof libsixelPackage
-  envchain: typeof envchainPackage
-  dateutil: typeof dateutilPackage
-  podlet: typeof podletPackage
-  'gvisor-tap-vsock': typeof gvisortapvsockPackage
-  skopeo: typeof skopeoPackage
-  redfishtool: typeof redfishtoolPackage
-  pstree: typeof pstreePackage
-  tokesura: typeof tokesuraPackage
-  re2: typeof re2Package
-  gops: typeof gopsPackage
-  glslc: typeof shadercPackage
-  brotli: typeof brotliPackage
-  redis_tui: typeof redis_tuiPackage
-  'rye-uv': typeof ryeuvPackage
-  'container-structure-test': typeof containerstructuretestPackage
-  whosthere: typeof whostherePackage
-  enc: typeof encPackage
-  usque: typeof usquePackage
-  s5cmd: typeof s5cmdPackage
-  reproc: typeof reprocPackage
-  svu: typeof svuPackage
-  'org-stats': typeof orgstatsPackage
-  'onig-config': typeof onigurumaPackage
-  fast_float: typeof fast_floatPackage
-  'toml-cli': typeof tomlcliPackage
-  regctl: typeof regctlPackage
-  regbot: typeof regbotPackage
-  regsync: typeof regsyncPackage
-  'google-maps-scraper': typeof googlemapsscraperPackage
-  snipkit: typeof snipkitPackage
-  jadx: typeof jadxPackage
-  'zsh-completions': typeof zshcompletionsPackage
-  'zsh-syntax-highlighting': typeof zshsyntaxhighlightingPackage
-  'zsh-autosuggestions': typeof zshautosuggestionsPackage
-  libdeflate: typeof libdeflatePackage
-  gox: typeof goxPackage
-  speedtest: typeof speedtestcliPackage
-  pup: typeof pupPackage
-  lego: typeof legoPackage
-  jira: typeof jiracliPackage
-  'swift-outdated': typeof swiftoutdatedPackage
-  jinja2: typeof jinja2cliPackage
-  xchtmlreport: typeof xctesthtmlreportPackage
-  complexity: typeof complexityPackage
-  xsv: typeof xsvPackage
-  tre: typeof trePackage
-  'justwatchcom/sql_exporter': typeof sql_exporterPackage
-  pytz: typeof pytzPackage
-  kubecolor: typeof kubecolorPackage
-  duf: typeof dufPackage
-  mactop: typeof mactopPackage
-  'Stable Diffusion web UI': typeof stablediffusionwebuiPackage
-  xcparse: typeof xcparsePackage
-  micromamba: typeof microPackage
-  mamba: typeof mambaPackage
-  'aws-sdk-cpp': typeof awssdkcppPackage
-  'docker-clean': typeof dockercleanPackage
-  libsamplerate: typeof libsampleratePackage
-  sndfile: typeof libsndfilePackage
-  libserdes: typeof libserdesPackage
-  librdkafka: typeof librdkafkaPackage
-  'age-plugin-yubikey': typeof agepluginyubikeyPackage
-  licensed: typeof licensedPackage
-  'aws-whoami': typeof awswhoamigolangPackage
-  cirrus: typeof cirruscliPackage
-  usql: typeof usqlPackage
-  lcov: typeof lcovPackage
-  'vanitygen-plusplus': typeof vanitygenplusplusPackage
-  'reattach-to-user-namespace': typeof tmuxmacosxpasteboardPackage
-  btop: typeof btopPackage
-  llrt: typeof llrtPackage
-  'docker-credential-ecr-login': typeof amazonecrcredentialhelperPackage
-  'eks-node-viewer': typeof eksnodeviewerPackage
-  libxcrypt: typeof libxcryptPackage
-  normalizer: typeof charset_normalizerPackage
-  acmedns: typeof acmednsPackage
-  twine: typeof twinePackage
-  'pyproject-build': typeof buildPackage
-  cffi: typeof cffiPackage
-  yazi: typeof yaziPackage
-  md2html: typeof md4cPackage
-  charmcraft: typeof charmcraftPackage
-  'canonical/pebble': typeof pebblePackage
-  'aws-iam-authenticator': typeof awsiamauthenticatorPackage
-  tine: typeof tinePackage
-  libfyaml: typeof libfyamlPackage
-  'arpack-ng': typeof arpackngPackage
-  'tea-package-builder': typeof teapackagebuilderPackage
-  mint: typeof mintPackage
-  xcodegen: typeof xcodegenPackage
-  libcbor: typeof libcborPackage
-  xcaddy: typeof xcaddyPackage
-  webhook: typeof webhookPackage
-  generic_sum: typeof mbedtlsPackage
-  horcrux: typeof horcruxPackage
-  lazydocker: typeof lazydockerPackage
-  lazygit: typeof lazygitPackage
-  'ios-deploy': typeof iosdeployPackage
-  'git-filter-repo': typeof gitfilterrepoPackage
-  libccd: typeof libccdPackage
-  awslogs: typeof awslogsPackage
-  libass: typeof libassPackage
-  openclaw: typeof openclawPackage
-  rswift: typeof rswiftPackage
-  license: typeof licensePackage
-  libatomic_ops: typeof libatomic_opsPackage
-  thefuck: typeof thefuckPackage
-  asciidoc: typeof asciidocpyPackage
-  libseccomp: typeof libseccompPackage
-  counterfeiter: typeof counterfeiterPackage
-  'terminal-notifier': typeof terminalnotifierPackage
-  iproute2mac: typeof iproute2macPackage
-  'go-md2man': typeof gomd2manPackage
-  'aws-vault': typeof awsvaultPackage
-  'tf-import-gen': typeof tfimportgenPackage
-  sourcekitten: typeof sourcekittenPackage
-  invoice: typeof invoicePackage
-  protoc: typeof protobufcPackage
-  csvdiff: typeof csvdiffPackage
-  gotestsum: typeof gotestsumPackage
-  'shaka-packager': typeof shakapackagerPackage
-  mmdblookup: typeof libmaxminddbPackage
-  'docker-lock': typeof dockerlockPackage
-  mop: typeof mopPackage
-  swiftlint: typeof swiftlintPackage
-  pakku: typeof pakkuPackage
-  fsdiff: typeof fsdiffPackage
-  commit: typeof commitPackage
-  'otel-cli': typeof otelcliPackage
-  cookiecutter: typeof cookiecutterPackage
-  fastgron: typeof fastgronPackage
-  conform: typeof conformPackage
-  ipcalc: typeof ipcalcPackage
-  lefthook: typeof lefthookPackage
-  nex: typeof nexPackage
-  nnn: typeof nnnPackage
-  periphery: typeof peripheryPackage
-  libepoxy: typeof libepoxyPackage
-  apko: typeof apkoPackage
-  navi: typeof naviPackage
-  terrarium: typeof terrariumtfPackage
-  tflint: typeof tflintPackage
-  lsof: typeof lsofPackage
-  witr: typeof witrPackage
-  grype: typeof grypePackage
-  diffoci: typeof diffociPackage
-  Surya: typeof suryaPackage
-  libunibreak: typeof libunibreakPackage
-  'swift-create-xcframework': typeof swiftcreatexcframeworkPackage
-  'Vulkan-Headers': typeof vulkanheadersPackage
-  'Vulkan-Loader': typeof vulkanloaderPackage
-  chatblade: typeof chatbladePackage
-  dasel: typeof daselPackage
-  ocrmypdf: typeof ocrmypdfPackage
-  aiac: typeof aiacPackage
-  libkml: typeof libkmlPackage
-  psutils: typeof psutilsPackage
-  paper: typeof libpaperPackage
-  numactl: typeof numactlPackage
-  lolcat: typeof lolcatPackage
-  ghq: typeof ghqPackage
-  confd: typeof confdPackage
-  air: typeof airPackage
-  fusermount3: typeof libfusePackage
-  unibilium: typeof unibiliumPackage
-  usrsctp: typeof usrsctpPackage
-  cowsay: typeof cowsayPackage
-  dive: typeof divePackage
-  pio: typeof pioPackage
-  'vault-unseal': typeof vaultunsealPackage
-  sasqwatch: typeof sasqwatchPackage
-  rawdog: typeof rawdogPackage
-  'pkcs11-helper': typeof pkcs11helperPackage
-  p7zip: typeof p7zipPackage
-  zimg: typeof zimgPackage
-  'SquashFS-Tools': typeof squashfstoolsPackage
-  Sourcery: typeof sourceryPackage
-  cpptoml: typeof cpptomlPackage
-  oci2git: typeof oci2gitPackage
-  create2crunch: typeof create2crunchPackage
-  'chruby-exec': typeof chrubyPackage
-  'ruby-install': typeof rubyinstallPackage
-  scc: typeof sccPackage
-  xcresultparser: typeof xcresultparserPackage
-  yamllint: typeof yamllintPackage
-  whisper: typeof whispercppPackage
-  'LLaMA.cpp': typeof llamacppPackage
-  sparsecat: typeof sparsecatPackage
-  bats: typeof batscorePackage
-  gci: typeof gciPackage
-  'heif-converter': typeof heifconverterimagePackage
-  'squidfunk/mkdocs-material': typeof mkdocsmaterialPackage
-  act: typeof actPackage
-  mas: typeof masPackage
-  tabulate: typeof pythontabulatePackage
-  markdownlint: typeof markdownlintcliPackage
-  flex: typeof flexPackage
-  neowofetch: typeof neowofetchPackage
-  hyfetch: typeof hyfetchPackage
-  landrun: typeof landrunPackage
-  SDL2_Pango: typeof sdl2_pangoPackage
-  buildkit: typeof buildkitPackage
-  kubeconform: typeof kubeconformPackage
-  saml2aws: typeof saml2awsPackage
-  bazel: typeof bazeliskPackage
-  buildifier: typeof buildtoolsPackage
-  jsoncpp: typeof jsoncppPackage
-  pylsp: typeof pythonlspserverPackage
-  'trezor-agent': typeof trezoragentPackage
-  'gost3411-2012': typeof streebogPackage
-  'kube-score': typeof kubescorePackage
-  nak: typeof nakPackage
-  jasper: typeof jasperPackage
-  'util-linux': typeof utillinuxPackage
-  pycparser: typeof pycparserPackage
-  'GPT Engineer': typeof gptengineerPackage
-  factotum: typeof factotumPackage
-  avif: typeof libavifPackage
-  k3sup: typeof k3supPackage
-  'text generation web UI': typeof textgenerationwebuiPackage
-  fizz: typeof fizzPackage
-  'cemetery-escape': typeof cemeteryescapePackage
-  mole: typeof molePackage
-  zap: typeof zapPackage
-  yabai: typeof yabaiPackage
-  skhd: typeof skhdPackage
-  'json-c': typeof jsoncPackage
-  expected: typeof expectedPackage
-  'protoc-gen-jsonschema': typeof protocgenjsonschemaPackage
-  ifacemaker: typeof ifacemakerPackage
-  black: typeof blackPackage
-  requests: typeof requestsPackage
-  'just-mcp': typeof justmcpPackage
-  libgeotiff: typeof libgeotiffPackage
-  fastfetch: typeof fastfetchPackage
-  allure: typeof allure2Package
-  'go-bindata': typeof gobindataPackage
-  'go-mod-upgrade': typeof gomodupgradePackage
-  swiftformat: typeof swiftformatPackage
-  screenresolution: typeof screenresolutionPackage
-  tfenv: typeof tfenvPackage
-  'swift-sh': typeof swiftshPackage
-  'xb-tool': typeof libxmlbPackage
-  stargazers: typeof stargazersPackage
-  heif: typeof libheifPackage
-  libde265: typeof libde265Package
-  lporg: typeof lporgPackage
-  colima: typeof colimaPackage
-  'yaml-cpp': typeof yamlcppPackage
-  keyring: typeof keyringPackage
-  rip2: typeof rip2Package
-  idna: typeof idnaPackage
-  'nvm-exec': typeof nvmPackage
-  jqp: typeof jqpPackage
-  k0sctl: typeof k0sctlPackage
-  libnl: typeof libnlPackage
-  mutagen: typeof mutagenPackage
-  xcodes: typeof xcodesPackage
-  when: typeof whenPackage
-  nullclaw: typeof nullclawPackage
-  scw: typeof scalewaycomPackage
-  'encore-go': typeof encoredevgoPackage
+  nvim: typeof neovimioPackage
+  DBeaver: typeof dbeaverioPackage
+  dbeaver: typeof dbeaverioPackage
+  pod2man: typeof eyrieorgeaglepodlatorsPackage
+  tailscale: typeof tailscalecomPackage
   WhatsApp: typeof whatsappcomPackage
   whatsapp: typeof whatsappcomPackage
-  gomplate: typeof gomplatecaPackage
-  codex: typeof openaicomcodexPackage
-  openai: typeof openaicomopenaipythonPackage
+  python: typeof pythonPackage
+  py: typeof pythonPackage
+  odigos: typeof odigosioPackage
+  wunderctl: typeof wundergraphcomPackage
+  augeas: typeof augeasnetPackage
+  'pkl-lang': typeof pkllangorgPackage
+  pcre2: typeof pcreorgv2Package
+  openjdk: typeof javaPackage
+  java: typeof javaPackage
+  jdk: typeof javaPackage
+  'kafka.apache': typeof kafkaapacheorgPackage
+  cointop: typeof cointopshPackage
+  gofumpt: typeof mvdanccgofumptPackage
+  shfmt: typeof mvdanccshPackage
+  'Scryer Prolog': typeof scryerplPackage
+  libsodium: typeof libsodiumorgPackage
+  Firefox: typeof firefoxorgPackage
+  firefox: typeof firefoxorgPackage
+  elizaOS: typeof elizaosgithubioPackage
+  pixi: typeof prefixdevPackage
+  tailwindcss: typeof tailwindcsscomPackage
+  valkey: typeof valkeyioPackage
+  gitleaks: typeof gitleaksioPackage
+  solana: typeof solanacomPackage
+  wait4x: typeof wait4xdevPackage
+  ctags: typeof ctagsioPackage
+  rclone: typeof rcloneorgPackage
+  tuxpaint: typeof tuxpaintorgPackage
+  qhull: typeof qhullorgPackage
+  htop: typeof htopdevPackage
+  file: typeof darwinsyscomfilePackage
+  'ansible-lint': typeof ansiblecomansiblelintPackage
+  pluto: typeof fairwindscomplutoPackage
+  re2c: typeof re2corgPackage
+  swig: typeof swigorgPackage
+  conftest: typeof conftestdevPackage
+  tofu: typeof opentofuorgPackage
+  'tcl-lang': typeof tcllangorgPackage
+  harfbuzz: typeof harfbuzzorgPackage
+  'LM Studio': typeof lmstudioaiPackage
+  'lm-studio': typeof lmstudioaiPackage
+  lmstudio: typeof lmstudioaiPackage
   metis: typeof glarosdtcumnedumetisPackage
-  liblinear: typeof csientuedutwcjlinliblinearPackage
-  samtools: typeof htsliborgsamtoolsPackage
-  asciidoctor: typeof asciidoctororgPackage
-  'source-highlight': typeof gnuorgsourcehighlightPackage
-  gcc: typeof gnuorggccPackage
-  gperf: typeof gnuorggperfPackage
-  gmp: typeof gnuorggmpPackage
-  idn: typeof gnuorglibidnPackage
-  coreutils: typeof gnuorgcoreutilsPackage
-  wget: typeof gnuorgwgetPackage
-  tar: typeof gnuorgtarPackage
-  guil: typeof gnuorgguilePackage
-  plotutils: typeof gnuorgplotutilsPackage
-  help2man: typeof gnuorghelp2manPackage
-  emacs: typeof gnuorgemacsPackage
-  readline: typeof gnuorgreadlinePackage
-  gdbm: typeof gnuorggdbmPackage
-  stow: typeof gnuorgstowPackage
-  asn1: typeof gnuorglibtasn1Package
-  gawk: typeof gnuorggawkPackage
-  fribidi: typeof gnuorgfribidiPackage
-  'autoconf-archive': typeof gnuorgautoconfarchivePackage
-  binutils: typeof gnuorgbinutilsPackage
-  groff: typeof gnuorggroffPackage
-  findutils: typeof gnuorgfindutilsPackage
-  parallel: typeof gnuorgparallelPackage
-  libtool: typeof gnuorglibtoolPackage
-  bison: typeof gnuorgbisonPackage
-  idn2: typeof gnuorglibidn2Package
-  automake: typeof gnuorgautomakePackage
-  mpfr: typeof gnuorgmpfrPackage
-  nettle: typeof gnuorgnettlePackage
-  diffutils: typeof gnuorgdiffutilsPackage
-  sed: typeof gnuorgsedPackage
-  iconv: typeof gnuorglibiconvPackage
-  libgomp: typeof gnuorggcclibgompPackage
-  libstdcxx: typeof gnuorggcclibstdcxxPackage
-  mpc: typeof gnuorgmpcPackage
-  which: typeof gnuorgwhichPackage
-  grub: typeof gnuorggrubPackage
-  texinfo: typeof gnuorgtexinfoPackage
-  libunistring: typeof gnuorglibunistringPackage
-  patch: typeof gnuorgpatchPackage
-  make: typeof gnuorgmakePackage
-  autoconf: typeof gnuorgautoconfPackage
-  libmicrohttpd: typeof gnuorglibmicrohttpdPackage
-  bash: typeof gnuorgbashPackage
-  libsigsegv: typeof gnuorglibsigsegvPackage
-  inetutils: typeof gnuorginetutilsPackage
-  grep: typeof gnuorggrepPackage
-  gettext: typeof gnuorggettextPackage
-  xorriso: typeof gnuorgxorrisoPackage
-  dialog: typeof invisibleislandnetdialogPackage
+  '1Password CLI': typeof developer1passwordcom1passwordcliPackage
+  tfsec: typeof aquasecuritygithubiotfsecPackage
+  trivy: typeof aquasecuritygithubiotrivyPackage
+  kind: typeof kindsigsk8sioPackage
+  'protoc-gen-connect-go': typeof connectrpcorgprotocgenconnectgoPackage
+  termshark: typeof termsharkioPackage
+  getmonero: typeof getmoneroorgPackage
+  azcopy: typeof microsoftcomazurestorageazcopyPackage
+  pwsh: typeof microsoftcompowershellPackage
+  markitdown: typeof microsoftcommarkitdownPackage
+  dxc: typeof microsoftcomdxcPackage
+  pyright: typeof microsoftcompyrightPackage
+  'vscode cli': typeof microsoftcomcodecliPackage
+  certbot: typeof certbotefforgPackage
+  bashly: typeof bashlydannybcoPackage
+  pkgm: typeof pkgxshpkgmPackage
+  mash: typeof pkgxshmashPackage
+  cargox: typeof pkgxshcargoxPackage
+  brewkit: typeof pkgxshbrewkitPackage
+  go: typeof goPackage
+  alacritty: typeof alacrittyorgPackage
+  SDL2_gfx: typeof ferzkoppnetsdl2_gfxPackage
+  opendap: typeof opendaporgPackage
+  'sfcgal-config': typeof sfcgalorgPackage
+  libsdl: typeof libsdlorgPackage
+  attr: typeof savannahnongnuorgattrPackage
+  acl: typeof savannahnongnuorgaclPackage
+  jupyter: typeof jupyterorgPackage
+  kpt: typeof kptdevPackage
+  dhall: typeof dhalllangorgPackage
+  dotenvx: typeof dotenvxcomPackage
+  sqlite3: typeof sqlitePackage
+  sqlite: typeof sqlitePackage
+  modal: typeof modalcomPackage
+  kubectl: typeof kubectlPackage
+  kustomize: typeof kubernetesiokustomizePackage
+  minikube: typeof kubernetesiominikubePackage
+  pocketbase: typeof pocketbaseioPackage
+  nmap: typeof nmaporgPackage
+  Cursor: typeof cursorcomPackage
+  cursor: typeof cursorcomPackage
+  mpg123: typeof mpg123dePackage
+  'golangci-lint': typeof golangcilintrunPackage
+  epstool: typeof ghostgumcomauepstoolPackage
+  cURL: typeof curlPackage
+  libcython: typeof cythonorglibcythonPackage
+  dagger: typeof daggerioPackage
+  shards: typeof crystallangorgshardsPackage
+  musepack: typeof musepacknetPackage
+  restic: typeof resticnetresticPackage
+  'logi-options-plus': typeof logitechcomoptionsPackage
+  'logi-options': typeof logitechcomoptionsPackage
+  docbook: typeof docbookorgPackage
+  task: typeof taskfiledevPackage
+  xvid: typeof xvidcomPackage
+  tldr: typeof tldrshPackage
+  xkbcli: typeof xkbcommonorgPackage
+  tailcall: typeof tailcallrunPackage
+  pipx: typeof pypagithubiopipxPackage
+  'libjpeg-turbo': typeof libjpegturboorgPackage
+  'microcks-cli': typeof microcksioPackage
+  littlecms: typeof littlecmscomPackage
+  platformdirs: typeof platformdirsPackage
+  grype: typeof grypePackage
+  jinja2: typeof jinja2cliPackage
+  redfishtool: typeof redfishtoolPackage
+  'go-redfish-api-idrac': typeof goredfishapiidracPackage
+  p7zip: typeof p7zipPackage
+  mamba: typeof mambaPackage
+  micromamba: typeof microPackage
+  jsoncpp: typeof jsoncppPackage
+  cJSON: typeof cjsonPackage
+  when: typeof whenPackage
+  'chruby-exec': typeof chrubyPackage
+  'ruby-install': typeof rubyinstallPackage
+  'license-plist': typeof licenseplistPackage
+  xcodes: typeof xcodesPackage
+  'swift-sh': typeof swiftshPackage
+  fast_float: typeof fast_floatPackage
+  blueutil: typeof blueutilPackage
+  commit: typeof commitPackage
+  libepoxy: typeof libepoxyPackage
+  lolcat: typeof lolcatPackage
+  rav1e: typeof rav1ePackage
+  speexdsp: typeof speexdspPackage
+  kubeconform: typeof kubeconformPackage
+  GKlib: typeof gklibPackage
+  'create-dmg': typeof createdmgPackage
+  sourcekitten: typeof sourcekittenPackage
+  'btrfs-progs': typeof btrfsprogsPackage
+  'reattach-to-user-namespace': typeof tmuxmacosxpasteboardPackage
+  xxh: typeof xxhashPackage
+  act: typeof actPackage
+  snipkit: typeof snipkitPackage
+  unibilium: typeof unibiliumPackage
+  yazi: typeof yaziPackage
+  hadolint: typeof hadolintPackage
+  bruce: typeof brucePackage
+  cowsay: typeof cowsayPackage
+  'gvisor-tap-vsock': typeof gvisortapvsockPackage
+  skopeo: typeof skopeoPackage
+  podlet: typeof podletPackage
+  dasel: typeof daselPackage
+  tmux: typeof tmuxPackage
+  'go-mod-upgrade': typeof gomodupgradePackage
+  aiac: typeof aiacPackage
+  'json-c': typeof jsoncPackage
+  xchtmlreport: typeof xctesthtmlreportPackage
+  'squidfunk/mkdocs-material': typeof mkdocsmaterialPackage
+  'just-mcp': typeof justmcpPackage
+  csvlens: typeof csvlensPackage
+  ocrmypdf: typeof ocrmypdfPackage
+  rawdog: typeof rawdogPackage
+  checkmake: typeof checkmakePackage
+  tabulate: typeof pythontabulatePackage
+  iproute2mac: typeof iproute2macPackage
+  stern: typeof sternPackage
+  buildkit: typeof buildkitPackage
+  'cfn-lint': typeof cfnlintPackage
+  witr: typeof witrPackage
+  fastfetch: typeof fastfetchPackage
+  'oapi-codegen': typeof oapicodegenPackage
+  'better-commits': typeof bettercommitsPackage
+  gdu: typeof gduPackage
+  'google-maps-scraper': typeof googlemapsscraperPackage
+  regctl: typeof regctlPackage
+  regsync: typeof regsyncPackage
+  regbot: typeof regbotPackage
+  webhook: typeof webhookPackage
+  rswift: typeof rswiftPackage
+  conform: typeof conformPackage
+  libatomic_ops: typeof libatomic_opsPackage
+  libsixel: typeof libsixelPackage
+  'shaka-packager': typeof shakapackagerPackage
+  scc: typeof sccPackage
+  six: typeof sixPackage
+  ifacemaker: typeof ifacemakerPackage
+  enc: typeof encPackage
+  duti: typeof dutiPackage
+  libdeflate: typeof libdeflatePackage
+  filelock: typeof filelockPackage
+  'git-chglog': typeof gitchglogPackage
+  libnl: typeof libnlPackage
+  needs: typeof needsPackage
+  xcparse: typeof xcparsePackage
+  thefuck: typeof thefuckPackage
+  unxip: typeof unxipPackage
+  'nvm-exec': typeof nvmPackage
+  k0sctl: typeof k0sctlPackage
+  saml2aws: typeof saml2awsPackage
+  'aws-sdk-cpp': typeof awssdkcppPackage
+  'kube-capacity': typeof kubecapacityPackage
+  tokesura: typeof tokesuraPackage
+  lsd: typeof lsdPackage
+  pup: typeof pupPackage
+  'aws-sso': typeof awsssocliPackage
+  gotestsum: typeof gotestsumPackage
+  reproc: typeof reprocPackage
+  fizz: typeof fizzPackage
+  envchain: typeof envchainPackage
+  'cargo-c': typeof cargocPackage
+  dive: typeof divePackage
+  SDL2_Pango: typeof sdl2_pangoPackage
+  screenresolution: typeof screenresolutionPackage
+  libseccomp: typeof libseccompPackage
+  blink: typeof blinkPackage
+  pstree: typeof pstreePackage
+  swiftgen: typeof swiftgenPackage
+  libass: typeof libassPackage
+  'git-credential-manager': typeof gitcredentialmanagerPackage
+  jira: typeof jiracliPackage
+  markdownlint: typeof markdownlintcliPackage
+  gox: typeof goxPackage
+  'node-build': typeof nodebuildPackage
+  pio: typeof pioPackage
+  libkml: typeof libkmlPackage
+  ghq: typeof ghqPackage
+  'regex-tui': typeof regextuiPackage
+  expected: typeof expectedPackage
+  'go-passbolt-cli': typeof gopassboltcliPackage
+  swiftenv: typeof swiftenvPackage
+  'pkcs11-helper': typeof pkcs11helperPackage
+  adr: typeof adrtoolsPackage
+  par2: typeof par2cmdlinePackage
+  libde265: typeof libde265Package
+  heif: typeof libheifPackage
+  urllib3: typeof urllib3Package
+  xsv: typeof xsvPackage
+  'git-filter-repo': typeof gitfilterrepoPackage
+  tine: typeof tinePackage
+  'heif-converter': typeof heifconverterimagePackage
+  opencanaryd: typeof opencanaryPackage
+  zippy: typeof zippyPackage
+  'rye-uv': typeof ryeuvPackage
+  gci: typeof gciPackage
+  lsof: typeof lsofPackage
+  'go-sponge': typeof gospongePackage
+  ticker: typeof tickerPackage
+  pyparsing: typeof pyparsingPackage
+  toml11: typeof toml11Package
+  libfyaml: typeof libfyamlPackage
+  swag: typeof swagPackage
+  mop: typeof mopPackage
+  protoc: typeof protobufcPackage
+  factotum: typeof factotumPackage
+  cirrus: typeof cirruscliPackage
+  k3sup: typeof k3supPackage
+  'terminal-notifier': typeof terminalnotifierPackage
+  kcat: typeof kcatPackage
+  invoice: typeof invoicePackage
+  'stress-ng': typeof stressngPackage
+  'vault-unseal': typeof vaultunsealPackage
+  libccd: typeof libccdPackage
+  csvdiff: typeof csvdiffPackage
+  carthage: typeof carthagePackage
+  pike: typeof pikePackage
+  pakku: typeof pakkuPackage
+  fsdiff: typeof fsdiffPackage
+  licensed: typeof licensedPackage
+  sqlboiler: typeof sqlboilerPackage
+  s5cmd: typeof s5cmdPackage
+  dateutil: typeof dateutilPackage
+  chatblade: typeof chatbladePackage
+  allure: typeof allure2Package
+  stargazers: typeof stargazersPackage
+  libcbor: typeof libcborPackage
+  xcaddy: typeof xcaddyPackage
+  'toml-cli': typeof tomlcliPackage
+  libunibreak: typeof libunibreakPackage
+  'ios-deploy': typeof iosdeployPackage
+  gomarkdoc: typeof gomarkdocPackage
+  tflint: typeof tflintPackage
+  rip2: typeof rip2Package
+  nex: typeof nexPackage
+  mackup: typeof mackupPackage
+  avif: typeof libavifPackage
+  nnn: typeof nnnPackage
+  gollum: typeof gollumPackage
+  'aws-whoami': typeof awswhoamigolangPackage
+  tfenv: typeof tfenvPackage
+  ethaddrgen: typeof ethaddrgenPackage
+  jsonlint: typeof jsonlintPackage
+  keyring: typeof keyringPackage
+  TTS: typeof ttsPackage
+  openplayground: typeof openplaygroundPackage
+  mas: typeof masPackage
+  Sourcery: typeof sourceryPackage
+  'onig-config': typeof onigurumaPackage
+  tdnf: typeof tdnfPackage
+  'go-bindata': typeof gobindataPackage
+  usque: typeof usquePackage
+  sparsecat: typeof sparsecatPackage
+  kubecolor: typeof kubecolorPackage
+  air: typeof airPackage
+  'text generation web UI': typeof textgenerationwebuiPackage
+  'yaml-cpp': typeof yamlcppPackage
+  nullclaw: typeof nullclawPackage
+  gpt4all: typeof gpt4allPackage
+  'Stable Diffusion web UI': typeof stablediffusionwebuiPackage
+  hyfetch: typeof hyfetchPackage
+  neowofetch: typeof neowofetchPackage
+  black: typeof blackPackage
+  requests: typeof requestsPackage
+  'aws-vault': typeof awsvaultPackage
+  sup: typeof supPackage
+  'go-md2man': typeof gomd2manPackage
+  cgif: typeof cgifPackage
+  ladder: typeof ladderPackage
+  pylsp: typeof pythonlspserverPackage
+  'tf-import-gen': typeof tfimportgenPackage
+  mint: typeof mintPackage
+  xcodegen: typeof xcodegenPackage
+  libnsl: typeof libnslPackage
+  'cemetery-escape': typeof cemeteryescapePackage
+  mmdblookup: typeof libmaxminddbPackage
+  mscp: typeof mscpPackage
+  redis_tui: typeof redis_tuiPackage
+  whosthere: typeof whostherePackage
+  'util-linux': typeof utillinuxPackage
+  bats: typeof batscorePackage
+  flex: typeof flexPackage
+  mactop: typeof mactopPackage
+  psutil: typeof psutilPackage
+  Surya: typeof suryaPackage
+  tre: typeof trePackage
+  md2html: typeof md4cPackage
+  confd: typeof confdPackage
+  usql: typeof usqlPackage
+  lego: typeof legoPackage
+  hiredis: typeof hiredisPackage
+  fusermount3: typeof libfusePackage
+  cloc: typeof clocPackage
+  'docker-credential-ecr-login': typeof amazonecrcredentialhelperPackage
+  'eks-node-viewer': typeof eksnodeviewerPackage
+  llrt: typeof llrtPackage
+  pytz: typeof pytzPackage
+  jadx: typeof jadxPackage
+  mutagen: typeof mutagenPackage
+  lefthook: typeof lefthookPackage
+  xeol: typeof xeolPackage
+  'Vulkan-Headers': typeof vulkanheadersPackage
+  'Vulkan-Loader': typeof vulkanloaderPackage
+  twine: typeof twinePackage
+  'pyproject-build': typeof buildPackage
+  counterfeiter: typeof counterfeiterPackage
+  'kube-score': typeof kubescorePackage
+  swiftlint: typeof swiftlintPackage
+  diffoci: typeof diffociPackage
+  rbenv: typeof rbenvPackage
+  vals: typeof valsPackage
+  helmfile: typeof helmfilePackage
+  blowfish: typeof blowfishPackage
+  sensors: typeof lmsensorsPackage
+  'GPT Engineer': typeof gptengineerPackage
+  fzf: typeof fzfPackage
+  lporg: typeof lporgPackage
+  terrarium: typeof terrariumtfPackage
+  speedtest: typeof speedtestcliPackage
+  idna: typeof idnaPackage
+  libxcrypt: typeof libxcryptPackage
+  generic_sum: typeof mbedtlsPackage
+  swiftformat: typeof swiftformatPackage
+  normalizer: typeof charset_normalizerPackage
+  'term-size': typeof macostermsizePackage
+  starpls: typeof starplsPackage
+  re2: typeof re2Package
+  glslc: typeof shadercPackage
+  brotli: typeof brotliPackage
+  gops: typeof gopsPackage
+  create2crunch: typeof create2crunchPackage
+  cookiecutter: typeof cookiecutterPackage
+  skhd: typeof skhdPackage
+  yabai: typeof yabaiPackage
+  'alpaca.cpp': typeof alpacacppPackage
+  'vanitygen-plusplus': typeof vanitygenplusplusPackage
+  'swift-outdated': typeof swiftoutdatedPackage
+  btop: typeof btopPackage
+  scrcpy: typeof scrcpyPackage
+  libgeotiff: typeof libgeotiffPackage
+  'justwatchcom/sql_exporter': typeof sql_exporterPackage
+  'gnome-extensions-cli': typeof gnomeextensionscliPackage
+  'canonical/pebble': typeof pebblePackage
+  charmcraft: typeof charmcraftPackage
+  'age-plugin-yubikey': typeof agepluginyubikeyPackage
+  svu: typeof svuPackage
+  'org-stats': typeof orgstatsPackage
+  sndfile: typeof libsndfilePackage
+  libsamplerate: typeof libsampleratePackage
+  lcov: typeof lcovPackage
+  tfupdate: typeof tfupdatePackage
+  'aws-iam-authenticator': typeof awsiamauthenticatorPackage
+  apko: typeof apkoPackage
+  migrate: typeof migratePackage
+  'otel-cli': typeof otelcliPackage
+  asciidoc: typeof asciidocpyPackage
+  oci2git: typeof oci2gitPackage
+  duf: typeof dufPackage
+  jqp: typeof jqpPackage
+  'squashfs-tools-ng': typeof squashfstoolsngPackage
+  overmind: typeof overmindPackage
+  glauth: typeof glauthPackage
+  sasqwatch: typeof sasqwatchPackage
+  spacer: typeof spacerPackage
+  utf8proc: typeof utf8procPackage
+  luv: typeof luvPackage
+  rexi: typeof rexiPackage
+  complexity: typeof complexityPackage
+  triangle: typeof trianglePackage
+  lux: typeof luxPackage
+  gopass: typeof gopassPackage
+  usrsctp: typeof usrsctpPackage
+  openclaw: typeof openclawPackage
+  periphery: typeof peripheryPackage
+  acmedns: typeof acmednsPackage
+  nak: typeof nakPackage
+  'swift-create-xcframework': typeof swiftcreatexcframeworkPackage
+  'protoc-gen-jsonschema': typeof protocgenjsonschemaPackage
+  spdlog: typeof spdlogPackage
+  awslogs: typeof awslogsPackage
+  tbb: typeof onetbbPackage
+  'docker-lock': typeof dockerlockPackage
+  'docker-clean': typeof dockercleanPackage
+  'tea-package-builder': typeof teapackagebuilderPackage
+  cffi: typeof cffiPackage
+  Eget: typeof egetPackage
+  Scriptisto: typeof scriptistoPackage
+  safe_hashes: typeof safetxhashesutilPackage
+  'cloudbase/garm-provider-openstack': typeof garmprovideropenstackPackage
+  'cloudbase/garm': typeof garmPackage
+  lerc: typeof lercPackage
+  'trezor-agent': typeof trezoragentPackage
+  yamllint: typeof yamllintPackage
+  gron: typeof gronPackage
+  'diff-so-fancy': typeof diffsofancyPackage
+  mail: typeof mailPackage
+  'python-pathspec': typeof pythonpathspecPackage
+  'spec-kit': typeof speckitPackage
+  'git-sizer': typeof gitsizerPackage
+  neofetch: typeof neofetchPackage
+  'xb-tool': typeof libxmlbPackage
+  landrun: typeof landrunPackage
+  zimg: typeof zimgPackage
+  navi: typeof naviPackage
+  'LLaMA.cpp': typeof llamacppPackage
+  vfkit: typeof vfkitPackage
+  libserdes: typeof libserdesPackage
+  librdkafka: typeof librdkafkaPackage
+  cpptoml: typeof cpptomlPackage
+  psutils: typeof psutilsPackage
+  paper: typeof libpaperPackage
+  license: typeof licensePackage
+  utf8cpp: typeof utfcppPackage
+  buildifier: typeof buildtoolsPackage
+  bazel: typeof bazeliskPackage
+  marionette: typeof marionettePackage
+  mole: typeof molePackage
+  'arpack-ng': typeof arpackngPackage
+  libyang: typeof libyangPackage
+  zap: typeof zapPackage
+  'zsh-autosuggestions': typeof zshautosuggestionsPackage
+  'zsh-syntax-highlighting': typeof zshsyntaxhighlightingPackage
+  'zsh-completions': typeof zshcompletionsPackage
+  'SquashFS-Tools': typeof squashfstoolsPackage
+  numactl: typeof numactlPackage
+  xcresultparser: typeof xcresultparserPackage
+  'container-structure-test': typeof containerstructuretestPackage
+  'gost3411-2012': typeof streebogPackage
+  jasper: typeof jasperPackage
+  pycparser: typeof pycparserPackage
+  lazygit: typeof lazygitPackage
+  lazydocker: typeof lazydockerPackage
+  horcrux: typeof horcruxPackage
+  kaspa: typeof rustykaspaPackage
+  kaspad: typeof kaspadPackage
+  argon2: typeof phcwinnerargon2Package
+  colima: typeof colimaPackage
+  fastgron: typeof fastgronPackage
+  ipcalc: typeof ipcalcPackage
+  libmd: typeof hadronsorglibmdPackage
+  'pcap-config': typeof tcpdumporgPackage
+  tcl: typeof tcltktclPackage
+  vorbis: typeof xiphorgvorbisPackage
+  flac: typeof xiphorgflacPackage
+  ogg: typeof xiphorgoggPackage
+  shout: typeof xiphorglibshoutPackage
+  libspatialite: typeof gaiagisitlibspatialitePackage
+  freexl: typeof gaiagisitfossilfreexlPackage
+  pdm: typeof pdmfmingdevPackage
+  'encore-go': typeof encoredevgoPackage
+  'libgd.github': typeof libgdgithubioPackage
+  infracost: typeof infracostioPackage
+  ninja: typeof ninjabuildorgPackage
+  sbt: typeof scalasbtorgPackage
+  nginx: typeof nginxorgPackage
+  'markupsafe.palletsprojects': typeof markupsafepalletsprojectscomPackage
+  libb2: typeof blake2netlibb2Package
+  cruft: typeof cruftgithubioPackage
+  'terraform-cdk': typeof terraformiocdkPackage
+  soliditylang: typeof soliditylangorgPackage
+  wavpack: typeof wavpackcomPackage
+  Ghostty: typeof ghosttyorgPackage
+  ghostty: typeof ghosttyorgPackage
   ncurses: typeof invisibleislandnetncursesPackage
   lynx: typeof invisibleislandnetlynxPackage
-  gpp: typeof logologicalorggppPackage
-  packer: typeof packerioPackage
-  libraw: typeof libraworgPackage
-  flux: typeof fluxcdioflux2Package
-  bytebase: typeof bytebasecomPackage
-  hjson: typeof hjsongithubioPackage
-  replibyte: typeof replibytecomPackage
-  wezterm: typeof wezfurlongorgweztermPackage
-  'xray-core': typeof xtlsgithubioPackage
-  git2: typeof libgit2orgPackage
-  'linux-pam': typeof linuxpamorgPackage
-  typing_extensions: typeof pythonorgtyping_extensionsPackage
-  libssh: typeof libsshorgPackage
-  pip: typeof pippypaioPackage
-  gitleaks: typeof gitleaksioPackage
-  'kubectl-cnpg': typeof cloudnativepgioPackage
-  postgrest: typeof postgrestorgPackage
-  shovel: typeof indexsupplycomshovelPackage
-  trufflehog: typeof trufflesecuritycomtrufflehogPackage
-  croc: typeof schollzcomcrocPackage
-  tools: typeof golangorgtoolsPackage
-  turso: typeof tursotechPackage
-  chezmoi: typeof chezmoiioPackage
-  applesimutils: typeof wixcomapplesimutilsPackage
-  webp: typeof googlecomwebpPackage
-  gcloud: typeof googlecomgcloudPackage
-  woff2: typeof googlecomwoff2Package
-  spm: typeof googlecomsentencepiecePackage
-  googletest: typeof googlecomgoogletestPackage
-  glog: typeof googlecomglogPackage
-  fullycapable: typeof googlecomfullycapablePackage
-  firebase: typeof googlecomfirebasetoolsPackage
-  highway: typeof googlecomhighwayPackage
-  'protoc-gen-go': typeof googlecomprotobufgoPackage
-  'libpthread-stubs': typeof xorglibpthreadstubsPackage
-  applewm: typeof xorgapplewmPackage
-  xrandr: typeof xorgxrandrPackage
-  x11: typeof xorgx11Package
-  xinput: typeof xorgxinputPackage
-  xau: typeof xorgxauPackage
-  xscrnsaver: typeof xorgxscrnsaverPackage
-  xcb: typeof xorgxcbPackage
-  exts: typeof xorgextsPackage
-  xtrans: typeof xorgxtransPackage
-  xaw: typeof xorgxawPackage
-  xdmcp: typeof xorgxdmcpPackage
-  xinerama: typeof xorgxineramaPackage
-  libSM: typeof xorglibsmPackage
-  xft: typeof xorgxftPackage
-  xkbfile: typeof xorgxkbfilePackage
-  libxfont2: typeof xorglibxfont2Package
-  xrender: typeof xorgxrenderPackage
-  xcomposite: typeof xorgxcompositePackage
-  'util-macros': typeof xorgutilmacrosPackage
-  pciaccess: typeof xorgpciaccessPackage
-  ice: typeof xorgicePackage
-  cvt: typeof xorglibcvtPackage
-  xtst: typeof xorgxtstPackage
-  xxf86vm: typeof xorgxxf86vmPackage
-  xdamage: typeof xorgxdamagePackage
-  libxres: typeof xorglibxresPackage
-  xmu: typeof xorgxmuPackage
-  xshmfence: typeof xorgxshmfencePackage
-  xcursor: typeof xorgxcursorPackage
-  xauth: typeof xorgxauthPackage
-  xfixes: typeof xorgxfixesPackage
-  xpm: typeof xorgxpmPackage
-  protocol: typeof xorgprotocolPackage
-  libfontenc: typeof xorglibfontencPackage
-  Notion: typeof notionsoPackage
-  notion: typeof notionsoPackage
-  shards: typeof crystallangorgshardsPackage
+  dialog: typeof invisibleislandnetdialogPackage
+  helm: typeof helmPackage
+  mun: typeof munlangorgPackage
+  numbat: typeof numbatdevPackage
+  age: typeof filippoioagePackage
+  'yubikey-agent': typeof filippoioyubikeyagentPackage
+  mpdecimal: typeof bytereeforgmpdecimalPackage
   elvish: typeof elvshPackage
-  'frei0r.dyne': typeof frei0rdyneorgPackage
-  ttyd: typeof tsl0922githubiottydPackage
-  'Visual Studio Code': typeof codevisualstudiocomPackage
-  vscode: typeof codevisualstudiocomPackage
-  code: typeof codevisualstudiocomPackage
-  earthly: typeof earthlydevearthlyPackage
-  cabal: typeof haskellorgcabalPackage
-  rabbitmq: typeof rabbitmqcomPackage
-  cfssl: typeof cfsslorgPackage
-  micro: typeof microeditorgithubioPackage
-  cloudflared: typeof cloudflarecomcloudflaredPackage
-  conda: typeof condaorgPackage
-  ronn: typeof rtomaykogithubioronnPackage
-  gnuplot: typeof gnuplotinfoPackage
-  cython: typeof cythonorgPackage
-  gphoto2: typeof gphotoorglibgphoto2Package
-  'python-certifi': typeof certifiiopythoncertifiPackage
-  epsilon: typeof epsilonprojectsourceforgeioPackage
-  'libcap-ng': typeof peopleredhatcomsgrubblibcapngPackage
-  fend: typeof printfngithubiofendPackage
-  resticprofile: typeof creativeprojectsgithubioresticprofilePackage
-  'xerces-c': typeof xercesapacheorgxercescPackage
-  tiff: typeof simplesystemsorglibtiffPackage
-  kind: typeof kindsigsk8sioPackage
-  restic: typeof resticnetresticPackage
-  rover: typeof apollographqlcomroverPackage
-  'rhash.sourceforge': typeof rhashsourceforgenetPackage
-  mercure: typeof mercurerocksPackage
-  SDL2_gfx: typeof ferzkoppnetsdl2_gfxPackage
-  slides: typeof maaslalanicomslidesPackage
-  imath: typeof openexrcomimathPackage
-  expect: typeof tcllangorgexpectPackage
-  dotnet: typeof dotnetmicrosoftcomPackage
-  eol: typeof endoflifedatePackage
-  rapidjson: typeof rapidjsonorgPackage
-  asciinema: typeof asciinemaorgPackage
-  heroku: typeof herokucomPackage
-  volta: typeof voltashPackage
-  musepack: typeof musepacknetPackage
-  atlantis: typeof runatlantisioPackage
-  rclone: typeof rcloneorgPackage
-  composer: typeof getcomposerorgPackage
-  'ast-grep.github': typeof astgrepgithubioPackage
-  libpq: typeof postgresqlorglibpqPackage
-  rubygems: typeof rubygemsorgPackage
-  'groovy-lang': typeof groovylangorgPackage
-  telnet: typeof applecomremote_cmdsPackage
-  container: typeof applecomcontainerPackage
-  'huggingface/cli': typeof huggingfacecoPackage
-  proj: typeof projorgPackage
-  doctave: typeof doctavecomPackage
-  zola: typeof getzolaorgPackage
-  jq: typeof stedolangithubiojqPackage
-  libmd: typeof hadronsorglibmdPackage
-  dotenvx: typeof dotenvxcomPackage
-  tcsh: typeof tcshorgPackage
-  Vanna: typeof vannaaiPackage
-  railway: typeof railwayappPackage
-  'git-review': typeof opendevorggitreviewPackage
-  openstack: typeof opendevorgopenstackpythonopenstackclientPackage
-  himalaya: typeof pimalayaorghimalayaPackage
-  vips: typeof libvipsorgPackage
-  perl: typeof perlorgPackage
-  next: typeof vercelcomnextPackage
-  pkg: typeof vercelcompkgPackage
+  eksctl: typeof eksctlioPackage
   curl: typeof curlPackage
   rg: typeof ripgrepPackage
 }
@@ -9180,1726 +9180,1726 @@ export const pantry: Pantry = {
   zotregistrydev: zotregistrydevPackage,
   zrokio: zrokioPackage,
   zshsourceforgeio: zshsourceforgeioPackage,
-  traefik: traefikioPackage,
-  versitygw: versitycomversitygwPackage,
-  cask: caskreadthedocsioPackage,
-  scons: sconsorgPackage,
-  fswatch: emcrisostomogithubiofswatchPackage,
-  libsolv: opensuseorglibsolvPackage,
-  cog: cocogittoioPackage,
-  librepo: rpmorglibrepoPackage,
-  popt: rpmorgpoptPackage,
-  rpm: rpmorgrpmPackage,
-  'rpm-sequoia': rpmorgrpmsequoiaPackage,
-  dnf5: rpmorgdnf5Package,
-  libdnf5: rpmorglibdnf5Package,
-  'kube-linter': kubelinterioPackage,
-  localstack: localstackcloudcliPackage,
-  awslocal: localstackcloudawsclilocalPackage,
-  'neon-config': notrojgithubioneonPackage,
-  dart: dartdevPackage,
-  bind9: iscorgbind9Package,
-  langchain: langchaincomPackage,
-  werf: werfioPackage,
-  invoke: pyinvokeorgPackage,
-  libproxy: libproxygithubiolibproxyPackage,
-  amp: amprsPackage,
-  'oauth2-proxy': oauth2proxygithubioPackage,
-  cilium: ciliumiociliumPackage,
-  hubble: ciliumiohubblePackage,
-  aux4: aux4ioPackage,
-  bore: borepubPackage,
-  argbash: argbashdevPackage,
-  gtk3: gtkorggtk3Package,
-  gtk4: gtkorggtk4Package,
-  llvm: llvmorgPackage,
-  gauche: practicalschemenetgauchePackage,
-  bun: bunPackage,
-  'bun.com': bunPackage,
-  vite: vitejsdevPackage,
-  'nim-lang': nimlangorgPackage,
-  'libjpeg-turbo': libjpegturboorgPackage,
-  gdown: wkentarogithubiogdownPackage,
-  apktool: apktoolorgPackage,
-  vde: virtualsquareorgvdePackage,
-  hunspell: hunspellgithubioPackage,
-  haskell: haskellorgPackage,
-  dog: dnslookupdogPackage,
-  pinniped: pinnipeddevPackage,
-  dexios: brxken128githubiodexiosPackage,
-  libsoup: libsouporgPackage,
-  libcython: cythonorglibcythonPackage,
-  plakar: plakarioPackage,
-  valkey: valkeyioPackage,
-  bcrypt: bcryptsourceforgenetPackage,
-  koyeb: koyebcomPackage,
-  assimp: assimporgPackage,
-  TablePlus: tablepluscomPackage,
-  tableplus: tablepluscomPackage,
-  pinentry: gnupgorgpinentryPackage,
-  libgcrypt: gnupgorglibgcryptPackage,
-  libksba: gnupgorglibksbaPackage,
-  npth: gnupgorgnpthPackage,
-  gpgme: gnupgorggpgmePackage,
-  'libgpg-error': gnupgorglibgpgerrorPackage,
-  'v2.5': gnupgorgv25Package,
-  'libassuan-config': gnupgorglibassuanPackage,
-  gif: giflibsourceforgeioPackage,
-  ksops: viaductaiksopsPackage,
-  clisp: clisporgPackage,
-  'dotenv-linter': dotenvlintergithubioPackage,
-  k9s: k9scliioPackage,
-  lz4: lz4orgPackage,
-  Warp: warpdevPackage,
-  warp: warpdevPackage,
-  mesa3d: mesa3dorgPackage,
-  fftw: fftworgPackage,
-  copa: projectcopaceticgithubioPackage,
-  duckscript: sagiegurarigithubioduckscriptPackage,
-  tilt: tiltdevPackage,
-  symfony: symfonycomPackage,
-  unbound: unboundnetPackage,
-  'sing-box': singboxappPackage,
-  'elixir-lang': elixirlangorgPackage,
-  surreal: surrealdbcomPackage,
-  httpie: httpieioPackage,
-  'youtube-dl': youtubedlorgPackage,
-  llm: llmdatasetteioPackage,
-  ord: ordinalscomPackage,
-  strace: straceioPackage,
-  'logi-options-plus': logitechcomoptionsPackage,
-  'logi-options': logitechcomoptionsPackage,
-  pluralith: pluralithcomPackage,
-  'fna-xna.github': fnaxnagithubioPackage,
-  mise: misejdxdevPackage,
-  tldr: tldrshPackage,
-  'golangci-lint': golangcilintrunPackage,
-  'terraform-docs': terraformdocsioPackage,
-  driftctl: snykiodriftctlPackage,
-  bashly: bashlydannybcoPackage,
-  genact: svenstarogithubiogenactPackage,
-  htslib: htsliborgPackage,
-  geni: priverdevgeniPackage,
-  'rust-script': rustscriptorgPackage,
-  'wayland-protocols': waylandfreedesktoporgprotocolsPackage,
-  ginkgo: onsigithubioginkgoPackage,
-  'browser-use': browserusecomPackage,
-  leptonica: leptonicaorgPackage,
-  'markupsafe.palletsprojects': markupsafepalletsprojectscomPackage,
-  soldeer: soldeerxyzPackage,
-  k3d: k3dioPackage,
-  snappy: googlegithubiosnappyPackage,
-  teller: tlrdevPackage,
-  Firefox: firefoxorgPackage,
-  firefox: firefoxorgPackage,
-  bitcoin: bitcoinorgPackage,
-  elementsproject: elementsprojectorgPackage,
-  consul: consulioPackage,
-  jpegxl: jpegorgjpegxlPackage,
-  borg: borgbackuporgPackage,
-  pluggy: pytestorgpluggyPackage,
-  'pandoc-crossref': pandocorgcrossrefPackage,
-  starship: starshiprsPackage,
-  libb2: blake2netlibb2Package,
-  rio: riotermcomPackage,
-  srt: srtallianceorgPackage,
-  'ceres-solver': ceressolverorgPackage,
-  vcluster: vclustercomPackage,
-  msgpack: msgpackorgPackage,
-  po4a: po4aorgPackage,
-  ncdu: devyorhelnlncduPackage,
-  gl2ps: geuzorggl2psPackage,
-  eksctl: eksctlioPackage,
-  zarf: zarfdevPackage,
-  alembic: alembicsqlalchemyorgPackage,
-  hatch: hatchpypaioPackage,
-  Arkade: arkadedevPackage,
-  pixi: prefixdevPackage,
-  typst: typstappPackage,
-  'openapi-generator': openapigeneratortechPackage,
-  wumpus: catborgwumpusPackage,
-  coredns: corednsioPackage,
-  'open-mpi': openmpiorgPackage,
-  rustup: rustlangorgrustupPackage,
-  bindgen: rustlangorgrustbindgenPackage,
-  cargo: rustlangorgcargoPackage,
-  'Protocol Buffers': protobufdevPackage,
-  cue: cuelangorgPackage,
-  php: phpPackage,
-  go: goPackage,
-  gnupg: gpgPackage,
-  gpg: gpgPackage,
-  epstool: ghostgumcomauepstoolPackage,
-  ipfscluster: ipfsclusterioPackage,
-  'eigen.tuxfamily': eigentuxfamilyorgPackage,
-  cnquery: cnqueryioPackage,
-  'Brave Browser': bravecomPackage,
-  brave: bravecomPackage,
-  pcre2: pcreorgv2Package,
-  prettyping: denilsonsanombrprettypingPackage,
-  yasm: yasmtortallnetPackage,
-  optipng: sfnetoptipngPackage,
-  'glm.g-truc': glmgtrucnetPackage,
-  chomp: chompbuildcomPackage,
-  buf: bufbuildPackage,
-  'freeglut.sourceforge': freeglutsourceforgeioPackage,
-  mdbook: rustlanggithubiomdbookPackage,
-  onefetch: onefetchdevPackage,
-  alacritty: alacrittyorgPackage,
-  etcd: etcdioPackage,
-  ansible: ansiblecomPackage,
-  'gpg-tui': orhundevgpgtuiPackage,
-  'clang-format': llvmorgclangformatPackage,
-  luarocks: luarocksorgPackage,
-  avro: apacheorgavroPackage,
-  arrow: apacheorgarrowPackage,
-  jmeter: apacheorgjmeterPackage,
-  zookeeper: apacheorgzookeeperPackage,
-  thrift: apacheorgthriftPackage,
-  httpd: apacheorghttpdPackage,
-  serf: apacheorgserfPackage,
-  svn: apacheorgsubversionPackage,
-  apr: apacheorgaprPackage,
-  jupyter: jupyterorgPackage,
-  'GitHub Desktop': githubcomdesktopPackage,
-  'github-desktop': githubcomdesktopPackage,
-  'gh-desktop': githubcomdesktopPackage,
+  Linear: linearappPackage,
+  linear: linearappPackage,
+  libuv: libuvorgPackage,
+  juliaup: julialangorgjuliaupPackage,
+  jenv: jenvbePackage,
+  tectonic: tectonictypesettinggithubioPackage,
   orc: gstreamerfreedesktoporgorcPackage,
-  cephadm: cephcomcephadmPackage,
-  lapack: netliborglapackPackage,
-  jless: jlessioPackage,
-  dhall: dhalllangorgPackage,
-  mockgen: gouberorgmockmockgenPackage,
-  xml: pagureioxmltoPackage,
-  libaio: pagureiolibaioPackage,
-  mongosh: mongodbcomshellPackage,
-  libelf: fossiesorglibelfPackage,
-  zrok: zrokioPackage,
+  gc: hboehminfogcPackage,
+  LocalAI: localaiioPackage,
+  copa: projectcopaceticgithubioPackage,
+  uriparse: uriparsergithubioPackage,
+  yasm: yasmtortallnetPackage,
+  'jenkins-lts': jenkinsioPackage,
+  pkgx: pkgxshPackage,
+  linkerd: linkerdiolinkerd2Package,
+  aom: aomediagooglesourcecomaomPackage,
+  corepack: nodejsorgcorepackPackage,
+  ssl3: curlsessl3Package,
+  trurl: curlsetrurlPackage,
+  'ca-certs': curlsecacertsPackage,
+  xdmcp: xorgxdmcpPackage,
+  xkbfile: xorgxkbfilePackage,
+  xcursor: xorgxcursorPackage,
+  xaw: xorgxawPackage,
+  xft: xorgxftPackage,
+  exts: xorgextsPackage,
+  libxres: xorglibxresPackage,
+  libSM: xorglibsmPackage,
+  applewm: xorgapplewmPackage,
+  xinerama: xorgxineramaPackage,
+  xauth: xorgxauthPackage,
+  xcomposite: xorgxcompositePackage,
+  xmu: xorgxmuPackage,
+  xtrans: xorgxtransPackage,
+  ice: xorgicePackage,
+  xshmfence: xorgxshmfencePackage,
+  xrender: xorgxrenderPackage,
+  x11: xorgx11Package,
+  xcb: xorgxcbPackage,
+  xau: xorgxauPackage,
+  pciaccess: xorgpciaccessPackage,
+  'util-macros': xorgutilmacrosPackage,
+  libxfont2: xorglibxfont2Package,
+  'libpthread-stubs': xorglibpthreadstubsPackage,
+  xpm: xorgxpmPackage,
+  protocol: xorgprotocolPackage,
+  xtst: xorgxtstPackage,
+  xinput: xorgxinputPackage,
+  xscrnsaver: xorgxscrnsaverPackage,
+  cvt: xorglibcvtPackage,
+  libfontenc: xorglibfontencPackage,
+  'xcb-util': xorgxcbutilPackage,
+  xdamage: xorgxdamagePackage,
+  xrandr: xorgxrandrPackage,
+  xfixes: xorgxfixesPackage,
+  xxf86vm: xorgxxf86vmPackage,
+  cask: caskreadthedocsioPackage,
+  'browser-use': browserusecomPackage,
   kluctl: kluctlioPackage,
-  jbig2dec: jbig2deccomPackage,
-  jsonnet: jsonnetorgPackage,
-  gofumpt: mvdanccgofumptPackage,
-  shfmt: mvdanccshPackage,
-  ack: beyondgrepcomPackage,
-  editline: thrysoeedkeditlinePackage,
-  rubberband: breakfastquaycomrubberbandPackage,
-  Ghostty: ghosttyorgPackage,
-  ghostty: ghosttyorgPackage,
-  flit: flitpypaioPackage,
-  encore: encoredevPackage,
-  '1Password': _1passwordcomPackage,
-  '1password': _1passwordcomPackage,
-  onepassword: _1passwordcomPackage,
-  trip: trippyclirsPackage,
-  mkdocs: mkdocsorgPackage,
-  mkcert: mkcertdevPackage,
-  'sfcgal-config': sfcgalorgPackage,
-  'taglib-config': tagliborgPackage,
-  gradle: gradlePackage,
-  'libusb-compat': libusbinfocompatPackage,
-  'rucio-client': ruciocernchrucioclientPackage,
-  'protoc-gen-connect-go': connectrpcorgprotocgenconnectgoPackage,
-  task: taskfiledevPackage,
-  postgresql: postgresPackage,
-  postgres: postgresPackage,
-  groonga: groongaorgPackage,
-  'poppler-data': popplerfreedesktoporgpopplerdataPackage,
-  soliditylang: soliditylangorgPackage,
-  augeas: augeasnetPackage,
-  zig: ziglangorgPackage,
-  radicle: radicleorgPackage,
-  libsdl: libsdlorgPackage,
-  DBeaver: dbeaverioPackage,
-  dbeaver: dbeaverioPackage,
-  'terraform-cdk': terraformiocdkPackage,
-  dav1d: codevideolanorgvideolandav1dPackage,
-  rist: codevideolanorgristlibristPackage,
-  aribb24: codevideolanorgaribb24Package,
-  lftp: lftpyarruPackage,
-  'protoc-gen-go-grpc': grpciogrpcgoPackage,
-  Inkscape: inkscapeorgPackage,
-  inkscape: inkscapeorgPackage,
-  idevicedate: libimobiledeviceorgPackage,
-  hasura: hasuraioPackage,
-  gifsicle: lcdforggifsiclePackage,
-  'pre-commit': precommitcomPackage,
-  SDL_mixer: libsdlorgsdl_mixerPackage,
-  SDL_image: libsdlorgsdl_imagePackage,
-  SDL_ttf: libsdlorgsdl_ttfPackage,
-  coder: codercomPackage,
-  'man-db': mandbgitlabiomandbPackage,
-  elizaOS: elizaosgithubioPackage,
-  cURL: curlPackage,
-  ipython: ipythonorgPackage,
-  mpg123: mpg123dePackage,
-  sympy: sympyorgPackage,
-  'cairo-trace': cairographicsorgPackage,
-  'cmdline-tools': androidcomcmdlinetoolsPackage,
-  tailwindcss: tailwindcsscomPackage,
-  pake: npmjscompakecliPackage,
-  dblab: dblabdanvergaracomPackage,
-  'Auto-GPT': agptcoPackage,
-  tox: toxwikiPackage,
-  Discord: discordcomPackage,
-  discord: discordcomPackage,
-  cmocka: cmockaorgPackage,
-  pycairo: cairographicsorgpycairoPackage,
-  xmlwf: libexpatgithubioPackage,
-  upx: upxgithubioPackage,
-  'c-ares': caresorgPackage,
-  'tree-sitter': treesittergithubioPackage,
-  packaging: pypaiopackagingPackage,
-  setuptools: pypaiosetuptoolsPackage,
-  distlib: pypaiodistlibPackage,
-  'trove-classifiers': pypaiotroveclassifiersPackage,
-  sops: getsopsioPackage,
-  dagger: daggerioPackage,
-  sassc: sasslangcomsasscPackage,
-  libsass: sasslangcomlibsassPackage,
-  caddy: caddyservercomPackage,
-  'tea/cli': teaxyzPackage,
-  graphviz: graphvizorgPackage,
-  snaplet: snapletdevcliPackage,
-  erlang: erlangorgPackage,
-  htop: htopdevPackage,
-  theora: theoraorgPackage,
-  'scie-pants': pantsbuildorgsciepantsPackage,
-  gource: gourceioPackage,
-  'libexif.github': libexifgithubioPackage,
-  'Hidden Bar': hiddenbarappPackage,
-  hiddenbar: hiddenbarappPackage,
-  'hidden-bar': hiddenbarappPackage,
-  'opencore-amr.sourceforge': opencoreamrsourceforgeioPackage,
-  pls: dhruvkbdevplsPackage,
-  docbook: docbookorgPackage,
-  kotlinlang: kotlinPackage,
-  kotlin: kotlinPackage,
-  steampipe: steampipeioPackage,
-  talhelper: budimanjojogithubiotalhelperPackage,
-  'Docker Desktop': dockercomdesktopPackage,
-  'docker-desktop': dockercomdesktopPackage,
   forc: fuellabsgithubioswayPackage,
-  meson: mesonbuildcomPackage,
-  smi: ibrcstubsdelibsmiPackage,
-  Element: elementioPackage,
-  element: elementioPackage,
   logdy: logdydevPackage,
-  templ: templguidePackage,
-  nvim: neovimioPackage,
-  'gts.sourceforge': gtssourceforgenetPackage,
-  mc: miniomcPackage,
-  ruff: astralshruffPackage,
-  pytest: pytestorgPackage,
-  ipfs: ipfstechPackage,
-  'gen-ir': veracodecomgenirPackage,
-  mvn: mavenPackage,
-  maven: mavenPackage,
-  changie: changiedevPackage,
-  tart: tartrunPackage,
-  opensearch: opensearchorgPackage,
-  agg: asciinemaorgaggPackage,
-  gist: rubygemsorggistPackage,
-  casdoor: casdoororgPackage,
-  ninja: ninjabuildorgPackage,
-  juju: jujuisPackage,
-  tesseract: tesseractocrgithubioPackage,
-  fly: flyioPackage,
-  json: lloydgithubioyajlPackage,
-  'musl.libc': musllibcorgPackage,
-  'opencl-headers': khronosorgopenclheadersPackage,
-  glslang: khronosorgglslangPackage,
-  spirv: khronosorgspirvtoolsPackage,
-  'spirv-cross': khronosorgspirvcrossPackage,
-  prettier: prettierioPackage,
-  exiftool: exiftoolorgPackage,
-  psycopg3: psycopgorgpsycopg3Package,
-  psycopg2: psycopgorgpsycopg2Package,
-  spacetime: spacetimedbcomPackage,
-  'open-interpreter': openinterpretercomPackage,
-  'iso-codes': debianorgisocodesPackage,
-  'bash-completion': debianorgbashcompletionPackage,
-  getmonero: getmoneroorgPackage,
-  dos2unix: waterlanhomexs4allnldos2unixPackage,
-  zip: zipPackage,
-  'libgd.github': libgdgithubioPackage,
+  Transmit: transmitpaniccomPackage,
+  transmit: transmitpaniccomPackage,
+  watchexec: watchexecgithubioPackage,
+  qrencode: fukuchiorgqrencodePackage,
+  traefik: traefikioPackage,
+  'vid.stab': publichronopikdevidstabPackage,
+  'otp-27': elixirlangorgotp27Package,
+  apktool: apktoolorgPackage,
+  chomp: chompbuildcomPackage,
   'Karabiner-Elements': karabinerelementspqrsorgPackage,
   karabiner: karabinerelementspqrsorgPackage,
   'karabiner-elements': karabinerelementspqrsorgPackage,
-  ladspa: ladspaorgPackage,
-  nuclei: projectdiscoveryionucleiPackage,
-  wunderctl: wundergraphcomPackage,
-  'device-mapper': sourcewareorgdmPackage,
-  bzip2: sourcewareorgbzip2Package,
-  libffi: sourcewareorglibffiPackage,
-  just: justsystemsPackage,
-  IINA: iinaioPackage,
-  iina: iinaioPackage,
-  cryptography: cryptographyioPackage,
-  liburcu: liburcuorgPackage,
-  dgraph: dgraphioPackage,
-  'ca-certs': curlsecacertsPackage,
-  trurl: curlsetrurlPackage,
-  ssl3: curlsessl3Package,
-  pandoc: pandocorgPackage,
-  ffmpeg: ffmpegorgPackage,
-  qhull: qhullorgPackage,
-  squawk: squawkhqcomPackage,
-  grpc: grpcioPackage,
-  laravel: laravelcomPackage,
-  vale: valeshPackage,
-  yuicompressor: yuigithubioyuicompressorPackage,
-  HandBrake: handbrakefrPackage,
-  handbrake: handbrakefrPackage,
-  linkerd: linkerdiolinkerd2Package,
-  atk: gnomeorgatkPackage,
-  'rsvg-convert': gnomeorglibrsvgPackage,
-  'gtk-mac-integration-gtk3': gnomeorggtkmacintegrationgtk3Package,
-  PyGObject: gnomeorgpygobjectPackage,
-  xslt: gnomeorglibxsltPackage,
-  'gi-docgen': gnomeorggidocgenPackage,
-  vala: gnomeorgvalaPackage,
-  'adwaita-icon-theme': gnomeorgadwaitaiconthemePackage,
-  'glib-networking': gnomeorgglibnetworkingPackage,
-  pango: gnomeorgpangoPackage,
-  gsf: gnomeorglibgsfPackage,
-  'json-glib': gnomeorgjsonglibPackage,
-  glib: gnomeorgglibPackage,
-  'g-ir': gnomeorggobjectintrospectionPackage,
-  'gdk-pixbuf': gnomeorggdkpixbufPackage,
-  libsecret: gnomeorglibsecretPackage,
-  'gsettings-desktop-schemas': gnomeorggsettingsdesktopschemasPackage,
-  virtualenv: virtualenvpypaioPackage,
-  hexedit: rigauxorghexeditPackage,
-  'mercurial-scm': mercurialscmorgPackage,
-  libarchive: libarchiveorgPackage,
-  'cscope.sourceforge': cscopesourceforgeioPackage,
-  libva: intelcomlibvaPackage,
-  pack: buildpacksioPackage,
-  tidy: htmltidyorgPackage,
-  'liblqr.wikidot': liblqrwikidotcomPackage,
-  amber: amberlangcomPackage,
-  'cyrus-sasl': cyrusimaporgcyrussaslPackage,
-  patchelf: nixosorgpatchelfPackage,
-  smartmontools: smartmontoolsorgPackage,
-  minisign: jedisct1githubiominisignPackage,
-  Figma: figmacomPackage,
-  figma: figmacomPackage,
-  terragrunt: terragruntgruntworkioPackage,
-  duckdb: duckdborgPackage,
-  memcached: memcachedorgPackage,
-  cpanm: cpanminusPackage,
-  sniffnet: sniffnetnetPackage,
-  opendap: opendaporgPackage,
-  gdal: gdalorgPackage,
-  jenv: jenvbePackage,
-  shout: xiphorglibshoutPackage,
-  vorbis: xiphorgvorbisPackage,
-  flac: xiphorgflacPackage,
-  ogg: xiphorgoggPackage,
-  cmake: cmakePackage,
-  rbw: gittoztnetrbwPackage,
-  tinyxml2: leethomasongithubiotinyxml2Package,
-  SeaweedFS: seaweedfscomPackage,
-  sqlfluff: sqlfluffcomPackage,
-  nmap: nmaporgPackage,
-  autossh: hardingmotdcaautosshPackage,
-  jumppad: jumppaddevPackage,
-  aspell: aspellnetPackage,
-  dprint: dprintdevPackage,
-  'pcap-config': tcpdumporgPackage,
-  pocketbase: pocketbaseioPackage,
-  gitql: amrdevelopergithubiogqlPackage,
-  circleci: circlecicomPackage,
-  rename: plasmasturmorgrenamePackage,
-  unixodbc: unixodbcorgPackage,
-  'code-server': codercomcodeserverPackage,
-  mupdf: mupdfcomPackage,
-  cruft: cruftgithubioPackage,
-  flipt: fliptioPackage,
-  potrace: sourceforgenetpotracePackage,
-  XMLStarlet: sourceforgenetxmlstarPackage,
-  'aac-enc': sourceforgenetopencoreamrPackage,
-  libmng: sourceforgenetlibmngPackage,
-  faac: sourceforgenetfaacPackage,
-  libtirpc: sourceforgenetlibtirpcPackage,
-  faad: sourceforgenetfaad2Package,
-  'net-tools': sourceforgenetnettoolsPackage,
-  e2fsprogs: sourceforgenete2fsprogsPackage,
-  mpv: mpvioPackage,
-  libomp: openmpllvmorgPackage,
-  libwpe: wpewebkitorglibwpePackage,
-  'wpebackend-fdo': wpewebkitorgwpebackendfdoPackage,
-  'operator-sdk': operatorframeworkiooperatorsdkPackage,
-  zathura: pwmtorgzathuraPackage,
-  girara: pwmtorggiraraPackage,
-  wimlib: wimlibnetPackage,
-  mosh: moshorgPackage,
-  gc: hboehminfogcPackage,
+  caddy: caddyservercomPackage,
+  tsc: typescriptlangorgPackage,
+  'open-interpreter': openinterpretercomPackage,
+  tools: golangorgtoolsPackage,
+  pinniped: pinnipeddevPackage,
+  exr: openexrcomPackage,
+  'cedar-agent': permitiocedaragentPackage,
+  aribb24: codevideolanorgaribb24Package,
+  rist: codevideolanorgristlibristPackage,
+  dav1d: codevideolanorgvideolandav1dPackage,
+  'The Silver Searcher': geoffgreerfmagPackage,
+  taplo: taplotamasfedevPackage,
+  'Protocol Buffers': protobufdevPackage,
+  pwgen: pwgensourceforgeioPackage,
+  wails: wailsioPackage,
+  radicle: radicleorgPackage,
   scdoc: srhtscdocPackage,
-  libpng: libpngorgPackage,
-  'netpbm.sourceforge': netpbmsourceforgenetPackage,
-  liblmdb: openldaporgliblmdbPackage,
-  LocalAI: localaiioPackage,
-  'ruby-lang': rubyPackage,
-  ruby: rubyPackage,
-  wavpack: wavpackcomPackage,
-  digger: diggerdevPackage,
-  'kafka.apache': kafkaapacheorgPackage,
-  vim: vimPackage,
-  vi: vimPackage,
-  libpipeline: libpipelinegitlabiolibpipelinePackage,
-  'Jenkins X': jenkinsxioPackage,
-  ollama: ollamaaiPackage,
-  julia: julialangorgPackage,
-  xkbcli: xkbcommonorgPackage,
-  abseil: abseilioPackage,
-  terratag: terratagioPackage,
-  quickwit: quickwitioPackage,
-  sketchybar: felixkratzgithubiosketchybarPackage,
-  krampus: idleberggithubiokrampusPackage,
-  sbt: scalasbtorgPackage,
-  jags: mcmcjagssourceforgeioPackage,
-  'mako-render': makotemplatesorgPackage,
-  depot: depotdevPackage,
-  vmaf: netflixcomvmafPackage,
-  OrbStack: orbstackdevPackage,
-  orbstack: orbstackdevPackage,
-  'git-town': gittowncomPackage,
-  duk: duktapeorgPackage,
-  leo: leolangorgPackage,
-  imageflow_tool: imageflowioimageflow_toolPackage,
-  meilisearch: meilisearchcomPackage,
-  LibTomMath: libtomnetmathPackage,
-  shellcheck: shellchecknetPackage,
-  unicode: unicodeorgPackage,
-  argcomplete: kislyukgithubioargcompletePackage,
-  gnutls: gnutlsorgPackage,
-  'arduino-cli': arduinogithubioarduinocliPackage,
-  rsync: rsyncsambaorgPackage,
-  sftpgo: sftpgocomPackage,
-  odigos: odigosioPackage,
-  genqlient: khanacademyorggenqlientPackage,
-  freexl: gaiagisitfossilfreexlPackage,
-  libspatialite: gaiagisitlibspatialitePackage,
-  hcloud: hetznercomhcloudPackage,
-  qrencode: fukuchiorgqrencodePackage,
-  Stats: statsappPackage,
-  stats: statsappPackage,
-  python: pythonPackage,
-  py: pythonPackage,
-  flutter: flutterdevPackage,
-  elfutils: elfutilsorgPackage,
-  'LM Studio': lmstudioaiPackage,
-  'lm-studio': lmstudioaiPackage,
-  lmstudio: lmstudioaiPackage,
-  acorn: acornioacorncliPackage,
-  dxc: microsoftcomdxcPackage,
-  pyright: microsoftcompyrightPackage,
-  azcopy: microsoftcomazurestorageazcopyPackage,
-  'vscode cli': microsoftcomcodecliPackage,
-  markitdown: microsoftcommarkitdownPackage,
-  pwsh: microsoftcompowershellPackage,
-  jbang: jbangdevPackage,
-  libcerf: jugitfzjuelichdemlzlibcerfPackage,
-  syft: anchorecomsyftPackage,
-  libtermkey: leonerdorguklibtermkeyPackage,
-  libvterm: leonerdorguklibvtermPackage,
-  minizip: zlibnetminizipPackage,
-  tailcall: tailcallrunPackage,
-  lzo: oberhumercomlzoPackage,
-  ucl: oberhumercomuclPackage,
-  Zed: zeddevPackage,
-  zed: zeddevPackage,
-  ldns: nlnetlabsnlldnsPackage,
-  caesiumclt: saerasoftcomcaesiumPackage,
-  Obsidian: obsidianmdPackage,
-  obsidian: obsidianmdPackage,
-  md5sha1sum: microbreworgmd5sha1sumPackage,
-  libevent: libeventorgPackage,
-  kubebuilder: kubebuilderioPackage,
-  librttopo: gitosgeoorggitearttopolibrttopoPackage,
-  puzzles: chiarkgreenendorgukpuzzlesPackage,
-  halibut: chiarkgreenendorgukhalibutPackage,
-  putty: chiarkgreenendorgukputtyPackage,
-  'docbook-xsl': docbookorgxslPackage,
-  Blender: blenderorgPackage,
-  blender: blenderorgPackage,
-  swig: swigorgPackage,
-  stripe: stripecomPackage,
-  mongodb: mongodbcomPackage,
-  openslide: openslideorgPackage,
-  systemd: systemdioPackage,
-  'macfuse.github': macfusegithubioPackage,
-  xcodeproj: cocoapodsorgxcodeprojPackage,
+  llm: llmdatasetteioPackage,
+  'nim-lang': nimlangorgPackage,
   'classic.yarnpkg': classicYarnPackage,
   yarn: classicYarnPackage,
-  appium: appiumioPackage,
-  daytona: daytonaioPackage,
-  'gimme-aws-creds': nikecomgimmeawscredsPackage,
-  ImageOptim: imageoptimcomPackage,
-  imageoptim: imageoptimcomPackage,
-  libvpx: webmprojectorglibvpxPackage,
-  'geos-config': libgeosorgPackage,
-  libpsl: rockdabootgithubiolibpslPackage,
-  gti: rwosorggtiPackage,
-  zsh: zshsourceforgeioPackage,
-  s4cmd: bloomreachcoms4cmdPackage,
-  'jenkins-lts': jenkinsioPackage,
-  mergestat: mergestatcommergestatlitePackage,
-  helm: helmPackage,
-  's-lang': jedsoftorgslangPackage,
-  MariaDB: mariadbcomserverPackage,
-  'pkl-lang': pkllangorgPackage,
-  skaffold: skaffolddevPackage,
-  watchexec: watchexecgithubioPackage,
-  'git-crypt': agwanamegitcryptPackage,
-  'python-jinja': palletsprojectscomjinjaPackage,
-  'python-click': palletsprojectscomclickPackage,
-  Keka: kekaioPackage,
-  keka: kekaioPackage,
-  'yt-dlp': ytdlporgPackage,
+  'elixir-lang': elixirlangorgPackage,
+  ruff: astralshruffPackage,
   pygmentize: pygmentsorgPackage,
-  fido2: developersyubicocomlibfido2Package,
-  'yubikey-manager': developersyubicocomyubikeymanagerPackage,
-  Cursor: cursorcomPackage,
-  cursor: cursorcomPackage,
-  xplr: xplrdevPackage,
-  rome: rometoolsPackage,
-  numbat: numbatdevPackage,
-  s3cmd: s3cmdPackage,
-  opj: openjpegorgPackage,
-  talosctl: talosdevPackage,
-  pod: cocoapodsorgPackage,
-  docutils: docutilsorgPackage,
-  'pyqt-bundle': riverbankcomputingcompyqtbuilderPackage,
-  sip: riverbankcomputingcomsipPackage,
+  jbig2dec: jbig2deccomPackage,
+  erlang: erlangorgPackage,
+  'python-click': palletsprojectscomclickPackage,
+  'python-jinja': palletsprojectscomjinjaPackage,
+  poetry: pythonpoetryorgPackage,
+  libvterm: leonerdorguklibvtermPackage,
+  libtermkey: leonerdorguklibtermkeyPackage,
+  prettyping: denilsonsanombrprettypingPackage,
+  reshape: fabianlindforssereshapePackage,
+  rename: plasmasturmorgrenamePackage,
+  freetds: freetdsorgPackage,
+  mergiraf: mergiraforgPackage,
+  'git-quick-stats': gitquickstatsshPackage,
+  'oh-my-posh': ohmyposhdevPackage,
+  Inkscape: inkscapeorgPackage,
+  inkscape: inkscapeorgPackage,
+  tilt: tiltdevPackage,
+  'Jenkins X': jenkinsxioPackage,
+  duckdb: duckdborgPackage,
+  'protoc-gen-go': googlecomprotobufgoPackage,
+  glog: googlecomglogPackage,
+  firebase: googlecomfirebasetoolsPackage,
+  fullycapable: googlecomfullycapablePackage,
+  woff2: googlecomwoff2Package,
+  webp: googlecomwebpPackage,
+  googletest: googlecomgoogletestPackage,
+  highway: googlecomhighwayPackage,
+  spm: googlecomsentencepiecePackage,
+  gcloud: googlecomgcloudPackage,
+  Vanna: vannaaiPackage,
+  s4cmd: bloomreachcoms4cmdPackage,
+  driftctl: snykiodriftctlPackage,
+  vcluster: vclustercomPackage,
+  rbw: gittoztnetrbwPackage,
   networkx: networkxorgPackage,
-  glow: charmshglowPackage,
-  pop: charmshpopPackage,
-  vhs: charmshvhsPackage,
-  freeze: charmshfreezePackage,
-  mods: charmshmodsPackage,
-  gum: charmshgumPackage,
-  melt: charmshmeltPackage,
-  skate: charmshskatePackage,
-  crush: charmshcrushPackage,
-  acl: savannahnongnuorgaclPackage,
-  attr: savannahnongnuorgattrPackage,
-  qpdf: qpdfsourceforgeioPackage,
-  tinygo: tinygoorgPackage,
+  flyway: flywaydborgPackage,
+  depot: depotdevPackage,
+  nomad: nomadprojectioPackage,
+  'suite-sparse': peopleengrtamuedudavissuitesparsePackage,
+  gqlgen: gqlgencomPackage,
+  'freeglut.sourceforge': freeglutsourceforgeioPackage,
+  memcached: memcachedorgPackage,
+  dos2unix: waterlanhomexs4allnldos2unixPackage,
+  'gflags.github': gflagsgithubioPackage,
+  'wayland-protocols': waylandfreedesktoporgprotocolsPackage,
+  imageflow_tool: imageflowioimageflow_toolPackage,
+  cryptography: cryptographyioPackage,
+  litecli: liteclicomPackage,
+  libksba: gnupgorglibksbaPackage,
+  npth: gnupgorgnpthPackage,
+  'libgpg-error': gnupgorglibgpgerrorPackage,
+  'libassuan-config': gnupgorglibassuanPackage,
+  pinentry: gnupgorgpinentryPackage,
+  'v2.5': gnupgorgv25Package,
+  libgcrypt: gnupgorglibgcryptPackage,
+  gpgme: gnupgorggpgmePackage,
+  jnv: cratesiojnvPackage,
+  'kaspa-miner': cratesiokaspaminerPackage,
+  sleek: cratesiosleekPackage,
+  sanitize: cratesiosanitizePackage,
+  killport: cratesiokillportPackage,
+  diskonaut: cratesiodiskonautPackage,
+  pueue: cratesiopueuePackage,
+  trash: cratesiotrashyPackage,
+  click: cratesioclickPackage,
+  'get-blessed': cratesiogetblessedPackage,
+  comrak: cratesiocomrakPackage,
+  dust: cratesiodudustPackage,
+  eza: cratesioezaPackage,
+  hyperfine: cratesiohyperfinePackage,
+  dua: cratesioduaPackage,
+  fblog: cratesiofblogPackage,
+  ripgrep: ripgrepPackage,
+  spider: cratesiospider_cliPackage,
+  gitu: cratesiogituPackage,
+  joshuto: cratesiojoshutoPackage,
+  flamegraph: cratesioflamegraphPackage,
+  qsv: cratesioqsvPackage,
+  kubie: cratesiokubiePackage,
+  'md-tui': cratesiomdtuiPackage,
+  gitweb: cratesiogitwebPackage,
+  pik: cratesiopikPackage,
+  'cargo-binstall': cratesiocargobinstallPackage,
+  samply: cratesiosamplyPackage,
+  fsrx: cratesiofsrxPackage,
+  jwt: cratesiojwtcliPackage,
+  typos: cratesiotyposPackage,
+  'git-grab': cratesiogitgrabPackage,
+  'git-absorb': cratesiogitabsorbPackage,
+  huniq: cratesiohuniqPackage,
+  vivid: cratesiovividPackage,
+  csview: cratesiocsviewPackage,
+  'rustls-ffi': cratesiorustlsffiPackage,
+  'rust-kanban': cratesiorustkanbanPackage,
+  ducker: cratesioduckerPackage,
+  spotify_player: cratesiospotify_playerPackage,
+  zoxide: cratesiozoxidePackage,
+  'tea-gpg-wallet': cratesioteagpgwalletPackage,
+  fnm: cratesiofnmPackage,
+  gitopolis: cratesiogitopolisPackage,
+  hac: cratesiohacclientPackage,
+  'rpg-cli': cratesiorpgcliPackage,
+  pastel: cratesiopastelPackage,
+  'git-tidy': cratesiogittidyPackage,
+  btm: cratesiobottomPackage,
+  ddh: cratesioddhPackage,
+  bpb: cratesiobpbPackage,
+  pqrs: cratesiopqrsPackage,
+  'cargo-tarpaulin': cratesiocargotarpaulinPackage,
+  aichat: cratesioaichatPackage,
+  termusic: cratesiotermusicPackage,
+  dym: cratesiodidyoumeanPackage,
+  gitui: cratesiogituiPackage,
+  names: cratesionamesPackage,
+  pgen: cratesiopgenPackage,
+  licensor: cratesiolicensorPackage,
+  'imessage-exporter': cratesioimessageexporterPackage,
+  pier: cratesiopierPackage,
+  topgrade: cratesiotopgradePackage,
+  omekasy: cratesioomekasyPackage,
+  cpz: cratesiocpzPackage,
+  'sqlx-cli': cratesiosqlxcliPackage,
+  mdcat: cratesiomdcatPackage,
+  bat: cratesiobatPackage,
+  silicon: cratesiosiliconPackage,
+  fselect: cratesiofselectPackage,
+  semverator: cratesiosemveratorPackage,
+  argc: cratesioargcPackage,
+  craftql: cratesiocraftqlPackage,
+  'git-trim': cratesiogittrimPackage,
+  mask: cratesiomaskPackage,
+  tokei: cratesiotokeiPackage,
+  bartib: cratesiobartibPackage,
+  'git-branchless': cratesiogitbranchlessPackage,
+  tiny: cratesiotinyPackage,
+  exa: cratesioexaPackage,
+  diskus: cratesiodiskusPackage,
+  lighthouse: cratesiolighthousePackage,
+  rage: cratesioragePackage,
+  srgn: cratesiosrgnPackage,
+  zellij: cratesiozellijPackage,
+  'tidy-viewer': cratesiotidyviewerPackage,
+  drill: cratesiodrillPackage,
+  portfolio_rs: cratesioportfolio_rsPackage,
+  broot: cratesiobrootPackage,
+  'wasm-pack': cratesiowasmpackPackage,
+  rucola: cratesiorucolanotesPackage,
+  cavif: cratesiocavifPackage,
+  wordl: cratesiowordlPackage,
+  bake: cratesiobakersPackage,
+  rmz: cratesiormzPackage,
+  sccache: cratesiosccachePackage,
+  docuum: cratesiodocuumPackage,
+  pushenv: cratesiopushenvPackage,
+  toast: cratesiotoastPackage,
+  'rtx-cli': cratesiortxcliPackage,
+  'git-gone': cratesiogitgonePackage,
+  albionrpg: cratesioalbion_terminal_rpgPackage,
+  sig: cratesiosigrsPackage,
+  versio: cratesioversioPackage,
+  delta: cratesiogitdeltaPackage,
+  wthrr: cratesiowthrrPackage,
+  rga: cratesioripgrepallPackage,
+  stego: cratesiostegoPackage,
+  eureka: cratesioeurekaPackage,
+  mprocs: cratesiomprocsPackage,
+  checkexec: cratesiocheckexecPackage,
+  krampus: idleberggithubiokrampusPackage,
+  bitcoin: bitcoinorgPackage,
+  micro: microeditorgithubioPackage,
+  'process-compose': f1bonacc1githubioprocesscomposePackage,
+  'dotenv-linter': dotenvlintergithubioPackage,
+  'Visual Studio Code': codevisualstudiocomPackage,
+  vscode: codevisualstudiocomPackage,
+  code: codevisualstudiocomPackage,
+  socat: destunreachorgsocatPackage,
+  localstack: localstackcloudcliPackage,
+  awslocal: localstackcloudawsclilocalPackage,
+  bytebase: bytebasecomPackage,
+  'c-ares': caresorgPackage,
+  Arc: arcnetPackage,
+  arc: arcnetPackage,
+  cups: openprintinggithubiocupsPackage,
+  node: nodePackage,
+  bcrypt: bcryptsourceforgenetPackage,
+  'libisl.sourceforge': libislsourceforgeioPackage,
+  zotregistry: zotregistrydevPackage,
+  libaec: dkrzdelibaecPackage,
+  genqlient: khanacademyorggenqlientPackage,
+  mvn: mavenPackage,
+  maven: mavenPackage,
+  whisper: openaicomwhisperPackage,
+  openai: openaicomopenaipythonPackage,
+  codex: openaicomcodexPackage,
+  'terraform-docs': terraformdocsioPackage,
+  gtk4: gtkorggtk4Package,
+  gtk3: gtkorggtk3Package,
+  Warp: warpdevPackage,
+  warp: warpdevPackage,
+  pixlet: tidbytcomPackage,
+  difft: wilfredmeukdifftasticPackage,
+  jags: mcmcjagssourceforgeioPackage,
+  terraform: terraformPackage,
+  packer: packerioPackage,
+  gnupg: gpgPackage,
+  gpg: gpgPackage,
+  asciidoctor: asciidoctororgPackage,
+  'gts.sourceforge': gtssourceforgenetPackage,
+  'netpbm.sourceforge': netpbmsourceforgenetPackage,
+  'rhash.sourceforge': rhashsourceforgenetPackage,
+  elementsproject: elementsprojectorgPackage,
+  'aws/cli': awsamazoncomcliPackage,
+  aws: awsamazoncomcliPackage,
+  'aws/cdk': cdkPackage,
+  cdk: cdkPackage,
+  sam: awsamazoncomsamPackage,
+  'session-manager-plugin': awsamazoncomsessionmanagerpluginPackage,
+  cmake: cmakePackage,
+  theora: theoraorgPackage,
   synth: getsynthcomPackage,
-  apptainer: apptainerorgPackage,
-  clog: clogtoolgithubioPackage,
+  rust: rustlangorgPackage,
+  'clang-format': llvmorgclangformatPackage,
+  libsoup: libsouporgPackage,
+  zathura: pwmtorgzathuraPackage,
+  girara: pwmtorggiraraPackage,
+  casdoor: casdoororgPackage,
   LibreOffice: libreofficeorgPackage,
   libreoffice: libreofficeorgPackage,
   soffice: libreofficeorgPackage,
-  unrar: rarlabcomPackage,
-  'kubectl-krew': krewsigsk8sioPackage,
-  'microcks-cli': microcksioPackage,
-  mergiraf: mergiraforgPackage,
-  netcdf: unidataucaredunetcdfPackage,
-  conftest: conftestdevPackage,
-  zotregistry: zotregistrydevPackage,
-  MetaGPT: deepwisdomaiPackage,
-  keep: keephqdevPackage,
-  HDF5: hdfgrouporghdf5Package,
-  databricks: databrickscomPackage,
-  tfsec: aquasecuritygithubiotfsecPackage,
-  trivy: aquasecuritygithubiotrivyPackage,
+  iroh: irohcomputerPackage,
+  sqlc: sqlcdevPackage,
+  'php-cs-fixer': symfonycomcsPackage,
+  pls: dhruvkbdevplsPackage,
+  'rust-script': rustscriptorgPackage,
+  htslib: htsliborgPackage,
+  gdal: gdalorgPackage,
+  openblas: openblasnetPackage,
+  gl2ps: geuzorggl2psPackage,
+  'rucio-client': ruciocernchrucioclientPackage,
+  f2py: numpyorgPackage,
+  Insomnia: insomniarestPackage,
+  insomnia: insomniarestPackage,
+  'cairo-trace': cairographicsorgPackage,
+  unbound: unboundnetPackage,
+  OrbStack: orbstackdevPackage,
+  orbstack: orbstackdevPackage,
+  libssh2: libssh2orgPackage,
+  nss: mozillaorgnssPackage,
+  'nspr-config': mozillaorgnsprPackage,
+  cbindgen: mozillaorgcbindgenPackage,
+  mozjpeg: mozillaorgmozjpegPackage,
   gr2fonttest: graphitesilorgPackage,
-  eas: expodeveascliPackage,
-  prql: prqllangorgPackage,
-  snyk: snykioPackage,
-  cstool: capstoneengineorgPackage,
-  'glew.sourceforge': glewsourceforgeioPackage,
-  temporal: temporalioPackage,
+  ansible: ansiblecomPackage,
+  alembic: alembicsqlalchemyorgPackage,
+  'pre-commit': precommitcomPackage,
+  doxygen: doxygennlPackage,
+  'musl.libc': musllibcorgPackage,
+  geni: priverdevgeniPackage,
+  'argo-workflows': argoprojgithubioworkflowsPackage,
+  'argo-cd': argoprojgithubiocdPackage,
+  'protoc-gen-go-grpc': grpciogrpcgoPackage,
+  'cyrus-sasl': cyrusimaporgcyrussaslPackage,
+  hubble: ciliumiohubblePackage,
+  cilium: ciliumiociliumPackage,
+  pluggy: pytestorgpluggyPackage,
+  'mypy-lang': mypylangorgPackage,
+  Rectangle: rectangleappPackage,
+  rectangle: rectangleappPackage,
+  amp: amprsPackage,
+  libwebsockets: libwebsocketsorgPackage,
+  rubygems: rubygemsorgPackage,
+  'git-lfs': gitlfscomPackage,
+  vamp: vamppluginsorgPackage,
+  aria2c: aria2githubioPackage,
+  chromedriver: chromedriverchromiumorgPackage,
+  changie: changiedevPackage,
   KeePassXC: keepassxcorgPackage,
   keepassxc: keepassxcorgPackage,
-  lychee: lycheeclirsPackage,
-  raccoin: raccoinorgPackage,
-  'pcsc-lite': pcscliteapdufrPackage,
-  lua: luaorgPackage,
-  Telegram: telegramorgPackage,
-  telegram: telegramorgPackage,
-  sam: awsamazoncomsamPackage,
-  'session-manager-plugin': awsamazoncomsessionmanagerpluginPackage,
-  'aws/cdk': cdkPackage,
-  cdk: cdkPackage,
-  'aws/cli': awsamazoncomcliPackage,
-  aws: awsamazoncomcliPackage,
-  daemontools: cryptodaemontoolsPackage,
-  envconsul: hashicorpcomenvconsulPackage,
-  'consul-template': hashicorpcomconsultemplatePackage,
-  aria2c: aria2githubioPackage,
-  MonitorControl: monitorcontrolappPackage,
-  monitorcontrol: monitorcontrolappPackage,
-  'monitor-control': monitorcontrolappPackage,
-  biome: biomejsdevPackage,
-  gqlgen: gqlgencomPackage,
-  libsodium: libsodiumorgPackage,
-  imagemagick: imagemagickorgPackage,
-  doxygen: doxygennlPackage,
-  speexdec: speexorgPackage,
-  syncthing: syncthingnetPackage,
-  sphinx: sphinxdocorgPackage,
-  lunarvim: lunarvimorgPackage,
-  fastlane: fastlanetoolsPackage,
-  fluentci: fluentciioPackage,
-  'sonar-scanner': sonarqubeorgsonarscannerPackage,
-  pixman: pixmanorgPackage,
-  mysql: mysqlPackage,
-  openjdk: javaPackage,
-  java: javaPackage,
-  jdk: javaPackage,
-  libssh2: libssh2orgPackage,
-  checkov: checkovioPackage,
-  Tunnelblick: tunnelblicknetPackage,
-  tunnelblick: tunnelblicknetPackage,
-  libsrtp: ciscocomlibsrtpPackage,
-  hurl: hurldevPackage,
+  pluralith: pluralithcomPackage,
+  mailpit: mailpitaxllentorgPackage,
+  pycairo: cairographicsorgpycairoPackage,
+  postgresql: postgresPackage,
+  postgres: postgresPackage,
+  granted: granteddevPackage,
+  Bittensor: bittensorcomPackage,
+  proj: projorgPackage,
+  fly: flyioPackage,
+  jetp: jetporchcomPackage,
+  pyyaml: pyyamlorgPackage,
+  coredns: corednsioPackage,
+  libelf: fossiesorglibelfPackage,
+  libmatio: matiosourceforgeioPackage,
+  libarchive: libarchiveorgPackage,
+  json: lloydgithubioyajlPackage,
+  scons: sconsorgPackage,
+  scw: scalewaycomPackage,
+  'yt-dlp': ytdlporgPackage,
+  'kubectl-cnpg': cloudnativepgioPackage,
+  bore: borepubPackage,
+  libsass: sasslangcomlibsassPackage,
+  sassc: sasslangcomsasscPackage,
+  tox: toxwikiPackage,
   ctop: ctopshPackage,
-  'poppler-qt5': freedesktoporgpopplerqt5Package,
-  'xcb-util': freedesktoporgxcbutilPackage,
-  vdpau: freedesktoporgvdpauPackage,
-  'xdg-user-dir': freedesktoporgxdguserdirsPackage,
-  'xcb-util-keysyms': freedesktoporgxcbutilkeysymsPackage,
-  'xcb-util-renderutil': freedesktoporgxcbutilrenderutilPackage,
-  'update-mime-database': freedesktoporgsharedmimeinfoPackage,
-  'desktop-file-utils': freedesktoporgdesktopfileutilsPackage,
-  'pkg-config': freedesktoporgpkgconfigPackage,
-  'p11-kit': freedesktoporgp11kitPackage,
-  'at-spi2-atk': freedesktoporgatspi2atkPackage,
-  'xcb-util-wm': freedesktoporgxcbutilwmPackage,
-  XKeyboardConfig: freedesktoporgxkeyboardconfigPackage,
-  dbus: freedesktoporgdbusPackage,
-  'icon-theme': freedesktoporgiconthemePackage,
-  appstreamcli: freedesktoporgappstreamPackage,
-  intltool: freedesktoporgintltoolPackage,
-  libbsd: freedesktoporglibbsdPackage,
-  'xcb-util-image': freedesktoporgxcbutilimagePackage,
-  'mesa-glu': freedesktoporgmesagluPackage,
-  polkit: freedesktoporgpolkitPackage,
-  cppunit: freedesktoporgcppunitPackage,
-  uchardet: freedesktoporguchardetPackage,
-  slirp: freedesktoporgslirpPackage,
-  fontconfig: freedesktoporgfontconfigPackage,
-  Slack: slackcomPackage,
-  slack: slackcomPackage,
-  sqlc: sqlcdevPackage,
-  'The Silver Searcher': geoffgreerfmagPackage,
-  wxwidgets: wxwidgetsorgPackage,
-  craft: craftPackage,
-  pwgen: pwgensourceforgeioPackage,
-  'Scryer Prolog': scryerplPackage,
-  wasmer: wasmerioPackage,
-  Maccy: maccyappPackage,
-  maccy: maccyappPackage,
-  dssim: kornelskidssimPackage,
-  luajit: luajitorgPackage,
-  pugixml: pugixmlorgPackage,
-  VLC: vlcappPackage,
-  vlc: vlcappPackage,
-  'The Unarchiver': theunarchivercomPackage,
-  'the-unarchiver': theunarchivercomPackage,
-  unar: theunarchivercomPackage,
-  rebar3: rebar3orgPackage,
-  wails: wailsioPackage,
-  vamp: vamppluginsorgPackage,
-  zeromq: zeromqorgPackage,
-  pkgx: pkgxshPackage,
-  aom: aomediagooglesourcecomaomPackage,
-  libaec: dkrzdelibaecPackage,
-  'python-pillow': pythonpilloworgPackage,
-  edgedb: edgedbcomPackage,
-  age: filippoioagePackage,
-  'yubikey-agent': filippoioyubikeyagentPackage,
-  podman: podmanioPackage,
-  boost: boostorgPackage,
-  sqruff: quarydevsqruffPackage,
-  pulumi: pulumiioPackage,
-  hwloc: openmpiorghwlocPackage,
-  daff: paulfitzgithubiodaffPackage,
-  nano: nanoeditororgPackage,
-  'php-cs-fixer': symfonycomcsPackage,
-  'suite-sparse': peopleengrtamuedudavissuitesparsePackage,
-  cfitsio: heasarcgsfcnasagovcfitsioPackage,
-  sshx: sshxioPackage,
-  nghttp2: nghttp2orgPackage,
-  atlas: atlasgoioPackage,
-  iroh: irohcomputerPackage,
-  loki: grafanacomlokiPackage,
-  'gflags.github': gflagsgithubioPackage,
-  libbluray: videolanorglibblurayPackage,
-  x264: videolanorgx264Package,
-  libplacebo: videolanorglibplaceboPackage,
-  x265: videolanorgx265Package,
-  'sdkman-init.sh': sdkmanioPackage,
-  tailscale: tailscalecomPackage,
-  kubecm: kubecmcloudPackage,
-  openvpn: openvpnnetPackage,
-  ctags: ctagsioPackage,
-  aserver: alsaprojectorgalsalibPackage,
-  tmate: tmateioPackage,
-  harfbuzz: harfbuzzorgPackage,
-  yadm: yadmioPackage,
+  aux4: aux4ioPackage,
+  sphinx: sphinxdocorgPackage,
+  werf: werfioPackage,
+  'git-cliff': gitclifforgPackage,
+  earthly: earthlydevearthlyPackage,
+  'ast-grep.github': astgrepgithubioPackage,
+  leo: leolangorgPackage,
+  pixman: pixmanorgPackage,
+  rye: ryeastralshPackage,
+  abseil: abseilioPackage,
+  'Brave Browser': bravecomPackage,
+  brave: bravecomPackage,
+  'libexif.github': libexifgithubioPackage,
   'gitlab-runner': gitlabcomgitlaborggitlabrunnerPackage,
   glab: gitlabcomgitlaborgcliPackage,
   watch: gitlabcomprocpsngwatchPackage,
   procps: gitlabcomprocpsngprocpsPackage,
+  SvtAv1EncApp: gitlabcomaomediacodecsvtav1Package,
   tree: gitlabcomoldmanprogrammerunixtreePackage,
   eclint: gitlabcomgreuteclintPackage,
-  SvtAv1EncApp: gitlabcomaomediacodecsvtav1Package,
-  render: rendercomPackage,
-  oci: oraclecomocicliPackage,
-  'berkeley-db': oraclecomberkeleydbPackage,
-  'kamal-deploy': kamaldeployorgPackage,
-  opa: openpolicyagentorgPackage,
-  diun: crazymaxdevdiunPackage,
-  mpmath: mpmathorgPackage,
-  'git-cliff': gitclifforgPackage,
-  freetds: freetdsorgPackage,
-  plantuml: plantumlcomPackage,
-  zlib: zlibnetPackage,
-  'libcxx.llvm': libcxxllvmorgPackage,
-  tig: jonasgithubiotigPackage,
-  tofu: opentofuorgPackage,
-  chromedriver: chromedriverchromiumorgPackage,
-  Postman: postmancomPackage,
-  postman: postmancomPackage,
-  check_if_email_exists: reacheremailcheckifemailexistscliPackage,
-  libmatio: matiosourceforgeioPackage,
-  libuv: libuvorgPackage,
-  lame: lamesourceforgeioPackage,
-  sqlite3: sqlitePackage,
-  sqlite: sqlitePackage,
-  modal: modalcomPackage,
-  istioctl: istioioPackage,
-  difft: wilfredmeukdifftasticPackage,
-  'CleanShot X': cleanshotcomPackage,
-  cleanshot: cleanshotcomPackage,
-  '1Password CLI': developer1passwordcom1passwordcliPackage,
-  'oh-my-posh': ohmyposhdevPackage,
-  reshape: fabianlindforssereshapePackage,
-  wireshark: wiresharkorgPackage,
-  rust: rustlangorgPackage,
-  ijg: ijgorgPackage,
-  re2c: re2corgPackage,
-  nixpacks: nixpackscomPackage,
-  rubocop: rubocoporgPackage,
-  convco: convcogithubioPackage,
-  wayland: waylandfreedesktoporgPackage,
-  devpod: devpodshcliPackage,
-  deno: denoPackage,
-  graphene: ebassigithubiographenePackage,
-  xpra: xpraorgPackage,
-  Bruno: brunoappPackage,
-  bruno: brunoappPackage,
-  'openpmix.github': openpmixgithubioPackage,
-  taplo: taplotamasfedevPackage,
-  swift: swiftorgPackage,
-  f2py: numpyorgPackage,
-  vault: vaultprojectioPackage,
-  mitmproxy: mitmproxyorgPackage,
-  goose: presslygithubiogoosePackage,
-  jemalloc: jemallocnetPackage,
-  brewkit: pkgxshbrewkitPackage,
-  mash: pkgxshmashPackage,
-  pkgm: pkgxshpkgmPackage,
-  cargox: pkgxshcargoxPackage,
-  mpdecimal: bytereeforgmpdecimalPackage,
-  lavinmq: lavinmqcomPackage,
-  pnp: pnpmioPackage,
-  'git-quick-stats': gitquickstatsshPackage,
-  ldap: openldaporgPackage,
-  hugo: gohugoioPackage,
-  xcbeautify: tuistioxcbeautifyPackage,
-  pcre: pcreorgPackage,
-  tuxpaint: tuxpaintorgPackage,
-  macvim: macvimorgPackage,
-  'tcl-lang': tcllangorgPackage,
-  'libisl.sourceforge': libislsourceforgeioPackage,
-  goreleaser: goreleasercomPackage,
-  robot: robotframeworkorgPackage,
-  dnsmasq: thekelleysorgukdnsmasqPackage,
-  'otp-27': elixirlangorgotp27Package,
-  OpenSSL: opensslPackage,
-  openssl: opensslPackage,
-  'libimobiledevice-glue': libimobiledeviceorglibimobiledevicegluePackage,
-  plistutil: libimobiledeviceorglibplistPackage,
-  libtatsu: libimobiledeviceorglibtatsuPackage,
-  libusbmuxd: libimobiledeviceorglibusbmuxdPackage,
-  'process-compose': f1bonacc1githubioprocesscomposePackage,
-  libimagequant: pngquantorglibPackage,
-  'jfrog-cli': jfrogcomjfrogcliPackage,
-  itstool: itstoolorgPackage,
-  cedar: cedarpolicycomcliPackage,
-  ghostscript: ghostscriptcomPackage,
-  'argo-cd': argoprojgithubiocdPackage,
-  'argo-workflows': argoprojgithubioworkflowsPackage,
-  'ruby-build': rbenvorgrubybuildPackage,
   PortAudio: portaudiocomPackage,
+  zarf: zarfdevPackage,
+  openvpn: openvpnnetPackage,
+  nano: nanoeditororgPackage,
+  aserver: alsaprojectorgalsalibPackage,
+  'pandoc-crossref': pandocorgcrossrefPackage,
+  virtualenv: virtualenvpypaioPackage,
+  gdown: wkentarogithubiogdownPackage,
+  spin: fermyoncomspinPackage,
+  'docbook-xsl': docbookorgxslPackage,
+  libdrm: drifreedesktoporgPackage,
+  kube: kubectxdevPackage,
+  ipfscluster: ipfsclusterioPackage,
+  syft: anchorecomsyftPackage,
+  zeromq: zeromqorgPackage,
   kerberos: kerberosorgPackage,
-  openssh: opensshcomPackage,
-  cups: openprintinggithubiocupsPackage,
-  qemu: qemuorgPackage,
-  freetype: freetypeorgPackage,
-  'ansible-lint': ansiblecomansiblelintPackage,
-  Rectangle: rectangleappPackage,
-  rectangle: rectangleappPackage,
-  Transmit: transmitpaniccomPackage,
-  transmit: transmitpaniccomPackage,
-  gql: graphqleditorcomgqlPackage,
-  mailpit: mailpitaxllentorgPackage,
-  bacon: dystroyorgbaconPackage,
-  Arc: arcnetPackage,
-  arc: arcnetPackage,
-  kubeshark: kubesharkcoPackage,
-  cicada: hugowangcicadaPackage,
-  fury: furycoPackage,
-  ots: otssnipttcomPackage,
-  libyaml: pyyamlorglibyamlPackage,
-  pocket: poktnetworkPackage,
-  carapace: carapaceshPackage,
-  fish: fishshellcomPackage,
-  'vid.stab': publichronopikdevidstabPackage,
-  pdm: pdmfmingdevPackage,
-  kaggle: kagglecomPackage,
-  Raycast: raycastcomPackage,
-  raycast: raycastcomPackage,
-  ktlint: ktlintgithubioPackage,
-  'scala-lang': scalaPackage,
-  scala: scalaPackage,
-  libspng: libspngorgPackage,
-  capnproto: capnprotoorgPackage,
-  'poppler.freedesktop': popplerfreedesktoporgPackage,
-  projen: projenioPackage,
-  openresty: openrestyorgPackage,
-  uplift: upliftcidevPackage,
-  supabase: supabasecomcliPackage,
-  kpt: kptdevPackage,
-  'sentry-cli': sentryioPackage,
-  'cedar-agent': permitiocedaragentPackage,
-  'soxr.sourceforge': soxrsourceforgenetPackage,
-  nginx: nginxorgPackage,
-  lzip: nongnuorglzipPackage,
-  fltk: fltkorgPackage,
-  gh: cligithubcomPackage,
-  'mypy-lang': mypylangorgPackage,
-  'Midnight Commander': midnightcommanderorgPackage,
-  pipx: pypagithubiopipxPackage,
-  Spotify: spotifycomPackage,
-  spotify: spotifycomPackage,
-  Bittensor: bittensorcomPackage,
-  mockery: vektragithubiomockeryPackage,
-  oras: oraslandPackage,
-  babashka: babashkaorgPackage,
-  terraform: terraformPackage,
-  'swagger-codegen': swaggerioswaggercodegenPackage,
-  velero: veleroioPackage,
-  nss: mozillaorgnssPackage,
-  mozjpeg: mozillaorgmozjpegPackage,
-  cbindgen: mozillaorgcbindgenPackage,
-  'nspr-config': mozillaorgnsprPackage,
-  versio: cratesioversioPackage,
-  mdcat: cratesiomdcatPackage,
-  silicon: cratesiosiliconPackage,
-  typos: cratesiotyposPackage,
-  btm: cratesiobottomPackage,
-  gitopolis: cratesiogitopolisPackage,
-  ddh: cratesioddhPackage,
-  zoxide: cratesiozoxidePackage,
-  albionrpg: cratesioalbion_terminal_rpgPackage,
-  'git-trim': cratesiogittrimPackage,
-  docuum: cratesiodocuumPackage,
-  aichat: cratesioaichatPackage,
-  sccache: cratesiosccachePackage,
-  gitweb: cratesiogitwebPackage,
-  topgrade: cratesiotopgradePackage,
-  licensor: cratesiolicensorPackage,
-  ripgrep: ripgrepPackage,
-  stego: cratesiostegoPackage,
-  pgen: cratesiopgenPackage,
-  killport: cratesiokillportPackage,
-  termusic: cratesiotermusicPackage,
-  zellij: cratesiozellijPackage,
-  omekasy: cratesioomekasyPackage,
-  rga: cratesioripgrepallPackage,
-  bat: cratesiobatPackage,
-  wordl: cratesiowordlPackage,
-  rage: cratesioragePackage,
-  toast: cratesiotoastPackage,
-  'git-tidy': cratesiogittidyPackage,
-  hac: cratesiohacclientPackage,
-  kubie: cratesiokubiePackage,
-  rmz: cratesiormzPackage,
-  wthrr: cratesiowthrrPackage,
-  fselect: cratesiofselectPackage,
-  gitu: cratesiogituPackage,
-  argc: cratesioargcPackage,
-  'kaspa-miner': cratesiokaspaminerPackage,
-  'git-gone': cratesiogitgonePackage,
-  semverator: cratesiosemveratorPackage,
-  trash: cratesiotrashyPackage,
-  'md-tui': cratesiomdtuiPackage,
-  pastel: cratesiopastelPackage,
-  sig: cratesiosigrsPackage,
-  sanitize: cratesiosanitizePackage,
-  diskonaut: cratesiodiskonautPackage,
-  sleek: cratesiosleekPackage,
-  cavif: cratesiocavifPackage,
-  diskus: cratesiodiskusPackage,
-  flamegraph: cratesioflamegraphPackage,
-  click: cratesioclickPackage,
-  pik: cratesiopikPackage,
-  broot: cratesiobrootPackage,
-  exa: cratesioexaPackage,
-  joshuto: cratesiojoshutoPackage,
-  fblog: cratesiofblogPackage,
-  srgn: cratesiosrgnPackage,
-  ducker: cratesioduckerPackage,
-  jnv: cratesiojnvPackage,
-  'rustls-ffi': cratesiorustlsffiPackage,
-  mprocs: cratesiomprocsPackage,
-  'cargo-binstall': cratesiocargobinstallPackage,
-  tiny: cratesiotinyPackage,
-  bartib: cratesiobartibPackage,
-  dym: cratesiodidyoumeanPackage,
-  hyperfine: cratesiohyperfinePackage,
-  'rtx-cli': cratesiortxcliPackage,
-  pueue: cratesiopueuePackage,
-  delta: cratesiogitdeltaPackage,
-  dua: cratesioduaPackage,
-  names: cratesionamesPackage,
-  rucola: cratesiorucolanotesPackage,
-  comrak: cratesiocomrakPackage,
-  bpb: cratesiobpbPackage,
-  spotify_player: cratesiospotify_playerPackage,
-  craftql: cratesiocraftqlPackage,
-  cpz: cratesiocpzPackage,
-  portfolio_rs: cratesioportfolio_rsPackage,
-  bake: cratesiobakersPackage,
-  pqrs: cratesiopqrsPackage,
-  'git-grab': cratesiogitgrabPackage,
-  spider: cratesiospider_cliPackage,
-  fnm: cratesiofnmPackage,
-  tokei: cratesiotokeiPackage,
-  drill: cratesiodrillPackage,
-  eureka: cratesioeurekaPackage,
-  'wasm-pack': cratesiowasmpackPackage,
-  'git-branchless': cratesiogitbranchlessPackage,
-  vivid: cratesiovividPackage,
-  'imessage-exporter': cratesioimessageexporterPackage,
-  'tea-gpg-wallet': cratesioteagpgwalletPackage,
-  eza: cratesioezaPackage,
-  csview: cratesiocsviewPackage,
-  'get-blessed': cratesiogetblessedPackage,
-  huniq: cratesiohuniqPackage,
-  lighthouse: cratesiolighthousePackage,
-  jwt: cratesiojwtcliPackage,
-  'git-absorb': cratesiogitabsorbPackage,
-  fsrx: cratesiofsrxPackage,
-  'cargo-tarpaulin': cratesiocargotarpaulinPackage,
-  'tidy-viewer': cratesiotidyviewerPackage,
-  'rpg-cli': cratesiorpgcliPackage,
-  qsv: cratesioqsvPackage,
-  pier: cratesiopierPackage,
-  samply: cratesiosamplyPackage,
-  dust: cratesiodudustPackage,
-  checkexec: cratesiocheckexecPackage,
-  mask: cratesiomaskPackage,
-  gitui: cratesiogituiPackage,
-  pushenv: cratesiopushenvPackage,
-  'sqlx-cli': cratesiosqlxcliPackage,
-  'rust-kanban': cratesiorustkanbanPackage,
-  granted: granteddevPackage,
-  npmjs: npmPackage,
-  npm: npmPackage,
-  jetp: jetporchcomPackage,
+  mosh: moshorgPackage,
+  mdbook: rustlanggithubiomdbookPackage,
+  'git-crypt': agwanamegitcryptPackage,
+  rapidjson: rapidjsonorgPackage,
+  quickwit: quickwitioPackage,
+  templ: templguidePackage,
+  opa: openpolicyagentorgPackage,
+  edencommon: facebookcomedencommonPackage,
+  fb303: facebookcomfb303Package,
+  wangle: facebookcomwanglePackage,
   thrift1: facebookcomfbthriftPackage,
+  zstd: facebookcomzstdPackage,
   mvfst: facebookcommvfstPackage,
   folly: facebookcomfollyPackage,
   watchman: facebookcomwatchmanPackage,
-  wangle: facebookcomwanglePackage,
-  fb303: facebookcomfb303Package,
-  edencommon: facebookcomedencommonPackage,
-  zstd: facebookcomzstdPackage,
-  Insomnia: insomniarestPackage,
-  insomnia: insomniarestPackage,
-  pipenv: pipenvpypaioPackage,
-  AltTab: alttabappPackage,
-  alttab: alttabappPackage,
-  'alt-tab': alttabappPackage,
-  socat: destunreachorgsocatPackage,
-  glfw: glfworgPackage,
-  cgal: cgalorgPackage,
-  dozzle: dozzledevPackage,
-  moon: moonrepodevmoonPackage,
-  spin: fermyoncomspinPackage,
-  pixlet: tidbytcomPackage,
-  mujs: mujscomPackage,
-  uriparse: uriparsergithubioPackage,
-  maturin: maturinrsPackage,
-  wait4x: wait4xdevPackage,
-  'lima-vm': limavmioPackage,
-  openblas: openblasnetPackage,
+  talisman: thoughtworksgithubiotalismanPackage,
+  hatch: hatchpypaioPackage,
+  IINA: iinaioPackage,
+  iina: iinaioPackage,
+  doctl: digitaloceancomdoctlPackage,
+  conda: condaorgPackage,
+  'open-mpi': openmpiorgPackage,
+  SDL_image: libsdlorgsdl_imagePackage,
+  SDL_mixer: libsdlorgsdl_mixerPackage,
+  SDL_ttf: libsdlorgsdl_ttfPackage,
+  yadm: yadmioPackage,
+  supabase: supabasecomcliPackage,
+  Postman: postmancomPackage,
+  postman: postmancomPackage,
+  'sing-box': singboxappPackage,
+  surreal: surrealdbcomPackage,
+  wumpus: catborgwumpusPackage,
+  Discord: discordcomPackage,
+  discord: discordcomPackage,
+  spacetime: spacetimedbcomPackage,
+  hwloc: openmpiorghwlocPackage,
+  'glew.sourceforge': glewsourceforgeioPackage,
+  trip: trippyclirsPackage,
+  'cscope.sourceforge': cscopesourceforgeioPackage,
+  k9s: k9scliioPackage,
+  'gpg-tui': orhundevgpgtuiPackage,
+  postgrest: postgrestorgPackage,
+  cfitsio: heasarcgsfcnasagovcfitsioPackage,
+  'mako-render': makotemplatesorgPackage,
+  'sonar-scanner': sonarqubeorgsonarscannerPackage,
+  sops: getsopsioPackage,
+  vmaf: netflixcomvmafPackage,
+  mkcert: mkcertdevPackage,
+  fend: printfngithubiofendPackage,
+  's-lang': jedsoftorgslangPackage,
+  wezterm: wezfurlongorgweztermPackage,
+  rubberband: breakfastquaycomrubberbandPackage,
+  versitygw: versitycomversitygwPackage,
+  fastlane: fastlanetoolsPackage,
+  'plocate.sesse': plocatesessenetPackage,
+  squawk: squawkhqcomPackage,
+  Notion: notionsoPackage,
+  notion: notionsoPackage,
+  xcodeproj: cocoapodsorgxcodeprojPackage,
+  haskell: haskellorgPackage,
+  uplift: upliftcidevPackage,
+  ccache: ccachedevPackage,
+  'jfrog-cli': jfrogcomjfrogcliPackage,
   Ollama: ollamacomPackage,
-  rye: ryeastralshPackage,
-  'docker-compose': dockercomcomposePackage,
-  'docker-machine': dockercommachinePackage,
-  'docker/cli': dockerPackage,
-  docker: dockerPackage,
-  buildx: dockercombuildxPackage,
-  cosign: sigstoredevcosignPackage,
-  gitsign: sigstoredevgitsignPackage,
-  tectonic: tectonictypesettinggithubioPackage,
-  corepack: nodejsorgcorepackPackage,
-  certbot: certbotefforgPackage,
-  MeetingBar: meetingbarappPackage,
-  meetingbar: meetingbarappPackage,
-  unzip: unzipPackage,
-  'opus-codec': opuscodecorgPackage,
-  termshark: termsharkioPackage,
-  kustomize: kubernetesiokustomizePackage,
-  kubectl: kubectlPackage,
-  minikube: kubernetesiominikubePackage,
-  exr: openexrcomPackage,
-  GIMP: gimporgPackage,
-  gimp: gimporgPackage,
+  ollama: ollamacomPackage,
+  pocket: poktnetworkPackage,
+  unixodbc: unixodbcorgPackage,
+  kargo: akuityiokargoPackage,
+  mupdf: mupdfcomPackage,
+  goreleaser: goreleasercomPackage,
+  fluentci: fluentciioPackage,
+  cog: cocogittoioPackage,
+  replibyte: replibytecomPackage,
+  redis: redisPackage,
+  vim: vimPackage,
+  vi: vimPackage,
+  'macfuse.github': macfusegithubioPackage,
+  snyk: snykioPackage,
+  pod: cocoapodsorgPackage,
+  telnet: applecomremote_cmdsPackage,
+  container: applecomcontainerPackage,
+  opj: openjpegorgPackage,
+  zip: zipPackage,
   'mecab-ipadic': taku910githubiomecabipadicPackage,
   mecab: taku910githubiomecabPackage,
-  'plocate.sesse': plocatesessenetPackage,
+  fftw: fftworgPackage,
+  pandoc: pandocorgPackage,
   jansson: digiporgjanssonPackage,
-  libdrm: drifreedesktoporgPackage,
-  tsc: typescriptlangorgPackage,
-  crystal: crystallangorgPackage,
+  imagemagick: imagemagickorgPackage,
+  unicode: unicodeorgPackage,
+  gradle: gradlePackage,
+  sftpgo: sftpgocomPackage,
+  etcd: etcdioPackage,
+  mongosh: mongodbcomshellPackage,
+  gomplate: gomplatecaPackage,
+  next: vercelcomnextPackage,
+  pkg: vercelcompkgPackage,
+  flit: flitpypaioPackage,
+  terratag: terratagioPackage,
+  tinyxml2: leethomasongithubiotinyxml2Package,
+  duk: duktapeorgPackage,
+  boost: boostorgPackage,
+  duckscript: sagiegurarigithubioduckscriptPackage,
+  php: phpPackage,
   streamlink: streamlinkgithubioPackage,
-  nomad: nomadprojectioPackage,
-  'linux-headers': kernelorglinuxheadersPackage,
-  libcap: kernelorglibcapPackage,
-  litecli: liteclicomPackage,
-  Linear: linearappPackage,
-  linear: linearappPackage,
-  redis: redisPackage,
-  doctl: digitaloceancomdoctlPackage,
-  flyway: flywaydborgPackage,
-  Signal: signalorgPackage,
-  signal: signalorgPackage,
-  pscale: planetscalecomPackage,
-  tcl: tcltktclPackage,
-  attrs: attrsorgPackage,
-  ntp: ntporgPackage,
-  openbao: openbaoorgopenbaoPackage,
-  talisman: thoughtworksgithubiotalismanPackage,
-  pyyaml: pyyamlorgPackage,
+  httpie: httpieioPackage,
+  cicada: hugowangcicadaPackage,
+  mysql: mysqlPackage,
+  'cmdline-tools': androidcomcmdlinetoolsPackage,
+  lavinmq: lavinmqcomPackage,
+  cosign: sigstoredevcosignPackage,
+  gitsign: sigstoredevgitsignPackage,
+  mujs: mujscomPackage,
+  govulncheck: godevgovulncheckPackage,
+  testscript: godevtestscriptPackage,
+  unrar: rarlabcomPackage,
+  HDF5: hdfgrouporghdf5Package,
+  kubeshark: kubesharkcoPackage,
+  HandBrake: handbrakefrPackage,
+  handbrake: handbrakefrPackage,
+  Arkade: arkadedevPackage,
+  render: rendercomPackage,
+  ots: otssnipttcomPackage,
+  crystal: crystallangorgPackage,
+  hjson: hjsongithubioPackage,
+  'GitHub Desktop': githubcomdesktopPackage,
+  'github-desktop': githubcomdesktopPackage,
+  'gh-desktop': githubcomdesktopPackage,
+  pip: pippypaioPackage,
+  cabal: haskellorgcabalPackage,
+  openslide: openslideorgPackage,
+  tart: tartrunPackage,
+  grpc: grpcioPackage,
+  exiftool: exiftoolorgPackage,
   iTerm2: iterm2comPackage,
   iterm: iterm2comPackage,
   iterm2: iterm2comPackage,
-  spicedb: authzedcomspicedbPackage,
-  testscript: godevtestscriptPackage,
-  govulncheck: godevgovulncheckPackage,
-  pod2man: eyrieorgeaglepodlatorsPackage,
-  cointop: cointopshPackage,
-  solana: solanacomPackage,
-  libwebsockets: libwebsocketsorgPackage,
-  poetry: pythonpoetryorgPackage,
-  kargo: akuityiokargoPackage,
-  juliaup: julialangorgjuliaupPackage,
-  phpMyAdmin: phpmyadminnetPackage,
+  docutils: docutilsorgPackage,
+  mergestat: mergestatcommergestatlitePackage,
+  cmocka: cmockaorgPackage,
+  vips: libvipsorgPackage,
+  GIMP: gimporgPackage,
+  gimp: gimporgPackage,
+  'glm.g-truc': glmgtrucnetPackage,
+  Keka: kekaioPackage,
+  keka: kekaioPackage,
+  'geos-config': libgeosorgPackage,
+  hcloud: hetznercomhcloudPackage,
+  gh: cligithubcomPackage,
+  libpsl: rockdabootgithubiolibpslPackage,
+  expect: tcllangorgexpectPackage,
+  libwpe: wpewebkitorglibwpePackage,
+  'wpebackend-fdo': wpewebkitorgwpebackendfdoPackage,
   fmt: fmtdevPackage,
-  xvid: xvidcomPackage,
+  apptainer: apptainerorgPackage,
+  ktlint: ktlintgithubioPackage,
+  'opus-codec': opuscodecorgPackage,
+  speexdec: speexorgPackage,
+  lzo: oberhumercomlzoPackage,
+  ucl: oberhumercomuclPackage,
+  systemd: systemdioPackage,
+  aspell: aspellnetPackage,
+  wimlib: wimlibnetPackage,
+  rpm: rpmorgrpmPackage,
+  libdnf5: rpmorglibdnf5Package,
+  librepo: rpmorglibrepoPackage,
+  popt: rpmorgpoptPackage,
+  dnf5: rpmorgdnf5Package,
+  'rpm-sequoia': rpmorgrpmsequoiaPackage,
+  juju: jujuisPackage,
+  smi: ibrcstubsdelibsmiPackage,
+  'taglib-config': tagliborgPackage,
+  'gimme-aws-creds': nikecomgimmeawscredsPackage,
+  libpipeline: libpipelinegitlabiolibpipelinePackage,
+  vite: vitejsdevPackage,
+  unzip: unzipPackage,
+  readline: gnuorgreadlinePackage,
+  fribidi: gnuorgfribidiPackage,
+  make: gnuorgmakePackage,
+  grub: gnuorggrubPackage,
+  plotutils: gnuorgplotutilsPackage,
+  idn: gnuorglibidnPackage,
+  which: gnuorgwhichPackage,
+  libsigsegv: gnuorglibsigsegvPackage,
+  autoconf: gnuorgautoconfPackage,
+  gmp: gnuorggmpPackage,
+  grep: gnuorggrepPackage,
+  'autoconf-archive': gnuorgautoconfarchivePackage,
+  mpc: gnuorgmpcPackage,
+  tar: gnuorgtarPackage,
+  gcc: gnuorggccPackage,
+  bison: gnuorgbisonPackage,
+  help2man: gnuorghelp2manPackage,
+  wget: gnuorgwgetPackage,
+  gawk: gnuorggawkPackage,
+  libunistring: gnuorglibunistringPackage,
+  binutils: gnuorgbinutilsPackage,
+  parallel: gnuorgparallelPackage,
+  patch: gnuorgpatchPackage,
+  libtool: gnuorglibtoolPackage,
+  nettle: gnuorgnettlePackage,
+  asn1: gnuorglibtasn1Package,
+  texinfo: gnuorgtexinfoPackage,
+  diffutils: gnuorgdiffutilsPackage,
+  gperf: gnuorggperfPackage,
+  idn2: gnuorglibidn2Package,
+  xorriso: gnuorgxorrisoPackage,
+  'source-highlight': gnuorgsourcehighlightPackage,
+  iconv: gnuorglibiconvPackage,
+  gettext: gnuorggettextPackage,
+  libmicrohttpd: gnuorglibmicrohttpdPackage,
+  gdbm: gnuorggdbmPackage,
+  findutils: gnuorgfindutilsPackage,
+  libstdcxx: gnuorggcclibstdcxxPackage,
+  libgomp: gnuorggcclibgompPackage,
+  emacs: gnuorgemacsPackage,
+  groff: gnuorggroffPackage,
+  bash: gnuorgbashPackage,
+  guil: gnuorgguilePackage,
+  sed: gnuorgsedPackage,
+  stow: gnuorgstowPackage,
+  inetutils: gnuorginetutilsPackage,
+  mpfr: gnuorgmpfrPackage,
+  automake: gnuorgautomakePackage,
+  coreutils: gnuorgcoreutilsPackage,
+  fury: furycoPackage,
+  'huggingface/cli': huggingfacecoPackage,
+  trufflehog: trufflesecuritycomtrufflehogPackage,
+  LibTomMath: libtomnetmathPackage,
+  ord: ordinalscomPackage,
+  bind9: iscorgbind9Package,
+  'eigen.tuxfamily': eigentuxfamilyorgPackage,
+  zrok: zrokioPackage,
+  Spotify: spotifycomPackage,
+  spotify: spotifycomPackage,
+  'libcxx.llvm': libcxxllvmorgPackage,
+  'liblqr.wikidot': liblqrwikidotcomPackage,
+  upx: upxgithubioPackage,
+  mpv: mpvioPackage,
+  croc: schollzcomcrocPackage,
+  lzip: nongnuorglzipPackage,
+  caesiumclt: saerasoftcomcaesiumPackage,
+  vhs: charmshvhsPackage,
+  mods: charmshmodsPackage,
+  glow: charmshglowPackage,
+  gum: charmshgumPackage,
+  crush: charmshcrushPackage,
+  skate: charmshskatePackage,
+  melt: charmshmeltPackage,
+  freeze: charmshfreezePackage,
+  pop: charmshpopPackage,
+  liburcu: liburcuorgPackage,
+  carapace: carapaceshPackage,
+  libomp: openmpllvmorgPackage,
+  openstack: opendevorgopenstackpythonopenstackclientPackage,
+  'git-review': opendevorggitreviewPackage,
+  mise: misejdxdevPackage,
+  argcomplete: kislyukgithubioargcompletePackage,
+  dgraph: dgraphioPackage,
+  resticprofile: creativeprojectsgithubioresticprofilePackage,
+  mercure: mercurerocksPackage,
+  dnsmasq: thekelleysorgukdnsmasqPackage,
+  'soxr.sourceforge': soxrsourceforgenetPackage,
+  'openpmix.github': openpmixgithubioPackage,
+  gleam: gleamrunPackage,
+  doctave: doctavecomPackage,
+  tinygo: tinygoorgPackage,
+  istioctl: istioioPackage,
+  libproxy: libproxygithubiolibproxyPackage,
+  ttyd: tsl0922githubiottydPackage,
+  plantuml: plantumlcomPackage,
+  jq: stedolangithubiojqPackage,
+  hugo: gohugoioPackage,
+  groonga: groongaorgPackage,
+  ncdu: devyorhelnlncduPackage,
+  'poppler-data': popplerfreedesktoporgpopplerdataPackage,
+  optipng: sfnetoptipngPackage,
+  ldap: openldaporgPackage,
+  xcbeautify: tuistioxcbeautifyPackage,
+  'groovy-lang': groovylangorgPackage,
+  agg: asciinemaorgaggPackage,
+  snappy: googlegithubiosnappyPackage,
+  md5sha1sum: microbreworgmd5sha1sumPackage,
+  pugixml: pugixmlorgPackage,
+  qpdf: qpdfsourceforgeioPackage,
+  qemu: qemuorgPackage,
+  kubebuilder: kubebuilderioPackage,
+  starship: starshiprsPackage,
+  ladspa: ladspaorgPackage,
+  convco: convcogithubioPackage,
+  symfony: symfonycomPackage,
+  zlib: zlibnetPackage,
+  s3cmd: s3cmdPackage,
+  Figma: figmacomPackage,
+  figma: figmacomPackage,
+  'sentry-cli': sentryioPackage,
+  pipenv: pipenvpypaioPackage,
+  psycopg3: psycopgorgpsycopg3Package,
+  psycopg2: psycopgorgpsycopg2Package,
+  sniffnet: sniffnetnetPackage,
+  xpra: xpraorgPackage,
+  freetype: freetypeorgPackage,
+  pcre: pcreorgPackage,
+  tig: jonasgithubiotigPackage,
+  rebar3: rebar3orgPackage,
+  podman: podmanioPackage,
+  'neon-config': notrojgithubioneonPackage,
+  digger: diggerdevPackage,
+  ImageOptim: imageoptimcomPackage,
+  imageoptim: imageoptimcomPackage,
+  yuicompressor: yuigithubioyuicompressorPackage,
+  kubecm: kubecmcloudPackage,
+  lame: lamesourceforgeioPackage,
+  amber: amberlangcomPackage,
+  projen: projenioPackage,
+  rustup: rustlangorgrustupPackage,
+  bindgen: rustlangorgrustbindgenPackage,
+  cargo: rustlangorgcargoPackage,
+  hasura: hasuraioPackage,
+  SeaweedFS: seaweedfscomPackage,
+  volta: voltashPackage,
+  capnproto: capnprotoorgPackage,
+  'ruby-build': rbenvorgrubybuildPackage,
+  prql: prqllangorgPackage,
+  Element: elementioPackage,
+  element: elementioPackage,
+  cue: cuelangorgPackage,
+  'scie-pants': pantsbuildorgsciepantsPackage,
+  pytest: pytestorgPackage,
+  perl: perlorgPackage,
+  cedar: cedarpolicycomcliPackage,
+  'arduino-cli': arduinogithubioarduinocliPackage,
+  wxwidgets: wxwidgetsorgPackage,
+  stripe: stripecomPackage,
+  lychee: lycheeclirsPackage,
+  soldeer: soldeerxyzPackage,
+  xplr: xplrdevPackage,
+  cpanm: cpanminusPackage,
+  mockery: vektragithubiomockeryPackage,
+  libimagequant: pngquantorglibPackage,
+  spicedb: authzedcomspicedbPackage,
+  sympy: sympyorgPackage,
+  idevicedate: libimobiledeviceorgPackage,
+  gist: rubygemsorggistPackage,
+  opensearch: opensearchorgPackage,
+  Slack: slackcomPackage,
+  slack: slackcomPackage,
+  TablePlus: tablepluscomPackage,
+  tableplus: tablepluscomPackage,
+  ipython: ipythonorgPackage,
+  mesa3d: mesa3dorgPackage,
+  libraw: libraworgPackage,
+  fltk: fltkorgPackage,
+  'bash-completion': debianorgbashcompletionPackage,
+  'iso-codes': debianorgisocodesPackage,
+  openbao: openbaoorgopenbaoPackage,
+  bun: bunPackage,
+  'bun.com': bunPackage,
+  buf: bufbuildPackage,
+  leptonica: leptonicaorgPackage,
+  lz4: lz4orgPackage,
+  circleci: circlecicomPackage,
+  pnp: pnpmioPackage,
+  kotlinlang: kotlinPackage,
+  kotlin: kotlinPackage,
+  assimp: assimporgPackage,
+  distlib: pypaiodistlibPackage,
+  setuptools: pypaiosetuptoolsPackage,
+  'trove-classifiers': pypaiotroveclassifiersPackage,
+  packaging: pypaiopackagingPackage,
+  dart: dartdevPackage,
+  flux: fluxcdioflux2Package,
+  ksops: viaductaiksopsPackage,
+  koyeb: koyebcomPackage,
+  cfssl: cfsslorgPackage,
+  himalaya: pimalayaorghimalayaPackage,
+  mockgen: gouberorgmockmockgenPackage,
+  nuclei: projectdiscoveryionucleiPackage,
+  dprint: dprintdevPackage,
+  robot: robotframeworkorgPackage,
+  macvim: macvimorgPackage,
+  sqruff: quarydevsqruffPackage,
+  Stats: statsappPackage,
+  stats: statsappPackage,
+  gnutls: gnutlsorgPackage,
+  pake: npmjscompakecliPackage,
+  acorn: acornioacorncliPackage,
+  luajit: luajitorgPackage,
+  liblinear: csientuedutwcjlinliblinearPackage,
+  railway: railwayappPackage,
+  eas: expodeveascliPackage,
+  turso: tursotechPackage,
+  samtools: htsliborgsamtoolsPackage,
+  jumppad: jumppaddevPackage,
+  'docker/cli': dockerPackage,
+  docker: dockerPackage,
+  'docker-compose': dockercomcomposePackage,
+  'docker-machine': dockercommachinePackage,
+  buildx: dockercombuildxPackage,
+  nghttp2: nghttp2orgPackage,
+  biome: biomejsdevPackage,
+  flipt: fliptioPackage,
+  vspipe: vapoursynthcomPackage,
+  pack: buildpacksioPackage,
+  'youtube-dl': youtubedlorgPackage,
+  composer: getcomposerorgPackage,
+  rio: riotermcomPackage,
+  rover: apollographqlcomroverPackage,
+  epsilon: epsilonprojectsourceforgeioPackage,
+  talosctl: talosdevPackage,
+  'linux-headers': kernelorglinuxheadersPackage,
+  libcap: kernelorglibcapPackage,
+  imath: openexrcomimathPackage,
+  eol: endoflifedatePackage,
+  rubocop: rubocoporgPackage,
+  'kubectl-krew': krewsigsk8sioPackage,
+  putty: chiarkgreenendorgukputtyPackage,
+  halibut: chiarkgreenendorgukhalibutPackage,
+  puzzles: chiarkgreenendorgukpuzzlesPackage,
+  talhelper: budimanjojogithubiotalhelperPackage,
+  maturin: maturinrsPackage,
+  raccoin: raccoinorgPackage,
+  elfutils: elfutilsorgPackage,
+  'Docker Desktop': dockercomdesktopPackage,
+  'docker-desktop': dockercomdesktopPackage,
+  msgpack: msgpackorgPackage,
+  plakar: plakarioPackage,
+  mongodb: mongodbcomPackage,
+  vale: valeshPackage,
+  'scala-lang': scalaPackage,
+  scala: scalaPackage,
+  gauche: practicalschemenetgauchePackage,
+  ntp: ntporgPackage,
+  glfw: glfworgPackage,
+  librttopo: gitosgeoorggitearttopolibrttopoPackage,
+  dblab: dblabdanvergaracomPackage,
+  teller: tlrdevPackage,
+  meson: mesonbuildcomPackage,
+  steampipe: steampipeioPackage,
+  pulumi: pulumiioPackage,
+  tidy: htmltidyorgPackage,
+  Signal: signalorgPackage,
+  signal: signalorgPackage,
+  invoke: pyinvokeorgPackage,
+  heroku: herokucomPackage,
+  tmate: tmateioPackage,
+  lftp: lftpyarruPackage,
+  cython: cythonorgPackage,
+  libcerf: jugitfzjuelichdemlzlibcerfPackage,
+  openssh: opensshcomPackage,
+  ffmpeg: ffmpegorgPackage,
+  jsonnet: jsonnetorgPackage,
+  daytona: daytonaioPackage,
+  gnuplot: gnuplotinfoPackage,
+  kaggle: kagglecomPackage,
+  libvpx: webmprojectorglibvpxPackage,
+  syncthing: syncthingnetPackage,
+  po4a: po4aorgPackage,
+  borg: borgbackuporgPackage,
+  julia: julialangorgPackage,
+  rome: rometoolsPackage,
+  tcsh: tcshorgPackage,
+  ijg: ijgorgPackage,
+  'git-town': gittowncomPackage,
+  liblmdb: openldaporgliblmdbPackage,
+  'yubikey-manager': developersyubicocomyubikeymanagerPackage,
+  fido2: developersyubicocomlibfido2Package,
+  'pcsc-lite': pcscliteapdufrPackage,
+  libspng: libspngorgPackage,
+  hexedit: rigauxorghexeditPackage,
+  'frei0r.dyne': frei0rdyneorgPackage,
+  clisp: clisporgPackage,
+  Tunnelblick: tunnelblicknetPackage,
+  tunnelblick: tunnelblicknetPackage,
+  'tree-sitter': treesittergithubioPackage,
+  itstool: itstoolorgPackage,
+  dotnet: dotnetmicrosoftcomPackage,
+  'openapi-generator': openapigeneratortechPackage,
+  'python-certifi': certifiiopythoncertifiPackage,
+  mkdocs: mkdocsorgPackage,
+  patchelf: nixosorgpatchelfPackage,
+  ldns: nlnetlabsnlldnsPackage,
+  appium: appiumioPackage,
+  dssim: kornelskidssimPackage,
+  luarocks: luarocksorgPackage,
+  typst: typstappPackage,
+  'kube-linter': kubelinterioPackage,
+  ack: beyondgrepcomPackage,
+  libsrtp: ciscocomlibsrtpPackage,
+  smartmontools: smartmontoolsorgPackage,
+  deno: denoPackage,
+  llvm: llvmorgPackage,
+  hunspell: hunspellgithubioPackage,
+  ginkgo: onsigithubioginkgoPackage,
+  graphene: ebassigithubiographenePackage,
+  dozzle: dozzledevPackage,
+  'Midnight Commander': midnightcommanderorgPackage,
+  'code-server': codercomcodeserverPackage,
+  rabbitmq: rabbitmqcomPackage,
+  jpegxl: jpegorgjpegxlPackage,
+  argbash: argbashdevPackage,
+  'sdkman-init.sh': sdkmanioPackage,
+  libevent: libeventorgPackage,
+  'man-db': mandbgitlabiomandbPackage,
+  libtatsu: libimobiledeviceorglibtatsuPackage,
+  plistutil: libimobiledeviceorglibplistPackage,
+  libusbmuxd: libimobiledeviceorglibusbmuxdPackage,
+  'libimobiledevice-glue': libimobiledeviceorglibimobiledevicegluePackage,
+  k3d: k3dioPackage,
+  craft: craftPackage,
+  gphoto2: gphotoorglibgphoto2Package,
+  jemalloc: jemallocnetPackage,
+  jless: jlessioPackage,
+  gitql: amrdevelopergithubiogqlPackage,
+  atlas: atlasgoioPackage,
+  autossh: hardingmotdcaautosshPackage,
+  snaplet: snapletdevcliPackage,
+  editline: thrysoeedkeditlinePackage,
+  MonitorControl: monitorcontrolappPackage,
+  monitorcontrol: monitorcontrolappPackage,
+  'monitor-control': monitorcontrolappPackage,
+  nixpacks: nixpackscomPackage,
+  'operator-sdk': operatorframeworkiooperatorsdkPackage,
+  xmlwf: libexpatgithubioPackage,
+  meilisearch: meilisearchcomPackage,
+  sqlfluff: sqlfluffcomPackage,
+  libpng: libpngorgPackage,
+  rsync: rsyncsambaorgPackage,
+  npmjs: npmPackage,
+  npm: npmPackage,
+  'device-mapper': sourcewareorgdmPackage,
+  libffi: sourcewareorglibffiPackage,
+  bzip2: sourcewareorgbzip2Package,
+  attrs: attrsorgPackage,
+  checkov: checkovioPackage,
+  daemontools: cryptodaemontoolsPackage,
+  daff: paulfitzgithubiodaffPackage,
+  devpod: devpodshcliPackage,
+  sketchybar: felixkratzgithubiosketchybarPackage,
+  check_if_email_exists: reacheremailcheckifemailexistscliPackage,
+  srt: srtallianceorgPackage,
+  vde: virtualsquareorgvdePackage,
+  libtirpc: sourceforgenetlibtirpcPackage,
+  faac: sourceforgenetfaacPackage,
+  potrace: sourceforgenetpotracePackage,
+  'net-tools': sourceforgenetnettoolsPackage,
+  faad: sourceforgenetfaad2Package,
+  'aac-enc': sourceforgenetopencoreamrPackage,
+  libmng: sourceforgenetlibmngPackage,
+  e2fsprogs: sourceforgenete2fsprogsPackage,
+  XMLStarlet: sourceforgenetxmlstarPackage,
+  'opencore-amr.sourceforge': opencoreamrsourceforgeioPackage,
+  gql: graphqleditorcomgqlPackage,
+  cnquery: cnqueryioPackage,
+  netcdf: unidataucaredunetcdfPackage,
+  goose: presslygithubiogoosePackage,
+  atlantis: runatlantisioPackage,
+  'xerces-c': xercesapacheorgxercescPackage,
+  ghostscript: ghostscriptcomPackage,
+  'The Unarchiver': theunarchivercomPackage,
+  'the-unarchiver': theunarchivercomPackage,
+  unar: theunarchivercomPackage,
+  'kamal-deploy': kamaldeployorgPackage,
+  dexios: brxken128githubiodexiosPackage,
+  swift: swiftorgPackage,
+  genact: svenstarogithubiogenactPackage,
+  'ceres-solver': ceressolverorgPackage,
+  'xray-core': xtlsgithubioPackage,
+  bacon: dystroyorgbaconPackage,
+  libaio: pagureiolibaioPackage,
+  xml: pagureioxmltoPackage,
+  Telegram: telegramorgPackage,
+  telegram: telegramorgPackage,
+  dog: dnslookupdogPackage,
+  gifsicle: lcdforggifsiclePackage,
+  libyaml: pyyamlorglibyamlPackage,
+  phpMyAdmin: phpmyadminnetPackage,
+  prettier: prettierioPackage,
+  'consul-template': hashicorpcomconsultemplatePackage,
+  envconsul: hashicorpcomenvconsulPackage,
+  Bruno: brunoappPackage,
+  bruno: brunoappPackage,
+  fswatch: emcrisostomogithubiofswatchPackage,
+  'xcb-util-wm': freedesktoporgxcbutilwmPackage,
+  intltool: freedesktoporgintltoolPackage,
+  polkit: freedesktoporgpolkitPackage,
+  'xdg-user-dir': freedesktoporgxdguserdirsPackage,
+  libbsd: freedesktoporglibbsdPackage,
+  'xcb-util-renderutil': freedesktoporgxcbutilrenderutilPackage,
+  slirp: freedesktoporgslirpPackage,
+  'mesa-glu': freedesktoporgmesagluPackage,
+  fontconfig: freedesktoporgfontconfigPackage,
+  XKeyboardConfig: freedesktoporgxkeyboardconfigPackage,
+  'poppler-qt5': freedesktoporgpopplerqt5Package,
+  cppunit: freedesktoporgcppunitPackage,
+  vdpau: freedesktoporgvdpauPackage,
+  'p11-kit': freedesktoporgp11kitPackage,
+  'icon-theme': freedesktoporgiconthemePackage,
+  dbus: freedesktoporgdbusPackage,
+  appstreamcli: freedesktoporgappstreamPackage,
+  'at-spi2-atk': freedesktoporgatspi2atkPackage,
+  'xcb-util-image': freedesktoporgxcbutilimagePackage,
+  'xcb-util-keysyms': freedesktoporgxcbutilkeysymsPackage,
+  'pkg-config': freedesktoporgpkgconfigPackage,
+  'desktop-file-utils': freedesktoporgdesktopfileutilsPackage,
+  uchardet: freedesktoporguchardetPackage,
+  'update-mime-database': freedesktoporgsharedmimeinfoPackage,
+  velero: veleroioPackage,
+  gif: giflibsourceforgeioPackage,
+  'fna-xna.github': fnaxnagithubioPackage,
+  libva: intelcomlibvaPackage,
+  sip: riverbankcomputingcomsipPackage,
+  'pyqt-bundle': riverbankcomputingcompyqtbuilderPackage,
+  mitmproxy: mitmproxyorgPackage,
+  'ruby-lang': rubyPackage,
+  ruby: rubyPackage,
+  'libusb-compat': libusbinfocompatPackage,
+  zig: ziglangorgPackage,
+  'berkeley-db': oraclecomberkeleydbPackage,
+  oci: oraclecomocicliPackage,
+  zsh: zshsourceforgeioPackage,
+  fish: fishshellcomPackage,
+  'CleanShot X': cleanshotcomPackage,
+  cleanshot: cleanshotcomPackage,
+  libpq: postgresqlorglibpqPackage,
+  mc: miniomcPackage,
+  wayland: waylandfreedesktoporgPackage,
+  'Auto-GPT': agptcoPackage,
+  gsf: gnomeorglibgsfPackage,
+  'adwaita-icon-theme': gnomeorgadwaitaiconthemePackage,
+  'json-glib': gnomeorgjsonglibPackage,
+  'gdk-pixbuf': gnomeorggdkpixbufPackage,
+  atk: gnomeorgatkPackage,
+  pango: gnomeorgpangoPackage,
+  'rsvg-convert': gnomeorglibrsvgPackage,
+  libsecret: gnomeorglibsecretPackage,
+  'g-ir': gnomeorggobjectintrospectionPackage,
+  vala: gnomeorgvalaPackage,
+  'gtk-mac-integration-gtk3': gnomeorggtkmacintegrationgtk3Package,
+  'glib-networking': gnomeorgglibnetworkingPackage,
+  'gi-docgen': gnomeorggidocgenPackage,
+  xslt: gnomeorglibxsltPackage,
+  'gsettings-desktop-schemas': gnomeorggsettingsdesktopschemasPackage,
+  glib: gnomeorgglibPackage,
+  PyGObject: gnomeorgpygobjectPackage,
+  'tea/cli': teaxyzPackage,
+  cloudflared: cloudflarecomcloudflaredPackage,
+  encore: encoredevPackage,
+  openresty: openrestyorgPackage,
+  shovel: indexsupplycomshovelPackage,
+  asciinema: asciinemaorgPackage,
+  'linux-pam': linuxpamorgPackage,
+  direnv: direnvnetPackage,
+  VLC: vlcappPackage,
+  vlc: vlcappPackage,
+  ronn: rtomaykogithubioronnPackage,
+  clog: clogtoolgithubioPackage,
+  flutter: flutterdevPackage,
+  'poppler.freedesktop': popplerfreedesktoporgPackage,
+  diun: crazymaxdevdiunPackage,
+  gti: rwosorggtiPackage,
+  databricks: databrickscomPackage,
+  libssh: libsshorgPackage,
+  '1Password': _1passwordcomPackage,
+  '1password': _1passwordcomPackage,
+  onepassword: _1passwordcomPackage,
+  cstool: capstoneengineorgPackage,
+  'lima-vm': limavmioPackage,
+  x264: videolanorgx264Package,
+  libplacebo: videolanorglibplaceboPackage,
+  libbluray: videolanorglibblurayPackage,
+  x265: videolanorgx265Package,
+  skaffold: skaffolddevPackage,
+  edgedb: edgedbcomPackage,
+  'oauth2-proxy': oauth2proxygithubioPackage,
+  ipfs: ipfstechPackage,
+  laravel: laravelcomPackage,
+  temporal: temporalioPackage,
+  zola: getzolaorgPackage,
+  minisign: jedisct1githubiominisignPackage,
+  gpp: logologicalorggppPackage,
+  git2: libgit2orgPackage,
+  graphviz: graphvizorgPackage,
+  wasmer: wasmerioPackage,
+  Zed: zeddevPackage,
+  zed: zeddevPackage,
+  moon: moonrepodevmoonPackage,
+  sshx: sshxioPackage,
+  cephadm: cephcomcephadmPackage,
+  'mercurial-scm': mercurialscmorgPackage,
+  AltTab: alttabappPackage,
+  alttab: alttabappPackage,
+  'alt-tab': alttabappPackage,
+  loki: grafanacomlokiPackage,
+  jbang: jbangdevPackage,
+  tesseract: tesseractocrgithubioPackage,
+  terragrunt: terragruntgruntworkioPackage,
+  'gen-ir': veracodecomgenirPackage,
+  MetaGPT: deepwisdomaiPackage,
+  Raycast: raycastcomPackage,
+  raycast: raycastcomPackage,
+  rtmpdump: rtmpdumpmplayerhqhuPackage,
+  MeetingBar: meetingbarappPackage,
+  meetingbar: meetingbarappPackage,
+  'opencl-headers': khronosorgopenclheadersPackage,
+  'spirv-cross': khronosorgspirvcrossPackage,
+  spirv: khronosorgspirvtoolsPackage,
+  glslang: khronosorgglslangPackage,
+  libsolv: opensuseorglibsolvPackage,
+  'python-pillow': pythonpilloworgPackage,
+  OpenSSL: opensslPackage,
+  openssl: opensslPackage,
+  lapack: netliborglapackPackage,
+  typing_extensions: pythonorgtyping_extensionsPackage,
+  tiff: simplesystemsorglibtiffPackage,
+  mpmath: mpmathorgPackage,
+  shellcheck: shellchecknetPackage,
+  onefetch: onefetchdevPackage,
+  applesimutils: wixcomapplesimutilsPackage,
+  Maccy: maccyappPackage,
+  maccy: maccyappPackage,
+  MariaDB: mariadbcomserverPackage,
+  avro: apacheorgavroPackage,
+  httpd: apacheorghttpdPackage,
+  zookeeper: apacheorgzookeeperPackage,
+  apr: apacheorgaprPackage,
+  arrow: apacheorgarrowPackage,
+  jmeter: apacheorgjmeterPackage,
+  thrift: apacheorgthriftPackage,
+  svn: apacheorgsubversionPackage,
+  serf: apacheorgserfPackage,
+  cgal: cgalorgPackage,
+  wireshark: wiresharkorgPackage,
+  minizip: zlibnetminizipPackage,
+  consul: consulioPackage,
+  lua: luaorgPackage,
+  babashka: babashkaorgPackage,
+  'Hidden Bar': hiddenbarappPackage,
+  hiddenbar: hiddenbarappPackage,
+  'hidden-bar': hiddenbarappPackage,
+  strace: straceioPackage,
+  hurl: hurldevPackage,
+  chezmoi: chezmoiioPackage,
+  coder: codercomPackage,
+  'libcap-ng': peopleredhatcomsgrubblibcapngPackage,
+  pscale: planetscalecomPackage,
+  gource: gourceioPackage,
+  Blender: blenderorgPackage,
+  blender: blenderorgPackage,
+  slides: maaslalanicomslidesPackage,
+  'swagger-codegen': swaggerioswaggercodegenPackage,
+  keep: keephqdevPackage,
+  just: justsystemsPackage,
+  vault: vaultprojectioPackage,
+  Obsidian: obsidianmdPackage,
+  obsidian: obsidianmdPackage,
+  lunarvim: lunarvimorgPackage,
+  langchain: langchaincomPackage,
+  oras: oraslandPackage,
   libcuefile: musepacknetlibcuefilePackage,
   libreplaygain: musepacknetlibreplaygainPackage,
-  littlecms: littlecmscomPackage,
-  file: darwinsyscomfilePackage,
-  kube: kubectxdevPackage,
-  'git-lfs': gitlfscomPackage,
-  pluto: fairwindscomplutoPackage,
-  gleam: gleamrunPackage,
-  vspipe: vapoursynthcomPackage,
-  rtmpdump: rtmpdumpmplayerhqhuPackage,
-  node: nodePackage,
-  mun: munlangorgPackage,
-  infracost: infracostioPackage,
-  direnv: direnvnetPackage,
-  ccache: ccachedevPackage,
-  duti: dutiPackage,
-  'git-credential-manager': gitcredentialmanagerPackage,
-  stern: sternPackage,
-  cJSON: cjsonPackage,
-  ethaddrgen: ethaddrgenPackage,
-  sqlboiler: sqlboilerPackage,
-  scrcpy: scrcpyPackage,
-  'stress-ng': stressngPackage,
-  safe_hashes: safetxhashesutilPackage,
-  rbenv: rbenvPackage,
-  'node-build': nodebuildPackage,
-  sup: supPackage,
-  vals: valsPackage,
-  helmfile: helmfilePackage,
-  Eget: egetPackage,
-  utf8cpp: utfcppPackage,
-  'regex-tui': regextuiPackage,
-  'create-dmg': createdmgPackage,
-  lsd: lsdPackage,
-  utf8proc: utf8procPackage,
-  vfkit: vfkitPackage,
-  swiftgen: swiftgenPackage,
-  speexdsp: speexdspPackage,
-  rav1e: rav1ePackage,
-  pyparsing: pyparsingPackage,
-  toml11: toml11Package,
-  tmux: tmuxPackage,
-  neofetch: neofetchPackage,
-  migrate: migratePackage,
-  blueutil: blueutilPackage,
-  csvlens: csvlensPackage,
-  bruce: brucePackage,
-  glauth: glauthPackage,
-  blowfish: blowfishPackage,
-  'better-commits': bettercommitsPackage,
-  hiredis: hiredisPackage,
-  overmind: overmindPackage,
-  adr: adrtoolsPackage,
-  'cfn-lint': cfnlintPackage,
-  starpls: starplsPackage,
-  'python-pathspec': pythonpathspecPackage,
-  zippy: zippyPackage,
-  opencanaryd: opencanaryPackage,
-  kcat: kcatPackage,
-  'cloudbase/garm-provider-openstack': garmprovideropenstackPackage,
-  'cloudbase/garm': garmPackage,
-  'git-sizer': gitsizerPackage,
-  'spec-kit': speckitPackage,
-  'gnome-extensions-cli': gnomeextensionscliPackage,
-  'go-passbolt-cli': gopassboltcliPackage,
-  tdnf: tdnfPackage,
-  lerc: lercPackage,
-  gron: gronPackage,
-  'cargo-c': cargocPackage,
-  spacer: spacerPackage,
-  fzf: fzfPackage,
-  argon2: phcwinnerargon2Package,
-  'squashfs-tools-ng': squashfstoolsngPackage,
-  'go-sponge': gospongePackage,
-  'go-redfish-api-idrac': goredfishapiidracPackage,
-  mackup: mackupPackage,
-  sensors: lmsensorsPackage,
-  kaspa: rustykaspaPackage,
-  kaspad: kaspadPackage,
-  needs: needsPackage,
-  tfupdate: tfupdatePackage,
-  rexi: rexiPackage,
-  gpt4all: gpt4allPackage,
-  filelock: filelockPackage,
-  par2: par2cmdlinePackage,
-  psutil: psutilPackage,
-  pike: pikePackage,
-  lux: luxPackage,
-  libyang: libyangPackage,
-  gollum: gollumPackage,
-  'diff-so-fancy': diffsofancyPackage,
-  libnsl: libnslPackage,
-  cgif: cgifPackage,
-  xeol: xeolPackage,
-  six: sixPackage,
-  checkmake: checkmakePackage,
-  Scriptisto: scriptistoPackage,
-  hadolint: hadolintPackage,
-  platformdirs: platformdirsPackage,
-  luv: luvPackage,
-  'term-size': macostermsizePackage,
-  openplayground: openplaygroundPackage,
-  ladder: ladderPackage,
-  'btrfs-progs': btrfsprogsPackage,
-  cloc: clocPackage,
-  swiftenv: swiftenvPackage,
-  ticker: tickerPackage,
-  gdu: gduPackage,
-  GKlib: gklibPackage,
-  mail: mailPackage,
-  gopass: gopassPackage,
-  'kube-capacity': kubecapacityPackage,
-  gomarkdoc: gomarkdocPackage,
-  xxh: xxhashPackage,
-  mscp: mscpPackage,
-  triangle: trianglePackage,
-  'git-chglog': gitchglogPackage,
-  marionette: marionettePackage,
-  spdlog: spdlogPackage,
-  'aws-sso': awsssocliPackage,
-  'alpaca.cpp': alpacacppPackage,
-  'oapi-codegen': oapicodegenPackage,
-  carthage: carthagePackage,
-  TTS: ttsPackage,
-  blink: blinkPackage,
-  swag: swagPackage,
-  unxip: unxipPackage,
-  'license-plist': licenseplistPackage,
-  tbb: onetbbPackage,
-  urllib3: urllib3Package,
-  jsonlint: jsonlintPackage,
-  libsixel: libsixelPackage,
-  envchain: envchainPackage,
-  dateutil: dateutilPackage,
-  podlet: podletPackage,
-  'gvisor-tap-vsock': gvisortapvsockPackage,
-  skopeo: skopeoPackage,
-  redfishtool: redfishtoolPackage,
-  pstree: pstreePackage,
-  tokesura: tokesuraPackage,
-  re2: re2Package,
-  gops: gopsPackage,
-  glslc: shadercPackage,
-  brotli: brotliPackage,
-  redis_tui: redis_tuiPackage,
-  'rye-uv': ryeuvPackage,
-  'container-structure-test': containerstructuretestPackage,
-  whosthere: whostherePackage,
-  enc: encPackage,
-  usque: usquePackage,
-  s5cmd: s5cmdPackage,
-  reproc: reprocPackage,
-  svu: svuPackage,
-  'org-stats': orgstatsPackage,
-  'onig-config': onigurumaPackage,
-  fast_float: fast_floatPackage,
-  'toml-cli': tomlcliPackage,
-  regctl: regctlPackage,
-  regbot: regbotPackage,
-  regsync: regsyncPackage,
-  'google-maps-scraper': googlemapsscraperPackage,
-  snipkit: snipkitPackage,
-  jadx: jadxPackage,
-  'zsh-completions': zshcompletionsPackage,
-  'zsh-syntax-highlighting': zshsyntaxhighlightingPackage,
-  'zsh-autosuggestions': zshautosuggestionsPackage,
-  libdeflate: libdeflatePackage,
-  gox: goxPackage,
-  speedtest: speedtestcliPackage,
-  pup: pupPackage,
-  lego: legoPackage,
-  jira: jiracliPackage,
-  'swift-outdated': swiftoutdatedPackage,
-  jinja2: jinja2cliPackage,
-  xchtmlreport: xctesthtmlreportPackage,
-  complexity: complexityPackage,
-  xsv: xsvPackage,
-  tre: trePackage,
-  'justwatchcom/sql_exporter': sql_exporterPackage,
-  pytz: pytzPackage,
-  kubecolor: kubecolorPackage,
-  duf: dufPackage,
-  mactop: mactopPackage,
-  'Stable Diffusion web UI': stablediffusionwebuiPackage,
-  xcparse: xcparsePackage,
-  micromamba: microPackage,
-  mamba: mambaPackage,
-  'aws-sdk-cpp': awssdkcppPackage,
-  'docker-clean': dockercleanPackage,
-  libsamplerate: libsampleratePackage,
-  sndfile: libsndfilePackage,
-  libserdes: libserdesPackage,
-  librdkafka: librdkafkaPackage,
-  'age-plugin-yubikey': agepluginyubikeyPackage,
-  licensed: licensedPackage,
-  'aws-whoami': awswhoamigolangPackage,
-  cirrus: cirruscliPackage,
-  usql: usqlPackage,
-  lcov: lcovPackage,
-  'vanitygen-plusplus': vanitygenplusplusPackage,
-  'reattach-to-user-namespace': tmuxmacosxpasteboardPackage,
-  btop: btopPackage,
-  llrt: llrtPackage,
-  'docker-credential-ecr-login': amazonecrcredentialhelperPackage,
-  'eks-node-viewer': eksnodeviewerPackage,
-  libxcrypt: libxcryptPackage,
-  normalizer: charset_normalizerPackage,
-  acmedns: acmednsPackage,
-  twine: twinePackage,
-  'pyproject-build': buildPackage,
-  cffi: cffiPackage,
-  yazi: yaziPackage,
-  md2html: md4cPackage,
-  charmcraft: charmcraftPackage,
-  'canonical/pebble': pebblePackage,
-  'aws-iam-authenticator': awsiamauthenticatorPackage,
-  tine: tinePackage,
-  libfyaml: libfyamlPackage,
-  'arpack-ng': arpackngPackage,
-  'tea-package-builder': teapackagebuilderPackage,
-  mint: mintPackage,
-  xcodegen: xcodegenPackage,
-  libcbor: libcborPackage,
-  xcaddy: xcaddyPackage,
-  webhook: webhookPackage,
-  generic_sum: mbedtlsPackage,
-  horcrux: horcruxPackage,
-  lazydocker: lazydockerPackage,
-  lazygit: lazygitPackage,
-  'ios-deploy': iosdeployPackage,
-  'git-filter-repo': gitfilterrepoPackage,
-  libccd: libccdPackage,
-  awslogs: awslogsPackage,
-  libass: libassPackage,
-  openclaw: openclawPackage,
-  rswift: rswiftPackage,
-  license: licensePackage,
-  libatomic_ops: libatomic_opsPackage,
-  thefuck: thefuckPackage,
-  asciidoc: asciidocpyPackage,
-  libseccomp: libseccompPackage,
-  counterfeiter: counterfeiterPackage,
-  'terminal-notifier': terminalnotifierPackage,
-  iproute2mac: iproute2macPackage,
-  'go-md2man': gomd2manPackage,
-  'aws-vault': awsvaultPackage,
-  'tf-import-gen': tfimportgenPackage,
-  sourcekitten: sourcekittenPackage,
-  invoice: invoicePackage,
-  protoc: protobufcPackage,
-  csvdiff: csvdiffPackage,
-  gotestsum: gotestsumPackage,
-  'shaka-packager': shakapackagerPackage,
-  mmdblookup: libmaxminddbPackage,
-  'docker-lock': dockerlockPackage,
-  mop: mopPackage,
-  swiftlint: swiftlintPackage,
-  pakku: pakkuPackage,
-  fsdiff: fsdiffPackage,
-  commit: commitPackage,
-  'otel-cli': otelcliPackage,
-  cookiecutter: cookiecutterPackage,
-  fastgron: fastgronPackage,
-  conform: conformPackage,
-  ipcalc: ipcalcPackage,
-  lefthook: lefthookPackage,
-  nex: nexPackage,
-  nnn: nnnPackage,
-  periphery: peripheryPackage,
-  libepoxy: libepoxyPackage,
-  apko: apkoPackage,
-  navi: naviPackage,
-  terrarium: terrariumtfPackage,
-  tflint: tflintPackage,
-  lsof: lsofPackage,
-  witr: witrPackage,
-  grype: grypePackage,
-  diffoci: diffociPackage,
-  Surya: suryaPackage,
-  libunibreak: libunibreakPackage,
-  'swift-create-xcframework': swiftcreatexcframeworkPackage,
-  'Vulkan-Headers': vulkanheadersPackage,
-  'Vulkan-Loader': vulkanloaderPackage,
-  chatblade: chatbladePackage,
-  dasel: daselPackage,
-  ocrmypdf: ocrmypdfPackage,
-  aiac: aiacPackage,
-  libkml: libkmlPackage,
-  psutils: psutilsPackage,
-  paper: libpaperPackage,
-  numactl: numactlPackage,
-  lolcat: lolcatPackage,
-  ghq: ghqPackage,
-  confd: confdPackage,
-  air: airPackage,
-  fusermount3: libfusePackage,
-  unibilium: unibiliumPackage,
-  usrsctp: usrsctpPackage,
-  cowsay: cowsayPackage,
-  dive: divePackage,
-  pio: pioPackage,
-  'vault-unseal': vaultunsealPackage,
-  sasqwatch: sasqwatchPackage,
-  rawdog: rawdogPackage,
-  'pkcs11-helper': pkcs11helperPackage,
-  p7zip: p7zipPackage,
-  zimg: zimgPackage,
-  'SquashFS-Tools': squashfstoolsPackage,
-  Sourcery: sourceryPackage,
-  cpptoml: cpptomlPackage,
-  oci2git: oci2gitPackage,
-  create2crunch: create2crunchPackage,
-  'chruby-exec': chrubyPackage,
-  'ruby-install': rubyinstallPackage,
-  scc: sccPackage,
-  xcresultparser: xcresultparserPackage,
-  yamllint: yamllintPackage,
-  whisper: whispercppPackage,
-  'LLaMA.cpp': llamacppPackage,
-  sparsecat: sparsecatPackage,
-  bats: batscorePackage,
-  gci: gciPackage,
-  'heif-converter': heifconverterimagePackage,
-  'squidfunk/mkdocs-material': mkdocsmaterialPackage,
-  act: actPackage,
-  mas: masPackage,
-  tabulate: pythontabulatePackage,
-  markdownlint: markdownlintcliPackage,
-  flex: flexPackage,
-  neowofetch: neowofetchPackage,
-  hyfetch: hyfetchPackage,
-  landrun: landrunPackage,
-  SDL2_Pango: sdl2_pangoPackage,
-  buildkit: buildkitPackage,
-  kubeconform: kubeconformPackage,
-  saml2aws: saml2awsPackage,
-  bazel: bazeliskPackage,
-  buildifier: buildtoolsPackage,
-  jsoncpp: jsoncppPackage,
-  pylsp: pythonlspserverPackage,
-  'trezor-agent': trezoragentPackage,
-  'gost3411-2012': streebogPackage,
-  'kube-score': kubescorePackage,
-  nak: nakPackage,
-  jasper: jasperPackage,
-  'util-linux': utillinuxPackage,
-  pycparser: pycparserPackage,
-  'GPT Engineer': gptengineerPackage,
-  factotum: factotumPackage,
-  avif: libavifPackage,
-  k3sup: k3supPackage,
-  'text generation web UI': textgenerationwebuiPackage,
-  fizz: fizzPackage,
-  'cemetery-escape': cemeteryescapePackage,
-  mole: molePackage,
-  zap: zapPackage,
-  yabai: yabaiPackage,
-  skhd: skhdPackage,
-  'json-c': jsoncPackage,
-  expected: expectedPackage,
-  'protoc-gen-jsonschema': protocgenjsonschemaPackage,
-  ifacemaker: ifacemakerPackage,
-  black: blackPackage,
-  requests: requestsPackage,
-  'just-mcp': justmcpPackage,
-  libgeotiff: libgeotiffPackage,
-  fastfetch: fastfetchPackage,
-  allure: allure2Package,
-  'go-bindata': gobindataPackage,
-  'go-mod-upgrade': gomodupgradePackage,
-  swiftformat: swiftformatPackage,
-  screenresolution: screenresolutionPackage,
-  tfenv: tfenvPackage,
-  'swift-sh': swiftshPackage,
-  'xb-tool': libxmlbPackage,
-  stargazers: stargazersPackage,
-  heif: libheifPackage,
-  libde265: libde265Package,
-  lporg: lporgPackage,
-  colima: colimaPackage,
-  'yaml-cpp': yamlcppPackage,
-  keyring: keyringPackage,
-  rip2: rip2Package,
-  idna: idnaPackage,
-  'nvm-exec': nvmPackage,
-  jqp: jqpPackage,
-  k0sctl: k0sctlPackage,
-  libnl: libnlPackage,
-  mutagen: mutagenPackage,
-  xcodes: xcodesPackage,
-  when: whenPackage,
-  nullclaw: nullclawPackage,
-  scw: scalewaycomPackage,
-  'encore-go': encoredevgoPackage,
+  nvim: neovimioPackage,
+  DBeaver: dbeaverioPackage,
+  dbeaver: dbeaverioPackage,
+  pod2man: eyrieorgeaglepodlatorsPackage,
+  tailscale: tailscalecomPackage,
   WhatsApp: whatsappcomPackage,
   whatsapp: whatsappcomPackage,
-  gomplate: gomplatecaPackage,
-  codex: openaicomcodexPackage,
-  openai: openaicomopenaipythonPackage,
+  python: pythonPackage,
+  py: pythonPackage,
+  odigos: odigosioPackage,
+  wunderctl: wundergraphcomPackage,
+  augeas: augeasnetPackage,
+  'pkl-lang': pkllangorgPackage,
+  pcre2: pcreorgv2Package,
+  openjdk: javaPackage,
+  java: javaPackage,
+  jdk: javaPackage,
+  'kafka.apache': kafkaapacheorgPackage,
+  cointop: cointopshPackage,
+  gofumpt: mvdanccgofumptPackage,
+  shfmt: mvdanccshPackage,
+  'Scryer Prolog': scryerplPackage,
+  libsodium: libsodiumorgPackage,
+  Firefox: firefoxorgPackage,
+  firefox: firefoxorgPackage,
+  elizaOS: elizaosgithubioPackage,
+  pixi: prefixdevPackage,
+  tailwindcss: tailwindcsscomPackage,
+  valkey: valkeyioPackage,
+  gitleaks: gitleaksioPackage,
+  solana: solanacomPackage,
+  wait4x: wait4xdevPackage,
+  ctags: ctagsioPackage,
+  rclone: rcloneorgPackage,
+  tuxpaint: tuxpaintorgPackage,
+  qhull: qhullorgPackage,
+  htop: htopdevPackage,
+  file: darwinsyscomfilePackage,
+  'ansible-lint': ansiblecomansiblelintPackage,
+  pluto: fairwindscomplutoPackage,
+  re2c: re2corgPackage,
+  swig: swigorgPackage,
+  conftest: conftestdevPackage,
+  tofu: opentofuorgPackage,
+  'tcl-lang': tcllangorgPackage,
+  harfbuzz: harfbuzzorgPackage,
+  'LM Studio': lmstudioaiPackage,
+  'lm-studio': lmstudioaiPackage,
+  lmstudio: lmstudioaiPackage,
   metis: glarosdtcumnedumetisPackage,
-  liblinear: csientuedutwcjlinliblinearPackage,
-  samtools: htsliborgsamtoolsPackage,
-  asciidoctor: asciidoctororgPackage,
-  'source-highlight': gnuorgsourcehighlightPackage,
-  gcc: gnuorggccPackage,
-  gperf: gnuorggperfPackage,
-  gmp: gnuorggmpPackage,
-  idn: gnuorglibidnPackage,
-  coreutils: gnuorgcoreutilsPackage,
-  wget: gnuorgwgetPackage,
-  tar: gnuorgtarPackage,
-  guil: gnuorgguilePackage,
-  plotutils: gnuorgplotutilsPackage,
-  help2man: gnuorghelp2manPackage,
-  emacs: gnuorgemacsPackage,
-  readline: gnuorgreadlinePackage,
-  gdbm: gnuorggdbmPackage,
-  stow: gnuorgstowPackage,
-  asn1: gnuorglibtasn1Package,
-  gawk: gnuorggawkPackage,
-  fribidi: gnuorgfribidiPackage,
-  'autoconf-archive': gnuorgautoconfarchivePackage,
-  binutils: gnuorgbinutilsPackage,
-  groff: gnuorggroffPackage,
-  findutils: gnuorgfindutilsPackage,
-  parallel: gnuorgparallelPackage,
-  libtool: gnuorglibtoolPackage,
-  bison: gnuorgbisonPackage,
-  idn2: gnuorglibidn2Package,
-  automake: gnuorgautomakePackage,
-  mpfr: gnuorgmpfrPackage,
-  nettle: gnuorgnettlePackage,
-  diffutils: gnuorgdiffutilsPackage,
-  sed: gnuorgsedPackage,
-  iconv: gnuorglibiconvPackage,
-  libgomp: gnuorggcclibgompPackage,
-  libstdcxx: gnuorggcclibstdcxxPackage,
-  mpc: gnuorgmpcPackage,
-  which: gnuorgwhichPackage,
-  grub: gnuorggrubPackage,
-  texinfo: gnuorgtexinfoPackage,
-  libunistring: gnuorglibunistringPackage,
-  patch: gnuorgpatchPackage,
-  make: gnuorgmakePackage,
-  autoconf: gnuorgautoconfPackage,
-  libmicrohttpd: gnuorglibmicrohttpdPackage,
-  bash: gnuorgbashPackage,
-  libsigsegv: gnuorglibsigsegvPackage,
-  inetutils: gnuorginetutilsPackage,
-  grep: gnuorggrepPackage,
-  gettext: gnuorggettextPackage,
-  xorriso: gnuorgxorrisoPackage,
-  dialog: invisibleislandnetdialogPackage,
+  '1Password CLI': developer1passwordcom1passwordcliPackage,
+  tfsec: aquasecuritygithubiotfsecPackage,
+  trivy: aquasecuritygithubiotrivyPackage,
+  kind: kindsigsk8sioPackage,
+  'protoc-gen-connect-go': connectrpcorgprotocgenconnectgoPackage,
+  termshark: termsharkioPackage,
+  getmonero: getmoneroorgPackage,
+  azcopy: microsoftcomazurestorageazcopyPackage,
+  pwsh: microsoftcompowershellPackage,
+  markitdown: microsoftcommarkitdownPackage,
+  dxc: microsoftcomdxcPackage,
+  pyright: microsoftcompyrightPackage,
+  'vscode cli': microsoftcomcodecliPackage,
+  certbot: certbotefforgPackage,
+  bashly: bashlydannybcoPackage,
+  pkgm: pkgxshpkgmPackage,
+  mash: pkgxshmashPackage,
+  cargox: pkgxshcargoxPackage,
+  brewkit: pkgxshbrewkitPackage,
+  go: goPackage,
+  alacritty: alacrittyorgPackage,
+  SDL2_gfx: ferzkoppnetsdl2_gfxPackage,
+  opendap: opendaporgPackage,
+  'sfcgal-config': sfcgalorgPackage,
+  libsdl: libsdlorgPackage,
+  attr: savannahnongnuorgattrPackage,
+  acl: savannahnongnuorgaclPackage,
+  jupyter: jupyterorgPackage,
+  kpt: kptdevPackage,
+  dhall: dhalllangorgPackage,
+  dotenvx: dotenvxcomPackage,
+  sqlite3: sqlitePackage,
+  sqlite: sqlitePackage,
+  modal: modalcomPackage,
+  kubectl: kubectlPackage,
+  kustomize: kubernetesiokustomizePackage,
+  minikube: kubernetesiominikubePackage,
+  pocketbase: pocketbaseioPackage,
+  nmap: nmaporgPackage,
+  Cursor: cursorcomPackage,
+  cursor: cursorcomPackage,
+  mpg123: mpg123dePackage,
+  'golangci-lint': golangcilintrunPackage,
+  epstool: ghostgumcomauepstoolPackage,
+  cURL: curlPackage,
+  libcython: cythonorglibcythonPackage,
+  dagger: daggerioPackage,
+  shards: crystallangorgshardsPackage,
+  musepack: musepacknetPackage,
+  restic: resticnetresticPackage,
+  'logi-options-plus': logitechcomoptionsPackage,
+  'logi-options': logitechcomoptionsPackage,
+  docbook: docbookorgPackage,
+  task: taskfiledevPackage,
+  xvid: xvidcomPackage,
+  tldr: tldrshPackage,
+  xkbcli: xkbcommonorgPackage,
+  tailcall: tailcallrunPackage,
+  pipx: pypagithubiopipxPackage,
+  'libjpeg-turbo': libjpegturboorgPackage,
+  'microcks-cli': microcksioPackage,
+  littlecms: littlecmscomPackage,
+  platformdirs: platformdirsPackage,
+  grype: grypePackage,
+  jinja2: jinja2cliPackage,
+  redfishtool: redfishtoolPackage,
+  'go-redfish-api-idrac': goredfishapiidracPackage,
+  p7zip: p7zipPackage,
+  mamba: mambaPackage,
+  micromamba: microPackage,
+  jsoncpp: jsoncppPackage,
+  cJSON: cjsonPackage,
+  when: whenPackage,
+  'chruby-exec': chrubyPackage,
+  'ruby-install': rubyinstallPackage,
+  'license-plist': licenseplistPackage,
+  xcodes: xcodesPackage,
+  'swift-sh': swiftshPackage,
+  fast_float: fast_floatPackage,
+  blueutil: blueutilPackage,
+  commit: commitPackage,
+  libepoxy: libepoxyPackage,
+  lolcat: lolcatPackage,
+  rav1e: rav1ePackage,
+  speexdsp: speexdspPackage,
+  kubeconform: kubeconformPackage,
+  GKlib: gklibPackage,
+  'create-dmg': createdmgPackage,
+  sourcekitten: sourcekittenPackage,
+  'btrfs-progs': btrfsprogsPackage,
+  'reattach-to-user-namespace': tmuxmacosxpasteboardPackage,
+  xxh: xxhashPackage,
+  act: actPackage,
+  snipkit: snipkitPackage,
+  unibilium: unibiliumPackage,
+  yazi: yaziPackage,
+  hadolint: hadolintPackage,
+  bruce: brucePackage,
+  cowsay: cowsayPackage,
+  'gvisor-tap-vsock': gvisortapvsockPackage,
+  skopeo: skopeoPackage,
+  podlet: podletPackage,
+  dasel: daselPackage,
+  tmux: tmuxPackage,
+  'go-mod-upgrade': gomodupgradePackage,
+  aiac: aiacPackage,
+  'json-c': jsoncPackage,
+  xchtmlreport: xctesthtmlreportPackage,
+  'squidfunk/mkdocs-material': mkdocsmaterialPackage,
+  'just-mcp': justmcpPackage,
+  csvlens: csvlensPackage,
+  ocrmypdf: ocrmypdfPackage,
+  rawdog: rawdogPackage,
+  checkmake: checkmakePackage,
+  tabulate: pythontabulatePackage,
+  iproute2mac: iproute2macPackage,
+  stern: sternPackage,
+  buildkit: buildkitPackage,
+  'cfn-lint': cfnlintPackage,
+  witr: witrPackage,
+  fastfetch: fastfetchPackage,
+  'oapi-codegen': oapicodegenPackage,
+  'better-commits': bettercommitsPackage,
+  gdu: gduPackage,
+  'google-maps-scraper': googlemapsscraperPackage,
+  regctl: regctlPackage,
+  regsync: regsyncPackage,
+  regbot: regbotPackage,
+  webhook: webhookPackage,
+  rswift: rswiftPackage,
+  conform: conformPackage,
+  libatomic_ops: libatomic_opsPackage,
+  libsixel: libsixelPackage,
+  'shaka-packager': shakapackagerPackage,
+  scc: sccPackage,
+  six: sixPackage,
+  ifacemaker: ifacemakerPackage,
+  enc: encPackage,
+  duti: dutiPackage,
+  libdeflate: libdeflatePackage,
+  filelock: filelockPackage,
+  'git-chglog': gitchglogPackage,
+  libnl: libnlPackage,
+  needs: needsPackage,
+  xcparse: xcparsePackage,
+  thefuck: thefuckPackage,
+  unxip: unxipPackage,
+  'nvm-exec': nvmPackage,
+  k0sctl: k0sctlPackage,
+  saml2aws: saml2awsPackage,
+  'aws-sdk-cpp': awssdkcppPackage,
+  'kube-capacity': kubecapacityPackage,
+  tokesura: tokesuraPackage,
+  lsd: lsdPackage,
+  pup: pupPackage,
+  'aws-sso': awsssocliPackage,
+  gotestsum: gotestsumPackage,
+  reproc: reprocPackage,
+  fizz: fizzPackage,
+  envchain: envchainPackage,
+  'cargo-c': cargocPackage,
+  dive: divePackage,
+  SDL2_Pango: sdl2_pangoPackage,
+  screenresolution: screenresolutionPackage,
+  libseccomp: libseccompPackage,
+  blink: blinkPackage,
+  pstree: pstreePackage,
+  swiftgen: swiftgenPackage,
+  libass: libassPackage,
+  'git-credential-manager': gitcredentialmanagerPackage,
+  jira: jiracliPackage,
+  markdownlint: markdownlintcliPackage,
+  gox: goxPackage,
+  'node-build': nodebuildPackage,
+  pio: pioPackage,
+  libkml: libkmlPackage,
+  ghq: ghqPackage,
+  'regex-tui': regextuiPackage,
+  expected: expectedPackage,
+  'go-passbolt-cli': gopassboltcliPackage,
+  swiftenv: swiftenvPackage,
+  'pkcs11-helper': pkcs11helperPackage,
+  adr: adrtoolsPackage,
+  par2: par2cmdlinePackage,
+  libde265: libde265Package,
+  heif: libheifPackage,
+  urllib3: urllib3Package,
+  xsv: xsvPackage,
+  'git-filter-repo': gitfilterrepoPackage,
+  tine: tinePackage,
+  'heif-converter': heifconverterimagePackage,
+  opencanaryd: opencanaryPackage,
+  zippy: zippyPackage,
+  'rye-uv': ryeuvPackage,
+  gci: gciPackage,
+  lsof: lsofPackage,
+  'go-sponge': gospongePackage,
+  ticker: tickerPackage,
+  pyparsing: pyparsingPackage,
+  toml11: toml11Package,
+  libfyaml: libfyamlPackage,
+  swag: swagPackage,
+  mop: mopPackage,
+  protoc: protobufcPackage,
+  factotum: factotumPackage,
+  cirrus: cirruscliPackage,
+  k3sup: k3supPackage,
+  'terminal-notifier': terminalnotifierPackage,
+  kcat: kcatPackage,
+  invoice: invoicePackage,
+  'stress-ng': stressngPackage,
+  'vault-unseal': vaultunsealPackage,
+  libccd: libccdPackage,
+  csvdiff: csvdiffPackage,
+  carthage: carthagePackage,
+  pike: pikePackage,
+  pakku: pakkuPackage,
+  fsdiff: fsdiffPackage,
+  licensed: licensedPackage,
+  sqlboiler: sqlboilerPackage,
+  s5cmd: s5cmdPackage,
+  dateutil: dateutilPackage,
+  chatblade: chatbladePackage,
+  allure: allure2Package,
+  stargazers: stargazersPackage,
+  libcbor: libcborPackage,
+  xcaddy: xcaddyPackage,
+  'toml-cli': tomlcliPackage,
+  libunibreak: libunibreakPackage,
+  'ios-deploy': iosdeployPackage,
+  gomarkdoc: gomarkdocPackage,
+  tflint: tflintPackage,
+  rip2: rip2Package,
+  nex: nexPackage,
+  mackup: mackupPackage,
+  avif: libavifPackage,
+  nnn: nnnPackage,
+  gollum: gollumPackage,
+  'aws-whoami': awswhoamigolangPackage,
+  tfenv: tfenvPackage,
+  ethaddrgen: ethaddrgenPackage,
+  jsonlint: jsonlintPackage,
+  keyring: keyringPackage,
+  TTS: ttsPackage,
+  openplayground: openplaygroundPackage,
+  mas: masPackage,
+  Sourcery: sourceryPackage,
+  'onig-config': onigurumaPackage,
+  tdnf: tdnfPackage,
+  'go-bindata': gobindataPackage,
+  usque: usquePackage,
+  sparsecat: sparsecatPackage,
+  kubecolor: kubecolorPackage,
+  air: airPackage,
+  'text generation web UI': textgenerationwebuiPackage,
+  'yaml-cpp': yamlcppPackage,
+  nullclaw: nullclawPackage,
+  gpt4all: gpt4allPackage,
+  'Stable Diffusion web UI': stablediffusionwebuiPackage,
+  hyfetch: hyfetchPackage,
+  neowofetch: neowofetchPackage,
+  black: blackPackage,
+  requests: requestsPackage,
+  'aws-vault': awsvaultPackage,
+  sup: supPackage,
+  'go-md2man': gomd2manPackage,
+  cgif: cgifPackage,
+  ladder: ladderPackage,
+  pylsp: pythonlspserverPackage,
+  'tf-import-gen': tfimportgenPackage,
+  mint: mintPackage,
+  xcodegen: xcodegenPackage,
+  libnsl: libnslPackage,
+  'cemetery-escape': cemeteryescapePackage,
+  mmdblookup: libmaxminddbPackage,
+  mscp: mscpPackage,
+  redis_tui: redis_tuiPackage,
+  whosthere: whostherePackage,
+  'util-linux': utillinuxPackage,
+  bats: batscorePackage,
+  flex: flexPackage,
+  mactop: mactopPackage,
+  psutil: psutilPackage,
+  Surya: suryaPackage,
+  tre: trePackage,
+  md2html: md4cPackage,
+  confd: confdPackage,
+  usql: usqlPackage,
+  lego: legoPackage,
+  hiredis: hiredisPackage,
+  fusermount3: libfusePackage,
+  cloc: clocPackage,
+  'docker-credential-ecr-login': amazonecrcredentialhelperPackage,
+  'eks-node-viewer': eksnodeviewerPackage,
+  llrt: llrtPackage,
+  pytz: pytzPackage,
+  jadx: jadxPackage,
+  mutagen: mutagenPackage,
+  lefthook: lefthookPackage,
+  xeol: xeolPackage,
+  'Vulkan-Headers': vulkanheadersPackage,
+  'Vulkan-Loader': vulkanloaderPackage,
+  twine: twinePackage,
+  'pyproject-build': buildPackage,
+  counterfeiter: counterfeiterPackage,
+  'kube-score': kubescorePackage,
+  swiftlint: swiftlintPackage,
+  diffoci: diffociPackage,
+  rbenv: rbenvPackage,
+  vals: valsPackage,
+  helmfile: helmfilePackage,
+  blowfish: blowfishPackage,
+  sensors: lmsensorsPackage,
+  'GPT Engineer': gptengineerPackage,
+  fzf: fzfPackage,
+  lporg: lporgPackage,
+  terrarium: terrariumtfPackage,
+  speedtest: speedtestcliPackage,
+  idna: idnaPackage,
+  libxcrypt: libxcryptPackage,
+  generic_sum: mbedtlsPackage,
+  swiftformat: swiftformatPackage,
+  normalizer: charset_normalizerPackage,
+  'term-size': macostermsizePackage,
+  starpls: starplsPackage,
+  re2: re2Package,
+  glslc: shadercPackage,
+  brotli: brotliPackage,
+  gops: gopsPackage,
+  create2crunch: create2crunchPackage,
+  cookiecutter: cookiecutterPackage,
+  skhd: skhdPackage,
+  yabai: yabaiPackage,
+  'alpaca.cpp': alpacacppPackage,
+  'vanitygen-plusplus': vanitygenplusplusPackage,
+  'swift-outdated': swiftoutdatedPackage,
+  btop: btopPackage,
+  scrcpy: scrcpyPackage,
+  libgeotiff: libgeotiffPackage,
+  'justwatchcom/sql_exporter': sql_exporterPackage,
+  'gnome-extensions-cli': gnomeextensionscliPackage,
+  'canonical/pebble': pebblePackage,
+  charmcraft: charmcraftPackage,
+  'age-plugin-yubikey': agepluginyubikeyPackage,
+  svu: svuPackage,
+  'org-stats': orgstatsPackage,
+  sndfile: libsndfilePackage,
+  libsamplerate: libsampleratePackage,
+  lcov: lcovPackage,
+  tfupdate: tfupdatePackage,
+  'aws-iam-authenticator': awsiamauthenticatorPackage,
+  apko: apkoPackage,
+  migrate: migratePackage,
+  'otel-cli': otelcliPackage,
+  asciidoc: asciidocpyPackage,
+  oci2git: oci2gitPackage,
+  duf: dufPackage,
+  jqp: jqpPackage,
+  'squashfs-tools-ng': squashfstoolsngPackage,
+  overmind: overmindPackage,
+  glauth: glauthPackage,
+  sasqwatch: sasqwatchPackage,
+  spacer: spacerPackage,
+  utf8proc: utf8procPackage,
+  luv: luvPackage,
+  rexi: rexiPackage,
+  complexity: complexityPackage,
+  triangle: trianglePackage,
+  lux: luxPackage,
+  gopass: gopassPackage,
+  usrsctp: usrsctpPackage,
+  openclaw: openclawPackage,
+  periphery: peripheryPackage,
+  acmedns: acmednsPackage,
+  nak: nakPackage,
+  'swift-create-xcframework': swiftcreatexcframeworkPackage,
+  'protoc-gen-jsonschema': protocgenjsonschemaPackage,
+  spdlog: spdlogPackage,
+  awslogs: awslogsPackage,
+  tbb: onetbbPackage,
+  'docker-lock': dockerlockPackage,
+  'docker-clean': dockercleanPackage,
+  'tea-package-builder': teapackagebuilderPackage,
+  cffi: cffiPackage,
+  Eget: egetPackage,
+  Scriptisto: scriptistoPackage,
+  safe_hashes: safetxhashesutilPackage,
+  'cloudbase/garm-provider-openstack': garmprovideropenstackPackage,
+  'cloudbase/garm': garmPackage,
+  lerc: lercPackage,
+  'trezor-agent': trezoragentPackage,
+  yamllint: yamllintPackage,
+  gron: gronPackage,
+  'diff-so-fancy': diffsofancyPackage,
+  mail: mailPackage,
+  'python-pathspec': pythonpathspecPackage,
+  'spec-kit': speckitPackage,
+  'git-sizer': gitsizerPackage,
+  neofetch: neofetchPackage,
+  'xb-tool': libxmlbPackage,
+  landrun: landrunPackage,
+  zimg: zimgPackage,
+  navi: naviPackage,
+  'LLaMA.cpp': llamacppPackage,
+  vfkit: vfkitPackage,
+  libserdes: libserdesPackage,
+  librdkafka: librdkafkaPackage,
+  cpptoml: cpptomlPackage,
+  psutils: psutilsPackage,
+  paper: libpaperPackage,
+  license: licensePackage,
+  utf8cpp: utfcppPackage,
+  buildifier: buildtoolsPackage,
+  bazel: bazeliskPackage,
+  marionette: marionettePackage,
+  mole: molePackage,
+  'arpack-ng': arpackngPackage,
+  libyang: libyangPackage,
+  zap: zapPackage,
+  'zsh-autosuggestions': zshautosuggestionsPackage,
+  'zsh-syntax-highlighting': zshsyntaxhighlightingPackage,
+  'zsh-completions': zshcompletionsPackage,
+  'SquashFS-Tools': squashfstoolsPackage,
+  numactl: numactlPackage,
+  xcresultparser: xcresultparserPackage,
+  'container-structure-test': containerstructuretestPackage,
+  'gost3411-2012': streebogPackage,
+  jasper: jasperPackage,
+  pycparser: pycparserPackage,
+  lazygit: lazygitPackage,
+  lazydocker: lazydockerPackage,
+  horcrux: horcruxPackage,
+  kaspa: rustykaspaPackage,
+  kaspad: kaspadPackage,
+  argon2: phcwinnerargon2Package,
+  colima: colimaPackage,
+  fastgron: fastgronPackage,
+  ipcalc: ipcalcPackage,
+  libmd: hadronsorglibmdPackage,
+  'pcap-config': tcpdumporgPackage,
+  tcl: tcltktclPackage,
+  vorbis: xiphorgvorbisPackage,
+  flac: xiphorgflacPackage,
+  ogg: xiphorgoggPackage,
+  shout: xiphorglibshoutPackage,
+  libspatialite: gaiagisitlibspatialitePackage,
+  freexl: gaiagisitfossilfreexlPackage,
+  pdm: pdmfmingdevPackage,
+  'encore-go': encoredevgoPackage,
+  'libgd.github': libgdgithubioPackage,
+  infracost: infracostioPackage,
+  ninja: ninjabuildorgPackage,
+  sbt: scalasbtorgPackage,
+  nginx: nginxorgPackage,
+  'markupsafe.palletsprojects': markupsafepalletsprojectscomPackage,
+  libb2: blake2netlibb2Package,
+  cruft: cruftgithubioPackage,
+  'terraform-cdk': terraformiocdkPackage,
+  soliditylang: soliditylangorgPackage,
+  wavpack: wavpackcomPackage,
+  Ghostty: ghosttyorgPackage,
+  ghostty: ghosttyorgPackage,
   ncurses: invisibleislandnetncursesPackage,
   lynx: invisibleislandnetlynxPackage,
-  gpp: logologicalorggppPackage,
-  packer: packerioPackage,
-  libraw: libraworgPackage,
-  flux: fluxcdioflux2Package,
-  bytebase: bytebasecomPackage,
-  hjson: hjsongithubioPackage,
-  replibyte: replibytecomPackage,
-  wezterm: wezfurlongorgweztermPackage,
-  'xray-core': xtlsgithubioPackage,
-  git2: libgit2orgPackage,
-  'linux-pam': linuxpamorgPackage,
-  typing_extensions: pythonorgtyping_extensionsPackage,
-  libssh: libsshorgPackage,
-  pip: pippypaioPackage,
-  gitleaks: gitleaksioPackage,
-  'kubectl-cnpg': cloudnativepgioPackage,
-  postgrest: postgrestorgPackage,
-  shovel: indexsupplycomshovelPackage,
-  trufflehog: trufflesecuritycomtrufflehogPackage,
-  croc: schollzcomcrocPackage,
-  tools: golangorgtoolsPackage,
-  turso: tursotechPackage,
-  chezmoi: chezmoiioPackage,
-  applesimutils: wixcomapplesimutilsPackage,
-  webp: googlecomwebpPackage,
-  gcloud: googlecomgcloudPackage,
-  woff2: googlecomwoff2Package,
-  spm: googlecomsentencepiecePackage,
-  googletest: googlecomgoogletestPackage,
-  glog: googlecomglogPackage,
-  fullycapable: googlecomfullycapablePackage,
-  firebase: googlecomfirebasetoolsPackage,
-  highway: googlecomhighwayPackage,
-  'protoc-gen-go': googlecomprotobufgoPackage,
-  'libpthread-stubs': xorglibpthreadstubsPackage,
-  applewm: xorgapplewmPackage,
-  xrandr: xorgxrandrPackage,
-  x11: xorgx11Package,
-  xinput: xorgxinputPackage,
-  xau: xorgxauPackage,
-  xscrnsaver: xorgxscrnsaverPackage,
-  xcb: xorgxcbPackage,
-  exts: xorgextsPackage,
-  xtrans: xorgxtransPackage,
-  xaw: xorgxawPackage,
-  xdmcp: xorgxdmcpPackage,
-  xinerama: xorgxineramaPackage,
-  libSM: xorglibsmPackage,
-  xft: xorgxftPackage,
-  xkbfile: xorgxkbfilePackage,
-  libxfont2: xorglibxfont2Package,
-  xrender: xorgxrenderPackage,
-  xcomposite: xorgxcompositePackage,
-  'util-macros': xorgutilmacrosPackage,
-  pciaccess: xorgpciaccessPackage,
-  ice: xorgicePackage,
-  cvt: xorglibcvtPackage,
-  xtst: xorgxtstPackage,
-  xxf86vm: xorgxxf86vmPackage,
-  xdamage: xorgxdamagePackage,
-  libxres: xorglibxresPackage,
-  xmu: xorgxmuPackage,
-  xshmfence: xorgxshmfencePackage,
-  xcursor: xorgxcursorPackage,
-  xauth: xorgxauthPackage,
-  xfixes: xorgxfixesPackage,
-  xpm: xorgxpmPackage,
-  protocol: xorgprotocolPackage,
-  libfontenc: xorglibfontencPackage,
-  Notion: notionsoPackage,
-  notion: notionsoPackage,
-  shards: crystallangorgshardsPackage,
+  dialog: invisibleislandnetdialogPackage,
+  helm: helmPackage,
+  mun: munlangorgPackage,
+  numbat: numbatdevPackage,
+  age: filippoioagePackage,
+  'yubikey-agent': filippoioyubikeyagentPackage,
+  mpdecimal: bytereeforgmpdecimalPackage,
   elvish: elvshPackage,
-  'frei0r.dyne': frei0rdyneorgPackage,
-  ttyd: tsl0922githubiottydPackage,
-  'Visual Studio Code': codevisualstudiocomPackage,
-  vscode: codevisualstudiocomPackage,
-  code: codevisualstudiocomPackage,
-  earthly: earthlydevearthlyPackage,
-  cabal: haskellorgcabalPackage,
-  rabbitmq: rabbitmqcomPackage,
-  cfssl: cfsslorgPackage,
-  micro: microeditorgithubioPackage,
-  cloudflared: cloudflarecomcloudflaredPackage,
-  conda: condaorgPackage,
-  ronn: rtomaykogithubioronnPackage,
-  gnuplot: gnuplotinfoPackage,
-  cython: cythonorgPackage,
-  gphoto2: gphotoorglibgphoto2Package,
-  'python-certifi': certifiiopythoncertifiPackage,
-  epsilon: epsilonprojectsourceforgeioPackage,
-  'libcap-ng': peopleredhatcomsgrubblibcapngPackage,
-  fend: printfngithubiofendPackage,
-  resticprofile: creativeprojectsgithubioresticprofilePackage,
-  'xerces-c': xercesapacheorgxercescPackage,
-  tiff: simplesystemsorglibtiffPackage,
-  kind: kindsigsk8sioPackage,
-  restic: resticnetresticPackage,
-  rover: apollographqlcomroverPackage,
-  'rhash.sourceforge': rhashsourceforgenetPackage,
-  mercure: mercurerocksPackage,
-  SDL2_gfx: ferzkoppnetsdl2_gfxPackage,
-  slides: maaslalanicomslidesPackage,
-  imath: openexrcomimathPackage,
-  expect: tcllangorgexpectPackage,
-  dotnet: dotnetmicrosoftcomPackage,
-  eol: endoflifedatePackage,
-  rapidjson: rapidjsonorgPackage,
-  asciinema: asciinemaorgPackage,
-  heroku: herokucomPackage,
-  volta: voltashPackage,
-  musepack: musepacknetPackage,
-  atlantis: runatlantisioPackage,
-  rclone: rcloneorgPackage,
-  composer: getcomposerorgPackage,
-  'ast-grep.github': astgrepgithubioPackage,
-  libpq: postgresqlorglibpqPackage,
-  rubygems: rubygemsorgPackage,
-  'groovy-lang': groovylangorgPackage,
-  telnet: applecomremote_cmdsPackage,
-  container: applecomcontainerPackage,
-  'huggingface/cli': huggingfacecoPackage,
-  proj: projorgPackage,
-  doctave: doctavecomPackage,
-  zola: getzolaorgPackage,
-  jq: stedolangithubiojqPackage,
-  libmd: hadronsorglibmdPackage,
-  dotenvx: dotenvxcomPackage,
-  tcsh: tcshorgPackage,
-  Vanna: vannaaiPackage,
-  railway: railwayappPackage,
-  'git-review': opendevorggitreviewPackage,
-  openstack: opendevorgopenstackpythonopenstackclientPackage,
-  himalaya: pimalayaorghimalayaPackage,
-  vips: libvipsorgPackage,
-  perl: perlorgPackage,
-  next: vercelcomnextPackage,
-  pkg: vercelcompkgPackage,
+  eksctl: eksctlioPackage,
   curl: curlPackage,
   rg: ripgrepPackage,
 }
