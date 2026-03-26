@@ -203,10 +203,29 @@ export class LocalStorage implements TarballStorage {
 
   async list(prefix: string): Promise<string[]> {
     const fs = await import('node:fs/promises')
-    const dir = this.getFilePath(prefix)
+    const path = await import('node:path')
+    // Emulate S3 prefix matching: list the parent directory and filter by prefix
+    const fullPrefix = this.getFilePath(prefix)
+    const parentDir = path.dirname(fullPrefix)
+    const prefixBase = path.basename(fullPrefix)
+
     try {
-      const entries = await fs.readdir(dir, { recursive: true })
-      return entries.map((e: string) => `${prefix}/${e}`)
+      const entries = await fs.readdir(parentDir, { withFileTypes: true })
+      const results: string[] = []
+      for (const entry of entries) {
+        if (!entry.name.startsWith(prefixBase)) continue
+        const entryPath = path.join(parentDir, entry.name)
+        if (entry.isDirectory()) {
+          const subEntries = await fs.readdir(entryPath, { recursive: true })
+          for (const sub of subEntries) {
+            results.push(`${prefix.slice(0, prefix.length - prefixBase.length)}${entry.name}/${sub}`)
+          }
+        }
+        else {
+          results.push(`${prefix.slice(0, prefix.length - prefixBase.length)}${entry.name}`)
+        }
+      }
+      return results
     }
     catch {
       return []
