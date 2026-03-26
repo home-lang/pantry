@@ -19,6 +19,16 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
+      - name: Fix zig-cli compat with 0.16-dev
+        run: |
+          for f in pantry/zig-cli/src/cli/Command.zig pantry/zig-config/src/config_loader.zig pantry/zig-config/src/services/file_loader.zig pantry/zig-config/src/merge.zig pantry/zig-cli/src/config/TomlParser.zig pantry/zig-cli/src/config/Json5Parser.zig pantry/zig-cli/src/config/JsoncParser.zig pantry/zig-cli/src/prompt/PromptCore.zig pantry/zig-cli/src/prompt/MultiSelectPrompt.zig pantry/zig-cli/src/prompt/Table.zig pantry/zig-cli/src/prompt/Box.zig pantry/zig-cli/src/prompt/Style.zig; do
+            if [ -f "$f" ]; then
+              sed -i "s/std\.ArrayList([^)]*){}/\&(std.ArrayList){.items=\&.{},.capacity=0}/g" "$f" 2>/dev/null || true
+            fi
+          done
+          # Direct fix for the known patterns
+          find pantry/zig-cli/src pantry/zig-config/src -name "*.zig" -exec perl -pi -e "s/std\.ArrayList\(([^)]*)\)\{\}/std.ArrayList(\1){ .items = \&.{}, .capacity = 0 }/g" {} ;
+
       - name: Check zig availability
         id: check-zig
         run: |
