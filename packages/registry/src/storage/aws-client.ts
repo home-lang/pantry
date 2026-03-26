@@ -86,7 +86,13 @@ export class S3Client {
       signedHeaders['x-amz-security-token'] = credentials.sessionToken
     }
 
-    // Create canonical request
+    // Create canonical request — split path and query string for proper signing
+    const [canonicalPath, queryString] = path.includes('?') ? path.split('?', 2) : [path, '']
+    // Sort query params alphabetically (required by AWS V4 signing)
+    const sortedQueryString = queryString
+      ? queryString.split('&').sort().join('&')
+      : ''
+
     const sortedHeaderKeys = Object.keys(signedHeaders).sort()
     const canonicalHeaders = sortedHeaderKeys
       .map(k => `${k.toLowerCase()}:${signedHeaders[k].trim()}`)
@@ -95,8 +101,8 @@ export class S3Client {
 
     const canonicalRequest = [
       method,
-      path,
-      '', // query string
+      canonicalPath,
+      sortedQueryString,
       canonicalHeaders,
       '',
       signedHeadersList,
