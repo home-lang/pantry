@@ -1,3 +1,27 @@
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.15...v0.9.16)
+
+### 🐛 Bug Fixes
+
+- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### 🧹 Chores
+
+- release v0.9.16 ([6c2ab6d](https://github.com/home-lang/pantry/commit/6c2ab6d)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
+[Compare changes](https://github.com/home-lang/pantry/compare/v0.9.15...HEAD)
+
+### 🐛 Bug Fixes
+
+- resolve ziglang.org@* and @latest to latest stable version ([d12e357](https://github.com/home-lang/pantry/commit/d12e357)) _(by Chris <chrisbreuer93@gmail.com>)_
+
+### Contributors
+
+- _Chris <chrisbreuer93@gmail.com>_
+
 [Compare changes](https://github.com/home-lang/pantry/compare/v0.9.12...v0.9.13)
 
 ### 🧹 Chores
