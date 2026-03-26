@@ -2189,14 +2189,10 @@ pub const Installer = struct {
         const start_ts_ = io_helper.clockGettime();
         const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
-        // Determine install location
-        const install_dir = if (options.project_root) |project_root| blk: {
-            break :blk try std.fmt.allocPrint(
-                self.allocator,
-                "{s}/pantry/zig/{s}",
-                .{ project_root, spec.version },
-            );
-        } else blk: {
+        // Use standard install path — same as every other package: {modules_dir}/{domain}/v{version}
+        const install_dir = if (options.project_root) |project_root|
+            try self.getProjectPackageDir(project_root, "ziglang.org", spec.version)
+        else blk: {
             const home = try Paths.home(self.allocator);
             defer self.allocator.free(home);
             break :blk try std.fmt.allocPrint(
@@ -2309,8 +2305,7 @@ pub const Installer = struct {
         try io_helper.makePath(extract_dir);
         try extractor.extractArchiveQuiet(self.allocator, archive_path, extract_dir, archive_ext, options.quiet);
 
-        // Find the actual Zig directory (it's usually named zig-{platform}-{arch}-{version})
-        // Use std.fs.Dir for iteration (Io.Dir doesn't have iterate() in Zig 0.16)
+        // Find the actual source directory (zig archives nest contents in zig-{platform}-{arch}-{version}/)
         var extracted_handle = try io_helper.openDirAbsoluteForIteration(extract_dir);
         defer extracted_handle.close();
 
@@ -2324,7 +2319,6 @@ pub const Installer = struct {
         }
 
         if (zig_source_dir == null) {
-            // Fallback to extract dir itself
             zig_source_dir = try self.allocator.dupe(u8, extract_dir);
         }
         defer self.allocator.free(zig_source_dir.?);
@@ -2335,51 +2329,19 @@ pub const Installer = struct {
 
         // Ensure zig binary is executable (not needed on Windows)
         if (comptime !is_windows) {
-            const zig_bin_path = try std.fmt.allocPrint(self.allocator, "{s}/zig", .{install_dir});
-            defer self.allocator.free(zig_bin_path);
-            _ = io_helper.childRun(self.allocator, &[_][]const u8{ "chmod", "+x", zig_bin_path }) catch {};
+            var chmod_buf: [std.fs.max_path_bytes:0]u8 = undefined;
+            const zig_path = std.fmt.bufPrint(chmod_buf[0..std.fs.max_path_bytes], "{s}/zig", .{install_dir}) catch null;
+            if (zig_path) |p| {
+                chmod_buf[p.len] = 0;
+                _ = std.c.chmod(&chmod_buf, 0o755);
+            }
         }
 
-        // Create project symlinks/copies if installing to project
+        // Use the standard symlink creation — same as all other packages.
+        // discoverBinaries now finds executables at the package root (e.g. zig binary),
+        // so no special-case symlink logic is needed here.
         if (options.project_root) |project_root| {
-            // Create pantry/.bin directory
-            const bin_dir = try std.fmt.allocPrint(
-                self.allocator,
-                "{s}/{s}/.bin",
-                .{ project_root, self.modules_dir },
-            );
-            defer self.allocator.free(bin_dir);
-            try io_helper.makePath(bin_dir);
-
-            // Binary name: zig.exe on Windows, zig elsewhere
-            const bin_name = if (is_windows) "zig.exe" else "zig";
-
-            const zig_binary = try std.fmt.allocPrint(
-                self.allocator,
-                "{s}/{s}",
-                .{ install_dir, bin_name },
-            );
-            defer self.allocator.free(zig_binary);
-
-            const zig_link = try std.fmt.allocPrint(
-                self.allocator,
-                "{s}/{s}",
-                .{ bin_dir, bin_name },
-            );
-            defer self.allocator.free(zig_link);
-
-            // Remove existing symlink/file if it exists
-            io_helper.deleteFile(zig_link) catch {};
-            if (is_windows) {
-                // Windows: copy instead of symlink (symlinks need admin on Windows)
-                io_helper.copyFile(zig_binary, zig_link) catch |err| {
-                    if (!style.isCI()) style.print("Warning: Failed to copy zig binary: {}\n", .{err});
-                };
-            } else {
-                io_helper.symLink(zig_binary, zig_link) catch |err| {
-                    if (!style.isCI()) style.print("Warning: Failed to create zig symlink: {}\n", .{err});
-                };
-            }
+            try self.createProjectSymlinks(project_root, "ziglang.org", spec.version, install_dir);
         }
 
         const end_ts_ = io_helper.clockGettime();

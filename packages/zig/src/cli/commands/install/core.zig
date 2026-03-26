@@ -1202,7 +1202,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     const start_ts2 = io_helper.clockGettime();
     const start_time = @as(i64, @intCast(start_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts2.nsec, 1_000_000)));
 
-    style.printInstalling(args.len);
+    style.printInstalling(package_args.items.len);
 
     var success_count: usize = 0;
     var failed_count: usize = 0;
@@ -1217,7 +1217,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         installed_packages.deinit(allocator);
     }
 
-    for (args) |pkg_spec_str| {
+    for (package_args.items) |pkg_spec_str| {
         // Parse package spec (name@version)
         const at_pos = std.mem.indexOf(u8, pkg_spec_str, "@");
         const raw_name = if (at_pos) |pos| pkg_spec_str[0..pos] else pkg_spec_str;
@@ -1366,11 +1366,6 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             continue;
         };
 
-        // Create symlinks in pantry/.bin for package executables
-        helpers.createBinSymlinksFromInstall(allocator, project_root, result.install_path, opts.modules_dir) catch |err| {
-            style.print("Warning: Failed to create bin symlinks for {s}: {}\n", .{ name, err });
-        };
-
         defer result.deinit(allocator);
 
         style.clearLine();
@@ -1475,7 +1470,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
     const end_time = @as(i64, @intCast(end_ts2.sec)) * 1000 + @as(i64, @intCast(@divFloor(end_ts2.nsec, 1_000_000)));
     const elapsed_ms = @as(f64, @floatFromInt(end_time - start_time));
 
-    style.printSummary(success_count, args.len, elapsed_ms);
+    style.printSummary(success_count, package_args.items.len, elapsed_ms);
 
     if (failed_count > 0) {
         style.printFailureCount(failed_count);

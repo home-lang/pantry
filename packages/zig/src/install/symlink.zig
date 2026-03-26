@@ -255,8 +255,10 @@ fn discoverNpmBinaries(
 }
 
 /// Discover binaries in a package directory
-/// First checks for npm package structure (lib/node_modules/*/bin/*)
-/// Falls back to standard bin/ and sbin/ directories
+/// 1. Checks for npm package structure (lib/node_modules/*/bin/*)
+/// 2. Scans standard bin/ and sbin/ directories
+/// 3. Falls back to scanning the package root for native executables
+///    (handles packages like zig that ship the binary at root level)
 pub fn discoverBinaries(
     allocator: std.mem.Allocator,
     package_dir: []const u8,
@@ -309,6 +311,54 @@ pub fn discoverBinaries(
                         .path = full_path,
                     });
                 }
+            }
+        }
+    }
+
+    // Fallback: if no binaries found in bin/sbin, scan the package root for native executables.
+    // This handles packages (e.g. zig) that ship the binary at the top level instead of bin/.
+    // Only pick up files that are executable and look like native binaries (no extension),
+    // to avoid false positives from scripts or data files.
+    if (binaries.items.len == 0) {
+        var root_dir = io_helper.openDirForIteration(package_dir) catch
+            return try binaries.toOwnedSlice(allocator);
+        defer root_dir.close();
+
+        var root_it = root_dir.iterate();
+        while (root_it.next() catch null) |entry| {
+            if (entry.kind != .file and entry.kind != .sym_link) continue;
+            // Skip dotfiles and files with common non-binary extensions
+            if (entry.name.len == 0 or entry.name[0] == '.') continue;
+            if (std.mem.endsWith(u8, entry.name, ".json") or
+                std.mem.endsWith(u8, entry.name, ".txt") or
+                std.mem.endsWith(u8, entry.name, ".md") or
+                std.mem.endsWith(u8, entry.name, ".yml") or
+                std.mem.endsWith(u8, entry.name, ".yaml") or
+                std.mem.endsWith(u8, entry.name, ".toml") or
+                std.mem.endsWith(u8, entry.name, ".cfg") or
+                std.mem.endsWith(u8, entry.name, ".conf") or
+                std.mem.endsWith(u8, entry.name, ".ini") or
+                std.mem.endsWith(u8, entry.name, ".log") or
+                std.mem.endsWith(u8, entry.name, ".lock"))
+            {
+                continue;
+            }
+
+            const full_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ package_dir, entry.name });
+            errdefer allocator.free(full_path);
+
+            const stat = io_helper.statFile(full_path) catch {
+                allocator.free(full_path);
+                continue;
+            };
+            // Only pick up files that are actually executable (strict check — no mode=0 fallback)
+            if (stat.mode != 0 and (stat.mode & 0o111) != 0) {
+                try binaries.append(allocator, .{
+                    .name = try allocator.dupe(u8, entry.name),
+                    .path = full_path,
+                });
+            } else {
+                allocator.free(full_path);
             }
         }
     }

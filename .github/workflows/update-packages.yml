@@ -118,9 +118,9 @@ jobs:
           git add packages/ts-pantry/src/packages/
           git commit -m "${{ steps.commit-message.outputs.commit_message }}" -m "Automated version update via GitHub API"
           git stash --include-untracked
-          git pull --rebase origin main
+          git pull --rebase origin refs/heads/main
           git stash pop || true
-          git push origin main
+          git push origin HEAD:refs/heads/main
 
           echo "committed=true" >> $GITHUB_OUTPUT
 

@@ -951,14 +951,6 @@ pub fn installSinglePackage(
     _ = bin_dir;
     _ = cwd;
 
-    // Create symlinks in pantry/.bin for package executables
-    // Use actual_install_path which has the real location (e.g., pantry/github.com/org/pkg/v1.0.0)
-    createBinSymlinks(allocator, proj_dir, actual_install_path, options.verbose, options.modules_dir) catch |err| {
-        if (options.verbose) {
-            style.print("    Could not create bin symlinks for {s}: {}\n", .{ lookup_name, err });
-        }
-    };
-
     // Compute integrity hash from installed package directory
     const integrity_hash = computePackageIntegrity(allocator, actual_install_path) catch null;
 
