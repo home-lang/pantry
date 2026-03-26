@@ -19,8 +19,19 @@ jobs:
       - name: Setup Pantry
         uses: ./packages/action
 
+      - name: Check zig availability
+        id: check-zig
+        run: |
+          if command -v zig &>/dev/null; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            zig version
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "zig not found, will use fallback"
+          fi
+
       - name: Setup Zig (fallback)
-        if: "!hashFiles('pantry/.bin/zig')"
+        if: steps.check-zig.outputs.available != 'true'
         uses: mlugg/setup-zig@v2
         with:
           version: 0.15.2
