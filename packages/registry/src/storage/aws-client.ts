@@ -218,12 +218,13 @@ export class S3Client {
     const host = this.getHost(bucket)
     const queryParams = new URLSearchParams({
       'list-type': '2',
-      'prefix': prefix,
       'max-keys': String(maxKeys),
+      'prefix': prefix,
     })
     const path = `/?${queryParams.toString()}`
 
-    const headers = this.sign('GET', '/', host, {}, '')
+    // Sign with the full path including query string for S3 V4 signature
+    const headers = this.sign('GET', path, host, {}, '')
 
     const response = await fetch(`https://${host}${path}`, {
       method: 'GET',
