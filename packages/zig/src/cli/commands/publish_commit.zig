@@ -608,14 +608,12 @@ fn uploadCommitToS3(
     // Update DynamoDB with commit record
     try updateCommitDynamoDB(allocator, name, clean_name, sha, tarball_key, repo_url, version);
 
-    // Build the install URL
-    const encoded_name = try allocator.dupe(u8, name);
-    defer allocator.free(encoded_name);
-
-    const install_url = try std.fmt.allocPrint(allocator, "{s}/commits/{s}/{s}/tarball", .{
+    // Build the install URL (short pkg-pr-new style: /name@sha)
+    const short_sha_local = if (sha.len >= 7) sha[0..7] else sha;
+    const install_url = try std.fmt.allocPrint(allocator, "{s}/{s}@{s}", .{
         options.registry,
-        sha,
         name,
+        short_sha_local,
     });
 
     return .{ .success = true, .url = install_url };
@@ -806,10 +804,11 @@ fn uploadCommitViaHttp(
 
     alloc_writer.deinit();
 
-    const install_url = try std.fmt.allocPrint(allocator, "{s}/commits/{s}/{s}/tarball", .{
+    const short_sha_s3 = if (sha.len >= 7) sha[0..7] else sha;
+    const install_url = try std.fmt.allocPrint(allocator, "{s}/{s}@{s}", .{
         options.registry,
-        sha,
         name,
+        short_sha_s3,
     });
 
     return .{ .success = true, .url = install_url };

@@ -225,22 +225,51 @@ export class Registry {
   }
 
   /**
-   * Get a commit-published package
+   * Get a commit-published package.
+   * Supports both full and short (7+ char) SHA prefixes.
    */
   async getCommitPackage(sha: string, name: string): Promise<CommitPublish | null> {
-    return this.metadataStorage.getCommitPublish(sha, name)
+    // Try exact match first
+    const exact = await this.metadataStorage.getCommitPublish(sha, name)
+    if (exact) return exact
+
+    // If short SHA (< 40 chars), try prefix match via S3 listing
+    if (sha.length < 40 && sha.length >= 7) {
+      try {
+        const safeName = name.replaceAll('@', '').replaceAll('/', '-')
+        const prefix = `commits/${sha}`
+        const keys = await this.tarballStorage.list(prefix)
+        // Find a key that matches our package
+        const matchKey = keys.find((k: string) => k.includes(`/${safeName}/${safeName}.tgz`))
+        if (matchKey) {
+          // Extract full SHA from the key: commits/{fullSha}/{safeName}/{safeName}.tgz
+          const fullSha = matchKey.split('/')[1]
+          if (fullSha && fullSha.startsWith(sha)) {
+            return this.metadataStorage.getCommitPublish(fullSha, name)
+          }
+        }
+      }
+      catch {
+        // Fall through to null
+      }
+    }
+
+    return null
   }
 
   /**
-   * Download a commit-published package tarball
+   * Download a commit-published package tarball.
+   * Supports both full and short (7+ char) SHA prefixes.
    */
   async downloadCommitTarball(sha: string, name: string): Promise<ArrayBuffer | null> {
-    const publish = await this.metadataStorage.getCommitPublish(sha, name)
+    // Use getCommitPackage which handles short SHA resolution
+    const publish = await this.getCommitPackage(sha, name)
     if (!publish)
       return null
 
     const safeName = name.replaceAll('@', '').replaceAll('/', '-')
-    const key = `commits/${sha}/${safeName}/${safeName}.tgz`
+    const resolvedSha = publish.sha || sha
+    const key = `commits/${resolvedSha}/${safeName}/${safeName}.tgz`
 
     try {
       return await this.tarballStorage.download(key)

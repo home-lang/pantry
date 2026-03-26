@@ -403,6 +403,33 @@ export function createHandler(
         return handleAnalytics(analyticsMatch[1], url, analyticsStorage, corsHeaders)
       }
 
+      // Short URL for commit packages (pkg-pr-new style)
+      // GET /pickier@abc1234 -> serve tarball
+      // GET /@craft-native/craft@abc1234 -> serve tarball
+      const shortCommitMatch = path.match(/^\/(@[^/]+\/[^@]+|[^@/][^@]*)@([a-f0-9]{7,40})$/)
+      if (shortCommitMatch && req.method === 'GET') {
+        const pkgName = decodeURIComponent(shortCommitMatch[1])
+        const sha = shortCommitMatch[2]
+        const tarball = await registry.downloadCommitTarball(sha, pkgName)
+        if (tarball) {
+          analyticsStorage.trackDownload({
+            packageName: pkgName,
+            version: sha.slice(0, 7),
+            timestamp: new Date().toISOString(),
+            userAgent: req.headers.get('user-agent') || undefined,
+          }).catch(() => {})
+          const safeName = pkgName.replaceAll('@', '').replaceAll('/', '-')
+          return new Response(tarball, {
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/gzip',
+              'Content-Disposition': `attachment; filename="${safeName}-${sha.slice(0, 7)}.tgz"`,
+            },
+          })
+        }
+        return Response.json({ error: 'Commit package not found' }, { status: 404, headers: corsHeaders })
+      }
+
       // Commit publish routes (pkg-pr-new equivalent)
       if (path === '/publish/commit' && req.method === 'POST') {
         return handleCommitPublish(req, registry, baseUrl, corsHeaders)

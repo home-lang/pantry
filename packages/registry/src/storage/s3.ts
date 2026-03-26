@@ -141,6 +141,14 @@ export class S3Storage implements TarballStorage {
     const key = this.getKey(name, version)
     return this.s3.generatePresignedPutUrl(this.bucket, key, 'application/gzip', expiresInSeconds)
   }
+
+  /**
+   * List object keys matching a prefix (used for short SHA resolution)
+   */
+  async list(prefix: string): Promise<string[]> {
+    const objects = await this.s3.list({ bucket: this.bucket, prefix, maxKeys: 10 })
+    return objects.map((o: any) => o.Key).filter(Boolean)
+  }
 }
 
 /**
@@ -191,5 +199,17 @@ export class LocalStorage implements TarballStorage {
 
   getUrl(key: string): string {
     return `${this.baseUrl}/storage/${key}`
+  }
+
+  async list(prefix: string): Promise<string[]> {
+    const fs = await import('node:fs/promises')
+    const dir = this.getFilePath(prefix)
+    try {
+      const entries = await fs.readdir(dir, { recursive: true })
+      return entries.map((e: string) => `${prefix}/${e}`)
+    }
+    catch {
+      return []
+    }
   }
 }

@@ -290,6 +290,7 @@ export interface TarballStorage {
   exists(key: string): Promise<boolean>
   delete(key: string): Promise<void>
   getUrl(key: string): string
+  list(prefix: string): Promise<string[]>
 }
 
 /**
