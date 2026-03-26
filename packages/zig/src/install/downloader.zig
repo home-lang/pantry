@@ -241,9 +241,16 @@ fn isShortDevVersion(version: []const u8) bool {
     return std.mem.endsWith(u8, version, "-dev");
 }
 
-/// Resolve a short dev version like "0.16.0-dev" to the full version from ziglang.org/download/index.json
+/// Resolve a zig version specifier to a concrete version via ziglang.org/download/index.json.
+/// Handles:
+///   - "*" / "latest" → latest stable release (e.g. "0.15.2")
+///   - Short dev like "0.16.0-dev" → full dev version (e.g. "0.16.0-dev.1484+d0ba6642b")
+///   - Anything else → returned as-is
 pub fn resolveZigDevVersion(allocator: std.mem.Allocator, version: []const u8) ![]const u8 {
-    if (!isShortDevVersion(version)) return allocator.dupe(u8, version);
+    const is_wildcard = std.mem.eql(u8, version, "*") or std.mem.eql(u8, version, "latest");
+    const is_short_dev = isShortDevVersion(version);
+
+    if (!is_wildcard and !is_short_dev) return allocator.dupe(u8, version);
 
     const result = io_helper.childRun(allocator, &[_][]const u8{
         "curl", "-sfL", "--connect-timeout", "10", "https://ziglang.org/download/index.json",
@@ -258,7 +265,6 @@ pub fn resolveZigDevVersion(allocator: std.mem.Allocator, version: []const u8) !
 
     if (result.stdout.len == 0) return allocator.dupe(u8, version);
 
-    // Parse JSON and extract master version
     const parsed = std.json.parseFromSlice(std.json.Value, allocator, result.stdout, .{
         .ignore_unknown_fields = true,
         .allocate = .alloc_always,
@@ -266,17 +272,60 @@ pub fn resolveZigDevVersion(allocator: std.mem.Allocator, version: []const u8) !
     defer parsed.deinit();
 
     if (parsed.value != .object) return allocator.dupe(u8, version);
-    const master = parsed.value.object.get("master") orelse return allocator.dupe(u8, version);
-    if (master != .object) return allocator.dupe(u8, version);
-    const master_version = master.object.get("version") orelse return allocator.dupe(u8, version);
-    if (master_version != .string) return allocator.dupe(u8, version);
 
-    // Verify the resolved version starts with the requested prefix (e.g. "0.16.0-dev")
-    if (std.mem.startsWith(u8, master_version.string, version)) {
-        return allocator.dupe(u8, master_version.string);
+    // For short dev versions, resolve from master
+    if (is_short_dev) {
+        const master = parsed.value.object.get("master") orelse return allocator.dupe(u8, version);
+        if (master != .object) return allocator.dupe(u8, version);
+        const master_version = master.object.get("version") orelse return allocator.dupe(u8, version);
+        if (master_version != .string) return allocator.dupe(u8, version);
+        if (std.mem.startsWith(u8, master_version.string, version)) {
+            return allocator.dupe(u8, master_version.string);
+        }
+        return allocator.dupe(u8, version);
+    }
+
+    // For "*" / "latest", find the highest stable version key (skip "master")
+    var best: ?[]const u8 = null;
+    var best_parts: [3]u32 = .{ 0, 0, 0 };
+    var iter = parsed.value.object.iterator();
+    while (iter.next()) |entry| {
+        const key = entry.key_ptr.*;
+        if (std.mem.eql(u8, key, "master")) continue;
+        if (std.mem.indexOf(u8, key, "-dev") != null) continue;
+        // Parse "major.minor.patch" for proper numeric comparison
+        const parts = parseVersionParts(key);
+        if (best == null or compareParts(parts, best_parts) == .gt) {
+            best = key;
+            best_parts = parts;
+        }
+    }
+
+    if (best) |v| {
+        return allocator.dupe(u8, v);
     }
 
     return allocator.dupe(u8, version);
+}
+
+/// Parse "major.minor.patch" into numeric parts for comparison
+fn parseVersionParts(v: []const u8) [3]u32 {
+    var parts: [3]u32 = .{ 0, 0, 0 };
+    var i: usize = 0;
+    var it = std.mem.splitScalar(u8, v, '.');
+    while (it.next()) |seg| {
+        if (i >= 3) break;
+        parts[i] = std.fmt.parseInt(u32, seg, 10) catch 0;
+        i += 1;
+    }
+    return parts;
+}
+
+fn compareParts(a: [3]u32, b: [3]u32) std.math.Order {
+    for (0..3) |i| {
+        if (a[i] != b[i]) return std.math.order(a[i], b[i]);
+    }
+    return .eq;
 }
 
 /// Build download URL for ziglang.org
