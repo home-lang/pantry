@@ -69,6 +69,7 @@ export const traefikioPackage = {
   */
   versions: [
     '3.7.0-ea.2',
+    '3.6.12',
     '3.6.11',
     '3.6.10',
     '3.6.9',
@@ -96,6 +97,7 @@ export const traefikioPackage = {
     '3.3.7',
     '3.3.6',
     '3.3.5',
+    '2.11.42',
     '2.11.41',
     '2.11.40',
     '2.11.38',
