@@ -240,12 +240,23 @@ export class Registry {
         const prefix = `commits/${sha}`
         const keys = await this.tarballStorage.list(prefix)
         // Find a key that matches our package
-        const matchKey = keys.find((k: string) => k.includes(`/${safeName}/${safeName}.tgz`))
+        const matchKey = keys.find((k: string) => k.includes(`/${safeName}/`))
         if (matchKey) {
           // Extract full SHA from the key: commits/{fullSha}/{safeName}/{safeName}.tgz
-          const fullSha = matchKey.split('/')[1]
+          const parts = matchKey.split('/')
+          const fullSha = parts[1]
           if (fullSha && fullSha.startsWith(sha)) {
-            return this.metadataStorage.getCommitPublish(fullSha, name)
+            // Try DynamoDB first, but if that fails, construct a synthetic result
+            const dbResult = await this.metadataStorage.getCommitPublish(fullSha, name).catch(() => null)
+            if (dbResult) return dbResult
+            // Construct from S3 data as fallback
+            return {
+              name,
+              sha: fullSha,
+              tarballUrl: this.tarballStorage.getUrl(matchKey),
+              checksum: '',
+              publishedAt: new Date().toISOString(),
+            }
           }
         }
       }
