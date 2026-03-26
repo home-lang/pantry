@@ -168,7 +168,9 @@ async function installSystemPackage(spec: string, pantryDir: string): Promise<vo
     return
   }
 
-  const version = rawVersion === 'latest' ? await resolveLatestVersion(domain) : rawVersion
+  // Resolve wildcards, "latest", and semver ranges to concrete versions
+  const needsResolve = rawVersion === 'latest' || rawVersion === '*' || /^[\^~>=<]/.test(rawVersion)
+  const version = needsResolve ? await resolveLatestVersion(domain) : rawVersion
   core.info(`Installing ${domain}@${version} via pantry SDK`)
   await installPackage(domain, version, { installDir: pantryDir, quiet: true })
 }
