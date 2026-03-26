@@ -525,7 +525,7 @@ pub fn build(b: *std.Build) void {
 fn getPackageVersion(b: *std.Build) ![]const u8 {
     // Read version directly from root package.json (../../ from packages/zig/)
     // Compatible with both Zig 0.15 and 0.16-dev
-    const content = if (true)
+    const content = if (@hasField(@TypeOf(b.build_root.handle), "io") or @hasDecl(std.Build, "graph"))
         b.build_root.handle.readFileAlloc(b.graph.io, "../../package.json", b.allocator, .limited(1024 * 1024)) catch return "0.0.0"
     else
         b.build_root.handle.readFileAlloc(b.allocator, "../../package.json", 1024 * 1024) catch return "0.0.0";

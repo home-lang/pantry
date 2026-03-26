@@ -785,6 +785,19 @@ pub fn installSinglePackage(
                 };
             }
 
+            // Check if version looks like a commit SHA (7-40 hex chars)
+            // If so, resolve from pantry registry commit packages: registry.pantry.dev/{name}@{sha}
+            const is_commit_sha = dep.version.len >= 7 and dep.version.len <= 40 and isHexString(dep.version);
+            if (is_commit_sha) {
+                const commit_url = try std.fmt.allocPrint(allocator, "https://registry.pantry.dev/{s}@{s}", .{ lookup_name, dep.version });
+                break :blk lib.packages.PackageSpec{
+                    .name = lookup_name,
+                    .version = dep.version,
+                    .source = .http,
+                    .url = commit_url,
+                };
+            }
+
             // Fall back to npm registry for non-domain packages (handles semver, caching, dedup)
             const npm_info = shared_installer.resolveNpmPackage(lookup_name, dep.version) catch |err| {
                 return .{
@@ -1152,6 +1165,15 @@ fn scanBinDirectory(allocator: std.mem.Allocator, package_path: []const u8, bin_
             };
         }
     }
+}
+
+/// Check if a string is a valid hex string (0-9, a-f only).
+/// Used to detect commit SHAs in version specifiers.
+fn isHexString(s: []const u8) bool {
+    for (s) |c| {
+        if (!((c >= '0' and c <= '9') or (c >= 'a' and c <= 'f'))) return false;
+    }
+    return s.len > 0;
 }
 
 /// Check if an existing symlink at `link_path` points to a binary from a different package
