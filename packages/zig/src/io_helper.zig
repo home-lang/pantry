@@ -23,7 +23,7 @@ const win32 = struct {
     const DWORD = std.os.windows.DWORD;
     const BOOL = std.os.windows.BOOL;
     const LARGE_INTEGER = std.os.windows.LARGE_INTEGER;
-    const FALSE = std.os.windows.FALSE;
+    const FALSE: BOOL = 0;
     const FILETIME = extern struct { dwLowDateTime: u32, dwHighDateTime: u32 };
 
     const ReadFile = if (is_windows) @extern(*const fn (HANDLE, [*]u8, DWORD, *DWORD, ?*anyopaque) callconv(.winapi) BOOL, .{ .name = "ReadFile" }) else {};
