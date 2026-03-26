@@ -229,9 +229,14 @@ export class Registry {
    * Supports both full and short (7+ char) SHA prefixes.
    */
   async getCommitPackage(sha: string, name: string): Promise<CommitPublish | null> {
-    // Try exact match first
-    const exact = await this.metadataStorage.getCommitPublish(sha, name)
-    if (exact) return exact
+    // Try exact match first (catch errors from DynamoDB for non-existent keys)
+    try {
+      const exact = await this.metadataStorage.getCommitPublish(sha, name)
+      if (exact) return exact
+    }
+    catch {
+      // DynamoDB may throw for non-existent items — fall through to S3 prefix search
+    }
 
     // If short SHA (< 40 chars), try prefix match via S3 listing
     if (sha.length < 40 && sha.length >= 7) {
