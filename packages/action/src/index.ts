@@ -151,10 +151,37 @@ function stripJsoncComments(text: string): string {
   return result
 }
 
+/** Map common aliases to their domain names used by the TS installer SDK */
+const ALIAS_TO_DOMAIN: Record<string, string> = {
+  bun: 'bun.sh',
+  zig: 'ziglang.org',
+  node: 'nodejs.org',
+  nodejs: 'nodejs.org',
+}
+
+/** Map domain names to their binary names */
+const DOMAIN_TO_BIN: Record<string, string> = {
+  'bun.sh': 'bun',
+  'ziglang.org': 'zig',
+  'nodejs.org': 'node',
+}
+
+/** Resolve an alias or domain to its canonical domain name */
+function resolveDomain(nameOrDomain: string): string {
+  return ALIAS_TO_DOMAIN[nameOrDomain] || nameOrDomain
+}
+
+/** Get the binary name for a dependency spec (alias or domain) */
+function getBinName(dep: string): string {
+  const name = dep.includes('@') ? dep.split('@')[0] : dep
+  const domain = resolveDomain(name)
+  return DOMAIN_TO_BIN[domain] || name.split('.')[0]
+}
+
 /**
  * Install a system package using the pantry TS installer SDK.
  * Works cross-platform (macOS, Linux, Windows) using Node.js APIs.
- * Supports: ziglang.org, bun.sh, nodejs.org
+ * Supports: ziglang.org, bun.sh, nodejs.org (and aliases: bun, zig, node)
  */
 async function installSystemPackage(spec: string, pantryDir: string): Promise<void> {
   // Import from the pantry TS installer SDK
@@ -162,9 +189,10 @@ async function installSystemPackage(spec: string, pantryDir: string): Promise<vo
 
   const { installPackage, isSupported, resolveLatestVersion } = installer
 
-  const [domain, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
+  const [rawDomain, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
+  const domain = resolveDomain(rawDomain)
   if (!isSupported(domain)) {
-    core.warning(`${domain}: not supported by TS installer SDK, trying pantry CLI`)
+    core.warning(`${rawDomain}: not supported by TS installer SDK, skipping`)
     return
   }
 
@@ -555,7 +583,7 @@ export async function run(): Promise<void> {
       const systemDeps = extractSystemDeps()
       const isWin = platform.os === 'windows'
       const missingDeps = systemDeps.filter(dep => {
-        const baseName = dep === 'bun.sh' ? 'bun' : dep === 'ziglang.org' ? 'zig' : dep.split('.')[0]
+        const baseName = getBinName(dep)
         const binName = isWin ? `${baseName}.exe` : baseName
         return !fs.existsSync(path.join(pantryBinDir, binName)) && !fs.existsSync(path.join(pantryBinDir, baseName))
       })
