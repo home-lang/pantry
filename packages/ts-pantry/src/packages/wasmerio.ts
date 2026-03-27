@@ -77,6 +77,7 @@ export const wasmerioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '7.1.0',
     '7.0.1',
     '7.0.0',
     '6.1.0',

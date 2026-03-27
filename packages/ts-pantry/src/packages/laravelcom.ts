@@ -77,6 +77,7 @@ export const laravelcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.25.0',
     '5.24.11',
     '5.24.10',
     '5.24.9',
