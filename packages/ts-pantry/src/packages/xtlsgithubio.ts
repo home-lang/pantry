@@ -69,6 +69,7 @@ export const xtlsgithubioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '26.3.27',
     '26.2.6',
     '26.2.4',
     '26.2.2',
