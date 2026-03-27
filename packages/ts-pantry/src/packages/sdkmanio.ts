@@ -68,6 +68,7 @@ export const sdkmanioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.22.1',
     '5.22.0',
     '5.21.0',
     '5.20.0',

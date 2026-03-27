@@ -68,6 +68,7 @@ export const daytonaioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.158.0',
     '0.157.0',
     '0.156.0',
     '0.155.0',
