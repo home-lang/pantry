@@ -715,8 +715,25 @@ fn publishSingleToRegistry(
     defer allocator.free(tarball_path);
     defer io_helper.deleteFile(tarball_path) catch {};
 
-    // Read tarball
-    const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, 100 * 1024 * 1024) catch {
+    // Check tarball size before reading into memory
+    const tarball_stat = io_helper.statFile(tarball_path) catch {
+        return CommandResult.err(allocator, "Error: Could not stat tarball file");
+    };
+    const tarball_size = tarball_stat.size;
+
+    if (tarball_size > 500 * 1024 * 1024) {
+        const err_msg = try std.fmt.allocPrint(allocator,
+            \\Error: Tarball is {d} MB — exceeds 500 MB limit.
+            \\
+            \\Add a "files" field to package.json to include only what you need,
+            \\or add exclusions to .pantryignore to reduce the tarball size.
+        , .{tarball_size / (1024 * 1024)});
+        return CommandResult.err(allocator, err_msg);
+    }
+
+    // Read tarball (use actual size + 1 as max to avoid BufferTooSmall on exact boundary)
+    const max_read_size: usize = @max(@as(usize, @intCast(tarball_size)) + 1, 1);
+    const tarball_data = io_helper.readFileAlloc(allocator, tarball_path, max_read_size) catch {
         return CommandResult.err(allocator, "Error: Could not read tarball");
     };
     defer allocator.free(tarball_data);
