@@ -401,3 +401,15 @@ export function isSupported(domain: string): boolean {
 export function supportedPackages(): string[] {
   return Object.keys(resolvers)
 }
+
+/**
+ * Get the primary binary name for a supported package domain.
+ * Returns the first non-Windows binary (e.g. 'bun' for 'bun.sh', 'zig' for 'ziglang.org').
+ */
+export function getPrimaryBinary(domain: string): string | undefined {
+  const resolver = resolvers[domain]
+  if (!resolver) return undefined
+  const platform = detectPlatform()
+  const bins = resolver.getBinaries(platform)
+  return bins[0]
+}

@@ -10,6 +10,7 @@ import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as glob from '@actions/glob'
 import * as tc from '@actions/tool-cache'
+import { getPrimaryBinary } from '../../ts-pantry/src/installer'
 import { isKnownAlias, resolvePackageDomain } from '../../ts-pantry/src/utils'
 
 export * from './types'
@@ -152,18 +153,11 @@ function stripJsoncComments(text: string): string {
   return result
 }
 
-/** Domain-to-primary-binary mapping for installer-supported packages */
-const DOMAIN_TO_BIN: Record<string, string> = {
-  'bun.sh': 'bun',
-  'ziglang.org': 'zig',
-  'nodejs.org': 'node',
-}
-
 /** Get the binary name for a dependency spec (alias or domain) */
 function getBinName(dep: string): string {
   const name = dep.includes('@') ? dep.split('@')[0] : dep
   const domain = resolvePackageDomain(name)
-  return DOMAIN_TO_BIN[domain] || name.split('.')[0]
+  return getPrimaryBinary(domain) || name.split('.')[0]
 }
 
 /**
