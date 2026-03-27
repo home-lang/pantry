@@ -69,6 +69,7 @@ export const depotdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.101.33',
     '2.101.32',
     '2.101.31',
     '2.101.30',
