@@ -10,6 +10,7 @@ import * as exec from '@actions/exec'
 import * as github from '@actions/github'
 import * as glob from '@actions/glob'
 import * as tc from '@actions/tool-cache'
+import { isKnownAlias, resolvePackageDomain } from '../../ts-pantry/src/utils'
 
 export * from './types'
 
@@ -151,37 +152,24 @@ function stripJsoncComments(text: string): string {
   return result
 }
 
-/** Map common aliases to their domain names used by the TS installer SDK */
-const ALIAS_TO_DOMAIN: Record<string, string> = {
-  bun: 'bun.sh',
-  zig: 'ziglang.org',
-  node: 'nodejs.org',
-  nodejs: 'nodejs.org',
-}
-
-/** Map domain names to their binary names */
+/** Domain-to-primary-binary mapping for installer-supported packages */
 const DOMAIN_TO_BIN: Record<string, string> = {
   'bun.sh': 'bun',
   'ziglang.org': 'zig',
   'nodejs.org': 'node',
 }
 
-/** Resolve an alias or domain to its canonical domain name */
-function resolveDomain(nameOrDomain: string): string {
-  return ALIAS_TO_DOMAIN[nameOrDomain] || nameOrDomain
-}
-
 /** Get the binary name for a dependency spec (alias or domain) */
 function getBinName(dep: string): string {
   const name = dep.includes('@') ? dep.split('@')[0] : dep
-  const domain = resolveDomain(name)
+  const domain = resolvePackageDomain(name)
   return DOMAIN_TO_BIN[domain] || name.split('.')[0]
 }
 
 /**
  * Install a system package using the pantry TS installer SDK.
  * Works cross-platform (macOS, Linux, Windows) using Node.js APIs.
- * Supports: ziglang.org, bun.sh, nodejs.org (and aliases: bun, zig, node)
+ * Supports: ziglang.org, bun.sh, nodejs.org (and all 1700+ aliases from ts-pantry)
  */
 async function installSystemPackage(spec: string, pantryDir: string): Promise<void> {
   // Import from the pantry TS installer SDK
@@ -189,10 +177,10 @@ async function installSystemPackage(spec: string, pantryDir: string): Promise<vo
 
   const { installPackage, isSupported, resolveLatestVersion } = installer
 
-  const [rawDomain, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
-  const domain = resolveDomain(rawDomain)
+  const [rawName, rawVersion = ''] = spec.includes('@') ? spec.split('@', 2) : [spec, 'latest']
+  const domain = resolvePackageDomain(rawName)
   if (!isSupported(domain)) {
-    core.warning(`${rawDomain}: not supported by TS installer SDK, skipping`)
+    core.warning(`${rawName} (resolved to ${domain}): not supported by TS installer SDK, skipping`)
     return
   }
 
@@ -214,9 +202,7 @@ function extractSystemDeps(): string[] {
       const parsed = JSON.parse(content)
       const deps = parsed.dependencies || {}
       return Object.entries(deps)
-        .filter(([n]) =>
-          n.includes('.') || ['bun', 'zig', 'node', 'python', 'ruby', 'go', 'rust', 'deno'].includes(n),
-        )
+        .filter(([n]) => n.includes('.') || isKnownAlias(n))
         .map(([name, version]) => version ? `${name}@${version}` : name)
     }
     catch { continue }
