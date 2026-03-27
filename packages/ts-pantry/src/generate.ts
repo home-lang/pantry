@@ -1217,8 +1217,8 @@ export const packages: Packages = pantry
         }
       }
 
-      // Add alias properties (allow overriding existing properties)
-      for (const [alias, targetDomain] of Object.entries(allAliases)) {
+      // Add alias properties (allow overriding existing properties), sorted for deterministic output
+      for (const [alias, targetDomain] of Object.entries(allAliases).sort((a, b) => a[0].localeCompare(b[0]))) {
         const importAlias = domainToImportAlias.get(targetDomain)
 
         if (importAlias) {
@@ -1323,7 +1323,7 @@ async function extractAllAliases(packagesDir?: string): Promise<Record<string, s
     return files
   }
 
-  const files = scanForPackageFiles(targetPackagesDir)
+  const files = scanForPackageFiles(targetPackagesDir).sort()
 
   console.log(`Found ${files.length} package files`)
 
