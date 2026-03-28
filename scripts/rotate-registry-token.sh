@@ -27,7 +27,7 @@ AWS_REGION="us-east-1"
 SERVICE_FILE="/etc/systemd/system/pantry-registry.service"
 
 # Default repos to update
-DEFAULT_REPOS="pickier/pickier,home-lang/pantry"
+DEFAULT_REPOS="pickier/pickier,home-lang/pantry,cwcss/crosswind"
 
 # Parse args
 REPOS="${1:---repos}"

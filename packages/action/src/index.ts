@@ -852,8 +852,8 @@ function extractChangelogForVersion(changelogPath: string, tag: string): string 
 
     const content = fs.readFileSync(changelogPath, 'utf-8')
     const version = tag.startsWith('v') ? tag.substring(1) : tag
-    // Escape dots for regex and require word boundary to avoid partial matches (1.2 matching 1.2.3)
-    const versionRe = new RegExp(`\\b${version.replace(/\./g, '\\.')}\\b`)
+    // Escape dots for regex and match version with optional v prefix to handle both "0.2.0" and "v0.2.0"
+    const versionRe = new RegExp(`\\bv?${version.replace(/\./g, '\\.')}\\b`)
 
     const lines = content.split('\n')
     let capturing = false
