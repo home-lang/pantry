@@ -69,6 +69,7 @@ export const pkgxshPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.10.2',
     '2.10.1',
     '2.10.0',
     '2.9.0',
