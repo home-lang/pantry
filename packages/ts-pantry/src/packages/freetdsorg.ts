@@ -90,6 +90,7 @@ export const freetdsorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.5.16',
     '1.5.15',
     '1.5.14',
     '1.5.13',
