@@ -68,6 +68,7 @@ export const openpolicyagentorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.15.1',
     '1.15.0',
     '1.14.1',
     '1.14.0',
