@@ -371,7 +371,20 @@ pub const NpmRegistry = struct {
                 return;
             },
             .unauthorized => return error.Unauthorized,
-            .forbidden => return error.Forbidden,
+            .forbidden => {
+                // npm returns 403 for version conflicts — read body to check
+                const body_reader = response.reader(&.{});
+                const error_body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(10 * 1024)) catch "";
+                defer allocator.free(error_body);
+
+                if (std.mem.indexOf(u8, error_body, "cannot publish over the previously published version") != null or
+                    std.mem.indexOf(u8, error_body, "Cannot publish over previously published version") != null or
+                    std.mem.indexOf(u8, error_body, "You cannot publish over the previously published versions") != null)
+                {
+                    return error.PackageAlreadyExists;
+                }
+                return error.Forbidden;
+            },
             .conflict => return error.PackageAlreadyExists,
             else => {
                 // Read error response for debugging

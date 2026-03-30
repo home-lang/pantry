@@ -1115,6 +1115,38 @@ fn publishSingleToNpm(
         }
         return .{ .exit_code = 0 };
     } else {
+        // Check for version conflict (npm returns 403 with EPUBLISHCONFLICT or conflict text)
+        var is_version_conflict = false;
+        if (response.error_details) |details| {
+            if (details.code) |code| {
+                if (std.mem.eql(u8, code, "EPUBLISHCONFLICT")) {
+                    is_version_conflict = true;
+                }
+            }
+        }
+        // Also check response body text for version conflict indicators
+        if (!is_version_conflict) {
+            if (response.message) |msg| {
+                if (std.mem.indexOf(u8, msg, "cannot publish over the previously published version") != null or
+                    std.mem.indexOf(u8, msg, "Cannot publish over previously published version") != null or
+                    std.mem.indexOf(u8, msg, "You cannot publish over the previously published versions") != null)
+                {
+                    is_version_conflict = true;
+                }
+            }
+        }
+
+        if (is_version_conflict) {
+            style.print("\nError: Version {s} of {s} already exists on npm.\n", .{ metadata.version, metadata.name });
+            style.print("Bump the version in package.json before publishing (e.g., 'npm version patch').\n", .{});
+            const err_msg = try std.fmt.allocPrint(
+                allocator,
+                "Version {s} already exists on npm",
+                .{metadata.version},
+            );
+            return CommandResult.err(allocator, err_msg);
+        }
+
         // Clean error output: "{status} {status_text}: {url}\n - {message}"
         const status_text: []const u8 = switch (response.status_code) {
             401 => "Unauthorized",
@@ -1397,6 +1429,18 @@ fn attemptOIDCPublish(
             error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
         }
 
+        // Also detect version conflict from response body text (npm returns 403 for this)
+        if (!is_version_conflict) {
+            if (response.message) |msg| {
+                if (std.mem.indexOf(u8, msg, "cannot publish over the previously published version") != null or
+                    std.mem.indexOf(u8, msg, "Cannot publish over previously published version") != null or
+                    std.mem.indexOf(u8, msg, "You cannot publish over the previously published versions") != null)
+                {
+                    is_version_conflict = true;
+                }
+            }
+        }
+
         return .{
             .success = false,
             .error_message = error_msg,
@@ -1489,6 +1533,18 @@ fn attemptOIDCPublishUnverified(
             error_msg = try allocator.dupe(u8, msg);
         } else {
             error_msg = try std.fmt.allocPrint(allocator, "Publish failed with status {d}", .{response.status_code});
+        }
+
+        // Also detect version conflict from response body text (npm returns 403 for this)
+        if (!is_version_conflict) {
+            if (response.message) |msg| {
+                if (std.mem.indexOf(u8, msg, "cannot publish over the previously published version") != null or
+                    std.mem.indexOf(u8, msg, "Cannot publish over previously published version") != null or
+                    std.mem.indexOf(u8, msg, "You cannot publish over the previously published versions") != null)
+                {
+                    is_version_conflict = true;
+                }
+            }
         }
 
         return .{
