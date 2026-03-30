@@ -61,6 +61,7 @@ export const watchexecgithubioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.5.1',
     '2.5.0',
     '2.4.3',
     '2.4.2',
