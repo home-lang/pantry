@@ -2,7 +2,7 @@ const std = @import("std");
 const testing = std.testing;
 const signing = @import("signing.zig");
 const io_helper = @import("../io_helper.zig");
-fn clockGettime() std.c.timespec {
+fn clockGettime() io_helper.Timespec {
     return io_helper.clockGettime();
 }
 

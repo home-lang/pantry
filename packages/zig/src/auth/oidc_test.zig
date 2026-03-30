@@ -4,7 +4,7 @@ const lib = @import("lib");
 const oidc = lib.auth.oidc;
 const io_helper = lib.io_helper;
 /// Get current timespec (Zig 0.16 compatible)
-fn getTimespec() std.c.timespec {
+fn getTimespec() io_helper.Timespec {
     return io_helper.clockGettime();
 }
 

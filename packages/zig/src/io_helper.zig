@@ -17,13 +17,19 @@ pub const File = std.Io.File;
 
 const is_windows = builtin.os.tag == .windows;
 
+/// Cross-platform timespec (c.timespec fields are void on Windows)
+pub const Timespec = struct {
+    sec: i64,
+    nsec: i64,
+};
+
 // Windows kernel32 @extern declarations (only evaluated on Windows targets)
 const win32 = struct {
     const HANDLE = std.os.windows.HANDLE;
     const DWORD = std.os.windows.DWORD;
     const BOOL = std.os.windows.BOOL;
     const LARGE_INTEGER = std.os.windows.LARGE_INTEGER;
-    const FALSE: BOOL = 0;
+    const FALSE: BOOL = if (@typeInfo(BOOL) == .@"enum") @enumFromInt(0) else 0;
     const FILETIME = extern struct { dwLowDateTime: u32, dwHighDateTime: u32 };
 
     const ReadFile = if (is_windows) @extern(*const fn (HANDLE, [*]u8, DWORD, *DWORD, ?*anyopaque) callconv(.winapi) BOOL, .{ .name = "ReadFile" }) else {};
@@ -1210,31 +1216,31 @@ pub fn getMilliTimestamp() i64 {
 }
 
 /// Get current wall-clock timespec (replacement for std.posix.clock_gettime(.REALTIME))
-pub fn clockGettime() c.timespec {
+pub fn clockGettime() Timespec {
     if (comptime is_windows) {
         var ft: win32.FILETIME = undefined;
         win32.GetSystemTimeAsFileTime(&ft);
         const ticks: u64 = @as(u64, ft.dwHighDateTime) << 32 | ft.dwLowDateTime;
         const unix_ticks: i64 = @as(i64, @bitCast(ticks)) - 116444736000000000;
-        return .{ .sec = @intCast(@divFloor(unix_ticks, 10000000)), .nsec = @intCast(@mod(unix_ticks, 10000000) * 100) };
+        return .{ .sec = @divFloor(unix_ticks, 10000000), .nsec = @mod(unix_ticks, 10000000) * 100 };
     }
     var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
     _ = c.clock_gettime(c.CLOCK.REALTIME, &ts);
-    return ts;
+    return .{ .sec = ts.sec, .nsec = ts.nsec };
 }
 
 /// Get current monotonic timespec (for benchmarking/timing)
-pub fn clockGettimeMonotonic() c.timespec {
+pub fn clockGettimeMonotonic() Timespec {
     if (comptime is_windows) {
         var ft: win32.FILETIME = undefined;
         win32.GetSystemTimeAsFileTime(&ft);
         const ticks: u64 = @as(u64, ft.dwHighDateTime) << 32 | ft.dwLowDateTime;
         const unix_ticks: i64 = @as(i64, @bitCast(ticks)) - 116444736000000000;
-        return .{ .sec = @intCast(@divFloor(unix_ticks, 10000000)), .nsec = @intCast(@mod(unix_ticks, 10000000) * 100) };
+        return .{ .sec = @divFloor(unix_ticks, 10000000), .nsec = @mod(unix_ticks, 10000000) * 100 };
     }
     var ts: c.timespec = .{ .sec = 0, .nsec = 0 };
     _ = c.clock_gettime(c.CLOCK.MONOTONIC, &ts);
-    return ts;
+    return .{ .sec = ts.sec, .nsec = ts.nsec };
 }
 
 /// Mutex wrapper — spin lock using atomics (works across all Zig 0.16 dev builds)
