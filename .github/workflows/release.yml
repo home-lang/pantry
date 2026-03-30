@@ -93,6 +93,7 @@ jobs:
 
   npm:
     name: npm
+    needs: pantry
     runs-on: ubuntu-latest
     permissions:
       contents: write
