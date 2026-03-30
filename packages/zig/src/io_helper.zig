@@ -115,8 +115,8 @@ pub fn readFileAlloc(allocator: std.mem.Allocator, path: []const u8, max_size: u
 
     while (true) {
         if (total == buffer.len) {
-            if (buffer.len >= max_size) return error.BufferTooSmall;
-            buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size));
+            if (buffer.len > max_size) return error.BufferTooSmall;
+            buffer = try allocator.realloc(buffer, @min(buffer.len *| 2, max_size + 1));
         }
         const n = platformRead(file.handle, buffer[total..]) catch |err| {
             return err;
