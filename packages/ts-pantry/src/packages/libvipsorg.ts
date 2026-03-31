@@ -105,6 +105,7 @@ export const libvipsorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.18.2',
     '8.18.1',
     '8.18.0',
     '8.17.3',
