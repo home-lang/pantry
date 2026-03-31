@@ -68,6 +68,7 @@ export const llmdatasetteioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.30',
     '0.29',
     '0.29.0',
     '0.28',
