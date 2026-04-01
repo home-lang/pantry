@@ -76,6 +76,7 @@ export const getcomposerorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.10.0-RC1',
     '2.9.5',
     '2.9.4',
     '2.9.3',
