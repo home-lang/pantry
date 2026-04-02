@@ -79,6 +79,7 @@ export const projenioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.99.29',
     '0.99.28',
     '0.99.27',
     '0.99.26',
