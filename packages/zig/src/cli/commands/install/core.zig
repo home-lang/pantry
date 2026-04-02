@@ -552,6 +552,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         // Clean Bun-style output - just show what we're installing
         style.printInstalling(deps_to_install.len);
 
+        if (opts.verbose) {
+            const setup_ts = io_helper.clockGettime();
+            const setup_ms = @as(i64, @intCast(setup_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(setup_ts.nsec, 1_000_000)));
+            std.debug.print("[verbose:timer] setup phase complete: {d}ms\n", .{setup_ms - start_time});
+        }
+
         // Install each dependency concurrently using a shared installer for deduplication
         var pkg_cache = try cache.PackageCache.init(allocator);
         defer pkg_cache.deinit();
@@ -695,8 +701,11 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         }
                     }
 
+                    var pkg_start_ms: i64 = 0;
                     if (ctx.opts.verbose) {
-                        std.debug.print("[verbose] [{d}/{d}] installing: {s} @ {s} (proj={s}, modules_dir={s})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.opts.modules_dir });
+                        const pkg_ts = io_helper.clockGettime();
+                        pkg_start_ms = @as(i64, @intCast(pkg_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(pkg_ts.nsec, 1_000_000)));
+                        std.debug.print("[verbose] [{d}/{d}] installing: {s} @ {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version });
                     }
 
                     ctx.results[i] = helpers.installSinglePackage(
@@ -722,7 +731,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                     };
 
                     if (ctx.opts.verbose) {
-                        std.debug.print("[verbose] [{d}/{d}] done: {s} success={}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.results[i].success });
+                        const pkg_end_ts = io_helper.clockGettime();
+                        const pkg_end_ms = @as(i64, @intCast(pkg_end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(pkg_end_ts.nsec, 1_000_000)));
+                        std.debug.print("[verbose:timer] [{d}/{d}] {s}: {d}ms (success={})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, pkg_end_ms - pkg_start_ms, ctx.results[i].success });
                     }
                 }
                 if (ctx.opts.verbose) {
@@ -809,7 +820,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             }
         }
         if (opts.verbose) {
+            const join_ts = io_helper.clockGettime();
+            const join_ms = @as(i64, @intCast(join_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(join_ts.nsec, 1_000_000)));
             std.debug.print("[verbose] all threads joined. final counter={d}\n", .{next_dep.load(.monotonic)});
+            std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{join_ms - start_time});
         }
 
         // Print clean Yarn/Bun-style summary - only show what was installed or failed
@@ -1174,6 +1188,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             style.printCheckedSummary(success_count, total_deps, elapsed_ms);
         }
 
+        if (options.verbose) {
+            std.debug.print("[verbose:timer] total install time: {d}ms\n", .{@as(i64, @intFromFloat(elapsed_ms))});
+        }
+
         if (failed_count > 0) {
             style.printFailureCount(failed_count);
 
@@ -1181,6 +1199,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 style.printWarn("Some packages failed. Use 'pantry clean' to reset, or fix errors and retry.\n", .{});
             }
         }
+
+        // Flush batched analytics (single HTTP request in background thread)
+        install.flushAnalytics(allocator);
 
         // Execute post-install hook
         if (try lockfile_hooks.executePostInstallHook(allocator, cwd, options.verbose)) |*post_result| {

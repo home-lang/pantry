@@ -59,16 +59,22 @@ fn installSingleWorkspaceDep(
     // Domain-style: full DynamoDB + S3 lookup. Non-domain: S3-only (lightweight).
     // Skip entirely for scoped npm packages (@scope/name).
     // PERF: Skip pantry registry lookup entirely if the bulk resolver already pre-resolved
-    // this package (avoids per-package HTTP to S3 / AWS CLI subprocess to DynamoDB).
+    // this package, or if the version is a semver constraint (npm packages never in Pantry).
     const is_scoped = clean_name.len > 0 and clean_name[0] == '@';
     const is_domain_style = std.mem.indexOfScalar(u8, clean_name, '.') != null;
+    const version_is_semver = dep.version.len > 0 and
+        (dep.version[0] == '^' or dep.version[0] == '~' or
+        dep.version[0] == '>' or dep.version[0] == '<' or
+        dep.version[0] == '=' or dep.version[0] == '*' or
+        (dep.version[0] >= '0' and dep.version[0] <= '9'));
     const bulk_resolved = shared_installer.hasNpmResolution(clean_name, dep.version);
     if (is_npm_package or (pkg_source == .pantry and
         pkg_registry.getPackageByName(clean_name) == null))
     {
-        // Try Pantry registry first — but skip if bulk resolver already has this package.
-        // Uses shared HTTP client for connection pooling across worker threads.
-        const pantry_lookup: ?helpers.PantryPackageInfo = if (bulk_resolved or is_scoped)
+        // Try Pantry registry first — but skip if bulk resolver already has this package,
+        // or if the version is a semver constraint (these are always npm packages).
+        const skip_pantry = bulk_resolved or is_scoped or version_is_semver;
+        const pantry_lookup: ?helpers.PantryPackageInfo = if (skip_pantry)
             null
         else if (is_domain_style)
             helpers.lookupPantryRegistryWithClient(allocator, clean_name, shared_installer.http_client) catch null
@@ -318,8 +324,11 @@ const WorkspaceThreadContext = struct {
                 }
             }
 
+            var pkg_start_ms: i64 = 0;
             if (ctx.verbose) {
-                std.debug.print("[verbose:ws] [{d}/{d}] installing: {s} @ {s} (root={s}, modules_dir={s})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version, ctx.workspace_root, ctx.shared_installer.modules_dir });
+                const pkg_ts = io_helper.clockGettime();
+                pkg_start_ms = @as(i64, @intCast(pkg_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(pkg_ts.nsec)), 1_000_000);
+                std.debug.print("[verbose:ws] [{d}/{d}] installing: {s} @ {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version });
             }
 
             ctx.results[i] = installSingleWorkspaceDep(
@@ -330,7 +339,9 @@ const WorkspaceThreadContext = struct {
             );
 
             if (ctx.verbose) {
-                std.debug.print("[verbose:ws] [{d}/{d}] done: {s} success={}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.results[i].success });
+                const pkg_end_ts = io_helper.clockGettime();
+                const pkg_end_ms = @as(i64, @intCast(pkg_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(pkg_end_ts.nsec)), 1_000_000);
+                std.debug.print("[verbose:timer] [{d}/{d}] {s}: {d}ms (success={})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, pkg_end_ms - pkg_start_ms, ctx.results[i].success });
             }
         }
         if (ctx.verbose) {
@@ -974,7 +985,10 @@ pub fn installWorkspaceCommandWithOptions(
             }
         }
         if (options.verbose) {
+            const join_ts = io_helper.clockGettime();
+            const join_ms = @as(i64, @intCast(join_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(join_ts.nsec)), 1_000_000);
             std.debug.print("[verbose:ws] all threads joined. final counter={d}\n", .{next_idx.load(.monotonic)});
+            std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{join_ms - install_start_ms});
         }
 
         // Print results and collect resolution data for lockfile
@@ -1482,6 +1496,9 @@ pub fn installWorkspaceCommandWithOptions(
         };
     }
 
+    // Flush batched analytics (single HTTP request in background thread)
+    install.flushAnalytics(allocator);
+
     // Execute post-install hook
     if (try lf_hooks.executePostInstallHook(allocator, workspace_root, options.verbose)) |*post_result| {
         defer {
@@ -1536,6 +1553,10 @@ pub fn installWorkspaceCommandWithOptions(
     const install_end_ms = @as(i64, @intCast(install_end_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_end_ts.nsec)), 1_000_000);
     const elapsed_ms: u64 = @intCast(@max(0, install_end_ms - install_start_ms));
     style.printWorkspaceComplete(success_count, failed_count, elapsed_ms);
+
+    if (options.verbose) {
+        std.debug.print("[verbose:timer] total install time: {d}ms\n", .{elapsed_ms});
+    }
 
     return .{ .exit_code = 0 };
 }

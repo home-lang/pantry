@@ -704,27 +704,37 @@ pub const Installer = struct {
         // If tarball URL wasn't consumed by download functions, free it here
         defer if (s3_tarball_url) |u| self.allocator.free(@constCast(u));
 
-        if (options.verbose) std.debug.print("[verbose:installer] looking up S3 registry for domain={s}, version={s}\n", .{ domain, spec.version });
+        // Perf: Skip S3/Pantry registry lookups for packages that are clearly npm
+        // (scoped @scope/name or non-domain names without dots). These will never be in S3.
+        const is_scoped_name = spec.name.len > 0 and spec.name[0] == '@';
+        const is_domain_name = std.mem.indexOfScalar(u8, spec.name, '.') != null;
+        const skip_s3_lookup = is_scoped_name or (!is_domain_name and pkg_info == null);
 
-        if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
-            if (options.verbose) std.debug.print("[verbose:installer] S3 registry hit: {s} @ {s} url={s}\n", .{ domain, s3_result.version, s3_result.tarball_url });
-            s3_version_alloc = s3_result.version;
-            s3_tarball_url = s3_result.tarball_url;
-            resolved_spec = PackageSpec{
-                .name = spec.name,
-                .version = s3_result.version,
-            };
-            from_s3 = true;
-        } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| {
-            if (options.verbose) std.debug.print("[verbose:installer] pantry published hit: {s} @ {s}\n", .{ domain, pub_result.version });
-            s3_version_alloc = pub_result.version;
-            s3_tarball_url = pub_result.tarball_url;
-            resolved_spec = PackageSpec{
-                .name = spec.name,
-                .version = pub_result.version,
-            };
-            from_s3 = true;
-        } else {
+        if (options.verbose) std.debug.print("[verbose:installer] looking up S3 registry for domain={s}, version={s} (skip_s3={})\n", .{ domain, spec.version, skip_s3_lookup });
+
+        if (!skip_s3_lookup) {
+            if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
+                if (options.verbose) std.debug.print("[verbose:installer] S3 registry hit: {s} @ {s} url={s}\n", .{ domain, s3_result.version, s3_result.tarball_url });
+                s3_version_alloc = s3_result.version;
+                s3_tarball_url = s3_result.tarball_url;
+                resolved_spec = PackageSpec{
+                    .name = spec.name,
+                    .version = s3_result.version,
+                };
+                from_s3 = true;
+            } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| {
+                if (options.verbose) std.debug.print("[verbose:installer] pantry published hit: {s} @ {s}\n", .{ domain, pub_result.version });
+                s3_version_alloc = pub_result.version;
+                s3_tarball_url = pub_result.tarball_url;
+                resolved_spec = PackageSpec{
+                    .name = spec.name,
+                    .version = pub_result.version,
+                };
+                from_s3 = true;
+            }
+        }
+
+        if (!from_s3) {
             if (pkg_info) |_| {
                 // Fall back to generated.zig version list
                 if (semver.resolveVersion(domain, spec.version)) |resolved_version| {
@@ -1831,7 +1841,6 @@ pub const Installer = struct {
             };
             for (results) |*r| r.* = null;
 
-            // Use thread pool for parallel resolution
             if (self.verbose) std.debug.print("[verbose:bfs] wave at depth={d}: {d} unique deps to resolve\n", .{ current_depth, unique_deps.items.len });
 
             var next_idx = std.atomic.Value(usize).init(0);
@@ -1843,19 +1852,16 @@ pub const Installer = struct {
                 .project_root = project_root,
             };
 
-            const cpu_count = std.Thread.getCpuCount() catch 4;
-            const max_threads = @min(cpu_count, 16);
-            const thread_count = @min(unique_deps.items.len, max_threads);
-
-            if (self.verbose) std.debug.print("[verbose:bfs] spawning {d} threads for BFS wave\n", .{thread_count});
+            // Use a small thread pool for parallel resolution (cap at 4 to avoid
+            // excessive contention on the shared HTTP client connection pool).
+            const max_bfs_threads: usize = 4;
+            const thread_count = @min(unique_deps.items.len, max_bfs_threads);
 
             if (thread_count <= 1) {
-                // Single dep or single CPU — just run inline
                 BfsDepThreadCtx.worker(&ctx);
             } else {
                 const spawned = thread_count - 1; // main thread participates too
                 var threads = self.allocator.alloc(?std.Thread, spawned) catch {
-                    // Fallback to inline
                     BfsDepThreadCtx.worker(&ctx);
                     break;
                 };
@@ -1866,10 +1872,8 @@ pub const Installer = struct {
                     threads[t] = std.Thread.spawn(.{}, BfsDepThreadCtx.worker, .{&ctx}) catch null;
                 }
 
-                // Main thread participates as worker
                 BfsDepThreadCtx.worker(&ctx);
 
-                // Join all threads
                 for (threads) |*t| {
                     if (t.*) |thread| {
                         thread.join();
@@ -1877,6 +1881,7 @@ pub const Installer = struct {
                     }
                 }
             }
+
             if (self.verbose) std.debug.print("[verbose:bfs] wave at depth={d} complete\n", .{current_depth});
 
             // Free collected deps (names/versions were borrowed during install)
@@ -3693,35 +3698,85 @@ test "Installer basic operations" {
 
 /// Report a package download to the pantry.dev analytics API.
 /// Truly fire-and-forget: runs in a detached thread so installs are never blocked.
+/// Perf: Analytics is fire-and-forget and non-critical. Instead of spawning a
+/// detached 2MB-stack thread per package, we batch events and send them in a
+/// single request at the end of the install. This eliminates thread explosion
+/// during installs with many packages.
+var analytics_events: std.ArrayList(AnalyticsEvent) = .empty;
+var analytics_mutex: io_helper.Mutex = .{};
+
+const AnalyticsEvent = struct {
+    domain: []const u8,
+    version: []const u8,
+};
+
 fn reportDownloadAnalytics(allocator: std.mem.Allocator, domain: []const u8, version: []const u8) void {
-    // Dupe strings for the detached thread (caller's memory may be freed)
     const owned_domain = allocator.dupe(u8, domain) catch return;
     const owned_version = allocator.dupe(u8, version) catch {
         allocator.free(owned_domain);
         return;
     };
-
-    const thread = std.Thread.spawn(.{ .stack_size = 2 * 1024 * 1024 }, analyticsWorker, .{ allocator, owned_domain, owned_version }) catch {
+    analytics_mutex.lock();
+    defer analytics_mutex.unlock();
+    analytics_events.append(allocator, .{ .domain = owned_domain, .version = owned_version }) catch {
         allocator.free(owned_domain);
         allocator.free(owned_version);
+    };
+}
+
+/// Flush all batched analytics events in a single detached thread.
+/// Call this once after install completes.
+pub fn flushAnalytics(allocator: std.mem.Allocator) void {
+    analytics_mutex.lock();
+    const events = analytics_events.items;
+    if (events.len == 0) {
+        analytics_mutex.unlock();
+        return;
+    }
+    // Take ownership of the list, reset the global
+    const owned_items = allocator.dupe(AnalyticsEvent, events) catch {
+        analytics_mutex.unlock();
+        return;
+    };
+    for (analytics_events.items) |ev| {
+        allocator.free(ev.domain);
+        allocator.free(ev.version);
+    }
+    analytics_events.clearRetainingCapacity();
+    analytics_mutex.unlock();
+
+    // Send in a single detached thread
+    const thread = std.Thread.spawn(.{ .stack_size = 2 * 1024 * 1024 }, analyticsFlushWorker, .{ allocator, owned_items }) catch {
+        for (owned_items) |ev| {
+            allocator.free(ev.domain);
+            allocator.free(ev.version);
+        }
+        allocator.free(owned_items);
         return;
     };
     thread.detach();
 }
 
-fn analyticsWorker(allocator: std.mem.Allocator, domain: []const u8, version: []const u8) void {
+fn analyticsFlushWorker(allocator: std.mem.Allocator, events: []const AnalyticsEvent) void {
     defer {
-        allocator.free(domain);
-        allocator.free(version);
+        for (events) |ev| {
+            allocator.free(ev.domain);
+            allocator.free(ev.version);
+        }
+        allocator.free(events);
     }
 
-    const body = std.fmt.allocPrint(
-        allocator,
-        "{{\"packageName\":\"{s}\",\"category\":\"download\",\"version\":\"{s}\"}}",
-        .{ domain, version },
-    ) catch return;
-    defer allocator.free(body);
+    // Build a JSON array of events
+    var buf = std.ArrayList(u8).empty;
+    defer buf.deinit(allocator);
+    buf.appendSlice(allocator, "[") catch return;
+    for (events, 0..) |ev, i| {
+        if (i > 0) buf.appendSlice(allocator, ",") catch return;
+        const entry = std.fmt.allocPrint(allocator, "{{\"packageName\":\"{s}\",\"category\":\"download\",\"version\":\"{s}\"}}", .{ ev.domain, ev.version }) catch return;
+        defer allocator.free(entry);
+        buf.appendSlice(allocator, entry) catch return;
+    }
+    buf.appendSlice(allocator, "]") catch return;
 
-    // Use native HTTP POST instead of spawning curl subprocess
-    _ = io_helper.httpPostJson(allocator, "https://registry.pantry.dev/analytics/events", body) catch return;
+    _ = io_helper.httpPostJson(allocator, "https://registry.pantry.dev/analytics/events", buf.items) catch return;
 }

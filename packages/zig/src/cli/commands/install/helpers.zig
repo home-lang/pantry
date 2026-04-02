@@ -757,14 +757,24 @@ pub fn installSinglePackage(
     } else blk: {
         // Regular registry package - check pantry built-in, then Pantry S3 registry, then npm
         if (pkg_info == null) {
-            // Try Pantry registry first, then fall back to npm.
-            // For domain-style packages (containing '.'), use full DynamoDB + S3 lookup.
-            // For non-domain packages (like "zig-config"), use lightweight S3-only lookup
-            // to avoid spawning expensive `aws` CLI subprocesses.
-            // Skip entirely for scoped npm packages (@scope/name) — never in Pantry.
+            // Perf: Skip Pantry registry lookup entirely when the version looks like
+            // an npm semver constraint (^, ~, >=, *, digit prefix). Pantry S3 packages
+            // use exact versions or domain-style names — they never have semver ranges.
+            // This avoids 1-2 wasted HTTP round trips per npm package (~100ms each).
             const is_scoped = lookup_name.len > 0 and lookup_name[0] == '@';
             const is_domain_style = std.mem.indexOfScalar(u8, lookup_name, '.') != null;
-            const pantry_info: ?PantryPackageInfo = if (is_scoped)
+            const version_is_semver = dep.version.len > 0 and
+                (dep.version[0] == '^' or dep.version[0] == '~' or
+                dep.version[0] == '>' or dep.version[0] == '<' or
+                dep.version[0] == '=' or dep.version[0] == '*' or
+                (dep.version[0] >= '0' and dep.version[0] <= '9'));
+            const skip_pantry_lookup = is_scoped or version_is_semver;
+
+            if (options.verbose) {
+                std.debug.print("[verbose:helper] pantry lookup: name={s}, is_scoped={}, is_domain={}, version_is_semver={}, skip={}\n", .{ lookup_name, is_scoped, is_domain_style, version_is_semver, skip_pantry_lookup });
+            }
+
+            const pantry_info: ?PantryPackageInfo = if (skip_pantry_lookup)
                 null
             else if (is_domain_style)
                 lookupPantryRegistry(allocator, lookup_name) catch |err| lkup: {
@@ -772,7 +782,7 @@ pub fn installSinglePackage(
                     break :lkup null;
                 }
             else
-                // Non-domain, non-scoped: try lightweight S3 lookup (e.g. zig-config, zig-cli)
+                // Non-domain, non-scoped, non-semver: try lightweight S3 lookup (e.g. zig-config, zig-cli)
                 lookupPantryS3Only(allocator, lookup_name);
             if (pantry_info) |info| {
                 var p_info = info;
@@ -789,7 +799,7 @@ pub fn installSinglePackage(
             // For domain-style packages (containing '.'), use pkgx source
             // which triggers S3 registry lookup in installer.zig.
             // Domain-style names like 'meilisearch.com' are pantry packages, not npm.
-            if (std.mem.indexOfScalar(u8, lookup_name, '.') != null) {
+            if (is_domain_style and !version_is_semver) {
                 break :blk lib.packages.PackageSpec{
                     .name = lookup_name,
                     .version = dep.version,

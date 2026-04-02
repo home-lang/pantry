@@ -15,6 +15,7 @@ pub const patches = @import("install/patches.zig");
 pub const Installer = installer.Installer;
 pub const InstallOptions = installer.InstallOptions;
 pub const InstallResult = installer.InstallResult;
+pub const flushAnalytics = installer.flushAnalytics;
 
 // Re-export runtime types
 pub const RuntimeInstaller = runtime.RuntimeInstaller;
