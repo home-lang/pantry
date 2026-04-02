@@ -560,6 +560,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         allocator.free(shared_installer.data_dir);
         shared_installer.data_dir = try allocator.dupe(u8, env_dir);
         shared_installer.modules_dir = opts.modules_dir;
+        shared_installer.verbose = opts.verbose;
 
         // Configure installer with .npmrc settings
         if (npmrc_config.registry) |custom_registry| {
@@ -644,17 +645,27 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             resume_packages: ?*const std.StringHashMap(void),
 
             fn worker(ctx: *@This()) void {
+                if (ctx.opts.verbose) {
+                    std.debug.print("[verbose] worker thread started (tid={d})\n", .{std.Thread.getCurrentId()});
+                }
                 while (true) {
                     const i = ctx.next.fetchAdd(1, .monotonic);
                     if (i >= ctx.deps.len) break;
 
                     const clean_name = helpers.normalizePackageName(ctx.deps[i].name);
 
+                    if (ctx.opts.verbose) {
+                        std.debug.print("[verbose] [{d}/{d}] processing: {s} @ {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version });
+                    }
+
                     // Skip packages that match lockfile and exist at destination
                     // (bypassed when --force is set)
                     if (!ctx.opts.force) {
                         if (ctx.lockfile_packages) |lf_pkgs| {
                             if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc, ctx.opts.modules_dir)) {
+                                if (ctx.opts.verbose) {
+                                    std.debug.print("[verbose] [{d}/{d}] skipped (lockfile match): {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name });
+                                }
                                 ctx.results[i] = .{
                                     .name = clean_name,
                                     .version = ctx.deps[i].version,
@@ -669,6 +680,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         // Skip packages already installed in a previous interrupted run (resume)
                         if (ctx.resume_packages) |resume_pkgs| {
                             if (resume_pkgs.contains(clean_name)) {
+                                if (ctx.opts.verbose) {
+                                    std.debug.print("[verbose] [{d}/{d}] skipped (resume checkpoint): {s}\n", .{ i + 1, ctx.deps.len, clean_name });
+                                }
                                 ctx.results[i] = .{
                                     .name = clean_name,
                                     .version = ctx.deps[i].version,
@@ -681,6 +695,10 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         }
                     }
 
+                    if (ctx.opts.verbose) {
+                        std.debug.print("[verbose] [{d}/{d}] installing: {s} @ {s} (proj={s}, modules_dir={s})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.opts.modules_dir });
+                    }
+
                     ctx.results[i] = helpers.installSinglePackage(
                         ctx.alloc,
                         ctx.deps[i],
@@ -690,13 +708,25 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                         ctx.cwd_path,
                         ctx.shared_installer,
                         ctx.opts,
-                    ) catch .{
-                        .name = ctx.deps[i].name,
-                        .version = ctx.deps[i].version,
-                        .success = false,
-                        .error_msg = null,
-                        .install_time_ms = 0,
+                    ) catch |err| blk: {
+                        if (ctx.opts.verbose) {
+                            std.debug.print("[verbose] [{d}/{d}] INSTALL ERROR: {s} @ {s}: {}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version, err });
+                        }
+                        break :blk .{
+                            .name = ctx.deps[i].name,
+                            .version = ctx.deps[i].version,
+                            .success = false,
+                            .error_msg = null,
+                            .install_time_ms = 0,
+                        };
                     };
+
+                    if (ctx.opts.verbose) {
+                        std.debug.print("[verbose] [{d}/{d}] done: {s} success={}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.results[i].success });
+                    }
+                }
+                if (ctx.opts.verbose) {
+                    std.debug.print("[verbose] worker thread exiting (tid={d})\n", .{std.Thread.getCurrentId()});
                 }
             }
         };
@@ -716,9 +746,26 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             .resume_packages = if (resuming) &checkpoint.installed_packages else null,
         };
 
+        if (opts.verbose) {
+            std.debug.print("[verbose] spawning {d} worker threads for {d} packages (cpu_count={d}, max_threads={d})\n", .{ thread_count, deps_to_install.len, cpu_count, max_threads });
+            std.debug.print("[verbose] project_dir={s}, modules_dir={s}, bin_dir={s}\n", .{ proj_dir, opts.modules_dir, bin_dir });
+            std.debug.print("[verbose] shared_installer ptr={*}, http_client ptr={*}\n", .{ &shared_installer, shared_installer.http_client });
+            for (deps_to_install, 0..) |dep, di| {
+                std.debug.print("[verbose]   dep[{d}]: {s} @ {s} (source={s})\n", .{ di, dep.name, dep.version, @tagName(dep.source) });
+            }
+        }
+
         // Spawn worker threads
         for (0..thread_count) |t| {
-            threads[t] = std.Thread.spawn(.{}, ThreadContext.worker, .{&ctx}) catch null;
+            threads[t] = std.Thread.spawn(.{}, ThreadContext.worker, .{&ctx}) catch |err| blk: {
+                if (opts.verbose) {
+                    std.debug.print("[verbose] FAILED to spawn thread {d}: {}\n", .{ t, err });
+                }
+                break :blk null;
+            };
+            if (opts.verbose and threads[t] != null) {
+                std.debug.print("[verbose] spawned worker thread {d}\n", .{t});
+            }
         }
 
         // Main thread shows progress while workers install
@@ -746,20 +793,41 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         }
 
         // Join all threads
-        for (&threads) |*t| {
+        if (opts.verbose) {
+            std.debug.print("[verbose] waiting for all worker threads to join...\n", .{});
+        }
+        for (&threads, 0..) |*t, ti| {
             if (t.*) |thread| {
+                if (opts.verbose) {
+                    std.debug.print("[verbose] joining thread {d}...\n", .{ti});
+                }
                 thread.join();
                 t.* = null;
+                if (opts.verbose) {
+                    std.debug.print("[verbose] thread {d} joined\n", .{ti});
+                }
             }
+        }
+        if (opts.verbose) {
+            std.debug.print("[verbose] all threads joined. final counter={d}\n", .{next_dep.load(.monotonic)});
         }
 
         // Print clean Yarn/Bun-style summary - only show what was installed or failed
         var success_count: usize = 0;
         var failed_count: usize = 0;
 
-        for (install_results) |result| {
+        for (install_results, 0..) |result, ri| {
             if (result.name.len == 0) continue;
             const display_name = helpers.stripDisplayPrefix(result.name);
+            if (opts.verbose) {
+                std.debug.print("[verbose] result[{d}]: {s} @ {s} success={} err={s}\n", .{
+                    ri,
+                    display_name,
+                    result.version,
+                    result.success,
+                    if (result.error_msg) |msg| msg else "(none)",
+                });
+            }
             if (result.success) {
                 style.printInstalled(display_name, result.version);
                 success_count += 1;

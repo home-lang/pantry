@@ -665,8 +665,15 @@ pub fn installSinglePackage(
     const start_ts = io_helper.clockGettime();
     const start_time = @as(i64, @intCast(start_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(start_ts.nsec, 1_000_000)));
 
+    if (options.verbose) {
+        std.debug.print("[verbose:helper] installSinglePackage: {s} @ {s} (source={s}, proj={s})\n", .{ dep.name, dep.version, @tagName(dep.source), proj_dir });
+    }
+
     // Skip local packages - they're handled separately
     if (isLocalDependency(dep)) {
+        if (options.verbose) {
+            std.debug.print("[verbose:helper] skipping local dependency: {s}\n", .{dep.name});
+        }
         return .{
             .name = "",
             .version = "",
@@ -682,6 +689,10 @@ pub fn installSinglePackage(
     // Resolve well-known package aliases (e.g. "meilisearch" -> "meilisearch.com")
     const lookup_name = resolvePackageAlias(stripped_name);
     const pkg_info = pkg_registry.getPackageByName(lookup_name);
+
+    if (options.verbose) {
+        std.debug.print("[verbose:helper] resolved: {s} -> stripped={s} -> lookup={s} (in_registry={})\n", .{ dep.name, stripped_name, lookup_name, pkg_info != null });
+    }
 
     // Check if this is a zig dev version (should use ziglang.org instead of pkgx)
     const is_zig_package = std.mem.eql(u8, lookup_name, "zig") or
@@ -873,13 +884,29 @@ pub fn installSinglePackage(
 
     _ = env_dir;
 
+    if (options.verbose) {
+        std.debug.print("[verbose:helper] calling installer.install for {s} (source={s}, version={s}, url={s})\n", .{
+            spec.name,
+            @tagName(spec.source),
+            spec.version,
+            if (spec.url) |u| u else "(null)",
+        });
+    }
+
     // Install to project's pantry directory (quiet mode for clean output)
     var inst_result = shared_installer.install(spec, .{
         .project_root = proj_dir,
         .quiet = true,
+        .verbose = options.verbose,
     }) catch |err| {
+        if (options.verbose) {
+            std.debug.print("[verbose:helper] installer.install FAILED for {s}: {}\n", .{ spec.name, err });
+        }
         // For zig packages not found in registry, fall back to direct ziglang.org download
         if (is_zig_package) {
+            if (options.verbose) {
+                std.debug.print("[verbose:helper] trying zig fallback for {s}\n", .{dep.version});
+            }
             const zig_fallback_spec = lib.packages.PackageSpec{
                 .name = "zig",
                 .version = dep.version,
@@ -911,6 +938,10 @@ pub fn installSinglePackage(
         return handleInstallError(allocator, err, lookup_name, dep.version, options.quiet);
     };
 
+    if (options.verbose) {
+        std.debug.print("[verbose:helper] installer.install SUCCESS for {s}: version={s}, path={s}, from_cache={}\n", .{ spec.name, inst_result.version, inst_result.install_path, inst_result.from_cache });
+    }
+
     // Duplicate the version and install path strings before deinit
     const installed_version = try allocator.dupe(u8, inst_result.version);
     const actual_install_path = try allocator.dupe(u8, inst_result.install_path);
@@ -920,6 +951,10 @@ pub fn installSinglePackage(
     // Run postinstall lifecycle script if enabled
     const package_path = try std.fs.path.join(allocator, &[_][]const u8{ proj_dir, options.modules_dir, lookup_name });
     defer allocator.free(package_path);
+
+    if (options.verbose) {
+        std.debug.print("[verbose:helper] package_path for lifecycle/shims: {s}\n", .{package_path});
+    }
 
     if (!options.ignore_scripts) {
         const lifecycle_options = lib.lifecycle.ScriptOptions{

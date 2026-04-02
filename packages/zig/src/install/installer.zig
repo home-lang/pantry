@@ -248,6 +248,8 @@ pub const Installer = struct {
     /// Shared HTTP client for connection pooling (reuses TCP/TLS connections across requests)
     /// std.http.Client has a built-in 32-connection pool with mutex protection.
     http_client: *std.http.Client,
+    /// Verbose debug logging (set once, checked throughout all install paths)
+    verbose: bool = false,
 
     /// Thread-safe cache tracking which packages are installed at the hoisted level.
     /// Eliminates redundant filesystem checks when the same transitive dep is encountered
@@ -636,37 +638,51 @@ pub const Installer = struct {
         const start_ts_ = io_helper.clockGettime();
         const start_time = @as(i64, @intCast(start_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(start_ts_.nsec)), 1_000_000);
 
+        if (options.verbose) {
+            std.debug.print("[verbose:installer] install() called: name={s}, version={s}, source={s}, project_root={s}\n", .{
+                spec.name,
+                spec.version,
+                @tagName(spec.source),
+                if (options.project_root) |pr| pr else "(global)",
+            });
+        }
+
         // Check if this is a local path dependency
         const is_local_path = std.mem.startsWith(u8, spec.version, "~/") or
             std.mem.startsWith(u8, spec.version, "/");
 
         if (is_local_path) {
-            // Handle local path dependency
+            if (options.verbose) std.debug.print("[verbose:installer] -> local path dependency: {s}\n", .{spec.version});
             return try self.installLocalPath(spec, options);
         }
 
         // Check if this is a GitHub dependency
         if (spec.source == .github) {
+            if (options.verbose) std.debug.print("[verbose:installer] -> github source: {s}\n", .{spec.name});
             return try self.installFromGitHub(spec, options);
         }
 
         // Check if this is a generic git dependency (git+https://, git+ssh://, git://)
         if (spec.source == .git) {
+            if (options.verbose) std.debug.print("[verbose:installer] -> git source: {s}\n", .{spec.name});
             return try self.installFromGit(spec, options);
         }
 
         // Check if this is a URL dependency (https:// tarball)
         if (spec.source == .http) {
+            if (options.verbose) std.debug.print("[verbose:installer] -> http/url source: {s}\n", .{spec.name});
             return try self.installFromUrl(spec, options);
         }
 
         // Check if this is a Zig from ziglang.org (dev or stable)
         if (spec.source == .ziglang) {
+            if (options.verbose) std.debug.print("[verbose:installer] -> ziglang source: {s}\n", .{spec.name});
             return try self.installFromZiglang(spec, options);
         }
 
         // Check if this is an npm package
         if (spec.source == .npm) {
+            if (options.verbose) std.debug.print("[verbose:installer] -> npm source: {s} url={s}\n", .{ spec.name, if (spec.url) |u| u else "(null)" });
             return try self.installFromNpm(spec, options);
         }
 
@@ -688,7 +704,10 @@ pub const Installer = struct {
         // If tarball URL wasn't consumed by download functions, free it here
         defer if (s3_tarball_url) |u| self.allocator.free(@constCast(u));
 
+        if (options.verbose) std.debug.print("[verbose:installer] looking up S3 registry for domain={s}, version={s}\n", .{ domain, spec.version });
+
         if (downloader.lookupS3Registry(self.allocator, domain, spec.version)) |s3_result| {
+            if (options.verbose) std.debug.print("[verbose:installer] S3 registry hit: {s} @ {s} url={s}\n", .{ domain, s3_result.version, s3_result.tarball_url });
             s3_version_alloc = s3_result.version;
             s3_tarball_url = s3_result.tarball_url;
             resolved_spec = PackageSpec{
@@ -697,7 +716,7 @@ pub const Installer = struct {
             };
             from_s3 = true;
         } else if (downloader.lookupPantryPublished(self.allocator, domain, spec.version)) |pub_result| {
-            // Fallback: check packages published via `pantry publish` (packages/pantry/ prefix)
+            if (options.verbose) std.debug.print("[verbose:installer] pantry published hit: {s} @ {s}\n", .{ domain, pub_result.version });
             s3_version_alloc = pub_result.version;
             s3_tarball_url = pub_result.tarball_url;
             resolved_spec = PackageSpec{
@@ -709,13 +728,16 @@ pub const Installer = struct {
             if (pkg_info) |_| {
                 // Fall back to generated.zig version list
                 if (semver.resolveVersion(domain, spec.version)) |resolved_version| {
+                    if (options.verbose) std.debug.print("[verbose:installer] generated.zig resolved: {s} -> {s}\n", .{ domain, resolved_version });
                     resolved_spec = PackageSpec{
                         .name = spec.name,
                         .version = resolved_version,
                     };
+                } else {
+                    if (options.verbose) std.debug.print("[verbose:installer] generated.zig version resolution failed for {s} @ {s}\n", .{ domain, spec.version });
                 }
             } else {
-                // Package not in generated.zig AND not in S3 registry
+                if (options.verbose) std.debug.print("[verbose:installer] NOT FOUND: {s} not in generated.zig or S3\n", .{domain});
                 return error.PackageNotFound;
             }
         }
@@ -728,8 +750,11 @@ pub const Installer = struct {
         const key_is_heap = install_key.ptr != &key_buf;
         defer if (key_is_heap) self.allocator.free(@constCast(install_key));
 
+        if (options.verbose) std.debug.print("[verbose:installer] install_key={s}, checking circular dep\n", .{install_key});
+
         // Atomically check+insert to prevent circular dependency loops (race-free)
         if (!try self.installing_stack.tryPut(install_key)) {
+            if (options.verbose) std.debug.print("[verbose:installer] CIRCULAR DEP detected for {s}, skipping\n", .{install_key});
             // Already being installed in the call stack - skip to avoid infinite loop
             const end_ts_ = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
@@ -753,15 +778,29 @@ pub const Installer = struct {
         // Transfer ownership of s3_tarball_url to the download function (it will free it)
         const transfer_url = s3_tarball_url;
         s3_tarball_url = null; // Prevent defer from double-freeing
-        const install_path = if (options.project_root) |project_root|
-            try self.installToProject(resolved_spec, domain, project_root, options, &used_cache, transfer_url)
-        else
-            try self.installGlobal(resolved_spec, domain, options, &used_cache, transfer_url);
+
+        if (options.verbose) std.debug.print("[verbose:installer] installing {s} @ {s} (from_s3={}, has_transfer_url={})\n", .{
+            resolved_spec.name,
+            resolved_spec.version,
+            from_s3,
+            transfer_url != null,
+        });
+
+        const install_path = if (options.project_root) |project_root| blk: {
+            if (options.verbose) std.debug.print("[verbose:installer] -> installToProject: {s} to {s}/{s}\n", .{ resolved_spec.name, project_root, self.modules_dir });
+            break :blk try self.installToProject(resolved_spec, domain, project_root, options, &used_cache, transfer_url);
+        } else blk: {
+            if (options.verbose) std.debug.print("[verbose:installer] -> installGlobal: {s}\n", .{resolved_spec.name});
+            break :blk try self.installGlobal(resolved_spec, domain, options, &used_cache, transfer_url);
+        };
+
+        if (options.verbose) std.debug.print("[verbose:installer] installed {s} @ {s} -> {s} (cached={})\n", .{ resolved_spec.name, resolved_spec.version, install_path, used_cache });
 
         // Install dependencies after the main package is installed
         // Skip for S3-sourced packages since they are self-contained with all libs bundled
         if (!from_s3) {
             if (pkg_info) |info| {
+                if (options.verbose) std.debug.print("[verbose:installer] installing sub-dependencies for {s} (count={d})\n", .{ resolved_spec.name, info.dependencies.len });
                 try self.installDependencies(info.dependencies, options);
             }
         }
@@ -773,6 +812,8 @@ pub const Installer = struct {
         if (!used_cache) {
             reportDownloadAnalytics(self.allocator, domain, resolved_spec.version);
         }
+
+        if (options.verbose) std.debug.print("[verbose:installer] install() complete: {s} @ {s} ({d}ms)\n", .{ resolved_spec.name, resolved_spec.version, @as(u64, @intCast(end_time - start_time)) });
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, resolved_spec.name),
@@ -1268,6 +1309,8 @@ pub const Installer = struct {
 
         const tarball_url = spec.url orelse return error.NoTarballUrl;
 
+        if (options.verbose) std.debug.print("[verbose:npm] installFromNpm: {s} @ {s} url={s}\n", .{ spec.name, spec.version, tarball_url });
+
         // Determine install location
         const install_dir = if (options.project_root) |project_root| blk: {
             break :blk try std.fmt.allocPrint(
@@ -1284,6 +1327,8 @@ pub const Installer = struct {
         };
         errdefer self.allocator.free(install_dir);
 
+        if (options.verbose) std.debug.print("[verbose:npm] install_dir={s}\n", .{install_dir});
+
         // Check if already installed (lightweight access check, no dir handle)
         const already_installed = !options.force and blk: {
             io_helper.accessAbsolute(install_dir, .{}) catch break :blk false;
@@ -1291,6 +1336,7 @@ pub const Installer = struct {
         };
 
         if (already_installed) {
+            if (options.verbose) std.debug.print("[verbose:npm] already installed (cached): {s}\n", .{install_dir});
             const end_ts_ = io_helper.clockGettime();
             const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
             return InstallResult{
@@ -1304,17 +1350,20 @@ pub const Installer = struct {
 
         // Content-addressed tarball cache: check if we already have this tarball on disk
         const cached_tarball = self.cache.get(spec.name, spec.version) catch null;
-        const tarball_data = if (cached_tarball) |meta|
-            io_helper.readFileAlloc(self.allocator, meta.cache_path, 256 * 1024 * 1024) catch null
-        else
-            null;
+        const tarball_data = if (cached_tarball) |meta| blk: {
+            if (options.verbose) std.debug.print("[verbose:npm] found cached tarball for {s} @ {s}\n", .{ spec.name, spec.version });
+            break :blk io_helper.readFileAlloc(self.allocator, meta.cache_path, 256 * 1024 * 1024) catch null;
+        } else null;
 
         const tarball_bytes = tarball_data orelse blk: {
+            if (options.verbose) std.debug.print("[verbose:npm] downloading tarball: {s}\n", .{tarball_url});
             // Download tarball via shared connection pool with retry (handles transient failures)
             var downloaded: ?[]const u8 = null;
             var dl_attempt: u32 = 0;
             while (dl_attempt < 3) : (dl_attempt += 1) {
+                if (options.verbose) std.debug.print("[verbose:npm] download attempt {d}/3 for {s}\n", .{ dl_attempt + 1, spec.name });
                 downloaded = io_helper.httpGetWithClient(self.http_client, self.allocator, tarball_url) catch {
+                    if (options.verbose) std.debug.print("[verbose:npm] download attempt {d} FAILED for {s}\n", .{ dl_attempt + 1, spec.name });
                     if (dl_attempt < 2) {
                         io_helper.nanosleep(0, (dl_attempt + 1) * 200 * std.time.ns_per_ms);
                         continue;
@@ -1325,7 +1374,10 @@ pub const Installer = struct {
                     return error.DownloadFailed;
                 };
                 if (downloaded) |d| {
-                    if (d.len > 0) break;
+                    if (d.len > 0) {
+                        if (options.verbose) std.debug.print("[verbose:npm] downloaded {d} bytes for {s}\n", .{ d.len, spec.name });
+                        break;
+                    }
                     self.allocator.free(d);
                     downloaded = null;
                 }
@@ -1351,6 +1403,7 @@ pub const Installer = struct {
         try io_helper.makePath(install_dir);
 
         // Extract tarball from memory — npm tarballs have a 'package' directory inside
+        if (options.verbose) std.debug.print("[verbose:npm] extracting tarball ({d} bytes) to {s}\n", .{ tarball_bytes.len, install_dir });
         {
             var dest = try io_helper.cwd().openDir(io_helper.io, install_dir, .{});
             defer dest.close(io_helper.io);
@@ -1361,19 +1414,21 @@ pub const Installer = struct {
             std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{
                 .strip_components = 1,
             }) catch {
-                // Extraction failed — possibly corrupted download, skip non-fatally
+                if (options.verbose) std.debug.print("[verbose:npm] EXTRACTION FAILED for {s}\n", .{spec.name});
                 if (!options.quiet) {
                     style.print("  ✗ Failed to extract {s} — skipping\n", .{spec.name});
                 }
-                // Clean up partial extraction
                 io_helper.deleteTree(install_dir) catch {};
                 return error.ExtractionFailed;
             };
         }
+        if (options.verbose) std.debug.print("[verbose:npm] extraction complete for {s}\n", .{spec.name});
 
         // Create shims for npm package binaries
         if (options.project_root) |project_root| {
+            if (options.verbose) std.debug.print("[verbose:npm] creating shims for {s} in {s}/{s}/.bin\n", .{ spec.name, project_root, self.modules_dir });
             try self.createNpmShims(project_root, spec.name, install_dir);
+            if (options.verbose) std.debug.print("[verbose:npm] shims created for {s}\n", .{spec.name});
         }
 
         // Record in hoisted cache so future encounters skip filesystem checks
@@ -1385,7 +1440,9 @@ pub const Installer = struct {
         // Skip if the caller will handle transitive resolution (e.g. installTransitiveDepInner)
         if (!options.skip_transitive_resolution) {
             if (options.project_root) |project_root| {
+                if (options.verbose) std.debug.print("[verbose:npm] resolving transitive deps for {s}\n", .{spec.name});
                 self.resolveTransitiveDeps(install_dir, project_root, 0) catch |err| {
+                    if (options.verbose) std.debug.print("[verbose:npm] transitive deps FAILED for {s}: {}\n", .{ spec.name, err });
                     style.print("Warning: Failed to resolve transitive deps for {s}: {}\n", .{ spec.name, err });
                 };
             }
@@ -1393,6 +1450,8 @@ pub const Installer = struct {
 
         const end_ts_ = io_helper.clockGettime();
         const end_time = @as(i64, @intCast(end_ts_.sec)) * 1000 + @divFloor(@as(i64, @intCast(end_ts_.nsec)), 1_000_000);
+
+        if (options.verbose) std.debug.print("[verbose:npm] installFromNpm complete: {s} @ {s} ({d}ms)\n", .{ spec.name, spec.version, @as(u64, @intCast(end_time - start_time)) });
 
         return InstallResult{
             .name = try self.allocator.dupe(u8, spec.name),
@@ -1458,7 +1517,9 @@ pub const Installer = struct {
         project_root: []const u8,
         is_optional: bool,
     ) ?[]const u8 {
+        if (self.verbose) std.debug.print("[verbose:transitive] installSingleTransitiveDep: {s} @ {s} (optional={})\n", .{ name, version_constraint, is_optional });
         return self.installSingleTransitiveDepInner(name, version_constraint, project_root) catch |err| {
+            if (self.verbose) std.debug.print("[verbose:transitive] FAILED: {s} @ {s}: {}\n", .{ name, version_constraint, err });
             if (!is_optional and !style.isCI()) {
                 style.print("    ! {s}: {}\n", .{ name, err });
             }
@@ -1673,7 +1734,11 @@ pub const Installer = struct {
         depth: u32,
     ) !void {
         const max_depth: u32 = 50;
-        if (depth >= max_depth) return;
+        if (depth >= max_depth) {
+            if (self.verbose) std.debug.print("[verbose:bfs] max depth ({d}) reached, stopping\n", .{max_depth});
+            return;
+        }
+        if (self.verbose) std.debug.print("[verbose:bfs] resolveTransitiveDeps: depth={d}, pkg_dir={s}\n", .{ depth, package_dir });
 
         // BFS work queue: directories of packages whose deps need resolving
         var work_queue: std.ArrayList([]const u8) = .empty;
@@ -1767,6 +1832,8 @@ pub const Installer = struct {
             for (results) |*r| r.* = null;
 
             // Use thread pool for parallel resolution
+            if (self.verbose) std.debug.print("[verbose:bfs] wave at depth={d}: {d} unique deps to resolve\n", .{ current_depth, unique_deps.items.len });
+
             var next_idx = std.atomic.Value(usize).init(0);
             var ctx = BfsDepThreadCtx{
                 .installer = self,
@@ -1779,6 +1846,8 @@ pub const Installer = struct {
             const cpu_count = std.Thread.getCpuCount() catch 4;
             const max_threads = @min(cpu_count, 16);
             const thread_count = @min(unique_deps.items.len, max_threads);
+
+            if (self.verbose) std.debug.print("[verbose:bfs] spawning {d} threads for BFS wave\n", .{thread_count});
 
             if (thread_count <= 1) {
                 // Single dep or single CPU — just run inline
@@ -1808,6 +1877,7 @@ pub const Installer = struct {
                     }
                 }
             }
+            if (self.verbose) std.debug.print("[verbose:bfs] wave at depth={d} complete\n", .{current_depth});
 
             // Free collected deps (names/versions were borrowed during install)
             for (unique_deps.items) |dep| {
@@ -1965,6 +2035,8 @@ pub const Installer = struct {
         name: []const u8,
         version_constraint: []const u8,
     ) !NpmResolution {
+        if (self.verbose) std.debug.print("[verbose:resolve] resolveNpmPackage: {s} @ {s}\n", .{ name, version_constraint });
+
         // --- Level 2 cache check: exact name@constraint match ---
         // Perf: Stack buffer for cache key (avoids heap alloc on every resolve call)
         var cache_key_stack: [512]u8 = undefined;
@@ -1974,6 +2046,7 @@ pub const Installer = struct {
         defer if (cache_key_is_heap) self.allocator.free(cache_key);
 
         if (self.npm_cache.getResolution(cache_key, self.allocator)) |cached| {
+            if (self.verbose) std.debug.print("[verbose:resolve] L2 cache hit: {s} -> {s}\n", .{ cache_key, cached.version });
             return cached;
         }
 
@@ -2416,10 +2489,13 @@ pub const Installer = struct {
         const project_pkg_dir = try self.getProjectPackageDir(project_root, domain, spec.version);
         errdefer self.allocator.free(project_pkg_dir);
 
+        if (self.verbose) std.debug.print("[verbose:project] installToProject: {s} @ {s} -> {s}\n", .{ spec.name, spec.version, project_pkg_dir });
+
         // Check if already installed in project (verify actual package structure, not just dir existence)
         const already_installed = !options.force and self.hasPackageStructure(project_pkg_dir);
 
         if (already_installed) {
+            if (self.verbose) std.debug.print("[verbose:project] already installed in project: {s}\n", .{project_pkg_dir});
             // Already in pantry - free unused S3 URL, create symlinks and return
             if (owned_url) |url| {
                 self.allocator.free(@constCast(url));
@@ -2871,6 +2947,8 @@ pub const Installer = struct {
     fn createNpmShims(self: *Installer, project_root: []const u8, package_name: []const u8, install_dir: []const u8) !void {
         const symlink_mod = @import("symlink.zig");
 
+        if (self.verbose) std.debug.print("[verbose:shims] createNpmShims: pkg={s}, install_dir={s}\n", .{ package_name, install_dir });
+
         // Project bin directory (pantry/.bin)
         const shim_dir = try std.fmt.allocPrint(
             self.allocator,
@@ -2878,6 +2956,8 @@ pub const Installer = struct {
             .{ project_root, self.modules_dir },
         );
         defer self.allocator.free(shim_dir);
+
+        if (self.verbose) std.debug.print("[verbose:shims] shim_dir={s}\n", .{shim_dir});
 
         try io_helper.makePath(shim_dir);
 
@@ -2890,12 +2970,13 @@ pub const Installer = struct {
         defer self.allocator.free(pkg_json_path);
 
         const pkg_content = io_helper.readFileAlloc(self.allocator, pkg_json_path, 1024 * 1024) catch {
-            // No package.json, nothing to do
+            if (self.verbose) std.debug.print("[verbose:shims] no package.json found for {s}\n", .{package_name});
             return;
         };
         defer self.allocator.free(pkg_content);
 
         const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, pkg_content, .{}) catch {
+            if (self.verbose) std.debug.print("[verbose:shims] failed to parse package.json for {s}\n", .{package_name});
             return;
         };
         defer parsed.deinit();
@@ -2903,7 +2984,12 @@ pub const Installer = struct {
         if (parsed.value != .object) return;
 
         // Check for bin field
-        const bin_value = parsed.value.object.get("bin") orelse return;
+        const bin_value = parsed.value.object.get("bin") orelse {
+            if (self.verbose) std.debug.print("[verbose:shims] no bin field in package.json for {s}\n", .{package_name});
+            return;
+        };
+
+        if (self.verbose) std.debug.print("[verbose:shims] found bin field for {s} (type={s})\n", .{ package_name, @tagName(bin_value) });
 
         if (bin_value == .string) {
             // Single binary with package name
@@ -3615,7 +3701,7 @@ fn reportDownloadAnalytics(allocator: std.mem.Allocator, domain: []const u8, ver
         return;
     };
 
-    const thread = std.Thread.spawn(.{ .stack_size = 64 * 1024 }, analyticsWorker, .{ allocator, owned_domain, owned_version }) catch {
+    const thread = std.Thread.spawn(.{ .stack_size = 2 * 1024 * 1024 }, analyticsWorker, .{ allocator, owned_domain, owned_version }) catch {
         allocator.free(owned_domain);
         allocator.free(owned_version);
         return;

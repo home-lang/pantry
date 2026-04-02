@@ -287,16 +287,27 @@ const WorkspaceThreadContext = struct {
     lockfile_packages: ?*const std.StringHashMap(lib.packages.LockfileEntry),
     lockfile_name_set: ?*const helpers.LockfileNameSet,
     constraint_map: ?*const helpers.LockfileConstraintMap,
+    verbose: bool = false,
 
     fn worker(ctx: *WorkspaceThreadContext) void {
+        if (ctx.verbose) {
+            std.debug.print("[verbose:ws] worker thread started (tid={d})\n", .{std.Thread.getCurrentId()});
+        }
         while (true) {
             const i = ctx.next.fetchAdd(1, .monotonic);
             if (i >= ctx.deps.len) break;
+
+            if (ctx.verbose) {
+                std.debug.print("[verbose:ws] [{d}/{d}] processing: {s} @ {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version });
+            }
 
             // Skip packages that match lockfile and exist at destination (O(1) via name set)
             if (ctx.lockfile_name_set) |ns| {
                 if (helpers.canSkipFromLockfileWithNameSet(ns, ctx.deps[i].name, ctx.deps[i].version, ctx.constraint_map, ctx.workspace_root, ctx.shared_installer.modules_dir)) {
                     const clean = helpers.stripDisplayPrefix(ctx.deps[i].name);
+                    if (ctx.verbose) {
+                        std.debug.print("[verbose:ws] [{d}/{d}] skipped (lockfile match): {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name });
+                    }
                     ctx.results[i] = .{
                         .name = clean,
                         .version = ctx.deps[i].version,
@@ -307,12 +318,23 @@ const WorkspaceThreadContext = struct {
                 }
             }
 
+            if (ctx.verbose) {
+                std.debug.print("[verbose:ws] [{d}/{d}] installing: {s} @ {s} (root={s}, modules_dir={s})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version, ctx.workspace_root, ctx.shared_installer.modules_dir });
+            }
+
             ctx.results[i] = installSingleWorkspaceDep(
                 ctx.alloc,
                 ctx.deps[i],
                 ctx.workspace_root,
                 ctx.shared_installer,
             );
+
+            if (ctx.verbose) {
+                std.debug.print("[verbose:ws] [{d}/{d}] done: {s} success={}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.results[i].success });
+            }
+        }
+        if (ctx.verbose) {
+            std.debug.print("[verbose:ws] worker thread exiting (tid={d})\n", .{std.Thread.getCurrentId()});
         }
     }
 };
@@ -638,6 +660,7 @@ pub fn installWorkspaceCommandWithOptions(
     allocator.free(shared_installer.data_dir);
     shared_installer.data_dir = try allocator.dupe(u8, env_dir);
     shared_installer.modules_dir = options.modules_dir;
+    shared_installer.verbose = options.verbose;
 
     // Configure installer with .npmrc settings (custom registry URL)
     if (npmrc_config.registry) |custom_registry| {
@@ -891,6 +914,7 @@ pub fn installWorkspaceCommandWithOptions(
             .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
             .lockfile_name_set = if (ws_name_set) |*ns| ns else null,
             .constraint_map = if (ws_constraint_map) |*cm| cm else null,
+            .verbose = options.verbose,
         };
 
         // Spawn worker threads scaled to CPU count
@@ -901,8 +925,25 @@ pub fn installWorkspaceCommandWithOptions(
         defer allocator.free(threads);
         for (threads) |*t| t.* = null;
 
+        if (options.verbose) {
+            std.debug.print("[verbose:ws] spawning {d} worker threads for {d} remote packages (cpu_count={d}, max_threads={d})\n", .{ thread_count, remote_count, cpu_count, max_threads });
+            std.debug.print("[verbose:ws] workspace_root={s}, modules_dir={s}\n", .{ workspace_root, shared_installer.modules_dir });
+            std.debug.print("[verbose:ws] shared_installer ptr={*}, http_client ptr={*}\n", .{ &shared_installer, shared_installer.http_client });
+            for (remote_deps, 0..) |dep, di| {
+                std.debug.print("[verbose:ws]   dep[{d}]: {s} @ {s} (source={s})\n", .{ di, dep.name, dep.version, @tagName(dep.source) });
+            }
+        }
+
         for (0..thread_count) |t| {
-            threads[t] = std.Thread.spawn(.{}, WorkspaceThreadContext.worker, .{&thread_ctx}) catch null;
+            threads[t] = std.Thread.spawn(.{}, WorkspaceThreadContext.worker, .{&thread_ctx}) catch |err| blk: {
+                if (options.verbose) {
+                    std.debug.print("[verbose:ws] FAILED to spawn thread {d}: {}\n", .{ t, err });
+                }
+                break :blk null;
+            };
+            if (options.verbose and threads[t] != null) {
+                std.debug.print("[verbose:ws] spawned worker thread {d}\n", .{t});
+            }
         }
 
         // Main thread shows spinner progress instead of participating as worker
@@ -917,16 +958,37 @@ pub fn installWorkspaceCommandWithOptions(
         style.clearProgress();
 
         // Join all threads
-        for (threads) |*t| {
+        if (options.verbose) {
+            std.debug.print("[verbose:ws] waiting for all worker threads to join...\n", .{});
+        }
+        for (threads, 0..) |*t, ti| {
             if (t.*) |thread| {
+                if (options.verbose) {
+                    std.debug.print("[verbose:ws] joining thread {d}...\n", .{ti});
+                }
                 thread.join();
                 t.* = null;
+                if (options.verbose) {
+                    std.debug.print("[verbose:ws] thread {d} joined\n", .{ti});
+                }
             }
+        }
+        if (options.verbose) {
+            std.debug.print("[verbose:ws] all threads joined. final counter={d}\n", .{next_idx.load(.monotonic)});
         }
 
         // Print results and collect resolution data for lockfile
-        for (remote_results) |result| {
+        for (remote_results, 0..) |result, ri| {
             if (result.name.len == 0) continue;
+            if (options.verbose) {
+                std.debug.print("[verbose:ws] result[{d}]: {s} @ {s} success={} err={s}\n", .{
+                    ri,
+                    result.name,
+                    result.version,
+                    result.success,
+                    if (result.error_msg) |msg| msg else "(none)",
+                });
+            }
             if (result.success) {
                 style.printInstalled(result.name, result.version);
                 success_count += 1;
