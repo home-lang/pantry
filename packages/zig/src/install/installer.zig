@@ -1852,9 +1852,9 @@ pub const Installer = struct {
                 .project_root = project_root,
             };
 
-            // Use a small thread pool for parallel resolution (cap at 4 to avoid
-            // excessive contention on the shared HTTP client connection pool).
-            const max_bfs_threads: usize = 4;
+            // Use a thread pool for parallel resolution (cap at 8 for good throughput
+            // while avoiding excessive contention on the shared HTTP client connection pool).
+            const max_bfs_threads: usize = 8;
             const thread_count = @min(unique_deps.items.len, max_bfs_threads);
 
             if (thread_count <= 1) {
@@ -2105,12 +2105,20 @@ pub const Installer = struct {
 
             // Retry up to 3 times with brief backoff for transient failures
             // Uses shared HTTP client for connection pooling (reuses TCP/TLS connections)
+            // Perf: Request abbreviated metadata (10-50x smaller than full registry JSON)
+            const npm_accept_header = [_]std.http.Header{
+                .{ .name = "Accept", .value = "application/vnd.npm.install-v1+json" },
+            };
             var response_body: ?[]const u8 = null;
             var attempt: u32 = 0;
             while (attempt < 3) : (attempt += 1) {
-                response_body = io_helper.httpGetWithClient(self.http_client, self.allocator, npm_url) catch {
+                response_body = io_helper.httpGetWithClientAndHeaders(
+                    self.http_client,
+                    self.allocator,
+                    npm_url,
+                    &npm_accept_header,
+                ) catch {
                     if (attempt < 2) {
-                        // Perf: Shorter initial backoff (50ms, 150ms instead of 100ms, 300ms)
                         io_helper.nanosleep(0, (attempt + 1) * 50 * std.time.ns_per_ms);
                         continue;
                     }

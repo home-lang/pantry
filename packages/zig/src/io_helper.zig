@@ -1468,6 +1468,34 @@ pub fn httpGetWithClient(client: *std.http.Client, allocator: std.mem.Allocator,
     return owned;
 }
 
+/// HTTP GET with extra headers using a shared client for connection pooling.
+/// Used for npm abbreviated metadata (application/vnd.npm.install-v1+json).
+pub fn httpGetWithClientAndHeaders(client: *std.http.Client, allocator: std.mem.Allocator, url: []const u8, extra_headers: []const std.http.Header) ![]u8 {
+    var alloc_writer = std.Io.Writer.Allocating.init(allocator);
+    errdefer alloc_writer.deinit();
+
+    var redirect_buf: [8192]u8 = undefined;
+
+    const result = client.fetch(.{
+        .location = .{ .url = url },
+        .response_writer = &alloc_writer.writer,
+        .redirect_buffer = &redirect_buf,
+        .redirect_behavior = @enumFromInt(10),
+        .extra_headers = extra_headers,
+    }) catch {
+        return error.HttpRequestFailed;
+    };
+
+    if (result.status != .ok) {
+        return error.HttpRequestFailed;
+    }
+
+    const data = alloc_writer.writer.buffer[0..alloc_writer.writer.end];
+    const owned = try allocator.dupe(u8, data);
+    alloc_writer.deinit();
+    return owned;
+}
+
 /// HTTP POST with JSON body. Returns response body as owned slice.
 pub fn httpPostJson(allocator: std.mem.Allocator, url: []const u8, json_body: []const u8) ![]u8 {
     var client: std.http.Client = .{
