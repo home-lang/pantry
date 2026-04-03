@@ -277,7 +277,7 @@ pub const Installer = struct {
         }
 
         /// Check if a package is already hoisted with a version satisfying the constraint.
-        fn checkSatisfies(self: *HoisteVersionCache, name: []const u8, version_constraint: []const u8) bool {
+        pub fn checkSatisfies(self: *HoisteVersionCache, name: []const u8, version_constraint: []const u8) bool {
             self.mutex.lock();
             defer self.mutex.unlock();
             const installed_version = self.map.get(name) orelse return false;
@@ -287,7 +287,7 @@ pub const Installer = struct {
         }
 
         /// Record a package as installed at the hoisted level.
-        fn put(self: *HoisteVersionCache, name: []const u8, version: []const u8) void {
+        pub fn put(self: *HoisteVersionCache, name: []const u8, version: []const u8) void {
             self.mutex.lock();
             defer self.mutex.unlock();
             if (self.map.contains(name)) return; // First version wins (hoisted)
@@ -1482,6 +1482,32 @@ pub const Installer = struct {
         integrity: ?[]const u8 = null, // sha512-... or shasum
     };
 
+    /// Extended resolution result that includes transitive dependency info.
+    /// Used by the parallel pipeline to resolve the full dep tree from metadata alone.
+    pub const NpmResolutionWithDeps = struct {
+        version: []const u8,
+        tarball_url: []const u8,
+        integrity: ?[]const u8 = null,
+        dependencies: []DepEntry,
+
+        pub const DepEntry = struct {
+            name: []const u8,
+            version_constraint: []const u8,
+            is_optional: bool,
+        };
+
+        pub fn deinit(self: *NpmResolutionWithDeps, allocator: std.mem.Allocator) void {
+            allocator.free(self.version);
+            allocator.free(self.tarball_url);
+            if (self.integrity) |i| allocator.free(i);
+            for (self.dependencies) |dep| {
+                allocator.free(dep.name);
+                allocator.free(dep.version_constraint);
+            }
+            allocator.free(self.dependencies);
+        }
+    };
+
     /// Collected dependency entry for batch processing.
     const CollectedDep = struct {
         name: []const u8, // owned (allocator.dupe)
@@ -2175,6 +2201,172 @@ pub const Installer = struct {
         self.npm_cache.putResolution(cache_key, result.version, result.tarball_url, result.integrity);
 
         return result;
+    }
+
+    /// Resolve an npm package AND extract its transitive dependency list from registry metadata.
+    /// Used by the parallel pipeline (Phase 1) to build the full dependency tree without downloading tarballs.
+    /// Shares the same L1/L2 cache as resolveNpmPackage().
+    pub fn resolveNpmPackageWithDeps(
+        self: *Installer,
+        name: []const u8,
+        version_constraint: []const u8,
+    ) !NpmResolutionWithDeps {
+        // --- L2 cache check (same as resolveNpmPackage) ---
+        var cache_key_stack: [512]u8 = undefined;
+        const cache_key = std.fmt.bufPrint(&cache_key_stack, "{s}@{s}", .{ name, version_constraint }) catch
+            try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version_constraint });
+        const cache_key_is_heap = (name.len + 1 + version_constraint.len > 512);
+        defer if (cache_key_is_heap) self.allocator.free(cache_key);
+
+        // --- L3 deps cache check: if we already resolved this exact version's deps ---
+        // Build version key after L2 check since we need the resolved version
+        // (falls through if no L2 hit)
+
+        // --- Lockfile-first resolution ---
+        if (self.lockfile) |lf| {
+            const lockfile_zig = @import("../deps/resolution/lockfile.zig");
+            if (lockfile_zig.getLockedVersion(lf, name)) |locked| {
+                const npm_zig = @import("../registry/npm.zig");
+                const constraint = npm_zig.SemverConstraint.parse(version_constraint) catch null;
+                const satisfies = if (constraint) |c| c.satisfies(locked.version) else true;
+
+                if (satisfies) {
+                    const tarball_url = if (locked.resolved.len > 0 and !std.mem.startsWith(u8, locked.resolved, "registry:"))
+                        try self.allocator.dupe(u8, locked.resolved)
+                    else
+                        try std.fmt.allocPrint(self.allocator, "https://registry.npmjs.org/{s}/-/{s}-{s}.tgz", .{
+                            name,
+                            if (std.mem.indexOf(u8, name, "/")) |slash_idx| name[slash_idx + 1 ..] else name,
+                            locked.version,
+                        });
+
+                    // Lockfile LockedVersion doesn't store transitive deps, so return empty.
+                    // The pipeline will still discover transitive deps via registry metadata
+                    // on subsequent BFS waves if needed.
+                    const empty_deps = try self.allocator.alloc(NpmResolutionWithDeps.DepEntry, 0);
+
+                    return NpmResolutionWithDeps{
+                        .version = try self.allocator.dupe(u8, locked.version),
+                        .tarball_url = tarball_url,
+                        .integrity = if (locked.integrity) |i| (self.allocator.dupe(u8, i) catch null) else null,
+                        .dependencies = empty_deps,
+                    };
+                }
+            }
+        }
+
+        // --- L1 cache: get or fetch raw registry JSON ---
+        const npm_response = if (self.npm_cache.getRegistryJson(name, self.allocator)) |cached_json|
+            cached_json
+        else blk: {
+            const registry_base = self.custom_registry_url orelse "https://registry.npmjs.org";
+            var npm_url_buf: [1024]u8 = undefined;
+            const npm_url = std.fmt.bufPrint(&npm_url_buf, "{s}/{s}", .{ registry_base, name }) catch
+                try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ registry_base, name });
+            const npm_url_is_heap = (registry_base.len + 1 + name.len > 1024);
+            defer if (npm_url_is_heap) self.allocator.free(npm_url);
+
+            var response_body: ?[]const u8 = null;
+            var attempt: u32 = 0;
+            while (attempt < 3) : (attempt += 1) {
+                response_body = io_helper.httpGetWithClient(self.http_client, self.allocator, npm_url) catch {
+                    if (attempt < 2) {
+                        io_helper.nanosleep(0, (attempt + 1) * 50 * std.time.ns_per_ms);
+                        continue;
+                    }
+                    return error.NpmRegistryUnavailable;
+                };
+                break;
+            }
+            const body = response_body orelse return error.NpmRegistryUnavailable;
+            self.npm_cache.putRegistryJson(name, body);
+            break :blk body;
+        };
+        defer self.allocator.free(npm_response);
+
+        if (npm_response.len == 0) return error.NpmRegistryUnavailable;
+
+        // --- Parse, resolve, and extract deps ---
+        const parsed = std.json.parseFromSlice(std.json.Value, self.allocator, npm_response, .{}) catch {
+            return error.InvalidNpmResponse;
+        };
+        defer parsed.deinit();
+
+        if (parsed.value != .object) return error.InvalidNpmResponse;
+
+        const target_version = try self.resolveNpmVersion(parsed.value, version_constraint);
+
+        const versions_obj = parsed.value.object.get("versions") orelse return error.NoVersions;
+        if (versions_obj != .object) return error.InvalidNpmResponse;
+
+        const version_data = versions_obj.object.get(target_version) orelse return error.VersionNotFound;
+        if (version_data != .object) return error.InvalidNpmResponse;
+
+        const dist = version_data.object.get("dist") orelse return error.NoTarballUrl;
+        if (dist != .object) return error.NoTarballUrl;
+
+        const tarball_val = dist.object.get("tarball") orelse return error.NoTarballUrl;
+        if (tarball_val != .string) return error.NoTarballUrl;
+
+        const integrity_str: ?[]const u8 = blk: {
+            if (dist.object.get("integrity")) |i| {
+                if (i == .string and i.string.len > 0) break :blk i.string;
+            }
+            if (dist.object.get("shasum")) |s| {
+                if (s == .string and s.string.len > 0) break :blk s.string;
+            }
+            break :blk null;
+        };
+
+        // Extract dependencies + peerDependencies from version_data
+        var deps_list = std.ArrayList(NpmResolutionWithDeps.DepEntry).empty;
+
+        const dep_sections = [_][]const u8{ "dependencies", "peerDependencies" };
+        const peer_meta = version_data.object.get("peerDependenciesMeta");
+
+        for (dep_sections) |section| {
+            const is_peer = std.mem.eql(u8, section, "peerDependencies");
+            const deps_val = version_data.object.get(section) orelse continue;
+            if (deps_val != .object) continue;
+
+            var iter = deps_val.object.iterator();
+            while (iter.next()) |entry| {
+                if (entry.value_ptr.* != .string) continue;
+                const dep_name = entry.key_ptr.*;
+                const dep_version = entry.value_ptr.string;
+
+                // Skip workspace: references
+                if (std.mem.startsWith(u8, dep_version, "workspace:")) continue;
+
+                // Check if peer dep is optional
+                var is_optional = is_peer; // all peers are optional by default
+                if (is_peer and peer_meta != null) {
+                    if (peer_meta.?.object.get(dep_name)) |meta| {
+                        if (meta == .object) {
+                            if (meta.object.get("optional")) |opt| {
+                                if (opt == .bool) is_optional = opt.bool;
+                            }
+                        }
+                    }
+                }
+
+                deps_list.append(self.allocator, .{
+                    .name = self.allocator.dupe(u8, dep_name) catch continue,
+                    .version_constraint = self.allocator.dupe(u8, dep_version) catch continue,
+                    .is_optional = is_optional,
+                }) catch continue;
+            }
+        }
+
+        // Cache the basic resolution in L2 for other threads
+        self.npm_cache.putResolution(cache_key, target_version, tarball_val.string, integrity_str);
+
+        return NpmResolutionWithDeps{
+            .version = try self.allocator.dupe(u8, target_version),
+            .tarball_url = try self.allocator.dupe(u8, tarball_val.string),
+            .integrity = if (integrity_str) |s| try self.allocator.dupe(u8, s) else null,
+            .dependencies = deps_list.toOwnedSlice(self.allocator) catch &.{},
+        };
     }
 
     /// Resolve a version constraint against npm registry data.
@@ -2949,7 +3141,7 @@ pub const Installer = struct {
 
     /// Create shims for npm package binaries
     /// Reads bin config from package.json and creates cross-platform shims
-    fn createNpmShims(self: *Installer, project_root: []const u8, package_name: []const u8, install_dir: []const u8) !void {
+    pub fn createNpmShims(self: *Installer, project_root: []const u8, package_name: []const u8, install_dir: []const u8) !void {
         const symlink_mod = @import("symlink.zig");
 
         if (self.verbose) std.debug.print("[verbose:shims] createNpmShims: pkg={s}, install_dir={s}\n", .{ package_name, install_dir });

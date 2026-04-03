@@ -882,7 +882,7 @@ pub fn installWorkspaceCommandWithOptions(
         success_count += 1;
     }
 
-    // ---- Pass 2: Collect remote deps, then install them in parallel ----
+    // ---- Pass 2: Install remote deps via parallel pipeline ----
     // Count remote deps
     var remote_count: usize = 0;
     for (all_deps) |dep| {
@@ -890,141 +890,57 @@ pub fn installWorkspaceCommandWithOptions(
     }
 
     if (remote_count > 0) {
-        // Collect remote deps into a contiguous array
-        var remote_deps = try allocator.alloc(lib.deps.parser.PackageDependency, remote_count);
-        defer allocator.free(remote_deps);
+        const pipeline = @import("../../../install/pipeline.zig");
+
+        // Build pipeline dep list from remote deps
+        var pipeline_deps = try allocator.alloc(pipeline.PipelineDep, remote_count);
+        defer allocator.free(pipeline_deps);
         {
             var ri: usize = 0;
             for (all_deps) |dep| {
-                if (!helpers.isLocalDependency(dep)) {
-                    remote_deps[ri] = dep;
-                    ri += 1;
-                }
+                if (helpers.isLocalDependency(dep)) continue;
+                const clean_name = helpers.resolvePackageAlias(helpers.normalizePackageName(dep.name));
+                pipeline_deps[ri] = .{
+                    .name = clean_name,
+                    .version = dep.version,
+                    .source = switch (dep.source) {
+                        .registry => .npm,
+                        .github => .github,
+                        .git => .git,
+                        .url => .http,
+                    },
+                };
+                ri += 1;
             }
         }
 
-        // Allocate result storage
-        const remote_results = try allocator.alloc(WorkspaceInstallResult, remote_count);
-        defer {
-            for (remote_results) |*r| r.deinit(allocator);
-            allocator.free(remote_results);
-        }
-        for (remote_results) |*r| {
-            r.* = .{ .name = "", .version = "", .success = false, .error_msg = null };
-        }
-
-        // Thread context for parallel remote installs
-        var next_idx = std.atomic.Value(usize).init(0);
-        var thread_ctx = WorkspaceThreadContext{
-            .deps = remote_deps,
-            .results = remote_results,
-            .next = &next_idx,
-            .alloc = allocator,
-            .workspace_root = workspace_root,
-            .shared_installer = &shared_installer,
-            .lockfile_packages = if (existing_lockfile) |*lf| &lf.packages else null,
-            .lockfile_name_set = if (ws_name_set) |*ns| ns else null,
-            .constraint_map = if (ws_constraint_map) |*cm| cm else null,
-            .verbose = options.verbose,
-        };
-
-        // Spawn worker threads scaled to CPU count
-        const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, 32);
-        const thread_count = @min(remote_count, max_threads);
-        var threads = try allocator.alloc(?std.Thread, max_threads);
-        defer allocator.free(threads);
-        for (threads) |*t| t.* = null;
-
-        if (options.verbose) {
-            std.debug.print("[verbose:ws] spawning {d} worker threads for {d} remote packages (cpu_count={d}, max_threads={d})\n", .{ thread_count, remote_count, cpu_count, max_threads });
-            std.debug.print("[verbose:ws] workspace_root={s}, modules_dir={s}\n", .{ workspace_root, shared_installer.modules_dir });
-            std.debug.print("[verbose:ws] shared_installer ptr={*}, http_client ptr={*}\n", .{ &shared_installer, shared_installer.http_client });
-            for (remote_deps, 0..) |dep, di| {
-                std.debug.print("[verbose:ws]   dep[{d}]: {s} @ {s} (source={s})\n", .{ di, dep.name, dep.version, @tagName(dep.source) });
-            }
-        }
-
-        for (0..thread_count) |t| {
-            threads[t] = std.Thread.spawn(.{}, WorkspaceThreadContext.worker, .{&thread_ctx}) catch |err| blk: {
-                if (options.verbose) {
-                    std.debug.print("[verbose:ws] FAILED to spawn thread {d}: {}\n", .{ t, err });
-                }
-                break :blk null;
-            };
-            if (options.verbose and threads[t] != null) {
-                std.debug.print("[verbose:ws] spawned worker thread {d}\n", .{t});
-            }
-        }
-
-        // Main thread shows spinner progress instead of participating as worker
-        var frame: usize = 0;
-        while (next_idx.load(.monotonic) < remote_count) {
-            const current = @min(next_idx.load(.monotonic), remote_count);
-            const pkg_name = if (current < remote_deps.len) remote_deps[current].name else "...";
-            style.printProgress(current, remote_count, pkg_name, frame);
-            frame +%= 1;
-            io_helper.nanosleep(0, 80 * std.time.ns_per_ms);
-        }
-        style.clearProgress();
-
-        // Join all threads
-        if (options.verbose) {
-            std.debug.print("[verbose:ws] waiting for all worker threads to join...\n", .{});
-        }
-        for (threads, 0..) |*t, ti| {
-            if (t.*) |thread| {
-                if (options.verbose) {
-                    std.debug.print("[verbose:ws] joining thread {d}...\n", .{ti});
-                }
-                thread.join();
-                t.* = null;
-                if (options.verbose) {
-                    std.debug.print("[verbose:ws] thread {d} joined\n", .{ti});
-                }
-            }
-        }
-        if (options.verbose) {
-            const join_ts = io_helper.clockGettime();
-            const join_ms = @as(i64, @intCast(join_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(join_ts.nsec)), 1_000_000);
-            std.debug.print("[verbose:ws] all threads joined. final counter={d}\n", .{next_idx.load(.monotonic)});
-            std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{join_ms - install_start_ms});
-        }
+        // Run the 3-phase parallel pipeline
+        var pipeline_result = try pipeline.run(
+            allocator,
+            &shared_installer,
+            pipeline_deps,
+            workspace_root,
+            options.verbose,
+        );
+        defer pipeline_result.deinit(allocator);
 
         // Print results and collect resolution data for lockfile
-        for (remote_results, 0..) |result, ri| {
+        for (pipeline_result.results) |result| {
             if (result.name.len == 0) continue;
-            if (options.verbose) {
-                std.debug.print("[verbose:ws] result[{d}]: {s} @ {s} success={} err={s}\n", .{
-                    ri,
-                    result.name,
-                    result.version,
-                    result.success,
-                    if (result.error_msg) |msg| msg else "(none)",
-                });
-            }
             if (result.success) {
                 style.printInstalled(result.name, result.version);
                 success_count += 1;
-
-                // Record in checkpoint for resume capability
                 checkpoint.recordPackage(result.name) catch {};
-
-                // Capture resolution data for lockfile
-                if (result.resolved_version != null or result.tarball_url != null or result.integrity != null) {
-                    const res_key = allocator.dupe(u8, result.name) catch continue;
-                    resolution_map.put(res_key, .{
-                        .resolved_version = if (result.resolved_version) |v| (allocator.dupe(u8, v) catch null) else null,
-                        .tarball_url = if (result.tarball_url) |u| (allocator.dupe(u8, u) catch null) else null,
-                        .integrity = if (result.integrity) |i| (allocator.dupe(u8, i) catch null) else null,
-                    }) catch {
-                        allocator.free(res_key);
-                    };
-                }
             } else {
                 style.printFailed(result.name, result.version, result.error_msg);
                 failed_count += 1;
             }
+        }
+
+        if (options.verbose) {
+            const phase_ts = io_helper.clockGettime();
+            const phase_ms = @as(i64, @intCast(phase_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(phase_ts.nsec)), 1_000_000);
+            std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{phase_ms - install_start_ms});
         }
     }
 
