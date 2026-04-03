@@ -634,7 +634,7 @@ pub fn installWorkspaceCommandWithOptions(
     const install_start_ms = @as(i64, @intCast(install_start_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(install_start_ts.nsec)), 1_000_000);
 
     // Create workspace environment
-    const home = try lib.Paths.home(allocator);
+    const home = lib.Paths.home(allocator) catch try allocator.dupe(u8, "/tmp");
     defer allocator.free(home);
 
     // Hash workspace root for environment directory
