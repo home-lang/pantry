@@ -2266,10 +2266,16 @@ pub const Installer = struct {
             const npm_url_is_heap = (registry_base.len + 1 + name.len > 1024);
             defer if (npm_url_is_heap) self.allocator.free(npm_url);
 
+            // Perf: Request abbreviated metadata (10-50x smaller than full registry JSON).
+            // Safe here because resolveNpmPackageWithDeps is only called during Phase 1
+            // of the pipeline, which never overlaps with Phase 2 (download).
+            const npm_accept_header = [_]std.http.Header{
+                .{ .name = "Accept", .value = "application/vnd.npm.install-v1+json" },
+            };
             var response_body: ?[]const u8 = null;
             var attempt: u32 = 0;
             while (attempt < 3) : (attempt += 1) {
-                response_body = io_helper.httpGetWithClient(self.http_client, self.allocator, npm_url) catch {
+                response_body = io_helper.httpGetWithClientAndHeaders(self.http_client, self.allocator, npm_url, &npm_accept_header) catch {
                     if (attempt < 2) {
                         io_helper.nanosleep(0, (attempt + 1) * 50 * std.time.ns_per_ms);
                         continue;
@@ -2279,7 +2285,8 @@ pub const Installer = struct {
                 break;
             }
             const body = response_body orelse return error.NpmRegistryUnavailable;
-            self.npm_cache.putRegistryJson(name, body);
+            // Note: Don't cache abbreviated JSON in L1 — it has different structure than full JSON
+            // and resolveNpmPackage() (used elsewhere) expects the full format.
             break :blk body;
         };
         defer self.allocator.free(npm_response);
