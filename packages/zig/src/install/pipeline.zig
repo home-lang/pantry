@@ -65,246 +65,278 @@ pub const PipelineDep = struct {
 // Phase 1: Full Tree Resolution
 // ============================================================================
 
-/// Thread context for parallel npm metadata resolution
-const ResolveThreadCtx = struct {
+/// Concurrent work queue for dependency resolution.
+/// Threads continuously pick up work as transitive deps are discovered — no wave boundaries.
+const ResolveQueue = struct {
+    /// Growing list of deps to resolve. Threads read via atomic index, main logic appends under mutex.
+    items: std.ArrayList(QueueItem),
+    /// Total items added (threads read this atomically to know when to stop)
+    total: std.atomic.Value(usize),
+    /// Next item to claim (work-stealing via atomic increment)
+    next: std.atomic.Value(usize),
+    /// Mutex for appending new items and updating resolved/seen
+    mutex: io_helper.Mutex,
+    /// Deduplicate by package name (first version wins, hoisted)
+    seen: std.StringHashMap(void),
+    /// Resolved packages (output)
+    resolved: std.ArrayList(ResolvedPackage),
+    /// Shared installer for npm resolution
     installer: *Installer,
-    deps: []const PipelineDep,
-    results: []?Installer.NpmResolutionWithDeps,
-    next: *std.atomic.Value(usize),
+    allocator: std.mem.Allocator,
     verbose: bool,
+    /// Track how many workers are idle (for termination detection)
+    idle_count: std.atomic.Value(usize),
+    thread_count: usize,
 
-    fn worker(ctx: *ResolveThreadCtx) void {
+    const QueueItem = struct {
+        name: []const u8,
+        version: []const u8,
+        is_top_level: bool,
+        source: packages.PackageSource,
+    };
+
+    fn init(allocator: std.mem.Allocator, inst: *Installer, verbose: bool, thread_count: usize) ResolveQueue {
+        return .{
+            .items = std.ArrayList(QueueItem).empty,
+            .total = std.atomic.Value(usize).init(0),
+            .next = std.atomic.Value(usize).init(0),
+            .mutex = .{},
+            .seen = std.StringHashMap(void).init(allocator),
+            .resolved = std.ArrayList(ResolvedPackage).empty,
+            .installer = inst,
+            .allocator = allocator,
+            .verbose = verbose,
+            .idle_count = std.atomic.Value(usize).init(0),
+            .thread_count = thread_count,
+        };
+    }
+
+    fn deinit(self: *ResolveQueue) void {
+        // Free unprocessed queue items
+        const processed = self.next.load(.monotonic);
+        for (self.items.items[processed..]) |item| {
+            if (!item.is_top_level) {
+                self.allocator.free(item.name);
+                self.allocator.free(item.version);
+            }
+        }
+        self.items.deinit(self.allocator);
+
+        var seen_iter = self.seen.iterator();
+        while (seen_iter.next()) |entry| {
+            self.allocator.free(entry.key_ptr.*);
+        }
+        self.seen.deinit();
+        // Note: resolved list ownership transfers to caller
+    }
+
+    /// Try to enqueue a dep. Returns false if already seen (deduped).
+    fn tryEnqueue(self: *ResolveQueue, name: []const u8, version: []const u8, source: packages.PackageSource) bool {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+
+        if (self.seen.contains(name)) return false;
+
+        const owned_name = self.allocator.dupe(u8, name) catch return false;
+        const owned_version = self.allocator.dupe(u8, version) catch {
+            self.allocator.free(owned_name);
+            return false;
+        };
+
+        self.seen.put(self.allocator.dupe(u8, name) catch {
+            self.allocator.free(owned_name);
+            self.allocator.free(owned_version);
+            return false;
+        }, {}) catch {
+            self.allocator.free(owned_name);
+            self.allocator.free(owned_version);
+            return false;
+        };
+
+        self.items.append(self.allocator, .{
+            .name = owned_name,
+            .version = owned_version,
+            .is_top_level = false,
+            .source = source,
+        }) catch {
+            self.allocator.free(owned_name);
+            self.allocator.free(owned_version);
+            return false;
+        };
+
+        _ = self.total.fetchAdd(1, .release);
+        return true;
+    }
+
+    /// Add a resolved package to the output list.
+    fn addResolved(self: *ResolveQueue, pkg: ResolvedPackage) void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+        self.resolved.append(self.allocator, pkg) catch {};
+    }
+
+    /// Worker function: continuously resolve deps from the queue.
+    fn worker(self: *ResolveQueue) void {
         while (true) {
-            const i = ctx.next.fetchAdd(1, .monotonic);
-            if (i >= ctx.deps.len) break;
+            const i = self.next.fetchAdd(1, .monotonic);
+            const total = self.total.load(.acquire);
 
-            const dep = ctx.deps[i];
+            if (i >= total) {
+                // No work available right now. Check if all threads are idle (termination).
+                _ = self.next.fetchSub(1, .monotonic); // put it back
+                const idle = self.idle_count.fetchAdd(1, .acq_rel) + 1;
 
-            // Skip non-npm packages in resolution phase
-            if (dep.source != .npm and dep.source != .pantry) {
-                ctx.results[i] = null;
+                if (idle >= self.thread_count) {
+                    // All threads idle and no more work — we're done
+                    // Wake other threads by bumping total to a sentinel
+                    return;
+                }
+
+                // Spin-wait briefly for new work
+                io_helper.nanosleep(0, 1 * std.time.ns_per_ms);
+                _ = self.idle_count.fetchSub(1, .acq_rel);
+
+                // Re-check if total grew
+                const new_total = self.total.load(.acquire);
+                if (new_total > total) continue;
+
+                // Check if all threads became idle while we were waiting
+                const idle2 = self.idle_count.load(.acquire);
+                if (idle2 >= self.thread_count - 1) return; // we're the last active
                 continue;
             }
 
-            if (ctx.verbose) {
-                std.debug.print("[verbose:pipeline:resolve] resolving: {s} @ {s}\n", .{ dep.name, dep.version });
+            // Mark as active
+            _ = self.idle_count.store(0, .release);
+
+            // Get the item (mutex needed because items list may be growing)
+            self.mutex.lock();
+            const item = if (i < self.items.items.len) self.items.items[i] else {
+                self.mutex.unlock();
+                continue;
+            };
+            self.mutex.unlock();
+
+            // Skip non-npm
+            if (item.source != .npm and item.source != .pantry) continue;
+
+            // Skip if already resolved by hoisted cache
+            if (self.installer.hoisted_versions.checkSatisfies(item.name, item.version)) continue;
+
+            if (self.verbose) {
+                std.debug.print("[verbose:pipeline:resolve] [{d}/{d}] {s} @ {s}\n", .{ i + 1, self.total.load(.acquire), item.name, item.version });
             }
 
-            ctx.results[i] = ctx.installer.resolveNpmPackageWithDeps(dep.name, dep.version) catch |err| blk: {
-                if (ctx.verbose) {
-                    std.debug.print("[verbose:pipeline:resolve] FAILED: {s} @ {s}: {}\n", .{ dep.name, dep.version, err });
+            // Resolve via npm registry
+            const result = self.installer.resolveNpmPackageWithDeps(item.name, item.version) catch continue;
+
+            // Add to resolved output
+            const owned_name = self.allocator.dupe(u8, item.name) catch {
+                self.allocator.free(result.version);
+                self.allocator.free(result.tarball_url);
+                if (result.integrity) |int| self.allocator.free(int);
+                for (result.dependencies) |dep| {
+                    self.allocator.free(dep.name);
+                    self.allocator.free(dep.version_constraint);
                 }
-                break :blk null;
+                self.allocator.free(result.dependencies);
+                continue;
             };
+
+            self.addResolved(.{
+                .name = owned_name,
+                .version = result.version,
+                .tarball_url = result.tarball_url,
+                .integrity = result.integrity,
+                .source = .npm,
+            });
+
+            // Record in hoisted cache
+            self.installer.hoisted_versions.put(item.name, result.version);
+
+            // Enqueue transitive deps immediately (no wave boundary!)
+            for (result.dependencies) |dep| {
+                if (!self.tryEnqueue(dep.name, dep.version_constraint, .npm)) {
+                    self.allocator.free(dep.name);
+                    self.allocator.free(dep.version_constraint);
+                }
+            }
+            self.allocator.free(result.dependencies);
         }
     }
 };
 
-/// Resolve the full dependency tree from npm registry metadata.
-/// Returns a flat deduplicated list of all packages to install.
+/// Resolve the full dependency tree using a concurrent work queue.
+/// No wave boundaries — threads continuously pick up work as transitive deps are discovered.
 fn resolveFullTree(
     allocator: std.mem.Allocator,
     inst: *Installer,
     top_level_deps: []const PipelineDep,
     verbose: bool,
 ) !std.ArrayList(ResolvedPackage) {
-    var resolved = std.ArrayList(ResolvedPackage).empty;
-    errdefer {
-        for (resolved.items) |pkg| {
-            allocator.free(pkg.name);
-            allocator.free(pkg.version);
-            allocator.free(pkg.tarball_url);
-            if (pkg.integrity) |i| allocator.free(i);
-        }
-        resolved.deinit(allocator);
-    }
+    const cpu_count = std.Thread.getCpuCount() catch 4;
+    const max_threads = @min(cpu_count, 16);
+    const thread_count = @max(max_threads, 2);
 
-    // Track resolved packages by name to deduplicate
-    var seen = std.StringHashMap(void).init(allocator);
-    defer seen.deinit();
-
-    // BFS wave queue: starts with top-level deps
-    var current_wave = std.ArrayList(PipelineDep).empty;
-    defer current_wave.deinit(allocator);
+    var queue = ResolveQueue.init(allocator, inst, verbose, thread_count);
 
     // Seed with top-level deps
     for (top_level_deps) |dep| {
-        try current_wave.append(allocator, dep);
-    }
-
-    var depth: u32 = 0;
-    const max_depth: u32 = 30;
-
-    while (current_wave.items.len > 0 and depth < max_depth) {
-        const wave_size = current_wave.items.len;
-
-        if (verbose) {
-            std.debug.print("[verbose:pipeline:resolve] wave {d}: {d} deps to resolve\n", .{ depth, wave_size });
-        }
-
-        // Resolve this wave in parallel
-        const results = try allocator.alloc(?Installer.NpmResolutionWithDeps, wave_size);
-        defer allocator.free(results);
-        for (results) |*r| r.* = null;
-
-        var next_idx = std.atomic.Value(usize).init(0);
-        var ctx = ResolveThreadCtx{
-            .installer = inst,
-            .deps = current_wave.items,
-            .results = results,
-            .next = &next_idx,
-            .verbose = verbose,
+        queue.mutex.lock();
+        queue.seen.put(allocator.dupe(u8, dep.name) catch {
+            queue.mutex.unlock();
+            continue;
+        }, {}) catch {
+            queue.mutex.unlock();
+            continue;
         };
-
-        // Use up to 16 threads for metadata resolution (small JSON responses)
-        const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, 16);
-        const thread_count = @min(wave_size, max_threads);
-
-        if (thread_count <= 1) {
-            ResolveThreadCtx.worker(&ctx);
-        } else {
-            const spawned = thread_count - 1;
-            var threads = try allocator.alloc(?std.Thread, spawned);
-            defer allocator.free(threads);
-            for (threads) |*t| t.* = null;
-
-            for (0..spawned) |t| {
-                threads[t] = std.Thread.spawn(.{}, ResolveThreadCtx.worker, .{&ctx}) catch null;
-            }
-            ResolveThreadCtx.worker(&ctx);
-
-            for (threads) |*t| {
-                if (t.*) |thread| {
-                    thread.join();
-                    t.* = null;
-                }
-            }
-        }
-
-        // Collect results and build next wave from transitive deps
-        var next_wave = std.ArrayList(PipelineDep).empty;
-
-        for (results, 0..) |maybe_result, ri| {
-            if (maybe_result) |res| {
-                const result = res;
-                // Add to resolved list if not seen
-                if (!seen.contains(result.version)) {
-                    // Use name as dedup key (hoisted: first version wins)
-                    const name_key = current_wave.items[ri].name;
-                    if (!seen.contains(name_key)) {
-                        try seen.put(try allocator.dupe(u8, name_key), {});
-                        try resolved.append(allocator, .{
-                            .name = result.version, // transfer ownership
-                            .version = result.version,
-                            .tarball_url = result.tarball_url,
-                            .integrity = result.integrity,
-                            .source = .npm,
-                        });
-                        // Fix: name should be the dep name, not the version
-                        resolved.items[resolved.items.len - 1].name = try allocator.dupe(u8, name_key);
-
-                        // Record in hoisted cache for dedup in later waves
-                        inst.hoisted_versions.put(name_key, result.version);
-                    } else {
-                        // Already resolved, free the result
-                        allocator.free(result.version);
-                        allocator.free(result.tarball_url);
-                        if (result.integrity) |i| allocator.free(i);
-                    }
-                } else {
-                    allocator.free(result.version);
-                    allocator.free(result.tarball_url);
-                    if (result.integrity) |i| allocator.free(i);
-                }
-
-                // Enqueue transitive deps for next wave
-                for (result.dependencies) |dep| {
-                    // Skip already-resolved
-                    if (seen.contains(dep.name)) {
-                        allocator.free(dep.name);
-                        allocator.free(dep.version_constraint);
-                        continue;
-                    }
-                    // Skip already-installed
-                    if (inst.hoisted_versions.checkSatisfies(dep.name, dep.version_constraint)) {
-                        allocator.free(dep.name);
-                        allocator.free(dep.version_constraint);
-                        continue;
-                    }
-                    // Skip optional deps that fail (silently)
-                    next_wave.append(allocator, .{
-                        .name = dep.name,
-                        .version = dep.version_constraint,
-                        .source = .npm,
-                    }) catch {
-                        allocator.free(dep.name);
-                        allocator.free(dep.version_constraint);
-                        continue;
-                    };
-                }
-                allocator.free(result.dependencies);
-            } else {
-                // Resolution failed — add non-npm packages directly
-                const dep = current_wave.items[ri];
-                if (dep.source != .npm and dep.source != .pantry) {
-                    if (!seen.contains(dep.name)) {
-                        try seen.put(try allocator.dupe(u8, dep.name), {});
-                        try resolved.append(allocator, .{
-                            .name = try allocator.dupe(u8, dep.name),
-                            .version = try allocator.dupe(u8, dep.version),
-                            .tarball_url = try allocator.dupe(u8, ""),
-                            .integrity = null,
-                            .source = dep.source,
-                        });
-                    }
-                }
-            }
-        }
-
-        // Swap waves
-        // Free old wave dep strings only if they were allocated for transitive deps (depth > 0)
-        if (depth > 0) {
-            for (current_wave.items) |dep| {
-                allocator.free(dep.name);
-                allocator.free(dep.version);
-            }
-        }
-        current_wave.clearRetainingCapacity();
-
-        // Deduplicate next wave by name
-        var next_seen = std.StringHashMap(void).init(allocator);
-        defer next_seen.deinit();
-        for (next_wave.items) |dep| {
-            if (next_seen.contains(dep.name) or seen.contains(dep.name)) {
-                allocator.free(dep.name);
-                allocator.free(dep.version);
-                continue;
-            }
-            next_seen.put(dep.name, {}) catch continue;
-            current_wave.append(allocator, dep) catch {
-                allocator.free(dep.name);
-                allocator.free(dep.version);
-            };
-        }
-        next_wave.deinit(allocator);
-
-        depth += 1;
+        queue.items.append(allocator, .{
+            .name = dep.name,
+            .version = dep.version,
+            .is_top_level = true,
+            .source = dep.source,
+        }) catch {
+            queue.mutex.unlock();
+            continue;
+        };
+        _ = queue.total.fetchAdd(1, .release);
+        queue.mutex.unlock();
     }
 
-    // Free remaining wave items
-    if (depth > 0) {
-        for (current_wave.items) |dep| {
-            allocator.free(dep.name);
-            allocator.free(dep.version);
+    if (verbose) {
+        std.debug.print("[verbose:pipeline:resolve] starting concurrent resolution with {d} threads, {d} initial deps\n", .{ thread_count, top_level_deps.len });
+    }
+
+    // Spawn worker threads
+    const spawned = thread_count - 1;
+    var threads = try allocator.alloc(?std.Thread, spawned);
+    defer allocator.free(threads);
+    for (threads) |*t| t.* = null;
+
+    for (0..spawned) |t| {
+        threads[t] = std.Thread.spawn(.{}, ResolveQueue.worker, .{&queue}) catch null;
+    }
+    // Main thread participates
+    ResolveQueue.worker(&queue);
+
+    // Join all threads
+    for (threads) |*t| {
+        if (t.*) |thread| {
+            thread.join();
+            t.* = null;
         }
     }
 
     if (verbose) {
-        std.debug.print("[verbose:pipeline:resolve] tree resolved: {d} unique packages in {d} waves\n", .{ resolved.items.len, depth });
+        std.debug.print("[verbose:pipeline:resolve] tree resolved: {d} unique packages, queue processed {d} items\n", .{ queue.resolved.items.len, queue.next.load(.monotonic) });
     }
 
-    return resolved;
+    // Transfer resolved list ownership to caller
+    const result = queue.resolved;
+    queue.resolved = std.ArrayList(ResolvedPackage).empty;
+    queue.deinit();
+
+    return result;
 }
 
 // ============================================================================
