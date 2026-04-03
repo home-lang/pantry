@@ -617,10 +617,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         defer allocator.free(pipeline_deps);
         for (deps_to_install, 0..) |dep, di| {
             const clean_name = helpers.resolvePackageAlias(helpers.normalizePackageName(dep.name));
+            // Domain-style names (containing '.') are pantry/system packages, not npm
+            const is_domain = std.mem.indexOfScalar(u8, clean_name, '.') != null;
             pipeline_deps[di] = .{
                 .name = clean_name,
                 .version = dep.version,
-                .source = switch (dep.source) {
+                .source = if (is_domain) .pantry else switch (dep.source) {
                     .registry => .npm,
                     .github => .github,
                     .git => .git,

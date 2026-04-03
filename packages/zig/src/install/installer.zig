@@ -2285,8 +2285,8 @@ pub const Installer = struct {
                 break;
             }
             const body = response_body orelse return error.NpmRegistryUnavailable;
-            // Note: Don't cache abbreviated JSON in L1 — it has different structure than full JSON
-            // and resolveNpmPackage() (used elsewhere) expects the full format.
+            // Cache in L1 so other threads/waves reuse this response
+            self.npm_cache.putRegistryJson(name, body);
             break :blk body;
         };
         defer self.allocator.free(npm_response);
