@@ -609,246 +609,54 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             shared_installer.bulkResolveViaPantryRegistry(bulk_deps);
         }
 
-        // Install results storage
-        const install_results = try allocator.alloc(types.InstallTaskResult, deps_to_install.len);
-        defer {
-            for (install_results) |*result| {
-                result.deinit(allocator);
-            }
-            allocator.free(install_results);
-        }
+        // ── Parallel pipeline: resolve tree → download → extract ──
+        const pipeline = @import("../../../install/pipeline.zig");
 
-        // Perf: Bulk-initialize results with @memset (single operation vs N iterations)
-        @memset(install_results, .{
-            .name = "",
-            .version = "",
-            .success = false,
-            .error_msg = null,
-            .install_time_ms = 0,
-        });
-
-        // Install remote packages in parallel using threads
-        // Perf: Use stack-allocated thread handles (avoids heap alloc for thread array)
-        // Cap at 8 threads — each top-level install can spawn sub-threads for transitive deps
-        const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, 8);
-        const thread_count = @min(deps_to_install.len, max_threads);
-        var threads: [8]?std.Thread = .{ null, null, null, null, null, null, null, null };
-        var next_dep = std.atomic.Value(usize).init(0);
-
-        const ThreadContext = struct {
-            deps: []const lib.deps.parser.PackageDependency,
-            results: []types.InstallTaskResult,
-            next: *std.atomic.Value(usize),
-            alloc: std.mem.Allocator,
-            proj: []const u8,
-            env: []const u8,
-            bin: []const u8,
-            cwd_path: []const u8,
-            shared_installer: *install.Installer,
-            opts: types.InstallOptions,
-            lockfile_packages: ?*const std.StringHashMap(lib.packages.LockfileEntry),
-            resume_packages: ?*const std.StringHashMap(void),
-
-            fn worker(ctx: *@This()) void {
-                if (ctx.opts.verbose) {
-                    std.debug.print("[verbose] worker thread started (tid={d})\n", .{std.Thread.getCurrentId()});
-                }
-                while (true) {
-                    const i = ctx.next.fetchAdd(1, .monotonic);
-                    if (i >= ctx.deps.len) break;
-
-                    const clean_name = helpers.normalizePackageName(ctx.deps[i].name);
-
-                    if (ctx.opts.verbose) {
-                        std.debug.print("[verbose] [{d}/{d}] processing: {s} @ {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version });
-                    }
-
-                    // Skip packages that match lockfile and exist at destination
-                    // (bypassed when --force is set)
-                    if (!ctx.opts.force) {
-                        if (ctx.lockfile_packages) |lf_pkgs| {
-                            if (helpers.canSkipFromLockfile(lf_pkgs, ctx.deps[i].name, ctx.deps[i].version, ctx.proj, ctx.alloc, ctx.opts.modules_dir)) {
-                                if (ctx.opts.verbose) {
-                                    std.debug.print("[verbose] [{d}/{d}] skipped (lockfile match): {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name });
-                                }
-                                ctx.results[i] = .{
-                                    .name = clean_name,
-                                    .version = ctx.deps[i].version,
-                                    .success = true,
-                                    .error_msg = null,
-                                    .install_time_ms = 0,
-                                };
-                                continue;
-                            }
-                        }
-
-                        // Skip packages already installed in a previous interrupted run (resume)
-                        if (ctx.resume_packages) |resume_pkgs| {
-                            if (resume_pkgs.contains(clean_name)) {
-                                if (ctx.opts.verbose) {
-                                    std.debug.print("[verbose] [{d}/{d}] skipped (resume checkpoint): {s}\n", .{ i + 1, ctx.deps.len, clean_name });
-                                }
-                                ctx.results[i] = .{
-                                    .name = clean_name,
-                                    .version = ctx.deps[i].version,
-                                    .success = true,
-                                    .error_msg = null,
-                                    .install_time_ms = 0,
-                                };
-                                continue;
-                            }
-                        }
-                    }
-
-                    var pkg_start_ms: i64 = 0;
-                    if (ctx.opts.verbose) {
-                        const pkg_ts = io_helper.clockGettime();
-                        pkg_start_ms = @as(i64, @intCast(pkg_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(pkg_ts.nsec, 1_000_000)));
-                        std.debug.print("[verbose] [{d}/{d}] installing: {s} @ {s}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version });
-                    }
-
-                    ctx.results[i] = helpers.installSinglePackage(
-                        ctx.alloc,
-                        ctx.deps[i],
-                        ctx.proj,
-                        ctx.env,
-                        ctx.bin,
-                        ctx.cwd_path,
-                        ctx.shared_installer,
-                        ctx.opts,
-                    ) catch |err| blk: {
-                        if (ctx.opts.verbose) {
-                            std.debug.print("[verbose] [{d}/{d}] INSTALL ERROR: {s} @ {s}: {}\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, ctx.deps[i].version, err });
-                        }
-                        break :blk .{
-                            .name = ctx.deps[i].name,
-                            .version = ctx.deps[i].version,
-                            .success = false,
-                            .error_msg = null,
-                            .install_time_ms = 0,
-                        };
-                    };
-
-                    if (ctx.opts.verbose) {
-                        const pkg_end_ts = io_helper.clockGettime();
-                        const pkg_end_ms = @as(i64, @intCast(pkg_end_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(pkg_end_ts.nsec, 1_000_000)));
-                        std.debug.print("[verbose:timer] [{d}/{d}] {s}: {d}ms (success={})\n", .{ i + 1, ctx.deps.len, ctx.deps[i].name, pkg_end_ms - pkg_start_ms, ctx.results[i].success });
-                    }
-                }
-                if (ctx.opts.verbose) {
-                    std.debug.print("[verbose] worker thread exiting (tid={d})\n", .{std.Thread.getCurrentId()});
-                }
-            }
-        };
-
-        var ctx = ThreadContext{
-            .deps = deps_to_install,
-            .results = install_results,
-            .next = &next_dep,
-            .alloc = allocator,
-            .proj = proj_dir,
-            .env = env_dir,
-            .bin = bin_dir,
-            .cwd_path = cwd,
-            .shared_installer = &shared_installer,
-            .opts = opts,
-            .lockfile_packages = null, // Fast path already checked; slow path installs everything
-            .resume_packages = if (resuming) &checkpoint.installed_packages else null,
-        };
-
-        if (opts.verbose) {
-            std.debug.print("[verbose] spawning {d} worker threads for {d} packages (cpu_count={d}, max_threads={d})\n", .{ thread_count, deps_to_install.len, cpu_count, max_threads });
-            std.debug.print("[verbose] project_dir={s}, modules_dir={s}, bin_dir={s}\n", .{ proj_dir, opts.modules_dir, bin_dir });
-            std.debug.print("[verbose] shared_installer ptr={*}, http_client ptr={*}\n", .{ &shared_installer, shared_installer.http_client });
-            for (deps_to_install, 0..) |dep, di| {
-                std.debug.print("[verbose]   dep[{d}]: {s} @ {s} (source={s})\n", .{ di, dep.name, dep.version, @tagName(dep.source) });
-            }
-        }
-
-        // Spawn worker threads
-        for (0..thread_count) |t| {
-            threads[t] = std.Thread.spawn(.{}, ThreadContext.worker, .{&ctx}) catch |err| blk: {
-                if (opts.verbose) {
-                    std.debug.print("[verbose] FAILED to spawn thread {d}: {}\n", .{ t, err });
-                }
-                break :blk null;
+        // Build pipeline dep list
+        var pipeline_deps = try allocator.alloc(pipeline.PipelineDep, deps_to_install.len);
+        defer allocator.free(pipeline_deps);
+        for (deps_to_install, 0..) |dep, di| {
+            const clean_name = helpers.resolvePackageAlias(helpers.normalizePackageName(dep.name));
+            pipeline_deps[di] = .{
+                .name = clean_name,
+                .version = dep.version,
+                .source = switch (dep.source) {
+                    .registry => .npm,
+                    .github => .github,
+                    .git => .git,
+                    .url => .http,
+                },
             };
-            if (opts.verbose and threads[t] != null) {
-                std.debug.print("[verbose] spawned worker thread {d}\n", .{t});
-            }
         }
 
-        // Main thread shows progress while workers install
-        if (style.isCI()) {
-            // CI mode: print milestone progress (no spinner)
-            var last_reported: usize = 0;
-            while (next_dep.load(.monotonic) < deps_to_install.len) {
-                const current = @min(next_dep.load(.monotonic), deps_to_install.len);
-                if (current > last_reported) {
-                    style.print("  Installing... [{d}/{d}]\n", .{ current, deps_to_install.len });
-                    last_reported = current;
-                }
-                io_helper.nanosleep(0, 200 * std.time.ns_per_ms);
-            }
-        } else {
-            var frame: usize = 0;
-            while (next_dep.load(.monotonic) < deps_to_install.len) {
-                const current = @min(next_dep.load(.monotonic), deps_to_install.len);
-                const pkg_name = if (current < deps_to_install.len) helpers.stripDisplayPrefix(deps_to_install[current].name) else "...";
-                style.printProgress(current, deps_to_install.len, pkg_name, frame);
-                frame +%= 1;
-                io_helper.nanosleep(0, 80 * std.time.ns_per_ms);
-            }
-            style.clearProgress();
-        }
+        var pipeline_result = try pipeline.run(
+            allocator,
+            &shared_installer,
+            pipeline_deps,
+            proj_dir,
+            opts.verbose,
+        );
+        defer pipeline_result.deinit(allocator);
 
-        // Join all threads
-        if (opts.verbose) {
-            std.debug.print("[verbose] waiting for all worker threads to join...\n", .{});
-        }
-        for (&threads, 0..) |*t, ti| {
-            if (t.*) |thread| {
-                if (opts.verbose) {
-                    std.debug.print("[verbose] joining thread {d}...\n", .{ti});
-                }
-                thread.join();
-                t.* = null;
-                if (opts.verbose) {
-                    std.debug.print("[verbose] thread {d} joined\n", .{ti});
-                }
-            }
-        }
-        if (opts.verbose) {
-            const join_ts = io_helper.clockGettime();
-            const join_ms = @as(i64, @intCast(join_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(join_ts.nsec, 1_000_000)));
-            std.debug.print("[verbose] all threads joined. final counter={d}\n", .{next_dep.load(.monotonic)});
-            std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{join_ms - start_time});
-        }
-
-        // Print clean Yarn/Bun-style summary - only show what was installed or failed
+        // Print results
         var success_count: usize = 0;
         var failed_count: usize = 0;
 
-        for (install_results, 0..) |result, ri| {
+        for (pipeline_result.results) |result| {
             if (result.name.len == 0) continue;
-            const display_name = helpers.stripDisplayPrefix(result.name);
-            if (opts.verbose) {
-                std.debug.print("[verbose] result[{d}]: {s} @ {s} success={} err={s}\n", .{
-                    ri,
-                    display_name,
-                    result.version,
-                    result.success,
-                    if (result.error_msg) |msg| msg else "(none)",
-                });
-            }
             if (result.success) {
-                style.printInstalled(display_name, result.version);
+                style.printInstalled(result.name, result.version);
                 success_count += 1;
             } else {
-                style.printFailed(display_name, result.version, result.error_msg);
+                style.printFailed(result.name, result.version, result.error_msg);
                 failed_count += 1;
             }
+        }
+
+        if (opts.verbose) {
+            const phase_ts = io_helper.clockGettime();
+            const phase_ms = @as(i64, @intCast(phase_ts.sec)) * 1000 + @as(i64, @intCast(@divFloor(phase_ts.nsec, 1_000_000)));
+            std.debug.print("[verbose:timer] parallel install phase complete: {d}ms\n", .{phase_ms - start_time});
         }
 
         // Handle local packages separately (they need special symlink handling)
@@ -1052,7 +860,7 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
             defer lockfile.deinit(allocator);
 
             // Add entries for all installed packages
-            for (deps, 0..) |dep, i| {
+            for (deps) |dep| {
                 const source = if (helpers.isLocalDependency(dep))
                     lib.packages.PackageSource.local
                 else if (std.mem.startsWith(u8, dep.name, "github:"))
@@ -1067,17 +875,9 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
                 else
                     dep.name;
 
-                // Use the resolved version from install_results if available, otherwise use dep.version
-                const resolved_version = if (i < install_results.len and install_results[i].success and install_results[i].version.len > 0)
-                    install_results[i].version
-                else
-                    dep.version;
-
-                // Capture integrity hash from install result
-                const integrity = if (i < install_results.len and install_results[i].success and install_results[i].integrity != null)
-                    try allocator.dupe(u8, install_results[i].integrity.?)
-                else
-                    null;
+                // Use dep.version for lockfile (pipeline resolves versions internally)
+                const resolved_version = dep.version;
+                const integrity: ?[]const u8 = null;
 
                 const entry = lib.packages.LockfileEntry{
                     .name = try allocator.dupe(u8, clean_name),
@@ -1112,12 +912,12 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
         } // if (!opts.no_save) — skip lockfile generation entirely
 
         // Add successful packages to pantry.lock and record in checkpoint
-        for (install_results) |result| {
+        for (pipeline_result.results) |result| {
             if (result.success and result.name.len > 0) {
                 const clean_name = helpers.normalizePackageName(result.name);
                 const resolved_url = try std.fmt.allocPrint(allocator, "registry:{s}@{s}", .{ clean_name, result.version });
                 defer allocator.free(resolved_url);
-                try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, result.integrity);
+                try lockfile_hooks.addPackageToLockfile(&lock_file, clean_name, result.version, resolved_url, null);
 
                 // Record successful package installation in checkpoint
                 checkpoint.recordPackage(clean_name) catch |err| {
