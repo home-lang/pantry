@@ -156,10 +156,10 @@ fn resolveFullTree(
             .verbose = verbose,
         };
 
-        // Use up to 8 threads for metadata resolution. Higher values cause
-        // EADDRNOTAVAIL (errno 49) from local port/socket exhaustion.
+        // Use up to 12 threads for metadata resolution. Wave boundaries give the OS
+        // time to recycle sockets between waves, avoiding EADDRNOTAVAIL (errno 49).
         const cpu_count = std.Thread.getCpuCount() catch 4;
-        const max_threads = @min(cpu_count, 8);
+        const max_threads = @min(cpu_count, 12);
         const thread_count = @min(wave_size, max_threads);
 
         if (thread_count <= 1) {
