@@ -47,6 +47,8 @@ pub const PipelineResult = struct {
     pub fn deinit(self: *PipelineResult, allocator: std.mem.Allocator) void {
         for (self.results) |*r| {
             if (r.error_msg) |msg| allocator.free(msg);
+            if (r.name.len > 0) allocator.free(r.name);
+            if (r.version.len > 0) allocator.free(r.version);
         }
         allocator.free(self.results);
     }
@@ -319,17 +321,21 @@ const DownloadThreadCtx = struct {
     verbose: bool,
 
     fn worker(ctx: *DownloadThreadCtx) void {
+        const alloc = ctx.installer.allocator;
         while (true) {
             const i = ctx.next.fetchAdd(1, .monotonic);
             if (i >= ctx.packages.len) break;
 
             const pkg = ctx.packages[i];
+            // Dupe name+version so results outlive the resolved list
+            const owned_name = alloc.dupe(u8, pkg.name) catch "";
+            const owned_version = alloc.dupe(u8, pkg.version) catch "";
 
             // Skip non-npm packages
             if (pkg.source != .npm) {
                 ctx.results[i] = .{
-                    .name = pkg.name,
-                    .version = pkg.version,
+                    .name = owned_name,
+                    .version = owned_version,
                     .success = true,
                     .from_cache = true,
                 };
@@ -339,7 +345,7 @@ const DownloadThreadCtx = struct {
             // Check if already installed on disk
             var exist_buf: [std.fs.max_path_bytes]u8 = undefined;
             const install_dir = std.fmt.bufPrint(&exist_buf, "{s}/{s}/{s}", .{ ctx.project_root, ctx.modules_dir, pkg.name }) catch {
-                ctx.results[i] = .{ .name = pkg.name, .version = pkg.version, .success = false, .error_msg = null };
+                ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                 continue;
             };
 
@@ -350,8 +356,8 @@ const DownloadThreadCtx = struct {
 
             if (already_installed) {
                 ctx.results[i] = .{
-                    .name = pkg.name,
-                    .version = pkg.version,
+                    .name = owned_name,
+                    .version = owned_version,
                     .success = true,
                     .from_cache = true,
                 };
@@ -388,7 +394,7 @@ const DownloadThreadCtx = struct {
                     }
                 }
                 const dl = downloaded orelse {
-                    ctx.results[i] = .{ .name = pkg.name, .version = pkg.version, .success = false, .error_msg = null };
+                    ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                     continue;
                 };
 
@@ -401,14 +407,14 @@ const DownloadThreadCtx = struct {
             };
 
             if (tarball_bytes == null) {
-                ctx.results[i] = .{ .name = pkg.name, .version = pkg.version, .success = false, .error_msg = null };
+                ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                 continue;
             }
             defer ctx.installer.allocator.free(tarball_bytes.?);
 
             // Extract tarball to install directory
             io_helper.makePath(install_dir) catch {
-                ctx.results[i] = .{ .name = pkg.name, .version = pkg.version, .success = false, .error_msg = null };
+                ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                 continue;
             };
 
@@ -429,7 +435,7 @@ const DownloadThreadCtx = struct {
             };
 
             if (!extract_success) {
-                ctx.results[i] = .{ .name = pkg.name, .version = pkg.version, .success = false, .error_msg = null };
+                ctx.results[i] = .{ .name = owned_name, .version = owned_version, .success = false, .error_msg = null };
                 continue;
             }
 
@@ -440,8 +446,8 @@ const DownloadThreadCtx = struct {
             ctx.installer.hoisted_versions.put(pkg.name, pkg.version);
 
             ctx.results[i] = .{
-                .name = pkg.name,
-                .version = pkg.version,
+                .name = owned_name,
+                .version = owned_version,
                 .success = true,
                 .from_cache = false,
             };
