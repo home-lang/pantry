@@ -97,14 +97,15 @@ pub const Paths = struct {
                 if (io_helper.getEnvVarOwned(allocator, "HOME")) |h| {
                     break :blk h;
                 } else |_| {
-                    return error.HomeNotFound;
+                    // Fallback when HOME is not set (e.g. systemd services, buddy dev)
+                    break :blk try allocator.dupe(u8, "/tmp");
                 }
             },
             .windows => blk: {
                 if (io_helper.getEnvVarOwned(allocator, "USERPROFILE")) |h| {
                     break :blk h;
                 } else |_| {
-                    return error.HomeNotFound;
+                    break :blk try allocator.dupe(u8, "C:\\Temp");
                 }
             },
         };
