@@ -461,6 +461,131 @@ const DownloadThreadCtx = struct {
 };
 
 // ============================================================================
+// Phase 1 (Fast): Server-Side Bulk Resolution
+// ============================================================================
+
+/// Resolve the full dependency tree via a single POST to registry.pantry.dev/npm/resolve.
+/// The server resolves the entire transitive tree server-side (BFS with concurrent npm fetches).
+/// Falls back to client-side resolveFullTree() if the server is unreachable.
+fn resolveViaRegistry(
+    allocator: std.mem.Allocator,
+    inst: *Installer,
+    top_level_deps: []const PipelineDep,
+    verbose: bool,
+) !std.ArrayList(ResolvedPackage) {
+    // Build JSON body: {"dependencies":{"react":"^18","lodash":"^4",...}}
+    // Only include npm packages (skip domain-style/pantry packages)
+    var body_buf = std.ArrayList(u8).empty;
+    defer body_buf.deinit(allocator);
+    body_buf.appendSlice(allocator, "{\"dependencies\":{") catch
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+
+    var first = true;
+    var npm_count: usize = 0;
+    for (top_level_deps) |dep| {
+        if (dep.source != .npm) continue;
+        if (!first) body_buf.append(allocator, ',') catch continue;
+        first = false;
+        body_buf.append(allocator, '"') catch continue;
+        body_buf.appendSlice(allocator, dep.name) catch continue;
+        body_buf.appendSlice(allocator, "\":\"") catch continue;
+        body_buf.appendSlice(allocator, dep.version) catch continue;
+        body_buf.append(allocator, '"') catch continue;
+        npm_count += 1;
+    }
+    body_buf.appendSlice(allocator, "}}") catch
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+
+    if (npm_count == 0) {
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+    }
+
+    if (verbose) {
+        std.debug.print("[verbose:pipeline:registry] POSTing {d} deps to registry.pantry.dev/npm/resolve...\n", .{npm_count});
+    }
+
+    // Single HTTP POST to resolve entire tree server-side
+    const response = io_helper.httpPostJsonWithClient(
+        inst.http_client,
+        allocator,
+        "https://registry.pantry.dev/npm/resolve",
+        body_buf.items,
+    ) catch {
+        if (verbose) std.debug.print("[verbose:pipeline:registry] server unreachable, falling back to client-side resolution\n", .{});
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+    };
+    defer allocator.free(response);
+
+    if (response.len == 0) {
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+    }
+
+    // Parse response
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, response, .{}) catch {
+        if (verbose) std.debug.print("[verbose:pipeline:registry] failed to parse response, falling back\n", .{});
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+    };
+    defer parsed.deinit();
+
+    if (parsed.value != .object) return resolveFullTree(allocator, inst, top_level_deps, verbose);
+    const resolved_obj = parsed.value.object.get("resolved") orelse
+        return resolveFullTree(allocator, inst, top_level_deps, verbose);
+    if (resolved_obj != .object) return resolveFullTree(allocator, inst, top_level_deps, verbose);
+
+    // Build resolved list from server response
+    var resolved = std.ArrayList(ResolvedPackage).empty;
+    errdefer {
+        for (resolved.items) |pkg| {
+            allocator.free(pkg.name);
+            allocator.free(pkg.version);
+            allocator.free(pkg.tarball_url);
+            if (pkg.integrity) |i| allocator.free(i);
+        }
+        resolved.deinit(allocator);
+    }
+
+    var iter = resolved_obj.object.iterator();
+    while (iter.next()) |entry| {
+        const pkg_name = entry.key_ptr.*;
+        const pkg_val = entry.value_ptr.*;
+        if (pkg_val != .object) continue;
+
+        const version = if (pkg_val.object.get("version")) |v| (if (v == .string) v.string else continue) else continue;
+        const tarball = if (pkg_val.object.get("tarball")) |t| (if (t == .string) t.string else continue) else continue;
+        const integrity_val = if (pkg_val.object.get("integrity")) |i| (if (i == .string and i.string.len > 0) i.string else null) else null;
+
+        try resolved.append(allocator, .{
+            .name = try allocator.dupe(u8, pkg_name),
+            .version = try allocator.dupe(u8, version),
+            .tarball_url = try allocator.dupe(u8, tarball),
+            .integrity = if (integrity_val) |i| try allocator.dupe(u8, i) else null,
+            .source = .npm,
+        });
+
+        // Also populate hoisted cache for dedup
+        inst.hoisted_versions.put(pkg_name, version);
+    }
+
+    // Add non-npm top-level deps (pantry/github/etc) that weren't sent to the server
+    for (top_level_deps) |dep| {
+        if (dep.source == .npm) continue;
+        try resolved.append(allocator, .{
+            .name = try allocator.dupe(u8, dep.name),
+            .version = try allocator.dupe(u8, dep.version),
+            .tarball_url = try allocator.dupe(u8, ""),
+            .integrity = null,
+            .source = dep.source,
+        });
+    }
+
+    if (verbose) {
+        std.debug.print("[verbose:pipeline:registry] server resolved {d} packages (from {d} top-level deps)\n", .{ resolved.items.len, npm_count });
+    }
+
+    return resolved;
+}
+
+// ============================================================================
 // Pipeline Entry Point
 // ============================================================================
 
@@ -477,9 +602,11 @@ pub fn run(
     const total_start_ms = @as(i64, @intCast(total_start.sec)) * 1000 + @divFloor(@as(i64, @intCast(total_start.nsec)), 1_000_000);
 
     // ── Phase 1: Resolve full dependency tree ──
-    if (verbose) std.debug.print("[verbose:pipeline] Phase 1: resolving dependency tree...\n", .{});
+    // First try server-side bulk resolution (1 HTTP request for the entire tree).
+    // Falls back to client-side BFS only for packages the server didn't resolve.
+    if (verbose) std.debug.print("[verbose:pipeline] Phase 1: resolving dependency tree via registry...\n", .{});
 
-    var resolved = try resolveFullTree(allocator, inst, top_level_deps, verbose);
+    var resolved = try resolveViaRegistry(allocator, inst, top_level_deps, verbose);
     defer {
         for (resolved.items) |pkg| {
             allocator.free(pkg.name);
