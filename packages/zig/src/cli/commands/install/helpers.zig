@@ -765,9 +765,9 @@ pub fn installSinglePackage(
             const is_domain_style = std.mem.indexOfScalar(u8, lookup_name, '.') != null;
             const version_is_semver = dep.version.len > 0 and
                 (dep.version[0] == '^' or dep.version[0] == '~' or
-                dep.version[0] == '>' or dep.version[0] == '<' or
-                dep.version[0] == '=' or dep.version[0] == '*' or
-                (dep.version[0] >= '0' and dep.version[0] <= '9'));
+                    dep.version[0] == '>' or dep.version[0] == '<' or
+                    dep.version[0] == '=' or dep.version[0] == '*' or
+                    (dep.version[0] >= '0' and dep.version[0] <= '9'));
             const skip_pantry_lookup = is_scoped or version_is_semver;
 
             if (options.verbose) {

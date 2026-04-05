@@ -64,9 +64,9 @@ fn installSingleWorkspaceDep(
     const is_domain_style = std.mem.indexOfScalar(u8, clean_name, '.') != null;
     const version_is_semver = dep.version.len > 0 and
         (dep.version[0] == '^' or dep.version[0] == '~' or
-        dep.version[0] == '>' or dep.version[0] == '<' or
-        dep.version[0] == '=' or dep.version[0] == '*' or
-        (dep.version[0] >= '0' and dep.version[0] <= '9'));
+            dep.version[0] == '>' or dep.version[0] == '<' or
+            dep.version[0] == '=' or dep.version[0] == '*' or
+            (dep.version[0] >= '0' and dep.version[0] <= '9'));
     const bulk_resolved = shared_installer.hasNpmResolution(clean_name, dep.version);
     if (is_npm_package or (pkg_source == .pantry and
         pkg_registry.getPackageByName(clean_name) == null))
