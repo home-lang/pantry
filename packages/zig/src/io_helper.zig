@@ -942,16 +942,18 @@ pub fn wait(child: *std.process.Child) !std.process.Child.Term {
     }
 }
 
-/// Kill a spawned child process
+/// Kill a spawned child process (safe to call even if already exited)
 pub fn kill(child: *std.process.Child) void {
-    if (comptime @hasDecl(@TypeOf(child.*), "kill")) {
+    // Use posix kill directly to avoid panic on ECHILD when process already exited.
+    // std.process.Child.kill() treats ECHILD as a "programmer bug" and panics,
+    // but it's a normal condition when the child exits before we kill it.
+    if (builtin.os.tag != .windows) {
+        if (@hasField(@TypeOf(child.*), "id")) {
+            const pid = if (@typeInfo(@TypeOf(child.id)) == .optional) (child.id orelse return) else child.id;
+            std.posix.kill(pid, std.posix.SIG.TERM) catch {};
+        }
+    } else if (comptime @hasDecl(@TypeOf(child.*), "kill")) {
         child.kill(getIo());
-        return;
-    }
-
-    // Fallback for targets/APIs without Child.kill
-    if (builtin.os.tag != .windows and @hasField(@TypeOf(child.*), "id")) {
-        std.posix.kill(child.id, std.posix.SIG.TERM) catch {};
     }
 }
 
