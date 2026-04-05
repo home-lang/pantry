@@ -514,7 +514,7 @@ pub fn canSkipFromLockfileWithNameSet(
     proj_dir: []const u8,
     modules_dir: []const u8,
 ) bool {
-    const clean_name = normalizePackageName(dep_name);
+    const clean_name = resolvePackageAlias(normalizePackageName(dep_name));
     if (!name_set.contains(clean_name)) return false;
 
     // Check if version constraint has changed since lockfile was written
@@ -545,7 +545,7 @@ pub fn canSkipFromLockfile(
     _: std.mem.Allocator,
     modules_dir: []const u8,
 ) bool {
-    const clean_name = normalizePackageName(dep_name);
+    const clean_name = resolvePackageAlias(normalizePackageName(dep_name));
 
     // Perf: Direct HashMap lookup O(1) instead of iterating all entries O(n)
     if (lockfile_packages.get(clean_name) == null) {
