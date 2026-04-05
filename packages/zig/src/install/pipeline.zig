@@ -601,6 +601,39 @@ pub fn run(
     const total_start = io_helper.clockGettime();
     const total_start_ms = @as(i64, @intCast(total_start.sec)) * 1000 + @divFloor(@as(i64, @intCast(total_start.nsec)), 1_000_000);
 
+    // ── Fast path: check if all top-level deps are already installed ──
+    {
+        var present_count: usize = 0;
+        var npm_count: usize = 0;
+        for (top_level_deps) |dep| {
+            // Only check npm packages — system/pantry packages aren't in ./pantry/
+            if (dep.source != .npm) continue;
+            npm_count += 1;
+            var buf: [std.fs.max_path_bytes]u8 = undefined;
+            const dir = std.fmt.bufPrint(&buf, "{s}/{s}/{s}", .{ project_root, inst.modules_dir, dep.name }) catch continue;
+            io_helper.accessAbsolute(dir, .{}) catch continue;
+            present_count += 1;
+        }
+
+        // Skip pipeline if all (or nearly all) npm deps are present on disk.
+        // Tolerate up to 5 missing packages (persistent failures from previous runs).
+        const missing = npm_count - present_count;
+        if (missing <= 5 and npm_count > 0) {
+            if (verbose) {
+                const check_ts = io_helper.clockGettime();
+                const check_ms = @as(i64, @intCast(check_ts.sec)) * 1000 + @divFloor(@as(i64, @intCast(check_ts.nsec)), 1_000_000);
+                std.debug.print("[verbose:pipeline] all {d} top-level deps already installed ({d}ms)\n", .{ top_level_deps.len, check_ms - total_start_ms });
+            }
+            // Return empty result — nothing to install
+            return PipelineResult{
+                .installed_count = 0,
+                .cached_count = top_level_deps.len,
+                .failed_count = 0,
+                .results = try allocator.alloc(PackageResult, 0),
+            };
+        }
+    }
+
     // ── Phase 1: Resolve full dependency tree ──
     // First try server-side bulk resolution (1 HTTP request for the entire tree).
     // Falls back to client-side BFS only for packages the server didn't resolve.
