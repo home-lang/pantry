@@ -369,6 +369,50 @@ pub fn installWorkspaceCommandWithOptions(
     const offline = @import("../../../install/offline.zig");
     const recovery = @import("../../../install/recovery.zig");
 
+    // ── Fast path: if pantry.lock exists and pantry/ dir is populated, skip everything ──
+    if (!options.force) {
+        const lockfile_path = std.fmt.allocPrint(allocator, "{s}/pantry.lock", .{workspace_root}) catch null;
+        defer if (lockfile_path) |p| allocator.free(p);
+
+        const pantry_dir = std.fmt.allocPrint(allocator, "{s}/{s}", .{ workspace_root, options.modules_dir }) catch null;
+        defer if (pantry_dir) |p| allocator.free(p);
+
+        if (lockfile_path != null and pantry_dir != null) {
+            const has_lockfile = blk: {
+                io_helper.accessAbsolute(lockfile_path.?, .{}) catch break :blk false;
+                break :blk true;
+            };
+            const has_pantry = blk: {
+                io_helper.accessAbsolute(pantry_dir.?, .{}) catch break :blk false;
+                break :blk true;
+            };
+
+            if (has_lockfile and has_pantry) {
+                // Quick check: count entries in pantry/ dir — if it has packages, assume up-to-date
+                const entry_count = count_blk: {
+                    var dir = io_helper.openDirAbsoluteForIteration(pantry_dir.?) catch break :count_blk @as(usize, 0);
+                    defer dir.close();
+                    var count: usize = 0;
+                    var iter = dir.iterate();
+                    while (iter.next() catch null) |entry| {
+                        if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] != '.') {
+                            count += 1;
+                            if (count >= 10) break;
+                        }
+                    }
+                    break :count_blk count;
+                };
+
+                if (entry_count >= 10) {
+                    if (options.verbose) {
+                        std.debug.print("[verbose:ws] fast path: pantry.lock exists, {s}/ has {d}+ packages — skipping\n", .{ options.modules_dir, entry_count });
+                    }
+                    return .{ .exit_code = 0 };
+                }
+            }
+        }
+    }
+
     // Offline mode detection
     const is_offline = offline.isOfflineMode();
     if (is_offline) {
