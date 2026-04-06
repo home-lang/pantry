@@ -68,6 +68,7 @@ export const infracostioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.10.44',
     '0.10.43',
     '0.10.42',
     '0.10.41',
