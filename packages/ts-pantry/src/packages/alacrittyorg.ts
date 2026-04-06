@@ -70,6 +70,7 @@ export const alacrittyorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.17.0',
     '0.16.1',
     '0.16.0',
     '0.15.1',
