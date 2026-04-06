@@ -516,12 +516,14 @@ pub fn installWorkspaceCommandWithOptions(
         };
 
         // Try deps file first (fast: just filesystem access)
-        if (member.deps_file_path != null) {
+        // Use the already-discovered deps_file_path directly — don't re-search
+        // with findDepsFile() which walks UP the directory tree and may find
+        // the root package.json instead of the member's.
+        if (member.deps_file_path) |deps_path| {
             const detector = @import("../../../deps/detector.zig");
-            if (try detector.findDepsFile(allocator, member.abs_path)) |deps_file| {
-                defer allocator.free(deps_file.path);
-                member_deps = try parser.inferDependencies(allocator, deps_file);
-            }
+            const format = detector.inferFormat(std.fs.path.basename(deps_path)) orelse .package_json;
+            const deps_file = detector.DepsFile{ .path = deps_path, .format = format };
+            member_deps = parser.inferDependencies(allocator, deps_file) catch null;
         }
 
         // Fall back to config file if deps file didn't work (slow: may spawn bun/node)
