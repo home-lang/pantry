@@ -566,6 +566,44 @@ fn resolveViaRegistry(
         inst.hoisted_versions.put(pkg_name, version);
     }
 
+    // Check if any top-level npm deps are missing from server response.
+    // The server may skip some due to dedup, caching, or resolution failures.
+    // Fall back to individual resolution for those.
+    var missing_count: usize = 0;
+    for (top_level_deps) |dep| {
+        if (dep.source != .npm) continue;
+
+        // Check if this dep (or its alias) is in the resolved list
+        var found = false;
+        for (resolved.items) |pkg| {
+            if (std.mem.eql(u8, pkg.name, dep.name)) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            // Try individual resolution
+            const npm_info = inst.resolveNpmPackage(dep.name, dep.version) catch continue;
+            defer allocator.free(npm_info.version);
+            defer allocator.free(npm_info.tarball_url);
+            defer if (npm_info.integrity) |i| allocator.free(i);
+
+            try resolved.append(allocator, .{
+                .name = try allocator.dupe(u8, dep.name),
+                .version = try allocator.dupe(u8, npm_info.version),
+                .tarball_url = try allocator.dupe(u8, npm_info.tarball_url),
+                .integrity = if (npm_info.integrity) |i| try allocator.dupe(u8, i) else null,
+                .source = .npm,
+            });
+            inst.hoisted_versions.put(dep.name, npm_info.version);
+            missing_count += 1;
+        }
+    }
+
+    if (verbose and missing_count > 0) {
+        std.debug.print("[verbose:pipeline:registry] individually resolved {d} packages missed by server\n", .{missing_count});
+    }
+
     // Add non-npm top-level deps (pantry/github/etc) that weren't sent to the server
     for (top_level_deps) |dep| {
         if (dep.source == .npm) continue;
