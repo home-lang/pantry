@@ -426,8 +426,14 @@ const DownloadThreadCtx = struct {
                 var input_reader: std.Io.Reader = .fixed(tarball_bytes.?);
                 var window_buf: [65536]u8 = undefined;
                 var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+                // Use diagnostics to handle duplicate tar entries (e.g. ts-mocker has
+                // dist/bin/cli.js listed twice). Without diagnostics, pipeToFileSystem
+                // errors on the duplicate and aborts extraction.
+                var diagnostics: std.tar.Diagnostics = .{ .allocator = ctx.installer.allocator };
+                defer diagnostics.deinit();
                 std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{
                     .strip_components = 1,
+                    .diagnostics = &diagnostics,
                 }) catch {
                     io_helper.deleteTree(install_dir) catch {};
                     break :blk false;

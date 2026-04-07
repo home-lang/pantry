@@ -1421,8 +1421,13 @@ pub const Installer = struct {
             var input_reader: std.Io.Reader = .fixed(tarball_bytes);
             var window_buf: [65536]u8 = undefined;
             var decompressor: std.compress.flate.Decompress = .init(&input_reader, .gzip, &window_buf);
+            // Use diagnostics to tolerate duplicate tar entries (some npm packages
+            // have the same file listed twice, e.g. ts-mocker's dist/bin/cli.js)
+            var tar_diagnostics: std.tar.Diagnostics = .{ .allocator = self.allocator };
+            defer tar_diagnostics.deinit();
             std.tar.pipeToFileSystem(io_helper.io, dest, &decompressor.reader, .{
                 .strip_components = 1,
+                .diagnostics = &tar_diagnostics,
             }) catch {
                 if (options.verbose) std.debug.print("[verbose:npm] EXTRACTION FAILED for {s}\n", .{spec.name});
                 if (!options.quiet) {
