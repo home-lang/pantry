@@ -150,13 +150,15 @@ fn discoverMembersForPattern(
 
 /// Check if a directory should be skipped during workspace discovery
 fn shouldSkipDir(name: []const u8) bool {
+    // Note: "build" is NOT skipped — it's a valid workspace member name
+    // (e.g. storage/framework/core/build/ in stacks). Only skip directories
+    // that are always build artifacts or package manager internals.
     return std.mem.eql(u8, name, "node_modules") or
         std.mem.eql(u8, name, "pantry") or
         std.mem.eql(u8, name, "cdk.out") or
         std.mem.eql(u8, name, ".cache") or
         std.mem.eql(u8, name, ".git") or
         std.mem.eql(u8, name, "dist") or
-        std.mem.eql(u8, name, "build") or
         std.mem.eql(u8, name, ".next") or
         std.mem.eql(u8, name, ".turbo") or
         std.mem.startsWith(u8, name, ".");
