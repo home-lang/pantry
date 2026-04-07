@@ -68,6 +68,7 @@ export const certbotefforgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '5.5.0',
     '5.4.0',
     '5.3.1',
     '5.3.0',

@@ -69,6 +69,7 @@ export const steampipeioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.4.1',
     '2.4.0',
     '2.3.6',
     '2.3.5',
