@@ -69,6 +69,8 @@ export const mercurerocksPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.22.1',
+    '0.22.0',
     '0.21.11',
     'helm-chart-0.21.11',
     '0.21.10',
