@@ -70,6 +70,7 @@ export const rubygemsorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '4.0.10',
     '4.0.9',
     '4.0.8',
     '4.0.7',
