@@ -61,6 +61,7 @@ export const dprintdevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.54.0',
     '0.53.2',
     '0.53.1',
     '0.53.0',
