@@ -76,6 +76,7 @@ export const kagglecomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '2.0.1',
     '1.7.4.5',
     '1.7.4.2',
     '1.6.3',
