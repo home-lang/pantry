@@ -68,6 +68,7 @@ export const atlasgoioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '1.2.0',
     '1.1.0',
     '1.0.0',
     '0.38.0',

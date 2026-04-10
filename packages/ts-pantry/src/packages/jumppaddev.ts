@@ -71,6 +71,7 @@ export const jumppaddevPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.27.0',
     '0.26.0',
     '0.25.1',
     '0.25.0',

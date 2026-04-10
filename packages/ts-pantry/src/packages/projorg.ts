@@ -83,6 +83,7 @@ export const projorgPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '9.8.1',
     '9.8.0',
     '9.7.1',
     '9.7.0',

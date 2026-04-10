@@ -75,6 +75,7 @@ export const streamlinkgithubioPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '8.3.0',
     '8.2.1',
     '8.2.0',
     '8.1.2',
