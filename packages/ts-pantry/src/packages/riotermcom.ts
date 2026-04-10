@@ -69,6 +69,7 @@ export const riotermcomPackage = {
   * @see https://ts-pantry.netlify.app/usage for installation instructions
   */
   versions: [
+    '0.3.3',
     '0.3.2',
     '0.3.1',
     '0.3.0',
