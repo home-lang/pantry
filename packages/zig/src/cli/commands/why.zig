@@ -119,7 +119,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             &paths,
             &visited,
             1,
-            5, // max depth
+            20, // max depth
         );
 
         // If no path was found through this dep, free the current_path
@@ -210,23 +210,27 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     };
 }
 
-/// Read the version of a package from node_modules/<name>/package.json
+/// Read the version of a package from pantry/<name>/package.json or node_modules/<name>/package.json
 fn getPackageVersion(allocator: std.mem.Allocator, project_root: []const u8, name: []const u8) ?[]const u8 {
-    const pkg_json_path = std.fmt.allocPrint(allocator, "{s}/node_modules/{s}/package.json", .{ project_root, name }) catch return null;
-    defer allocator.free(pkg_json_path);
+    const modules_dirs = [_][]const u8{ "pantry", "node_modules" };
+    for (modules_dirs) |modules_dir| {
+        const pkg_json_path = std.fmt.allocPrint(allocator, "{s}/{s}/{s}/package.json", .{ project_root, modules_dir, name }) catch return null;
+        defer allocator.free(pkg_json_path);
 
-    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch return null;
-    defer allocator.free(content);
+        const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch continue;
+        defer allocator.free(content);
 
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return null;
-    defer parsed.deinit();
+        const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch continue;
+        defer parsed.deinit();
 
-    if (parsed.value != .object) return null;
+        if (parsed.value != .object) continue;
 
-    const version_val = parsed.value.object.get("version") orelse return null;
-    if (version_val != .string) return null;
+        const version_val = parsed.value.object.get("version") orelse continue;
+        if (version_val != .string) continue;
 
-    return allocator.dupe(u8, version_val.string) catch null;
+        return allocator.dupe(u8, version_val.string) catch null;
+    }
+    return null;
 }
 
 /// Recursively search for the target package in the dependency tree
@@ -243,14 +247,25 @@ fn searchTransitiveDeps(
 ) !void {
     if (depth > max_depth) return;
 
-    // Read node_modules/<current_pkg>/package.json to get its dependencies
-    const pkg_json_path = try std.fmt.allocPrint(allocator, "{s}/node_modules/{s}/package.json", .{ project_root, current_pkg });
-    defer allocator.free(pkg_json_path);
+    // Read pantry/<current_pkg>/package.json or node_modules/<current_pkg>/package.json
+    const modules_dirs_list = [_][]const u8{ "pantry", "node_modules" };
+    var pkg_json_path: ?[]const u8 = null;
+    var content: ?[]const u8 = null;
+    for (modules_dirs_list) |modules_dir| {
+        const try_path = try std.fmt.allocPrint(allocator, "{s}/{s}/{s}/package.json", .{ project_root, modules_dir, current_pkg });
+        const try_content = io_helper.readFileAlloc(allocator, try_path, 2 * 1024 * 1024) catch {
+            allocator.free(try_path);
+            continue;
+        };
+        pkg_json_path = try_path;
+        content = try_content;
+        break;
+    }
+    defer if (pkg_json_path) |p| allocator.free(p);
+    const file_content = content orelse return;
+    defer allocator.free(file_content);
 
-    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch return;
-    defer allocator.free(content);
-
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch return;
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, file_content, .{}) catch return;
     defer parsed.deinit();
 
     if (parsed.value != .object) return;

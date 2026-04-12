@@ -433,5 +433,5 @@ fn registerGlobalLink(allocator: std.mem.Allocator, pkg_name: []const u8, target
 
     // Remove existing link if present, then create
     io_helper.deleteFile(link_path) catch {};
-    io_helper.symLink(target_path, link_path) catch {};
+    try io_helper.symLink(target_path, link_path);
 }

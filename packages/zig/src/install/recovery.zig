@@ -144,7 +144,7 @@ pub const InstallCheckpoint = struct {
         if (packages_val != .array) return null;
 
         var checkpoint = InstallCheckpoint.init(allocator);
-        checkpoint.checkpoint_path = try std.fmt.allocPrint(allocator, "{s}/.pantry-checkpoint.json", .{project_dir});
+        checkpoint.checkpoint_path = try std.fmt.allocPrint(allocator, "{s}/pantry/.install-checkpoint", .{project_dir});
 
         for (packages_val.array.items) |item| {
             if (item == .string) {
@@ -229,11 +229,10 @@ pub const InstallCheckpoint = struct {
 };
 
 fn restoreFromBackup(backup_dir: []const u8) !void {
-    // Implementation: copy files from backup back to original location
-    style.print("Restoring from backup: {s}\n", .{backup_dir});
-
-    // After restore, clean up backup
-    defer io_helper.deleteTree(backup_dir) catch {};
+    // Automatic restore is not implemented — keep the backup dir so the user can
+    // manually copy files back if needed.
+    style.print("Backup preserved at: {s}\n", .{backup_dir});
+    style.print("Automatic restore is not supported. Please manually copy files from the backup directory if needed.\n", .{});
 }
 
 /// Error recovery suggestions

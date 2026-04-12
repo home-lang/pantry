@@ -318,11 +318,31 @@ fn getGitRepoUrl(allocator: std.mem.Allocator) ![]const u8 {
 
     if (trimmed.len == 0) return error.GitNotAvailable;
 
+    // Strip git+ prefix (e.g., git+https://github.com/... -> https://github.com/...)
+    var url_str = trimmed;
+    if (std.mem.startsWith(u8, url_str, "git+")) {
+        url_str = url_str[4..];
+    }
+
+    // Handle ssh://git@host/path format
+    if (std.mem.startsWith(u8, url_str, "ssh://git@")) {
+        const after_at = url_str["ssh://git@".len..];
+        // Find the first / to separate host from path
+        if (std.mem.indexOf(u8, after_at, "/")) |slash_idx| {
+            const host = after_at[0..slash_idx];
+            var path = after_at[slash_idx + 1 ..];
+            if (std.mem.endsWith(u8, path, ".git")) {
+                path = path[0 .. path.len - 4];
+            }
+            return try std.fmt.allocPrint(allocator, "https://{s}/{s}", .{ host, path });
+        }
+    }
+
     // Convert git@github.com:owner/repo.git to https://github.com/owner/repo
-    if (std.mem.startsWith(u8, trimmed, "git@")) {
-        if (std.mem.indexOf(u8, trimmed, ":")) |colon_idx| {
-            const host = trimmed[4..colon_idx];
-            var path = trimmed[colon_idx + 1 ..];
+    if (std.mem.startsWith(u8, url_str, "git@")) {
+        if (std.mem.indexOf(u8, url_str, ":")) |colon_idx| {
+            const host = url_str[4..colon_idx];
+            var path = url_str[colon_idx + 1 ..];
             if (std.mem.endsWith(u8, path, ".git")) {
                 path = path[0 .. path.len - 4];
             }
@@ -331,15 +351,15 @@ fn getGitRepoUrl(allocator: std.mem.Allocator) ![]const u8 {
     }
 
     // Already https
-    if (std.mem.startsWith(u8, trimmed, "https://")) {
-        var url = trimmed;
+    if (std.mem.startsWith(u8, url_str, "https://")) {
+        var url = url_str;
         if (std.mem.endsWith(u8, url, ".git")) {
             url = url[0 .. url.len - 4];
         }
         return try allocator.dupe(u8, url);
     }
 
-    return try allocator.dupe(u8, trimmed);
+    return try allocator.dupe(u8, url_str);
 }
 
 // ============================================================================

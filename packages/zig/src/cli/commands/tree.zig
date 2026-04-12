@@ -171,22 +171,33 @@ fn buildNodeFromModules(
     // Mark as visited (use the node's owned name slice so the key lives long enough)
     try visited.put(node.name, {});
 
-    // Try to read node_modules/<name>/package.json for transitive deps
-    const pkg_json_path = try std.fmt.allocPrint(
-        allocator,
-        "{s}/node_modules/{s}/package.json",
-        .{ project_root, name },
-    );
-    defer allocator.free(pkg_json_path);
-
-    const content = io_helper.readFileAlloc(allocator, pkg_json_path, 2 * 1024 * 1024) catch {
+    // Try to read pantry/<name>/package.json or node_modules/<name>/package.json for transitive deps
+    const tree_modules_dirs = [_][]const u8{ "pantry", "node_modules" };
+    var pkg_json_path: ?[]const u8 = null;
+    var content: ?[]const u8 = null;
+    for (tree_modules_dirs) |mdir| {
+        const try_path = try std.fmt.allocPrint(
+            allocator,
+            "{s}/{s}/{s}/package.json",
+            .{ project_root, mdir, name },
+        );
+        const try_content = io_helper.readFileAlloc(allocator, try_path, 2 * 1024 * 1024) catch {
+            allocator.free(try_path);
+            continue;
+        };
+        pkg_json_path = try_path;
+        content = try_content;
+        break;
+    }
+    defer if (pkg_json_path) |p| allocator.free(p);
+    const file_content = content orelse {
         // Package not installed or unreadable — return as leaf
         _ = visited.remove(name);
         return node;
     };
-    defer allocator.free(content);
+    defer allocator.free(file_content);
 
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, content, .{}) catch {
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, file_content, .{}) catch {
         _ = visited.remove(name);
         return node;
     };
@@ -227,7 +238,7 @@ fn buildNodeFromModules(
 }
 
 fn printTree(node: *PackageNode, prefix: []const u8, is_last: bool, options: TreeOptions) !void {
-    if (node.dep_type != .normal or std.mem.eql(u8, node.name, "root")) {
+    if (std.mem.eql(u8, node.name, "root")) {
         // Root node, skip printing
         for (node.dependencies.items, 0..) |child, i| {
             const child_is_last = i == node.dependencies.items.len - 1;

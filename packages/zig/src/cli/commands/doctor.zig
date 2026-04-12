@@ -275,10 +275,8 @@ fn checkPermissions(allocator: std.mem.Allocator) !CheckResult {
             .suggestion = try allocator.dupe(u8, "Check directory permissions and ownership"),
         };
     };
+    defer io_helper.deleteFile(test_file_path) catch {};
     test_file.close(io_helper.io);
-
-    // Clean up
-    io_helper.deleteFile(test_file_path) catch {};
 
     return .{
         .name = name,

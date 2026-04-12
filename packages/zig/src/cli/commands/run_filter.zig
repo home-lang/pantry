@@ -331,8 +331,15 @@ pub fn runScriptWithFilter(
 
             try command_list.appendSlice(allocator, script_command);
             for (script_args) |arg| {
-                try command_list.append(allocator, ' ');
-                try command_list.appendSlice(allocator, arg);
+                try command_list.appendSlice(allocator, " '");
+                for (arg) |ch| {
+                    if (ch == '\'') {
+                        try command_list.appendSlice(allocator, "'\\''");
+                    } else {
+                        try command_list.append(allocator, ch);
+                    }
+                }
+                try command_list.append(allocator, '\'');
             }
 
             const full_command = command_list.items;
@@ -357,19 +364,27 @@ pub fn runScriptWithFilter(
                 allocator.free(result.stderr);
             }
 
-            if (result.term.exited == 0) {
+            const success = switch (result.term) {
+                .exited => |code| code == 0,
+                else => false,
+            };
+            if (success) {
                 style.print("{s}✓{s} {s}\n", .{ style.green, style.reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     style.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
+                const exit_code: u8 = switch (result.term) {
+                    .exited => |code| code,
+                    else => 1,
+                };
                 style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{
                     style.red,
                     style.reset,
                     member.name,
                     style.dim,
-                    result.term.exited,
+                    exit_code,
                     style.reset,
                 });
                 if (result.stderr.len > 0) {
@@ -624,8 +639,15 @@ fn executeScriptsInMembers(
 
             try command_list.appendSlice(allocator, script_command);
             for (script_args) |arg| {
-                try command_list.append(allocator, ' ');
-                try command_list.appendSlice(allocator, arg);
+                try command_list.appendSlice(allocator, " '");
+                for (arg) |ch| {
+                    if (ch == '\'') {
+                        try command_list.appendSlice(allocator, "'\\''");
+                    } else {
+                        try command_list.append(allocator, ch);
+                    }
+                }
+                try command_list.append(allocator, '\'');
             }
 
             const full_command = command_list.items;
@@ -642,14 +664,22 @@ fn executeScriptsInMembers(
                 allocator.free(result.stderr);
             }
 
-            if (result.term.exited == 0) {
+            const success2 = switch (result.term) {
+                .exited => |code| code == 0,
+                else => false,
+            };
+            if (success2) {
                 style.print("{s}✓{s} {s}\n", .{ style.green, style.reset, member.name });
                 if (options.verbose and result.stdout.len > 0) {
                     style.print("{s}", .{result.stdout});
                 }
                 success_count += 1;
             } else {
-                style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ style.red, style.reset, member.name, style.dim, result.term.exited, style.reset });
+                const exit_code2: u8 = switch (result.term) {
+                    .exited => |code| code,
+                    else => 1,
+                };
+                style.print("{s}✗{s} {s} {s}(exit code: {}){s}\n", .{ style.red, style.reset, member.name, style.dim, exit_code2, style.reset });
                 if (result.stderr.len > 0) {
                     style.print("{s}", .{result.stderr});
                 }

@@ -9,7 +9,7 @@ const style = @import("../style.zig");
 const CommandResult = common.CommandResult;
 
 pub const RunScriptOptions = struct {
-    timeout_ms: u64 = 120000,
+    timeout_ms: u64 = 0,
 };
 
 // ============================================================================
@@ -107,8 +107,15 @@ pub fn runScriptCommandWithOptions(
 
     try command_list.appendSlice(allocator, script_command);
     for (script_args) |arg| {
-        try command_list.append(allocator, ' ');
-        try command_list.appendSlice(allocator, arg);
+        try command_list.appendSlice(allocator, " '");
+        for (arg) |ch| {
+            if (ch == '\'') {
+                try command_list.appendSlice(allocator, "'\\''");
+            } else {
+                try command_list.append(allocator, ch);
+            }
+        }
+        try command_list.append(allocator, '\'');
     }
     const display_command = command_list.items;
 

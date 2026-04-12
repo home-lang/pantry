@@ -90,13 +90,27 @@ pub fn verifyCommand(allocator: std.mem.Allocator, args: []const []const u8) !Co
     );
     defer parsed.deinit();
 
+    if (parsed.value != .object) {
+        return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file is not a valid JSON object") };
+    }
     const sig_obj = parsed.value.object;
+
+    const algo_str = if (sig_obj.get("algorithm")) |v| (if (v == .string) v.string else null) else null;
+    const sig_str = if (sig_obj.get("signature")) |v| (if (v == .string) v.string else null) else null;
+    const kid_str = if (sig_obj.get("key_id")) |v| (if (v == .string) v.string else null) else null;
+    const ts_val = if (sig_obj.get("timestamp")) |v| (if (v == .integer) v.integer else null) else null;
+
+    if (algo_str == null) return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file missing 'algorithm' field") };
+    if (sig_str == null) return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file missing 'signature' field") };
+    if (kid_str == null) return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file missing 'key_id' field") };
+    if (ts_val == null) return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Signature file missing 'timestamp' field") };
+
     var signature = signing.PackageSignature{
-        .algorithm = try allocator.dupe(u8, sig_obj.get("algorithm").?.string),
-        .signature = try allocator.dupe(u8, sig_obj.get("signature").?.string),
-        .key_id = try allocator.dupe(u8, sig_obj.get("key_id").?.string),
-        .timestamp = @intCast(sig_obj.get("timestamp").?.integer),
-        .key_url = if (sig_obj.get("key_url")) |url| try allocator.dupe(u8, url.string) else null,
+        .algorithm = try allocator.dupe(u8, algo_str.?),
+        .signature = try allocator.dupe(u8, sig_str.?),
+        .key_id = try allocator.dupe(u8, kid_str.?),
+        .timestamp = @intCast(ts_val.?),
+        .key_url = if (sig_obj.get("key_url")) |url| (if (url == .string) try allocator.dupe(u8, url.string) else null) else null,
     };
     defer signature.deinit(allocator);
 
@@ -139,10 +153,12 @@ fn loadKeyringFromFile(keyring: *signing.Keyring, allocator: std.mem.Allocator, 
     );
     defer parsed.deinit();
 
+    if (parsed.value != .object) return error.InvalidKeyringFormat;
     const keys_obj = parsed.value.object;
     var it = keys_obj.iterator();
     while (it.next()) |entry| {
         const key_id = entry.key_ptr.*;
+        if (entry.value_ptr.* != .string) continue;
         const public_key_pem = entry.value_ptr.*.string;
         try keyring.addKey(key_id, public_key_pem);
     }

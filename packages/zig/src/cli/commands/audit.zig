@@ -588,6 +588,8 @@ fn queryVulnerabilities(
             ver = ver[1..];
         } else if (std.mem.startsWith(u8, ver, ">=") or std.mem.startsWith(u8, ver, "<=")) {
             ver = ver[2..];
+        } else if (ver.len > 0 and (ver[0] == '>' or ver[0] == '<' or ver[0] == '=')) {
+            ver = ver[1..];
         }
 
         var arr = std.json.Array.init(allocator);
@@ -596,40 +598,64 @@ fn queryVulnerabilities(
     }
 
     const payload_value = std.json.Value{ .object = payload };
-    const json_bytes = std.json.Stringify.valueAlloc(allocator, payload_value, .{}) catch return;
+    const json_bytes = std.json.Stringify.valueAlloc(allocator, payload_value, .{}) catch |err| {
+        std.debug.print("warning: audit: failed to serialize request payload: {}\n", .{err});
+        return;
+    };
     defer allocator.free(json_bytes);
 
     // Make HTTP request to npm bulk advisory endpoint
     var client = http.Client{ .allocator = allocator, .io = io_helper.getIo() };
     defer client.deinit();
 
-    const uri = std.Uri.parse("https://registry.npmjs.org/-/npm/v1/security/advisories/bulk") catch return;
+    const uri = std.Uri.parse("https://registry.npmjs.org/-/npm/v1/security/advisories/bulk") catch |err| {
+        std.debug.print("warning: audit: failed to parse advisory URL: {}\n", .{err});
+        return;
+    };
 
     var req = client.request(.POST, uri, .{
         .extra_headers = &[_]http.Header{
             .{ .name = "Content-Type", .value = "application/json" },
         },
-    }) catch return;
+    }) catch |err| {
+        std.debug.print("warning: audit: failed to open HTTP request: {}\n", .{err});
+        return;
+    };
     defer req.deinit();
 
     // Use sendBodyComplete which sets transfer_encoding and writes body in one call
     const json_buf = @constCast(json_bytes);
-    req.sendBodyComplete(json_buf) catch return;
+    req.sendBodyComplete(json_buf) catch |err| {
+        std.debug.print("warning: audit: failed to send request body: {}\n", .{err});
+        return;
+    };
 
     var redirect_buffer: [4096]u8 = undefined;
-    var response = req.receiveHead(&redirect_buffer) catch return;
+    var response = req.receiveHead(&redirect_buffer) catch |err| {
+        std.debug.print("warning: audit: failed to receive response: {}\n", .{err});
+        return;
+    };
 
-    if (response.head.status != .ok) return;
+    if (response.head.status != .ok) {
+        std.debug.print("warning: audit: npm advisory API returned status {}\n", .{response.head.status});
+        return;
+    }
 
     const body_reader = response.reader(&.{});
-    const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch return;
+    const body = body_reader.allocRemaining(allocator, std.Io.Limit.limited(10 * 1024 * 1024)) catch |err| {
+        std.debug.print("warning: audit: failed to read response body: {}\n", .{err});
+        return;
+    };
     defer allocator.free(body);
 
     // Parse the response — npm returns:
     // { "package_name": [ { "id": 123, "title": "...", "severity": "high",
     //     "vulnerable_versions": "<4.17.21", "patched_versions": ">=4.17.21",
     //     "url": "https://github.com/advisories/GHSA-...", "cwe": ["CWE-79"] }, ... ] }
-    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{}) catch return;
+    const parsed = std.json.parseFromSlice(std.json.Value, allocator, body, .{}) catch |err| {
+        std.debug.print("warning: audit: failed to parse response JSON: {}\n", .{err});
+        return;
+    };
     defer parsed.deinit();
 
     if (parsed.value != .object) return;

@@ -3,6 +3,103 @@ const definitions = @import("definitions.zig");
 const platform = @import("platform.zig");
 const io_helper = @import("../io_helper.zig");
 
+/// Write `s` to the buffer, escaping the five XML predefined entities so that
+/// a user-supplied service name / log path / argument can't break out of the
+/// plist template (`<string>foo</string>` with `foo` = `"&bar"`).
+fn writeXmlEscaped(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: []const u8) !void {
+    for (s) |c| {
+        switch (c) {
+            '&' => try buf.appendSlice(allocator, "&amp;"),
+            '<' => try buf.appendSlice(allocator, "&lt;"),
+            '>' => try buf.appendSlice(allocator, "&gt;"),
+            '"' => try buf.appendSlice(allocator, "&quot;"),
+            '\'' => try buf.appendSlice(allocator, "&apos;"),
+            else => try buf.append(allocator, c),
+        }
+    }
+}
+
+/// Shell-style (shlex) argv splitter — handles single- and double-quoted
+/// segments and backslash escapes, matching what Bun / Node / launchd's
+/// ProgramArguments expect. Returns a caller-owned slice of owned strings.
+pub fn splitShellArgs(allocator: std.mem.Allocator, cmd: []const u8) ![][]const u8 {
+    var args = std.ArrayList([]const u8).empty;
+    errdefer {
+        for (args.items) |a| allocator.free(a);
+        args.deinit(allocator);
+    }
+
+    var current = std.ArrayList(u8).empty;
+    defer current.deinit(allocator);
+
+    var i: usize = 0;
+    var in_single = false;
+    var in_double = false;
+    var has_content = false;
+
+    while (i < cmd.len) : (i += 1) {
+        const c = cmd[i];
+        if (in_single) {
+            if (c == '\'') {
+                in_single = false;
+            } else {
+                try current.append(allocator, c);
+                has_content = true;
+            }
+        } else if (in_double) {
+            if (c == '"') {
+                in_double = false;
+            } else if (c == '\\' and i + 1 < cmd.len) {
+                // Inside double quotes, \\ \" \$ \` \n are escapes; anything
+                // else keeps the backslash literal. Keep it simple: pass
+                // through the next char.
+                i += 1;
+                try current.append(allocator, cmd[i]);
+                has_content = true;
+            } else {
+                try current.append(allocator, c);
+                has_content = true;
+            }
+        } else {
+            switch (c) {
+                ' ', '\t', '\n', '\r' => {
+                    if (has_content) {
+                        const owned = try allocator.dupe(u8, current.items);
+                        try args.append(allocator, owned);
+                        current.clearRetainingCapacity();
+                        has_content = false;
+                    }
+                },
+                '\'' => {
+                    in_single = true;
+                    has_content = true;
+                },
+                '"' => {
+                    in_double = true;
+                    has_content = true;
+                },
+                '\\' => {
+                    if (i + 1 < cmd.len) {
+                        i += 1;
+                        try current.append(allocator, cmd[i]);
+                        has_content = true;
+                    }
+                },
+                else => {
+                    try current.append(allocator, c);
+                    has_content = true;
+                },
+            }
+        }
+    }
+    if (has_content) {
+        const owned = try allocator.dupe(u8, current.items);
+        try args.append(allocator, owned);
+    }
+
+    return args.toOwnedSlice(allocator);
+}
+
 pub const ServiceManager = struct {
     allocator: std.mem.Allocator,
     controller: platform.ServiceController,
@@ -150,25 +247,46 @@ pub const ServiceManager = struct {
             try io_helper.writeAllToFile(file, "<plist version=\"1.0\">\n");
             try io_helper.writeAllToFile(file, "<dict>\n");
 
-            const label_line = try std.fmt.allocPrint(self.allocator, "    <key>Label</key>\n    <string>{s}</string>\n", .{label});
-            defer self.allocator.free(label_line);
-            try io_helper.writeAllToFile(file, label_line);
+            // XML-escape label (user-controlled) so a service named `foo<bar&`
+            // can't break out of the <string> element.
+            {
+                var label_buf = std.ArrayList(u8).empty;
+                defer label_buf.deinit(self.allocator);
+                try label_buf.appendSlice(self.allocator, "    <key>Label</key>\n    <string>");
+                try writeXmlEscaped(&label_buf, self.allocator, label);
+                try label_buf.appendSlice(self.allocator, "</string>\n");
+                try io_helper.writeAllToFile(file, label_buf.items);
+            }
 
-            // Split start_command into individual ProgramArguments
+            // Split start_command into individual ProgramArguments. Uses a
+            // shell-aware splitter so `mytool "path with spaces" --arg='v k'`
+            // becomes 3 args instead of 4 or 5. Each arg is XML-escaped so
+            // literal `<` / `&` / `"` in user service definitions can't break
+            // the plist template.
             try io_helper.writeAllToFile(file, "    <key>ProgramArguments</key>\n    <array>\n");
-            var arg_iter = std.mem.splitScalar(u8, service.start_command, ' ');
-            while (arg_iter.next()) |arg| {
+            const parsed_args = try splitShellArgs(self.allocator, service.start_command);
+            defer {
+                for (parsed_args) |a| self.allocator.free(a);
+                self.allocator.free(parsed_args);
+            }
+            for (parsed_args) |arg| {
                 if (arg.len == 0) continue;
-                const arg_line = try std.fmt.allocPrint(self.allocator, "        <string>{s}</string>\n", .{arg});
-                defer self.allocator.free(arg_line);
-                try io_helper.writeAllToFile(file, arg_line);
+                var line_buf = std.ArrayList(u8).empty;
+                defer line_buf.deinit(self.allocator);
+                try line_buf.appendSlice(self.allocator, "        <string>");
+                try writeXmlEscaped(&line_buf, self.allocator, arg);
+                try line_buf.appendSlice(self.allocator, "</string>\n");
+                try io_helper.writeAllToFile(file, line_buf.items);
             }
             try io_helper.writeAllToFile(file, "    </array>\n");
 
             if (service.working_directory) |wd| {
-                const wd_line = try std.fmt.allocPrint(self.allocator, "    <key>WorkingDirectory</key>\n    <string>{s}</string>\n", .{wd});
-                defer self.allocator.free(wd_line);
-                try io_helper.writeAllToFile(file, wd_line);
+                var wd_buf = std.ArrayList(u8).empty;
+                defer wd_buf.deinit(self.allocator);
+                try wd_buf.appendSlice(self.allocator, "    <key>WorkingDirectory</key>\n    <string>");
+                try writeXmlEscaped(&wd_buf, self.allocator, wd);
+                try wd_buf.appendSlice(self.allocator, "</string>\n");
+                try io_helper.writeAllToFile(file, wd_buf.items);
             }
 
             if (service.keep_alive) {
@@ -192,13 +310,23 @@ pub const ServiceManager = struct {
                     defer self.allocator.free(logs_dir);
                     io_helper.makePath(logs_dir) catch {};
 
-                    const stdout_path = try std.fmt.allocPrint(self.allocator, "    <key>StandardOutPath</key>\n    <string>{s}/{s}.log</string>\n", .{ logs_dir, service.name });
-                    defer self.allocator.free(stdout_path);
-                    try io_helper.writeAllToFile(file, stdout_path);
+                    var out_buf = std.ArrayList(u8).empty;
+                    defer out_buf.deinit(self.allocator);
+                    try out_buf.appendSlice(self.allocator, "    <key>StandardOutPath</key>\n    <string>");
+                    try writeXmlEscaped(&out_buf, self.allocator, logs_dir);
+                    try out_buf.append(self.allocator, '/');
+                    try writeXmlEscaped(&out_buf, self.allocator, service.name);
+                    try out_buf.appendSlice(self.allocator, ".log</string>\n");
+                    try io_helper.writeAllToFile(file, out_buf.items);
 
-                    const stderr_path = try std.fmt.allocPrint(self.allocator, "    <key>StandardErrorPath</key>\n    <string>{s}/{s}.err</string>\n", .{ logs_dir, service.name });
-                    defer self.allocator.free(stderr_path);
-                    try io_helper.writeAllToFile(file, stderr_path);
+                    var err_buf = std.ArrayList(u8).empty;
+                    defer err_buf.deinit(self.allocator);
+                    try err_buf.appendSlice(self.allocator, "    <key>StandardErrorPath</key>\n    <string>");
+                    try writeXmlEscaped(&err_buf, self.allocator, logs_dir);
+                    try err_buf.append(self.allocator, '/');
+                    try writeXmlEscaped(&err_buf, self.allocator, service.name);
+                    try err_buf.appendSlice(self.allocator, ".err</string>\n");
+                    try io_helper.writeAllToFile(file, err_buf.items);
                 }
             }
 
@@ -441,4 +569,54 @@ test "ServiceManager list services" {
     defer allocator.free(services);
 
     try std.testing.expect(services.len == 2);
+}
+
+test "splitShellArgs handles quoted args" {
+    const allocator = std.testing.allocator;
+
+    // Spaces inside quotes stay together
+    {
+        const args = try splitShellArgs(allocator, "bin --arg \"hello world\" --flag");
+        defer {
+            for (args) |a| allocator.free(a);
+            allocator.free(args);
+        }
+        try std.testing.expectEqual(@as(usize, 4), args.len);
+        try std.testing.expectEqualStrings("bin", args[0]);
+        try std.testing.expectEqualStrings("--arg", args[1]);
+        try std.testing.expectEqualStrings("hello world", args[2]);
+        try std.testing.expectEqualStrings("--flag", args[3]);
+    }
+
+    // Single quotes preserve literal content
+    {
+        const args = try splitShellArgs(allocator, "echo 'a b c'");
+        defer {
+            for (args) |a| allocator.free(a);
+            allocator.free(args);
+        }
+        try std.testing.expectEqual(@as(usize, 2), args.len);
+        try std.testing.expectEqualStrings("a b c", args[1]);
+    }
+
+    // Plain splitting
+    {
+        const args = try splitShellArgs(allocator, "a b c");
+        defer {
+            for (args) |a| allocator.free(a);
+            allocator.free(args);
+        }
+        try std.testing.expectEqual(@as(usize, 3), args.len);
+    }
+}
+
+test "writeXmlEscaped escapes metacharacters" {
+    const allocator = std.testing.allocator;
+    var buf = std.ArrayList(u8).empty;
+    defer buf.deinit(allocator);
+    try writeXmlEscaped(&buf, allocator, "<foo & bar>\"baz\"'qux'");
+    try std.testing.expectEqualStrings(
+        "&lt;foo &amp; bar&gt;&quot;baz&quot;&apos;qux&apos;",
+        buf.items,
+    );
 }

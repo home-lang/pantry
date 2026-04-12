@@ -57,6 +57,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
 
     var total_size: usize = 0;
     var files_removed: usize = 0;
+    var files_failed: usize = 0;
 
     // Clean based on target
     switch (target) {
@@ -64,29 +65,35 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             const result = try cleanCache(allocator);
             total_size += result.size;
             files_removed += result.count;
+            files_failed += result.failed;
         },
         .temp => {
             const result = try cleanTemp(allocator);
             total_size += result.size;
             files_removed += result.count;
+            files_failed += result.failed;
         },
         .logs => {
             const result = try cleanLogs(allocator);
             total_size += result.size;
             files_removed += result.count;
+            files_failed += result.failed;
         },
         .all => {
             var result = try cleanCache(allocator);
             total_size += result.size;
             files_removed += result.count;
+            files_failed += result.failed;
 
             result = try cleanTemp(allocator);
             total_size += result.size;
             files_removed += result.count;
+            files_failed += result.failed;
 
             result = try cleanLogs(allocator);
             total_size += result.size;
             files_removed += result.count;
+            files_failed += result.failed;
         },
     }
 
@@ -100,14 +107,17 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         size_str,
     });
 
-    const message = try std.fmt.allocPrint(
-        allocator,
-        "Freed {s} of disk space",
-        .{size_str},
-    );
+    if (files_failed > 0) {
+        try stdout.print("⚠  {d} item(s) could not be removed (permission denied or in use). Run with sudo or close programs holding those files.\n", .{files_failed});
+    }
+
+    const message = if (files_failed == 0)
+        try std.fmt.allocPrint(allocator, "Freed {s} of disk space", .{size_str})
+    else
+        try std.fmt.allocPrint(allocator, "Freed {s} ({d} item(s) could not be removed)", .{ size_str, files_failed });
 
     return CommandResult{
-        .exit_code = 0,
+        .exit_code = if (files_failed > 0) 1 else 0,
         .message = message,
     };
 }
@@ -115,6 +125,9 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
 const CleanResult = struct {
     count: usize,
     size: usize,
+    /// Number of entries whose deletion failed (permission denied, locked, etc.).
+    /// Non-zero means the cache was only partially cleaned and the user should know.
+    failed: usize = 0,
 };
 
 /// Clean package cache
@@ -177,29 +190,43 @@ fn cleanLogs(allocator: std.mem.Allocator) !CleanResult {
     return result;
 }
 
-/// Remove directory and return stats
+/// Remove directory and return stats. Surfaces the number of items whose
+/// deletion failed so the command prints a warning instead of silently
+/// reporting success on locked/permission-denied entries.
 fn removeDirectory(allocator: std.mem.Allocator, path: []const u8) !CleanResult {
     _ = allocator;
 
     var count: usize = 0;
     var size: usize = 0;
+    var failed: usize = 0;
 
     var dir = io_helper.cwd().openDir(io_helper.io, path, .{ .iterate = true }) catch {
         // Directory doesn't exist or can't be opened
-        return CleanResult{ .count = 0, .size = 0 };
+        return CleanResult{ .count = 0, .size = 0, .failed = 0 };
     };
     defer dir.close(io_helper.io);
 
+    const stdout = std.io.getStdOut().writer();
     var iter = dir.iterate();
     while (try iter.next(io_helper.io)) |entry| {
         if (entry.kind == .file) {
-            const stat = dir.statFile(io_helper.io, entry.name) catch continue;
+            const stat = dir.statFile(io_helper.io, entry.name) catch {
+                failed += 1;
+                continue;
+            };
+            dir.deleteFile(io_helper.io, entry.name) catch |err| {
+                failed += 1;
+                stdout.print("  ✗ Could not delete {s}: {s}\n", .{ entry.name, @errorName(err) }) catch {};
+                continue;
+            };
             size += stat.size;
             count += 1;
-
-            dir.deleteFile(io_helper.io, entry.name) catch {};
         } else if (entry.kind == .directory) {
-            dir.deleteTree(io_helper.io, entry.name) catch {};
+            dir.deleteTree(io_helper.io, entry.name) catch |err| {
+                failed += 1;
+                stdout.print("  ✗ Could not remove {s}: {s}\n", .{ entry.name, @errorName(err) }) catch {};
+                continue;
+            };
             count += 1;
         }
     }
@@ -207,6 +234,7 @@ fn removeDirectory(allocator: std.mem.Allocator, path: []const u8) !CleanResult 
     return CleanResult{
         .count = count,
         .size = size,
+        .failed = failed,
     };
 }
 

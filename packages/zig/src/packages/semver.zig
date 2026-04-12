@@ -39,14 +39,38 @@ pub fn parseVersion(version: []const u8) !Version {
     var parts = std.mem.splitAny(u8, clean_version, ".-");
 
     const major_str = parts.next() orelse return error.InvalidVersion;
-    const minor_str = parts.next() orelse "0";
-    const patch_str = parts.next() orelse "0";
+    // Missing minor/patch (e.g. "1" or "1.2") defaults to 0 — matches bun/npm behaviour.
+    // But if present, they MUST parse cleanly — "1.invalid.3" is a real user error and
+    // silently rewriting it to "1.0.0" masks corrupt lockfiles and typos upstream.
+    const minor_str_opt = parts.next();
+    const patch_str_opt = parts.next();
 
     const major = std.fmt.parseInt(u32, major_str, 10) catch return error.InvalidVersion;
-    const minor = std.fmt.parseInt(u32, minor_str, 10) catch 0;
-    const patch = std.fmt.parseInt(u32, patch_str, 10) catch 0;
+    const minor: u32 = if (minor_str_opt) |s|
+        (std.fmt.parseInt(u32, s, 10) catch return error.InvalidVersion)
+    else
+        0;
+    const patch: u32 = if (patch_str_opt) |s|
+        (std.fmt.parseInt(u32, s, 10) catch return error.InvalidVersion)
+    else
+        0;
 
     return .{ .major = major, .minor = minor, .patch = patch };
+}
+
+test "parseVersion rejects non-numeric components" {
+    try std.testing.expectError(error.InvalidVersion, parseVersion("1.invalid.3"));
+    try std.testing.expectError(error.InvalidVersion, parseVersion("1.2.foo"));
+    // Short forms still accepted — npm treats "1" as "1.0.0"
+    const short = try parseVersion("1");
+    try std.testing.expectEqual(@as(u32, 1), short.major);
+    try std.testing.expectEqual(@as(u32, 0), short.minor);
+    try std.testing.expectEqual(@as(u32, 0), short.patch);
+    // 'v' prefix still stripped
+    const prefixed = try parseVersion("v1.2.3");
+    try std.testing.expectEqual(@as(u32, 1), prefixed.major);
+    try std.testing.expectEqual(@as(u32, 2), prefixed.minor);
+    try std.testing.expectEqual(@as(u32, 3), prefixed.patch);
 }
 
 /// Parse a version constraint string like "^1.2.3" or ">=1.0.0"

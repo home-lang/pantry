@@ -34,8 +34,27 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         }
     }
 
+    // Parse --force flag (needed by presets to overwrite existing files)
+    var force = false;
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) force = true;
+    }
+
     // If preset is specified, skip interactive prompts and generate from preset
     if (preset) |preset_name| {
+        // Guard: if key files already exist, refuse unless --force is set
+        if (!force) {
+            const check_files = [_][]const u8{ "package.json", "deps.yaml", "pantry.json", "tsconfig.json" };
+            for (check_files) |name| {
+                io_helper.cwd().access(io_helper.io, name, .{}) catch continue;
+                const msg = try std.fmt.allocPrint(
+                    allocator,
+                    "Error: {s} already exists. Run with --force to overwrite existing files.",
+                    .{name},
+                );
+                return .{ .exit_code = 1, .message = msg };
+            }
+        }
         return generatePreset(allocator, preset_name, cwd);
     }
 
@@ -56,7 +75,11 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         var buf: [10]u8 = undefined;
         const bytes_read = try io_helper.readStdin(&buf);
 
-        if (bytes_read == 0 or buf[0] != 'y') {
+        const answer = std.mem.trim(u8, buf[0..bytes_read], &std.ascii.whitespace);
+        const accepted = (answer.len > 0) and
+            ((answer[0] == 'y' or answer[0] == 'Y') or
+            std.ascii.eqlIgnoreCase(answer, "yes"));
+        if (!accepted) {
             return .{
                 .exit_code = 0,
                 .message = try allocator.dupe(u8, "Cancelled"),
@@ -108,11 +131,17 @@ pub fn initCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
         break :blk true;
     };
 
+    // JSON-escape the user-entered fields before embedding
+    const safe_name = try jsonEscape(allocator, project_name);
+    defer allocator.free(safe_name);
+    const safe_desc = try jsonEscape(allocator, description);
+    defer allocator.free(safe_desc);
+
     // Generate pantry.json
     const template = if (has_tsconfig or has_package_json)
-        try generateNodeTemplate(allocator, project_name, version, description)
+        try generateNodeTemplate(allocator, safe_name, version, safe_desc)
     else
-        try generateBasicTemplate(allocator, project_name, version, description);
+        try generateBasicTemplate(allocator, safe_name, version, safe_desc);
     defer allocator.free(template);
 
     // Write file
@@ -620,4 +649,39 @@ fn writeFileContent(path: []const u8, content: []const u8) !void {
     const file = try io_helper.cwd().createFile(io_helper.io, path, .{});
     defer file.close(io_helper.io);
     try io_helper.writeAllToFile(file, content);
+}
+
+/// Escape a user-entered string for safe embedding in a JSON string literal.
+/// Handles " \ and control characters.
+fn jsonEscape(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
+    var needs_escape = false;
+    for (input) |c| {
+        if (c == '"' or c == '\\' or c < 0x20) {
+            needs_escape = true;
+            break;
+        }
+    }
+    if (!needs_escape) return try allocator.dupe(u8, input);
+
+    var out = std.ArrayList(u8).empty;
+    defer out.deinit(allocator);
+    for (input) |c| {
+        switch (c) {
+            '"' => try out.appendSlice(allocator, "\\\""),
+            '\\' => try out.appendSlice(allocator, "\\\\"),
+            '\n' => try out.appendSlice(allocator, "\\n"),
+            '\r' => try out.appendSlice(allocator, "\\r"),
+            '\t' => try out.appendSlice(allocator, "\\t"),
+            else => {
+                if (c < 0x20) {
+                    var hex_buf: [6]u8 = undefined;
+                    const s = std.fmt.bufPrint(&hex_buf, "\\u{x:0>4}", .{c}) catch continue;
+                    try out.appendSlice(allocator, s);
+                } else {
+                    try out.append(allocator, c);
+                }
+            },
+        }
+    }
+    return out.toOwnedSlice(allocator);
 }

@@ -43,12 +43,14 @@ pub const NpmRegistry = struct {
         var headers_buf: [4]http.Header = undefined;
         var headers_count: usize = 0;
 
-        // Add authorization if configured
+        // Add authorization if configured — allocate outside switch so it lives until after the request
+        var auth_value_alloc: ?[]const u8 = null;
+        defer if (auth_value_alloc) |av| allocator.free(av);
+
         switch (self.config.auth) {
             .bearer => |token| {
-                const auth_value = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
-                defer allocator.free(auth_value);
-                headers_buf[headers_count] = .{ .name = "Authorization", .value = auth_value };
+                auth_value_alloc = try std.fmt.allocPrint(allocator, "Bearer {s}", .{token});
+                headers_buf[headers_count] = .{ .name = "Authorization", .value = auth_value_alloc.? };
                 headers_count += 1;
             },
             else => {},

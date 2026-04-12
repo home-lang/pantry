@@ -299,8 +299,8 @@ pub fn executeScript(
 
     {
         var dir: []const u8 = options.cwd;
-        var depth: usize = 0;
-        while (depth < 20) : (depth += 1) {
+        // Walk until dirname stops changing (reached root); no artificial depth cap.
+        while (true) {
             if (nm_path_buf.items.len > 0) {
                 try nm_path_buf.append(allocator, ':');
             }
@@ -309,16 +309,36 @@ pub fn executeScript(
             try nm_path_buf.appendSlice(allocator, options.modules_dir);
             try nm_path_buf.appendSlice(allocator, "/.bin");
 
-            dir = std.fs.path.dirname(dir) orelse break;
+            const parent = std.fs.path.dirname(dir) orelse break;
+            if (std.mem.eql(u8, parent, dir)) break; // at root
+            dir = parent;
         }
     }
 
+    // Use single-quoted PATH export to prevent shell-meta expansion. Any
+    // embedded single-quote is replaced with '\'' (end quote, escaped literal,
+    // restart quote) which is safe for POSIX sh.
     const wrapped_cmd = if (is_windows)
         script_cmd
-    else if (nm_path_buf.items.len > 0)
-        try std.fmt.allocPrint(allocator, "export PATH=\"{s}:{s}\" && {s}", .{ nm_path_buf.items, current_path, script_cmd })
-    else
-        try std.fmt.allocPrint(allocator, "export PATH=\"{s}/{s}/.bin:{s}\" && {s}", .{ options.cwd, options.modules_dir, current_path, script_cmd });
+    else blk: {
+        const path_val = if (nm_path_buf.items.len > 0)
+            try std.fmt.allocPrint(allocator, "{s}:{s}", .{ nm_path_buf.items, current_path })
+        else
+            try std.fmt.allocPrint(allocator, "{s}/{s}/.bin:{s}", .{ options.cwd, options.modules_dir, current_path });
+        defer allocator.free(path_val);
+
+        // Escape single quotes in the PATH value for POSIX sh.
+        var escaped_path = std.ArrayList(u8).empty;
+        defer escaped_path.deinit(allocator);
+        for (path_val) |ch| {
+            if (ch == '\'') {
+                try escaped_path.appendSlice(allocator, "'\\''");
+            } else {
+                try escaped_path.append(allocator, ch);
+            }
+        }
+        break :blk try std.fmt.allocPrint(allocator, "export PATH='{s}' && {s}", .{ escaped_path.items, script_cmd });
+    };
     defer if (!is_windows) allocator.free(wrapped_cmd);
 
     const timer_start = io_helper.getMilliTimestamp();
