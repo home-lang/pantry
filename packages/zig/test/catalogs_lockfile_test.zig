@@ -28,7 +28,7 @@ test "catalog reference resolution is recorded in lockfile" {
         .version = "1.0.0",
         .lockfile_version = 1,
         .generated_at = std.time.timestamp(),
-        .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+        .packages = .empty,
     };
     defer lockfile.deinit(allocator);
 
@@ -52,7 +52,7 @@ test "catalog reference resolution is recorded in lockfile" {
             };
 
             const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ dep.name, resolved_version });
-            try lockfile.packages.put(key, lockfile_pkg);
+            try lockfile.packages.put(allocator, key, lockfile_pkg);
         }
     }
 
@@ -93,7 +93,7 @@ test "named catalog references recorded in lockfile" {
         .version = "1.0.0",
         .lockfile_version = 1,
         .generated_at = std.time.timestamp(),
-        .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+        .packages = .empty,
     };
     defer lockfile.deinit(allocator);
 
@@ -116,7 +116,7 @@ test "named catalog references recorded in lockfile" {
             };
 
             const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ dep.name, resolved_version });
-            try lockfile.packages.put(key, lockfile_pkg);
+            try lockfile.packages.put(allocator, key, lockfile_pkg);
         }
     }
 
@@ -153,7 +153,7 @@ test "lockfile roundtrip with catalog resolutions" {
         .version = "1.0.0",
         .lockfile_version = 1,
         .generated_at = std.time.timestamp(),
-        .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+        .packages = .empty,
     };
     defer lockfile1.deinit(allocator);
 
@@ -172,7 +172,7 @@ test "lockfile roundtrip with catalog resolutions" {
             };
 
             const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ dep_name, version });
-            try lockfile1.packages.put(key, lockfile_pkg);
+            try lockfile1.packages.put(allocator, key, lockfile_pkg);
         }
     }
 
@@ -230,7 +230,7 @@ test "lockfile updates when catalog versions change" {
             .version = "1.0.0",
             .lockfile_version = 1,
             .generated_at = std.time.timestamp(),
-            .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+            .packages = .empty,
         };
         defer lockfile.deinit(allocator);
 
@@ -245,7 +245,7 @@ test "lockfile updates when catalog versions change" {
                 .dependencies = null,
             };
             const key = try std.fmt.allocPrint(allocator, "package-a@{s}", .{version});
-            try lockfile.packages.put(key, pkg);
+            try lockfile.packages.put(allocator, key, pkg);
         }
 
         try lib.packages.lockfile.writeLockfile(allocator, &lockfile, tmp_path);
@@ -264,7 +264,7 @@ test "lockfile updates when catalog versions change" {
             .version = "1.0.0",
             .lockfile_version = 1,
             .generated_at = std.time.timestamp(),
-            .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+            .packages = .empty,
         };
         defer lockfile.deinit(allocator);
 
@@ -279,7 +279,7 @@ test "lockfile updates when catalog versions change" {
                 .dependencies = null,
             };
             const key = try std.fmt.allocPrint(allocator, "package-a@{s}", .{version});
-            try lockfile.packages.put(key, pkg);
+            try lockfile.packages.put(allocator, key, pkg);
         }
 
         // Writing should detect the change
@@ -321,7 +321,7 @@ test "lockfile with multiple workspace packages using catalogs" {
         .version = "1.0.0",
         .lockfile_version = 1,
         .generated_at = std.time.timestamp(),
-        .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+        .packages = .empty,
     };
     defer lockfile.deinit(allocator);
 
@@ -335,8 +335,8 @@ test "lockfile with multiple workspace packages using catalogs" {
         .{ .workspace = "build", .deps = &[_][]const u8{ "vite", "typescript" } },
     };
 
-    var recorded_packages = std.StringHashMap(void).init(allocator);
-    defer recorded_packages.deinit();
+    var recorded_packages: std.StringHashMap(void) = .empty;
+    defer recorded_packages.deinit(allocator);
 
     for (workspace_deps) |ws| {
         for (ws.deps) |dep_name| {
@@ -354,8 +354,8 @@ test "lockfile with multiple workspace packages using catalogs" {
                         .integrity = null,
                         .dependencies = null,
                     };
-                    try lockfile.packages.put(key, pkg);
-                    try recorded_packages.put(key, {});
+                    try lockfile.packages.put(allocator, key, pkg);
+                    try recorded_packages.put(allocator, key, {});
                 } else {
                     allocator.free(key);
                 }
@@ -395,7 +395,7 @@ test "lockfile handles missing catalog references gracefully" {
         .version = "1.0.0",
         .lockfile_version = 1,
         .generated_at = std.time.timestamp(),
-        .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+        .packages = .empty,
     };
     defer lockfile.deinit(allocator);
 
@@ -413,7 +413,7 @@ test "lockfile handles missing catalog references gracefully" {
                 .dependencies = null,
             };
             const key = try std.fmt.allocPrint(allocator, "{s}@{s}", .{ dep_name, version });
-            try lockfile.packages.put(key, pkg);
+            try lockfile.packages.put(allocator, key, pkg);
         }
         // Missing references are simply not added to lockfile
     }
@@ -440,7 +440,7 @@ test "lockfile preserves non-catalog dependencies" {
         .version = "1.0.0",
         .lockfile_version = 1,
         .generated_at = std.time.timestamp(),
-        .packages = std.StringHashMap(lib.packages.types.LockfilePackage).init(allocator),
+        .packages = .empty,
     };
     defer lockfile.deinit(allocator);
 
@@ -456,7 +456,7 @@ test "lockfile preserves non-catalog dependencies" {
             .dependencies = null,
         };
         const key = try std.fmt.allocPrint(allocator, "direct-version@^2.0.0", .{});
-        try lockfile.packages.put(key, pkg);
+        try lockfile.packages.put(allocator, key, pkg);
     }
 
     // Add a catalog dependency
@@ -471,7 +471,7 @@ test "lockfile preserves non-catalog dependencies" {
             .dependencies = null,
         };
         const key = try std.fmt.allocPrint(allocator, "from-catalog@{s}", .{version});
-        try lockfile.packages.put(key, pkg);
+        try lockfile.packages.put(allocator, key, pkg);
     }
 
     // Both should coexist in lockfile

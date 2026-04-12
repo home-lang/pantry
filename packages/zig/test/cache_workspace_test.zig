@@ -50,7 +50,7 @@ test "OptimizedCache - compression" {
     const checksum = [_]u8{0} ** 32;
 
     // Create large data to compress
-    var large_data = try allocator.alloc(u8, 10000);
+    const large_data = try allocator.alloc(u8, 10000);
     defer allocator.free(large_data);
     @memset(large_data, 'A');
 
@@ -242,9 +242,9 @@ test "WorkspacePackage - deinit" {
         .name = try allocator.dupe(u8, "test-pkg"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "packages/test"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg.deinit(allocator);
 
@@ -266,9 +266,9 @@ test "DependencyGraph - basic operations" {
         .name = try allocator.dupe(u8, "pkg1"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "packages/pkg1"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg1.deinit(allocator);
 
@@ -276,14 +276,14 @@ test "DependencyGraph - basic operations" {
         .name = try allocator.dupe(u8, "pkg2"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "packages/pkg2"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg2.deinit(allocator);
 
     // pkg2 depends on pkg1
-    try pkg2.dependencies.put(try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "1.0.0"));
+    try pkg2.dependencies.put(allocator, try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "1.0.0"));
 
     // Add to graph
     try graph.addPackage(&pkg1);
@@ -315,9 +315,9 @@ test "DependencyGraph - circular dependency detection" {
         .name = try allocator.dupe(u8, "pkg1"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "packages/pkg1"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg1.deinit(allocator);
 
@@ -325,15 +325,15 @@ test "DependencyGraph - circular dependency detection" {
         .name = try allocator.dupe(u8, "pkg2"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "packages/pkg2"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg2.deinit(allocator);
 
     // Create circular dependency: pkg1 -> pkg2 -> pkg1
-    try pkg1.dependencies.put(try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "1.0.0"));
-    try pkg2.dependencies.put(try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "1.0.0"));
+    try pkg1.dependencies.put(allocator, try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "1.0.0"));
+    try pkg2.dependencies.put(allocator, try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "1.0.0"));
 
     // Add to graph
     try graph.addPackage(&pkg1);
@@ -417,9 +417,9 @@ test "Integration - workspace dependency resolution" {
         .name = try allocator.dupe(u8, "pkg1"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "p1"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg1.deinit(allocator);
 
@@ -427,9 +427,9 @@ test "Integration - workspace dependency resolution" {
         .name = try allocator.dupe(u8, "pkg2"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "p2"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg2.deinit(allocator);
 
@@ -437,9 +437,9 @@ test "Integration - workspace dependency resolution" {
         .name = try allocator.dupe(u8, "pkg3"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "p3"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg3.deinit(allocator);
 
@@ -447,17 +447,17 @@ test "Integration - workspace dependency resolution" {
         .name = try allocator.dupe(u8, "pkg4"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .path = try allocator.dupe(u8, "p4"),
-        .dependencies = std.StringHashMap([]const u8).init(allocator),
-        .dev_dependencies = std.StringHashMap([]const u8).init(allocator),
-        .bin = std.StringHashMap([]const u8).init(allocator),
+        .dependencies = .empty,
+        .dev_dependencies = .empty,
+        .bin = .empty,
     };
     defer pkg4.deinit(allocator);
 
     // Setup dependencies
-    try pkg1.dependencies.put(try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "1.0.0"));
-    try pkg1.dependencies.put(try allocator.dupe(u8, "pkg3"), try allocator.dupe(u8, "1.0.0"));
-    try pkg2.dependencies.put(try allocator.dupe(u8, "pkg3"), try allocator.dupe(u8, "1.0.0"));
-    try pkg4.dependencies.put(try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "1.0.0"));
+    try pkg1.dependencies.put(allocator, try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "1.0.0"));
+    try pkg1.dependencies.put(allocator, try allocator.dupe(u8, "pkg3"), try allocator.dupe(u8, "1.0.0"));
+    try pkg2.dependencies.put(allocator, try allocator.dupe(u8, "pkg3"), try allocator.dupe(u8, "1.0.0"));
+    try pkg4.dependencies.put(allocator, try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "1.0.0"));
 
     // Add to graph
     try graph.addPackage(&pkg1);

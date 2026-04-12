@@ -27,8 +27,8 @@ const MockRegistry = struct {
     pub fn init(allocator: std.mem.Allocator) MockRegistry {
         return .{
             .allocator = allocator,
-            .published_packages = std.StringHashMap(PackageInfo).init(allocator),
-            .oidc_tokens = std.StringHashMap(oidc.OIDCToken).init(allocator),
+            .published_packages = .empty,
+            .oidc_tokens = .empty,
         };
     }
 
@@ -37,13 +37,13 @@ const MockRegistry = struct {
         while (it.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.published_packages.deinit();
+        self.published_packages.deinit(self.allocator);
 
         var token_it = self.oidc_tokens.iterator();
         while (token_it.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.oidc_tokens.deinit();
+        self.oidc_tokens.deinit(self.allocator);
     }
 
     pub fn publishPackage(
@@ -55,7 +55,7 @@ const MockRegistry = struct {
         provenance: ?[]const u8,
     ) !void {
         const key = try std.fmt.allocPrint(self.allocator, "{s}@{s}", .{ name, version });
-        try self.published_packages.put(key, PackageInfo{
+        try self.published_packages.put(self.allocator, key, PackageInfo{
             .name = name,
             .version = version,
             .tarball_sha256 = tarball_sha256,
@@ -188,7 +188,8 @@ test "End-to-end: Policy enforcement workflow" {
 }
 
 test "End-to-end: Trusted publisher validation" {
-    const allocator = testing.allocator;
+    // allocator not needed — validateClaims is pure struct comparison
+    _ = testing.allocator;
 
     // 1. Define trusted publisher
     const trusted_pub = oidc.TrustedPublisher{

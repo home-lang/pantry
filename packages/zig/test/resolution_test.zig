@@ -29,7 +29,7 @@ test "ConflictResolver - no conflicts" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolutions.deinit();
+        resolutions.deinit(allocator);
     }
 
     try testing.expectEqual(@as(usize, 1), resolutions.count());
@@ -55,7 +55,7 @@ test "ConflictResolver - multiple requirements first_wins" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolutions.deinit();
+        resolutions.deinit(allocator);
     }
 
     const lodash_version = resolutions.get("lodash").?;
@@ -79,7 +79,7 @@ test "ConflictResolver - multiple requirements last_wins" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolutions.deinit();
+        resolutions.deinit(allocator);
     }
 
     const lodash_version = resolutions.get("lodash").?;
@@ -349,18 +349,18 @@ test "LockFile - validate matching installation" {
     try lock_file.addPackage("lodash", "4.17.21", "https://registry.npmjs.org/lodash", null);
     try lock_file.addPackage("react", "18.2.0", "https://registry.npmjs.org/react", null);
 
-    var installed = std.StringHashMap([]const u8).init(allocator);
+    var installed: std.StringHashMap([]const u8) = .empty;
     defer {
         var it = installed.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        installed.deinit();
+        installed.deinit(allocator);
     }
 
-    try installed.put(try allocator.dupe(u8, "lodash"), try allocator.dupe(u8, "4.17.21"));
-    try installed.put(try allocator.dupe(u8, "react"), try allocator.dupe(u8, "18.2.0"));
+    try installed.put(allocator, try allocator.dupe(u8, "lodash"), try allocator.dupe(u8, "4.17.21"));
+    try installed.put(allocator, try allocator.dupe(u8, "react"), try allocator.dupe(u8, "18.2.0"));
 
     var validation = try lock_file.validate(installed);
     defer validation.deinit();
@@ -379,17 +379,17 @@ test "LockFile - validate with missing package" {
     try lock_file.addPackage("lodash", "4.17.21", "https://registry.npmjs.org/lodash", null);
     try lock_file.addPackage("react", "18.2.0", "https://registry.npmjs.org/react", null);
 
-    var installed = std.StringHashMap([]const u8).init(allocator);
+    var installed: std.StringHashMap([]const u8) = .empty;
     defer {
         var it = installed.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        installed.deinit();
+        installed.deinit(allocator);
     }
 
-    try installed.put(try allocator.dupe(u8, "lodash"), try allocator.dupe(u8, "4.17.21"));
+    try installed.put(allocator, try allocator.dupe(u8, "lodash"), try allocator.dupe(u8, "4.17.21"));
     // Missing react
 
     var validation = try lock_file.validate(installed);
@@ -408,17 +408,17 @@ test "LockFile - validate with version mismatch" {
 
     try lock_file.addPackage("lodash", "4.17.21", "https://registry.npmjs.org/lodash", null);
 
-    var installed = std.StringHashMap([]const u8).init(allocator);
+    var installed: std.StringHashMap([]const u8) = .empty;
     defer {
         var it = installed.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        installed.deinit();
+        installed.deinit(allocator);
     }
 
-    try installed.put(try allocator.dupe(u8, "lodash"), try allocator.dupe(u8, "4.17.20")); // Wrong version
+    try installed.put(allocator, try allocator.dupe(u8, "lodash"), try allocator.dupe(u8, "4.17.20")); // Wrong version
 
     var validation = try lock_file.validate(installed);
     defer validation.deinit();

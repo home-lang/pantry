@@ -677,7 +677,7 @@ test "batch discovery - search path with extra spaces" {
 test "AutoLinkResults - get returns null for missing key" {
     const allocator = testing.allocator;
     var results = link_commands.AutoLinkResults{
-        .map = std.StringHashMap([]const u8).init(allocator),
+        .map = .empty,
         .allocator = allocator,
     };
     defer results.deinit();
@@ -688,13 +688,13 @@ test "AutoLinkResults - get returns null for missing key" {
 test "AutoLinkResults - deinit frees all entries" {
     const allocator = testing.allocator;
     var results = link_commands.AutoLinkResults{
-        .map = std.StringHashMap([]const u8).init(allocator),
+        .map = .empty,
         .allocator = allocator,
     };
 
     const key = try allocator.dupe(u8, "test-key");
     const val = try allocator.dupe(u8, "/some/path");
-    try results.map.put(key, val);
+    try results.map.put(allocator, key, val);
 
     // deinit should free both key and value without leaks
     results.deinit();

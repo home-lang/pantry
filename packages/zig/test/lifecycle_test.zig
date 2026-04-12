@@ -52,7 +52,7 @@ test "loadTrustedDependencies - empty config" {
         while (it.next()) |key| {
             allocator.free(key.*);
         }
-        trusted.deinit();
+        trusted.deinit(allocator);
     }
 
     try std.testing.expectEqual(@as(usize, 0), trusted.count());
@@ -78,7 +78,7 @@ test "loadTrustedDependencies - with trusted packages" {
         while (it.next()) |key| {
             allocator.free(key.*);
         }
-        trusted.deinit();
+        trusted.deinit(allocator);
     }
 
     try std.testing.expectEqual(@as(usize, 2), trusted.count());
@@ -89,11 +89,11 @@ test "loadTrustedDependencies - with trusted packages" {
 test "isTrusted - custom trusted package" {
     const allocator = std.testing.allocator;
 
-    var trusted = std.StringHashMap(void).init(allocator);
-    defer trusted.deinit();
+    var trusted: std.StringHashMap(void) = .empty;
+    defer trusted.deinit(allocator);
 
     const key = try allocator.dupe(u8, "my-package");
-    try trusted.put(key, {});
+    try trusted.put(allocator, key, {});
     defer allocator.free(key);
 
     try std.testing.expect(lifecycle.isTrusted("my-package", trusted));
@@ -103,8 +103,8 @@ test "isTrusted - custom trusted package" {
 test "isTrusted - default trusted package" {
     const allocator = std.testing.allocator;
 
-    var trusted = std.StringHashMap(void).init(allocator);
-    defer trusted.deinit();
+    var trusted: std.StringHashMap(void) = .empty;
+    defer trusted.deinit(allocator);
 
     // Should be trusted even without being in the custom list
     try std.testing.expect(lifecycle.isTrusted("node-sass", trusted));
@@ -131,7 +131,7 @@ test "extractScripts - no scripts" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(allocator);
     }
 
     try std.testing.expectEqual(@as(usize, 0), scripts.count());
@@ -162,7 +162,7 @@ test "extractScripts - with lifecycle scripts" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(allocator);
     }
 
     try std.testing.expectEqual(@as(usize, 3), scripts.count());

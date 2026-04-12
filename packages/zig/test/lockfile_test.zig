@@ -117,9 +117,9 @@ test "Lockfile - entry with dependencies" {
     var lockfile = try lib.packages.Lockfile.init(allocator, "1.0.0");
     defer lockfile.deinit(allocator);
 
-    var deps = std.StringHashMap([]const u8).init(allocator);
-    try deps.put(try allocator.dupe(u8, "dep1"), try allocator.dupe(u8, "1.0.0"));
-    try deps.put(try allocator.dupe(u8, "dep2"), try allocator.dupe(u8, "2.0.0"));
+    var deps: std.StringHashMap([]const u8) = .empty;
+    try deps.put(allocator, try allocator.dupe(u8, "dep1"), try allocator.dupe(u8, "1.0.0"));
+    try deps.put(allocator, try allocator.dupe(u8, "dep2"), try allocator.dupe(u8, "2.0.0"));
 
     const entry = lib.packages.LockfileEntry{
         .name = try allocator.dupe(u8, "parent-pkg"),

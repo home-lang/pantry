@@ -237,12 +237,12 @@ test "property: named catalogs are independent" {
         const pkg_name = try generateRandomPackageName(allocator, random, 20);
         defer allocator.free(pkg_name);
 
-        var expected_versions = std.ArrayList([]const u8).init(allocator);
+        var expected_versions: std.ArrayList([]const u8) = .empty;
         defer {
             for (expected_versions.items) |v| {
                 allocator.free(v);
             }
-            expected_versions.deinit();
+            expected_versions.deinit(allocator);
         }
 
         for (0..num_catalogs) |i| {
@@ -252,7 +252,7 @@ test "property: named catalogs are independent" {
             var catalog = lib.deps.catalogs.Catalog.init(allocator, try allocator.dupe(u8, catalog_name));
 
             const version = try generateRandomVersion(allocator, random);
-            try expected_versions.append(try allocator.dupe(u8, version));
+            try expected_versions.append(allocator, try allocator.dupe(u8, version));
             defer allocator.free(version);
 
             try catalog.addVersion(pkg_name, version);
@@ -430,17 +430,17 @@ test "property: large catalogs maintain O(1) lookup" {
 
     // Add many packages
     const num_packages = 10000;
-    var package_names = std.ArrayList([]const u8).init(allocator);
+    var package_names: std.ArrayList([]const u8) = .empty;
     defer {
         for (package_names.items) |name| {
             allocator.free(name);
         }
-        package_names.deinit();
+        package_names.deinit(allocator);
     }
 
     for (0..num_packages) |i| {
         const pkg_name = try std.fmt.allocPrint(allocator, "package-{d}", .{i});
-        try package_names.append(try allocator.dupe(u8, pkg_name));
+        try package_names.append(allocator, try allocator.dupe(u8, pkg_name));
         defer allocator.free(pkg_name);
 
         const version = try std.fmt.allocPrint(allocator, "^{d}.0.0", .{i % 100});

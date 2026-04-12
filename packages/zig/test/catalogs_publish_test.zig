@@ -14,7 +14,7 @@ const lib = @import("lib");
 
 /// Helper to create a temporary package.json with catalog references
 fn createPackageJsonWithCatalogs(
-    allocator: std.mem.Allocator,
+    _: std.mem.Allocator,
     path: []const u8,
     pkg_name: []const u8,
     pkg_version: []const u8,
@@ -49,14 +49,14 @@ fn resolveCatalogReferences(
     manager: *lib.deps.CatalogManager,
     deps: std.StringHashMap([]const u8),
 ) !std.StringHashMap([]const u8) {
-    var resolved = std.StringHashMap([]const u8).init(allocator);
+    var resolved: std.StringHashMap([]const u8) = .empty;
     errdefer {
         var it = resolved.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved.deinit();
+        resolved.deinit(allocator);
     }
 
     var it = deps.iterator();
@@ -70,6 +70,7 @@ fn resolveCatalogReferences(
             version_ref;
 
         try resolved.put(
+            allocator,
             try allocator.dupe(u8, pkg_name),
             try allocator.dupe(u8, resolved_version),
         );
@@ -95,18 +96,18 @@ test "publish resolves default catalog references" {
     manager.setDefaultCatalog(catalog);
 
     // Simulate package.json with catalog references
-    var original_deps = std.StringHashMap([]const u8).init(allocator);
+    var original_deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = original_deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        original_deps.deinit();
+        original_deps.deinit(allocator);
     }
 
-    try original_deps.put(try allocator.dupe(u8, "react"), try allocator.dupe(u8, "catalog:"));
-    try original_deps.put(try allocator.dupe(u8, "react-dom"), try allocator.dupe(u8, "catalog:"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "react"), try allocator.dupe(u8, "catalog:"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "react-dom"), try allocator.dupe(u8, "catalog:"));
 
     // Resolve references for publishing
     const resolved_deps = try resolveCatalogReferences(allocator, &manager, original_deps);
@@ -116,7 +117,7 @@ test "publish resolves default catalog references" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved_deps.deinit();
+        resolved_deps.deinit(allocator);
     }
 
     // Verify catalog references were resolved
@@ -146,20 +147,20 @@ test "publish resolves named catalog references" {
     try manager.addNamedCatalog("build", build_catalog);
 
     // Package with named catalog references
-    var original_deps = std.StringHashMap([]const u8).init(allocator);
+    var original_deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = original_deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        original_deps.deinit();
+        original_deps.deinit(allocator);
     }
 
-    try original_deps.put(try allocator.dupe(u8, "vitest"), try allocator.dupe(u8, "catalog:testing"));
-    try original_deps.put(try allocator.dupe(u8, "@testing-library/react"), try allocator.dupe(u8, "catalog:testing"));
-    try original_deps.put(try allocator.dupe(u8, "vite"), try allocator.dupe(u8, "catalog:build"));
-    try original_deps.put(try allocator.dupe(u8, "typescript"), try allocator.dupe(u8, "catalog:build"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "vitest"), try allocator.dupe(u8, "catalog:testing"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "@testing-library/react"), try allocator.dupe(u8, "catalog:testing"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "vite"), try allocator.dupe(u8, "catalog:build"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "typescript"), try allocator.dupe(u8, "catalog:build"));
 
     // Resolve
     const resolved_deps = try resolveCatalogReferences(allocator, &manager, original_deps);
@@ -169,7 +170,7 @@ test "publish resolves named catalog references" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved_deps.deinit();
+        resolved_deps.deinit(allocator);
     }
 
     // Verify all resolved correctly
@@ -190,19 +191,19 @@ test "publish preserves non-catalog dependencies" {
     manager.setDefaultCatalog(catalog);
 
     // Mix of catalog and direct references
-    var original_deps = std.StringHashMap([]const u8).init(allocator);
+    var original_deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = original_deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        original_deps.deinit();
+        original_deps.deinit(allocator);
     }
 
-    try original_deps.put(try allocator.dupe(u8, "from-catalog"), try allocator.dupe(u8, "catalog:"));
-    try original_deps.put(try allocator.dupe(u8, "direct-version"), try allocator.dupe(u8, "^2.0.0"));
-    try original_deps.put(try allocator.dupe(u8, "github-dep"), try allocator.dupe(u8, "github:owner/repo"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "from-catalog"), try allocator.dupe(u8, "catalog:"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "direct-version"), try allocator.dupe(u8, "^2.0.0"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "github-dep"), try allocator.dupe(u8, "github:owner/repo"));
 
     // Resolve
     const resolved_deps = try resolveCatalogReferences(allocator, &manager, original_deps);
@@ -212,7 +213,7 @@ test "publish preserves non-catalog dependencies" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved_deps.deinit();
+        resolved_deps.deinit(allocator);
     }
 
     // Catalog ref resolved, others unchanged
@@ -235,18 +236,18 @@ test "publish handles missing catalog references" {
     try catalog.addVersion("exists", "^1.0.0");
     manager.setDefaultCatalog(catalog);
 
-    var original_deps = std.StringHashMap([]const u8).init(allocator);
+    var original_deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = original_deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        original_deps.deinit();
+        original_deps.deinit(allocator);
     }
 
-    try original_deps.put(try allocator.dupe(u8, "exists"), try allocator.dupe(u8, "catalog:"));
-    try original_deps.put(try allocator.dupe(u8, "missing"), try allocator.dupe(u8, "catalog:"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "exists"), try allocator.dupe(u8, "catalog:"));
+    try original_deps.put(allocator, try allocator.dupe(u8, "missing"), try allocator.dupe(u8, "catalog:"));
 
     // Resolve - missing refs keep catalog: reference
     const resolved_deps = try resolveCatalogReferences(allocator, &manager, original_deps);
@@ -256,7 +257,7 @@ test "publish handles missing catalog references" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved_deps.deinit();
+        resolved_deps.deinit(allocator);
     }
 
     // Existing resolved, missing kept as-is
@@ -274,17 +275,17 @@ test "publish fails if catalog reference cannot be resolved" {
 
     // No catalog set up
 
-    var deps = std.StringHashMap([]const u8).init(allocator);
+    var deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        deps.deinit();
+        deps.deinit(allocator);
     }
 
-    try deps.put(try allocator.dupe(u8, "some-pkg"), try allocator.dupe(u8, "catalog:"));
+    try deps.put(allocator, try allocator.dupe(u8, "some-pkg"), try allocator.dupe(u8, "catalog:"));
 
     const resolved_deps = try resolveCatalogReferences(allocator, &manager, deps);
     defer {
@@ -293,7 +294,7 @@ test "publish fails if catalog reference cannot be resolved" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved_deps.deinit();
+        resolved_deps.deinit(allocator);
     }
 
     // Unresolved reference kept as catalog:
@@ -347,14 +348,14 @@ test "complete publish workflow with catalog resolution" {
     defer parsed.deinit();
 
     // Extract dependencies
-    var original_deps = std.StringHashMap([]const u8).init(allocator);
+    var original_deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = original_deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        original_deps.deinit();
+        original_deps.deinit(allocator);
     }
 
     if (parsed.value.object.get("dependencies")) |deps_obj| {
@@ -363,6 +364,7 @@ test "complete publish workflow with catalog resolution" {
             while (it.next()) |entry| {
                 if (entry.value_ptr.* == .string) {
                     try original_deps.put(
+                        allocator,
                         try allocator.dupe(u8, entry.key_ptr.*),
                         try allocator.dupe(u8, entry.value_ptr.string),
                     );
@@ -379,7 +381,7 @@ test "complete publish workflow with catalog resolution" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved_deps.deinit();
+        resolved_deps.deinit(allocator);
     }
 
     // Verify resolution
@@ -424,19 +426,20 @@ test "monorepo publish - multiple packages with shared catalog" {
 
     // Publish each workspace package
     for (workspaces) |ws| {
-        var ws_deps = std.StringHashMap([]const u8).init(allocator);
+        var ws_deps : std.StringHashMap([]const u8) = .empty;
         defer {
             var it = ws_deps.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            ws_deps.deinit();
+            ws_deps.deinit(allocator);
         }
 
         // Load dependencies
         for (ws.deps) |dep| {
             try ws_deps.put(
+                allocator,
                 try allocator.dupe(u8, dep.name),
                 try allocator.dupe(u8, dep.version),
             );
@@ -450,7 +453,7 @@ test "monorepo publish - multiple packages with shared catalog" {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            resolved.deinit();
+            resolved.deinit(allocator);
         }
 
         // Verify all catalog refs resolved
@@ -486,36 +489,36 @@ test "publish validates no catalog references remain" {
 
     // Test with resolved deps - should pass
     {
-        var resolved_deps = std.StringHashMap([]const u8).init(allocator);
+        var resolved_deps : std.StringHashMap([]const u8) = .empty;
         defer {
             var it = resolved_deps.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            resolved_deps.deinit();
+            resolved_deps.deinit(allocator);
         }
 
-        try resolved_deps.put(try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "^1.0.0"));
-        try resolved_deps.put(try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "^2.0.0"));
+        try resolved_deps.put(allocator, try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "^1.0.0"));
+        try resolved_deps.put(allocator, try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "^2.0.0"));
 
         try validateNoCatalogReferences(resolved_deps);
     }
 
     // Test with unresolved refs - should fail
     {
-        var unresolved_deps = std.StringHashMap([]const u8).init(allocator);
+        var unresolved_deps : std.StringHashMap([]const u8) = .empty;
         defer {
             var it = unresolved_deps.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            unresolved_deps.deinit();
+            unresolved_deps.deinit(allocator);
         }
 
-        try unresolved_deps.put(try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "^1.0.0"));
-        try unresolved_deps.put(try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "catalog:"));
+        try unresolved_deps.put(allocator, try allocator.dupe(u8, "pkg1"), try allocator.dupe(u8, "^1.0.0"));
+        try unresolved_deps.put(allocator, try allocator.dupe(u8, "pkg2"), try allocator.dupe(u8, "catalog:"));
 
         const result = validateNoCatalogReferences(unresolved_deps);
         try testing.expectError(error.UnresolvedCatalogReference, result);
@@ -532,18 +535,18 @@ test "publish handles workspace: protocol alongside catalogs" {
     try catalog.addVersion("external-pkg", "^1.0.0");
     manager.setDefaultCatalog(catalog);
 
-    var deps = std.StringHashMap([]const u8).init(allocator);
+    var deps : std.StringHashMap([]const u8) = .empty;
     defer {
         var it = deps.iterator();
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        deps.deinit();
+        deps.deinit(allocator);
     }
 
-    try deps.put(try allocator.dupe(u8, "external-pkg"), try allocator.dupe(u8, "catalog:"));
-    try deps.put(try allocator.dupe(u8, "internal-pkg"), try allocator.dupe(u8, "workspace:*"));
+    try deps.put(allocator, try allocator.dupe(u8, "external-pkg"), try allocator.dupe(u8, "catalog:"));
+    try deps.put(allocator, try allocator.dupe(u8, "internal-pkg"), try allocator.dupe(u8, "workspace:*"));
 
     const resolved = try resolveCatalogReferences(allocator, &manager, deps);
     defer {
@@ -552,7 +555,7 @@ test "publish handles workspace: protocol alongside catalogs" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolved.deinit();
+        resolved.deinit(allocator);
     }
 
     // Catalog resolved, workspace left as-is (would be handled separately)

@@ -90,12 +90,12 @@ test "fuzz catalog creation and lookup" {
 
         // Add random packages
         const num_packages = random.intRangeAtMost(usize, 0, 20);
-        var added_packages = std.ArrayList([]const u8).init(allocator);
+        var added_packages: std.ArrayList([]const u8) = .empty;
         defer {
             for (added_packages.items) |pkg| {
                 allocator.free(pkg);
             }
-            added_packages.deinit();
+            added_packages.deinit(allocator);
         }
 
         for (0..num_packages) |_| {
@@ -113,7 +113,7 @@ test "fuzz catalog creation and lookup" {
             };
 
             // Remember valid packages
-            try added_packages.append(try allocator.dupe(u8, pkg_name));
+            try added_packages.append(allocator, try allocator.dupe(u8, pkg_name));
             allocator.free(pkg_name);
             allocator.free(version);
         }
@@ -155,8 +155,8 @@ test "fuzz JSON parsing" {
 
     // Generate random but somewhat valid JSON structures
     for (0..50) |_| {
-        var json_builder = std.ArrayList(u8).init(allocator);
-        defer json_builder.deinit();
+        var json_builder: std.ArrayList(u8) = .empty;
+        defer json_builder.deinit(allocator);
 
         const writer = json_builder.writer();
 
@@ -197,7 +197,7 @@ test "fuzz JSON parsing" {
 
         try writer.writeAll("}}");
 
-        const json_str = try json_builder.toOwnedSlice();
+        const json_str = try json_builder.toOwnedSlice(allocator);
         defer allocator.free(json_str);
 
         // Try to parse - should not crash
@@ -284,8 +284,8 @@ test "fuzz with malicious inputs" {
         "$(whoami)", // Command substitution
         "`whoami`", // Backtick substitution
         "${HOME}", // Variable expansion
-        "\u0000", // Unicode null
-        "\u200B\u200C\u200D", // Zero-width chars
+        "\x00", // Null byte
+        "\xE2\x80\x8B\xE2\x80\x8C\xE2\x80\x8D", // Zero-width chars (UTF-8 encoded)
     };
 
     var manager = lib.deps.CatalogManager.init(allocator);
@@ -358,8 +358,8 @@ test "fuzz package name patterns" {
         "package  name", // Multiple spaces
         " package", // Leading space
         "package ", // Trailing space
-        "\u200Bpackage", // Zero-width space
-        "package\u200B",
+        "\xE2\x80\x8Bpackage", // Zero-width space (UTF-8)
+        "package\xE2\x80\x8B",
     };
 
     var manager = lib.deps.CatalogManager.init(allocator);
