@@ -311,21 +311,21 @@ pub const RuntimeInstaller = struct {
         };
         defer dir.close(io_helper.io);
 
-        var versions = std.ArrayList([]const u8).init(self.allocator);
+        var versions: std.ArrayList([]const u8) = .empty;
         errdefer {
             for (versions.items) |v| self.allocator.free(v);
-            versions.deinit();
+            versions.deinit(self.allocator);
         }
 
         var iter = dir.iterate();
         while (try iter.next(io_helper.io)) |entry| {
             if (entry.kind == .directory) {
                 const version = try self.allocator.dupe(u8, entry.name);
-                try versions.append(version);
+                try versions.append(self.allocator, version);
             }
         }
 
-        return versions.toOwnedSlice();
+        return versions.toOwnedSlice(self.allocator);
     }
 
     /// Uninstall a runtime version

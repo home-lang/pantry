@@ -35,23 +35,23 @@ pub fn topologicalSort(
     }
 
     // Build dependency graph
-    var in_degree = std.StringHashMap(usize).init(allocator);
-    defer in_degree.deinit();
+    var in_degree: std.StringHashMap(usize) = .empty;
+    defer in_degree.deinit(allocator);
 
-    var adj_list = std.StringHashMap(std.ArrayList([]const u8)).init(allocator);
+    var adj_list: std.StringHashMap(std.ArrayList([]const u8)) = .empty;
     defer {
         var it = adj_list.iterator();
         while (it.next()) |entry| {
             entry.value_ptr.deinit(allocator);
         }
-        adj_list.deinit();
+        adj_list.deinit(allocator);
     }
 
     // Initialize in-degree and adjacency list
     for (packages) |pkg| {
-        try in_degree.put(pkg.name, 0);
-        const list = std.ArrayList([]const u8).empty;
-        try adj_list.put(pkg.name, list);
+        try in_degree.put(allocator, pkg.name, 0);
+        const list: std.ArrayList([]const u8) = .empty;
+        try adj_list.put(allocator, pkg.name, list);
     }
 
     // Build graph edges and count in-degrees

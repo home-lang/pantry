@@ -27,8 +27,8 @@ pub const Environment = struct {
             .hash = [_]u8{0} ** 16,
             .dep_file = "",
             .path = "",
-            .env_vars = std.StringHashMap([]const u8).init(allocator),
-            .packages = std.ArrayList([]const u8).init(),
+            .env_vars = .empty,
+            .packages = .empty,
             ._allocator = allocator,
         };
     }
@@ -42,7 +42,7 @@ pub const Environment = struct {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        self.env_vars.deinit();
+        self.env_vars.deinit(allocator);
 
         for (self.packages.items) |pkg| {
             allocator.free(pkg);

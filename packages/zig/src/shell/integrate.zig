@@ -21,7 +21,7 @@ pub const ShellIntegrator = struct {
             for (shell_files.items) |file| {
                 self.allocator.free(file);
             }
-            shell_files.deinit();
+            @constCast(&shell_files).deinit(self.allocator);
         }
 
         const hook_line = "command -v pantry >/dev/null 2>&1 && eval \"$(pantry dev:shellcode)\"";
@@ -52,7 +52,7 @@ pub const ShellIntegrator = struct {
             for (shell_files.items) |file| {
                 self.allocator.free(file);
             }
-            shell_files.deinit();
+            @constCast(&shell_files).deinit(self.allocator);
         }
 
         for (shell_files.items) |file| {
@@ -72,12 +72,12 @@ pub const ShellIntegrator = struct {
     }
 
     fn getShellFiles(self: *ShellIntegrator) !std.ArrayList([]const u8) {
-        var files = std.ArrayList([]const u8).init(self.allocator);
+        var files: std.ArrayList([]const u8) = .empty;
         errdefer {
             for (files.items) |file| {
                 self.allocator.free(file);
             }
-            files.deinit();
+            files.deinit(self.allocator);
         }
 
         const home_dir = try lib.Paths.home(self.allocator);
@@ -106,7 +106,7 @@ pub const ShellIntegrator = struct {
                 continue;
             };
 
-            try files.append(file);
+            try files.append(self.allocator, file);
         }
 
         // If no files exist and we're on macOS, create .zshrc
@@ -115,7 +115,7 @@ pub const ShellIntegrator = struct {
                 zdotdir,
                 ".zshrc",
             });
-            try files.append(zshrc);
+            try files.append(self.allocator, zshrc);
         }
 
         return files;
@@ -144,8 +144,8 @@ pub const ShellIntegrator = struct {
         const content = try io_helper.readFileAlloc(self.allocator, file, 10 * 1024 * 1024);
         defer self.allocator.free(content);
 
-        var lines = std.ArrayList([]const u8).init(self.allocator);
-        defer lines.deinit();
+        var lines: std.ArrayList([]const u8) = .empty;
+        defer lines.deinit(self.allocator);
 
         var iter = std.mem.split(u8, content, "\n");
         var skip_next = false;
@@ -163,7 +163,7 @@ pub const ShellIntegrator = struct {
                 continue;
             }
 
-            try lines.append(line);
+            try lines.append(self.allocator, line);
         }
 
         // Rewrite file
@@ -200,7 +200,7 @@ test "ShellIntegrator getShellFiles" {
         for (files.items) |file| {
             allocator.free(file);
         }
-        files.deinit();
+        @constCast(&files).deinit(allocator);
     }
 
     // Should find at least one shell file or create one

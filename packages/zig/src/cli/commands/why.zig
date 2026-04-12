@@ -79,36 +79,36 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     }
 
     // Not a direct dependency — search transitive paths through node_modules
-    var paths = std.ArrayList(std.ArrayList(DependencyPath)).init(allocator);
+    var paths: std.ArrayList(std.ArrayList(DependencyPath)) = .empty;
     defer {
         for (paths.items) |*path| {
             for (path.items) |*entry| {
                 entry.deinit(allocator);
             }
-            path.deinit();
+            path.deinit(allocator);
         }
-        paths.deinit();
+        paths.deinit(allocator);
     }
 
     // Track visited packages to prevent infinite loops
-    var visited = std.StringHashMap(void).init(allocator);
-    defer visited.deinit();
+    var visited: std.StringHashMap(void) = .empty;
+    defer visited.deinit(allocator);
 
     // Search from each direct dependency
     for (deps) |dep| {
-        var current_path = std.ArrayList(DependencyPath).init(allocator);
+        var current_path: std.ArrayList(DependencyPath) = .empty;
 
         // Add the direct dep as the first entry
         const dep_version = getPackageVersion(allocator, effective_root, dep.name) orelse (allocator.dupe(u8, dep.version) catch continue);
 
-        try current_path.append(.{
+        try current_path.append(allocator, .{
             .package = try allocator.dupe(u8, dep.name),
             .version = dep_version,
             .depth = 0,
         });
 
         visited.clearRetainingCapacity();
-        try visited.put(dep.name, {});
+        try visited.put(allocator, dep.name, {});
 
         try searchTransitiveDeps(
             allocator,
@@ -139,7 +139,7 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             for (current_path.items) |*entry| {
                 entry.deinit(allocator);
             }
-            current_path.deinit();
+            current_path.deinit(allocator);
         }
     }
 
@@ -282,9 +282,9 @@ fn searchTransitiveDeps(
 
         if (std.mem.eql(u8, dep_name, target)) {
             // Found the target! Build a complete path by cloning current_path and appending target.
-            var found_path = std.ArrayList(DependencyPath).init(allocator);
+            var found_path: std.ArrayList(DependencyPath) = .empty;
             for (current_path.items) |existing_entry| {
-                try found_path.append(.{
+                try found_path.append(allocator, .{
                     .package = try allocator.dupe(u8, existing_entry.package),
                     .version = try allocator.dupe(u8, existing_entry.version),
                     .depth = existing_entry.depth,
@@ -294,23 +294,23 @@ fn searchTransitiveDeps(
             // Get actual installed version of the target
             const target_ver = getPackageVersion(allocator, project_root, target) orelse (allocator.dupe(u8, dep_ver) catch continue);
 
-            try found_path.append(.{
+            try found_path.append(allocator, .{
                 .package = try allocator.dupe(u8, target),
                 .version = target_ver,
                 .depth = depth,
             });
 
-            try found_paths.append(found_path);
+            try found_paths.append(allocator, found_path);
             continue;
         }
 
         // Recurse into this dependency if not visited
         if (visited.contains(dep_name)) continue;
-        try visited.put(dep_name, {});
+        try visited.put(allocator, dep_name, {});
 
         const child_ver = getPackageVersion(allocator, project_root, dep_name) orelse (allocator.dupe(u8, dep_ver) catch continue);
 
-        try current_path.append(.{
+        try current_path.append(allocator, .{
             .package = try allocator.dupe(u8, dep_name),
             .version = child_ver,
             .depth = depth,

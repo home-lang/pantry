@@ -40,7 +40,7 @@ pub const RollbackManager = struct {
     pub fn init(allocator: std.mem.Allocator) RollbackManager {
         return .{
             .allocator = allocator,
-            .actions = std.ArrayList(RollbackAction).init(allocator),
+            .actions = .empty,
             .enabled = true,
         };
     }
@@ -49,7 +49,7 @@ pub const RollbackManager = struct {
         for (self.actions.items) |*action| {
             action.deinit(self.allocator);
         }
-        self.actions.deinit();
+        self.actions.deinit(self.allocator);
     }
 
     pub fn disable(self: *RollbackManager) void {
@@ -67,7 +67,7 @@ pub const RollbackManager = struct {
         const path_copy = try self.allocator.dupe(u8, path);
         errdefer self.allocator.free(path_copy);
 
-        try self.actions.append(.{ .file_created = path_copy });
+        try self.actions.append(self.allocator, .{ .file_created = path_copy });
     }
 
     /// Record file modification (creates backup)
@@ -93,7 +93,7 @@ pub const RollbackManager = struct {
             io_helper.deleteFile(backup_path) catch {};
         }
 
-        try self.actions.append(.{
+        try self.actions.append(self.allocator, .{
             .file_modified = .{
                 .path = path_copy,
                 .backup_path = backup_path,
@@ -108,7 +108,7 @@ pub const RollbackManager = struct {
         const path_copy = try self.allocator.dupe(u8, path);
         errdefer self.allocator.free(path_copy);
 
-        try self.actions.append(.{ .dir_created = path_copy });
+        try self.actions.append(self.allocator, .{ .dir_created = path_copy });
     }
 
     /// Record symlink creation
@@ -118,7 +118,7 @@ pub const RollbackManager = struct {
         const path_copy = try self.allocator.dupe(u8, path);
         errdefer self.allocator.free(path_copy);
 
-        try self.actions.append(.{ .symlink_created = path_copy });
+        try self.actions.append(self.allocator, .{ .symlink_created = path_copy });
     }
 
     /// Perform rollback (reverse all actions)

@@ -37,16 +37,17 @@ pub const ExecutionStats = struct {
     errors: std.ArrayList(ScriptError),
 
     pub fn init(allocator: std.mem.Allocator) ExecutionStats {
+        _ = allocator;
         return .{
-            .errors = std.ArrayList(ScriptError).init(allocator),
+            .errors = .empty,
         };
     }
 
-    pub fn deinit(self: *ExecutionStats) void {
+    pub fn deinit(self: *ExecutionStats, allocator: std.mem.Allocator) void {
         for (self.errors.items) |*err| {
-            err.deinit(self.errors.allocator);
+            err.deinit(allocator);
         }
-        self.errors.deinit();
+        self.errors.deinit(allocator);
     }
 };
 
@@ -258,7 +259,7 @@ pub const ParallelExecutionResult = struct {
             result.deinit(allocator);
         }
         allocator.free(self.results);
-        self.stats.deinit();
+        self.stats.deinit(allocator);
     }
 };
 
@@ -277,7 +278,7 @@ pub fn executeScriptsParallel(
     errdefer allocator.free(results);
 
     var stats = ExecutionStats.init(allocator);
-    errdefer stats.deinit();
+    errdefer stats.deinit(allocator);
 
     const start_time = @as(i64, @intCast((io_helper.clockGettime()).sec * 1000));
 
@@ -307,7 +308,7 @@ pub fn executeScriptsParallel(
             stats.failed += 1;
             stats.total_scripts += 1;
 
-            try stats.errors.append(.{
+            try stats.errors.append(allocator, .{
                 .package_name = try allocator.dupe(u8, script.package_name),
                 .script_name = try allocator.dupe(u8, script.script_name),
                 .error_message = try std.fmt.allocPrint(allocator, "Error: {}", .{err}),
@@ -334,7 +335,7 @@ pub fn executeScriptsParallel(
             else
                 try allocator.dupe(u8, "Script failed");
 
-            try stats.errors.append(.{
+            try stats.errors.append(allocator, .{
                 .package_name = try allocator.dupe(u8, script.package_name),
                 .script_name = try allocator.dupe(u8, script.script_name),
                 .error_message = error_msg,
@@ -389,63 +390,63 @@ pub fn executeScriptSandboxed(
     const builtin = @import("builtin");
 
     // Build sandboxed command based on OS
-    var cmd_args = std.ArrayList([]const u8).init(allocator);
-    defer cmd_args.deinit();
+    var cmd_args: std.ArrayList([]const u8) = .empty;
+    defer cmd_args.deinit(allocator);
 
     switch (builtin.os.tag) {
         .linux => {
             // Use bwrap (bubblewrap) for Linux sandboxing if available
             // This is a lightweight sandboxing tool similar to what Flatpak uses
-            try cmd_args.append("bwrap");
+            try cmd_args.append(allocator,"bwrap");
 
             // Basic filesystem isolation
-            try cmd_args.append("--unshare-all");
-            try cmd_args.append("--share-net"); // Share network by default, can be restricted
-            try cmd_args.append("--die-with-parent");
+            try cmd_args.append(allocator,"--unshare-all");
+            try cmd_args.append(allocator,"--share-net"); // Share network by default, can be restricted
+            try cmd_args.append(allocator,"--die-with-parent");
 
             // Mount essential directories read-only
-            try cmd_args.append("--ro-bind");
-            try cmd_args.append("/usr");
-            try cmd_args.append("/usr");
+            try cmd_args.append(allocator,"--ro-bind");
+            try cmd_args.append(allocator,"/usr");
+            try cmd_args.append(allocator,"/usr");
 
-            try cmd_args.append("--ro-bind");
-            try cmd_args.append("/lib");
-            try cmd_args.append("/lib");
+            try cmd_args.append(allocator,"--ro-bind");
+            try cmd_args.append(allocator,"/lib");
+            try cmd_args.append(allocator,"/lib");
 
-            try cmd_args.append("--ro-bind");
-            try cmd_args.append("/lib64");
-            try cmd_args.append("/lib64");
+            try cmd_args.append(allocator,"--ro-bind");
+            try cmd_args.append(allocator,"/lib64");
+            try cmd_args.append(allocator,"/lib64");
 
-            try cmd_args.append("--ro-bind");
-            try cmd_args.append("/bin");
-            try cmd_args.append("/bin");
+            try cmd_args.append(allocator,"--ro-bind");
+            try cmd_args.append(allocator,"/bin");
+            try cmd_args.append(allocator,"/bin");
 
             // Provide basic system files
-            try cmd_args.append("--ro-bind");
-            try cmd_args.append("/etc/resolv.conf");
-            try cmd_args.append("/etc/resolv.conf");
+            try cmd_args.append(allocator,"--ro-bind");
+            try cmd_args.append(allocator,"/etc/resolv.conf");
+            try cmd_args.append(allocator,"/etc/resolv.conf");
 
-            try cmd_args.append("--proc");
-            try cmd_args.append("/proc");
+            try cmd_args.append(allocator,"--proc");
+            try cmd_args.append(allocator,"/proc");
 
-            try cmd_args.append("--dev");
-            try cmd_args.append("/dev");
+            try cmd_args.append(allocator,"--dev");
+            try cmd_args.append(allocator,"/dev");
 
-            try cmd_args.append("--tmpfs");
-            try cmd_args.append("/tmp");
+            try cmd_args.append(allocator,"--tmpfs");
+            try cmd_args.append(allocator,"/tmp");
 
             // Add read paths
             for (sandbox_config.read_paths) |path| {
-                try cmd_args.append("--ro-bind");
-                try cmd_args.append(path);
-                try cmd_args.append(path);
+                try cmd_args.append(allocator,"--ro-bind");
+                try cmd_args.append(allocator,path);
+                try cmd_args.append(allocator,path);
             }
 
             // Add write paths
             for (sandbox_config.write_paths) |path| {
-                try cmd_args.append("--bind");
-                try cmd_args.append(path);
-                try cmd_args.append(path);
+                try cmd_args.append(allocator,"--bind");
+                try cmd_args.append(allocator,path);
+                try cmd_args.append(allocator,path);
             }
 
             // Restrict network if configured
@@ -456,9 +457,9 @@ pub fn executeScriptSandboxed(
             }
 
             // Execute the actual command
-            try cmd_args.append("sh");
-            try cmd_args.append("-c");
-            try cmd_args.append(script_cmd);
+            try cmd_args.append(allocator,"sh");
+            try cmd_args.append(allocator,"-c");
+            try cmd_args.append(allocator,script_cmd);
         },
         .macos => {
             // macOS: Use sandbox-exec with a profile
@@ -475,25 +476,25 @@ pub fn executeScriptSandboxed(
             defer allocator.free(profile);
 
             // For read paths
-            var profile_with_paths = std.ArrayList(u8).init(allocator);
-            defer profile_with_paths.deinit();
+            var profile_with_paths: std.ArrayList(u8) = .empty;
+            defer profile_with_paths.deinit(allocator);
 
-            try profile_with_paths.appendSlice(profile);
+            try profile_with_paths.appendSlice(allocator, profile);
 
             for (sandbox_config.read_paths) |path| {
                 const rule = try std.fmt.allocPrint(allocator, "(allow file-read* (subpath \"{s}\"))\n", .{path});
                 defer allocator.free(rule);
-                try profile_with_paths.appendSlice(rule);
+                try profile_with_paths.appendSlice(allocator, rule);
             }
 
             for (sandbox_config.write_paths) |path| {
                 const rule = try std.fmt.allocPrint(allocator, "(allow file-write* (subpath \"{s}\"))\n", .{path});
                 defer allocator.free(rule);
-                try profile_with_paths.appendSlice(rule);
+                try profile_with_paths.appendSlice(allocator, rule);
             }
 
             if (sandbox_config.allow_network) {
-                try profile_with_paths.appendSlice("(allow network*)\n");
+                try profile_with_paths.appendSlice(allocator, "(allow network*)\n");
             }
 
             // Write profile to temp file
@@ -508,12 +509,12 @@ pub fn executeScriptSandboxed(
             }
             try io_helper.writeAllToFile(profile_file, profile_with_paths.items);
 
-            try cmd_args.append("sandbox-exec");
-            try cmd_args.append("-f");
-            try cmd_args.append(profile_path);
-            try cmd_args.append("sh");
-            try cmd_args.append("-c");
-            try cmd_args.append(script_cmd);
+            try cmd_args.append(allocator,"sandbox-exec");
+            try cmd_args.append(allocator,"-f");
+            try cmd_args.append(allocator,profile_path);
+            try cmd_args.append(allocator,"sh");
+            try cmd_args.append(allocator,"-c");
+            try cmd_args.append(allocator,script_cmd);
         },
         .windows => {
             // Windows: AppContainer would require Win32 API calls

@@ -4,9 +4,19 @@ const std = @import("std");
 /// For local dev: `pantry install` symlinks from ~/Code/Libraries/*
 /// For CI: workflow clones deps into pantry/ at workspace root
 fn resolveDependencyPath(b: *std.Build, package_name: []const u8, entry_point: []const u8, fallback_path: []const u8) []const u8 {
-    _ = fallback_path;
     // pantry/ folder is at the workspace root (../../ from packages/zig/)
-    return b.fmt("../../pantry/{s}/{s}", .{ package_name, entry_point });
+    const primary = b.fmt("../../pantry/{s}/{s}", .{ package_name, entry_point });
+    // Try primary path first, fall back to fallback
+    if (b.build_root.handle.access(primary, .{})) |_| {
+        return primary;
+    } else |_| {}
+    // Try fallback path
+    if (b.build_root.handle.access(fallback_path, .{})) |_| {
+        return fallback_path;
+    } else |_| {}
+    // Neither exists - print helpful message and return primary (will fail at compile time with clear error)
+    std.debug.print("Warning: dependency '{s}' not found at '{s}' or '{s}'. Run 'pantry install' first.\n", .{ package_name, primary, fallback_path });
+    return primary;
 }
 
 pub fn build(b: *std.Build) void {

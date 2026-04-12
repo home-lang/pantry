@@ -181,28 +181,28 @@ pub fn enforcePolicy(
     package_data: []const u8,
     keyring: *const signing.Keyring,
 ) !PolicyResult {
-    var violations = std.ArrayList(PolicyViolation).init(allocator);
+    var violations: std.ArrayList(PolicyViolation) = .empty;
     errdefer {
         for (violations.items) |*v| {
             v.deinit(allocator);
         }
-        violations.deinit();
+        violations.deinit(allocator);
     }
 
-    var warnings = std.ArrayList([]const u8).init(allocator);
+    var warnings: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (warnings.items) |w| {
             allocator.free(w);
         }
-        warnings.deinit();
+        warnings.deinit(allocator);
     }
 
     // If policy level is none, allow everything
     if (policy.level == .none) {
         return PolicyResult{
             .allowed = true,
-            .violations = try violations.toOwnedSlice(),
-            .warnings = try warnings.toOwnedSlice(),
+            .violations = try violations.toOwnedSlice(allocator),
+            .warnings = try warnings.toOwnedSlice(allocator),
         };
     }
 
@@ -213,8 +213,8 @@ pub fn enforcePolicy(
         // Package doesn't require signature, allow it
         return PolicyResult{
             .allowed = true,
-            .violations = try violations.toOwnedSlice(),
-            .warnings = try warnings.toOwnedSlice(),
+            .violations = try violations.toOwnedSlice(allocator),
+            .warnings = try warnings.toOwnedSlice(allocator),
         };
     }
 
@@ -229,10 +229,10 @@ pub fn enforcePolicy(
                 .{package_name},
             ),
         };
-        try violations.append(violation);
+        try violations.append(allocator, violation);
 
         if (policy.level == .warn) {
-            try warnings.append(try std.fmt.allocPrint(
+            try warnings.append(allocator, try std.fmt.allocPrint(
                 allocator,
                 "Warning: {s} - {s}",
                 .{ package_name, violation.format() },
@@ -246,8 +246,8 @@ pub fn enforcePolicy(
 
         return PolicyResult{
             .allowed = false,
-            .violations = try violations.toOwnedSlice(),
-            .warnings = try warnings.toOwnedSlice(),
+            .violations = try violations.toOwnedSlice(allocator),
+            .warnings = try warnings.toOwnedSlice(allocator),
         };
     }
 
@@ -273,10 +273,10 @@ pub fn enforcePolicy(
                     .{ package_name, sig.key_id },
                 ),
             };
-            try violations.append(violation);
+            try violations.append(allocator, violation);
 
             if (policy.level == .warn) {
-                try warnings.append(try std.fmt.allocPrint(
+                try warnings.append(allocator, try std.fmt.allocPrint(
                     allocator,
                     "Warning: {s} - {s}",
                     .{ package_name, violation.format() },
@@ -307,10 +307,10 @@ pub fn enforcePolicy(
                 .{ package_name, err },
             ),
         };
-        try violations.append(violation);
+        try violations.append(allocator, violation);
 
         if (policy.level == .warn) {
-            try warnings.append(try std.fmt.allocPrint(
+            try warnings.append(allocator, try std.fmt.allocPrint(
                 allocator,
                 "Warning: {s} - {s}",
                 .{ package_name, violation.format() },
@@ -324,8 +324,8 @@ pub fn enforcePolicy(
 
         return PolicyResult{
             .allowed = false,
-            .violations = try violations.toOwnedSlice(),
-            .warnings = try warnings.toOwnedSlice(),
+            .violations = try violations.toOwnedSlice(allocator),
+            .warnings = try warnings.toOwnedSlice(allocator),
         };
     };
 
@@ -355,13 +355,13 @@ pub fn loadFromConfig(allocator: std.mem.Allocator, config: std.json.Value) !Sig
     var required_for: ?[][]const u8 = null;
     if (obj.get("requiredFor")) |rf| {
         if (rf == .array) {
-            var patterns = std.ArrayList([]const u8).init(allocator);
+            var patterns: std.ArrayList([]const u8) = .empty;
             for (rf.array.items) |item| {
                 if (item == .string) {
-                    try patterns.append(try allocator.dupe(u8, item.string));
+                    try patterns.append(allocator, try allocator.dupe(u8, item.string));
                 }
             }
-            required_for = try patterns.toOwnedSlice();
+            required_for = try patterns.toOwnedSlice(allocator);
         }
     }
 
@@ -369,13 +369,13 @@ pub fn loadFromConfig(allocator: std.mem.Allocator, config: std.json.Value) !Sig
     var exempt: ?[][]const u8 = null;
     if (obj.get("exempt")) |ex| {
         if (ex == .array) {
-            var patterns = std.ArrayList([]const u8).init(allocator);
+            var patterns: std.ArrayList([]const u8) = .empty;
             for (ex.array.items) |item| {
                 if (item == .string) {
-                    try patterns.append(try allocator.dupe(u8, item.string));
+                    try patterns.append(allocator, try allocator.dupe(u8, item.string));
                 }
             }
-            exempt = try patterns.toOwnedSlice();
+            exempt = try patterns.toOwnedSlice(allocator);
         }
     }
 
@@ -383,13 +383,13 @@ pub fn loadFromConfig(allocator: std.mem.Allocator, config: std.json.Value) !Sig
     var trusted_keys: ?[][]const u8 = null;
     if (obj.get("trustedKeys")) |tk| {
         if (tk == .array) {
-            var keys = std.ArrayList([]const u8).init(allocator);
+            var keys: std.ArrayList([]const u8) = .empty;
             for (tk.array.items) |item| {
                 if (item == .string) {
-                    try keys.append(try allocator.dupe(u8, item.string));
+                    try keys.append(allocator, try allocator.dupe(u8, item.string));
                 }
             }
-            trusted_keys = try keys.toOwnedSlice();
+            trusted_keys = try keys.toOwnedSlice(allocator);
         }
     }
 

@@ -40,17 +40,17 @@ pub const WorkspaceConfig = struct {
         const packages_val = ws_obj.get("packages") orelse return error.NoPackages;
         if (packages_val != .array) return error.InvalidPackages;
 
-        var packages = std.ArrayList([]const u8).init(allocator);
+        var packages: std.ArrayList([]const u8) = .empty;
         errdefer {
             for (packages.items) |pkg| {
                 allocator.free(pkg);
             }
-            packages.deinit();
+            packages.deinit(allocator);
         }
 
         for (packages_val.array.items) |item| {
             if (item == .string) {
-                try packages.append(try allocator.dupe(u8, item.string));
+                try packages.append(allocator, try allocator.dupe(u8, item.string));
             }
         }
 
@@ -77,7 +77,7 @@ pub const WorkspaceConfig = struct {
 
         return .{
             .root = try allocator.dupe(u8, root),
-            .packages = try packages.toOwnedSlice(),
+            .packages = try packages.toOwnedSlice(allocator),
             .shared_deps = shared_deps,
             .hoist = hoist,
             .name = name,
@@ -113,21 +113,21 @@ pub const WorkspacePackage = struct {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(allocator);
 
         var dev_it = self.dev_dependencies.iterator();
         while (dev_it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        self.dev_dependencies.deinit();
+        self.dev_dependencies.deinit(allocator);
 
         var bin_it = self.bin.iterator();
         while (bin_it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        self.bin.deinit();
+        self.bin.deinit(allocator);
     }
 
     /// Load package from directory
@@ -172,14 +172,14 @@ pub const WorkspacePackage = struct {
         errdefer allocator.free(version);
 
         // Get dependencies
-        var dependencies = std.StringHashMap([]const u8).init(allocator);
+        var dependencies: std.StringHashMap([]const u8) = .empty;
         errdefer {
             var it = dependencies.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            dependencies.deinit();
+            dependencies.deinit(allocator);
         }
 
         if (obj.get("dependencies")) |deps| {
@@ -189,21 +189,21 @@ pub const WorkspacePackage = struct {
                     if (entry.value_ptr.* == .string) {
                         const key = try allocator.dupe(u8, entry.key_ptr.*);
                         const value = try allocator.dupe(u8, entry.value_ptr.*.string);
-                        try dependencies.put(key, value);
+                        try dependencies.put(allocator, key, value);
                     }
                 }
             }
         }
 
         // Get dev dependencies
-        var dev_dependencies = std.StringHashMap([]const u8).init(allocator);
+        var dev_dependencies: std.StringHashMap([]const u8) = .empty;
         errdefer {
             var it = dev_dependencies.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            dev_dependencies.deinit();
+            dev_dependencies.deinit(allocator);
         }
 
         if (obj.get("devDependencies")) |deps| {
@@ -213,21 +213,21 @@ pub const WorkspacePackage = struct {
                     if (entry.value_ptr.* == .string) {
                         const key = try allocator.dupe(u8, entry.key_ptr.*);
                         const value = try allocator.dupe(u8, entry.value_ptr.*.string);
-                        try dev_dependencies.put(key, value);
+                        try dev_dependencies.put(allocator, key, value);
                     }
                 }
             }
         }
 
         // Get bin
-        var bin = std.StringHashMap([]const u8).init(allocator);
+        var bin: std.StringHashMap([]const u8) = .empty;
         errdefer {
             var it = bin.iterator();
             while (it.next()) |entry| {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            bin.deinit();
+            bin.deinit(allocator);
         }
 
         if (obj.get("bin")) |bin_val| {
@@ -237,7 +237,7 @@ pub const WorkspacePackage = struct {
                     if (entry.value_ptr.* == .string) {
                         const key = try allocator.dupe(u8, entry.key_ptr.*);
                         const value = try allocator.dupe(u8, entry.value_ptr.*.string);
-                        try bin.put(key, value);
+                        try bin.put(allocator, key, value);
                     }
                 }
             }
@@ -272,8 +272,8 @@ pub const DependencyGraph = struct {
 
     pub fn init(allocator: std.mem.Allocator) DependencyGraph {
         return .{
-            .packages = std.StringHashMap(*WorkspacePackage).init(allocator),
-            .edges = std.StringHashMap(std.ArrayList([]const u8)).init(allocator),
+            .packages = .empty,
+            .edges = .empty,
             .allocator = allocator,
         };
     }
@@ -285,31 +285,31 @@ pub const DependencyGraph = struct {
             for (entry.value_ptr.items) |dep| {
                 self.allocator.free(dep);
             }
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(self.allocator);
         }
-        self.edges.deinit();
+        self.edges.deinit(self.allocator);
 
         var pkg_it = self.packages.iterator();
         while (pkg_it.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.packages.deinit();
+        self.packages.deinit(self.allocator);
     }
 
     /// Add package to graph
     pub fn addPackage(self: *DependencyGraph, pkg: *WorkspacePackage) !void {
         const name = try self.allocator.dupe(u8, pkg.name);
-        try self.packages.put(name, pkg);
+        try self.packages.put(self.allocator, name, pkg);
 
         // Add dependency edges
-        var deps = std.ArrayList([]const u8).init(self.allocator);
+        var deps: std.ArrayList([]const u8) = .empty;
         var dep_it = pkg.dependencies.keyIterator();
         while (dep_it.next()) |dep_name| {
-            try deps.append(try self.allocator.dupe(u8, dep_name.*));
+            try deps.append(self.allocator, try self.allocator.dupe(u8, dep_name.*));
         }
 
         const edge_key = try self.allocator.dupe(u8, pkg.name);
-        try self.edges.put(edge_key, deps);
+        try self.edges.put(self.allocator, edge_key, deps);
     }
 
     /// Get topological sort of packages (for build order)
@@ -322,11 +322,11 @@ pub const DependencyGraph = struct {
             result.deinit(self.allocator);
         }
 
-        var visited = std.StringHashMap(bool).init(self.allocator);
-        defer visited.deinit();
+        var visited: std.StringHashMap(bool) = .empty;
+        defer visited.deinit(self.allocator);
 
-        var temp_mark = std.StringHashMap(bool).init(self.allocator);
-        defer temp_mark.deinit();
+        var temp_mark: std.StringHashMap(bool) = .empty;
+        defer temp_mark.deinit(self.allocator);
 
         var pkg_it = self.packages.keyIterator();
         while (pkg_it.next()) |name| {
@@ -353,7 +353,7 @@ pub const DependencyGraph = struct {
             return;
         }
 
-        try temp_mark.put(name, true);
+        try temp_mark.put(self.allocator, name, true);
 
         // Visit dependencies
         if (self.edges.get(name)) |deps| {
@@ -366,7 +366,7 @@ pub const DependencyGraph = struct {
         }
 
         _ = temp_mark.remove(name);
-        try visited.put(name, true);
+        try visited.put(self.allocator, name, true);
         try result.append(self.allocator, try self.allocator.dupe(u8, name));
     }
 
@@ -393,7 +393,7 @@ pub const Workspace = struct {
     pub fn init(allocator: std.mem.Allocator, config: WorkspaceConfig) !Workspace {
         return .{
             .config = config,
-            .packages = std.ArrayList(WorkspacePackage).init(allocator),
+            .packages = .empty,
             .graph = DependencyGraph.init(allocator),
             .allocator = allocator,
         };
@@ -403,7 +403,7 @@ pub const Workspace = struct {
         for (self.packages.items) |*pkg| {
             pkg.deinit(self.allocator);
         }
-        self.packages.deinit();
+        self.packages.deinit(self.allocator);
         self.graph.deinit();
     }
 
@@ -431,7 +431,7 @@ pub const Workspace = struct {
                 self.config.root,
                 pattern,
             );
-            try self.packages.append(pkg);
+            try self.packages.append(self.allocator, pkg);
         }
     }
 
@@ -540,7 +540,7 @@ pub const Workspace = struct {
                             self.config.root,
                             rel_path,
                         );
-                        try self.packages.append(pkg);
+                        try self.packages.append(self.allocator, pkg);
                     }
                 }
             }
@@ -589,7 +589,7 @@ pub const Workspace = struct {
                             self.config.root,
                             rel_path,
                         );
-                        try self.packages.append(pkg);
+                        try self.packages.append(self.allocator, pkg);
                     } else |_| {}
                 }
 

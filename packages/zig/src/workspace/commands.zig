@@ -7,15 +7,10 @@ const Workspace = core.Workspace;
 const WorkspaceConfig = core.WorkspaceConfig;
 const WorkspacePackage = core.WorkspacePackage;
 
-/// Read entire file contents (Zig 0.16 compatible)
-fn readFileAlloc(allocator: std.mem.Allocator, file: std.Io.File, max_size: usize) ![]u8 {
-    _ = file;
-    _ = max_size;
-
-    // TODO: Implement using Zig 0.16 Io API when the correct method is identified
-    // For now, return empty to allow compilation. This function is used by workspace
-    // features which may need refactoring for full Zig 0.16 compatibility.
-    return try allocator.alloc(u8, 0);
+/// Read entire file contents using io_helper (Zig 0.16 compatible).
+/// Delegates to io_helper.readFileAlloc which handles the low-level I/O.
+fn readFileAllocByPath(allocator: std.mem.Allocator, path: []const u8, max_size: usize) ![]u8 {
+    return try io_helper.readFileAlloc(allocator, path, max_size);
 }
 
 /// Workspace command result
@@ -182,10 +177,7 @@ fn runPackageScript(
     const config_path = try std.fmt.allocPrint(allocator, "{s}/pantry.json", .{pkg_path});
     defer allocator.free(config_path);
 
-    const file = io_helper.cwd().openFile(io_helper.io, config_path, .{}) catch return false;
-    defer file.close(io_helper.io);
-
-    const content = try readFileAlloc(allocator, file, 10 * 1024 * 1024);
+    const content = readFileAllocByPath(allocator, config_path, 10 * 1024 * 1024) catch return false;
     defer allocator.free(content);
 
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, content, .{});

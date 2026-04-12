@@ -175,7 +175,7 @@ pub fn expandBraces(allocator: std.mem.Allocator, pattern: []const u8) ![][]cons
     const suffix = pattern[close_brace + 1 ..];
 
     // Split alternatives
-    var results = std.ArrayList([]const u8).init(allocator);
+    var results: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (results.items) |item| {
             allocator.free(item);

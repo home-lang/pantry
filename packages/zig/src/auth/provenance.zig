@@ -242,106 +242,106 @@ fn formatTimestamp(allocator: std.mem.Allocator, timestamp: i64) ![]const u8 {
 
 /// Serialize provenance attestation to JSON
 pub fn serializeProvenance(allocator: std.mem.Allocator, attestation: *const ProvenanceAttestation) ![]u8 {
-    var json = std.ArrayList(u8).init(allocator);
-    errdefer json.deinit();
+    var json: std.ArrayList(u8) = .empty;
+    errdefer json.deinit(allocator);
 
-    try json.appendSlice("{");
+    try json.appendSlice(allocator,"{");
 
     // _type
-    try json.appendSlice("\"_type\":\"");
-    try json.appendSlice(attestation._type);
-    try json.appendSlice("\",");
+    try json.appendSlice(allocator,"\"_type\":\"");
+    try json.appendSlice(allocator,attestation._type);
+    try json.appendSlice(allocator,"\",");
 
     // predicateType
-    try json.appendSlice("\"predicateType\":\"");
-    try json.appendSlice(attestation.predicateType);
-    try json.appendSlice("\",");
+    try json.appendSlice(allocator,"\"predicateType\":\"");
+    try json.appendSlice(allocator,attestation.predicateType);
+    try json.appendSlice(allocator,"\",");
 
     // subject
-    try json.appendSlice("\"subject\":[");
+    try json.appendSlice(allocator,"\"subject\":[");
     for (attestation.subject, 0..) |subj, i| {
         if (i > 0) try json.appendSlice(",");
-        try json.appendSlice("{\"name\":\"");
-        try json.appendSlice(subj.name);
-        try json.appendSlice("\",\"digest\":{\"sha256\":\"");
-        try json.appendSlice(subj.digest.sha256);
-        try json.appendSlice("\"");
+        try json.appendSlice(allocator,"{\"name\":\"");
+        try json.appendSlice(allocator,subj.name);
+        try json.appendSlice(allocator,"\",\"digest\":{\"sha256\":\"");
+        try json.appendSlice(allocator,subj.digest.sha256);
+        try json.appendSlice(allocator,"\"");
         if (subj.digest.sha512) |sha512| {
-            try json.appendSlice(",\"sha512\":\"");
-            try json.appendSlice(sha512);
-            try json.appendSlice("\"");
+            try json.appendSlice(allocator,",\"sha512\":\"");
+            try json.appendSlice(allocator,sha512);
+            try json.appendSlice(allocator,"\"");
         }
-        try json.appendSlice("}}");
+        try json.appendSlice(allocator,"}}");
     }
-    try json.appendSlice("],");
+    try json.appendSlice(allocator,"],");
 
     // predicate
-    try json.appendSlice("\"predicate\":{");
+    try json.appendSlice(allocator,"\"predicate\":{");
 
     // buildDefinition
-    try json.appendSlice("\"buildDefinition\":{");
-    try json.appendSlice("\"buildType\":\"");
-    try json.appendSlice(attestation.predicate.buildDefinition.buildType);
-    try json.appendSlice("\",");
-    try json.appendSlice("\"externalParameters\":{");
-    try json.appendSlice("\"repository\":\"");
-    try json.appendSlice(attestation.predicate.buildDefinition.externalParameters.repository);
-    try json.appendSlice("\",\"ref\":\"");
-    try json.appendSlice(attestation.predicate.buildDefinition.externalParameters.ref);
-    try json.appendSlice("\"");
+    try json.appendSlice(allocator,"\"buildDefinition\":{");
+    try json.appendSlice(allocator,"\"buildType\":\"");
+    try json.appendSlice(allocator,attestation.predicate.buildDefinition.buildType);
+    try json.appendSlice(allocator,"\",");
+    try json.appendSlice(allocator,"\"externalParameters\":{");
+    try json.appendSlice(allocator,"\"repository\":\"");
+    try json.appendSlice(allocator,attestation.predicate.buildDefinition.externalParameters.repository);
+    try json.appendSlice(allocator,"\",\"ref\":\"");
+    try json.appendSlice(allocator,attestation.predicate.buildDefinition.externalParameters.ref);
+    try json.appendSlice(allocator,"\"");
     if (attestation.predicate.buildDefinition.externalParameters.workflow) |workflow| {
-        try json.appendSlice(",\"workflow\":\"");
-        try json.appendSlice(workflow);
-        try json.appendSlice("\"");
+        try json.appendSlice(allocator,",\"workflow\":\"");
+        try json.appendSlice(allocator,workflow);
+        try json.appendSlice(allocator,"\"");
     }
-    try json.appendSlice("}");
+    try json.appendSlice(allocator,"}");
 
     // internalParameters
     if (attestation.predicate.buildDefinition.internalParameters) |ip| {
-        try json.appendSlice(",\"internalParameters\":{");
+        try json.appendSlice(allocator,",\"internalParameters\":{");
         var first = true;
         if (ip.github_workflow_ref) |gwr| {
-            try json.appendSlice("\"github_workflow_ref\":\"");
-            try json.appendSlice(gwr);
-            try json.appendSlice("\"");
+            try json.appendSlice(allocator,"\"github_workflow_ref\":\"");
+            try json.appendSlice(allocator,gwr);
+            try json.appendSlice(allocator,"\"");
             first = false;
         }
         if (ip.github_run_id) |gri| {
             if (!first) try json.appendSlice(",");
-            try json.appendSlice("\"github_run_id\":\"");
-            try json.appendSlice(gri);
-            try json.appendSlice("\"");
+            try json.appendSlice(allocator,"\"github_run_id\":\"");
+            try json.appendSlice(allocator,gri);
+            try json.appendSlice(allocator,"\"");
         }
-        try json.appendSlice("}");
+        try json.appendSlice(allocator,"}");
     }
-    try json.appendSlice("},");
+    try json.appendSlice(allocator,"},");
 
     // runDetails
-    try json.appendSlice("\"runDetails\":{");
-    try json.appendSlice("\"builder\":{\"id\":\"");
-    try json.appendSlice(attestation.predicate.runDetails.builder.id);
-    try json.appendSlice("\"");
+    try json.appendSlice(allocator,"\"runDetails\":{");
+    try json.appendSlice(allocator,"\"builder\":{\"id\":\"");
+    try json.appendSlice(allocator,attestation.predicate.runDetails.builder.id);
+    try json.appendSlice(allocator,"\"");
     if (attestation.predicate.runDetails.builder.version) |v| {
-        try json.appendSlice(",\"version\":\"");
-        try json.appendSlice(v);
-        try json.appendSlice("\"");
+        try json.appendSlice(allocator,",\"version\":\"");
+        try json.appendSlice(allocator,v);
+        try json.appendSlice(allocator,"\"");
     }
-    try json.appendSlice("},");
-    try json.appendSlice("\"metadata\":{\"invocationId\":\"");
-    try json.appendSlice(attestation.predicate.runDetails.metadata.invocationId);
-    try json.appendSlice("\",\"startedOn\":\"");
-    try json.appendSlice(attestation.predicate.runDetails.metadata.startedOn);
-    try json.appendSlice("\"");
+    try json.appendSlice(allocator,"},");
+    try json.appendSlice(allocator,"\"metadata\":{\"invocationId\":\"");
+    try json.appendSlice(allocator,attestation.predicate.runDetails.metadata.invocationId);
+    try json.appendSlice(allocator,"\",\"startedOn\":\"");
+    try json.appendSlice(allocator,attestation.predicate.runDetails.metadata.startedOn);
+    try json.appendSlice(allocator,"\"");
     if (attestation.predicate.runDetails.metadata.finishedOn) |fo| {
-        try json.appendSlice(",\"finishedOn\":\"");
-        try json.appendSlice(fo);
-        try json.appendSlice("\"");
+        try json.appendSlice(allocator,",\"finishedOn\":\"");
+        try json.appendSlice(allocator,fo);
+        try json.appendSlice(allocator,"\"");
     }
-    try json.appendSlice("}}");
+    try json.appendSlice(allocator,"}}");
 
-    try json.appendSlice("}}");
+    try json.appendSlice(allocator,"}}");
 
-    return json.toOwnedSlice();
+    return json.toOwnedSlice(allocator);
 }
 
 /// Compute SHA-256 hash of data and return as hex string

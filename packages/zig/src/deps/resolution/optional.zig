@@ -64,7 +64,7 @@ pub const OptionalDependencyManager = struct {
         const platform = try detectPlatform(allocator);
         return .{
             .allocator = allocator,
-            .optional_deps = std.StringHashMap(OptionalDependency).init(allocator),
+            .optional_deps = .empty,
             .results = .{},
             .current_platform = platform,
         };
@@ -79,7 +79,7 @@ pub const OptionalDependencyManager = struct {
             var dep = entry.value_ptr.*;
             dep.deinit(self.allocator);
         }
-        self.optional_deps.deinit();
+        self.optional_deps.deinit(self.allocator);
 
         for (self.results.items) |*result| {
             result.deinit(self.allocator);
@@ -93,7 +93,7 @@ pub const OptionalDependencyManager = struct {
         dep: OptionalDependency,
     ) !void {
         const name_copy = try self.allocator.dupe(u8, dep.name);
-        try self.optional_deps.put(name_copy, dep);
+        try self.optional_deps.put(self.allocator, name_copy, dep);
     }
 
     /// Check if a dependency should be installed on current platform
@@ -249,12 +249,12 @@ pub fn parseFromPackageJson(
     allocator: std.mem.Allocator,
     parsed: std.json.Parsed(std.json.Value),
 ) !std.ArrayList(OptionalDependency) {
-    var deps = std.ArrayList(OptionalDependency).init(allocator);
+    var deps: std.ArrayList(OptionalDependency) = .empty;
     errdefer {
         for (deps.items) |*dep| {
             dep.deinit(allocator);
         }
-        deps.deinit();
+        deps.deinit(allocator);
     }
 
     const root = parsed.value.object;
@@ -271,7 +271,7 @@ pub fn parseFromPackageJson(
                 else => continue,
             };
 
-            try deps.append(.{
+            try deps.append(allocator, .{
                 .name = try allocator.dupe(u8, name),
                 .version = try allocator.dupe(u8, version),
             });

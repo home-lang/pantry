@@ -51,18 +51,27 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
-    const nm_path = try std.fmt.allocPrint(allocator, "{s}/node_modules", .{cwd});
-    defer allocator.free(nm_path);
-
-    // Check node_modules exists
-    io_helper.accessAbsolute(nm_path, .{}) catch {
-        return CommandResult.err(allocator, "No node_modules directory found. Run 'pantry install' first.");
+    // Try pantry/ first (pantry's default), fall back to node_modules/
+    const modules_dirs = [_][]const u8{ "pantry", "node_modules" };
+    var nm_path: ?[]const u8 = null;
+    for (modules_dirs) |dir_name| {
+        const candidate = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ cwd, dir_name });
+        io_helper.accessAbsolute(candidate, .{}) catch {
+            allocator.free(candidate);
+            continue;
+        };
+        nm_path = candidate;
+        break;
+    }
+    const effective_nm_path = nm_path orelse {
+        return CommandResult.err(allocator, "No pantry/ or node_modules/ directory found. Run 'pantry install' first.");
     };
+    defer allocator.free(effective_nm_path);
 
     style.print("Analyzing dependency tree...\n\n", .{});
 
     // Scan node_modules recursively and collect all package instances
-    var package_map = std.StringHashMap(std.ArrayList(PackageInstance)).init(allocator);
+    var package_map: std.StringHashMap(std.ArrayList(PackageInstance)) = .empty;
     defer {
         var map_iter = package_map.iterator();
         while (map_iter.next()) |entry| {
@@ -73,10 +82,10 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
             entry.value_ptr.deinit(allocator);
             allocator.free(entry.key_ptr.*);
         }
-        package_map.deinit();
+        package_map.deinit(allocator);
     }
 
-    try scanNodeModules(allocator, nm_path, &package_map);
+    try scanNodeModules(allocator, effective_nm_path, &package_map);
 
     // Build duplicate list (packages with more than one unique version)
     var duplicates = std.ArrayList(DuplicatePackage).empty;
@@ -93,11 +102,11 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         if (instances.len < 2) continue;
 
         // Count unique versions
-        var unique_versions = std.StringHashMap(void).init(allocator);
-        defer unique_versions.deinit();
+        var unique_versions: std.StringHashMap(void) = .empty;
+        defer unique_versions.deinit(allocator);
 
         for (instances) |inst| {
-            unique_versions.put(inst.version, {}) catch continue;
+            unique_versions.put(allocator, inst.version, {}) catch continue;
         }
 
         if (unique_versions.count() < 2) continue;
@@ -291,9 +300,9 @@ fn recordPackage(
         allocator.free(key);
         try list.append(allocator, instance);
     } else {
-        var list = std.ArrayList(PackageInstance).empty;
+        var list: std.ArrayList(PackageInstance) = .empty;
         try list.append(allocator, instance);
-        try package_map.put(key, list);
+        try package_map.put(allocator, key, list);
     }
 }
 

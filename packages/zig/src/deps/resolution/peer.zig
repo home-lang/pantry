@@ -96,7 +96,7 @@ pub const PeerDependencyManager = struct {
     pub fn init(allocator: std.mem.Allocator) PeerDependencyManager {
         return .{
             .allocator = allocator,
-            .installed = std.StringHashMap([]const u8).init(allocator),
+            .installed = .empty,
             .peers = .{},
         };
     }
@@ -108,7 +108,7 @@ pub const PeerDependencyManager = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.installed.deinit();
+        self.installed.deinit(self.allocator);
 
         // Free peers list
         for (self.peers.items) |*peer| {
@@ -125,7 +125,7 @@ pub const PeerDependencyManager = struct {
         const version_copy = try self.allocator.dupe(u8, version);
         errdefer self.allocator.free(version_copy);
 
-        try self.installed.put(name_copy, version_copy);
+        try self.installed.put(self.allocator, name_copy, version_copy);
     }
 
     /// Add a peer dependency requirement
@@ -201,12 +201,12 @@ pub const PeerDependencyManager = struct {
             return &[_]PeerDependency{};
         }
 
-        var to_install = std.ArrayList(PeerDependency).init(self.allocator);
+        var to_install: std.ArrayList(PeerDependency) = .empty;
 
         for (self.peers.items) |peer| {
             // Only auto-install if not already installed and not optional
             if (self.installed.get(peer.name) == null and !peer.optional) {
-                try to_install.append(.{
+                try to_install.append(self.allocator, .{
                     .name = try self.allocator.dupe(u8, peer.name),
                     .version_range = try self.allocator.dupe(u8, peer.version_range),
                     .required_by = try self.allocator.dupe(u8, peer.required_by),
@@ -215,7 +215,7 @@ pub const PeerDependencyManager = struct {
             }
         }
 
-        return try to_install.toOwnedSlice();
+        return try to_install.toOwnedSlice(self.allocator);
     }
 
     /// Format validation report

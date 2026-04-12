@@ -21,7 +21,7 @@ pub fn validateInstallation(
     install_path: []const u8,
     expected_files: []const []const u8,
 ) !ValidationResult {
-    var errors = std.ArrayList([]const u8).init(allocator);
+    var errors: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (errors.items) |err| {
             allocator.free(err);
@@ -68,7 +68,7 @@ pub fn validateBinary(
     allocator: std.mem.Allocator,
     binary_path: []const u8,
 ) !ValidationResult {
-    var errors = std.ArrayList([]const u8).init(allocator);
+    var errors: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (errors.items) |err| {
             allocator.free(err);
@@ -122,7 +122,7 @@ pub fn validateDirectoryStructure(
     install_path: []const u8,
     required_dirs: []const []const u8,
 ) !ValidationResult {
-    var errors = std.ArrayList([]const u8).init(allocator);
+    var errors: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (errors.items) |err| {
             allocator.free(err);

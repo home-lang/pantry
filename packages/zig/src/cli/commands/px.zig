@@ -38,8 +38,19 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     defer allocator.free(effective_root);
 
     // Check local bin first (at workspace root if in workspace)
-    const local_bin = try std.fs.path.join(allocator, &[_][]const u8{ effective_root, "pantry", ".bin", executable_name });
-    defer allocator.free(local_bin);
+    // Try pantry/.bin first, then fall back to node_modules/.bin
+    const local_bin_pantry = try std.fs.path.join(allocator, &[_][]const u8{ effective_root, "pantry", ".bin", executable_name });
+    defer allocator.free(local_bin_pantry);
+    const local_bin_nm = try std.fs.path.join(allocator, &[_][]const u8{ effective_root, "node_modules", ".bin", executable_name });
+    defer allocator.free(local_bin_nm);
+
+    const local_bin = blk: {
+        io_helper.cwd().access(io_helper.io, local_bin_pantry, .{}) catch {
+            io_helper.cwd().access(io_helper.io, local_bin_nm, .{}) catch break :blk local_bin_pantry;
+            break :blk local_bin_nm;
+        };
+        break :blk local_bin_pantry;
+    };
 
     const found_local = blk: {
         io_helper.cwd().access(io_helper.io, local_bin, .{}) catch {
@@ -93,10 +104,11 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
             };
         }
 
-        // After install, check both local and global bin
+        // After install, check local (pantry/.bin + node_modules/.bin) and global bin
         const found_after_install_local = blk: {
-            io_helper.cwd().access(io_helper.io, local_bin, .{}) catch {
-                break :blk false;
+            io_helper.cwd().access(io_helper.io, local_bin_pantry, .{}) catch {
+                io_helper.cwd().access(io_helper.io, local_bin_nm, .{}) catch break :blk false;
+                break :blk true;
             };
             break :blk true;
         };
@@ -115,9 +127,11 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
     }
 
     // Re-check which bin exists (in case we just installed)
+    // Prefer pantry/.bin, fall back to node_modules/.bin
     const local_exists = blk: {
-        io_helper.cwd().access(io_helper.io, local_bin, .{}) catch {
-            break :blk false;
+        io_helper.cwd().access(io_helper.io, local_bin_pantry, .{}) catch {
+            io_helper.cwd().access(io_helper.io, local_bin_nm, .{}) catch break :blk false;
+            break :blk true;
         };
         break :blk true;
     };
@@ -128,8 +142,14 @@ pub fn pxCommand(allocator: std.mem.Allocator, args: []const []const u8, options
         break :blk true;
     };
 
-    // Determine which bin to execute (prefer local over global)
-    const bin_path = if (local_exists) local_bin else if (global_exists) global_bin else {
+    // Determine which bin to execute (prefer local pantry/.bin > local node_modules/.bin > global)
+    const resolved_local_bin: []const u8 = blk: {
+        io_helper.cwd().access(io_helper.io, local_bin_pantry, .{}) catch {
+            break :blk local_bin_nm;
+        };
+        break :blk local_bin_pantry;
+    };
+    const bin_path = if (local_exists) resolved_local_bin else if (global_exists) global_bin else {
         return .{
             .exit_code = 1,
             .message = try std.fmt.allocPrint(allocator, "Error: Executable '{s}' not found", .{executable_name}),

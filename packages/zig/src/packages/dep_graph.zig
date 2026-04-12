@@ -25,7 +25,7 @@ pub const DependencyGraph = struct {
     pub fn init(allocator: std.mem.Allocator) DependencyGraph {
         return .{
             .allocator = allocator,
-            .nodes = std.StringHashMap(DependencyNode).init(allocator),
+            .nodes = .empty,
         };
     }
 
@@ -42,7 +42,7 @@ pub const DependencyGraph = struct {
             self.allocator.free(key.*);
         }
 
-        self.nodes.deinit();
+        self.nodes.deinit(self.allocator);
     }
 
     /// Resolve all dependencies for a package list
@@ -108,21 +108,21 @@ pub const DependencyGraph = struct {
         // Get dependencies from package (if available)
         // For now, packages don't have dependencies in generated.zig
         // This demonstrates the structure for when dependency data is available
-        var dep_list = std.ArrayList([]const u8).init(self.allocator);
+        var dep_list: std.ArrayList([]const u8) = .empty;
         errdefer {
             for (dep_list.items) |dep| {
                 self.allocator.free(dep);
             }
-            dep_list.deinit();
+            dep_list.deinit(self.allocator);
         }
 
         // Example: if pkg had a dependencies field, we would iterate it
         // const pkg_deps = pkg.dependencies orelse &[_][]const u8{};
         // for (pkg_deps) |dep_name| {
-        //     try dep_list.append(try self.allocator.dupe(u8, dep_name));
+        //     try dep_list.append(self.allocator, try self.allocator.dupe(u8, dep_name));
         // }
 
-        const deps = try dep_list.toOwnedSlice();
+        const deps = try dep_list.toOwnedSlice(self.allocator);
 
         const node = DependencyNode{
             .name = try self.allocator.dupe(u8, name),
@@ -130,7 +130,7 @@ pub const DependencyGraph = struct {
             .dependencies = deps,
         };
 
-        try self.nodes.put(key, node);
+        try self.nodes.put(self.allocator, key, node);
 
         // Recursively resolve transitive dependencies
         for (deps) |dep_spec| {
@@ -168,36 +168,36 @@ pub const DependencyGraph = struct {
             .dependencies = dep_list,
         };
 
-        try self.nodes.put(key, node);
+        try self.nodes.put(self.allocator, key, node);
     }
 
     /// Detect version conflicts
     pub fn detectConflicts(self: *DependencyGraph) ![]Conflict {
-        var conflicts = std.ArrayList(Conflict).init(self.allocator);
+        var conflicts: std.ArrayList(Conflict) = .empty;
         errdefer conflicts.deinit(self.allocator);
 
         // Group packages by name
-        var by_name = std.StringHashMap(std.ArrayList([]const u8)).init(self.allocator);
+        var by_name: std.StringHashMap(std.ArrayList([]const u8)) = .empty;
         defer {
             var deinit_it = by_name.valueIterator();
             while (deinit_it.next()) |list| {
                 list.deinit(self.allocator);
             }
-            by_name.deinit();
+            by_name.deinit(self.allocator);
         }
 
         var it = self.nodes.iterator();
         while (it.next()) |entry| {
             const node = entry.value_ptr;
 
-            const list = by_name.get(node.name) orelse blk: {
-                const new_list = std.ArrayList([]const u8).init(self.allocator);
-                try by_name.put(node.name, new_list);
+            var list = by_name.get(node.name) orelse blk: {
+                const new_list: std.ArrayList([]const u8) = .empty;
+                try by_name.put(self.allocator, node.name, new_list);
                 break :blk new_list;
             };
 
             try list.append(self.allocator, node.version);
-            try by_name.put(node.name, list);
+            try by_name.put(self.allocator, node.name, list);
         }
 
         // Check for multiple versions of same package
@@ -254,13 +254,13 @@ test "DependencyGraph conflict detection" {
     defer graph.deinit();
 
     // Manually add conflicting versions
-    try graph.nodes.put(try allocator.dupe(u8, "pkg@1.0.0"), DependencyGraph.DependencyNode{
+    try graph.nodes.put(allocator, try allocator.dupe(u8, "pkg@1.0.0"), DependencyGraph.DependencyNode{
         .name = try allocator.dupe(u8, "pkg"),
         .version = try allocator.dupe(u8, "1.0.0"),
         .dependencies = try allocator.alloc([]const u8, 0),
     });
 
-    try graph.nodes.put(try allocator.dupe(u8, "pkg@2.0.0"), DependencyGraph.DependencyNode{
+    try graph.nodes.put(allocator, try allocator.dupe(u8, "pkg@2.0.0"), DependencyGraph.DependencyNode{
         .name = try allocator.dupe(u8, "pkg"),
         .version = try allocator.dupe(u8, "2.0.0"),
         .dependencies = try allocator.alloc([]const u8, 0),

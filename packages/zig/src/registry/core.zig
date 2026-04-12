@@ -168,7 +168,7 @@ pub const PackageMetadata = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            deps.deinit();
+            deps.deinit(allocator);
         }
         if (self.dev_dependencies) |*deps| {
             var it = deps.iterator();
@@ -176,7 +176,7 @@ pub const PackageMetadata = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            deps.deinit();
+            deps.deinit(allocator);
         }
     }
 };
@@ -288,7 +288,7 @@ pub const RegistryManager = struct {
     pub fn init(allocator: std.mem.Allocator) RegistryManager {
         return .{
             .allocator = allocator,
-            .registries = std.ArrayList(RegistryConfig).init(allocator),
+            .registries = .empty,
         };
     }
 
@@ -296,12 +296,12 @@ pub const RegistryManager = struct {
         for (self.registries.items) |*registry| {
             registry.deinit(self.allocator);
         }
-        self.registries.deinit();
+        self.registries.deinit(self.allocator);
     }
 
     /// Add a registry to the manager
     pub fn addRegistry(self: *RegistryManager, config: RegistryConfig) !void {
-        try self.registries.append(config);
+        try self.registries.append(self.allocator, config);
 
         // Sort by priority
         std.mem.sort(RegistryConfig, self.registries.items, {}, struct {

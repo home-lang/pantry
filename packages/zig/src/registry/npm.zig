@@ -585,12 +585,12 @@ fn parseNpmSearchResults(allocator: std.mem.Allocator, json: std.json.Value) ![]
 
     if (objects != .array) return error.InvalidResponse;
 
-    var results = std.ArrayList(core.PackageMetadata).init(allocator);
+    var results: std.ArrayList(core.PackageMetadata) = .empty;
     errdefer {
         for (results.items) |*item| {
             item.deinit(allocator);
         }
-        results.deinit();
+        results.deinit(allocator);
     }
 
     for (objects.array.items) |item| {
@@ -616,7 +616,7 @@ fn parseNpmSearchResults(allocator: std.mem.Allocator, json: std.json.Value) ![]
         else
             null;
 
-        try results.append(core.PackageMetadata{
+        try results.append(allocator, core.PackageMetadata{
             .name = name,
             .version = try allocator.dupe(u8, version),
             .description = description,
@@ -630,7 +630,7 @@ fn parseNpmSearchResults(allocator: std.mem.Allocator, json: std.json.Value) ![]
         });
     }
 
-    return results.toOwnedSlice();
+    return results.toOwnedSlice(allocator);
 }
 
 /// Parse versions from npm package response
@@ -642,20 +642,20 @@ fn parseNpmVersions(allocator: std.mem.Allocator, json: std.json.Value) ![][]con
 
     if (versions != .object) return error.InvalidResponse;
 
-    var results = std.ArrayList([]const u8).init(allocator);
+    var results: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (results.items) |item| {
             allocator.free(item);
         }
-        results.deinit();
+        results.deinit(allocator);
     }
 
     var it = versions.object.iterator();
     while (it.next()) |entry| {
-        try results.append(try allocator.dupe(u8, entry.key_ptr.*));
+        try results.append(allocator, try allocator.dupe(u8, entry.key_ptr.*));
     }
 
-    return results.toOwnedSlice();
+    return results.toOwnedSlice(allocator);
 }
 
 /// Semver constraint types for NPM version resolution

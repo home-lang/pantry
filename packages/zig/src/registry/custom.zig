@@ -469,20 +469,20 @@ fn parseCustomSearchResults(allocator: std.mem.Allocator, json: std.json.Value) 
 
     if (results != .array) return error.InvalidResponse;
 
-    var packages = std.ArrayList(core.PackageMetadata).init(allocator);
+    var packages: std.ArrayList(core.PackageMetadata) = .empty;
     errdefer {
         for (packages.items) |*pkg| {
             pkg.deinit(allocator);
         }
-        packages.deinit();
+        packages.deinit(allocator);
     }
 
     for (results.array.items) |item| {
         const pkg = parseCustomPackageResponse(allocator, item) catch continue;
-        try packages.append(pkg);
+        try packages.append(allocator, pkg);
     }
 
-    return packages.toOwnedSlice();
+    return packages.toOwnedSlice(allocator);
 }
 
 /// Parse versions list
@@ -498,19 +498,19 @@ fn parseCustomVersions(allocator: std.mem.Allocator, json: std.json.Value) ![][]
 
     if (versions != .array) return error.InvalidResponse;
 
-    var results = std.ArrayList([]const u8).init(allocator);
+    var results: std.ArrayList([]const u8) = .empty;
     errdefer {
         for (results.items) |item| {
             allocator.free(item);
         }
-        results.deinit();
+        results.deinit(allocator);
     }
 
     for (versions.array.items) |item| {
         if (item == .string) {
-            try results.append(try allocator.dupe(u8, item.string));
+            try results.append(allocator, try allocator.dupe(u8, item.string));
         }
     }
 
-    return results.toOwnedSlice();
+    return results.toOwnedSlice(allocator);
 }

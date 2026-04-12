@@ -9,33 +9,49 @@ pub const WrapperError = error{
     PermissionDenied,
 };
 
+/// Escape a string for safe inclusion in a single-quoted shell value.
+/// Replaces each ' with the sequence '\'' (end quote, escaped quote, start quote).
+fn shellEscapeSingleQuote(buf: *std.ArrayList(u8), allocator: std.mem.Allocator, s: []const u8) !void {
+    for (s) |c| {
+        if (c == '\'') {
+            try buf.appendSlice(allocator, "'\\''");
+        } else {
+            try buf.append(allocator, c);
+        }
+    }
+}
+
 /// Generate shell wrapper script for a binary
 pub fn generateShellWrapper(
     allocator: std.mem.Allocator,
     binary_path: []const u8,
     env_vars: ?std.StringHashMap([]const u8),
 ) ![]const u8 {
-    var buffer = std.ArrayList(u8).init(allocator);
-    errdefer buffer.deinit();
+    var buffer: std.ArrayList(u8) = .empty;
+    errdefer buffer.deinit(allocator);
 
-    try buffer.appendSlice("#!/bin/sh\n");
-    try buffer.appendSlice("# Auto-generated wrapper by Pantry\n\n");
+    try buffer.appendSlice(allocator, "#!/bin/sh\n");
+    try buffer.appendSlice(allocator, "# Auto-generated wrapper by Pantry\n\n");
 
-    // Add environment variables if provided
+    // Add environment variables if provided (single-quoted for safety)
     if (env_vars) |vars| {
         var it = vars.iterator();
         while (it.next()) |entry| {
-            try buffer.writer().print("export {s}=\"{s}\"\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+            try buffer.print(allocator, "export {s}='", .{entry.key_ptr.*});
+            try shellEscapeSingleQuote(&buffer, allocator, entry.value_ptr.*);
+            try buffer.appendSlice(allocator, "'\n");
         }
         if (vars.count() > 0) {
-            try buffer.appendSlice("\n");
+            try buffer.appendSlice(allocator, "\n");
         }
     }
 
-    // Execute the actual binary with all arguments
-    try buffer.writer().print("exec \"{s}\" \"$@\"\n", .{binary_path});
+    // Execute the actual binary with all arguments (single-quoted path for safety)
+    try buffer.appendSlice(allocator, "exec '");
+    try shellEscapeSingleQuote(&buffer, allocator, binary_path);
+    try buffer.appendSlice(allocator, "' \"$@\"\n");
 
-    return try buffer.toOwnedSlice();
+    return try buffer.toOwnedSlice(allocator);
 }
 
 /// Create wrapper script for a binary
@@ -155,13 +171,13 @@ pub fn generateEnvWrapper(
     lib_path: ?[]const u8,
     additional_env: ?std.StringHashMap([]const u8),
 ) ![]const u8 {
-    var buffer = std.ArrayList(u8).init(allocator);
-    errdefer buffer.deinit();
+    var buffer: std.ArrayList(u8) = .empty;
+    errdefer buffer.deinit(allocator);
 
-    try buffer.appendSlice("#!/bin/sh\n");
-    try buffer.appendSlice("# Auto-generated environment wrapper\n\n");
+    try buffer.appendSlice(allocator, "#!/bin/sh\n");
+    try buffer.appendSlice(allocator, "# Auto-generated environment wrapper\n\n");
 
-    // Set library path if provided
+    // Set library path if provided (single-quoted for safety, with variable expansion via concatenation)
     if (lib_path) |path| {
         const platform = lib.Platform.current();
         const var_name = switch (platform) {
@@ -169,25 +185,31 @@ pub fn generateEnvWrapper(
             .linux, .freebsd => "LD_LIBRARY_PATH",
             .windows => "PATH",
         };
-        try buffer.writer().print("export {s}=\"{s}:${s}\"\n", .{ var_name, path, var_name });
+        try buffer.print(allocator, "export {s}='", .{var_name});
+        try shellEscapeSingleQuote(&buffer, allocator, path);
+        try buffer.print(allocator, "':\"${s}\"\n", .{var_name});
     }
 
-    // Add additional environment variables
+    // Add additional environment variables (single-quoted for safety)
     if (additional_env) |env| {
         var it = env.iterator();
         while (it.next()) |entry| {
-            try buffer.writer().print("export {s}=\"{s}\"\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+            try buffer.print(allocator, "export {s}='", .{entry.key_ptr.*});
+            try shellEscapeSingleQuote(&buffer, allocator, entry.value_ptr.*);
+            try buffer.appendSlice(allocator, "'\n");
         }
     }
 
     if (lib_path != null or (additional_env != null and additional_env.?.count() > 0)) {
-        try buffer.appendSlice("\n");
+        try buffer.appendSlice(allocator, "\n");
     }
 
-    // Execute binary
-    try buffer.writer().print("exec \"{s}\" \"$@\"\n", .{binary_path});
+    // Execute binary (single-quoted path for safety)
+    try buffer.appendSlice(allocator, "exec '");
+    try shellEscapeSingleQuote(&buffer, allocator, binary_path);
+    try buffer.appendSlice(allocator, "' \"$@\"\n");
 
-    return try buffer.toOwnedSlice();
+    return try buffer.toOwnedSlice(allocator);
 }
 
 /// Fix macOS library paths using install_name_tool.
@@ -201,23 +223,23 @@ test "generateShellWrapper" {
     defer allocator.free(wrapper);
 
     try std.testing.expect(std.mem.indexOf(u8, wrapper, "#!/bin/sh") != null);
-    try std.testing.expect(std.mem.indexOf(u8, wrapper, "exec \"/usr/bin/node\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, wrapper, "exec '/usr/bin/node'") != null);
 }
 
 test "generateShellWrapper with env vars" {
     const allocator = std.testing.allocator;
 
-    var env_vars = std.StringHashMap([]const u8).init(allocator);
-    defer env_vars.deinit();
+    var env_vars: std.StringHashMap([]const u8) = .empty;
+    defer env_vars.deinit(allocator);
 
-    try env_vars.put("NODE_ENV", "production");
-    try env_vars.put("PORT", "3000");
+    try env_vars.put(allocator, "NODE_ENV", "production");
+    try env_vars.put(allocator, "PORT", "3000");
 
     const wrapper = try generateShellWrapper(allocator, "/usr/bin/node", env_vars);
     defer allocator.free(wrapper);
 
-    try std.testing.expect(std.mem.indexOf(u8, wrapper, "export NODE_ENV=\"production\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, wrapper, "export PORT=\"3000\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, wrapper, "export NODE_ENV='production'") != null);
+    try std.testing.expect(std.mem.indexOf(u8, wrapper, "export PORT='3000'") != null);
 }
 
 test "createBinaryWrapper" {
