@@ -36,12 +36,43 @@ pub fn installCommandWithOptions(allocator: std.mem.Allocator, args: []const []c
 }
 
 pub fn installWorkspaceCommand(allocator: std.mem.Allocator) !common.CommandResult {
-    // Workspace command needs workspace_root and workspace_file_path
-    // This is a temporary wrapper - ideally main.zig would call workspace directly
-    _ = allocator;
+    const io_helper = @import("../../io_helper.zig");
+    const detector = @import("../../deps/detector.zig");
+    const workspace = @import("install/workspace.zig");
+
+    // Discover workspace root and config file from CWD
+    const cwd = try io_helper.getCwdAlloc(allocator);
+    defer allocator.free(cwd);
+
+    const workspace_root = try detector.resolveProjectRoot(allocator, cwd);
+    defer allocator.free(workspace_root);
+
+    // Look for workspace config file (pantry.jsonc, pantry.json, package.json)
+    const config_names = [_][]const u8{ "pantry.jsonc", "pantry.json", "package.json" };
+    var workspace_file: ?[]const u8 = null;
+    defer if (workspace_file) |f| allocator.free(f);
+
+    for (config_names) |name| {
+        const candidate = std.fmt.allocPrint(allocator, "{s}/{s}", .{ workspace_root, name }) catch continue;
+        io_helper.accessAbsolute(candidate, .{}) catch {
+            allocator.free(candidate);
+            continue;
+        };
+        workspace_file = candidate;
+        break;
+    }
+
+    if (workspace_file == null) {
+        return .{
+            .exit_code = 1,
+            .message = try allocator.dupe(u8, "No workspace config file found (pantry.jsonc, pantry.json, or package.json)"),
+        };
+    }
+
+    const result = try workspace.installWorkspaceCommand(allocator, workspace_root, workspace_file.?);
     return .{
-        .exit_code = 1,
-        .message = null,
+        .exit_code = result.exit_code,
+        .message = result.message,
     };
 }
 

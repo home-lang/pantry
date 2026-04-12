@@ -153,3 +153,41 @@ test "ShellCodeGenerator minimal" {
     // Should not have hook registration
     try std.testing.expect(std.mem.indexOf(u8, code, "chpwd_functions") == null);
 }
+
+test "ShellCodeGenerator full output contains expected shell constructs" {
+    const allocator = std.testing.allocator;
+
+    var generator = ShellCodeGenerator.init(allocator, .{
+        .show_messages = true,
+        .verbose = false,
+    });
+    defer generator.deinit();
+
+    const code = try generator.generate();
+    defer allocator.free(code);
+
+    // Should contain shell function definitions
+    try std.testing.expect(std.mem.indexOf(u8, code, "__pantry_switch_environment") != null);
+    // Should contain config variable assignments
+    try std.testing.expect(std.mem.indexOf(u8, code, "__PANTRY_SHOW_MESSAGES=") != null);
+    try std.testing.expect(std.mem.indexOf(u8, code, "__PANTRY_VERBOSE=") != null);
+    // Header should include platform info
+    try std.testing.expect(std.mem.indexOf(u8, code, "# Pantry Shell Integration (Zig)") != null);
+    try std.testing.expect(std.mem.indexOf(u8, code, "# Generated:") != null);
+}
+
+test "ShellCodeGenerator minimal contains function keyword" {
+    const allocator = std.testing.allocator;
+
+    var generator = ShellCodeGenerator.init(allocator, .{});
+    defer generator.deinit();
+
+    const code = try generator.generateMinimal();
+    defer allocator.free(code);
+
+    // Minimal should still have the Pantry Shell Functions header
+    try std.testing.expect(std.mem.indexOf(u8, code, "# Pantry Shell Functions") != null);
+    // Should contain config variables even in minimal mode
+    try std.testing.expect(std.mem.indexOf(u8, code, "__PANTRY_SHOW_MESSAGES=") != null);
+    try std.testing.expect(std.mem.indexOf(u8, code, "__PANTRY_DEACTIVATION_MSG=") != null);
+}

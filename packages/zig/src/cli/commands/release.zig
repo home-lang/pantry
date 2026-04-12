@@ -31,7 +31,8 @@ pub const ReleaseOptions = struct {
     tag_name: ?[]const u8 = null,
 };
 
-/// Find a binary in PATH or pantry's bin directories
+/// Find a binary in PATH or pantry's bin directories.
+/// Caller owns the returned slice and must free it with `allocator`.
 fn findBinary(allocator: std.mem.Allocator, name: []const u8) ?[]const u8 {
     // Check pantry bin dirs first
     const home = io_helper.getenv("HOME") orelse return null;
@@ -54,21 +55,26 @@ fn findBinary(allocator: std.mem.Allocator, name: []const u8) ?[]const u8 {
     io_helper.accessAbsolute(cwd_bin, .{}) catch {
         allocator.free(cwd_bin);
         // Fall back to PATH lookup via `which`
-        const result = io_helper.childRun(allocator, &.{ "which", name }) catch return null;
-        defer allocator.free(result.stdout);
-        defer allocator.free(result.stderr);
-        if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
-            // Trim trailing newline
-            // Trim trailing whitespace
-            var end = result.stdout.len;
-            while (end > 0 and (result.stdout[end - 1] == '\n' or result.stdout[end - 1] == '\r' or result.stdout[end - 1] == ' ')) {
-                end -= 1;
-            }
-            return allocator.dupe(u8, result.stdout[0..end]) catch return null;
-        }
-        return null;
+        return findBinaryInPath(allocator, name);
     };
     return cwd_bin;
+}
+
+/// Look up a binary via the system `which` command.
+fn findBinaryInPath(allocator: std.mem.Allocator, name: []const u8) ?[]const u8 {
+    const result = io_helper.childRun(allocator, &.{ "which", name }) catch return null;
+    defer allocator.free(result.stdout);
+    defer allocator.free(result.stderr);
+
+    if (result.term == .exited and result.term.exited == 0 and result.stdout.len > 0) {
+        // Trim trailing whitespace
+        var end = result.stdout.len;
+        while (end > 0 and (result.stdout[end - 1] == '\n' or result.stdout[end - 1] == '\r' or result.stdout[end - 1] == ' ')) {
+            end -= 1;
+        }
+        return allocator.dupe(u8, result.stdout[0..end]) catch return null;
+    }
+    return null;
 }
 
 pub fn releaseCommand(allocator: std.mem.Allocator, options: ReleaseOptions) !CommandResult {

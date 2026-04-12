@@ -287,6 +287,16 @@ test "stripTrailingCommas - nested trailing commas" {
     try std.testing.expect(parsed.value.object.get("workspaces") != null);
 }
 
+test "stripComments preserves // in strings" {
+    const allocator = std.testing.allocator;
+    const input =
+        \\{"url": "https://example.com/path"}
+    ;
+    const result = try stripComments(allocator, input);
+    defer allocator.free(result);
+    try std.testing.expect(std.mem.indexOf(u8, result, "https://example.com/path") != null);
+}
+
 test "stripTrailingCommas - preserves commas in strings" {
     const allocator = std.testing.allocator;
     const input =

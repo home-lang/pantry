@@ -76,6 +76,23 @@ pub fn shellLookupCommand(allocator: std.mem.Allocator, dir: []const u8) !Comman
     return .{ .exit_code = 1 };
 }
 
+/// Handle unknown shell subcommands with a helpful suggestion message.
+pub fn shellUnknownSubcommand(allocator: std.mem.Allocator, subcommand: []const u8) !CommandResult {
+    const msg = try std.fmt.allocPrint(
+        allocator,
+        "Unknown shell subcommand: '{s}'\n\nValid subcommands:\n" ++
+            "  integrate   Install shell hook into your shell config\n" ++
+            "  code        Print shell integration code to stdout\n" ++
+            "  lookup      Look up environment for a directory\n" ++
+            "  activate    Activate environment for a directory\n",
+        .{subcommand},
+    );
+    return .{
+        .exit_code = 1,
+        .message = msg,
+    };
+}
+
 pub fn shellActivateCommand(allocator: std.mem.Allocator, dir: []const u8) !CommandResult {
     // Use the full ShellCommands implementation for activate
     const shell_cmds = @import("../../shell/commands.zig");

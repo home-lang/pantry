@@ -73,6 +73,9 @@ pub const SharedCache = struct {
                 .truncate = false,
             });
         }
+        errdefer if (lock_file) |file| {
+            file.close();
+        };
 
         return .{
             .cache = opt_cache,

@@ -245,6 +245,28 @@ test "parseGitHubUrl with non-GitHub URL" {
     try std.testing.expect(result3 == null);
 }
 
+/// Escape single quotes in a string for safe embedding in JS single-quoted strings.
+/// Replaces `'` with `\\x27`.
+fn escapeSingleQuotes(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
+    // Fast path: no quotes to escape
+    if (std.mem.indexOf(u8, input, "'") == null) {
+        return try allocator.dupe(u8, input);
+    }
+
+    var result = try std.ArrayList(u8).initCapacity(allocator, input.len + 16);
+    errdefer result.deinit(allocator);
+
+    for (input) |c| {
+        if (c == '\'') {
+            try result.appendSlice(allocator, "\\x27");
+        } else {
+            try result.append(allocator, c);
+        }
+    }
+
+    return try result.toOwnedSlice(allocator);
+}
+
 /// Execute a TypeScript dependency file using Bun or Node
 /// Returns JSON string output from the executed file
 fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]const u8 {
@@ -252,6 +274,11 @@ fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]c
     const runtimes = [_][]const u8{ "bun", "node" };
 
     for (runtimes) |runtime| {
+        // Escape single quotes in the file path for JS string safety.
+        // Replace ' with \x27 which is valid inside JS single-quoted strings.
+        const safe_path = try escapeSingleQuotes(allocator, file_path);
+        defer allocator.free(safe_path);
+
         // Create a wrapper script that imports the config and outputs JSON
         const wrapper_script = try std.fmt.allocPrint(
             allocator,
@@ -259,7 +286,7 @@ fn executeTsConfigFile(allocator: std.mem.Allocator, file_path: []const u8) ![]c
             \\const output = config.default || config;
             \\console.log(JSON.stringify(output));
         ,
-            .{file_path},
+            .{safe_path},
         );
         defer allocator.free(wrapper_script);
 

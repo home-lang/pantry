@@ -388,6 +388,19 @@ test "Filter - path patterns" {
     try std.testing.expect(!filter.matchesMember(member_app));
 }
 
+test "Filter - combined include and exclude patterns" {
+    const allocator = std.testing.allocator;
+    // Include everything matching @scope/*, but exclude @scope/internal
+    const patterns = [_][]const u8{ "@scope/*", "!@scope/internal" };
+    var filter = try Filter.initWithPatterns(allocator, &patterns);
+    defer filter.deinit();
+
+    try std.testing.expect(filter.matchesPackageName("@scope/ui"));
+    try std.testing.expect(filter.matchesPackageName("@scope/utils"));
+    try std.testing.expect(!filter.matchesPackageName("@scope/internal"));
+    try std.testing.expect(!filter.matchesPackageName("other-package"));
+}
+
 test "Filter - empty filter matches all" {
     const allocator = std.testing.allocator;
     var filter = Filter.init(allocator);

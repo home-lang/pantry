@@ -195,6 +195,45 @@ pub const ErrorContext = struct {
     }
 };
 
+/// Return a user-friendly message with an actionable suggestion for common
+/// pantry errors.  The caller owns the returned slice.
+pub fn friendlyMessage(err: pantryError, allocator: std.mem.Allocator) ![]const u8 {
+    return switch (err) {
+        // Package workflow
+        error.PackageNotFound => try allocator.dupe(u8, "Package not found. Double-check the name or run `pantry search <term>` to find it."),
+        error.PackageVersionNotFound => try allocator.dupe(u8, "That version does not exist. Run `pantry info <pkg>` to see available versions."),
+        error.PackageDownloadFailed => try allocator.dupe(u8, "Download failed. Check your network connection and try again."),
+        error.PackageCorrupted => try allocator.dupe(u8, "Package appears corrupted. Run `pantry cache:clear` and reinstall."),
+
+        // Dependency workflow
+        error.DependencyResolutionFailed => try allocator.dupe(u8, "Could not resolve dependencies. Run `pantry install --force` or check your deps file for typos."),
+        error.DependencyConflict => try allocator.dupe(u8, "Dependency conflict detected. Check version ranges in your config for overlapping constraints."),
+        error.CircularDependency => try allocator.dupe(u8, "Circular dependency detected. Review your dependency graph for cycles."),
+
+        // Environment
+        error.EnvironmentNotFound => try allocator.dupe(u8, "Environment not found. Run `pantry install` to create it."),
+        error.EnvironmentCorrupted => try allocator.dupe(u8, "Environment is corrupted. Delete the pantry/ directory and run `pantry install`."),
+
+        // Cache
+        error.CacheCorrupted => try allocator.dupe(u8, "Cache is corrupted. Run `pantry cache:clear` to fix."),
+        error.CacheLockTimeout => try allocator.dupe(u8, "Cache is locked by another process. Wait a moment or delete the .lock file."),
+
+        // Network
+        error.NetworkUnavailable => try allocator.dupe(u8, "No network connection. Check your internet and try again."),
+        error.DownloadTimeout => try allocator.dupe(u8, "Download timed out. Try again or check your network connection."),
+
+        // Config
+        error.ConfigFileInvalid => try allocator.dupe(u8, "Config file is invalid. Check for JSON syntax errors in pantry.jsonc or package.json."),
+        error.ConfigFileNotFound => try allocator.dupe(u8, "No config file found. Run `pantry init` to create one."),
+
+        // Permissions
+        error.PermissionDenied => try allocator.dupe(u8, "Permission denied. Check file ownership or try with elevated privileges."),
+
+        // Fall back to the basic formatError for everything else
+        else => try formatError(err, allocator),
+    };
+}
+
 test "formatError" {
     const allocator = std.testing.allocator;
 
@@ -203,6 +242,23 @@ test "formatError" {
 
     try std.testing.expect(msg.len > 0);
     try std.testing.expect(std.mem.indexOf(u8, msg, "not found") != null);
+}
+
+test "friendlyMessage" {
+    const allocator = std.testing.allocator;
+
+    const msg = try friendlyMessage(error.PackageNotFound, allocator);
+    defer allocator.free(msg);
+    try std.testing.expect(std.mem.indexOf(u8, msg, "pantry search") != null);
+
+    const msg2 = try friendlyMessage(error.CacheCorrupted, allocator);
+    defer allocator.free(msg2);
+    try std.testing.expect(std.mem.indexOf(u8, msg2, "cache:clear") != null);
+
+    // Falls back to formatError for unmapped errors
+    const msg3 = try friendlyMessage(error.Unknown, allocator);
+    defer allocator.free(msg3);
+    try std.testing.expect(msg3.len > 0);
 }
 
 test "ErrorContext format" {

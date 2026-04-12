@@ -39,8 +39,6 @@ fn preparePatch(allocator: std.mem.Allocator, package_spec: []const u8) !Command
         break :blk package_spec[0..pos];
     } else package_spec;
 
-    _ = pkg_name;
-
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
@@ -48,35 +46,17 @@ fn preparePatch(allocator: std.mem.Allocator, package_spec: []const u8) !Command
     const effective_root = try @import("../../deps/detector.zig").resolveProjectRoot(allocator, cwd);
     defer allocator.free(effective_root);
 
-    // Find the package in node_modules/ or pantry/
+    // Find the package in node_modules/ or pantry/ using the bare name (without version)
     const dirs = [_][]const u8{ "node_modules", "pantry" };
     var source_dir: ?[]const u8 = null;
     for (dirs) |dir| {
-        const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_root, dir, package_spec }) catch continue;
+        const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_root, dir, pkg_name }) catch continue;
         io_helper.cwd().access(io_helper.io, pkg_dir, .{}) catch {
             allocator.free(pkg_dir);
             continue;
         };
         source_dir = pkg_dir;
         break;
-    }
-
-    if (source_dir == null) {
-        // Try without version
-        for (dirs) |dir| {
-            const clean_name = if (at_pos) |pos| blk: {
-                if (pos == 0) break :blk package_spec;
-                break :blk package_spec[0..pos];
-            } else package_spec;
-
-            const pkg_dir = std.fmt.allocPrint(allocator, "{s}/{s}/{s}", .{ effective_root, dir, clean_name }) catch continue;
-            io_helper.cwd().access(io_helper.io, pkg_dir, .{}) catch {
-                allocator.free(pkg_dir);
-                continue;
-            };
-            source_dir = pkg_dir;
-            break;
-        }
     }
 
     if (source_dir == null) {
@@ -89,10 +69,13 @@ fn preparePatch(allocator: std.mem.Allocator, package_spec: []const u8) !Command
     const patch_dir = try std.fmt.allocPrint(allocator, "{s}/.pantry-patches/{s}", .{ cwd, package_spec });
     defer allocator.free(patch_dir);
 
-    // Copy package to patch directory using cp -r
-    _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "rm", "-rf", patch_dir } }) catch {};
-    _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "mkdir", "-p", patch_dir } }) catch {};
-    _ = io_helper.spawnAndWait(.{ .argv = &[_][]const u8{ "cp", "-r", source_dir.?, patch_dir } }) catch {};
+    // Copy package to patch directory
+    io_helper.deleteTree(patch_dir) catch {};
+    try io_helper.makePath(patch_dir);
+    io_helper.copyTree(source_dir.?, patch_dir) catch |err| {
+        const msg = try std.fmt.allocPrint(allocator, "Failed to copy package: {s}", .{@errorName(err)});
+        return CommandResult{ .exit_code = 1, .message = msg };
+    };
 
     style.print("Package extracted to:\n", .{});
     style.print("  {s}\n\n", .{patch_dir});

@@ -27,3 +27,17 @@ test "Alias resolution works" {
         try std.testing.expectEqualStrings("nodejs.org", domain);
     }
 }
+
+test "common aliases resolve correctly" {
+    // Verify a set of frequently-used aliases map to expected domains
+    try std.testing.expectEqualStrings("bun.sh", resolvealias("bun").?);
+    try std.testing.expectEqualStrings("ziglang.org", resolvealias("zig").?);
+    try std.testing.expectEqualStrings("python.org", resolvealias("python").?);
+    try std.testing.expectEqualStrings("go.dev", resolvealias("go").?);
+    try std.testing.expectEqualStrings("rust-lang.org", resolvealias("rust").?);
+    try std.testing.expectEqualStrings("curl.se", resolvealias("curl").?);
+    try std.testing.expectEqualStrings("git-scm.com", resolvealias("git").?);
+
+    // Unknown alias returns null
+    try std.testing.expect(resolvealias("this-does-not-exist-xyz") == null);
+}

@@ -63,13 +63,24 @@ pub fn infoCommand(allocator: std.mem.Allocator, args: []const []const u8) !Comm
     const packages = @import("../../packages/generated.zig");
     const pkg_name = args[0];
 
-    const pkg = packages.getPackageByName(pkg_name);
+    // Try exact match first, then case-insensitive fallback
+    const pkg = packages.getPackageByName(pkg_name) orelse blk: {
+        // Case-insensitive fallback: scan all packages
+        for (&packages.packages) |*p| {
+            if (std.ascii.eqlIgnoreCase(p.domain, pkg_name) or
+                std.ascii.eqlIgnoreCase(p.name, pkg_name))
+            {
+                break :blk p;
+            }
+        }
+        break :blk null;
+    };
 
     if (pkg == null) {
         const msg = try std.fmt.allocPrint(
             allocator,
-            "Package '{s}' not found",
-            .{pkg_name},
+            "Package '{s}' not found. Try `pantry search {s}` to find similar packages.",
+            .{ pkg_name, pkg_name },
         );
         return .{
             .exit_code = 1,

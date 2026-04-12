@@ -108,13 +108,17 @@ pub const pantryConfigLoader = struct {
         const runtimes = [_][]const u8{ "bun", "node" };
 
         for (runtimes) |runtime| {
+            // Escape single quotes in the path for JS string safety
+            const safe_path = try escapeSingleQuotes(self.allocator, ts_config_path);
+            defer self.allocator.free(safe_path);
+
             // Create a wrapper script that imports the config and outputs JSON
             const wrapper_script = try std.fmt.allocPrint(
                 self.allocator,
                 \\import config from '{s}';
                 \\console.log(JSON.stringify(config.default || config));
             ,
-                .{ts_config_path},
+                .{safe_path},
             );
             defer self.allocator.free(wrapper_script);
 
@@ -174,8 +178,10 @@ pub const pantryConfigLoader = struct {
         return null;
     }
 
-    /// Try to find a config file with specific directory, name, and extension
-    /// Perf: Stack buffer for config file paths (avoids alloc+free+dupe per check)
+    /// Try to find a config file with specific directory, name, and extension.
+    /// Perf: Stack buffer for config file paths (avoids alloc+free+dupe per check).
+    /// Safety: `bufPrint` uses `catch return null` so an oversized path is
+    /// treated the same as "file not found" rather than causing undefined behaviour.
     fn tryConfigFile(
         self: *pantryConfigLoader,
         dir: []const u8,
@@ -193,6 +199,27 @@ pub const pantryConfigLoader = struct {
         return try self.allocator.dupe(u8, path);
     }
 };
+
+/// Escape single quotes in a string for safe embedding in JS single-quoted strings.
+/// Replaces `'` with `\\x27`.
+fn escapeSingleQuotes(allocator: std.mem.Allocator, input: []const u8) ![]const u8 {
+    if (std.mem.indexOf(u8, input, "'") == null) {
+        return try allocator.dupe(u8, input);
+    }
+
+    var result = try std.ArrayList(u8).initCapacity(allocator, input.len + 16);
+    errdefer result.deinit(allocator);
+
+    for (input) |c| {
+        if (c == '\'') {
+            try result.appendSlice(allocator, "\\x27");
+        } else {
+            try result.append(allocator, c);
+        }
+    }
+
+    return try result.toOwnedSlice(allocator);
+}
 
 /// pantry-specific load options
 pub const LoadOptions = struct {

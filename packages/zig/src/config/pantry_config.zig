@@ -31,6 +31,28 @@ pub const LinkerMode = enum {
 pub const PantryConfig = struct {
     install: InstallConfig = .{},
 
+    /// Free heap-allocated fields that were duplicated during TOML parsing.
+    /// Only frees fields that differ from the comptime defaults (i.e. were
+    /// allocated by `parseTomlContent`).
+    pub fn deinit(self: *PantryConfig, allocator: std.mem.Allocator) void {
+        // registry: default is null, so any non-null value was heap-allocated
+        if (self.install.registry) |reg| {
+            allocator.free(reg);
+            self.install.registry = null;
+        }
+        // link_search_paths: default is null, so any non-null value was heap-allocated
+        if (self.install.link_search_paths) |paths| {
+            allocator.free(paths);
+            self.install.link_search_paths = null;
+        }
+        // modules_dir: default is the comptime literal "pantry".
+        // If the pointer differs from the default, it was heap-allocated.
+        if (self.install.modules_dir.ptr != (InstallConfig{}).modules_dir.ptr) {
+            allocator.free(self.install.modules_dir);
+            self.install.modules_dir = "pantry";
+        }
+    }
+
     pub const InstallConfig = struct {
         /// Linker strategy: isolated (default) or hoisted
         linker: LinkerMode = .isolated,
@@ -212,7 +234,7 @@ test "parse hoisted config" {
 
 test "parse production config" {
     const allocator = std.testing.allocator;
-    const config = try parseTomlContent(allocator,
+    var config = try parseTomlContent(allocator,
         \\[install]
         \\production = true
         \\dev = false
@@ -225,8 +247,29 @@ test "parse production config" {
     try std.testing.expectEqual(true, config.install.frozen_lockfile);
     try std.testing.expectEqualStrings("https://npm.mycompany.com/", config.install.registry.?);
 
-    // Clean up allocated registry string
-    allocator.free(config.install.registry.?);
+    // Use deinit to clean up allocated fields
+    config.deinit(allocator);
+}
+
+test "deinit frees heap-allocated fields" {
+    const allocator = std.testing.allocator;
+    var config = try parseTomlContent(allocator,
+        \\[install]
+        \\registry = "https://custom.registry.dev/"
+        \\modulesDir = "node_modules"
+        \\linkSearchPaths = "~/Code,~/Projects"
+    );
+
+    try std.testing.expectEqualStrings("https://custom.registry.dev/", config.install.registry.?);
+    try std.testing.expectEqualStrings("node_modules", config.install.modules_dir);
+    try std.testing.expectEqualStrings("~/Code,~/Projects", config.install.link_search_paths.?);
+
+    config.deinit(allocator);
+
+    // After deinit, optional fields should be null and modules_dir should be the default
+    try std.testing.expect(config.install.registry == null);
+    try std.testing.expect(config.install.link_search_paths == null);
+    try std.testing.expectEqualStrings("pantry", config.install.modules_dir);
 }
 
 test "parse empty file returns defaults" {

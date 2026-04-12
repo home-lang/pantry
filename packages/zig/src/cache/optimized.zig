@@ -350,7 +350,7 @@ pub const OptimizedCache = struct {
             key: []const u8,
             downloaded_at: i64,
             size: usize,
-        }){};
+        }).empty;
         try packages.ensureTotalCapacity(self.allocator, self.base.metadata.count());
         defer packages.deinit(self.allocator);
 
