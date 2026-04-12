@@ -172,6 +172,28 @@ test "lookupHostCredential rejects substring host attack" {
     try std.testing.expect(lookupHostCredential(&map, "https://evil-registry.npmjs.org/") == null);
 }
 
+test "lookupHostCredential path-prefix key matches subpath" {
+    const allocator = std.testing.allocator;
+    var map = std.StringHashMap([]const u8).init(allocator);
+    defer {
+        var it = map.iterator();
+        while (it.next()) |entry| {
+            allocator.free(entry.key_ptr.*);
+            allocator.free(entry.value_ptr.*);
+        }
+        map.deinit(allocator);
+    }
+
+    // Key includes a path prefix
+    try map.put(try allocator.dupe(u8, "registry.npmjs.org/npm"), try allocator.dupe(u8, "npm-token"));
+
+    // Should match URLs under that path prefix
+    try std.testing.expectEqualStrings("npm-token", lookupHostCredential(&map, "https://registry.npmjs.org/npm/v1/foo").?);
+
+    // Should NOT match a different path
+    try std.testing.expect(lookupHostCredential(&map, "https://registry.npmjs.org/other") == null);
+}
+
 /// Extract host portion from a URL (e.g., "https://registry.npmjs.org" -> "registry.npmjs.org")
 fn extractHost(url: []const u8) ?[]const u8 {
     var start: usize = 0;

@@ -133,6 +133,12 @@ pub fn readConfigFile(allocator: std.mem.Allocator, config_path: []const u8) !st
     return try std.json.parseFromSlice(std.json.Value, allocator, json_content, .{});
 }
 
+/// Format a user-facing error message with a consistent "Error: " prefix.
+/// Caller owns the returned slice.
+pub fn formatUserError(allocator: std.mem.Allocator, comptime fmt: []const u8, args: anytype) ![]const u8 {
+    return std.fmt.allocPrint(allocator, "Error: " ++ fmt, args);
+}
+
 /// Extract all dependencies from parsed config with their types
 pub fn extractAllDependencies(
     allocator: std.mem.Allocator,

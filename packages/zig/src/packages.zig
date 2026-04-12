@@ -34,3 +34,7 @@ pub const satisfiesConstraint = registry.satisfiesConstraint;
 pub const DependencyGraph = dep_graph.DependencyGraph;
 pub const DependencyNode = dep_graph.DependencyGraph.DependencyNode;
 pub const Conflict = dep_graph.DependencyGraph.Conflict;
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}

@@ -6,6 +6,14 @@ const io_helper = lib.io_helper;
 
 /// Scan common locations for dependency files with global packages
 pub fn scanForGlobalDeps(allocator: std.mem.Allocator) ![]parser.PackageDependency {
+    // Allow disabling global dep scanning via env var (useful in CI/containers)
+    if (io_helper.getEnvVarOwned(allocator, "PANTRY_NO_GLOBAL_SCAN")) |val| {
+        defer allocator.free(val);
+        if (std.mem.eql(u8, val, "1") or std.mem.eql(u8, val, "true")) {
+            return &[_]parser.PackageDependency{};
+        }
+    } else |_| {}
+
     const home = io_helper.getEnvVarOwned(allocator, "HOME") catch |err| {
         if (err == error.EnvironmentVariableNotFound) {
             // Try USERPROFILE on Windows

@@ -415,6 +415,26 @@ test "parse constraint with = prefix" {
     try std.testing.expectEqual(@as(u32, 0), c.patch);
 }
 
+test "caret ^0.1.2 matches 0.1.x but not 0.2.0" {
+    const c = try parseConstraint("^0.1.2");
+    try std.testing.expect(satisfiesConstraint("0.1.2", c));
+    try std.testing.expect(satisfiesConstraint("0.1.3", c));
+    try std.testing.expect(satisfiesConstraint("0.1.99", c));
+    try std.testing.expect(!satisfiesConstraint("0.2.0", c));
+    try std.testing.expect(!satisfiesConstraint("0.1.1", c));
+    try std.testing.expect(!satisfiesConstraint("1.0.0", c));
+}
+
+test "tilde ~1.2.3 matches 1.2.x but not 1.3.0" {
+    const c = try parseConstraint("~1.2.3");
+    try std.testing.expect(satisfiesConstraint("1.2.3", c));
+    try std.testing.expect(satisfiesConstraint("1.2.4", c));
+    try std.testing.expect(satisfiesConstraint("1.2.99", c));
+    try std.testing.expect(!satisfiesConstraint("1.3.0", c));
+    try std.testing.expect(!satisfiesConstraint("1.2.2", c));
+    try std.testing.expect(!satisfiesConstraint("2.0.0", c));
+}
+
 test "caret constraint with 0.x" {
     // ^0.2.3 should only allow 0.2.x where x >= 3
     const c = Constraint{ .type = .caret, .major = 0, .minor = 2, .patch = 3 };

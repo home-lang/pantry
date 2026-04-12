@@ -15,3 +15,7 @@ pub const ShellCodeGenerator = generator.ShellCodeGenerator;
 pub const ShellConfig = generator.ShellConfig;
 pub const ShellCommands = commands.ShellCommands;
 pub const ShellIntegrator = integrate.ShellIntegrator;
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}

@@ -111,6 +111,14 @@ test "verifyIntegrity sha512 SRI happy path" {
     try std.testing.expect(verifyIntegrity(allocator, body, sri));
 }
 
+test "verifyIntegrity sha1 SRI" {
+    const allocator = std.testing.allocator;
+    // sha1("hello world") = 2aae6c35c94fcfb415dbe95f408b9ce91ee846ed
+    const body = "hello world";
+    const sri = "sha1-Kq5sNclPz7QV2+lfQIuc6R7oRu0=";
+    try std.testing.expect(verifyIntegrity(allocator, body, sri));
+}
+
 test "verifyIntegrity detects tampered body under sha256 hex" {
     const allocator = std.testing.allocator;
     const original = "hello world";
@@ -524,7 +532,9 @@ const DownloadThreadCtx = struct {
                 // Store in content-addressed cache
                 var checksum: [32]u8 = undefined;
                 std.crypto.hash.sha2.Sha256.hash(dl, &checksum, .{});
-                ctx.installer.cache.put(pkg.name, pkg.version, pkg.tarball_url, checksum, dl) catch {};
+                ctx.installer.cache.put(pkg.name, pkg.version, pkg.tarball_url, checksum, dl) catch |err| {
+                    if (ctx.verbose) std.debug.print("[verbose:pipeline] cache put failed: {s}\n", .{@errorName(err)});
+                };
 
                 break :dl_blk dl;
             };

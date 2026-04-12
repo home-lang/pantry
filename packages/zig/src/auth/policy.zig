@@ -239,8 +239,8 @@ pub fn enforcePolicy(
             ));
             return PolicyResult{
                 .allowed = true,
-                .violations = try violations.toOwnedSlice(),
-                .warnings = try warnings.toOwnedSlice(),
+                .violations = try violations.toOwnedSlice(allocator),
+                .warnings = try warnings.toOwnedSlice(allocator),
             };
         }
 
@@ -283,15 +283,15 @@ pub fn enforcePolicy(
                 ));
                 return PolicyResult{
                     .allowed = true,
-                    .violations = try violations.toOwnedSlice(),
-                    .warnings = try warnings.toOwnedSlice(),
+                    .violations = try violations.toOwnedSlice(allocator),
+                    .warnings = try warnings.toOwnedSlice(allocator),
                 };
             }
 
             return PolicyResult{
                 .allowed = false,
-                .violations = try violations.toOwnedSlice(),
-                .warnings = try warnings.toOwnedSlice(),
+                .violations = try violations.toOwnedSlice(allocator),
+                .warnings = try warnings.toOwnedSlice(allocator),
             };
         }
     }
@@ -317,8 +317,8 @@ pub fn enforcePolicy(
             ));
             return PolicyResult{
                 .allowed = true,
-                .violations = try violations.toOwnedSlice(),
-                .warnings = try warnings.toOwnedSlice(),
+                .violations = try violations.toOwnedSlice(allocator),
+                .warnings = try warnings.toOwnedSlice(allocator),
             };
         }
 
@@ -332,8 +332,8 @@ pub fn enforcePolicy(
     // Signature is valid
     return PolicyResult{
         .allowed = true,
-        .violations = try violations.toOwnedSlice(),
-        .warnings = try warnings.toOwnedSlice(),
+        .violations = try violations.toOwnedSlice(allocator),
+        .warnings = try warnings.toOwnedSlice(allocator),
     };
 }
 

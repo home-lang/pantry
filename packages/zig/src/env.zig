@@ -11,3 +11,7 @@ pub const EnvManager = manager.EnvManager;
 pub const EnvironmentInfo = scanner.EnvironmentInfo;
 pub const EnvScanner = scanner.EnvScanner;
 pub const EnvCommands = commands.EnvCommands;
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}

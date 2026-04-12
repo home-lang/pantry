@@ -11,3 +11,7 @@ pub const Services = definitions.Services;
 pub const Platform = platform.Platform;
 pub const ServiceController = platform.ServiceController;
 pub const ServiceManager = manager.ServiceManager;
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}

@@ -610,6 +610,48 @@ test "splitShellArgs handles quoted args" {
     }
 }
 
+test "splitShellArgs empty string returns 0 args" {
+    const allocator = std.testing.allocator;
+    const args = try splitShellArgs(allocator, "");
+    defer {
+        for (args) |a| allocator.free(a);
+        allocator.free(args);
+    }
+    try std.testing.expectEqual(@as(usize, 0), args.len);
+}
+
+test "splitShellArgs whitespace-only returns 0 args" {
+    const allocator = std.testing.allocator;
+    const args = try splitShellArgs(allocator, "   \t  \n  ");
+    defer {
+        for (args) |a| allocator.free(a);
+        allocator.free(args);
+    }
+    try std.testing.expectEqual(@as(usize, 0), args.len);
+}
+
+test "splitShellArgs backslash outside quotes" {
+    const allocator = std.testing.allocator;
+    const args = try splitShellArgs(allocator, "hello\\ world");
+    defer {
+        for (args) |a| allocator.free(a);
+        allocator.free(args);
+    }
+    try std.testing.expectEqual(@as(usize, 1), args.len);
+    try std.testing.expectEqualStrings("hello world", args[0]);
+}
+
+test "splitShellArgs adjacent quotes" {
+    const allocator = std.testing.allocator;
+    const args = try splitShellArgs(allocator, "'hello'\"world\"");
+    defer {
+        for (args) |a| allocator.free(a);
+        allocator.free(args);
+    }
+    try std.testing.expectEqual(@as(usize, 1), args.len);
+    try std.testing.expectEqualStrings("helloworld", args[0]);
+}
+
 test "writeXmlEscaped escapes metacharacters" {
     const allocator = std.testing.allocator;
     var buf = std.ArrayList(u8).empty;

@@ -15,3 +15,7 @@ pub const CacheStatistics = optimized.CacheStatistics;
 pub const SharedCache = shared.SharedCache;
 pub const SharedCacheConfig = shared.SharedCacheConfig;
 pub const GlobalCache = shared.GlobalCache;
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}

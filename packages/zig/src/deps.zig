@@ -23,3 +23,7 @@ pub const PeerDependencyManager = resolution.PeerDependencyManager;
 pub const OptionalDependencyManager = resolution.OptionalDependencyManager;
 pub const LockFile = resolution.LockFile;
 pub const ResolutionContext = resolution.ResolutionContext;
+
+test {
+    @import("std").testing.refAllDecls(@This());
+}

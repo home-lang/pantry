@@ -801,6 +801,12 @@ test "verifyChecksum" {
     try std.testing.expectError(error.ChecksumMismatch, result);
 }
 
+test "parseVersionParts and compareParts" {
+    try std.testing.expectEqual(compareParts(parseVersionParts("1.2.3"), parseVersionParts("1.2.4")), .lt);
+    try std.testing.expectEqual(compareParts(parseVersionParts("2.0.0"), parseVersionParts("1.9.9")), .gt);
+    try std.testing.expectEqual(compareParts(parseVersionParts("1.0.0"), parseVersionParts("1.0.0")), .eq);
+}
+
 test "isZigDevVersion" {
     try std.testing.expect(isZigDevVersion("0.16.0-dev.1484+d0ba6642b"));
     try std.testing.expect(isZigDevVersion("0.16.0-dev"));

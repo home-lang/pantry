@@ -14,7 +14,9 @@ pub fn discoverMembers(
     workspace_root: []const u8,
     patterns: [][]const u8,
 ) ![]types.WorkspaceMember {
-    // We'll collect members in a temporary buffer
+    // Stack-allocated buffer limits workspace discovery to 256 members.
+    // This avoids heap allocation for the common case; workspaces exceeding
+    // this limit will receive a clear error with guidance to split or raise it.
     var members_buffer: [256]types.WorkspaceMember = undefined;
     var member_count: usize = 0;
 
