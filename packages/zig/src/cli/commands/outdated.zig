@@ -9,8 +9,22 @@ const common = @import("common.zig");
 const style = @import("../style.zig");
 const aliases = @import("../../packages/aliases.zig");
 const parser = @import("../../deps/parser.zig");
+const update_mod = @import("update.zig");
+const MetadataCache = update_mod.MetadataCache;
 
 const CommandResult = common.CommandResult;
+
+/// Module-level metadata cache pointer. When set, queryNpmVersions and
+/// querySystemVersions will consult this before falling back to a direct
+/// HTTP fetch, mirroring the approach used in update.zig.
+var g_metadata_cache: ?*MetadataCache = null;
+
+fn cachedHttpGet(allocator: std.mem.Allocator, url: []const u8) ![]u8 {
+    if (g_metadata_cache) |cache| {
+        if (cache.getOrFetch(url)) |body| return body;
+    }
+    return io_helper.httpGet(allocator, url);
+}
 
 /// Dependency kind for version resolution
 const DepKind = enum { npm, system, skip };
@@ -153,8 +167,6 @@ fn matchesFilters(name: []const u8, filters: []const []const u8) bool {
 
 /// Check for outdated packages
 pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
-    const update_mod = @import("update.zig");
-
     const cwd = try io_helper.getCwdAlloc(allocator);
     defer allocator.free(cwd);
 
@@ -176,6 +188,55 @@ pub fn execute(allocator: std.mem.Allocator, args: []const []const u8) !CommandR
         deps.len,
         if (deps.len == 1) "" else "s",
     });
+
+    // Parallel metadata prefetch: build URL list and fetch all concurrently
+    // so the serial loop below runs at parse speed, not network latency * N.
+    var metadata_cache = MetadataCache.init(allocator);
+    defer metadata_cache.deinit();
+    g_metadata_cache = &metadata_cache;
+    defer g_metadata_cache = null;
+
+    {
+        var prefetch_urls = std.ArrayList([]u8).empty;
+        defer {
+            for (prefetch_urls.items) |u| allocator.free(u);
+            prefetch_urls.deinit(allocator);
+        }
+
+        for (deps) |dep| {
+            const kind = classifyDep(dep.name, dep.version);
+            if (kind == .skip) continue;
+
+            switch (kind) {
+                .npm => {
+                    const clean_name = if (std.mem.startsWith(u8, dep.name, "auto:"))
+                        dep.name[5..]
+                    else if (std.mem.startsWith(u8, dep.name, "npm:"))
+                        dep.name[4..]
+                    else
+                        dep.name;
+                    if (std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{clean_name})) |url| {
+                        prefetch_urls.append(allocator, url) catch {};
+                    } else |_| {}
+                },
+                .system => {
+                    const domain = resolveSystemDomain(dep.name);
+                    if (std.fmt.allocPrint(allocator, "https://pantry-registry.s3.amazonaws.com/binaries/{s}/metadata.json", .{domain})) |url| {
+                        prefetch_urls.append(allocator, url) catch {};
+                    } else |_| {}
+                },
+                .skip => {},
+            }
+        }
+
+        if (prefetch_urls.items.len > 0) {
+            if (allocator.alloc([]const u8, prefetch_urls.items.len)) |const_urls| {
+                defer allocator.free(const_urls);
+                for (prefetch_urls.items, 0..) |u, idx| const_urls[idx] = u;
+                update_mod.prefetchMetadata(allocator, &metadata_cache, const_urls);
+            } else |_| {}
+        }
+    }
 
     // Check each dependency for updates
     var outdated = std.ArrayList(OutdatedPackage).empty;
@@ -353,7 +414,7 @@ fn queryNpmVersions(allocator: std.mem.Allocator, name: []const u8, constraint: 
     const url = std.fmt.allocPrint(allocator, "https://registry.npmjs.org/{s}", .{clean_name}) catch return null;
     defer allocator.free(url);
 
-    const body = io_helper.httpGet(allocator, url) catch return null;
+    const body = cachedHttpGet(allocator, url) catch return null;
     defer allocator.free(body);
     if (body.len == 0) return null;
 
@@ -405,7 +466,7 @@ fn querySystemVersions(allocator: std.mem.Allocator, name: []const u8, constrain
     ) catch return null;
     defer allocator.free(metadata_url);
 
-    const body = io_helper.httpGet(allocator, metadata_url) catch return null;
+    const body = cachedHttpGet(allocator, metadata_url) catch return null;
     defer allocator.free(body);
     if (body.len == 0) return null;
 

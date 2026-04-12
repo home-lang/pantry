@@ -87,7 +87,11 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
     defer allocator.free(tar_result.stdout);
     defer allocator.free(tar_result.stderr);
 
-    if (tar_result.term != .exited or tar_result.term.exited != 0) {
+    const tar_failed = switch (tar_result.term) {
+        .exited => |code| code != 0,
+        else => true,
+    };
+    if (tar_failed) {
         const msg = try std.fmt.allocPrint(allocator, "Error: Failed to create tarball: {s}", .{tar_result.stderr});
         return CommandResult.err(allocator, msg);
     }
@@ -108,7 +112,11 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
     defer allocator.free(upload_result.stdout);
     defer allocator.free(upload_result.stderr);
 
-    if (upload_result.term != .exited or upload_result.term.exited != 0) {
+    const upload_failed = switch (upload_result.term) {
+        .exited => |code| code != 0,
+        else => true,
+    };
+    if (upload_failed) {
         const msg = try std.fmt.allocPrint(allocator, "Error: S3 upload failed: {s}", .{upload_result.stderr});
         return CommandResult.err(allocator, msg);
     }
@@ -141,10 +149,10 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
 
     // Use jq to update metadata (add/update this version+platform entry)
     // If no existing metadata, start from scratch
-    const jq_input = if (fetch_result != null and fetch_result.?.term == .exited and fetch_result.?.term.exited == 0)
-        metadata_path
-    else
-        "/dev/null";
+    const jq_input = if (fetch_result) |fr| switch (fr.term) {
+        .exited => |code| if (code == 0) metadata_path else "/dev/null",
+        else => "/dev/null",
+    } else "/dev/null";
 
     // Build jq expression to upsert version/platform
     const jq_expr = try std.fmt.allocPrint(
@@ -160,7 +168,11 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
     });
     defer allocator.free(jq_result.stderr);
 
-    if (jq_result.term != .exited or jq_result.term.exited != 0) {
+    const jq_failed = switch (jq_result.term) {
+        .exited => |code| code != 0,
+        else => true,
+    };
+    if (jq_failed) {
         allocator.free(jq_result.stdout);
         const msg = try std.fmt.allocPrint(allocator, "Error: Failed to update metadata: {s}", .{jq_result.stderr});
         return CommandResult.err(allocator, msg);
@@ -178,7 +190,11 @@ pub fn publishBinaryCommand(allocator: std.mem.Allocator, args: []const []const 
     defer allocator.free(meta_upload_result.stdout);
     defer allocator.free(meta_upload_result.stderr);
 
-    if (meta_upload_result.term != .exited or meta_upload_result.term.exited != 0) {
+    const meta_upload_failed = switch (meta_upload_result.term) {
+        .exited => |code| code != 0,
+        else => true,
+    };
+    if (meta_upload_failed) {
         const msg = try std.fmt.allocPrint(allocator, "Error: Failed to upload metadata: {s}", .{meta_upload_result.stderr});
         return CommandResult.err(allocator, msg);
     }

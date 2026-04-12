@@ -146,3 +146,34 @@ pub const ProxyConfig = struct {
         return false;
     }
 };
+
+test "ProxyConfig.shouldBypass with wildcard" {
+    const cfg = ProxyConfig{ .no_proxy = "*" };
+    try std.testing.expect(cfg.shouldBypass("anything.example.com"));
+    try std.testing.expect(cfg.shouldBypass("localhost"));
+}
+
+test "ProxyConfig.shouldBypass with exact match" {
+    const cfg = ProxyConfig{ .no_proxy = "localhost, example.com" };
+    try std.testing.expect(cfg.shouldBypass("localhost"));
+    try std.testing.expect(cfg.shouldBypass("example.com"));
+    try std.testing.expect(!cfg.shouldBypass("other.com"));
+}
+
+test "ProxyConfig.shouldBypass with suffix match" {
+    const cfg = ProxyConfig{ .no_proxy = ".internal.corp" };
+    try std.testing.expect(cfg.shouldBypass("api.internal.corp"));
+    try std.testing.expect(!cfg.shouldBypass("external.com"));
+}
+
+test "ProxyConfig.shouldBypass with no NO_PROXY set" {
+    const cfg = ProxyConfig{};
+    try std.testing.expect(!cfg.shouldBypass("anything.com"));
+}
+
+test "ProxyConfig.fromEnv returns valid config" {
+    // fromEnv reads from environment; in test the proxy vars are typically unset
+    const cfg = ProxyConfig.fromEnv();
+    // Should not crash and fields should be null when env vars are unset
+    _ = cfg.shouldBypass("example.com");
+}

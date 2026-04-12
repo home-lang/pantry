@@ -48,7 +48,7 @@ const GlobalThreadContext = struct {
                     .install_time_ms = 0,
                     .error_msg = std.fmt.allocPrint(ctx.alloc, "{}", .{err}) catch null,
                 };
-                return;
+                continue;
             };
 
             ctx.results[i] = .{

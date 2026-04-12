@@ -247,3 +247,84 @@ test "normalize" {
         try testing.expectEqualStrings("../foo", result);
     }
 }
+
+test "basename edge cases" {
+    const testing = std.testing;
+
+    // Trailing slashes
+    try testing.expectEqualStrings("baz", basename("/foo/bar/baz/"));
+    try testing.expectEqualStrings("baz", basename("/foo/bar/baz///"));
+
+    // Double slashes in middle
+    try testing.expectEqualStrings("bar", basename("/foo//bar"));
+
+    // Root only
+    try testing.expectEqualStrings("", basename("///"));
+
+    // Empty path
+    try testing.expectEqualStrings("", basename(""));
+}
+
+test "dirname edge cases" {
+    const testing = std.testing;
+
+    // Trailing slashes
+    try testing.expectEqualStrings("/foo/bar", dirname("/foo/bar/baz/"));
+
+    // Double slashes
+    try testing.expectEqualStrings("/foo", dirname("/foo//bar"));
+
+    // Root only variants
+    try testing.expectEqualStrings("/", dirname("/"));
+    try testing.expectEqualStrings("/", dirname("///"));
+
+    // Empty path
+    try testing.expectEqualStrings(".", dirname(""));
+}
+
+test "normalize edge cases" {
+    const testing = std.testing;
+    const allocator = testing.allocator;
+
+    // Trailing slashes
+    {
+        const result = try normalize(allocator, "/foo/bar/");
+        defer allocator.free(result);
+        try testing.expectEqualStrings("/foo/bar", result);
+    }
+
+    // Double slashes
+    {
+        const result = try normalize(allocator, "/foo//bar");
+        defer allocator.free(result);
+        try testing.expectEqualStrings("/foo/bar", result);
+    }
+
+    // ".." at absolute root (should not go above /)
+    {
+        const result = try normalize(allocator, "/../../../foo");
+        defer allocator.free(result);
+        try testing.expectEqualStrings("/foo", result);
+    }
+
+    // Empty path
+    {
+        const result = try normalize(allocator, "");
+        defer allocator.free(result);
+        try testing.expectEqualStrings(".", result);
+    }
+
+    // Only dots
+    {
+        const result = try normalize(allocator, ".");
+        defer allocator.free(result);
+        try testing.expectEqualStrings(".", result);
+    }
+
+    // Multiple ".." in relative path
+    {
+        const result = try normalize(allocator, "a/b/../../c");
+        defer allocator.free(result);
+        try testing.expectEqualStrings("c", result);
+    }
+}

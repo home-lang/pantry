@@ -209,7 +209,11 @@ fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path
         defer allocator.free(result.stdout);
         defer allocator.free(result.stderr);
 
-        if (result.term != .exited or result.term.exited != 0) {
+        const curl_failed = switch (result.term) {
+            .exited => |code| code != 0,
+            else => true,
+        };
+        if (curl_failed) {
             continue;
         }
         return;
@@ -222,7 +226,11 @@ fn downloadFileWithCurl(allocator: std.mem.Allocator, url: []const u8, dest_path
         defer allocator.free(result.stdout);
         defer allocator.free(result.stderr);
 
-        if (result.term == .exited and result.term.exited == 0) {
+        const curl2_ok = switch (result.term) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (curl2_ok) {
             return;
         }
     }
@@ -466,7 +474,11 @@ pub fn lookupS3Registry(
             curl_bin, "-sfL", "--connect-timeout", "10", "--max-time", "30", metadata_url,
         }) catch continue;
 
-        if (curl_result.term != .exited or curl_result.term.exited != 0) {
+        const s3_curl_failed = switch (curl_result.term) {
+            .exited => |code| code != 0,
+            else => true,
+        };
+        if (s3_curl_failed) {
             allocator.free(curl_result.stdout);
             allocator.free(curl_result.stderr);
             continue;
@@ -787,4 +799,13 @@ test "verifyChecksum" {
     const wrong_checksum = "0000000000000000000000000000000000000000000000000000000000000000";
     const result = verifyChecksum(allocator, test_file, wrong_checksum);
     try std.testing.expectError(error.ChecksumMismatch, result);
+}
+
+test "isZigDevVersion" {
+    try std.testing.expect(isZigDevVersion("0.16.0-dev.1484+d0ba6642b"));
+    try std.testing.expect(isZigDevVersion("0.16.0-dev"));
+    try std.testing.expect(isZigDevVersion("0.14.0-dev.2851+b074a1eb8"));
+    try std.testing.expect(!isZigDevVersion("0.15.2"));
+    try std.testing.expect(!isZigDevVersion("1.0.0"));
+    try std.testing.expect(!isZigDevVersion("0.16.0"));
 }

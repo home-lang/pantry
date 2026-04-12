@@ -127,7 +127,15 @@ pub const Paths = struct {
                     break :blk try std.fmt.allocPrint(allocator, "{s}/.cache/pantry", .{home_dir});
                 }
             },
-            .windows => try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\cache", .{home_dir}),
+            .windows => blk: {
+                // Prefer LOCALAPPDATA for Windows cache path
+                if (io_helper.getEnvVarOwned(allocator, "LOCALAPPDATA")) |local| {
+                    defer allocator.free(local);
+                    break :blk try std.fmt.allocPrint(allocator, "{s}\\pantry\\cache", .{local});
+                } else |_| {
+                    break :blk try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\cache", .{home_dir});
+                }
+            },
         };
     }
 
@@ -147,7 +155,15 @@ pub const Paths = struct {
                     break :blk try std.fmt.allocPrint(allocator, "{s}/.local/share/pantry", .{home_dir});
                 }
             },
-            .windows => try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\data", .{home_dir}),
+            .windows => blk: {
+                // Prefer LOCALAPPDATA for Windows data path
+                if (io_helper.getEnvVarOwned(allocator, "LOCALAPPDATA")) |local| {
+                    defer allocator.free(local);
+                    break :blk try std.fmt.allocPrint(allocator, "{s}\\pantry\\data", .{local});
+                } else |_| {
+                    break :blk try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\data", .{home_dir});
+                }
+            },
         };
     }
 
@@ -167,7 +183,15 @@ pub const Paths = struct {
                     break :blk try std.fmt.allocPrint(allocator, "{s}/.config/pantry", .{home_dir});
                 }
             },
-            .windows => try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\config", .{home_dir}),
+            .windows => blk: {
+                // Prefer LOCALAPPDATA for Windows config path
+                if (io_helper.getEnvVarOwned(allocator, "LOCALAPPDATA")) |local| {
+                    defer allocator.free(local);
+                    break :blk try std.fmt.allocPrint(allocator, "{s}\\pantry\\config", .{local});
+                } else |_| {
+                    break :blk try std.fmt.allocPrint(allocator, "{s}\\AppData\\Local\\pantry\\config", .{home_dir});
+                }
+            },
         };
     }
 
