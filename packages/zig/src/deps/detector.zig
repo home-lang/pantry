@@ -42,33 +42,36 @@ pub const WorkspaceFile = struct {
     }
 };
 
+const DepsFileInfo = struct { name: []const u8, format: DepsFile.FileFormat };
+
+/// Paired list of dependency file names and their formats.
+/// Order defines priority (highest first).
+const deps_files_table = [_]DepsFileInfo{
+    .{ .name = "pantry.json", .format = .pantry_json },
+    .{ .name = "pantry.jsonc", .format = .pantry_jsonc },
+    .{ .name = "pantry.yaml", .format = .pantry_yaml },
+    .{ .name = "pantry.yml", .format = .pantry_yml },
+    .{ .name = "deps.yaml", .format = .deps_yaml },
+    .{ .name = "deps.yml", .format = .deps_yml },
+    .{ .name = "dependencies.yaml", .format = .dependencies_yaml },
+    .{ .name = "pkgx.yaml", .format = .pkgx_yaml },
+    .{ .name = "config/deps.ts", .format = .config_deps_ts },
+    .{ .name = ".config/deps.ts", .format = .dotconfig_deps_ts },
+    .{ .name = "pantry.config.ts", .format = .pantry_config_ts },
+    .{ .name = ".config/pantry.ts", .format = .dotconfig_pantry_ts },
+    .{ .name = "package.json", .format = .package_json },
+    .{ .name = "package.jsonc", .format = .package_jsonc },
+    .{ .name = "zig.json", .format = .zig_json },
+    .{ .name = "Cargo.toml", .format = .cargo_toml },
+    .{ .name = "pyproject.toml", .format = .pyproject_toml },
+    .{ .name = "requirements.txt", .format = .requirements_txt },
+    .{ .name = "Gemfile", .format = .gemfile },
+    .{ .name = "go.mod", .format = .go_mod },
+    .{ .name = "composer.json", .format = .composer_json },
+};
+
 /// Find dependency file in directory or parent directories
 pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsFile {
-    const file_names = [_][]const u8{
-        "pantry.json", // pantry.json (highest priority)
-        "pantry.jsonc", // pantry.jsonc
-        "pantry.yaml", // pantry.yaml
-        "pantry.yml", // pantry.yml
-        "deps.yaml", // deps.yaml (before TS configs - pure YAML, no runtime needed)
-        "deps.yml",
-        "dependencies.yaml",
-        "pkgx.yaml",
-        "config/deps.ts", // config/deps.ts (typed TS config - needs runtime)
-        ".config/deps.ts", // .config/deps.ts
-        "pantry.config.ts", // pantry.config.ts (needs runtime)
-        ".config/pantry.ts", // .config/pantry.ts
-        // Other package manager formats (lower priority, fallback only)
-        "package.json", // package.json (npm/bun/yarn compatible)
-        "package.jsonc", // Zig package.jsonc
-        "zig.json", // zig.json
-        "Cargo.toml",
-        "pyproject.toml",
-        "requirements.txt",
-        "Gemfile",
-        "go.mod",
-        "composer.json",
-    };
-
     var current_dir_buf: [std.fs.max_path_bytes]u8 = undefined;
     const current_dir = try io_helper.realpath(start_dir, &current_dir_buf);
 
@@ -81,8 +84,8 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
         var path_buf: [std.fs.max_path_bytes]u8 = undefined;
 
         // Try each dependency file name
-        for (file_names, 0..) |file_name, i| {
-            const full_path = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ dir_path, file_name }) catch continue;
+        for (deps_files_table) |entry| {
+            const full_path = std.fmt.bufPrint(&path_buf, "{s}/{s}", .{ dir_path, entry.name }) catch continue;
 
             // Check if file exists
             io_helper.accessAbsolute(full_path, .{}) catch {
@@ -90,10 +93,9 @@ pub fn findDepsFile(allocator: std.mem.Allocator, start_dir: []const u8) !?DepsF
             };
 
             // Found a dependency file!
-            const format: DepsFile.FileFormat = @enumFromInt(i);
             return DepsFile{
                 .path = try allocator.dupe(u8, full_path),
-                .format = format,
+                .format = entry.format,
             };
         }
 

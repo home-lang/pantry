@@ -174,7 +174,7 @@ pub const StringInterner = struct {
         while (it.next()) |value| {
             self.allocator.free(value.*);
         }
-        self.map.deinit();
+        self.map.deinit(self.allocator);
     }
 
     /// Intern a string, returning a stable pointer

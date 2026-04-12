@@ -224,7 +224,7 @@ fn resolveFullTree(
 
     // Track resolved packages by name to deduplicate
     var seen = std.StringHashMap(void).init(allocator);
-    defer seen.deinit();
+    defer seen.deinit(allocator);
 
     // BFS wave queue: starts with top-level deps
     var current_wave = std.ArrayList(PipelineDep).empty;
@@ -378,7 +378,7 @@ fn resolveFullTree(
 
         // Deduplicate next wave by name
         var next_seen = std.StringHashMap(void).init(allocator);
-        defer next_seen.deinit();
+        defer next_seen.deinit(allocator);
         for (next_wave.items) |dep| {
             if (next_seen.contains(dep.name) or seen.contains(dep.name)) {
                 allocator.free(dep.name);

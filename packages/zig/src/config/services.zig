@@ -18,7 +18,7 @@ pub const ServiceConfig = struct {
                 allocator.free(entry.key_ptr.*);
                 allocator.free(entry.value_ptr.*);
             }
-            env_map.deinit();
+            env_map.deinit(allocator);
         }
     }
 };

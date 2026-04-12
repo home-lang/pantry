@@ -139,7 +139,7 @@ pub fn extractAllDependencies(
     parsed: std.json.Parsed(std.json.Value),
 ) !std.StringHashMap(DependencyInfo) {
     var deps_map = std.StringHashMap(DependencyInfo).init(allocator);
-    errdefer deps_map.deinit();
+    errdefer deps_map.deinit(allocator);
 
     const root = parsed.value.object;
 

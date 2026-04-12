@@ -60,7 +60,7 @@ pub fn runScriptCommandWithOptions(
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(allocator);
     }
 
     // Find the requested script
@@ -220,7 +220,7 @@ pub fn listScriptsCommand(allocator: std.mem.Allocator) !CommandResult {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(allocator);
     }
 
     // Build output listing all scripts

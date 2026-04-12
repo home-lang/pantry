@@ -52,7 +52,7 @@ pub const FilterConfigs = struct {
             self.allocator.free(key.*);
         }
 
-        self.configs.deinit();
+        self.configs.deinit(self.allocator);
     }
 
     pub fn add(self: *FilterConfigs, config: FilterConfig) !void {
@@ -75,7 +75,7 @@ pub const FilterConfigs = struct {
         errdefer all_patterns.deinit(self.allocator);
 
         var visited = std.StringHashMap(void).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(self.allocator);
 
         try self.collectPatternsRecursive(name, &all_patterns, &visited);
 

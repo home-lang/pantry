@@ -73,7 +73,7 @@ pub const FileWatcher = struct {
         while (iter.next()) |key| {
             self.allocator.free(key.*);
         }
-        self.file_timestamps.deinit();
+        self.file_timestamps.deinit(self.allocator);
     }
 
     /// Start watching for changes
@@ -185,7 +185,7 @@ pub const FileWatcher = struct {
             while (iter.next()) |key| {
                 self.allocator.free(key.*);
             }
-            new_timestamps.deinit();
+            new_timestamps.deinit(self.allocator);
         }
 
         // Scan all files again
@@ -213,7 +213,7 @@ pub const FileWatcher = struct {
         while (old_key_iter.next()) |key| {
             self.allocator.free(key.*);
         }
-        self.file_timestamps.deinit();
+        self.file_timestamps.deinit(self.allocator);
         self.file_timestamps = new_timestamps;
         new_timestamps = std.StringHashMap(i64).init(self.allocator);
 

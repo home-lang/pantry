@@ -39,7 +39,7 @@ pub const TomlTable = struct {
                 else => {},
             }
         }
-        self.entries.deinit();
+        self.entries.deinit(self.allocator);
     }
 
     pub fn getString(self: *const TomlTable, key: []const u8) ?[]const u8 {

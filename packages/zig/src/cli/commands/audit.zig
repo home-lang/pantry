@@ -162,13 +162,13 @@ pub fn auditCommand(
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        deps_map.deinit();
+        deps_map.deinit(allocator);
     }
 
     // Filter to production only if requested
     if (options.prod_only) {
         var filtered = std.StringHashMap(common.DependencyInfo).init(allocator);
-        errdefer filtered.deinit();
+        errdefer filtered.deinit(allocator);
 
         var it = deps_map.iterator();
         while (it.next()) |entry| {

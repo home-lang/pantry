@@ -45,7 +45,7 @@ pub const Keyring = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.keys.deinit();
+        self.keys.deinit(self.allocator);
     }
 
     /// Add a trusted public key to the keyring

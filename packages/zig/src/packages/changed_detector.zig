@@ -45,14 +45,7 @@ fn getChangedFiles(
     }
 
     // Get committed changes
-    const git_diff_cmd = try std.fmt.allocPrint(
-        allocator,
-        "git diff --name-only {s}",
-        .{options.base},
-    );
-    defer allocator.free(git_diff_cmd);
-
-    const diff_result = try io_helper.childRunWithOptions(allocator, &[_][]const u8{ "sh", "-c", git_diff_cmd }, .{
+    const diff_result = try io_helper.childRunWithOptions(allocator, &[_][]const u8{ "git", "diff", "--name-only", options.base }, .{
         .cwd = workspace_root,
     });
     defer {
@@ -60,7 +53,10 @@ fn getChangedFiles(
         allocator.free(diff_result.stderr);
     }
 
-    if (diff_result.term.exited == 0) {
+    if (switch (diff_result.term) {
+        .exited => |code| code == 0,
+        else => false,
+    }) {
         var lines = std.mem.splitScalar(u8, diff_result.stdout, '\n');
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t\r");

@@ -40,7 +40,7 @@ pub const ServiceConfig = struct {
             // Only free the values which are allocated
             allocator.free(entry.value_ptr.*);
         }
-        self.env_vars.deinit();
+        self.env_vars.deinit(allocator);
     }
 };
 
@@ -61,6 +61,21 @@ pub const ServiceStatus = enum {
     }
 };
 
+/// Search a directory for the first subdirectory starting with 'v' (version directory).
+/// Returns the full path (caller-owned) or null if none found.
+fn findVersionDirIn(allocator: std.mem.Allocator, base_dir: []const u8) !?[]const u8 {
+    const io_helper = @import("../io_helper.zig");
+    var dir = io_helper.openDirAbsoluteForIteration(base_dir) catch return null;
+    defer dir.close();
+    var iter = dir.iterate();
+    while (try iter.next()) |entry| {
+        if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
+            return try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_dir, entry.name });
+        }
+    }
+    return null;
+}
+
 /// Resolve JAVA_HOME by finding the java binary through pantry install locations
 /// and walking up to the JDK root. Returns null if not found.
 fn resolveJavaHome(allocator: std.mem.Allocator, project_root: ?[]const u8, home: ?[]const u8) !?[]const u8 {
@@ -71,16 +86,7 @@ fn resolveJavaHome(allocator: std.mem.Allocator, project_root: ?[]const u8, home
         const openjdk_dir = try std.fmt.allocPrint(allocator, "{s}/pantry/openjdk.org", .{pr});
         defer allocator.free(openjdk_dir);
         if (io_helper.accessAbsolute(openjdk_dir, .{})) |_| {
-            // Find version subdirectory (e.g. v21.0.8.7)
-            var dir = io_helper.openDirAbsoluteForIteration(openjdk_dir) catch return null;
-            defer dir.close();
-            var iter = dir.iterate();
-            while (try iter.next()) |entry| {
-                if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
-                    const java_home = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ openjdk_dir, entry.name });
-                    return java_home;
-                }
-            }
+            if (try findVersionDirIn(allocator, openjdk_dir)) |java_home| return java_home;
         } else |_| {}
     }
 
@@ -89,15 +95,7 @@ fn resolveJavaHome(allocator: std.mem.Allocator, project_root: ?[]const u8, home
         const global_openjdk = try std.fmt.allocPrint(allocator, "{s}/.pantry/global/packages/openjdk.org", .{h});
         defer allocator.free(global_openjdk);
         if (io_helper.accessAbsolute(global_openjdk, .{})) |_| {
-            var dir = io_helper.openDirAbsoluteForIteration(global_openjdk) catch return null;
-            defer dir.close();
-            var iter = dir.iterate();
-            while (try iter.next()) |entry| {
-                if (entry.kind == .directory and entry.name.len > 0 and entry.name[0] == 'v') {
-                    const java_home = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ global_openjdk, entry.name });
-                    return java_home;
-                }
-            }
+            if (try findVersionDirIn(allocator, global_openjdk)) |java_home| return java_home;
         } else |_| {}
     }
 

@@ -358,7 +358,7 @@ test "Activation script generation" {
     const allocator = std.testing.allocator;
 
     var env_vars = std.StringHashMap([]const u8).init(allocator);
-    defer env_vars.deinit();
+    defer env_vars.deinit(allocator);
     try env_vars.put("NODE_VERSION", "20.0.0");
 
     const script = try generateActivation(allocator, "/usr/local/bin:/usr/bin", env_vars);

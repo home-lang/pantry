@@ -119,7 +119,7 @@ pub const ServiceManager = struct {
             entry.value_ptr.*.deinit(self.allocator);
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.services.deinit();
+        self.services.deinit(self.allocator);
     }
 
     /// Register a service

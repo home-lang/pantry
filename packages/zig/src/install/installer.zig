@@ -79,7 +79,7 @@ const InstallingStack = struct {
         while (it.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.map.deinit();
+        self.map.deinit(self.allocator);
     }
 
     /// Atomically check if key exists and insert if not. Returns true if inserted, false if already present.
@@ -144,7 +144,7 @@ const NpmCache = struct {
             self.allocator.free(entry.value_ptr.tarball_url);
             if (entry.value_ptr.integrity) |i| self.allocator.free(i);
         }
-        self.resolution_map.deinit();
+        self.resolution_map.deinit(self.allocator);
 
         // Free registry entries
         var rit = self.registry_map.iterator();
@@ -152,7 +152,7 @@ const NpmCache = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.registry_map.deinit();
+        self.registry_map.deinit(self.allocator);
     }
 
     /// Level 2: Look up a cached resolution. Returns caller-owned copies of the strings.
@@ -279,7 +279,7 @@ pub const Installer = struct {
                 self.alloc.free(entry.key_ptr.*);
                 self.alloc.free(entry.value_ptr.*);
             }
-            self.map.deinit();
+            self.map.deinit(self.alloc);
         }
 
         /// Check if a package is already hoisted with a version satisfying the constraint.
@@ -1903,7 +1903,7 @@ pub const Installer = struct {
             {
                 // Track names we've already added in this wave to avoid duplicates
                 var seen = std.StringHashMap(void).init(self.allocator);
-                defer seen.deinit();
+                defer seen.deinit(self.allocator);
 
                 for (all_deps.items) |dep| {
                     // Re-check hoisted cache (may have been populated by previous wave)
@@ -3134,7 +3134,7 @@ pub const Installer = struct {
                             self.allocator.free(entry.key_ptr.*);
                             self.allocator.free(entry.value_ptr.*);
                         }
-                        bin_map.deinit();
+                        bin_map.deinit(self.allocator);
                     }
 
                     // Create symlinks for custom bin paths

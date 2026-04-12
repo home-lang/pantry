@@ -26,7 +26,7 @@ pub fn extractBinPaths(
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        bin_map.deinit();
+        bin_map.deinit(allocator);
     }
 
     switch (bin_val) {

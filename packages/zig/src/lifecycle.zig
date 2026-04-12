@@ -186,7 +186,7 @@ pub fn loadTrustedDependencies(
     config: std.json.Parsed(std.json.Value),
 ) !std.StringHashMap(void) {
     var trusted = std.StringHashMap(void).init(allocator);
-    errdefer trusted.deinit();
+    errdefer trusted.deinit(allocator);
 
     const root = config.value.object;
 
@@ -232,7 +232,7 @@ pub fn extractScripts(
     package_json: std.json.Parsed(std.json.Value),
 ) !std.StringHashMap([]const u8) {
     var scripts = std.StringHashMap([]const u8).init(allocator);
-    errdefer scripts.deinit();
+    errdefer scripts.deinit(allocator);
 
     const root = package_json.value.object;
 
@@ -447,7 +447,7 @@ pub fn runLifecycleScript(
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(allocator);
     }
 
     // Check if the lifecycle script exists
@@ -464,7 +464,7 @@ pub fn runLifecycleScript(
     const root_package_json = io_helper.readFileAlloc(allocator, root_package_json_path, 1024 * 1024) catch {
         // If no root package.json, use empty trusted list
         var empty_trusted = std.StringHashMap(void).init(allocator);
-        defer empty_trusted.deinit();
+        defer empty_trusted.deinit(allocator);
 
         if (!isTrusted(package_name, empty_trusted)) {
             if (options.verbose) {
@@ -491,7 +491,7 @@ pub fn runLifecycleScript(
         while (it.next()) |key| {
             allocator.free(key.*);
         }
-        trusted_deps.deinit();
+        trusted_deps.deinit(allocator);
     }
 
     // Check if package is trusted

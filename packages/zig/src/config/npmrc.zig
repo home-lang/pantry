@@ -54,21 +54,21 @@ pub const NpmrcConfig = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.scoped_registries.deinit();
+        self.scoped_registries.deinit(self.allocator);
 
         var at_iter = self.auth_tokens.iterator();
         while (at_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.auth_tokens.deinit();
+        self.auth_tokens.deinit(self.allocator);
 
         var ba_iter = self.basic_auth.iterator();
         while (ba_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.basic_auth.deinit();
+        self.basic_auth.deinit(self.allocator);
     }
 
     /// Get the registry URL for a given package name.
@@ -158,7 +158,7 @@ test "lookupHostCredential rejects substring host attack" {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        map.deinit();
+        map.deinit(allocator);
     }
 
     try map.put(try allocator.dupe(u8, "registry.npmjs.org"), try allocator.dupe(u8, "secret"));

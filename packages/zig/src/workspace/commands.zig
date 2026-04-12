@@ -250,7 +250,7 @@ pub fn check(allocator: std.mem.Allocator, workspace: *Workspace) !CommandResult
 
     // Check for duplicate package names
     var name_map = std.StringHashMap(usize).init(allocator);
-    defer name_map.deinit();
+    defer name_map.deinit(allocator);
 
     for (workspace.packages.items) |pkg| {
         const result = try name_map.getOrPut(pkg.name);

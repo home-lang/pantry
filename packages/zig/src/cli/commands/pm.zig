@@ -627,7 +627,7 @@ pub fn untrustedCommand(allocator: std.mem.Allocator) !CommandResult {
 
     // Read trusted list
     var trusted = std.StringHashMap(void).init(allocator);
-    defer trusted.deinit();
+    defer trusted.deinit(allocator);
 
     const config_files = [_][]const u8{ "pantry.jsonc", "pantry.json", "package.json" };
     for (config_files) |config_path| {

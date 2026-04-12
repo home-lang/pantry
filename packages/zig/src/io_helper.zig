@@ -757,6 +757,7 @@ pub fn copyTree(src_path: []const u8, dest_path: []const u8) !void {
     var dir = openDirForIteration(src_path) catch return;
     defer dir.close();
 
+    var copy_failed: usize = 0;
     var iter = dir.iterate();
     while (iter.next() catch null) |entry| {
         var child_src: [std.fs.max_path_bytes]u8 = undefined;
@@ -765,11 +766,16 @@ pub fn copyTree(src_path: []const u8, dest_path: []const u8) !void {
         const cd = std.fmt.bufPrint(&child_dst, "{s}/{s}", .{ dest_path, entry.name }) catch continue;
 
         if (entry.kind == .directory) {
-            copyTree(cs, cd) catch {};
+            copyTree(cs, cd) catch {
+                copy_failed += 1;
+            };
         } else {
-            copyFile(cs, cd) catch {};
+            copyFile(cs, cd) catch {
+                copy_failed += 1;
+            };
         }
     }
+    if (copy_failed > 0) return error.PartialCopy;
 }
 
 /// Create a symbolic link using platform-specific syscalls

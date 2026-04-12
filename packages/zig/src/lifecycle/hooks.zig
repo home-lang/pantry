@@ -122,7 +122,7 @@ pub fn executeHook(
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(allocator);
     }
 
     // Check if hook script exists
@@ -238,7 +238,7 @@ pub const HookRegistry = struct {
         while (it.next()) |key| {
             self.allocator.free(key.*);
         }
-        self.hooks.deinit();
+        self.hooks.deinit(self.allocator);
     }
 
     /// Register a custom hook

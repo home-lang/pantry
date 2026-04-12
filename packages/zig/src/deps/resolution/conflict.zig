@@ -82,7 +82,7 @@ pub const ConflictResolver = struct {
             var c = conflict.*;
             c.deinit();
         }
-        self.conflicts.deinit();
+        self.conflicts.deinit(self.allocator);
     }
 
     /// Record a dependency requirement
@@ -103,7 +103,7 @@ pub const ConflictResolver = struct {
     /// Resolve conflicts and return a map of package -> resolved version
     pub fn resolveAll(self: *ConflictResolver) !std.StringHashMap([]const u8) {
         var resolutions = std.StringHashMap([]const u8).init(self.allocator);
-        errdefer resolutions.deinit();
+        errdefer resolutions.deinit(self.allocator);
 
         var it = self.conflicts.iterator();
         while (it.next()) |entry| {

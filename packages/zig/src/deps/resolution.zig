@@ -85,7 +85,7 @@ pub const ResolutionContext = struct {
                 self.allocator.free(entry.key_ptr.*);
                 self.allocator.free(entry.value_ptr.*);
             }
-            conflict_resolutions.deinit();
+            conflict_resolutions.deinit(self.allocator);
         }
 
         // Validate peer dependencies
@@ -117,7 +117,7 @@ pub const ResolutionResult = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.conflict_resolutions.deinit();
+        self.conflict_resolutions.deinit(self.allocator);
 
         self.peer_validation.deinit();
     }

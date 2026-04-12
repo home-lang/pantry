@@ -48,7 +48,7 @@ pub fn removeCommand(allocator: std.mem.Allocator, args: []const []const u8, opt
 
     // Track removed and not found packages — use HashMap for O(1) dedup
     var removed_set = std.StringHashMap(void).init(allocator);
-    defer removed_set.deinit();
+    defer removed_set.deinit(allocator);
     var removed_packages = try std.ArrayList([]const u8).initCapacity(allocator, args.len);
     defer removed_packages.deinit(allocator);
 
@@ -485,7 +485,7 @@ fn removeFromConfigFile(allocator: std.mem.Allocator, cwd: []const u8, packages:
 
     // Track which packages we found and need to remove
     var packages_to_remove = std.StringHashMap(void).init(allocator);
-    defer packages_to_remove.deinit();
+    defer packages_to_remove.deinit(allocator);
 
     for (packages) |pkg| {
         // Check if package is in dependencies
@@ -2033,7 +2033,7 @@ fn sortPackagesByDependencyOrder(
 
     // Map workspace package names to their index
     var name_to_idx = std.StringHashMap(usize).init(allocator);
-    defer name_to_idx.deinit();
+    defer name_to_idx.deinit(allocator);
     for (packages, 0..) |pkg, i| {
         name_to_idx.put(pkg.name, i) catch continue;
     }
@@ -2176,7 +2176,7 @@ fn resolveWorkspaceProtocol(allocator: std.mem.Allocator, content: []const u8, p
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        resolutions.deinit();
+        resolutions.deinit(allocator);
     }
 
     for (dep_sections) |section| {
@@ -2660,7 +2660,7 @@ const DependencyChain = struct {
             child.deinit(allocator);
             allocator.destroy(child);
         }
-        self.children.deinit();
+        self.children.deinit(allocator);
     }
 };
 
@@ -2695,7 +2695,7 @@ pub fn whyCommand(allocator: std.mem.Allocator, args: []const []const u8, option
         while (it.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        deps_map.deinit();
+        deps_map.deinit(allocator);
     }
 
     // Find matching packages

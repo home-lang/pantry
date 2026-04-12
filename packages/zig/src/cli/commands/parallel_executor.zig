@@ -69,7 +69,7 @@ fn executeScript(ctx: ExecutionContext) !ScriptResult {
             ctx.allocator.free(entry.key_ptr.*);
             ctx.allocator.free(entry.value_ptr.*);
         }
-        scripts.deinit();
+        scripts.deinit(ctx.allocator);
     }
 
     // Check if the script exists

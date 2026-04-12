@@ -81,7 +81,7 @@ pub const PackageCache = struct {
             var meta = entry.value_ptr;
             meta.deinit(self.allocator);
         }
-        self.metadata.deinit();
+        self.metadata.deinit(self.allocator);
         self.allocator.free(self.cache_dir);
     }
 

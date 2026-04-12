@@ -78,7 +78,7 @@ pub const Entry = struct {
             allocator.free(entry.key_ptr.*);
             allocator.free(entry.value_ptr.*);
         }
-        self.env_vars.deinit();
+        self.env_vars.deinit(allocator);
     }
 };
 
@@ -144,7 +144,7 @@ pub const EnvCache = struct {
             entry_ptr.*.deinit(self.allocator);
             self.allocator.destroy(entry_ptr.*);
         }
-        self.cache.deinit();
+        self.cache.deinit(self.allocator);
 
         if (self.cache_file_path) |path| {
             self.allocator.free(path);

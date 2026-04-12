@@ -46,7 +46,7 @@ pub const LockedPackage = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
     }
 };
 
@@ -71,7 +71,7 @@ pub const LockFile = struct {
 
     pub fn deinit(self: *LockFile) void {
         // name_index values point into packages map, no separate free needed
-        self.name_index.deinit();
+        self.name_index.deinit(self.allocator);
 
         var it = self.packages.iterator();
         while (it.next()) |entry| {
@@ -79,7 +79,7 @@ pub const LockFile = struct {
             var pkg = entry.value_ptr.*;
             pkg.deinit();
         }
-        self.packages.deinit();
+        self.packages.deinit(self.allocator);
     }
 
     /// Build name→key index for O(1) lookups in getLockedVersion.

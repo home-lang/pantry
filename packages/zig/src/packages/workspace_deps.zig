@@ -165,7 +165,7 @@ fn buildParallelGroups(
 ) ![][]types.WorkspaceMember {
     // Calculate dependency level for each member
     var levels = std.StringHashMap(usize).init(allocator);
-    defer levels.deinit();
+    defer levels.deinit(allocator);
 
     // Initialize all to level 0
     for (members) |member| {
