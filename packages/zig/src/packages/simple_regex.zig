@@ -24,8 +24,11 @@ const std = @import("std");
 
 /// Match a string against a regex pattern
 pub fn matchRegex(pattern: []const u8, text: []const u8) bool {
-    return matchInternal(pattern, text, 0, 0, false);
+    return matchInternal(pattern, text, 0, 0, false, 0);
 }
+
+/// Maximum recursion depth to prevent stack overflow on pathological patterns
+const max_recursion_depth: usize = 500;
 
 fn matchInternal(
     pattern: []const u8,
@@ -33,7 +36,11 @@ fn matchInternal(
     p_idx: usize,
     t_idx: usize,
     anchored: bool,
+    depth: usize,
 ) bool {
+    // Guard against excessive recursion (pathological patterns)
+    if (depth > max_recursion_depth) return false;
+
     // Base case: pattern exhausted
     if (p_idx >= pattern.len) {
         return t_idx >= text.len or !anchored;
@@ -41,7 +48,7 @@ fn matchInternal(
 
     // Check for start anchor
     if (p_idx == 0 and pattern[p_idx] == '^') {
-        return matchInternal(pattern, text, p_idx + 1, t_idx, true);
+        return matchInternal(pattern, text, p_idx + 1, t_idx, true, depth + 1);
     }
 
     // Check for end anchor
@@ -58,9 +65,9 @@ fn matchInternal(
         const char_pattern = pattern[p_idx];
 
         return switch (quantifier) {
-            '*' => matchStar(pattern, text, p_idx, t_idx, char_pattern, anchored),
-            '+' => matchPlus(pattern, text, p_idx, t_idx, char_pattern, anchored),
-            '?' => matchOptional(pattern, text, p_idx, t_idx, char_pattern, anchored),
+            '*' => matchStar(pattern, text, p_idx, t_idx, char_pattern, anchored, depth + 1),
+            '+' => matchPlus(pattern, text, p_idx, t_idx, char_pattern, anchored, depth + 1),
+            '?' => matchOptional(pattern, text, p_idx, t_idx, char_pattern, anchored, depth + 1),
             else => false,
         };
     }
@@ -73,7 +80,7 @@ fn matchInternal(
         if (t_idx >= text.len) return false;
 
         if (matchCharClass(char_class, text[t_idx])) {
-            return matchInternal(pattern, text, close_bracket + 1, t_idx + 1, anchored);
+            return matchInternal(pattern, text, close_bracket + 1, t_idx + 1, anchored, depth + 1);
         }
         return false;
     }
@@ -90,19 +97,19 @@ fn matchInternal(
         };
 
         if (matches) {
-            return matchInternal(pattern, text, p_idx + 2, t_idx + 1, anchored);
+            return matchInternal(pattern, text, p_idx + 2, t_idx + 1, anchored, depth + 1);
         }
         return false;
     }
 
     // Handle single character match
     if (t_idx < text.len and matchChar(pattern[p_idx], text[t_idx])) {
-        return matchInternal(pattern, text, p_idx + 1, t_idx + 1, anchored);
+        return matchInternal(pattern, text, p_idx + 1, t_idx + 1, anchored, depth + 1);
     }
 
     // If not anchored, try matching from next position in text
     if (!anchored and t_idx + 1 <= text.len) {
-        return matchInternal(pattern, text, 0, t_idx + 1, false);
+        return matchInternal(pattern, text, 0, t_idx + 1, false, depth + 1);
     }
 
     return false;
@@ -115,16 +122,17 @@ fn matchStar(
     t_idx: usize,
     char_pattern: u8,
     anchored: bool,
+    depth: usize,
 ) bool {
     // Try matching zero occurrences
-    if (matchInternal(pattern, text, p_idx + 2, t_idx, anchored)) {
+    if (matchInternal(pattern, text, p_idx + 2, t_idx, anchored, depth + 1)) {
         return true;
     }
 
     // Try matching one or more occurrences
     var i = t_idx;
     while (i < text.len and matchChar(char_pattern, text[i])) : (i += 1) {
-        if (matchInternal(pattern, text, p_idx + 2, i + 1, anchored)) {
+        if (matchInternal(pattern, text, p_idx + 2, i + 1, anchored, depth + 1)) {
             return true;
         }
     }
@@ -139,6 +147,7 @@ fn matchPlus(
     t_idx: usize,
     char_pattern: u8,
     anchored: bool,
+    depth: usize,
 ) bool {
     // Must match at least once
     if (t_idx >= text.len or !matchChar(char_pattern, text[t_idx])) {
@@ -148,7 +157,7 @@ fn matchPlus(
     // Try matching one or more occurrences
     var i = t_idx;
     while (i < text.len and matchChar(char_pattern, text[i])) : (i += 1) {
-        if (matchInternal(pattern, text, p_idx + 2, i + 1, anchored)) {
+        if (matchInternal(pattern, text, p_idx + 2, i + 1, anchored, depth + 1)) {
             return true;
         }
     }
@@ -163,15 +172,16 @@ fn matchOptional(
     t_idx: usize,
     char_pattern: u8,
     anchored: bool,
+    depth: usize,
 ) bool {
     // Try matching zero occurrences
-    if (matchInternal(pattern, text, p_idx + 2, t_idx, anchored)) {
+    if (matchInternal(pattern, text, p_idx + 2, t_idx, anchored, depth + 1)) {
         return true;
     }
 
     // Try matching one occurrence
     if (t_idx < text.len and matchChar(char_pattern, text[t_idx])) {
-        return matchInternal(pattern, text, p_idx + 2, t_idx + 1, anchored);
+        return matchInternal(pattern, text, p_idx + 2, t_idx + 1, anchored, depth + 1);
     }
 
     return false;

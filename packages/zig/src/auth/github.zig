@@ -165,15 +165,22 @@ pub const GitHubClient = struct {
             .{ .name = "X-GitHub-Api-Version", .value = "2022-11-28" },
         };
 
-        // Build JSON body
+        // Build JSON body (escape user-supplied fields to prevent injection)
+        const escaped_tag = try jsonEscapeAlloc(self.allocator, tag);
+        defer self.allocator.free(escaped_tag);
+        const escaped_name = try jsonEscapeAlloc(self.allocator, name);
+        defer self.allocator.free(escaped_name);
+        const escaped_body = try jsonEscapeAlloc(self.allocator, body_text);
+        defer self.allocator.free(escaped_body);
+
         const request_body = try std.fmt.allocPrint(
             self.allocator,
             \\{{"tag_name":"{s}","name":"{s}","body":"{s}","draft":{s},"prerelease":{s}}}
         ,
             .{
-                tag,
-                name,
-                body_text,
+                escaped_tag,
+                escaped_name,
+                escaped_body,
                 if (draft) "true" else "false",
                 if (prerelease) "true" else "false",
             },
@@ -496,6 +503,70 @@ fn parseGitRemoteUrl(allocator: std.mem.Allocator, url: []const u8) ?OwnerRepo {
     }
 
     return null;
+}
+
+/// Escape a string for embedding inside a JSON string value.
+/// Handles: " -> \", \ -> \\, newlines -> \n, tabs -> \t, and other control characters.
+fn jsonEscapeAlloc(allocator: std.mem.Allocator, input: []const u8) ![]u8 {
+    var escaped_len: usize = 0;
+    for (input) |c| {
+        escaped_len += switch (c) {
+            '"', '\\' => @as(usize, 2),
+            '\n', '\r', '\t' => @as(usize, 2),
+            else => if (c < 0x20) @as(usize, 6) else @as(usize, 1),
+        };
+    }
+
+    const result = try allocator.alloc(u8, escaped_len);
+    errdefer allocator.free(result);
+
+    var i: usize = 0;
+    for (input) |c| {
+        switch (c) {
+            '"' => {
+                result[i] = '\\';
+                result[i + 1] = '"';
+                i += 2;
+            },
+            '\\' => {
+                result[i] = '\\';
+                result[i + 1] = '\\';
+                i += 2;
+            },
+            '\n' => {
+                result[i] = '\\';
+                result[i + 1] = 'n';
+                i += 2;
+            },
+            '\r' => {
+                result[i] = '\\';
+                result[i + 1] = 'r';
+                i += 2;
+            },
+            '\t' => {
+                result[i] = '\\';
+                result[i + 1] = 't';
+                i += 2;
+            },
+            else => {
+                if (c < 0x20) {
+                    const hex_chars = "0123456789abcdef";
+                    result[i] = '\\';
+                    result[i + 1] = 'u';
+                    result[i + 2] = '0';
+                    result[i + 3] = '0';
+                    result[i + 4] = hex_chars[c >> 4];
+                    result[i + 5] = hex_chars[c & 0x0F];
+                    i += 6;
+                } else {
+                    result[i] = c;
+                    i += 1;
+                }
+            },
+        }
+    }
+
+    return result;
 }
 
 fn parseOwnerRepoFromPath(allocator: std.mem.Allocator, path: []const u8) ?OwnerRepo {

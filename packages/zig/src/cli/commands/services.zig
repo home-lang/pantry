@@ -130,7 +130,70 @@ fn parseUserGroup(allocator: std.mem.Allocator, content: []const u8, group_name:
 // Service Listing
 // ============================================================================
 
-pub fn servicesCommand(_: std.mem.Allocator) !CommandResult {
+pub fn servicesCommand(allocator: std.mem.Allocator) !CommandResult {
+    // Check for --json flag in process args
+    const args = std.process.argsAlloc(allocator) catch return servicesCommandHuman();
+    defer std.process.argsFree(allocator, args);
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "--json")) {
+            return servicesCommandJson(allocator);
+        }
+    }
+    return servicesCommandHuman();
+}
+
+fn servicesCommandJson(allocator: std.mem.Allocator) !CommandResult {
+    const ServiceEntry = struct { name: []const u8, description: []const u8, port: ?u16, category: []const u8 };
+    const entries = [_]ServiceEntry{
+        .{ .name = "postgres", .description = "PostgreSQL", .port = 5432, .category = "databases" },
+        .{ .name = "redis", .description = "Redis", .port = 6379, .category = "databases" },
+        .{ .name = "mysql", .description = "MySQL", .port = 3306, .category = "databases" },
+        .{ .name = "mariadb", .description = "MariaDB", .port = 3306, .category = "databases" },
+        .{ .name = "mongodb", .description = "MongoDB", .port = 27017, .category = "databases" },
+        .{ .name = "meilisearch", .description = "Meilisearch", .port = 7700, .category = "databases" },
+        .{ .name = "elasticsearch", .description = "Elasticsearch", .port = 9200, .category = "databases" },
+        .{ .name = "memcached", .description = "Memcached", .port = 11211, .category = "databases" },
+        .{ .name = "kafka", .description = "Apache Kafka", .port = 9092, .category = "queues" },
+        .{ .name = "rabbitmq", .description = "RabbitMQ", .port = 5672, .category = "queues" },
+        .{ .name = "nats", .description = "NATS", .port = 4222, .category = "queues" },
+        .{ .name = "prometheus", .description = "Prometheus", .port = 9090, .category = "monitoring" },
+        .{ .name = "grafana", .description = "Grafana", .port = 3000, .category = "monitoring" },
+        .{ .name = "nginx", .description = "Nginx", .port = 8080, .category = "web" },
+        .{ .name = "caddy", .description = "Caddy", .port = 2015, .category = "web" },
+        .{ .name = "httpd", .description = "Apache httpd", .port = 8084, .category = "web" },
+        .{ .name = "vault", .description = "HashiCorp Vault", .port = 8200, .category = "infrastructure" },
+        .{ .name = "consul", .description = "HashiCorp Consul", .port = 8500, .category = "infrastructure" },
+        .{ .name = "minio", .description = "MinIO", .port = 9000, .category = "infrastructure" },
+        .{ .name = "ollama", .description = "Ollama", .port = 11434, .category = "dev" },
+        .{ .name = "cloudflared", .description = "Cloudflared", .port = null, .category = "tunnels" },
+    };
+
+    var buf = std.ArrayList(u8).empty;
+    defer buf.deinit(allocator);
+
+    try buf.appendSlice(allocator, "[");
+    for (entries, 0..) |entry, i| {
+        if (i > 0) try buf.appendSlice(allocator, ",");
+        if (entry.port) |p| {
+            const line = try std.fmt.allocPrint(allocator, "{{\"name\":\"{s}\",\"description\":\"{s}\",\"port\":{d},\"category\":\"{s}\"}}", .{ entry.name, entry.description, p, entry.category });
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        } else {
+            const line = try std.fmt.allocPrint(allocator, "{{\"name\":\"{s}\",\"description\":\"{s}\",\"port\":null,\"category\":\"{s}\"}}", .{ entry.name, entry.description, entry.category });
+            defer allocator.free(line);
+            try buf.appendSlice(allocator, line);
+        }
+    }
+    try buf.appendSlice(allocator, "]\n");
+
+    const output = try allocator.dupe(u8, buf.items);
+    style.print("{s}", .{output});
+    allocator.free(output);
+
+    return .{ .exit_code = 0 };
+}
+
+fn servicesCommandHuman() CommandResult {
     style.print("Available Services ({d} total):\n\n", .{68});
 
     // Databases (22)

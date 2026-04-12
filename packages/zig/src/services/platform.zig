@@ -165,9 +165,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "launchctl", "load", service_file };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceStartFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceStartFailed;
     }
 
     fn launchdStop(self: *ServiceController, service_name: []const u8) !void {
@@ -177,9 +179,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "launchctl", "unload", service_file };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceStopFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceStopFailed;
     }
 
     fn launchdStatus(self: *ServiceController, service_name: []const u8) !definitions.ServiceStatus {
@@ -190,10 +194,10 @@ pub const ServiceController = struct {
         var child = try io_helper.spawn(.{ .argv = &argv, .stdout = .pipe, .stderr = .pipe });
         const result = try io_helper.wait(&child);
 
-        return if (result == .exited and result.exited == 0)
-            .running
-        else
-            .stopped;
+        return switch (result) {
+            .exited => |code| if (code == 0) .running else .stopped,
+            else => .stopped,
+        };
     }
 
     fn getLaunchdServiceFile(self: *ServiceController, service_name: []const u8) ![]const u8 {
@@ -230,9 +234,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "start", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceStartFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceStartFailed;
     }
 
     fn systemdStop(self: *ServiceController, service_name: []const u8) !void {
@@ -242,9 +248,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "stop", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceStopFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceStopFailed;
     }
 
     fn systemdEnable(self: *ServiceController, service_name: []const u8) !void {
@@ -254,9 +262,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "enable", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceEnableFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceEnableFailed;
     }
 
     fn systemdDisable(self: *ServiceController, service_name: []const u8) !void {
@@ -266,9 +276,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "systemctl", "--user", "disable", service_unit };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceDisableFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceDisableFailed;
     }
 
     fn systemdStatus(self: *ServiceController, service_name: []const u8) !definitions.ServiceStatus {
@@ -312,9 +324,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "service", rcd_name, "onestart" };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceStartFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceStartFailed;
     }
 
     fn rcdStop(self: *ServiceController, service_name: []const u8) !void {
@@ -324,9 +338,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "service", rcd_name, "onestop" };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceStopFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceStopFailed;
     }
 
     fn rcdEnable(self: *ServiceController, service_name: []const u8) !void {
@@ -340,9 +356,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "sysrc", var_name };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceEnableFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceEnableFailed;
     }
 
     fn rcdDisable(self: *ServiceController, service_name: []const u8) !void {
@@ -356,9 +374,11 @@ pub const ServiceController = struct {
         const argv = [_][]const u8{ "sysrc", var_name };
         const result = try io_helper.spawnAndWait(.{ .argv = &argv });
 
-        if (result != .exited or result.exited != 0) {
-            return error.ServiceDisableFailed;
-        }
+        const ok = switch (result) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!ok) return error.ServiceDisableFailed;
     }
 
     fn rcdStatus(self: *ServiceController, service_name: []const u8) !definitions.ServiceStatus {

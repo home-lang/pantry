@@ -1175,8 +1175,12 @@ fn envCleanAction(ctx: *cli.BaseCommand.ParseContext) !void {
 
     const dry_run = ctx.hasOption("dry-run");
     const force = ctx.hasOption("force");
+    const max_age_days: u32 = if (ctx.getOption("max-age-days")) |val|
+        std.fmt.parseInt(u32, val, 10) catch 30
+    else
+        30;
 
-    const result = try lib.commands.envCleanCommandWithOptions(allocator, dry_run, force);
+    const result = try lib.commands.envCleanCommandWithOptions(allocator, dry_run, force, max_age_days);
     defer result.deinit(allocator);
 
     if (result.message) |msg| {

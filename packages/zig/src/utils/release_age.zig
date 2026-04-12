@@ -58,16 +58,16 @@ pub fn isReleaseOldEnough(
 /// Format age duration as human-readable string
 pub fn formatAge(allocator: std.mem.Allocator, age_seconds: u64) ![]const u8 {
     if (age_seconds < 60) {
-        return std.fmt.allocPrint(allocator, "{d} seconds", .{age_seconds});
+        return std.fmt.allocPrint(allocator, "{d} {s}", .{ age_seconds, if (age_seconds == 1) "second" else "seconds" });
     } else if (age_seconds < 3600) {
         const minutes = age_seconds / 60;
-        return std.fmt.allocPrint(allocator, "{d} minutes", .{minutes});
+        return std.fmt.allocPrint(allocator, "{d} {s}", .{ minutes, if (minutes == 1) "minute" else "minutes" });
     } else if (age_seconds < 86400) {
         const hours = age_seconds / 3600;
-        return std.fmt.allocPrint(allocator, "{d} hours", .{hours});
+        return std.fmt.allocPrint(allocator, "{d} {s}", .{ hours, if (hours == 1) "hour" else "hours" });
     } else {
         const days = age_seconds / 86400;
-        return std.fmt.allocPrint(allocator, "{d} days", .{days});
+        return std.fmt.allocPrint(allocator, "{d} {s}", .{ days, if (days == 1) "day" else "days" });
     }
 }
 
@@ -146,7 +146,7 @@ test "formatAge returns correct strings" {
     // 90 seconds = 1 minute
     const age2 = try formatAge(allocator, 90);
     defer allocator.free(age2);
-    try std.testing.expectEqualStrings("1 minutes", age2);
+    try std.testing.expectEqualStrings("1 minute", age2);
 
     // 7200 seconds = 2 hours
     const age3 = try formatAge(allocator, 7200);

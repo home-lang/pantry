@@ -1037,11 +1037,7 @@ pub fn createSignedProvenance(
     const sigstore_token = try oidc.getTokenFromEnvironmentWithAudience(allocator, &provider, "sigstore") orelse return error.NoOIDCToken;
     defer allocator.free(sigstore_token);
 
-    // 2. Generate ephemeral ECDSA keypair
-    // Note: Zig's std.crypto has ECDSA support
-    // For now, we'll use a simplified approach
-    // TODO: Generate actual ECDSA P-256 keypair
-    // For now, this is a placeholder - real implementation needs crypto
+    // 2. Generate ephemeral ECDSA P-256 keypair (via std.crypto.sign.ecdsa)
     const keypair = try generateEphemeralKeypair(allocator);
     defer allocator.free(keypair.public_key_pem);
     defer allocator.free(keypair.private_key);

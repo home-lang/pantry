@@ -67,17 +67,29 @@ pub fn envInspectCommandWithVerbose(allocator: std.mem.Allocator, hash_str: []co
     return .{ .exit_code = 0 };
 }
 
-pub fn envCleanCommand(allocator: std.mem.Allocator, _: []const []const u8) !CommandResult {
-    return envCleanCommandWithOptions(allocator, false, false);
+pub fn envCleanCommand(allocator: std.mem.Allocator, args: []const []const u8) !CommandResult {
+    var dry_run = false;
+    var force = false;
+    var max_age_days: u32 = 30;
+    for (args) |arg| {
+        if (std.mem.eql(u8, arg, "--dry-run")) {
+            dry_run = true;
+        } else if (std.mem.eql(u8, arg, "--force") or std.mem.eql(u8, arg, "-f")) {
+            force = true;
+        } else if (std.mem.startsWith(u8, arg, "--max-age-days=")) {
+            max_age_days = std.fmt.parseInt(u32, arg["--max-age-days=".len..], 10) catch 30;
+        }
+    }
+    return envCleanCommandWithOptions(allocator, dry_run, force, max_age_days);
 }
 
-pub fn envCleanCommandWithOptions(allocator: std.mem.Allocator, dry_run: bool, force: bool) !CommandResult {
+pub fn envCleanCommandWithOptions(allocator: std.mem.Allocator, dry_run: bool, force: bool, max_age_days: u32) !CommandResult {
     const env_commands = @import("../../env/commands.zig");
     var commands = env_commands.EnvCommands.init(allocator);
     defer commands.deinit();
 
-    // Clean environments older than 30 days
-    commands.clean(30, dry_run, force) catch |err| {
+    // Clean environments older than the specified number of days
+    commands.clean(max_age_days, dry_run, force) catch |err| {
         const msg = try std.fmt.allocPrint(allocator, "Error cleaning environments: {}", .{err});
         return .{ .exit_code = 1, .message = msg };
     };

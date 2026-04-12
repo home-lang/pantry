@@ -33,13 +33,13 @@ fn maybeDecompressGzip(allocator: std.mem.Allocator, data: []const u8) ![]const 
 /// Scoped packages like "@scope/name" need special handling
 /// npm expects the / to be encoded as %2F in the URL path
 fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) ![]u8 {
-    // npm registry expects scoped packages with / encoded as %2F
-    // e.g., @scope/name -> @scope%2fname
+    // npm registry expects scoped packages with special chars percent-encoded
+    // e.g., @scope/name -> %40scope%2Fname
     var encoded_len: usize = 0;
     for (package_name) |c| {
         encoded_len += switch (c) {
-            '/' => 3, // %2F
-            else => 1,
+            '/', '@', ' ', '#', '?', '&', '=', '+', '%' => @as(usize, 3),
+            else => @as(usize, 1),
         };
     }
 
@@ -58,7 +58,55 @@ fn urlEncodePackageName(allocator: std.mem.Allocator, package_name: []const u8) 
             '/' => {
                 result[i] = '%';
                 result[i + 1] = '2';
-                result[i + 2] = 'f'; // lowercase per npm convention
+                result[i + 2] = 'F';
+                i += 3;
+            },
+            '@' => {
+                result[i] = '%';
+                result[i + 1] = '4';
+                result[i + 2] = '0';
+                i += 3;
+            },
+            ' ' => {
+                result[i] = '%';
+                result[i + 1] = '2';
+                result[i + 2] = '0';
+                i += 3;
+            },
+            '#' => {
+                result[i] = '%';
+                result[i + 1] = '2';
+                result[i + 2] = '3';
+                i += 3;
+            },
+            '?' => {
+                result[i] = '%';
+                result[i + 1] = '3';
+                result[i + 2] = 'F';
+                i += 3;
+            },
+            '&' => {
+                result[i] = '%';
+                result[i + 1] = '2';
+                result[i + 2] = '6';
+                i += 3;
+            },
+            '=' => {
+                result[i] = '%';
+                result[i + 1] = '3';
+                result[i + 2] = 'D';
+                i += 3;
+            },
+            '+' => {
+                result[i] = '%';
+                result[i + 1] = '2';
+                result[i + 2] = 'B';
+                i += 3;
+            },
+            '%' => {
+                result[i] = '%';
+                result[i + 1] = '2';
+                result[i + 2] = '5';
                 i += 3;
             },
             else => {

@@ -61,8 +61,9 @@ pub const InstallTaskResult = struct {
     }
 };
 
-/// Task context for concurrent installation
-/// TODO: Re-enable when std.Io.Group API stabilizes
+/// Task context for concurrent installation.
+/// Concurrency is managed via std.Thread pool with mutex-guarded task index
+/// (see executeConcurrent pattern), since std.Io.Group was removed in Zig 0.16.
 pub const InstallTask = struct {
     allocator: std.mem.Allocator,
     dep: lib.deps.parser.PackageDependency,

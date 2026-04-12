@@ -142,9 +142,11 @@ fn executeScript(task: ScriptTask, config: ConcurrentConfig) !ScriptResult {
     const allocator = config.allocator;
 
     // Build argv for shell execution
+    const shell = comptime if (@import("builtin").os.tag == .windows) "cmd" else "sh";
+    const shell_flag = comptime if (@import("builtin").os.tag == .windows) "/C" else "-c";
     var argv_buf: [128][]const u8 = undefined;
-    argv_buf[0] = "sh";
-    argv_buf[1] = "-c";
+    argv_buf[0] = shell;
+    argv_buf[1] = shell_flag;
     argv_buf[2] = task.command;
     argv_buf[3] = "_"; // sh placeholder for $0
 
@@ -170,12 +172,21 @@ fn executeScript(task: ScriptTask, config: ConcurrentConfig) !ScriptResult {
         };
     };
 
+    const exit_code: u8 = switch (result.term) {
+        .exited => |code| @intCast(code),
+        else => 1,
+    };
+    const success = switch (result.term) {
+        .exited => |code| code == 0,
+        else => false,
+    };
+
     return ScriptResult{
         .name = try allocator.dupe(u8, task.name),
-        .exit_code = @as(u8, @intCast(result.term.exited)),
+        .exit_code = exit_code,
         .stdout = result.stdout,
         .stderr = result.stderr,
-        .success = result.term.exited == 0,
+        .success = success,
     };
 }
 

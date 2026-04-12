@@ -30,6 +30,22 @@ pub fn bootstrapCommand(allocator: std.mem.Allocator, options: BootstrapOptions)
     style.print("╚══════════════════════════════════════════════════════════════╝\n", .{});
     style.print("\n", .{});
 
+    // Check that git is available (required for many dev workflows)
+    const git_check = io_helper.childRun(allocator, &[_][]const u8{ "git", "--version" });
+    if (git_check) |r| {
+        defer allocator.free(r.stdout);
+        defer allocator.free(r.stderr);
+        const git_ok = switch (r.term) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!git_ok) {
+            return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Error: git is not installed or not working. Please install git first.") };
+        }
+    } else |_| {
+        return .{ .exit_code = 1, .message = try allocator.dupe(u8, "Error: git is not found in PATH. Please install git first.") };
+    }
+
     var steps_completed: u8 = 0;
     var steps_total: u8 = 0;
 
@@ -140,7 +156,11 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
         defer allocator.free(r.stdout);
         defer allocator.free(r.stderr);
 
-        if (r.term == .exited and r.term.exited == 0) {
+        const bun_ok = switch (r.term) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (bun_ok) {
             if (verbose) {
                 const version = std.mem.trim(u8, r.stdout, &std.ascii.whitespace);
                 style.print("       Bun already installed: v{s}\n", .{version});
@@ -175,7 +195,11 @@ fn installBun(allocator: std.mem.Allocator, install_path: []const u8, verbose: b
         defer allocator.free(r.stdout);
         defer allocator.free(r.stderr);
 
-        if (r.term.exited != 0) {
+        const install_ok = switch (r.term) {
+            .exited => |code| code == 0,
+            else => false,
+        };
+        if (!install_ok) {
             return error.BunInstallFailed;
         }
     } else |err| {

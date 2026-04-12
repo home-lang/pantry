@@ -123,10 +123,14 @@ pub fn installPhpDeps(allocator: std.mem.Allocator, project_dir: []const u8, ver
     }
 
     // Perf #9: Pre-sized autoload generation
-    generateAutoload(allocator, vendor_dir, packages.items) catch {};
+    generateAutoload(allocator, vendor_dir, packages.items) catch |err| {
+        std.debug.print("pantry: warning: autoload generation failed: {s}\n", .{@errorName(err)});
+    };
 
     // Write lock marker
-    writeLockMarker(allocator, lock_path, packages.items) catch {};
+    writeLockMarker(allocator, lock_path, packages.items) catch |err| {
+        std.debug.print("pantry: warning: lock marker write failed: {s}\n", .{@errorName(err)});
+    };
 
     const installed_count = installed.load(.monotonic);
     style.print("{s}  Installed {d}/{d} PHP packages{s}\n", .{ style.dim, installed_count, packages.items.len, style.reset });

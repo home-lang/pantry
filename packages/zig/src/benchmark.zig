@@ -40,10 +40,14 @@ pub fn benchmark(
         func();
         const end_time = io_helper.clockGettimeMonotonic();
 
-        // Handle nanosecond rollover correctly
-        const sec_diff = end_time.sec - start_time.sec;
-        const nsec_diff = end_time.nsec - start_time.nsec;
-        const elapsed = @as(u64, @intCast(sec_diff * std.time.ns_per_s + nsec_diff));
+        // Handle nanosecond rollover correctly (borrow when nsec wraps)
+        var sec_diff = end_time.sec - start_time.sec;
+        var nsec_diff = end_time.nsec - start_time.nsec;
+        if (nsec_diff < 0) {
+            sec_diff -= 1;
+            nsec_diff += std.time.ns_per_s;
+        }
+        const elapsed = @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff));
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
@@ -77,7 +81,13 @@ pub fn benchmarkCacheLookup(
         _ = try cache.get(key);
         const end_time = io_helper.clockGettimeMonotonic();
 
-        const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
+        var sec_diff = end_time.sec - start_time.sec;
+        var nsec_diff = end_time.nsec - start_time.nsec;
+        if (nsec_diff < 0) {
+            sec_diff -= 1;
+            nsec_diff += std.time.ns_per_s;
+        }
+        const elapsed = @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff));
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
@@ -115,7 +125,13 @@ pub fn benchmarkHash(
         _ = string.md5Hash(data);
         const end_time = io_helper.clockGettimeMonotonic();
 
-        const elapsed = @as(u64, @intCast((end_time.sec - start_time.sec) * std.time.ns_per_s + (end_time.nsec - start_time.nsec)));
+        var sec_diff = end_time.sec - start_time.sec;
+        var nsec_diff = end_time.nsec - start_time.nsec;
+        if (nsec_diff < 0) {
+            sec_diff -= 1;
+            nsec_diff += std.time.ns_per_s;
+        }
+        const elapsed = @as(u64, @intCast(sec_diff)) * std.time.ns_per_s + @as(u64, @intCast(nsec_diff));
         total_ns += elapsed;
 
         if (elapsed < min_ns) min_ns = elapsed;
